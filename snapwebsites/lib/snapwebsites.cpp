@@ -2044,7 +2044,7 @@ quiet_error_callback::quiet_error_callback(snap_child *snap, bool log)
  * \param[in] err_details  The internal details about the error (for system administrators only).
  * \param[in] err_by_mime_type  If returning an error, do not return HTML when this element MIME type is something else, instead send a file of that type, but still with the HTTP error code supplied.
  */
-void quiet_error_callback::on_error(snap_child::http_code_t const err_code, QString const& err_name, QString const& err_description, QString const& err_details, bool const err_by_mime_type)
+void quiet_error_callback::on_error(snap_child::http_code_t const err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
 {
     // since we ignore the error here anyway we can ignore this flag...
     static_cast<void>(err_by_mime_type);

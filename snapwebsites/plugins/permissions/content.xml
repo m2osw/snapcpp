@@ -386,6 +386,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
   </content>
 
+  <!-- Code to exit from an IFRAME when a login is required -->
+  <content path="/remove-iframe-for-login" owner="output">
+    <param name="content::title" revision="revision">Remove IFRAME for Login</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>This page is used to force the removal of the IFRAME before a login. The permission plugin detects such when a request is made with a query string defined as "iframe=true".</p>]]>
+    </param>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+  </content>
+  <content path="/js/permissions">
+    <param name="content::title" revision="revision">Permissions JavaScripts</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>JavaScripts for the permissions plugin.</p>]]>
+    </param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="remove-iframe-for-login" type="attachment/public">
+      <path>:/js/permissions/remove-iframe-for-login.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>output (&gt;= 0.1.5.70)</dependency>
+    </attachment>
+  </content>
+
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

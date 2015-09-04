@@ -235,7 +235,7 @@ void cookie_consent_silktide::on_generate_header_content(content::path_info_t & 
     static_cast<void>(ctemplate);
     static_cast<void>(metadata);
 
-    snap_uri const main_uri(f_snap->get_uri());
+    snap_uri const & main_uri(f_snap->get_uri());
     if(main_uri.has_query_option("iframe"))
     {
         if(main_uri.query_option("iframe") == "true")

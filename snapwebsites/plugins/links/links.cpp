@@ -1596,7 +1596,7 @@ namespace details
 
 // TBD maybe this should be a taxonomy function and not directly a links option?
 //     (it would remove some additional dependencies on the content plugin!)
-void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variable_vector_t const& sub_results)
+void call_linked_to(snap_expr::variable_t & result, snap_expr::variable_t::variable_vector_t const & sub_results)
 {
     if(sub_results.size() != 3
     && sub_results.size() != 4)

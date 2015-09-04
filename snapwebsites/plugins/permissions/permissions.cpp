@@ -918,7 +918,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 8, 1, 23, 0, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 3, 3, 49, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1436,7 +1436,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                     err_callback.on_error(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                             "Access Denied",
                             "You are not authorized to access our website.",
-                            QString("spammer trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()),
+                            QString("Spammer trying to \"%1\" on page \"%2\" with insufficient rights.").arg(action).arg(ipath.get_cpath()),
                             false);
                 }
                 return;
@@ -1450,7 +1450,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                         action != "view"
                             ? QString("You are not authorized to access the login page with action \"%1\".").arg(action)
                             : "Somehow you are not authorized to access the login page.",
-                        QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()),
+                        QString("User trying to \"%1\" on page \"%2\" with insufficient rights.").arg(action).arg(ipath.get_cpath()),
                         true);
                 return;
             }
@@ -1463,9 +1463,35 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                         action != "view"
                             ? QString("You are not authorized to access this document with action \"%1\".").arg(action)
                             : "Somehow you are not authorized to view this page.",
-                        QString("User trying to \"%1\" on page \"%2\" with unsufficient rights. Not redirecting to /login either since submit is expected to work for visitors.").arg(action).arg(ipath.get_cpath()),
+                        QString("User trying to \"%1\" on page \"%2\" with insufficient rights. Not redirecting to /login either since submit is expected to work for visitors.").arg(action).arg(ipath.get_cpath()),
                         true);
                 return;
+            }
+
+            // if the page is to appear in an IFRAME then we want to
+            // remove the frame before showing the login screen, for
+            // that purpose we have a special page which does all that
+            // work for us; not that if you still want to open a login
+            // screen in an IFRAME, you'll want to make sure to NOT
+            // put the iframe=true parameter in the URL query string
+            //
+            snap_uri const & main_uri(f_snap->get_uri());
+            if(main_uri.has_query_option("iframe"))
+            {
+                if(main_uri.query_option("iframe") == "true")
+                {
+                    err_callback.on_redirect(
+                        // message
+                        "Unauthorized",
+                        QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(ipath.get_cpath()),
+                        QString("User trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
+                        false,
+                        // redirect
+                        "remove-iframe-for-login",
+                        snap_child::http_code_t::HTTP_CODE_FOUND);
+                    // not reached if path checking
+                    return;
+                }
             }
 
             // user is anonymous, there is hope, he may have access once
@@ -1480,11 +1506,12 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                 users_plugin->set_referrer( ipath.get_cpath() );
             }
             //
+            // if the page is inside an IFRAME we want to remove the iframe
             err_callback.on_redirect(
                 // message
                 "Unauthorized",
                 QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(ipath.get_cpath()),
-                QString("user trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
+                QString("User trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
                 false,
                 // redirect
                 "login",
@@ -1516,7 +1543,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                         // message
                         "Unauthorized",
                         QString("The page you were trying to access (%1) requires you to verify your credentials. Please log in again and the system will send you back there.").arg(ipath.get_cpath()),
-                        QString("user trying to \"%1\" on page \"%2\" when not recently logged in.").arg(action).arg(ipath.get_cpath()),
+                        QString("User trying to \"%1\" on page \"%2\" when not recently logged in.").arg(action).arg(ipath.get_cpath()),
                         false,
                         // redirect
                         "verify-credentials",
@@ -1530,7 +1557,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             err_callback.on_error(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                     "Access Denied",
                     QString("You are not authorized to apply this action (%1) to this page (%2).").arg(action).arg(ipath.get_key()),
-                    QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_key()),
+                    QString("User trying to \"%1\" on page \"%2\" with insufficient rights.").arg(action).arg(ipath.get_key()),
                     true);
         }
         return;
@@ -1625,7 +1652,7 @@ QString const & permissions::get_user_path()
     if(!f_has_user_path)
     {
         f_has_user_path = true;
-        users::users *users_plugin(users::users::instance());
+        users::users * users_plugin(users::users::instance());
         f_user_path = users_plugin->get_user_path();
         if(f_user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
         {
@@ -2464,6 +2491,12 @@ void permissions::on_generate_header_content(content::path_info_t & ipath, QDomE
 {
     static_cast<void>(header);
     static_cast<void>(ctemplate);
+
+    if(ipath.get_cpath() == "remove-iframe-for-login")
+    {
+        QDomDocument doc(header.ownerDocument());
+        content::content::instance()->add_javascript(doc, "remove-iframe-for-login");
+    }
 
     // check whether the user has edit rights
     content::permission_flag can_edit;

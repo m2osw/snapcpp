@@ -1162,7 +1162,7 @@ void content::create_content_done(path_info_t & ipath, QString const & owner, QS
  *         generally returns false if the attachment cannot be created or
  *         already exists
  */
-bool content::create_attachment_impl(attachment_file& file, snap_version::version_number_t branch_number, QString const& locale)
+bool content::create_attachment_impl(attachment_file & file, snap_version::version_number_t branch_number, QString const & locale)
 {
     // quick check for security reasons so we can avoid unwanted uploads
     // (note that we already had the check for size and similar "problems")
@@ -1191,7 +1191,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
 
     // create the path to the new attachment itself
     // first get the basename
-    snap_child::post_file_t const& post_file(file.get_file());
+    snap_child::post_file_t const & post_file(file.get_file());
     QString attachment_filename(post_file.get_basename());
 
     // make sure that the parent of the attachment isn't final
@@ -1744,7 +1744,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
         // browser, and finally the version which is saved as integers
         snap_version::name_vector_t browsers(fv.get_browsers());
         int const bmax(browsers.size());
-        bool all(bmax == 1 && browsers[0].get_name() == "all");
+        bool const all(bmax == 1 && browsers[0].get_name() == "all");
         for(int i(0); i < bmax; ++i)
         {
             QByteArray jskey;
@@ -1752,7 +1752,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
             jskey.append('_');
             jskey.append(browsers[i].get_name());
             jskey.append('_');
-            snap_version::version_numbers_vector_t const& version(fv.get_version());
+            snap_version::version_numbers_vector_t const & version(fv.get_version());
             int const vmax(version.size());
             for(int v(0); v < vmax; ++v)
             {
@@ -3206,7 +3206,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
     f_added_javascripts[name] = true;
 
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
-    if(!files_table->exists("javascripts"/*javascript::get_name(javascript::name_t::SNAP_NAME_JAVASCRIPT_ROW)--incorrect dependency*/))
+    if(!files_table->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_JAVASCRIPTS)))
     {
         // absolutely no JavaScripts available!
         f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
@@ -3214,7 +3214,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
                 "A JavaScript was requested in the \"files\" table before it was inserted under /js/...");
         NOTREACHED();
     }
-    QtCassandra::QCassandraRow::pointer_t javascript_row(files_table->row("javascripts"/*javascript::get_name(javascript::name_t::SNAP_NAME_JAVASCRIPT_ROW)*/));
+    QtCassandra::QCassandraRow::pointer_t javascript_row(files_table->row(get_name(name_t::SNAP_NAME_CONTENT_FILES_JAVASCRIPTS)));
 
     // TODO: at this point I read all the entries with "name_..."
     //       we will want to first check with the user's browser and

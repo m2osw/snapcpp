@@ -183,7 +183,7 @@ bool content::page_cloned_impl(cloned_tree_t const& tree)
  * \sa move_page()
  * \sa trash_page()
  */
-bool content::clone_page(clone_info_t& source, clone_info_t& destination)
+bool content::clone_page(clone_info_t & source, clone_info_t & destination)
 {
 
 // WARNING: This function is NOT yet functional, I am still looking into how
@@ -191,7 +191,7 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
 
     struct sub_function
     {
-        sub_function(content *content_plugin, clone_info_t& source, clone_info_t& destination, int64_t const start_date)
+        sub_function(content * content_plugin, clone_info_t & source, clone_info_t & destination, int64_t const start_date)
             : f_content_plugin(content_plugin)
             , f_source(source)
             , f_destination(destination)
@@ -216,6 +216,7 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
             //       with page B data; we may want to first move page A
             //       to the trashcan though, and then allow the overwrite
             //       if the destination is marked as "deleted")
+            //
             if(f_content_table->exists(f_destination.f_ipath.get_key()))
             {
                 SNAP_LOG_ERROR("clone_page() called with a destination (")(f_destination.f_ipath.get_key())(") which already exists.");
@@ -647,7 +648,7 @@ bool content::move_page(path_info_t& ipath_source, path_info_t& ipath_destinatio
  * \sa clone_page()
  * \sa move_page()
  */
-bool content::trash_page(path_info_t& ipath)
+bool content::trash_page(path_info_t & ipath)
 {
     // is the page deletable?
     //
@@ -678,6 +679,8 @@ bool content::trash_page(path_info_t& ipath)
     // make sure that path exists
     if(!content_table->exists(trashcan_path))
     {
+        // TODO: it looks like we are not going to create the parents if
+        //       they do not exist...
         path_info_t trashcan_ipath;
 
         trashcan_ipath.set_path(trashcan_path);
