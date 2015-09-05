@@ -46,6 +46,7 @@ do
         -e "s:\\\$CLOSURE_COMPILER:$CLOSURE_COMPILER:g"`
 
     cmd="java -jar ../tmp/google-js-compiler/compiler.jar --js_output_file $OUTPUT/`basename $js .js`.min.js $OPTIONS $INLINE_OPTIONS --js $js"
+    echo "$js:"
     echo $cmd
     $cmd
 done
