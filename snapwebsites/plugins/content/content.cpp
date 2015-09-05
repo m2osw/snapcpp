@@ -3317,7 +3317,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
                 // last) file and see whether that one is satisfactory...
                 // the process continues untill all the versions of
                 // a file were checked
-                SNAP_LOG_WARNING("file referenced as JavaScript \"")(name)("\" has no reference back to ")(site_key)(" (this happens if your website is not 100% up to date)");
+                SNAP_LOG_WARNING("file referenced as JavaScript \"")(name)("\" has no reference back to \"")(site_key)("\" (this happens if your website is not 100% up to date)");
                 continue;
             }
             // the key of this cell is the path we want to use to the file

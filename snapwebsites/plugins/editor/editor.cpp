@@ -25,13 +25,13 @@
 
 #include "dbutils.h"
 #include "mkgmtime.h"
+#include "qdomhelpers.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
-#include "qdomhelpers.h"
 #include "qxmlmessagehandler.h"
-#include "snap_image.h"
-#include "not_reached.h"
 #include "log.h"
+#include "not_reached.h"
+#include "snap_image.h"
 
 #include <QtCassandra/QCassandraLock.h>
 #include <libtld/tld.h>
@@ -1076,11 +1076,6 @@ editor::save_mode_t editor::string_to_save_mode(QString const& mode)
  * string. In other words, the result string remains unchanged if the
  * input value is considered invalid.
  *
- * \warning
- * If you consider an emtpy value as valid, then check that special
- * case on return of false because this function returns false on
- * a null value.
- *
  * \param[in] value_info  A value_to_string_info_t object.
  *
  * \return true if the data_type is not known internally, false when the type
@@ -1097,6 +1092,8 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
 
     if(value_info.get_data_type() == "int8")
     {
+        value_info.set_type_name("decimal integer");
+
         int const v(value_info.get_value().safeSignedCharValue());
         if(value_info.get_widget_type() == "checkmark")
         {
@@ -1112,6 +1109,8 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
 
     if(value_info.get_data_type() == "int64")
     {
+        value_info.set_type_name("decimal integer");
+
         int64_t const v(value_info.get_value().safeInt64Value());
         value_info.result() = QString("%1").arg(v);
         value_info.set_status(value_to_string_info_t::status_t::DONE);
@@ -1121,6 +1120,8 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
     if(value_info.get_data_type() == "double"
     || value_info.get_data_type() == "float64")
     {
+        value_info.set_type_name("decimal number");
+
         double const v(value_info.get_value().safeDoubleValue());
         value_info.result() = QString("%1").arg(v);
         value_info.set_status(value_to_string_info_t::status_t::DONE);
@@ -1131,6 +1132,8 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
     || value_info.get_data_type() == "html"
     || value_info.get_data_type() == "plain")
     {
+        value_info.set_type_name("string");
+
         // data is already as expected, copy as is
         value_info.result() = value_info.get_value().stringValue();
         value_info.set_status(value_to_string_info_t::status_t::DONE);
@@ -1139,12 +1142,14 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
 
     if(value_info.get_data_type() == "ms-date-us")
     {
+        value_info.set_type_name("date");
+
         value_info.result() = f_snap->date_to_string(value_info.get_value().safeInt64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
         value_info.set_status(value_to_string_info_t::status_t::DONE);
-        return true;
+        return false;
     }
 
-    return false;
+    return true;
 }
 
 
@@ -1266,6 +1271,8 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
     // a standard string (remember we use UTF-8 everywhere)
     if(value_info.get_data_type() == "string")
     {
+        value_info.set_type_name("string");
+
         // no special handling for strings
         value_info.result().setStringValue(value_info.get_data());
         value_info.set_status(string_to_value_info_t::status_t::DONE);
@@ -2071,7 +2078,7 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
  *
  * \return The QDomDocument representing the editor form, may be null.
  */
-QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
+QDomDocument editor::get_editor_widgets(content::path_info_t & ipath)
 {
     static QMap<QString, QDomDocument> g_cached_form;
 
@@ -4243,12 +4250,12 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
  * a customer and only the edit mode requires the editor. This may also
  * be a setting in the database (per page, type, global...).
  *
- * \param[in] ipath  The path being managed.
+ * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The XML element named "page".
  * \param[in,out] page  The XML element named "body".
  * \param[in] ctemplate  The template in case the default does not work.
  */
-void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
     enum class added_form_file_support_t
     {
@@ -4425,7 +4432,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         bool const is_editor_timeout(field_name == get_name(name_t::SNAP_NAME_EDITOR_TIMEOUT));
         bool const is_editor_auto_reset(field_name == get_name(name_t::SNAP_NAME_EDITOR_AUTO_RESET));
         if(!field_name.isEmpty()
-        && (is_editor_session_field || is_editor_timeout || is_editor_auto_reset || data_row->exists(field_name)))
+        && (is_editor_session_field || is_editor_timeout || is_editor_auto_reset || draft_value || data_row->exists(field_name)))
         {
             QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
             QString current_value;
@@ -4446,76 +4453,17 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             }
             else if(draft_value)
             {
-                // all draft values are saved as strings
+                // all draft values are saved as is as strings
                 current_value = value.stringValue();
-            }
-            else if(widget_auto_save == "int8")
-            {
-                // if the value is null, it's as if it weren't defined
-                if(!value.nullValue())
-                {
-                    int const v(value.signedCharValue());
-                    if(field_type == "checkmark")
-                    {
-                        if(v == 0)
-                        {
-                            current_value = "0";
-                        }
-                        else
-                        {
-                            current_value = "1";
-                        }
-                    }
-                    else
-                    {
-                        current_value = QString("%1").arg(v);
-                    }
-                }
-            }
-            else if(widget_auto_save == "int64")
-            {
-                if(static_cast<size_t>(value.size()) >= sizeof(double))
-                {
-                    int64_t const v(value.int64Value());
-                    current_value = QString("%1").arg(v);
-                }
-            }
-            else if(widget_auto_save == "double"
-                 || widget_auto_save == "float64")
-            {
-                // if the value is null, it's as if it were not defined
-                // (we actually make sure there is at least one double)
-                if(static_cast<size_t>(value.size()) >= sizeof(double))
-                {
-                    double const v(value.doubleValue());
-                    current_value = QString("%1").arg(v);
-                }
-            }
-            else if(widget_auto_save == "ms-date-us")
-            {
-                // convert a 64 bit value in micro seconds to a US date
-                if(!value.nullValue())
-                {
-                    current_value = f_snap->date_to_string(value.int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
-                }
-            }
-            else if(widget_auto_save == "string"
-                 || widget_auto_save == "html")
-            {
-                // no special handling for strings / html
-                current_value = value.stringValue();
-            }
-            else if(widget_auto_save == "plain")
-            {
-                // the string is plain text so make sure special characters
-                // are properly escaped
-                current_value = snap_dom::escape(value.stringValue());
             }
             else
             {
-                // If no auto-save we expect a plugin to furnish the current
-                // value so we do not overwrite it
-                set_value = false;
+                value_to_string_info_t value_info(ipath, w, value);
+                value_to_string(value_info);
+                if(value_info.is_valid())
+                {
+                    current_value = value_info.result();
+                }
             }
 
             if(set_value)

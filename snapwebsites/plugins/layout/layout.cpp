@@ -873,9 +873,9 @@ out.write(doc.toString(-1).toUtf8());
  * \param[in,out] doc  Main document where the JavaScript and CSS are added.
  * \param[in,out] doc_output  The document where the defines are taken from.
  */
-void layout::extract_js_and_css(QDomDocument& doc, QDomDocument& doc_output)
+void layout::extract_js_and_css(QDomDocument & doc, QDomDocument & doc_output)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
 
     // javascripts can be added in any order because we have
     // proper dependencies thus they automatically get sorted
