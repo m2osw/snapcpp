@@ -124,7 +124,8 @@ DTD of the XSLT 2.0.
             rel (nofollow) #IMPLIED
             target CDATA #IMPLIED
             title CDATA ""
-            product-guid CDATA #IMPLIED>
+            product-guid CDATA #IMPLIED
+            tabindex CDATA #IMPLIED>
 
 <!-- product-guid is from ecommerce -->
 
