@@ -994,7 +994,8 @@ snapwebsites.Output.prototype.registerBufferToMIME = function(buffer_to_mime)
  *
  * @return {Object}  An object representing the query string name/value
  *                   pairs of the query string; the object may be empty
- *                   (i.e. length === 0).
+ *                   (i.e. length === 0) although if no query string is
+ *                   defined the function returns null instead.
  */
 snapwebsites.Output.parseQueryString = function(query_string, include_domain) // static
 {
