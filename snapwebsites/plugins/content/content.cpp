@@ -2382,13 +2382,171 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
                         throw content_exception_invalid_content_xml("<link> tags mode attribute must be one of \"1:1\", \"1:*\", \"*:1\", or \"*:*\"");
                     }
                 }
+                snap_version::version_number_t branch_source(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+                snap_version::version_number_t branch_destination(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+                QString branches(element.attribute("branches"));
+                if(!branches.isEmpty() && branches != "0:0")
+                {
+                    if(branches == "*" || branches == "*:*")
+                    {
+                        branch_source = snap_version::SPECIAL_VERSION_ALL;
+                        branch_destination = snap_version::SPECIAL_VERSION_ALL;
+                    }
+                    else
+                    {
+                        snap_string_list b(branches.split(':'));
+                        if(b.size() != 2)
+                        {
+                            throw content_exception_invalid_content_xml("<remove-link> tags 'branches' attribute must be one of \"*\", \"*:*\", \"#:#\", where # represents a number or is \"system\" (default is 0:0)");
+                        }
+                        if(b[0] == "system")
+                        {
+                            branch_source = snap_version::SPECIAL_VERSION_SYSTEM_BRANCH;
+                        }
+                        else
+                        {
+                            bool ok(false);
+                            branch_source = static_cast<snap_version::basic_version_number_t>(b[0].toInt(&ok, 10));
+                            if(!ok)
+                            {
+                                throw content_exception_invalid_content_xml("<remove-link> tags 'branches' attribute must be one of \"*\", \"*:*\", \"#:#\", where # represents a number or is \"system\" (default is 0:0), invalid number before ':'.");
+                            }
+                        }
+                        if(b[1] == "system")
+                        {
+                            branch_destination = snap_version::SPECIAL_VERSION_SYSTEM_BRANCH;
+                        }
+                        else
+                        {
+                            bool ok(false);
+                            branch_destination = static_cast<snap_version::basic_version_number_t>(b[1].toInt(&ok, 10));
+                            if(!ok)
+                            {
+                                throw content_exception_invalid_content_xml("<remove-link> tags 'branches' attribute must be one of \"*\", \"*:*\", \"#:#\", where # represents a number or is \"system\" (default is 0:0), invalid number after ':'.");
+                            }
+                        }
+                    }
+                }
                 // the destination URL is defined in the <link> content
                 QString destination_path(element.text());
                 f_snap->canonicalize_path(destination_path);
-                QString destination_key(f_snap->get_site_key_with_slash() + destination_path);
+                QString const destination_key(f_snap->get_site_key_with_slash() + destination_path);
                 links::link_info source(link_name, source_unique, key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
                 links::link_info destination(link_to, destination_unique, destination_key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
-                add_link(key, source, destination);
+                add_link(key, source, destination, branch_source, branch_destination, false);
+            }
+            // <remove-link name=... to=... [mode="1/*:1/*"]> destination path </link>
+            else if(tag_name == "remove-link")
+            {
+                // just like a link, only we will end up removing that link
+                // instead of adding it
+                QString link_name(element.attribute("name"));
+                if(link_name.isEmpty())
+                {
+                    throw content_exception_invalid_content_xml("all <remove-link> tags supplied to add_xml() must include a valid \"name\" attribute");
+                }
+                if(link_name == plugin_name)
+                {
+                    throw content_exception_invalid_content_xml(QString("the \"name\" attribute of a <remove-link> tag cannot be set to the plugin name (%1)").arg(plugin_name));
+                }
+                if(!link_name.contains("::"))
+                {
+                    // force the owner in the link name
+                    link_name = QString("%1::%2").arg(plugin_name).arg(link_name);
+                }
+                if(link_name == get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE))
+                {
+                    found_content_type = true;
+                }
+                QString link_to(element.attribute("to"));
+                if(link_to.isEmpty())
+                {
+                    throw content_exception_invalid_content_xml("all <remove-link> tags supplied to add_xml() must include a valid \"to\" attribute");
+                }
+                if(link_to == plugin_name)
+                {
+                    throw content_exception_invalid_content_xml(QString("the \"to\" attribute of a <remove-link> tag cannot be set to the plugin name (%1)").arg(plugin_name));
+                }
+                if(!link_to.contains("::"))
+                {
+                    // force the owner in the link name
+                    link_to = QString("%1::%2").arg(plugin_name).arg(link_to);
+                }
+                bool source_unique(true);
+                bool destination_unique(true);
+                QString mode(element.attribute("mode"));
+                if(!mode.isEmpty() && mode != "1:1")
+                {
+                    if(mode == "1:*")
+                    {
+                        destination_unique = false;
+                    }
+                    else if(mode == "*:1")
+                    {
+                        source_unique = false;
+                    }
+                    else if(mode == "*:*")
+                    {
+                        destination_unique = false;
+                        source_unique = false;
+                    }
+                    else
+                    {
+                        throw content_exception_invalid_content_xml("<remove-link> tags mode attribute must be one of \"1:1\", \"1:*\", \"*:1\", or \"*:*\"");
+                    }
+                }
+                snap_version::version_number_t branch_source(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+                snap_version::version_number_t branch_destination(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+                QString branches(element.attribute("branches"));
+                if(!branches.isEmpty() && branches != "0:0")
+                {
+                    if(branches == "*" || branches == "*:*")
+                    {
+                        branch_source = snap_version::SPECIAL_VERSION_ALL;
+                        branch_destination = snap_version::SPECIAL_VERSION_ALL;
+                    }
+                    else
+                    {
+                        snap_string_list b(branches.split(':'));
+                        if(b.size() != 2)
+                        {
+                            throw content_exception_invalid_content_xml("<remove-link> tags 'branches' attribute must be one of \"*\", \"*:*\", \"#:#\", where # represents a number or is \"system\" (default is 0:0)");
+                        }
+                        if(b[0] == "system")
+                        {
+                            branch_source = snap_version::SPECIAL_VERSION_SYSTEM_BRANCH;
+                        }
+                        else
+                        {
+                            bool ok(false);
+                            branch_source = static_cast<snap_version::basic_version_number_t>(b[0].toInt(&ok, 10));
+                            if(!ok)
+                            {
+                                throw content_exception_invalid_content_xml("<remove-link> tags 'branches' attribute must be one of \"*\", \"*:*\", \"#:#\", where # represents a number or is \"system\" (default is 0:0), invalid number before ':'.");
+                            }
+                        }
+                        if(b[1] == "system")
+                        {
+                            branch_destination = snap_version::SPECIAL_VERSION_SYSTEM_BRANCH;
+                        }
+                        else
+                        {
+                            bool ok(false);
+                            branch_destination = static_cast<snap_version::basic_version_number_t>(b[1].toInt(&ok, 10));
+                            if(!ok)
+                            {
+                                throw content_exception_invalid_content_xml("<remove-link> tags 'branches' attribute must be one of \"*\", \"*:*\", \"#:#\", where # represents a number or is \"system\" (default is 0:0), invalid number after ':'.");
+                            }
+                        }
+                    }
+                }
+                // the destination URL is defined in the <link> content
+                QString destination_path(element.text());
+                f_snap->canonicalize_path(destination_path);
+                QString const destination_key(f_snap->get_site_key_with_slash() + destination_path);
+                links::link_info source(link_name, source_unique, key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+                links::link_info destination(link_to, destination_unique, destination_key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+                add_link(key, source, destination, branch_source, branch_destination, true);
             }
             // <attachment name=... type=... [owner=...]> resource path to file </link>
             else if(tag_name == "attachment")
@@ -2457,7 +2615,7 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
             bool const source_unique(true);
             bool const destination_unique(false);
             QString destination_path;
-            if(path.left(14) == "admin/layouts/")
+            if(path.startsWith("admin/layouts/"))
             {
                 // make sure that this is the root of that layout and
                 // not an attachment or sub-page
@@ -2470,7 +2628,7 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
             }
             if(destination_path.isEmpty())
             {
-                if(path.left(6) == "admin/")
+                if(path.startsWith("admin/"))
                 {
                     destination_path = "types/taxonomy/system/content-types/administration-page";
                 }
@@ -2482,7 +2640,7 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
             QString const destination_key(f_snap->get_site_key_with_slash() + destination_path);
             links::link_info source(link_name, source_unique, key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
             links::link_info destination(link_to, destination_unique, destination_key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
-            add_link(key, source, destination);
+            add_link(key, source, destination, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, false);
         }
         if(!found_prevent_delete)
         {
@@ -2532,7 +2690,7 @@ void content::add_content(const QString& path, const QString& plugin_owner)
     else
     {
         // create the new block
-        content_block block;
+        content_block_t block;
         block.f_path = path;
         block.f_owner = plugin_owner;
         f_blocks.insert(path, block);
@@ -2587,7 +2745,7 @@ void content::add_content(const QString& path, const QString& plugin_owner)
  * \sa add_link()
  * \sa on_save_content()
  */
-void content::add_param(QString const& path, QString const& name, param_revision_t revision_type, QString const& locale, QString const& data)
+void content::add_param(QString const & path, QString const & name, param_revision_t revision_type, QString const & locale, QString const & data)
 {
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
@@ -2727,6 +2885,9 @@ void content::set_param_type(QString const& path, QString const& name, param_typ
  * \param[in] path  The path where the link is added (source URI, site key + path.)
  * \param[in] source  The link definition of the source.
  * \param[in] destination  The link definition of the destination.
+ * \param[in] branch_source  The branch to modify, may be set to SPECIAL_VERSION_ALL.
+ * \param[in] branch_destination  The branch to modify, may be set to SPECIAL_VERSION_ALL.
+ * \param[in] remove  The link we actually be removed and not added if true.
  *
  * \sa add_content()
  * \sa add_attachment()
@@ -2734,18 +2895,33 @@ void content::set_param_type(QString const& path, QString const& name, param_typ
  * \sa add_param()
  * \sa create_link()
  */
-void content::add_link(const QString& path, const links::link_info& source, const links::link_info& destination)
+void content::add_link(
+        QString const & path,
+        links::link_info const & source,
+        links::link_info const & destination,
+        snap_version::version_number_t branch_source,
+        snap_version::version_number_t branch_destination,
+        bool const remove)
 {
     content_block_map_t::iterator b(f_blocks.find(path));
     if(b == f_blocks.end())
     {
-        throw content_exception_parameter_not_defined("no block with path \"" + path + "\" found");
+        throw content_exception_parameter_not_defined(QString("no block with path \"%1\" found").arg(path));
     }
 
     content_link link;
     link.f_source = source;
     link.f_destination = destination;
-    b->f_links.push_back(link);
+    link.f_branch_source = branch_source;
+    link.f_branch_destination = branch_destination;
+    if(remove)
+    {
+        b->f_remove_links.push_back(link);
+    }
+    else
+    {
+        b->f_links.push_back(link);
+    }
 }
 
 
@@ -3036,24 +3212,25 @@ void content::on_save_content()
     }
 
     // link the nodes together (on top of the parent/child links)
-    // this is done as a second step so we're sure that all the source and
-    // destination rows exist at the time we create the links
+    // this is done as a second step so we are sure that all the source
+    // and destination rows exist at the time we create the links
+    //
     f_snap->trace("Generate links between various pages.\n");
-    for(content_block_map_t::iterator d(f_blocks.begin());
-            d != f_blocks.end(); ++d)
-    {
-        for(content_links_t::iterator l(d->f_links.begin());
-                l != d->f_links.end(); ++l)
-        {
-//printf("developer link: [%s]/[%s]\n", l->f_source.key().toUtf8().data(), l->f_destination.key().toUtf8().data());
-            links::links::instance()->create_link(l->f_source, l->f_destination);
-        }
-    }
+    on_save_links(&content_block_t::f_links, true);
+
+    // remove some links that the developer found as spurious...
+    // you have to be careful with this one:
+    // (1) it will ALWAYS re-remove that link...
+    // (2) the link can be added then immediately removed
+    //     since the remove is applied after the add
+    //
+    f_snap->trace("Remove links between various pages.\n");
+    on_save_links(&content_block_t::f_remove_links, false);
 
     // attachments are pages too, only they require a valid parent to be
     // created and many require links to work (i.e. be assigned a type)
     // so we add them after the basic content and links
-    f_snap->trace("Save attachment to database.\n");
+    f_snap->trace("Save attachments to database.\n");
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
     {
@@ -3150,7 +3327,7 @@ void content::on_save_content()
                 create_content(ipath, d->f_owner, type_key.mid(pos + 37));
             }
         }
-        // else -- if the path does not start with site_key we have got a problem
+        // else -- if the path does not start with site_key we have a problem
 
         path_info_t ipath;
         ipath.set_path(d->f_path);
@@ -3162,6 +3339,88 @@ void content::on_save_content()
 
     // we are done with that set of data, release it from memory
     f_blocks.clear();
+}
+
+
+/** \brief Create or delete links defined in the specified list.
+ *
+ * This function goes through the list of blocks and search for those that
+ * include links to create (f_links) or remove (f_remove_links).
+ *
+ * The \p create flag, if true, means the link will be created. If false,
+ * it will be deleted.
+ *
+ * This is an internal function called by the on_save_content() function
+ * to create / remove links as required.
+ *
+ * The function knows how to handle the branch definition. If set to
+ * SPECIAL_VERSION_ALL then all the branches are affected. This can
+ * be very important if you wanted to forcibly remove an invalid
+ * permission.
+ *
+ * \param[in] list  The offset of the list to work with.
+ * \param[in] create  Whether to create or delete links.
+ */
+void content::on_save_links(content_block_links_offset_t list, bool const create)
+{
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+    QString const last_branch_key(QString("%1::%2")
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+
+    for(content_block_map_t::iterator d(f_blocks.begin());
+            d != f_blocks.end(); ++d)
+    {
+        // f_blocks use QMap so we need to use (*d) to be able to
+        // use the C++ offset
+        for(content_links_t::iterator l(((*d).*list).begin());
+                l != ((*d).*list).end(); ++l)
+        {
+            snap_version::version_number_t start_source(l->f_branch_source);
+            snap_version::version_number_t end_source(start_source);
+            snap_version::version_number_t start_destination(l->f_branch_destination);
+            snap_version::version_number_t end_destination(start_destination);
+
+            if(start_source == snap_version::SPECIAL_VERSION_ALL)
+            {
+                start_source = snap_version::SPECIAL_VERSION_MIN;
+
+                // get the end from the database
+                path_info_t ipath;
+                ipath.set_path(l->f_source.key());
+                end_source = content_table->row(ipath.get_key())->cell(last_branch_key)->value().safeUInt32Value();
+            }
+
+            if(start_destination == snap_version::SPECIAL_VERSION_ALL)
+            {
+                start_destination = snap_version::SPECIAL_VERSION_MIN;
+
+                // get the end from the database
+                path_info_t ipath;
+                ipath.set_path(l->f_destination.key());
+                end_destination = content_table->row(ipath.get_key())->cell(last_branch_key)->value().safeUInt32Value();
+            }
+
+            for(snap_version::version_number_t i(start_source); i <= end_source; ++i)
+            {
+                l->f_source.set_branch(i);
+                for(snap_version::version_number_t j(start_destination); j <= end_destination; ++j)
+                {
+                    l->f_destination.set_branch(j);
+
+                    // handle that specific set of branches
+                    if(create)
+                    {
+                        links::links::instance()->create_link(l->f_source, l->f_destination);
+                    }
+                    else
+                    {
+                        links::links::instance()->delete_this_link(l->f_source, l->f_destination);
+                    }
+                }
+            }
+        }
+    }
 }
 
 

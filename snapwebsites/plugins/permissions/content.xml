@@ -283,8 +283,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Group used by managers. Managers are linked to one specific website and they can do pretty much anything they want in that website except editing some top level system pages. In most cases, site owners are assigned the administrator group.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/administrator</link>
+    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
+    <link name="permissions::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
     <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
     <link name="permissions::action::restore" to="permissions::link_back" mode="*:*">/types/permissions/rights/restore</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor">
@@ -320,7 +324,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/secure</link>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/secure</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
+    <remove-link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</remove-link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user">
     <param name="content::title" revision="revision">Visitor Group</param>

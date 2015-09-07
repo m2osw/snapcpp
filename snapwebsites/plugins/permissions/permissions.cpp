@@ -918,7 +918,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 3, 3, 49, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 6, 23, 19, 26, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

@@ -748,7 +748,7 @@ public:
     void                add_param(QString const & path, QString const & name, param_revision_t revision_type, QString const & locale, QString const & data);
     void                set_param_overwrite(QString const & path, const QString& name, bool overwrite);
     void                set_param_type(QString const & path, const QString & name, param_type_t param_type);
-    void                add_link(QString const & path, links::link_info const & source, links::link_info const & destination);
+    void                add_link(QString const & path, links::link_info const & source, links::link_info const & destination, snap_version::version_number_t branch_source, snap_version::version_number_t branch_destination, bool const remove);
     void                add_attachment(QString const & path, content_attachment const & attachment);
     bool                load_attachment(QString const & key, attachment_file & file, bool load_data = true);
     void                add_javascript(QDomDocument doc, QString const & name);
@@ -770,23 +770,27 @@ private:
 
     struct content_link
     {
-        links::link_info            f_source;
-        links::link_info            f_destination;
+        links::link_info                f_source;
+        links::link_info                f_destination;
+        snap_version::version_number_t  f_branch_source;
+        snap_version::version_number_t  f_branch_destination;
     };
     typedef QVector<content_link>   content_links_t;
 
     typedef QVector<content_attachment>    content_attachments_t;
 
-    struct content_block
+    struct content_block_t
     {
         QString                     f_path;
         QString                     f_owner;
         content_params_t            f_params;
         content_links_t             f_links;
+        content_links_t             f_remove_links;
         content_attachments_t       f_attachments;
         controlled_vars::fbool_t    f_saved;
     };
-    typedef QMap<QString, content_block>    content_block_map_t;
+    typedef QMap<QString, content_block_t>  content_block_map_t;
+    typedef content_links_t content_block_t::* content_block_links_offset_t;
 
     struct javascript_ref_t
     {
@@ -799,6 +803,7 @@ private:
     void        initial_update(int64_t variables_timestamp);
     void        remove_files_compressor(int64_t variables_timestamp);
     void        content_update(int64_t variables_timestamp);
+    void        on_save_links(content_block_links_offset_t list, bool const create);
 
     void        backend_action_reset_status(bool const force);
     void        backend_process_status();

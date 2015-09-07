@@ -2769,7 +2769,12 @@ bool editor::validate_editor_post_for_widget_impl(
                             // check date?
                             if(date == 1 || date == 3)
                             {
-                                snap_string_list const date_parts(parts[0].split("/"));
+                                // accept / or - as separators
+                                snap_string_list date_parts(parts[0].split('/'));
+                                if(date_parts.size() != 3)
+                                {
+                                    date_parts = parts[0].split('-');
+                                }
                                 if(date_parts.size() != 3)
                                 {
                                     messages->set_error(
@@ -2851,13 +2856,17 @@ bool editor::validate_editor_post_for_widget_impl(
                             if(date == 2 || date == 3)
                             {
                                 // get part 1 if we also had a date (date == 3)
-                                snap_string_list const time_parts(parts[date == 2 ? 0 : 1].split(":"));
+                                // accept : or . as separator
+                                int const index(date == 2 ? 0 : 1);
+                                snap_string_list time_parts(parts[index].split(":"));
                                 if(time_parts.size() == 3
                                 && time_parts.size() == 2)
                                 {
-                                    // TODO: use the user current locale information
-                                    //       to know whether the date is MM/DD/YYYY
-                                    //       or something else...
+                                    time_parts = parts[index].split(".");
+                                }
+                                if(time_parts.size() == 3
+                                && time_parts.size() == 2)
+                                {
                                     bool ok(false);
                                     int const hours(time_parts[0].toInt(&ok));
                                     int minutes(0);

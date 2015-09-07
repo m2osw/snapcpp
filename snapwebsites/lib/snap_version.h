@@ -60,6 +60,7 @@ enum class compare_t : signed int
 
 typedef uint32_t basic_version_number_t;
 
+static basic_version_number_t const SPECIAL_VERSION_ALL               = static_cast<basic_version_number_t>(-4); // apply to all branches
 static basic_version_number_t const SPECIAL_VERSION_EXTENDED          = static_cast<basic_version_number_t>(-3); // revision of .js/.css may be more than one number
 static basic_version_number_t const SPECIAL_VERSION_INVALID           = static_cast<basic_version_number_t>(-2);
 static basic_version_number_t const SPECIAL_VERSION_UNDEFINED         = static_cast<basic_version_number_t>(-1);
@@ -67,7 +68,7 @@ static basic_version_number_t const SPECIAL_VERSION_MIN               = 0;
 static basic_version_number_t const SPECIAL_VERSION_SYSTEM_BRANCH     = 0;
 static basic_version_number_t const SPECIAL_VERSION_USER_FIRST_BRANCH = 1;
 static basic_version_number_t const SPECIAL_VERSION_FIRST_REVISION    = 0;
-static basic_version_number_t const SPECIAL_VERSION_MAX_BRANCH_NUMBER = static_cast<basic_version_number_t>(-4);
+static basic_version_number_t const SPECIAL_VERSION_MAX_BRANCH_NUMBER = static_cast<basic_version_number_t>(-5);
 static basic_version_number_t const SPECIAL_VERSION_MAX               = static_cast<basic_version_number_t>(-1);
 
 typedef controlled_vars::limited_auto_init<basic_version_number_t, SPECIAL_VERSION_MIN, SPECIAL_VERSION_MAX, SPECIAL_VERSION_UNDEFINED> version_number_t;
