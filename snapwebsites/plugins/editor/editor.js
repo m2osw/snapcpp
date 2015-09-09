@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.366
+ * Version: 0.0.3.367
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -1188,6 +1188,8 @@ snapwebsites.EditorBase.prototype.getWidgetType = function(type_name)
  */
 snapwebsites.EditorLinkDialog = function(editor_base)
 {
+    var that = this;
+
     this.editorBase_ = editor_base;
 
     // TODO: add support for a close without saving the changes!
@@ -1207,7 +1209,7 @@ snapwebsites.EditorLinkDialog = function(editor_base)
     jQuery("#snap_editor_link_ok").click(function(e)
         {
             e.preventDefault();
-            this.close();
+            that.close();
         });
 
     return this;
@@ -1281,7 +1283,9 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
         focusItem,
         pos,
         height,
-        left;
+        left,
+        title,
+        z;
 
     if(links.length > 0)
     {
@@ -1289,7 +1293,15 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
         // it is already the anchor, we can use the text here
         // in this case we also have a URL and possibly a title
         jQuery("#snap_editor_link_url").val(snapwebsites.castToString(jtag.attr("href"), "href in #snap_editor_link_url"));
-        jQuery("#snap_editor_link_title").val(snapwebsites.castToString(jtag.attr("title"), "title in #snap_editor_link_title"));
+
+        // the title is not mandatory so we may get "undefined"
+        title = jtag.attr("title");
+        if(typeof title == "string")
+        {
+            jQuery("#snap_editor_link_title").val(snapwebsites.castToString(title, "title in #snap_editor_link_title"));
+        }
+
+        // the target is also optional
         new_window = jtag.attr("target") === "_blank";
     }
     else
@@ -1330,9 +1342,15 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
     {
         left = 10;
     }
+    snapwebsites.PopupInstance.darkenPage(150, false);
     this.linkDialogPopup_.css("left", left);
-    this.linkDialogPopup_.fadeIn(300,function(){jQuery(focusItem).focus();});
-    snapwebsites.PopupInstance.darkenPage(150, true);
+    this.linkDialogPopup_.css("z-index", 0);
+    z = jQuery("div.zordered").maxZIndex() + 1;
+    this.linkDialogPopup_.css("z-index", z);
+    this.linkDialogPopup_.fadeIn(300, function()
+        {
+            jQuery(focusItem).focus();
+        });
 };
 
 
@@ -1345,7 +1363,7 @@ snapwebsites.EditorLinkDialog.prototype.close = function()
 {
     var url, links, jtag, text, title, new_window;
 
-    snapwebsites.EditorInstance.linkDialogPopup_.fadeOut(150);
+    this.linkDialogPopup_.fadeOut(150);
     snapwebsites.PopupInstance.darkenPage(-150, false);
 
     this.editorBase_.refocus();
@@ -1497,7 +1515,7 @@ snapwebsites.EditorToolbar.toolbarButtons_ = // static const
     ["subscript", "Subscript (Ctrl-Shift-B)", 0x10042],
     ["superscript", "Superscript (Ctrl-Shift-P)", 0x10050],
     ["|", "|"],
-    ["createLink", "Manage Link (Ctrl-L)", 0x6004C, "http://snapwebsites.org/", snapwebsites.EditorToolbar.prototype.callbackLinkDialog_],
+    ["createLink", "Manage Link (Ctrl-L)", 0x6004C, "http://snapwebsites.org/" /*, snapwebsites.EditorToolbar.prototype.callbackLinkDialog_*/ ],
     ["unlink", "Remove Link (Ctrl-K)", 0x2004B],
     ["|", "-"],
     ["insertUnorderedList", "Bulleted List (Ctrl-Q)", 0x51],
@@ -1531,7 +1549,7 @@ snapwebsites.EditorToolbar.toolbarButtons_ = // static const
     ["fontName", null, 0x10046, "Arial"],       // Ctrl-Shift-F -- TODO add font selector
     ["foreColor", null, 0x52, "red"],           // Ctrl-R -- TODO add color selector
     ["hiliteColor", null, 0x10048, "#ffff00"],  // Ctrl-Shift-H -- TODO add color selector
-    ["*", null, 0x54, "", snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_]            // Ctrl-T
+    ["*", null, 0x54, "" /*, snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_*/ ]            // Ctrl-T
 ];
 
 
@@ -1668,6 +1686,16 @@ snapwebsites.EditorToolbar.prototype.createToolbar_ = function()
         {
             // the name of the image always uses the original name
             originalName = snapwebsites.EditorToolbar.toolbarButtons_[idx][0];
+
+            if(originalName == "createLink")
+            {
+                snapwebsites.EditorToolbar.toolbarButtons_[idx][4] = snapwebsites.EditorToolbar.prototype.callbackLinkDialog_;
+            }
+            else if(originalName == "*")
+            {
+                snapwebsites.EditorToolbar.toolbarButtons_[idx][4] = snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_;
+            }
+
             if(msie)
             {
                 if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "hiliteColor")
@@ -1719,26 +1747,31 @@ snapwebsites.EditorToolbar.prototype.createToolbar_ = function()
         this.toolbar_ = jQuery("#toolbar");
 
         this.toolbar_
-            .click(function(e){
-                that.editorBase_.refocus();
-                e.preventDefault();
-            })
-            .mousedown(function(e){
-                // XXX: this needs to be handled through a form of callback
-                snapwebsites.EditorInstance.cancelToolbarHide();
-                e.preventDefault();
-            })
-            .find(":any(.horizontal-separator .group)")
-                .click(function(){
+            .click(function(e)
+                {
                     that.editorBase_.refocus();
-                });
+                    e.preventDefault();
+                })
+            .mousedown(function(e)
+                {
+                    // XXX: this needs to be handled through a form of callback
+                    that.cancelToolbarHide();
+                    e.preventDefault();
+                })
+            .find(":any(.horizontal-separator .group)")
+                .click(function()
+                    {
+                        that.editorBase_.refocus();
+                    });
+
         this.toolbar_
             .find(".button")
-                .click(function(){
-                    var index = this.attr("button-id");
-                    that.editorBase_.refocus();
-                    that.command(index);
-                });
+                .click(function()
+                    {
+                        var index = jQuery(this).attr("button-id");
+                        that.editorBase_.refocus();
+                        that.command(index);
+                    });
     }
 };
 
@@ -1790,7 +1823,7 @@ snapwebsites.EditorToolbar.prototype.command = function(idx)
 //#ifdef DEBUG
         if(typeof callback !== "function")
         {
-            throw new Error("snapwebsites.Editor.command() callback function \"" + callback + "\" is not a function.");
+            throw new Error("snapwebsites.Editor.command() callback #" + idx + " function \"" + callback + "\" is not a function.");
         }
 //#endif
         callback.apply(this, snapwebsites.EditorToolbar.toolbarButtons_[idx]);
