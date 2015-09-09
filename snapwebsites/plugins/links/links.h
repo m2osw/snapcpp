@@ -204,7 +204,7 @@ public:
     QString data() const;
     void from_data(QString const & db_data);
 
-    static void verify_name(QString const & vname);
+    void verify_name(QString const & vname);
 
 private:
     controlled_vars::fbool_t        f_unique;

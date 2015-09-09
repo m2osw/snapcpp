@@ -431,7 +431,7 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
  * \param[in,out] ipath  The canonicalized path being processed.
  * \param[in,out] xml  The XML document to filter.
  */
-void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
+void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
 {
     class filter_state_t
     {
@@ -963,12 +963,17 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             }
             paths += it.key();
         }
-        messages::messages::instance()->set_error(
-            "Recursive Token(s)",
-            QString("One or more tokens are looping back to page \"%1\" (all paths are: \"%2\").").arg(ipath.get_key()).arg(paths),
-            QString("to fix, look at the tokens that loop"),
-            false
-        );
+        // Lists have a HUGE problem with this one... for now I'm
+        // turning off the error message because in most cases it
+        // is not a real problem (We can move on...)
+        //
+        SNAP_LOG_ERROR("One or more tokens are looping back to page \"")(ipath.get_key())("\" (all paths are: \"")(paths)("\").");
+        //messages::messages::instance()->set_error(
+        //    "Recursive Token(s)",
+        //    QString("One or more tokens are looping back to page \"%1\" (all paths are: \"%2\").").arg(ipath.get_key()).arg(paths),
+        //    QString("to fix, look at the tokens that loop"),
+        //    false
+        //);
         return;
     }
     struct add_remove_path_t

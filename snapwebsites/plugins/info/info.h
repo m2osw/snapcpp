@@ -52,7 +52,9 @@ public:
 
 
 
-class info : public plugins::plugin, public form::form_post, public path::path_execute, public layout::layout_content
+class info : public plugins::plugin
+           , public path::path_execute
+           , public layout::layout_content
 {
 public:
     static const sessions::sessions::session_info::session_id_t INFO_SESSION_ID_SETTINGS = 1;      // settings-form.xml
@@ -60,17 +62,23 @@ public:
                             info();
                             ~info();
 
+    // plugin implementation
     static info *           instance();
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
+    void                    on_bootstrap(snap_child * snap);
 
-    void                    on_bootstrap(snap_child *snap);
-    virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
+    // path_execute implementation
     virtual bool            on_path_execute(content::path_info_t & ipath);
+
+    // layout_content implementation
     virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    //void                    on_generate_header_content(QString const & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
-    //void                    on_generate_page_content(QString const & cpath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+
+    // server signals
     void                    on_improve_signature(QString const & path, QString & signature);
+
+    // editor signals
+    void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
 
 private:
     void                    content_update(int64_t variables_timestamp);

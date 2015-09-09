@@ -280,9 +280,13 @@ void cookie_consent_silktide::on_generate_header_content(content::path_info_t & 
  */
 void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row)
 {
-    static_cast<void>(ipath);
     static_cast<void>(revision_row);
     static_cast<void>(secret_row);
+
+    if(ipath.get_cpath() != "admin/settings/cookie-consent-silktide")
+    {
+        return;
+    }
 
     SNAP_LOG_INFO("saving silktide options to \"")(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_OPTIONS))("\".");
 

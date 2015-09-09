@@ -21,10 +21,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/admin/settings/info">
     <param name="content::title" revision="revision">Website Basic Settings</param>
     <param name="content::body" revision="revision">
-      <p>You are running Snap! v[version]</p>
-      <p>Site wide settings as offerred by the core system of your website.</p>[form::source]
+      <p>Site wide settings as offerred by the core system of your website.</p>
     </param>
-    <param name="form::source">settings</param>
+    <param name="editor::layout" revision="global" overwrite="yes">"info-settings-page";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"info-settings-parser";</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="menu::admin" to="menu::admin" mode="1:*">/types/taxonomy/system/menu/item/admin</link>
   </content>

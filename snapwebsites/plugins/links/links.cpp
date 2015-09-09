@@ -277,11 +277,11 @@ char const *get_name(name_t name)
  *
  * \param[in] vname  The name to be verified
  */
-void link_info::verify_name(QString const& vname)
+void link_info::verify_name(QString const & vname)
 {
     // the namespace is really only for debug purposes
     // but at this time we'll keep it for security
-    char const *links_namespace(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE));
+    char const * links_namespace(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE));
     QString ns;
     ns.reserve(64);
     bool has_namespace(false);
@@ -336,12 +336,12 @@ void link_info::verify_name(QString const& vname)
     if(!has_namespace)
     {
         // at least one namespace is mandatory
-        throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, at least one namespace is expected.");
+        throw links_exception_invalid_name(QString("name \"%1\" is not acceptable, at least one namespace is expected. (key: %2, branch: %3)").arg(vname).arg(f_key).arg(f_branch));
     }
 
     if(ns == links_namespace)
     {
-        throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a link name cannot end with \"links\".");
+        throw links_exception_invalid_name(QString("name \"%1\" is not acceptable, a link name cannot end with \"links\". (key: %2, branch: %3)").arg(vname).arg(f_key).arg(f_branch));
     }
 }
 

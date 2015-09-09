@@ -5,8 +5,9 @@
 # Description:
 #      Basic Information about the website. This module lets administrators
 #      edit global information about their website. It is separate from the
-#      content plugin because it requires form, permissions, etc. which the
-#      content plugin cannot directly access.
+#      links, content, and output plugins because it requires the editor,
+#      permissions, etc. which the content and output plugins cannot
+#      directly access.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -53,14 +54,18 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 snap_validate_xml( content.xml content/content.dtd )
-snap_validate_xml( settings-form.xml form/snap-form.dtd )
+
+snap_validate_xml( info-settings-page.xml editor/editor-form.dtd )
+snap_validate_xml( info-settings-parser.xsl layout/simplified-xslt20.dtd )
+
 
 add_library(info SHARED
     info.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    settings-form.xml
+    info-settings-page.xml
+    info-settings-parser.xsl
 )
 
 target_link_libraries( info ${QT_LIBRARIES} )

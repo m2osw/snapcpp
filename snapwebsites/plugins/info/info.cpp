@@ -17,6 +17,7 @@
 
 #include "info.h"
 
+#include "../editor/editor.h"
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 #include "../users/users.h"
@@ -103,13 +104,12 @@ info::~info()
  *
  * \param[in] snap  The child handling this request.
  */
-void info::on_bootstrap(snap_child *snap)
+void info::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
     SNAP_LISTEN(info, "server", server, improve_signature, _1, _2);
-    //SNAP_LISTEN(info, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
-    //SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(info, "editor", editor::editor, finish_editor_form_processing, _1, _2);
 }
 
 
@@ -122,7 +122,7 @@ void info::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the info plugin.
  */
-info *info::instance()
+info * info::instance()
 {
     return g_plugin_info_factory.instance();
 }
@@ -161,7 +161,7 @@ int64_t info::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 10, 22, 47, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 8, 16, 30, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -176,7 +176,8 @@ int64_t info::do_update(int64_t last_updated)
  */
 void info::content_update(int64_t variables_timestamp)
 {
-    (void) variables_timestamp;
+    static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml(get_plugin_name());
 }
 
@@ -194,7 +195,7 @@ void info::content_update(int64_t variables_timestamp)
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool info::on_path_execute(content::path_info_t& ipath)
+bool info::on_path_execute(content::path_info_t & ipath)
 {
     f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
@@ -221,107 +222,43 @@ bool info::on_path_execute(content::path_info_t& ipath)
  * \param[in] ctemplate  A template used when the other parameters are
  *                       not available.
  */
-void info::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void info::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
     // our settings pages are like any standard pages
     output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 
-/* \brief Generate the header common content.
- *
- * This function generates some content that is expected in a page
- * by default.
- *
- * \param[in] l  The layout pointer.
- * \param[in] cpath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template if cpath does not exist.
- */
-//void favicon::on_generate_page_content(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate)
-//{
-//    content::field_search::search_result_t result;
-//
-//    get_icon(cpath, result, false);
-//
-//    // add the favicon.ico name at the end of the path we've found
-//    QString icon_path;
-//    if(result.isEmpty())
-//    {
-//        icon_path = f_snap->get_site_key_with_slash() + "favicon.ico";
-//    }
-//    else
-//    {
-//        icon_path = result[0].stringValue();
-//        if(!icon_path.endsWith("/"))
-//        {
-//            icon_path += "/";
-//        }
-//        icon_path += "favicon.ico";
-//    }
-//
-//    FIELD_SEARCH
-//        (content::field_search::COMMAND_ELEMENT, body)
-//        (content::field_search::COMMAND_CHILD_ELEMENT, "image")
-//        (content::field_search::COMMAND_CHILD_ELEMENT, "shortcut")
-//        (content::field_search::COMMAND_ELEMENT_ATTR, "type=image/vnd.microsoft.icon")
-//        (content::field_search::COMMAND_ELEMENT_ATTR, "href=" + icon_path)
-//        // TODO get the image sizes when saving the image in the database
-//        //      so that way we can retrieve them around here
-//        (content::field_search::COMMAND_ELEMENT_ATTR, "width=16")
-//        (content::field_search::COMMAND_ELEMENT_ATTR, "height=16")
-//
-//        // generate
-//        ;
-//}
-
-
-
-/** \brief Process a post from the info settings form.
- *
- * This function processes the post of the info settings form.
- *
- * This function is defined because some of the parameters in the form
- * cannot be auto-saved (although they kind of could, some parameters
- * are expected in the site information table instead.)
- *
- * \param[in] ipath  The path the user is accessing now.
- * \param[in] session_info  The user session being processed.
- */
-void info::on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info)
+void info::on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded)
 {
-    static_cast<void>(session_info);
-
-    if(ipath.get_cpath() != "admin/settings/info")
+    if(!succeeded
+    || ipath.get_cpath() != "admin/settings/info")
     {
-        // this should not happen because invalid paths will not pass the
-        // session validation process
-        throw info_exception_invalid_path("info::on_process_form_post() was called with an unsupported path: \"" + ipath.get_cpath() + "\"");
+        return;
     }
 
-    QtCassandra::QCassandraValue value;
-    QString name;
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(ipath.get_revision_key()));
 
-    name = f_snap->postenv(get_name(name_t::SNAP_NAME_INFO_NAME));
-    value = name;
+    QtCassandra::QCassandraValue value;
+
+    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME))->value();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME), value);
 
-    name = f_snap->postenv(get_name(name_t::SNAP_NAME_INFO_LONG_NAME));
-    value = name;
+    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME))->value();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME), value);
 
-    name = f_snap->postenv(get_name(name_t::SNAP_NAME_INFO_SHORT_NAME));
-    value = name;
+    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME))->value();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME), value);
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Improves the error signature.
  *
  * This function adds a link to the administration page to the signature of
- * die() errors. This is done only if the user is logged in.
+ * die() errors. This is done only if the user is logged in and has enough
+ * rights to access administrative pages.
  *
  * \param[in] path  The path on which the error occurs.
  * \param[in,out] signature  The HTML signature to improve.
@@ -335,7 +272,7 @@ void info::on_improve_signature(QString const & path, QString & signature)
     {
         // only show the /admin link if the user can go there
         permissions::permissions *permissions_plugin(permissions::permissions::instance());
-        QString const& login_status(permissions_plugin->get_login_status());
+        QString const & login_status(permissions_plugin->get_login_status());
         content::path_info_t page_ipath;
         page_ipath.set_path("/admin");
         content::permission_flag allowed;

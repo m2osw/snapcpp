@@ -109,6 +109,15 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CONTENT_BRANCH_TABLE:
         return "branch";
 
+    case name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_CURRENT_PAGE:
+        return "content::breadcrumbs_show_current_page";
+
+    case name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_HOME:
+        return "content::breadcrumbs_show_home";
+
+    case name_t::SNAP_NAME_CONTENT_BREADCRUMBS_HOME_LABEL:
+        return "content::breadcrumbs_home_label";
+
     case name_t::SNAP_NAME_CONTENT_CHILDREN:
         return "content::children";
 

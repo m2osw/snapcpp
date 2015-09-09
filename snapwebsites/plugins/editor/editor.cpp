@@ -423,7 +423,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 8, 16, 23, 46, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 8, 21, 6, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -486,6 +486,7 @@ void editor::on_generate_header_content(content::path_info_t & ipath, QDomElemen
     // TODO: find a way to include the editor only if required
     //       (it may already be done! search on add_javascript() for info.)
     content::content::instance()->add_javascript(doc, "editor");
+    content::content::instance()->add_css(doc, "editor");
 
     // The following creates a session for editing the page.
     // This code is NOT used if the page is an editor form (i.e.
@@ -647,7 +648,7 @@ void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::
  * \param[in,out] ipath  The path the user is accessing now.
  * \param[in] session_info  The user session being processed.
  */
-void editor::on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info)
+void editor::on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info)
 {
     static_cast<void>(session_info);
 
@@ -681,7 +682,7 @@ void editor::on_process_form_post(content::path_info_t& ipath, sessions::session
  */
 void editor::process_new_draft()
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
 
     // get the 3 parameters entered by the user to get the new page started
@@ -701,7 +702,7 @@ void editor::process_new_draft()
     // linked to that one page.)
     time_t const start_time(f_snap->get_start_time());
     int64_t const start_date(f_snap->get_start_date());
-    char const *drafts_path(get_name(name_t::SNAP_NAME_EDITOR_DRAFTS_PATH));
+    char const * drafts_path(get_name(name_t::SNAP_NAME_EDITOR_DRAFTS_PATH));
     QString const site_key(f_snap->get_site_key_with_slash());
     QString new_draft_key(QString("%1%2/%3").arg(site_key).arg(drafts_path).arg(start_time));
 
@@ -808,7 +809,7 @@ void editor::process_new_draft()
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void editor::on_process_post(QString const& uri_path)
+void editor::on_process_post(QString const & uri_path)
 {
     QString const editor_full_session(f_snap->postenv("_editor_session"));
 //std::cerr << "***\n*** process post of [" << uri_path << "] [" << editor_full_session << "]\n***\n";
@@ -1412,7 +1413,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         //
         // * those the user just sent us
         // * those in the draft if the user has one
-        // * those in the database
+        // * those in the revision table
         //
         f_post_values.clear();
         f_current_values.clear();

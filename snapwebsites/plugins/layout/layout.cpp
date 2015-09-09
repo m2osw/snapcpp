@@ -54,7 +54,7 @@ SNAP_PLUGIN_START(layout, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -126,7 +126,7 @@ layout::~layout()
  *
  * \param[in] snap  The child handling this request.
  */
-void layout::on_bootstrap(snap_child *snap)
+void layout::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -144,7 +144,7 @@ void layout::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the layout plugin.
  */
-layout *layout::instance()
+layout * layout::instance()
 {
     return g_plugin_layout_factory.instance();
 }
@@ -292,7 +292,7 @@ QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
  *
  * \return The name of the layout, may be "default" if no other name was found.
  */
-QString layout::get_layout(content::path_info_t& ipath, QString const& column_name, bool use_qs_theme)
+QString layout::get_layout(content::path_info_t & ipath, QString const & column_name, bool use_qs_theme)
 {
     QString layout_name;
 
@@ -513,7 +513,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
  *
  * \return The XSL code in a string.
  */
-QString layout::define_layout(content::path_info_t& ipath, QString const& name, QString const& key, QString const& default_filename, QString& layout_name)
+QString layout::define_layout(content::path_info_t & ipath, QString const & name, QString const & key, QString const & default_filename, QString & layout_name)
 {
     // result variable
     QString xsl;
@@ -586,6 +586,12 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
             if(!data.isEmpty())
             {
                 xsl = QString::fromUtf8(data.data(), data.size());
+            }
+            else
+            {
+                // this warning will help at least me to debug a problem
+                // with loading a layout
+                SNAP_LOG_WARNING("layout data named \"")(names.join("/"))("\" could not be loaded. We will be using the \"default\" layout instead.");
             }
             layout_name = "default";
         }
@@ -1407,7 +1413,7 @@ void layout::replace_includes(QString& xsl)
  */
 int64_t layout::install_layout(QString const & layout_name, int64_t const last_updated)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 

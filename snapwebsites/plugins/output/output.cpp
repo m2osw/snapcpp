@@ -146,7 +146,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 3, 3, 0, 23, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 8, 16, 57, 23, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -625,59 +625,130 @@ void output::on_replace_token(content::path_info_t & ipath, QString const & plug
 
 void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
 {
+    content::content * content(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
+
     QDomDocument doc(parent.ownerDocument());
     QString const cpath(ipath.get_cpath());
 
+    QDomElement ol(doc.createElement("ol"));
+    ol.setAttribute("vocab", "http://schema.org/");
+    ol.setAttribute("typeOf", "BreadcrumList");
+    parent.appendChild(ol);
+
+    content::path_info_t info_ipath;
+    info_ipath.set_path("admin/settings/info");
+
+    QtCassandra::QCassandraRow::pointer_t info_row(revision_table->row(info_ipath.get_revision_key()));
+
+    QString home_label(info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_HOME_LABEL))->value().stringValue());
+    if(home_label.isEmpty())
+    {
+        // translation is taken in account by the settings since we
+        // expect the right language selection to happen before we
+        // reach this function
+        //
+        home_label = "Home";
+    }
+
+    QtCassandra::QCassandraValue value(info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_HOME))->value());
+    bool const show_home(value.nullValue() || value.safeSignedCharValue() != 0);
+
+    value = info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_CURRENT_PAGE))->value();
+    bool const show_current_page(value.nullValue() || value.safeSignedCharValue() != 0);
+
     // the breadcrumb is a list of paths from this page back to
     // the home:
-    content::content * content(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
     snap_string_list const segments(cpath.split('/'));
-    int const max_segments(segments.size());
+    int const max_segments(cpath == "" ? 0 : segments.size());
+    int first(-1);
     for(int i(0); i <= max_segments; ++i)
     {
-        QString label;
+        // ol/li
+        QDomElement li(doc.createElement("li"));
+        snap_string_list classes;
+        if((!show_home && i == 0)
+        || (!show_current_page && i == max_segments))
+        {
+            classes << "hide";
+        }
+        if((show_home && i == 0)
+        || (!show_home && i == 1))
+        {
+            first = i;
+            classes << "first";
+        }
+        if((show_current_page && i == max_segments)
+        || (!show_current_page && i == max_segments - 1))
+        {
+            classes << "last";
+        }
+        // we expected "odd" for the very first item which is not hidden
+        if((i & 1) == first)
+        {
+            classes << "odd";
+        }
+        else if(first != -1)
+        {
+            classes << "even";
+        }
+        li.setAttribute("class", classes.join(" "));
+        li.setAttribute("typeOf", "ListItem");
+        li.setAttribute("property", "itemListElement");
+        ol.appendChild(li);
+
+        // ol/li/a
+        // (for Google, it is better to have <a> for ALL entries, including
+        // the current page, although you could hide the current page.)
         QDomElement anchor(doc.createElement("a"));
+        anchor.setAttribute("typeof", "WebPage");
+        anchor.setAttribute("property", "item");
+        li.appendChild(anchor);
+
+        // ol/li/a/span
+        QDomElement span(doc.createElement("span"));
+        span.setAttribute("property", "name");
+        anchor.appendChild(span);
+
+        QString label;
         if(i == 0)
         {
             // special case for the Home page
-            // TODO: add a parameter to the token to define the name
-            //       of this first entry
             anchor.setAttribute("href", "/");
-            label = "Home";
+
+            // Note: although there is a title in the home page and
+            //       we could use that name, it is likely the name
+            //       of the website and it may not be appropriate
+            //       here. You can edit this label in "/admin/settings/info"
+            //
+            label = home_label;
         }
         else
         {
-            // add a separator
-            // TODO: allow the theme to define the separator
-            QDomText separator(doc.createTextNode(QString(" %1 ").arg(QChar(0xBB))));
-            parent.appendChild(separator);
-
             QString const path(static_cast<QStringList>(segments.mid(0, i)).join("/"));
             content::path_info_t page_ipath;
             page_ipath.set_path(path);
-            label = revision_table->row(page_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue();
-            if(i != max_segments)
+
+            // Google says we should use full paths... that is easy for us
+            anchor.setAttribute("href", "/" + page_ipath.get_cpath());
+
+            // by default try to use the short title if available
+            label = revision_table->row(page_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_SHORT_TITLE))->value().stringValue();
+            if(label.isEmpty())
             {
-                // TBD: should we look into using ".." and "../..", etc.
-                //      instead of full paths? the parent paths would be
-                //      shorter!
-                //
-                anchor.setAttribute("href", "/" + page_ipath.get_cpath());
+                label = revision_table->row(page_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue();
             }
         }
+
+        // ol/li/a/span//text
         QDomText text(doc.createTextNode(label));
-        if(i != max_segments)
-        {
-            anchor.appendChild(text);
-            parent.appendChild(anchor);
-        }
-        else
-        {
-            // in this case we do not have an anchor
-            // (last entry is the current page)
-            parent.appendChild(text);
-        }
+        span.appendChild(text);
+
+        // ol/li/meta
+        QDomElement position(doc.createElement("meta"));
+        position.setAttribute("property", "position");
+        position.setAttribute("content", QString("%1").arg(i + 1)); // position starts at 1
+        li.appendChild(position);
     }
 }
 

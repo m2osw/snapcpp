@@ -58,6 +58,7 @@ div.user-messages h3
 	opacity: 0.2;
 }
 
+
 /** default pop-up CSS **/
 iframe
 {
@@ -100,4 +101,32 @@ iframe
 .snap-popup .popup-body
 {
 	clear: both;
+}
+
+
+/** default pop-up CSS **/
+div.breadcrumb ol
+{
+	list-style-type: none;
+}
+
+div.breadcrumb li::before
+{
+	/* WARNING: two spaces after the BB because the first is
+	 *          eaten as part of the escape character.
+	 */
+	content: " \BB  ";
+}
+div.breadcrumb li.first::before
+{
+	content: "";
+}
+
+div.breadcrumb li
+{
+	display: inline;
+}
+div.breadcrumb li.hide
+{
+	display: none;
 }

@@ -63,7 +63,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                  secret (public|secret) "public"
                  mode (select-only|editable) "select-only"
                  auto-save (double|float64|html|int8|int64|ms-date-us|no|plain|string|locale_timezone) "string"
-                 drop (drop) #IMPLIED>
+                 drop (drop) #IMPLIED
+                 no-toolbar (no-toolbar) #IMPLIED>
 
 <!-- WARNING: label is used as the HTML label when appearing in HTML areas,
               and as the label tag for other widgets -->
