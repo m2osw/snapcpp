@@ -732,7 +732,7 @@ public:
     virtual void        on_backend_action(QString const & action);
     void                on_backend_process();
     void                on_load_file(snap_child::post_file_t & file, bool & found);
-    void                on_cell_is_secure(QString const & table, QString const & row, QString const & cell, server::secure_field_flag_t & secure);
+    void                on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
 
     // content plugin signals
     SNAP_SIGNAL(new_content, (path_info_t & path), (path));

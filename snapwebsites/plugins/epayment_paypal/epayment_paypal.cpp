@@ -256,6 +256,7 @@ void epayment_paypal::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(epayment_paypal, "server", server, process_post, _1);
+    SNAP_LISTEN(epayment_paypal, "server", server, table_is_accessible, _1, _2);
     SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3, _4);
     SNAP_LISTEN(epayment_paypal, "epayment", epayment::epayment, repeat_payment, _1, _2, _3);
@@ -3736,6 +3737,36 @@ std::string epayment_paypal::create_unique_request_id(QString const & main_id)
     return main_id.toUtf8().data() + std::string(buf);
 }
 
+
+
+/** \brief Check whether the cell can securily be used in a script.
+ *
+ * This signal is sent by the cell() function of snap_expr objects.
+ * The plugin receiving the signal can check the table, row, and cell
+ * names and mark that specific cell as secure. This will prevent the
+ * script writer from accessing that specific cell.
+ *
+ * In case of the content plugin, this is used to protect all contents
+ * in the secret table.
+ *
+ * The \p secure flag is used to mark the cell as secure. Simply call
+ * the mark_as_secure() function to do so.
+ *
+ * \param[in] table  The table being accessed.
+ * \param[in] accessible  Whether the cell is secure.
+ *
+ * \return This function returns true in case the signal needs to proceed.
+ */
+void epayment_paypal::on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible)
+{
+    if(table_name == get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_TABLE))
+    {
+        // the paypal payment table includes all sorts of top-secret
+        // identifiers so we do not want anyone to share such
+        //
+        accessible.mark_as_secure();
+    }
+}
 
 
 

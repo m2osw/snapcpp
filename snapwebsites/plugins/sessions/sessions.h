@@ -170,11 +170,11 @@ public:
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
 
-    void                    on_bootstrap(snap_child *snap);
-    void                    on_cell_is_secure(QString const & table, QString const & row, QString const & cell, server::secure_field_flag_t & secure);
+    void                    on_bootstrap(snap_child * snap);
     void                    clean_session_table(int64_t variables_timestamp);
 
     virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                    on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
 
     QString                 create_session(session_info & info);
     void                    save_session(session_info & info, bool const new_random);

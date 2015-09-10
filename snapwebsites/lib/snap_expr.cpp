@@ -1553,11 +1553,11 @@ public:
     {
         if(!g_context)
         {
-            throw snap_expr_exception_not_ready("cell() function not available, g_context is NULL");
+            throw snap_expr_exception_not_ready("cell() function not available, g_context is NULL.");
         }
         if(sub_results.size() != 3)
         {
-            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell() expected exactly 3");
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell() expected exactly 3.");
         }
         QString const table_name(sub_results[0].get_string("cell(1)"));
         QString const row_name(sub_results[1].get_string("cell(2)"));
@@ -1565,14 +1565,14 @@ public:
 //std::cerr << "cell(\"" << table_name << "\", \"" << row_name << "\", \"" << cell_name << "\")\n";
 
         // verify whether reading the content is considered secure
-        server::secure_field_flag_t secure;
-        server::instance()->cell_is_secure(table_name, row_name, cell_name, secure);
-        if(secure.is_secure())
+        server::accessible_flag_t accessible;
+        server::instance()->table_is_accessible(table_name, accessible);
+        if(!accessible.is_accessible())
         {
             // TBD: should we just return a string with an error in it
             //      instead of throwing?
             throw snap_expr_exception_not_accessible(
-                    QString("cell() called with a set of parameters specifying a secure cell (table \"%1\", row \"%2\", cell \"%3\"); no data will be returned")
+                    QString("cell() called with a set of parameters specifying access to a secure table (table \"%1\", row \"%2\", cell \"%3\"); no data will be returned.")
                             .arg(table_name).arg(row_name).arg(cell_name));
         }
 

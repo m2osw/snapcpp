@@ -135,6 +135,10 @@ public:
     QtCassandra::QCassandraTable::pointer_t     get_epayment_paypal_table();
 
     void                        on_bootstrap(snap_child * snap);
+
+    // server signal implementation
+    void                        on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
+
     void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
     void                        on_process_post(QString const & uri_path);
     virtual bool                on_path_execute(content::path_info_t & ipath);

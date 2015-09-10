@@ -197,6 +197,10 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_users_table();
 
     void                    on_bootstrap(::snap::snap_child * snap);
+
+    // server signal implementation
+    void                    on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
+
     void                    on_init();
     void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
     void                    on_generate_header_content(content::path_info_t & path, QDomElement & hader, QDomElement & metadata, QString const & ctemplate);
@@ -211,7 +215,6 @@ public:
     void                    on_create_content(content::path_info_t & path, QString const & owner, QString const & type);
     void                    on_improve_signature(QString const & path, QString & signature);
     void                    on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
-    void                    on_cell_is_secure(QString const & table, QString const & row, QString const & cell, server::secure_field_flag_t & secure);
     void                    on_set_locale();
     void                    on_set_timezone();
 

@@ -1917,26 +1917,50 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
 
 
 
-/** \fn void server::cell_is_secure(QString const& table, QString const& row, QString const& cell, secure_field_flag_t& secure)
- * \brief Check whether the cell can securily be used in a script.
+/** \fn void server::table_is_accessible(QString const & table_name, accessible_flag_t & accessible)
+ * \brief Check whether a table can securily be used in a script.
  *
  * This signal is sent by the cell() function of snap_expr objects.
- * The plugin receiving the signal can check the table, row, and cell
- * names and mark that specific cell as secure. This will prevent the
- * script writer from accessing that specific cell.
+ * The plugins receiving the signal can check the table name
+ * and mark it as accessible or secure.
  *
- * This is used, for example, to protect the user password. Even though
- * the password is encrypted, allowing an end user to get a copy of
- * the encrypted password would dearly simplify the work of a hacker in
+ * A table only marked as accessible can be accessed safely.
+ *
+ * \code
+ *   void my_plugin::on_table_isaccessible(QString const & table_name, accessible_flag_t & accessible)
+ *   {
+ *      if(table_name == get_name(name_t::SNAP_NAME_MYPLUGIN_TABLE_NAME))
+ *      {
+ *          accessible.mark_as_accessible();
+ *      }
+ *   }
+ * \endcode
+ *
+ * It is possible for a plugin to mark certain tables as not accessible,
+ * whether or not a plugin mark them as accessible. For example:
+ *
+ * \code
+ *   void content::on_table_isaccessible(QString const & table_name, accessible_flag_t & accessible)
+ *   {
+ *      if(table_name == get_name(name_t::SNAP_NAME_CONTENT_SECRET_TABLE))
+ *      {
+ *          // explicitly mark this table as a secure table
+ *          accessible.mark_as_secure();
+ *      }
+ *   }
+ * \endcode
+ *
+ * This is used, for example, to protect the users and secret tables.
+ * Even though passwords are encrypted, allowing an end user to get a copy
+ * of the encrypted password would dearly simplify the work of a hacker in
  * finding the unencrypted password.
  *
  * The \p secure flag is used to mark the cell as secure. Simply call
- * the mark_as_secure() function to do so.
+ * the mark_as_secure() function to do so. This means the table cannot
+ * be accessed and the cell() function fails.
  *
  * \param[in] table  The table being accessed.
- * \param[in] row  The row being accessed.
- * \param[in] cell  The cell being accessed.
- * \param[in] secure  Whether the cell is secure.
+ * \param[in] accessible  Whether the cell is secure.
  */
 
 

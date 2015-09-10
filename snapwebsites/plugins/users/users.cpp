@@ -421,7 +421,7 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "server", server, detach_from_session);
     SNAP_LISTEN(users, "server", server, define_locales, _1);
     SNAP_LISTEN(users, "server", server, improve_signature, _1, _2);
-    SNAP_LISTEN(users, "server", server, cell_is_secure, _1, _2, _3, _4);
+    SNAP_LISTEN(users, "server", server, table_is_accessible, _1, _2);
     SNAP_LISTEN0(users, "locale", locale::locale, set_locale);
     SNAP_LISTEN0(users, "locale", locale::locale, set_timezone);
     SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
@@ -4605,46 +4605,6 @@ void users::on_improve_signature(QString const& path, QString& signature)
 }
 
 
-/** \brief Check whether the cell can securily be used in a script.
- *
- * This signal is sent by the cell() function of snap_expr objects.
- * The plugin receiving the signal can check the table, row, and cell
- * names and mark that specific cell as secure. This will prevent the
- * script writer from accessing that specific cell.
- *
- * This is used, for example, to protect the user password. Even though
- * the password is encrypted, allowing an end user to get a copy of
- * the encrypted password would dearly simplify the work of a hacker in
- * finding the unencrypted password.
- *
- * The \p secure flag is used to mark the cell as secure. Simply call
- * the mark_as_secure() function to do so.
- *
- * \param[in] table  The table being accessed.
- * \param[in] row  The row being accessed.
- * \param[in] cell  The cell being accessed.
- * \param[in] secure  Whether the cell is secure.
- *
- * \return This function returns true in case the signal needs to proceed.
- */
-void users::on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure)
-{
-    static_cast<void>(row);
-
-    if(table == get_name(name_t::SNAP_NAME_USERS_TABLE))
-    {
-        if(cell == get_name(name_t::SNAP_NAME_USERS_PASSWORD)
-        || cell == get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)
-        || cell == get_name(name_t::SNAP_NAME_USERS_PASSWORD_SALT)
-        || cell == get_name(name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))
-        {
-            // password is considered secure
-            secure.mark_as_secure();
-        }
-    }
-}
-
-
 /** \brief Signal called when a plugin requests the locale to be set.
  *
  * This signal is called whenever a plugin requests that the locale be
@@ -4734,6 +4694,37 @@ void users::repair_link_of_cloned_page(QString const& clone, snap_version::versi
     // users also have a status, but no one should allow a user to be cloned
     // and thus the status does not need to be handled here (what would we
     // do really with it here? mark the user as blocked?)
+}
+
+
+/** \brief Check whether the cell can securily be used in a script.
+ *
+ * This signal is sent by the cell() function of snap_expr objects.
+ * The plugin receiving the signal can check the table, row, and cell
+ * names and mark that specific cell as secure. This will prevent the
+ * script writer from accessing that specific cell.
+ *
+ * In case of the content plugin, this is used to protect all contents
+ * in the secret table.
+ *
+ * The \p secure flag is used to mark the cell as secure. Simply call
+ * the mark_as_secure() function to do so.
+ *
+ * \param[in] table  The table being accessed.
+ * \param[in] accessible  Whether the cell is secure.
+ *
+ * \return This function returns true in case the signal needs to proceed.
+ */
+void users::on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible)
+{
+    if(table_name == get_name(name_t::SNAP_NAME_USERS_TABLE))
+    {
+        // the users table includes the user passwords, albeit
+        // encrypted, we just do not ever want to share any of
+        // that
+        //
+        accessible.mark_as_secure();
+    }
 }
 
 

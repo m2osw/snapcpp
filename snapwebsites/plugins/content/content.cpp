@@ -434,7 +434,7 @@ void content::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(content, "server", server, register_backend_action, _1);
     SNAP_LISTEN0(content, "server", server, backend_process);
     SNAP_LISTEN(content, "server", server, load_file, _1, _2);
-    SNAP_LISTEN(content, "server", server, cell_is_secure, _1, _2, _3, _4);
+    SNAP_LISTEN(content, "server", server, table_is_accessible, _1, _2);
 }
 
 
@@ -3978,23 +3978,33 @@ void content::on_load_file(snap_child::post_file_t& file, bool& found)
  * the mark_as_secure() function to do so.
  *
  * \param[in] table  The table being accessed.
- * \param[in] row  The row being accessed.
- * \param[in] cell  The cell being accessed.
- * \param[in] secure  Whether the cell is secure.
+ * \param[in] accessible  Whether the cell is secure.
  *
  * \return This function returns true in case the signal needs to proceed.
  */
-void content::on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure)
+void content::on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible)
 {
-    static_cast<void>(row);
-    static_cast<void>(cell);
-
     // all data in the secret table are considered secure
     // also check the lock table which really does not need to be public
-    if(table == get_name(name_t::SNAP_NAME_CONTENT_SECRET_TABLE)
-    || table == f_snap->get_context()->lockTableName())
+    if(table_name == get_name(name_t::SNAP_NAME_CONTENT_TABLE)
+    || table_name == get_name(name_t::SNAP_NAME_CONTENT_BRANCH_TABLE)
+    || table_name == get_name(name_t::SNAP_NAME_CONTENT_REVISION_TABLE)
+    || table_name == snap::get_name(snap::name_t::SNAP_NAME_SITES))
     {
-        secure.mark_as_secure();
+        accessible.mark_as_accessible();
+    }
+    else if(table_name == get_name(name_t::SNAP_NAME_CONTENT_SECRET_TABLE)
+    || table_name == get_name(name_t::SNAP_NAME_CONTENT_PROCESSING_TABLE)
+    || table_name == get_name(name_t::SNAP_NAME_CONTENT_FILES_TABLE)
+    || table_name == snap::get_name(snap::name_t::SNAP_NAME_DOMAINS)
+    || table_name == snap::get_name(snap::name_t::SNAP_NAME_WEBSITES)
+    || table_name == snap::get_name(snap::name_t::SNAP_NAME_SITES)
+    || table_name == f_snap->get_context()->lockTableName())
+    {
+        // this is very important for the secret table; this way any
+        // other plugin cannot authorize a user to make that table
+        // accessible
+        accessible.mark_as_secure();
     }
 }
 

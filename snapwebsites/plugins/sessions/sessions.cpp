@@ -856,7 +856,7 @@ void sessions::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(sessions, "server", server, cell_is_secure, _1, _2, _3, _4);
+    SNAP_LISTEN(sessions, "server", server, table_is_accessible, _1, _2);
 }
 
 
@@ -1646,32 +1646,27 @@ QString sessions::get_from_session(const session_info& info, const QString& name
  * names and mark that specific cell as secure. This will prevent the
  * script writer from accessing that specific cell.
  *
- * This is used, for example, to protect the user password. Even though
- * the password is encrypted, allowing an end user to get a copy of
- * the encrypted password would dearly simplify the work of a hacker in
- * finding the unencrypted password.
+ * In case of the content plugin, this is used to protect all contents
+ * in the secret table.
  *
  * The \p secure flag is used to mark the cell as secure. Simply call
  * the mark_as_secure() function to do so.
  *
  * \param[in] table  The table being accessed.
- * \param[in] row  The row being accessed.
- * \param[in] cell  The cell being accessed.
- * \param[in] secure  Whether the cell is secure.
+ * \param[in] accessible  Whether the cell is secure.
  *
  * \return This function returns true in case the signal needs to proceed.
  */
-void sessions::on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure)
+void sessions::on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible)
 {
-    static_cast<void>(row);
-    static_cast<void>(cell);
-
-    if(table == get_name(name_t::SNAP_NAME_SESSIONS_TABLE))
+    if(table_name == get_name(name_t::SNAP_NAME_SESSIONS_TABLE))
     {
-        secure.mark_as_secure();
+        // the sessions table includes all sorts of top-secret
+        // identifiers so we do not want anyone to share such
+        //
+        accessible.mark_as_secure();
     }
 }
-
 
 
 SNAP_PLUGIN_END()
