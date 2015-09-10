@@ -118,6 +118,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CONTENT_BREADCRUMBS_HOME_LABEL:
         return "content::breadcrumbs_home_label";
 
+    case name_t::SNAP_NAME_CONTENT_BREADCRUMBS_PARENT:
+        return "content::breadcrumbs_parent";
+
     case name_t::SNAP_NAME_CONTENT_CHILDREN:
         return "content::children";
 

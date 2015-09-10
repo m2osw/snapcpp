@@ -629,7 +629,6 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
     QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
 
     QDomDocument doc(parent.ownerDocument());
-    QString const cpath(ipath.get_cpath());
 
     QDomElement ol(doc.createElement("ol"));
     ol.setAttribute("vocab", "http://schema.org/");
@@ -655,14 +654,16 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
     bool const show_home(value.nullValue() || value.safeSignedCharValue() != 0);
 
     value = info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_CURRENT_PAGE))->value();
-    bool const show_current_page(value.nullValue() || value.safeSignedCharValue() != 0);
+    bool show_current_page(value.nullValue() || value.safeSignedCharValue() != 0);
 
     // the breadcrumb is a list of paths from this page back to
     // the home:
-    snap_string_list const segments(cpath.split('/'));
-    int const max_segments(cpath == "" ? 0 : segments.size());
+    QDomElement previous_li;
+    snap_string_list segments = ipath.get_segments();
+    int max_segments(ipath.get_cpath() == "" ? 0 : segments.size());
     int first(-1);
-    for(int i(0); i <= max_segments; ++i)
+    bool has_last(false);
+    for(int i(max_segments); i >= 0; --i)
     {
         // ol/li
         QDomElement li(doc.createElement("li"));
@@ -678,9 +679,11 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
             first = i;
             classes << "first";
         }
-        if((show_current_page && i == max_segments)
-        || (!show_current_page && i == max_segments - 1))
+        if(!has_last
+        && ((show_current_page && i == max_segments)
+        || (!show_current_page && i == max_segments - 1)))
         {
+            has_last = true;
             classes << "last";
         }
         // we expected "odd" for the very first item which is not hidden
@@ -695,7 +698,16 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
         li.setAttribute("class", classes.join(" "));
         li.setAttribute("typeOf", "ListItem");
         li.setAttribute("property", "itemListElement");
-        ol.appendChild(li);
+
+        if(previous_li.isNull())
+        {
+            ol.appendChild(li);
+        }
+        else
+        {
+            ol.insertBefore(li, previous_li);
+        }
+        previous_li = li;
 
         // ol/li/a
         // (for Google, it is better to have <a> for ALL entries, including
@@ -710,6 +722,7 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
         span.setAttribute("property", "name");
         anchor.appendChild(span);
 
+        content::path_info_t page_ipath;
         QString label;
         if(i == 0)
         {
@@ -726,7 +739,6 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
         else
         {
             QString const path(static_cast<QStringList>(segments.mid(0, i)).join("/"));
-            content::path_info_t page_ipath;
             page_ipath.set_path(path);
 
             // Google says we should use full paths... that is easy for us
@@ -749,6 +761,35 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
         position.setAttribute("property", "position");
         position.setAttribute("content", QString("%1").arg(i + 1)); // position starts at 1
         li.appendChild(position);
+
+        // the page may know better than us what its parent is (i.e. we can
+        // build breadcrumbs that are not truely following the natural
+        // parent/child path)
+        if(i != 0
+        && revision_table->row(page_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_PARENT)))
+        {
+            // if the page defines its own breadcrumb parent, then replace
+            // the current path information with that new info.
+            QString const breadcrumbs_parent(revision_table->row(page_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_PARENT))->value().stringValue());
+
+            // canonicalize
+            content::path_info_t parent_ipath;
+            parent_ipath.set_path(breadcrumbs_parent);
+
+            // replace segments and index
+            segments = parent_ipath.get_segments();
+            if(parent_ipath.get_cpath() == "")
+            {
+                // special case... (because "" or "one-segment" is the same)
+                i = 1;
+            }
+            else
+            {
+                i = segments.size() + 1;
+            }
+            max_segments = segments.size();
+            show_current_page = true;
+        }
     }
 }
 
