@@ -178,7 +178,7 @@ int64_t form::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 8, 14, 19, 59, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 10, 0, 17, 8, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
