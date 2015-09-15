@@ -981,12 +981,16 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
             {
                 if(*s == '\0')
                 {
-                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked validity in tld_email_list::parse()");
                 }
                 if(*s == '\\')
                 {
                     // the backslash is not part of the result
                     ++s;
+                    if(*s == '\0')
+                    {
+                        throw std::logic_error("somehow we found a \\0 in a quoted string after a backslash in tld_email_t which should not happen since it was already checked validity in tld_email_list::parse()");
+                    }
                 }
                 if((static_cast<unsigned char>(*s) < ' ' && *s != '\t') || *s == 0x7F)
                 {
