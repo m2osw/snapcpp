@@ -26,6 +26,8 @@
 
 #include <iostream>
 
+#include "not_used.h"
+
 void output(int code
           , char const * page_title
           , char const * message)
@@ -68,8 +70,8 @@ void output(int code
 
 int main(int argc, char *argv[])
 {
-    static_cast<void>(argc);
-    static_cast<void>(argv);
+    snap::NOTUSED(argc);
+    snap::NOTUSED(argv);
 
     // the process has to run as the user named "build" and group "build"
     // so first we want to do that, then we want to cd to the correct
@@ -167,7 +169,7 @@ int main(int argc, char *argv[])
         struct tm const * now(localtime(&today));
         char date[256];
         strftime(date, sizeof(date), "%Y/%m/%d %T", now);
-        static_cast<void>(freopen("/var/www/build/public_html/build-log.html", "w", stdout));
+        snap::NOTUSED(freopen("/var/www/build/public_html/build-log.html", "w", stdout));
         // WARNING: using fprintf() to make sure we print in the new stdout
         //          and not the old one
         fprintf(stdout,
@@ -185,8 +187,8 @@ int main(int argc, char *argv[])
         fflush(stdout);
 
         // make sure we are detected from the Apache server
-        static_cast<void>(freopen("/var/log/build-error.log", "a", stderr));
-        static_cast<void>(freopen("/dev/null", "r", stdin));
+        snap::NOTUSED(freopen("/var/log/build-error.log", "a", stderr));
+        snap::NOTUSED(freopen("/dev/null", "r", stdin));
 
         std::string command("bin/build.sh");
         std::string const qs(getenv("QUERY_STRING"));
