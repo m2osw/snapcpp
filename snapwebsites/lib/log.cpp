@@ -208,7 +208,12 @@ void configure_console()
                 + log4cplus::tstring("[%i]:%b:%L:%h: %m%n")
                 );
     //const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
+// log4cplus only accepts std::auto_ptr<> which is deprecated in newer versions
+// of g++ so we have to make sure the deprecation definition gets ignored
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
+#pragma GCC diagnostic pop
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
     g_log_config_filename.clear();
@@ -261,7 +266,12 @@ void configure_logfile( QString const& logfile )
                 + boost::replace_all_copy(server::instance()->servername(), "%", "%%").c_str()
                 + log4cplus::tstring("[%i]: %m (%b:%L)%n")
                 );
+// log4cplus only accepts std::auto_ptr<> which is deprecated in newer versions
+// of g++ so we have to make sure the deprecation definition gets ignored
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
+#pragma GCC diagnostic pop
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
     g_log_config_filename.clear();
@@ -307,7 +317,12 @@ void configure_sysLog()
                 ( boost::replace_all_copy(servername, "%", "%%").c_str()
                 + log4cplus::tstring("[%i]:%b:%L:%h: %m%n")
                 );
+// log4cplus only accepts std::auto_ptr<> which is deprecated in newer versions
+// of g++ so we have to make sure the deprecation definition gets ignored
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
+#pragma GCC diagnostic pop
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
     g_log_config_filename.clear();
