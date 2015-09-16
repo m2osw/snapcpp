@@ -1,6 +1,9 @@
 
 # Note: in many cases a filename can be "." (current directory)
 
+# Check out a copy from the repository
+git clone git://git.code.sf.net/p/snapcpp/code snapcpp
+
 # check what you've changed (verify that you want to commit all of those)
 git diff ["<filename>"]
 
