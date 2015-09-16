@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.367
+ * Version: 0.0.3.368
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -1770,7 +1770,7 @@ snapwebsites.EditorToolbar.prototype.createToolbar_ = function()
                     {
                         var index = jQuery(this).attr("button-id");
                         that.editorBase_.refocus();
-                        that.command(index);
+                        that.command(snapwebsites.castToNumber(index, "the command index must be a number"));
                     });
     }
 };
@@ -4109,9 +4109,14 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
             // so there is no need for us to save them again here (plus
             // in some cases it would be impossible like for file upload)
             w = this.editorWidgets_[key];
-            if((save_all || w.wasModified(true))
+            if((save_all || w.wasModified(true) || w.getWidget().hasClass("always-save"))
             && !w.getWidget().hasClass("immediate-save"))
             {
+                // once saved once in this round, make sure to always save
+                // until we get a successful save otherwise data saved in
+                // the draft may wrongly get used!
+                w.getWidget().addClass("always-save");
+
                 this.savedData_[key] = w.saving();
                 obj[key] = this.savedData_[key].result;
             }
@@ -5909,7 +5914,7 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeContentEditable, snapwebsites
 /** \brief Initialize an "Edit" button.
  *
  * This function adds an "Edit" button to the specified \p editor_widget.
- * By default most widgets don't get an edit button because they are
+ * By default most widgets do not get an edit button because they are
  * automatically editable (if not disabled or marked as read-only.)
  *
  * This is especially necessary on editable text areas where links would

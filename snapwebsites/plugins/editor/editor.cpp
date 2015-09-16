@@ -24,13 +24,13 @@
 #include "../permissions/permissions.h"
 
 #include "dbutils.h"
+#include "log.h"
 #include "mkgmtime.h"
+#include "not_reached.h"
 #include "qdomhelpers.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
 #include "qxmlmessagehandler.h"
-#include "log.h"
-#include "not_reached.h"
 #include "snap_image.h"
 
 #include <QtCassandra/QCassandraLock.h>
@@ -423,7 +423,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 9, 5, 30, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 10, 18, 7, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -905,7 +905,7 @@ void editor::on_process_post(QString const & uri_path)
 
     }
 
-    server_access::server_access *server_access_plugin(server_access::server_access::instance());
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
 
     content::path_info_t real_ipath;
     QString const object_path(info.get_object_path());
@@ -1129,9 +1129,18 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
         return false;
     }
 
+    if(value_info.get_data_type() == "plain")
+    {
+        value_info.set_type_name("string");
+
+        // characters such as <, >, and & have to be re-escaped here
+        value_info.result() = snap_dom::escape(value_info.get_value().stringValue());
+        value_info.set_status(value_to_string_info_t::status_t::DONE);
+        return false;
+    }
+
     if(value_info.get_data_type() == "string"
-    || value_info.get_data_type() == "html"
-    || value_info.get_data_type() == "plain")
+    || value_info.get_data_type() == "html")
     {
         value_info.set_type_name("string");
 
@@ -1383,9 +1392,11 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     if(!editor_widgets.isNull())
     {
         // a default (data driven) redirect to apply when saving an editor form
-        if(!on_save.isNull())
+        if(!on_save.isNull() && on_save.hasAttribute("redirect"))
         {
-            server_access::server_access::instance()->ajax_redirect(on_save.attribute("redirect"), on_save.attribute("target"));
+            QString const redirect(on_save.attribute("redirect"));
+            //if(redirect == "...") { ... } -- some dynamic redirect? (i.e. parent)
+            server_access::server_access::instance()->ajax_redirect(redirect, on_save.attribute("target"));
         }
 
         locale::locale * locale_plugin(locale::locale::instance());
@@ -2213,12 +2224,29 @@ QDomDocument editor::get_editor_widgets(content::path_info_t & ipath)
  *      return a >= -100 && a <= 100;
  * \endcode
  *
- * \param[in] cpath  The path where the form is defined
- * \param[in,out] info  The information linked with this form (loaded from the session)
+ * \warning
+ * The \p value parameter represents HTML and not plain text even if in
+ * many cases it will show up as plain text when this function gets called.
+ * Most importantly, if you expect the string to be plain text (i.e. no
+ * tags) special characters such as \<, >, and & will be encoded so you
+ * want to call snap_dom::unescape() on such values. If the value may
+ * include tags, it is more complicated. You may call snap_dom::remove_tags()
+ * if you do not need to check the tags, though. Of course, if the value
+ * expected cannot otherwise include those characters (i.e. an integer) then
+ * there is no need for such drastic measures.
+ *
+ * \param[in,out] ipath  The path where the form is defined
+ * \param[in,out] info  The information linked with this form (loaded
+ *                      from the session)
  * \param[in] widget  The widget being tested
- * \param[in] widget_name  The name of the widget (i.e. the id="..." attribute value)
- * \param[in] widget_type  The type of the widget (i.e. the type="..." attribute value)
- * \param[in] is_secret  If true, the field is considered a secret field (i.e. a password.)
+ * \param[in] widget_name  The name of the widget
+ *                         (i.e. the id="..." attribute value)
+ * \param[in] widget_type  The type of the widget
+ *                         (i.e. the type="..." attribute value)
+ * \param[in] value  The value being validated, it is an HTML value, even if
+ *                   in many cases it will look like plain text.
+ * \param[in] is_secret  If true, the field is considered a secret
+ *                       field (i.e. a password.)
  *
  * \return Always return true so other plugins have a chance to validate too.
  */
@@ -2231,6 +2259,53 @@ bool editor::validate_editor_post_for_widget_impl(
             QString const & value,
             bool const is_secret)
 {
+    // TODO: we want to move that to the editor class and make it public
+    //       and use it to make the validate_editor_post_for_widget()
+    //       signal call, that way we can have this code available to
+    //       all plugins; we could even have all sorts of things available
+    //       like ways to generate the error messages in an editor
+    //       consistent way
+    //
+    class value_handler_t
+    {
+    public:
+        value_handler_t(QString const & value)
+            : f_value(value)
+        {
+        }
+
+        QString const & get_value() const
+        {
+            return f_value;
+        }
+
+        int get_value_length() const
+        {
+            return f_value.length();
+        }
+
+        QString get_stripped_value() const
+        {
+            if(!f_stripped_value_defined)
+            {
+                f_stripped_value_defined = true;
+                f_stripped_value = snap_dom::remove_tags(f_value);
+            }
+            return f_stripped_value;
+        }
+
+        int get_stripped_value_length()
+        {
+            return get_stripped_value().length();
+        }
+
+    private:
+        QString const &                     f_value;
+        mutable controlled_vars::fbool_t    f_stripped_value_defined;
+        mutable QString                     f_stripped_value;
+    };
+    value_handler_t value_handler(value);
+
     messages::messages * messages(messages::messages::instance());
     locale::locale * locale_plugin(locale::locale::instance());
 
@@ -2250,6 +2325,32 @@ bool editor::validate_editor_post_for_widget_impl(
         if(!sizes.isNull())
         {
             // minimum number of characters, for images minimum width and height
+            QDomElement absolute_min_element(sizes.firstChildElement("absolute-min"));
+            if(!absolute_min_element.isNull())
+            {
+                has_minimum = true;
+                QString const m(absolute_min_element.text());
+                bool ok;
+                int const l(m.toInt(&ok));
+                if(!ok)
+                {
+                    throw editor_exception_invalid_editor_form_xml(QString("the absolute minimum size \"%1\" must be a valid decimal integer").arg(m));
+                }
+                if(value_handler.get_value_length() < l)
+                {
+                    // length too small
+                    messages->set_error(
+                        "Absolute Length Too Small",
+                        QString("\"%1\" is too small in \"%2\". The widget requires at least %3 characters of any type.")
+                                .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
+                        QString("not enough characters in \"%1\"").arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                }
+            }
+
+            // minimum number of VISIBLE characters, for images minimum width and height
             QDomElement min_element(sizes.firstChildElement("min"));
             if(!min_element.isNull())
             {
@@ -2310,7 +2411,7 @@ bool editor::validate_editor_post_for_widget_impl(
                     {
                         throw editor_exception_invalid_editor_form_xml(QString("the minimum size \"%1\" must be a valid decimal integer").arg(m));
                     }
-                    if(value.length() < l)
+                    if(value_handler.get_stripped_value_length() < l)
                     {
                         // length too small
                         messages->set_error(
@@ -2322,6 +2423,31 @@ bool editor::validate_editor_post_for_widget_impl(
                         ).set_widget_name(widget_name);
                         info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
+                }
+            }
+
+            // maximum number of characters, for images maximum width and height
+            QDomElement absolute_max_element(sizes.firstChildElement("absolute-max"));
+            if(!absolute_max_element.isNull())
+            {
+                QString const m(absolute_max_element.text());
+                bool ok;
+                int const l(m.toInt(&ok));
+                if(!ok)
+                {
+                    throw editor_exception_invalid_editor_form_xml(QString("the maximum size \"%1\" must be a valid decimal integer").arg(m));
+                }
+                if(value_handler.get_value_length() > l)
+                {
+                    // length too large
+                    messages->set_error(
+                        "Length Too Long",
+                        QString("\"%1\" is too long in \"%2\". The widget requires at most %3 characters.")
+                                .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
+                        QString("too many characters in \"%1\"").arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                 }
             }
 
@@ -2386,7 +2512,7 @@ bool editor::validate_editor_post_for_widget_impl(
                     {
                         throw editor_exception_invalid_editor_form_xml(QString("the maximum size \"%1\" must be a valid decimal integer").arg(m));
                     }
-                    if(value.length() > l)
+                    if(value_handler.get_stripped_value_length() > l)
                     {
                         // length too large
                         messages->set_error(
@@ -2445,7 +2571,7 @@ bool editor::validate_editor_post_for_widget_impl(
                 || widget_type == "html-edit")
                 {
                     // calculate the number of lines in value
-                    int lines(form::form::count_text_lines(value));
+                    int const lines(form::form::count_text_lines(value));
                     if(min_value != -1 && lines < min_value)
                     {
                         // not enough lines (text)
@@ -2460,7 +2586,7 @@ bool editor::validate_editor_post_for_widget_impl(
                     }
                     if(max_value != -1 && lines > max_value)
                     {
-                        // not enough lines (text)
+                        // too many lines (text)
                         messages->set_error(
                             "Too Many Lines",
                             QString("\"%1\" has too many lines in \"%2\". The widget accepts at most %3 lines.")
@@ -2702,7 +2828,7 @@ bool editor::validate_editor_post_for_widget_impl(
                     {
                         // Note:
                         // We do not test whether there is some text here to avoid
-                        // wasting time; we could have such a test in a tool of
+                        // wasting time; we should have such a test in a tool of
                         // ours used to verify that the editor form is well defined.
                         re = regex_tag.text();
                     }
@@ -2710,7 +2836,7 @@ bool editor::validate_editor_post_for_widget_impl(
                     if(email != 0)
                     {
                         tld_email_list emails;
-                        if(emails.parse(value.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
+                        if(emails.parse(snap_dom::unescape(value).toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
                         {
                             messages->set_error(
                                 "Invalid Value",
@@ -4473,6 +4599,15 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
                 if(value_info.is_valid())
                 {
                     current_value = value_info.result();
+                }
+                else
+                {
+                    // TODO: make sure this is correct... I noticed
+                    //       that I was not setting set_value to false
+                    //       anywhere anymore since I use the
+                    //       value_to_string() signal
+                    //
+                    set_value = false;
                 }
             }
 

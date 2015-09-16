@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.29
+ * Version: 0.0.1.30
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -325,7 +325,7 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
     {
         snapwebsites.OutputInstance.displayMessages(result.messages);
 
-        // undarken only on errors, if we are to redirect we don't have
+        // undarken only on errors, if we are to redirect we do not have
         // to undarken since everything will anyway go away
         undarken = undarken || result.undarken == snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR;
     }
@@ -335,6 +335,11 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
         snapwebsites.OutputInstance.displayOneMessage("Error", result.error_message);
     }
 
+    // WARNING: DO NOT CACHE THE RESULT OF THE PREVIOUS CALL TO THAT FUNCTION
+    //
+    // Because the user's functions in between may have changed what the
+    // function is to return.
+    //
     if(!snapwebsites.ServerAccess.willRedirect(result) && undarken)
     {
         snapwebsites.PopupInstance.darkenPage(-150, false);
@@ -526,10 +531,26 @@ snapwebsites.ServerAccess.prototype.data_ = null;
  */
 snapwebsites.ServerAccess.willRedirect = function(result) // static
 {
-    // TODO: find a way to cache that information?
-    var redirect = result.jqxhr.responseXML.getElementsByTagName("redirect");
+    // TODO: Find a way to cache that information?
+    //
+    //       i.e. if the user wants to change the "redirect" info then
+    //       we should catch that and change the cached flag.
+    //
+    //       That being said, it probably won't make any speed difference
+    //       since we do not call this function much.
+    //
+    var redirect;
 
-    return redirect.length === 1;
+    if(result.jqxhr)
+    {
+        if(result.jqxhr.responseXML)
+        {
+            redirect = result.jqxhr.responseXML.getElementsByTagName("redirect");
+            return redirect.length === 1;
+        }
+    }
+
+    return false;
 };
 
 
@@ -889,7 +910,7 @@ snapwebsites.ServerAccess.prototype.onSuccess_ = function(result)
                 }
                 // else TODO search for a window named 'target'
                 //           and do the redirect in there?
-                //           it doesn't look good in terms of
+                //           it does not look good in terms of
                 //           API though... we can find frames
                 //           but not windows unless we 100%
                 //           handle the window.open() calls

@@ -2775,11 +2775,11 @@ bool snap_child::process(int socket)
         exit(0);
         NOTREACHED();
     }
-    catch( snap_exception const& except )
+    catch( snap_exception const & except )
     {
         SNAP_LOG_FATAL("snap_child::process(): snap_exception caught: ")(except.what());
     }
-    catch( std::exception const& std_except )
+    catch( std::exception const & std_except )
     {
         // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
@@ -2927,7 +2927,7 @@ void snap_child::read_environment()
     class read_env
     {
     public:
-        read_env(snap_child *snap, int socket, environment_map_t& env, environment_map_t& browser_cookies, environment_map_t& post, post_file_map_t& files)
+        read_env(snap_child * snap, int socket, environment_map_t & env, environment_map_t & browser_cookies, environment_map_t & post, post_file_map_t & files)
             : f_snap(snap)
             , f_socket(socket)
             //, f_unget('\0') -- auto-init
@@ -2951,7 +2951,7 @@ void snap_child::read_environment()
         {
         }
 
-        void die(QString const& details) const
+        void die(QString const & details) const
         {
             f_snap->die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Unstable network connection",
@@ -5102,7 +5102,7 @@ void snap_child::site_redirect()
  * \param[in] reason_brief  A brief explanation for the redirection.
  * \param[in] reason  The long version of the explanation for the redirection.
  */
-void snap_child::page_redirect(QString const& path, http_code_t http_code, QString const& reason_brief, QString const& reason)
+void snap_child::page_redirect(QString const & path, http_code_t http_code, QString const & reason_brief, QString const & reason)
 {
     if(f_site_key_with_slash.isEmpty())
     {
@@ -5340,7 +5340,7 @@ QString snap_child::postenv(QString const& name, QString const& default_value) c
  * \param[in] name  The name of the POST variable to fetch.
  * \param[in] value  The new value for this POST variable.
  */
-void snap_child::replace_postenv(const QString& name, const QString& value)
+void snap_child::replace_postenv(QString const & name, QString const & value)
 {
     f_post[name] = value;
 }

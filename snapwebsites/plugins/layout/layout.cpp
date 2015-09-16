@@ -771,7 +771,7 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     //       tagging capability)
     if(plugins::exists("filter"))
     {
-//std::cerr << "*** Filter all of that...\n";
+//SNAP_LOG_WARNING("*** Filter all of that...: [")(doc.toString())("]");
         // replace all tokens when filtering is available
         filter::filter::instance()->on_token_filter(ipath, doc);
     }

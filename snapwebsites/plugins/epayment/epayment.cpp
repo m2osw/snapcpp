@@ -1548,7 +1548,7 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
                 // /snap/head/metadata/epayment/product-name
                 (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT_NAME))
                 (content::field_search::command_t::COMMAND_SELF)
-                (content::field_search::command_t::COMMAND_SAVE, "product-name")
+                (content::field_search::command_t::COMMAND_SAVE_XML, "product-name")
 
                 // /snap/head/metadata/epayment/product-description
                 (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_EPAYMENT_DESCRIPTION))
@@ -1558,7 +1558,7 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
                     (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
                     (content::field_search::command_t::COMMAND_SELF)
                 (content::field_search::command_t::COMMAND_LABEL, 1)
-                (content::field_search::command_t::COMMAND_SAVE, "product-description")
+                (content::field_search::command_t::COMMAND_SAVE_XML, "product-description")
 
                 // /snap/head/metadata/epayment/product-price
                 (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_EPAYMENT_PRICE))

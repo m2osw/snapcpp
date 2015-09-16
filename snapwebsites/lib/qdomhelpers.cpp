@@ -46,7 +46,7 @@ namespace snap_dom
  * \param[in,out] child  DOM element receiving the result as children nodes.
  * \param[in] xml  The input XML string.
  */
-void insert_html_string_to_xml_doc(QDomNode& child, QString const& xml)
+void insert_html_string_to_xml_doc(QDomNode & child, QString const & xml)
 {
     // parsing the XML can be slow, try to avoid that if possible
     int const max(xml.length());
@@ -171,17 +171,27 @@ QString xml_children_to_string(QDomNode & node)
 void replace_node_with_html_string(QDomNode & replace, QString const & xml)
 {
     // parsing the XML can be slow, try to avoid that if possible
-    if(xml.contains('<'))
+    for(QChar const * s(xml.data()); !s->isNull(); ++s)
     {
-        QDomDocument xml_doc("wrapper");
-        xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
-        replace_node_with_elements(replace, xml_doc.documentElement());
+        switch(s->unicode())
+        {
+        case '<':
+        case '>':
+        case '&':
+            // this requires the full XML round trip
+            {
+                QDomDocument xml_doc("wrapper");
+                xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
+                replace_node_with_elements(replace, xml_doc.documentElement());
+            }
+            return;
+
+        }
     }
-    else
-    {
-        QDomText text(replace.toText());
-        text.setData(xml);
-    }
+
+    // plain text is faster
+    QDomText text(replace.toText());
+    text.setData(xml);
 }
 
 
@@ -436,7 +446,7 @@ QDomElement create_element(QDomNode parent, QString const& path)
  *
  * \return The text found in the html string if any.
  */
-QString remove_tags(QString const& html)
+QString remove_tags(QString const & html)
 {
     QDomDocument doc;
     // TBD: shall we make sure that this 'html' string is compatible XML?
@@ -446,16 +456,26 @@ QString remove_tags(QString const& html)
 }
 
 
-/** \brief Encode entities converting a plain text to an HTML string.
+/** \brief Encode entities converting plain text to a valid HTML string.
  *
  * Somehow the linker cannot find the Qt::escape() function so we
  * have our own version here.
+ *
+ * \note
+ * The function transforms the double quote (") character to &quot;
+ * so the resulting string can be used as an attribute value quoted
+ * with double quotes:
+ *
+ * \code
+ *    QString html(QString("<a href=\"%1\">Click Here</a>")
+ *                      .arg(snap_dom::escape("This \"string\" here"));
+ * \endcode
  *
  * \param[in] str  The string to transform.
  *
  * \return The converted string.
  */
-QString escape(QString const& str)
+QString escape(QString const & str)
 {
     QString result;
     result.reserve(str.length() * 112 / 100 + 20);
@@ -500,8 +520,13 @@ QString escape(QString const& str)
  * Qt offers a function called escape() which transforms plain text
  * to HTML with entities (so for example \< becomes \&lt;,) but for
  * some weird reason they do not offer an unescape() function...
+ *
+ * \param[in] str  The string where HTML characters need to be transformed
+ *                 to regular characters.
+ *
+ * \return The resulting unescaped string.
  */
-QString unescape(QString const& str)
+QString unescape(QString const & str)
 {
     QString result;
     result.reserve(str.length() + 10);

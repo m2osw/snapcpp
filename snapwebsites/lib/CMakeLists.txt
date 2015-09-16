@@ -61,7 +61,7 @@ endif()
 include_directories(
     SYSTEM
         ${MAGIC_INCLUDE_PATH}
-        ${LOG4CPLUS_INCLUDE_DIR}
+        ${LOG4CPLUS_INCLUDE_DIRS}
         ${QT_INCLUDES}
         ${LIBPROCPS_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}

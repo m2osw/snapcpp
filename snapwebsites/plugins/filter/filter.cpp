@@ -750,7 +750,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
                 if(c == '[')
                 {
                     // recursively parse sub-tokens
-                    QString save_token(f_token);
+                    QString const save_token(f_token);
                     if(!parse_token())
                     {
                         f_token = save_token + f_token;
@@ -902,13 +902,16 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             f_extra_input.insert(0, c);
         }
 
+        // TODO: We probably want to convert UTF-32 characters as such
+        //       instead of two UTF-16 encoded values.
+        //
         char_t getc()
         {
             if(!f_extra_input.isEmpty())
             {
                 if(f_extra_index < f_extra_input.size())
                 {
-                    char_t wc(f_extra_input[f_extra_index].unicode());
+                    char_t const wc(f_extra_input[f_extra_index].unicode());
                     ++f_extra_index;
                     return wc;
                 }
@@ -921,7 +924,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             }
             else
             {
-                char_t wc(f_text[f_index].unicode());
+                char_t const wc(f_text[f_index].unicode());
                 ++f_index;
                 return wc;
             }
@@ -1045,7 +1048,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
             if(t.parse())
             {
-//std::cerr << "***\n*** replace text [" << text.data() << "] with [" << t.result() << "]\n***\n";
+//SNAP_LOG_WARNING("***\n*** replace text [")(text.data())("] with [")(t.result())("]\n***\n");
                 // replace the text with its contents
                 snap_dom::replace_node_with_html_string(n, t.result());
             }

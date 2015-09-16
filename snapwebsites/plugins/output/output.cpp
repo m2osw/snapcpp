@@ -268,6 +268,10 @@ void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
     static_cast<void>(page);
 
     // if the content is the main page then define the titles and body here
+    //
+    // titles are defined as HTML; you can output them as plain text
+    // using "value-of" instead of "copy-of" in your .xsl files
+    //
     FIELD_SEARCH
         (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
         (content::field_search::command_t::COMMAND_ELEMENT, body)
@@ -275,33 +279,35 @@ void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
 
         // /snap/page/body/titles
         (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "titles")
-        // /snap/page/body/titles/title
-        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
-        (content::field_search::command_t::COMMAND_SELF)
-        (content::field_search::command_t::COMMAND_IF_FOUND, 1)
-            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+
+            // /snap/page/body/titles/title
+            (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
             (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::command_t::COMMAND_LABEL, 1)
-        (content::field_search::command_t::COMMAND_SAVE, "title")
-        // /snap/page/body/titles/short-title
-        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_SHORT_TITLE))
-        (content::field_search::command_t::COMMAND_SELF)
-        (content::field_search::command_t::COMMAND_IF_FOUND, 2)
-            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+            (content::field_search::command_t::COMMAND_IF_FOUND, 1)
+                (content::field_search::command_t::COMMAND_PATH, ctemplate)
+                (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
+            (content::field_search::command_t::COMMAND_LABEL, 1)
+            (content::field_search::command_t::COMMAND_SAVE_XML, "title")
+            // /snap/page/body/titles/short-title
+            (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_SHORT_TITLE))
             (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::command_t::COMMAND_LABEL, 2)
-        (content::field_search::command_t::COMMAND_SAVE, "short-title")
-        // /snap/page/body/titles/long-title
-        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_LONG_TITLE))
-        (content::field_search::command_t::COMMAND_SELF)
-        (content::field_search::command_t::COMMAND_IF_FOUND, 3)
-            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+            (content::field_search::command_t::COMMAND_IF_FOUND, 2)
+                (content::field_search::command_t::COMMAND_PATH, ctemplate)
+                (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
+            (content::field_search::command_t::COMMAND_LABEL, 2)
+            (content::field_search::command_t::COMMAND_SAVE_XML, "short-title")
+            // /snap/page/body/titles/long-title
+            (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_LONG_TITLE))
             (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::command_t::COMMAND_LABEL, 3)
-        (content::field_search::command_t::COMMAND_SAVE, "long-title")
+            (content::field_search::command_t::COMMAND_IF_FOUND, 3)
+                (content::field_search::command_t::COMMAND_PATH, ctemplate)
+                (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
+            (content::field_search::command_t::COMMAND_LABEL, 3)
+            (content::field_search::command_t::COMMAND_SAVE_XML, "long-title")
+
         (content::field_search::command_t::COMMAND_PARENT_ELEMENT)
 
         // /snap/page/body/content

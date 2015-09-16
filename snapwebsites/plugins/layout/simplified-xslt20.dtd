@@ -84,6 +84,7 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT xsl:value-of ANY>
 <!ATTLIST xsl:value-of select CDATA #REQUIRED>
+<!-- disable-output-escaping (yes|no) "no" / not supported by Qt implementation -->
 
 <!ELEMENT xsl:attribute ANY>
 <!ATTLIST xsl:attribute name CDATA #REQUIRED>

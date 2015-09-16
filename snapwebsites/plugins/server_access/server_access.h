@@ -48,6 +48,22 @@ public:
     server_access_exception_create_called_twice(QString const &     what_msg) : server_access_exception(what_msg) {}
 };
 
+class server_access_exception_success_with_errors : public server_access_exception
+{
+public:
+    server_access_exception_success_with_errors(char const *        what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_success_with_errors(std::string const & what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_success_with_errors(QString const &     what_msg) : server_access_exception(what_msg) {}
+};
+
+class server_access_exception_invalid_uri : public server_access_exception
+{
+public:
+    server_access_exception_invalid_uri(char const *        what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_invalid_uri(std::string const & what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_invalid_uri(QString const &     what_msg) : server_access_exception(what_msg) {}
+};
+
 
 
 

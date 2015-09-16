@@ -101,11 +101,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<xsl:template name="snap:html-header">
 		<xsl:param name="theme-css" select="''"/>
 
-		<!-- force UTF-8 encoding (at the very beginning to avoid a IE6 bug -->
+		<!-- force UTF-8 encoding (at the very beginning to avoid an IE6 bug -->
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
 		<!-- title is required, no need to test its presence -->
-		<xsl:variable name="title" select="page/body/titles/title"/>
+		<xsl:variable name="title" select="page/body/titles/title/node()"/>
 		<xsl:variable name="site_name" select="head/metadata/desc[@type='name']/data"/>
 		<title><xsl:value-of select="$title"/> | <xsl:value-of select="$site_name"/></title>
 		<meta property="og:title" content="{$title}"/>

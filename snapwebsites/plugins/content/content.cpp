@@ -491,7 +491,7 @@ int64_t content::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE(2015, 7, 3, 20, 54, 18, remove_files_compressor);
 
     // This entry can get a newer date as things evolve
-    SNAP_PLUGIN_UPDATE(2015, 7, 3, 20, 54, 19, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 10, 3, 35, 19, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

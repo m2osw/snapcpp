@@ -97,8 +97,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                class CDATA ""
                value CDATA #IMPLIED> <!-- value is the result, i.e. you could use 0, 1, 2, 3, instead of the string in the dropdown -->
 
-<!ELEMENT sizes (min|max|min-lines|max-lines|resize)+>
+<!ELEMENT sizes (absolute-min|min|absolute-max|max|min-lines|max-lines|resize)+>
+<!ELEMENT absolute-min (#PCDATA)>
 <!ELEMENT min (#PCDATA)>
+<!ELEMENT absolute-max (#PCDATA)>
 <!ELEMENT max (#PCDATA)>
 <!ELEMENT min-lines (#PCDATA)>
 <!ELEMENT max-lines (#PCDATA)>

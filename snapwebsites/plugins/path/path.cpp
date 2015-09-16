@@ -24,6 +24,7 @@
 #include "not_reached.h"
 #include "log.h"
 #include "qstring_stream.h"
+#include "snap_uri.h"
 
 #include <iostream>
 
@@ -78,6 +79,23 @@ public:
 
     virtual void on_error(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
     {
+        // first check whether we are handling an AJAX request
+        server_access::server_access * server_access_plugin(server_access::server_access::instance());
+        if(server_access_plugin->is_ajax_request())
+        {
+//std::cerr << "***\n*** PATH Permission denied, but we can ask user for credentials with a redirect...\n***\n";
+            messages::messages::instance()->set_error(err_name, err_description, err_details, false);
+            QString const err_code_string(QString("%1").arg(static_cast<int>(err_code)));
+            server_access_plugin->ajax_append_data("error-code", err_code_string.toUtf8());
+            server_access_plugin->create_ajax_result(f_ipath, false);
+            server_access_plugin->ajax_output();
+            f_snap->output_result(snap_child::HEADER_MODE_ERROR, f_snap->get_output());
+            f_snap->exit(0);
+            NOTREACHED();
+        }
+
+        // give a chance to other plugins to handle the error
+        // (Especially the attachment plugin when "weird" data was requested)
         if(err_by_mime_type && f_plugin)
         {
             // will this plugin handle that error?
@@ -114,7 +132,7 @@ public:
                 }
 
                 // exit with an error
-                exit(1);
+                f_snap->exit(1);
                 NOTREACHED();
             }
         }
@@ -127,20 +145,30 @@ public:
             /* snap_child::page_redirect() */ QString const & path, snap_child::http_code_t const http_code)
     {
         // TODO: remove this message dependency
-        messages::messages::instance()->set_error(err_name, err_description, err_details, err_security);
-        server_access::server_access *server_access_plugin(server_access::server_access::instance());
+        server_access::server_access * server_access_plugin(server_access::server_access::instance());
         if(server_access_plugin->is_ajax_request())
         {
-            // Since the user sent an AJAX request, returning
-            // a redirect won't work as expected... instead we
-            // reply with a redirect in AJAX.
-            //
-            // TODO: The redirect requires the result of the AJAX
-            //       request to be 'true'... verify that this is
-            //       not in conflict with what we are trying to
-            //       achieve here
+            // Since the user sent an AJAX request, we have to reply with
+            // an AJAX answer; however, we CANNOT send an AJAX redirect
+            // when sending an error back to the client... so we actually
+            // use set_warning() instead of set_error().
             //
 //std::cerr << "***\n*** PATH Permission denied, but we can ask user for credentials with a redirect...\n***\n";
+            if(!err_security)
+            {
+                messages::messages::instance()->set_warning(err_name, err_description, err_details);
+            }
+            else
+            {
+                // we cannot generate a warning with a secure error message...
+                // we just log it for now.
+                SNAP_LOG_FATAL(logging::log_security_t::LOG_SECURITY_SECURE)
+                        ("path::on_redirect(): ")(err_details)(" (")
+                                    (err_name)(": ")(err_description)(")");
+                // we still generate a warning so the end users has a chance
+                // to see something at some point
+                messages::messages::instance()->set_warning("An Error Occurred", "An unspecified error occurred.", "Please check your secure log for more information.");
+            }
             server_access_plugin->create_ajax_result(f_ipath, true);
             server_access_plugin->ajax_redirect(QString("/%1").arg(path), "_top");
             server_access_plugin->ajax_output();
@@ -149,6 +177,7 @@ public:
         }
         else
         {
+            messages::messages::instance()->set_error(err_name, err_description, err_details, err_security);
             f_snap->page_redirect(path, http_code, err_description, err_details);
         }
         NOTREACHED();
@@ -592,7 +621,7 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
     if(owner_plugin != nullptr)
     {
         // got a valid plugin, verify that the user has permission
-        path_error_callback *pec(dynamic_cast<path_error_callback *>(&err_callback));
+        path_error_callback * pec(dynamic_cast<path_error_callback *>(&err_callback));
         if(pec)
         {
             pec->set_plugin(owner_plugin);
@@ -638,7 +667,7 @@ void path::verify_permissions(content::path_info_t & ipath, permission_error_cal
 {
     QString const action(define_action(ipath));
 
-    SNAP_LOG_TRACE("verify_permissions(): ipath=") << ipath.get_key() << ", action=" << action;
+    SNAP_LOG_TRACE("verify_permissions(): ipath=")(ipath.get_key())(", action=")(action);
 
     // only actions that are defined in the permission types are
     // allowed, anything else is funky action from a hacker or

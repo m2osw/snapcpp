@@ -350,12 +350,12 @@ int32_t paging_t::get_number_of_items() const
     {
         // if the number of items is not (yet) defined in the database
         // then it will be set to zero
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
         f_number_of_items = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value();
     }
 
-    // the count may have been limited by the user
+    // the total count may have been limited by the programmer
     if(f_maximum_number_of_items == -1
     || f_number_of_items < f_maximum_number_of_items)
     {
@@ -429,19 +429,8 @@ void paging_t::set_start_offset(int32_t start_offset)
  */
 int32_t paging_t::get_start_offset() const
 {
-    if(f_start_offset < 1)
-    {
-        // the caller did not force the offset, first check the query
-        // string to see whether the end user defined a page parameter
-
-        // calculate the offset using the start page
-        // and page size instead, adjusting for the
-        // fact that page numbers start at one instead
-        // of zero
-        return (f_page - 1) * get_page_size() + 1;
-    }
-
-    return f_start_offset;
+    int const offset(f_start_offset < 1 ? 0 : static_cast<int>(f_start_offset));
+    return offset + (f_page - 1) * get_page_size() + 1;
 }
 
 
@@ -1058,7 +1047,7 @@ int32_t paging_t::get_previous_page() const
 int32_t paging_t::get_total_pages() const
 {
     int32_t const page_size(get_page_size());
-    return (get_number_of_items() + page_size - 1) / page_size;
+    return (get_number_of_items() - f_start_offset + page_size - 1) / page_size;
 }
 
 

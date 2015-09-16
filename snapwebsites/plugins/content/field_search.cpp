@@ -236,6 +236,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const & str_value)
     case command_t::COMMAND_SAVE_FLOAT64:
     case command_t::COMMAND_SAVE_INT64:
     case command_t::COMMAND_SAVE_INT64_DATE:
+    case command_t::COMMAND_SAVE_PLAIN:
     case command_t::COMMAND_SAVE_XML:
     case command_t::COMMAND_WARNING:
         break;
@@ -513,6 +514,7 @@ field_search& field_search::operator () (command_t cmd)
  * \li COMMAND_SAVE_FLOAT64
  * \li COMMAND_SAVE_INT64
  * \li COMMAND_SAVE_INT64_DATE
+ * \li COMMAND_SAVE_PLAIN
  * \li COMMAND_SAVE_XML
  * \li COMMAND_WARNING
  *
@@ -1145,7 +1147,7 @@ void field_search::run()
             f_variables[varname] = value.stringValue();
         }
 
-        void cmd_save(QString const & child_name)
+        void cmd_save(QString const & child_name, command_t command)
         {
             struct parser
             {
@@ -1163,7 +1165,13 @@ void field_search::run()
                     : f_child_name(child_name)
                     //, f_pos(0) -- auto-init
                     , f_length(f_child_name.length())
+                    //, f_keep_result(false) -- auto-init
                 {
+                    if(f_length > 0 && f_child_name[0].unicode() == '*')
+                    {
+                        f_keep_result = true;
+                        ++f_pos;
+                    }
                 }
 
                 int getc()
@@ -1272,9 +1280,15 @@ void field_search::run()
                     NOTREACHED();
                 }
 
+                bool keep_result() const
+                {
+                    return f_keep_result;
+                }
+
                 QString const               f_child_name;
                 controlled_vars::zuint32_t  f_pos;
                 controlled_vars::muint32_t  f_length;
+                controlled_vars::fbool_t    f_keep_result;
             };
 
             if(!f_result.isEmpty() && !f_element.isNull())
@@ -1286,7 +1300,7 @@ void field_search::run()
                 //
                 // segments: child
                 //         | child attribute
-                //         | path '/' path
+                //         | segments '/' segments
                 //
                 // child: IDENTIFIER
                 //
@@ -1400,65 +1414,58 @@ void field_search::run()
                 {
                     throw content_exception_invalid_sequence("no name defined in the field name string, at least one is required for the save command");
                 }
-                snap_dom::insert_html_string_to_xml_doc(child, f_result[0].stringValue());
-                cmd_reset(true);
-            }
-        }
+                switch(command)
+                {
+                case command_t::COMMAND_SAVE:
+                    // the data is expected to be plain text
+                    {
+                        QDomText text(doc.createTextNode(f_result[0].stringValue()));
+                        child.appendChild(text);
+                    }
+                    break;
 
-        // TODO: look into adding support for complex destinations
-        void cmd_save_float64(QString const& child_name)
-        {
-            if(!f_result.isEmpty() && !f_element.isNull() && static_cast<size_t>(f_result[0].size()) >= sizeof(double))
-            {
-                QDomDocument doc(f_element.ownerDocument());
-                QDomElement child(doc.createElement(child_name));
-                f_element.appendChild(child);
-                QDomText text(doc.createTextNode(QString("%1").arg(f_result[0].doubleValue())));
-                child.appendChild(text);
-                cmd_reset(true);
-            }
-        }
+                case command_t::COMMAND_SAVE_FLOAT64:
+                    {
+                        QDomText text(doc.createTextNode(QString("%1").arg(f_result[0].safeDoubleValue())));
+                        child.appendChild(text);
+                    }
+                    break;
 
-        // TODO: look into adding support for complex destinations
-        void cmd_save_int64(QString const& child_name)
-        {
-            if(!f_result.isEmpty() && !f_element.isNull() && static_cast<size_t>(f_result[0].size()) >= sizeof(int64_t))
-            {
-                QDomDocument doc(f_element.ownerDocument());
-                QDomElement child(doc.createElement(child_name));
-                f_element.appendChild(child);
-                QDomText text(doc.createTextNode(QString("%1").arg(f_result[0].int64Value())));
-                child.appendChild(text);
-                cmd_reset(true);
-            }
-        }
+                case command_t::COMMAND_SAVE_INT64:
+                    {
+                        QDomText text(doc.createTextNode(QString("%1").arg(f_result[0].safeInt64Value())));
+                        child.appendChild(text);
+                    }
+                    break;
 
-        // TODO: look into adding support for complex destinations
-        void cmd_save_int64_date(QString const& child_name)
-        {
-            if(!f_result.isEmpty() && !f_element.isNull() && static_cast<size_t>(f_result[0].size()) >= sizeof(int64_t))
-            {
-                QDomDocument doc(f_element.ownerDocument());
-                QDomElement child(doc.createElement(child_name));
-                f_element.appendChild(child);
-                QDomText text(doc.createTextNode(f_snap->date_to_string(f_result[0].int64Value())));
-                child.appendChild(text);
-                cmd_reset(true);
-            }
-        }
+                case command_t::COMMAND_SAVE_INT64_DATE:
+                    {
+                        QDomText text(doc.createTextNode(f_snap->date_to_string(f_result[0].safeInt64Value())));
+                        child.appendChild(text);
+                    }
+                    break;
 
-        void cmd_save_xml(QString const& child_name)
-        {
-            if(!f_result.isEmpty() && !f_element.isNull())
-            {
-                QDomDocument doc(f_element.ownerDocument());
-                QDomElement child(doc.createElement(child_name));
-                f_element.appendChild(child);
+                case command_t::COMMAND_SAVE_PLAIN:
+                    // the data is expected to be HTML that has to be saved as plain text
+                    {
+                        QDomText text(doc.createTextNode(snap_dom::remove_tags(f_result[0].stringValue())));
+                        child.appendChild(text);
+                    }
+                    break;
 
-                // parse the XML (XHTML) string
-                snap_dom::insert_html_string_to_xml_doc(child, f_result[0].stringValue());
+                case command_t::COMMAND_SAVE_XML:
+                    // the data is expected to be valid XML (XHTML)
+                    snap_dom::insert_html_string_to_xml_doc(child, f_result[0].stringValue());
+                    break;
 
-                cmd_reset(true);
+                default:
+                    throw content_exception_type_mismatch(QString("command %1 not supported in cmd_save()").arg(static_cast<int>(command)));
+
+                }
+                if(!p.keep_result())
+                {
+                    cmd_reset(true);
+                }
             }
         }
 
@@ -1618,23 +1625,12 @@ void field_search::run()
                     break;
 
                 case command_t::COMMAND_SAVE:
-                    cmd_save(f_program[i].get_string());
-                    break;
-
                 case command_t::COMMAND_SAVE_FLOAT64:
-                    cmd_save_float64(f_program[i].get_string());
-                    break;
-
                 case command_t::COMMAND_SAVE_INT64:
-                    cmd_save_int64(f_program[i].get_string());
-                    break;
-
                 case command_t::COMMAND_SAVE_INT64_DATE:
-                    cmd_save_int64_date(f_program[i].get_string());
-                    break;
-
+                case command_t::COMMAND_SAVE_PLAIN:
                 case command_t::COMMAND_SAVE_XML:
-                    cmd_save_xml(f_program[i].get_string());
+                    cmd_save(f_program[i].get_string(), f_program[i].get_command());
                     break;
 
                 case command_t::COMMAND_LABEL:

@@ -118,7 +118,7 @@ class paging_t
 public:
     static int32_t const    DEFAULT_PAGE_SIZE = 20;
 
-                        paging_t(snap_child *snap, content::path_info_t & ipath);
+                        paging_t(snap_child * snap, content::path_info_t & ipath);
 
     list_item_vector_t  read_list();
 

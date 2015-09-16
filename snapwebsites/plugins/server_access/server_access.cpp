@@ -40,7 +40,7 @@ SNAP_PLUGIN_START(server_access, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     // Note: <branch>.<revision> are actually replaced by a full version
     //       when dealing with JavaScript and CSS files (Version: field)
@@ -147,7 +147,7 @@ int64_t server_access::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 8, 16, 23, 46, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 15, 0, 35, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -193,7 +193,7 @@ bool server_access::is_ajax_request() const
  * \param[in] uri_path  The path of the page being worked on.
  * \param[in,out] result  The result about to be sent to the end user.
  */
-void server_access::on_output_result(QString const& uri_path, QByteArray& result)
+void server_access::on_output_result(QString const & uri_path, QByteArray & result)
 {
     // AJAX request?
     if(!is_ajax_request()  // already an AJAX response
@@ -205,13 +205,12 @@ void server_access::on_output_result(QString const& uri_path, QByteArray& result
     // remove the Location header if present!
     f_snap->set_header(snap::get_name(snap::name_t::SNAP_NAME_CORE_LOCATION_HEADER), "", snap_child::HEADER_MODE_EVERYWHERE);
 
-    // This is viewed as an AJAX request... transform the response here
-    content::path_info_t ipath;
-    ipath.set_path(uri_path);
-
     // if we arrive here, we suppose that the AJAX answer is a failure
     if(!f_ajax_initialized)
     {
+        content::path_info_t ipath;
+        ipath.set_path(uri_path);
+
         create_ajax_result(ipath, false);
     }
     else
@@ -240,7 +239,7 @@ void server_access::on_output_result(QString const& uri_path, QByteArray& result
  * This won't prevent the JavaScript code from displaying the resulting
  * error messages to the client.
  *
- * \param[in] ipath  The path of the page being generated.
+ * \param[in,out] ipath  The path of the page being generated.
  * \param[in] success  Whether the request is considered successful.
  */
 void server_access::create_ajax_result(content::path_info_t & ipath, bool success)
@@ -299,7 +298,7 @@ void server_access::ajax_output()
     QDomElement snap_tag(f_ajax.documentElement());
 
     // if any messages were generated, add them to the AJAX message
-    messages::messages *messages(messages::messages::instance());
+    messages::messages * messages(messages::messages::instance());
     int const max_messages(messages->get_message_count());
     if(max_messages > 0)
     {
@@ -318,6 +317,14 @@ void server_access::ajax_output()
             {
             case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_ERROR:
                 type = "error";
+                if(f_success)
+                {
+                    // convert to a failure if there is an error
+                    // (in some cases we may not correctly catch the fact
+                    // early enough but if an error was generated we must
+                    // ignore the redirect and this is the way...)
+                    throw server_access_exception_success_with_errors("f_success is true when an error was generated, this is a contradictory AJAX reply, do not send.");
+                }
                 break;
 
             case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_WARNING:
@@ -391,6 +398,7 @@ void server_access::ajax_output()
                        snap_child::HEADER_MODE_EVERYWHERE);
 
     // This is an XML file, so put the XML header, just in case
+    // encoding is UTF-8 and that is the default so do not specify in header
     f_snap->output("<?xml version=\"1.0\"?>" + f_ajax.toString(-1));
 }
 
@@ -450,14 +458,16 @@ void server_access::ajax_failure()
 
 /** \brief Setup a redirect.
  *
- * This function defines an AJAX redirect.
+ * This function defines an AJAX redirect (i.e. a redirect which cannot
+ * just use a Location: ... header.)
  *
- * The function ignores the redirect request if the AJAX response is not
+ * The AJAX plugin ignores the redirect request if the AJAX response is not
  * a success.
  *
  * If \p uri is an empty string, then no redirect is defined.
  *
- * The \p target parameter is optional. It may be set to one of the
+ * The \p target parameter is optional. It may be set to the name of
+ * a frame (although these are being deprecated...) or one of the
  * following values:
  *
  * \li _blank -- open the URI in a new window
@@ -468,13 +478,38 @@ void server_access::ajax_failure()
  * \note
  * This function can be called before the create_ajax_result() function.
  *
+ * \todo
+ * Offer a way to remove the current redirect request. Probably by setting
+ * the \p uri parameter to "". At this time that special case is just
+ * ignored.
+ *
  * \param[in] uri  The URI of the page to send the user to.
  * \param[in] target  The target for the redirect (see above).
  */
-void server_access::ajax_redirect(QString const& uri, QString const& target)
+void server_access::ajax_redirect(QString const & uri, QString const & target)
 {
     if(!uri.isEmpty())
     {
+        // make sure it does not include '\n' nor '\r'
+        if(uri.contains('\n') || uri.contains('\r'))
+        {
+            throw server_access_exception_invalid_uri("server_access::ajax_redirect(): called with a URI including \\n or \\r characters.");
+        }
+
+        // now validate the syntax as a whole
+        snap_uri canonicalize_uri;
+        if(!canonicalize_uri.set_uri(uri))
+        {
+            // in most cases it fails because the protocol is missing
+            QString local_path(uri);
+            f_snap->canonicalize_path(local_path);
+            if(!canonicalize_uri.set_uri(f_snap->get_site_key_with_slash() + local_path))
+            {
+                throw server_access_exception_invalid_uri("server_access::ajax_redirect(): called with a URI it could not understand.");
+            }
+        }
+
+        // if initialize, directly deal with the DOM
         if(f_ajax_initialized)
         {
             if(f_success)
@@ -500,6 +535,7 @@ void server_access::ajax_redirect(QString const& uri, QString const& target)
         }
         else
         {
+            // request not yet generated, keep the data in our cache
             f_ajax_redirect = uri;
             f_ajax_target = target;
         }

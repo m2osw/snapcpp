@@ -277,9 +277,9 @@ bool snap_uri::set_uri(QString const & uri)
         {
             if(u->unicode() == '/')
             {
-                // encode right here since we have separate strings
                 if(s != u)
                 {
+                    // decode right here since we just separate one segment
                     uri_path << urldecode(QString(s, static_cast<int>(u - s)));
                 }
                 // skip the '/'
@@ -289,7 +289,7 @@ bool snap_uri::set_uri(QString const & uri)
         }
         if(s != u)
         {
-            // last path element when it does not end with '/'
+            // last segment when it does not end with '/'
             uri_path << urldecode(QString(s, static_cast<int>(u - s)));
         }
     }
@@ -297,13 +297,13 @@ bool snap_uri::set_uri(QString const & uri)
     snap_uri_options_t query_strings;
     if(!u->isNull() && u->unicode() == '?')
     {
-        // skip the '?' and then any introductory '&'
+        // skip the '?' and then any (invalid?) introductory '&'
         do
         {
             ++u;
         }
         while(!u->isNull() && u->unicode() == '&');
-        const QChar *e(nullptr);
+        QChar const * e(nullptr);
         for(s = u;; ++u)
         {
             if(u->isNull() || u->unicode() == '&' || u->unicode() == '#')
@@ -320,7 +320,7 @@ bool snap_uri::set_uri(QString const & uri)
                     // this is a very special case!!!
                     // ...&=value&...
                     // so we use a "special" name, also even that name could be
-                    // defined (with %2A=value)
+                    // defined in the query string (with %2A=value)
                     name = "*";
                 }
 
@@ -330,12 +330,16 @@ bool snap_uri::set_uri(QString const & uri)
                 QString value;
                 if(e != u)
                 {
+                    // note that we reach here if there is an equal sign,
+                    // the value may still be empty (i.e. u - e - 1 == 0 is
+                    // possible)
+                    //
                     value = QString::fromRawData(e + 1, static_cast<int>(u - e - 1));
                 }
                 name = urldecode(name);
                 if(query_strings.contains(name))
                 {
-                    // two strings with the same name refused
+                    // two parameters with the same name, refused
                     return false;
                 }
                 query_strings[name] = urldecode(value);
@@ -1939,13 +1943,41 @@ QString snap_uri::urldecode(QString const& uri, bool relax)
             utf8 += c;
         }
         else if(relax
+
+                // these are the only characters allowed by the RFC
                 || (*u >= 'A' && *u <= 'Z')
                 || (*u >= 'a' && *u <= 'z')
                 || (*u >= '0' && *u <= '9')
-                || *u == '.' || *u == '-' || *u == '/'
-                || *u == '_' || *u == '~' || *u == '!')
+                || *u == '.' || *u == '-'
+                || *u == '/' || *u == '_'
+
+                // not legal in a URI considered 100% valid but most
+                // systems accept the following as is so we do too
+                || *u == '~' || *u == '!'
+                || *u == '@' || *u == ','
+                || *u == ';' || *u == ':'
+        )
         {
-            // here we accept the ~ and ! characters although it is "wrong"
+            // The tilde (~), when used, is often to indicate a user a la
+            // Unix (~<name>/... or just ~/... for the current user.)
+            //
+            // The exclamation point (!) is most often used with the hash
+            // bang; if that appears in a query string variable, then we
+            // need to accept at least the exclamation point (the hash has
+            // to be encoded no matter what.)
+            //
+            // The at sign (@) is used in email addresses.
+            //
+            // The comma (,) is often used to separate elements; for example
+            // the paging support uses "page=p3,s30" for show page 3 with
+            // 30 elements per page.
+            //
+            // The semi-colon (;) may appear if you have an HTML entity in
+            // a query string (i.e. "...?value=this+%26amp;+that".)
+            //
+            // The colon (:) can be used to separate values within a
+            // parameter when the comma is not appropriate.
+            //
             utf8 += *u;
         }
         else
