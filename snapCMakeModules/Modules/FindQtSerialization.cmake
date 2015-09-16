@@ -3,8 +3,8 @@
 # Once done this will define
 #
 # QTSERIALIZATION_FOUND        - System has QtSerialization
-# QTSERIALIZATION_INCLUDE_DIR  - The QtSerialization include directories
-# QTSERIALIZATION_LIBRARY      - The libraries needed to use QtSerialization (none)
+# QTSERIALIZATION_INCLUDE_DIRS - The QtSerialization include directories
+# QTSERIALIZATION_LIBRARIES    - The libraries needed to use QtSerialization
 # QTSERIALIZATION_DEFINITIONS  - Compiler switches required for using QtSerialization (none)
 
 find_path( QTSERIALIZATION_INCLUDE_DIR QtSerialization/QSerialization.h
