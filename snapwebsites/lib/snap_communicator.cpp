@@ -82,7 +82,7 @@ snap_communicator::snap_client_connection::snap_client_connection(std::string co
  * but the library may also initialize a few other things and discover
  * what interface it will be using.)
  *
- * \expcetion snap_communicator_initialization_error
+ * \exception snap_communicator_initialization_error
  * If the library cannot be initialized, then this exception is raised.
  */
 snap_communicator::snap_communicator()

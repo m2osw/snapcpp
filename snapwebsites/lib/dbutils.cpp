@@ -198,7 +198,7 @@ QByteArray dbutils::string_to_key( const QString& str )
 }
 
 
-QString dbutils::microseconds_to_string ( int64_t const& time, bool const full )
+QString dbutils::microseconds_to_string ( int64_t const & time, bool const full )
 {
     char buf[64];
     struct tm t;
@@ -218,6 +218,42 @@ QString dbutils::microseconds_to_string ( int64_t const& time, bool const full )
                 .arg(buf)
                 .arg(time % 1000000, 6, 10, QChar('0'));
     }
+}
+
+uint64_t dbutils::string_to_microseconds ( QString const & time )
+{
+    // TODO: check whether we have the number between parenthesis...
+    //       The string may include the microseconds as one 64 bit number
+    //       between parenthesis; if present we may want to use that instead?
+
+    // String will be of the form: "%Y-%m-%d %H:%M:%S.%N"
+    //
+    snap_string_list const datetime_split ( time.split(' ') );
+    if(datetime_split.size() < 2)
+    {
+        return -1;
+    }
+    snap_string_list const date_split     ( datetime_split[0].split('-') );
+    snap_string_list const time_split     ( datetime_split[1].split(':') );
+    if(date_split.size() != 3
+    || time_split.size() != 3)
+    {
+        return -1;
+    }
+    //
+    tm to;
+    memset(&to, 0, sizeof(to));
+    to.tm_sec  = time_split[2].toInt();
+    to.tm_min  = time_split[1].toInt();
+    to.tm_hour = time_split[0].toInt();
+    to.tm_mday = date_split[2].toInt();
+    to.tm_mon  = date_split[1].toInt() - 1;
+    to.tm_year = date_split[0].toInt() - 1900;
+
+    int64_t ns((time_split[2].toDouble() - to.tm_sec) * 1000000.0);
+    //
+    time_t const tt( mkgmtime( &to ) );
+    return tt * 1000000 + ns;
 }
 
 
@@ -272,7 +308,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     else if((f_tableName == "list" && f_rowName != "*standalone*")
          || (f_tableName == "files" && f_rowName == "images"))
     {
-        QString const time(microseconds_to_string(QtCassandra::uint64Value(key, 0), true));
+        QString const time(microseconds_to_string(QtCassandra::safeInt64Value(key, 0), true));
         name = QString("%1 %4").arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
     }
     else if(f_tableName == "branch" && (key.startsWith(content_attachment_reference.toAscii())) )
@@ -536,6 +572,11 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         return column_type_t::CT_status_value;
     }
+    else if(f_tableName == "cache"
+        && (n.startsWith("permissions::")))
+    {
+        return column_type_t::CT_rights_value;
+    }
 
     // all others viewed as strings
     return column_type_t::CT_string_value;
@@ -611,7 +652,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             case column_type_t::CT_time_microseconds:
             {
                 // 64 bit value (microseconds)
-                uint64_t const time(c->value().uint64Value());
+                int64_t const time(c->value().safeInt64Value());
                 if(time == 0)
                 {
                     v = "time not set (0)";
@@ -627,8 +668,8 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             {
                 QByteArray value(c->value().binaryValue());
                 v = QString("%1 %2")
-                            .arg(microseconds_to_string(QtCassandra::uint64Value(value, 0), true))
-                            .arg(QtCassandra::stringValue(value, sizeof(uint64_t)));
+                            .arg(microseconds_to_string(QtCassandra::safeInt64Value(value, 0), true))
+                            .arg(QtCassandra::stringValue(value, sizeof(int64_t)));
             }
             break;
 
@@ -790,6 +831,16 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
+            case column_type_t::CT_rights_value:
+            {
+                // save the time followed by the list of permissions separated
+                // by '\n'
+                v = QString("%1 %2")
+                        .arg(microseconds_to_string(c->value().safeInt64Value(), true))
+                        .arg(c->value().stringValue(sizeof(int64_t)).replace("\r", "\\r").replace("\n", "\\n"));
+            }
+            break;
+
         }
     }
     catch(std::runtime_error const& e)
@@ -804,7 +855,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
 }
 
 
-void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
+void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v )
 {
     QCassandraValue cvalue;
     //
@@ -860,37 +911,7 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
 
         case column_type_t::CT_time_microseconds:
         {
-            // String will be of the form: "%Y-%m-%d %H:%M:%S.%N"
-            //
-            snap_string_list const datetime_split ( v.split(' ') );
-            if(datetime_split.size() < 2)
-            {
-                return;
-            }
-            snap_string_list const date_split     ( datetime_split[0].split('-') );
-            snap_string_list const time_split     ( datetime_split[1].split(':') );
-            if(date_split.size() != 3)
-            {
-                return;
-            }
-            if(time_split.size() != 3)
-            {
-                return;
-            }
-            //
-            tm to;
-            memset(&to, 0, sizeof(to));
-            to.tm_sec  = time_split[2].toInt();
-            to.tm_min  = time_split[1].toInt();
-            to.tm_hour = time_split[0].toInt();
-            to.tm_mday = date_split[2].toInt();
-            to.tm_mon  = date_split[1].toInt() - 1;
-            to.tm_year = date_split[0].toInt() - 1900; // TODO: handle the decimal part
-
-            int64_t ns((time_split[2].toDouble() - to.tm_sec) * 1000000.0);
-            //
-            time_t const tt( mkgmtime( &to ) );
-            cvalue.setUInt64Value( tt * 1000000 + ns );
+            cvalue.setInt64Value( string_to_microseconds(v) );
         }
         break;
 
@@ -1086,6 +1107,27 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
             //v = c->value().stringValue().replace("\n", "\\n");
             QString convert( v );
             cvalue.setStringValue( convert.replace( "\\r", "\r" ).replace( "\\n", "\n" ) );
+        }
+        break;
+
+        case column_type_t::CT_rights_value:
+        {
+            // save the time followed by the list of permissions separated
+            // by '\n'
+            QString convert( v );
+            QByteArray buffer;
+            QtCassandra::setInt64Value( buffer, string_to_microseconds(v) );
+            int pos(v.indexOf(')'));
+            if(pos > 0)
+            {
+                ++pos;
+                while(v[pos].isSpace())
+                {
+                    ++pos;
+                }
+                QtCassandra::appendStringValue( buffer, v.mid(pos + 1) );
+            }
+            cvalue.setBinaryValue(buffer);
         }
         break;
     }

@@ -39,6 +39,7 @@ public:
     static QString      key_to_string          ( QByteArray const & key  );
     static QByteArray   string_to_key          ( QString const &    str  );
     static QString      microseconds_to_string ( int64_t const &    time, bool const full );
+    static uint64_t     string_to_microseconds ( QString const &    time );
 
     int         get_display_len() const;
     void        set_display_len( int const val );
@@ -69,7 +70,8 @@ private:
         CT_md5array_value,
         CT_secure_value,
         CT_status_value,
-        CT_string_value
+        CT_string_value,
+        CT_rights_value
     };
 
     column_type_t get_column_type( QtCassandra::QCassandraCell::pointer_t c ) const;

@@ -46,6 +46,7 @@ enum class name_t
     SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE,
     //SNAP_NAME_PERMISSIONS_GROUPS,
     SNAP_NAME_PERMISSIONS_GROUPS_PATH,
+    SNAP_NAME_PERMISSIONS_LAST_UPDATED,
     SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER,
     SNAP_NAME_PERMISSIONS_LINK_BACK_DELETE,
     SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT,
@@ -61,11 +62,12 @@ enum class name_t
     SNAP_NAME_PERMISSIONS_MAKE_ROOT,
     SNAP_NAME_PERMISSIONS_NAMESPACE,
     SNAP_NAME_PERMISSIONS_PATH,
+    SNAP_NAME_PERMISSIONS_PLUGIN,
     SNAP_NAME_PERMISSIONS_RIGHTS_PATH,
     SNAP_NAME_PERMISSIONS_USERS_PATH,
     SNAP_NAME_PERMISSIONS_VIEW_NAMESPACE
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 
@@ -108,11 +110,15 @@ public:
         typedef QVector<QString>        set_t;
         typedef QMap<QString, set_t>    req_sets_t;
 
-                                sets_t(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status);
+                                sets_t(snap_child * snap, QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status);
+                                ~sets_t();
 
         void                    set_login_status(QString const & status);
         QString const &         get_login_status() const;
                        
+        bool                    read_from_user_cache();
+        void                    save_to_user_cache();
+        QString const &         get_user_cache_key();
         QString const &         get_user_path() const;
         content::path_info_t &  get_ipath() const;
         QString const &         get_action() const;
@@ -121,6 +127,9 @@ public:
         int                     get_user_rights_count() const;
         set_t const &           get_user_rights() const;
 
+        bool                    read_from_plugin_cache();
+        void                    save_to_plugin_cache();
+        QString const &         get_plugin_cache_key();
         void                    add_plugin_permission(QString const & plugin, QString right);
         int                     get_plugin_rights_count() const;
         req_sets_t const &      get_plugin_rights() const;
@@ -129,12 +138,22 @@ public:
         bool                    allowed() const;
 
     private:
-        QString                 f_user_path;
-        content::path_info_t &  f_ipath;
-        QString                 f_action;
-        QString                 f_login_status;
-        set_t                   f_user_rights;
-        req_sets_t              f_plugin_permissions;
+                                sets_t(sets_t const &) = delete;
+        sets_t                  operator = (sets_t const &) = delete;
+
+        void                    get_cache_table();
+
+        zpsnap_child_t                  f_snap;
+        QString                         f_user_path;
+        content::path_info_t &          f_ipath;
+        QString                         f_action;
+        QString                         f_login_status;
+        set_t                           f_user_rights;
+        QString                         f_user_cache_key;
+        req_sets_t                      f_plugin_permissions;
+        QString                         f_plugin_cache_key;
+        controlled_vars::fbool_t        f_using_user_cache;
+        controlled_vars::fbool_t        f_using_plugin_cache;
     };
 
                             permissions();
@@ -153,6 +172,11 @@ public:
     virtual void            on_backend_action(QString const & action);
     void                    on_user_verified(content::path_info_t & ipath, int64_t identifier);
     void                    on_add_snap_expr_functions(snap_expr::functions_t & functions);
+
+    // link signals
+    void                    on_modified_link(links::link_info const & link, bool const created);
+
+    // link_cloned implementation
     virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
 
     SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t & sets), (perms, sets));
@@ -174,6 +198,7 @@ private:
     QString                     f_login_status;
     controlled_vars::fbool_t    f_has_user_path;
     QString                     f_user_path;
+    std::map<QString, bool>     f_valid_actions;
 };
 
 } // namespace permissions

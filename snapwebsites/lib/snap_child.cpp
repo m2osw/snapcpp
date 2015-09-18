@@ -5122,6 +5122,23 @@ void snap_child::page_redirect(QString const & path, http_code_t http_code, QStr
         NOTREACHED();
     }
 
+    switch(http_code)
+    {
+    case http_code_t::HTTP_CODE_MOVED_PERMANENTLY:
+    case http_code_t::HTTP_CODE_FOUND:
+    case http_code_t::HTTP_CODE_SEE_OTHER:
+    case http_code_t::HTTP_CODE_TEMPORARY_REDIRECT:
+    case http_code_t::HTTP_CODE_PERMANENT_REDIRECT:
+        break;
+
+    default:
+        die(http_code_t::HTTP_CODE_FORBIDDEN, "Error Code Not Allowed For Redirect",
+                QString("Prevented a redirect using HTTP code %1.").arg(static_cast<int>(http_code)),
+                "We limit the redirect to using 301, 302, 303, 307, and 308.");
+        NOTREACHED();
+
+    }
+
     if(path.contains('\n') || path.contains('\r'))
     {
         // if the path includes a \n or \r then the user could inject
@@ -5581,7 +5598,7 @@ void snap_child::improve_signature(QString const & path, QString & signature)
  *
  * \return The content of the row as a Cassandra value.
  */
-QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
+QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name)
 {
     // retrieve site table if not there yet
     if(!f_site_table)

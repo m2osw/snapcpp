@@ -169,6 +169,13 @@ public:
                 // to see something at some point
                 messages::messages::instance()->set_warning("An Error Occurred", "An unspecified error occurred.", "Please check your secure log for more information.");
             }
+
+            // we are about to die without calling the die() or page_redirect()
+            // functions so we need to call the attach_to_session() function
+            // explicitly
+            //
+            server::server::instance()->attach_to_session();
+
             server_access_plugin->create_ajax_result(f_ipath, true);
             server_access_plugin->ajax_redirect(QString("/%1").arg(path), "_top");
             server_access_plugin->ajax_output();
@@ -692,7 +699,7 @@ void path::verify_permissions(content::path_info_t & ipath, permission_error_cal
  *
  * \return true if the signal should be propagated.
  */
-bool path::access_allowed_impl(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result)
+bool path::access_allowed_impl(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result)
 {
     static_cast<void>(user_path);
     static_cast<void>(ipath);

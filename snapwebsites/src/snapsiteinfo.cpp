@@ -524,7 +524,7 @@ int main(int argc, char *argv[])
     }
     catch(std::exception const& e)
     {
-        std::cerr << "snapsiteinfo: expcetion: " << e.what() << std::endl;
+        std::cerr << "snapsiteinfo: exception: " << e.what() << std::endl;
         return 1;
     }
 }

@@ -44,6 +44,7 @@ enum class name_t
     SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_HOME,
     SNAP_NAME_CONTENT_BREADCRUMBS_HOME_LABEL,
     SNAP_NAME_CONTENT_BREADCRUMBS_PARENT,
+    SNAP_NAME_CONTENT_CACHE_TABLE,
     SNAP_NAME_CONTENT_CHILDREN,
     SNAP_NAME_CONTENT_CLONE,
     SNAP_NAME_CONTENT_CLONED,
@@ -694,6 +695,7 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_branch_table();
     QtCassandra::QCassandraTable::pointer_t get_revision_table();
     QtCassandra::QCassandraTable::pointer_t get_processing_table();
+    QtCassandra::QCassandraTable::pointer_t get_cache_table();
     QtCassandra::QCassandraValue get_content_parameter(path_info_t & path, QString const & param_name, param_revision_t revision_type);
     snap_child *        get_snap();
 
@@ -822,6 +824,7 @@ private:
     QtCassandra::QCassandraTable::pointer_t         f_content_table;
     QtCassandra::QCassandraTable::pointer_t         f_secret_table;
     QtCassandra::QCassandraTable::pointer_t         f_processing_table;
+    QtCassandra::QCassandraTable::pointer_t         f_cache_table;
     QtCassandra::QCassandraTable::pointer_t         f_branch_table;
     QtCassandra::QCassandraTable::pointer_t         f_revision_table;
     QtCassandra::QCassandraTable::pointer_t         f_files_table;

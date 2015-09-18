@@ -1091,7 +1091,7 @@ int main(int argc, char *argv[])
     }
     catch(std::exception const& e)
     {
-        std::cerr << "snaplayout: expcetion: " << e.what() << std::endl;
+        std::cerr << "snaplayout: exception: " << e.what() << std::endl;
         return 1;
     }
 }

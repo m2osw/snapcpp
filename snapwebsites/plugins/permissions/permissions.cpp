@@ -23,10 +23,11 @@
 #include "../users/users.h"
 #include "../messages/messages.h"
 
-#include "plugins.h"
-#include "not_reached.h"
-#include "qstring_stream.h"
 #include "log.h"
+#include "not_reached.h"
+#include "not_used.h"
+#include "plugins.h"
+#include "qstring_stream.h"
 
 #include <QtCassandra/QCassandraValue.h>
 
@@ -40,6 +41,10 @@ SNAP_PLUGIN_START(permissions, 1, 0)
 
 namespace details
 {
+
+// cache table from the content plugin
+QtCassandra::QCassandraTable::pointer_t     g_cache_table;
+
 
 name_t login_status_from_string(QString const & status)
 {
@@ -89,7 +94,7 @@ name_t login_status_from_string(QString const & status)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -150,6 +155,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_PERMISSIONS_GROUPS_PATH:
         return "types/permissions/groups";
 
+    case name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED:
+        return "permissions::last_updated";
+
     case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER:
         return "permissions::link_back::administer";
 
@@ -194,6 +202,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_PERMISSIONS_PATH:
         return "types/permissions";
+
+    case name_t::SNAP_NAME_PERMISSIONS_PLUGIN:
+        return "plugin";
 
     case name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH:
         return "types/permissions/rights";
@@ -299,19 +310,37 @@ char const *get_name(name_t name)
  * The constructor saves the path and action in the object. These two
  * parameters are read-only parameters.
  *
+ * \param[in] snap  The snap child pointer.
  * \param[in] user_path  The path to the user.
  * \param[in,out] ipath  The path being queried.
  * \param[in] action  The action being used in this query.
  * \param[in] login_status  The state of the log in of this user.
  */
-permissions::sets_t::sets_t(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status)
-    : f_user_path(user_path)
+permissions::sets_t::sets_t(snap_child * snap, QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status)
+    : f_snap(snap)
+    , f_user_path(user_path)
     , f_ipath(ipath)
     , f_action(action)
     , f_login_status(login_status)
     //, f_user_rights() -- auto-init
+    //, f_user_cache_key("") -- auto-init
     //, f_plugin_permissions() -- auto-init
+    //, f_plugin_cache_key() -- auto-init
+    //, f_using_user_cache() -- auto-init
+    //, f_using_plugin_cache() -- auto-init
 {
+}
+
+
+/** \brief Clean up sets_t objects.
+ *
+ * This function cleans up the sets_t object. Mainly, it determines whether
+ * the user and page permissions should be saved to the cache table.
+ */
+permissions::sets_t::~sets_t()
+{
+    save_to_user_cache();
+    save_to_plugin_cache();
 }
 
 
@@ -344,6 +373,7 @@ permissions::sets_t::sets_t(QString const & user_path, content::path_info_t & ip
 void permissions::sets_t::set_login_status(QString const & login_status)
 {
     f_login_status = login_status;
+    f_user_cache_key.clear();
 }
 
 
@@ -409,6 +439,354 @@ content::path_info_t & permissions::sets_t::get_ipath() const
 const QString & permissions::sets_t::get_action() const
 {
     return f_action;
+}
+
+
+/** \brief Make sure the cache table pointer is defined.
+ *
+ * This function makes sure we have the pointer to the cache table defined
+ * so that our functions can access the g_cache_table variable.
+ */
+void permissions::sets_t::get_cache_table()
+{
+    if(!details::g_cache_table)
+    {
+        details::g_cache_table = content::content::instance()->get_cache_table();
+    }
+}
+
+
+/** \brief The key used to read and write the cache data for this user.
+ *
+ * This function calculates the cache key for a user. This key is used
+ * to access the cached data for a given user.
+ *
+ * \code
+ *     Name                 Comments
+ *
+ *     <status>             User login status, this includes the
+ *                          "permissions" and "login_status" namespaces
+ *
+ *     <action>             The specific action being applied (this may
+ *                          feel like a waste for users that are not
+ *                          registered, but a plugin could have specific
+ *                          need in that regard...)
+ * \endcode
+ *
+ * \note
+ * The user does NOT need to be specified in the cache key itself since
+ * that data is saved under the user row (i.e. for user with id 3, the
+ * cache data is saved in cache."<domain>/user/3")
+ *
+ * \return The cache key.
+ */
+QString const & permissions::sets_t::get_user_cache_key()
+{
+    if(f_user_cache_key.isEmpty())
+    {
+        f_user_cache_key = QString("%1::%2")
+                            .arg(f_login_status)
+                            .arg(f_action);
+    }
+
+    return f_user_cache_key;
+}
+
+
+/** \brief Check whether that user has his rights cached.
+ *
+ * The user rights are cached in the cache table. The cached data is
+ * considered invalid if the users permissions get modified at any
+ * one time.
+ *
+ * The function returns false when the data was invalidated or if
+ * no cached data is found.
+ *
+ * At this time the cached data is defined as follow:
+ *
+ * \li 64 bit of timestamp (see snap_child::get_start_date())
+ * \li lines of URIs representing user rights (lines are separated by '\n')
+ *
+ * The action and login status are used in the user cache key and thus
+ * are not required in the cache (also they have to be known at time
+ * of call.)
+ *
+ * \return true if the cached data was read and considered valid.
+ */
+bool permissions::sets_t::read_from_user_cache()
+{
+// to avoid the user cache, always return false here
+//return false;
+
+    // already read that cacne data?
+    if(f_using_user_cache)
+    {
+        return true;
+    }
+
+    QString const & cache_key(get_user_cache_key());
+
+    // TODO: look into why I decided to use "" for the anonymous user
+    //       because in the end here we may want to use the original
+    //       string everywhere?
+    //
+    content::path_info_t cache_ipath;
+    cache_ipath.set_path(f_user_path.isEmpty() ? users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH) : f_user_path);
+
+    get_cache_table();
+
+    if(!details::g_cache_table->exists(cache_ipath.get_key())
+    || !details::g_cache_table->row(cache_ipath.get_key())->exists(cache_key))
+    {
+        return false;
+    }
+
+    // cache entry exists, read it
+    QtCassandra::QCassandraValue cache_value(details::g_cache_table->row(cache_ipath.get_key())->cell(cache_key)->value());
+
+    // check the timestamp
+    int64_t const timestamp(cache_value.safeInt64Value());
+    QtCassandra::QCassandraValue const last_updated_value(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED)));
+    int64_t const last_updated(last_updated_value.safeInt64Value());
+    if(timestamp < last_updated)
+    {
+        // the cache is present but out of date, let the caller compute
+        // a new version
+        return false;
+    }
+
+    // convert the cached value in what the caller expects
+    QString const all_user_rights(cache_value.stringValue(sizeof(int64_t)));
+    int start(0);
+    int pos(all_user_rights.indexOf('\n'));
+    while(pos != -1)
+    {
+        f_user_rights.push_back(all_user_rights.mid(start, pos - start));
+        start = pos + 1;
+        pos = all_user_rights.indexOf('\n', start);
+    }
+    // there is no left over in that string unless the save_to_user_cache()
+    // fails somehow (i.e. all lines end with '\n')
+
+    f_using_user_cache = true;
+
+    // success, data came from cache
+    return true;
+}
+
+
+/** \brief Write the current user rights to the cache.
+ *
+ * This function saves the current user rights to the cache. This is
+ * the opposite function to the read_from_user_cache() function.
+ *
+ * The write is automatically called when the sets_t destructor is
+ * called. That way we are sure that the cache is updated appropriately.
+ *
+ * The function does nothing if the user data came from reading the cache
+ * since obviously in that case the data is the exact same.
+ */
+void permissions::sets_t::save_to_user_cache()
+{
+    // if we are using the cache, no need to save anything
+    if(f_using_user_cache)
+    {
+        return;
+    }
+
+    // this should have been called in the read, but we cannot assume the
+    // read function was called...
+    get_cache_table();
+
+    QString const & cache_key(get_user_cache_key());
+
+    content::path_info_t cache_ipath;
+    cache_ipath.set_path(f_user_path.isEmpty() ? users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH) : f_user_path);
+
+    QByteArray value;
+    uint64_t const start_date(f_snap->get_start_date());
+    QtCassandra::setInt64Value(value, start_date);
+    for(auto right : f_user_rights)
+    {
+        QtCassandra::appendStringValue(value, QString("%1\n").arg(right));
+    }
+
+    details::g_cache_table->row(cache_ipath.get_key())->cell(cache_key)->setValue(value);
+}
+
+
+/** \brief The key used to read and write the cache data for this page.
+ *
+ * This function calculates the cache key for a page. This key is used
+ * to access the cached data for a given page.
+ *
+ * \code
+ *     Name                 Comments
+ *
+ *     <namespace>          To clearly distinguish this entry in the cache
+ *                          we use a namespace which is:
+ *
+ *                              permissions::plugin::action
+ *
+ *     <action>             The specific action being applied (this may
+ *                          feel like a waste for users that are not
+ *                          registered, but a plugin could have specific
+ *                          need in that regard...)
+ * \endcode
+ *
+ * \note
+ * The page does NOT need to be specified in the cache key itself since
+ * that data is saved under the page row (i.e. for page with path /example,
+ * the cache data is saved in cache."<domain>/example")
+ *
+ * \return The cache key.
+ */
+QString const & permissions::sets_t::get_plugin_cache_key()
+{
+    if(f_plugin_cache_key.isEmpty())
+    {
+        f_plugin_cache_key = QString("%1::%2::%3::%4")
+                                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_PLUGIN))
+                                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                                .arg(f_action);
+    }
+
+    return f_plugin_cache_key;
+}
+
+
+/** \brief Check whether that user has his rights cached.
+ *
+ * The user rights are cached in the cache table. The cached data is
+ * considered invalid if the users permissions get modified at any
+ * one time.
+ *
+ * The function returns false when the data was invalidated or if
+ * no cached data is found.
+ *
+ * At this time the cached data is defined as follow:
+ *
+ * \li 64 bit of timestamp (see snap_child::get_start_date())
+ * \li lines of URIs representing user rights (lines are separated by '\n')
+ *
+ * The action and login status are used in the user cache key and thus
+ * are not required in the cache (also they have to be known at time
+ * of call.)
+ *
+ * \return true if the cached data was read and considered valid.
+ */
+bool permissions::sets_t::read_from_plugin_cache()
+{
+// to avoid the page cache, always return false here
+//return false;
+
+    // already read that cacne data?
+    if(f_using_plugin_cache)
+    {
+        // cache already read
+        return true;
+    }
+
+    QString const & cache_key(get_plugin_cache_key());
+
+    get_cache_table();
+
+    if(!details::g_cache_table->exists(f_ipath.get_key())
+    || !details::g_cache_table->row(f_ipath.get_key())->exists(cache_key))
+    {
+        // no cache available, let the caller compute this one
+        return false;
+    }
+
+    // cache entry exists, read it
+    QtCassandra::QCassandraValue cache_value(details::g_cache_table->row(f_ipath.get_key())->cell(cache_key)->value());
+
+    // check the timestamp
+    int64_t const timestamp(cache_value.safeInt64Value());
+    QtCassandra::QCassandraValue const last_updated_value(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED)));
+    int64_t const last_updated(last_updated_value.safeInt64Value());
+    if(timestamp < last_updated)
+    {
+        // the cache is present but out of date, let the caller compute
+        // a new version
+        return false;
+    }
+
+    // convert the cached value in what the caller expects
+    QString const all_plugin_permissions(cache_value.stringValue(sizeof(int64_t)));
+    QString plugin_name;
+    int start(0);
+    int pos(all_plugin_permissions.indexOf('\n'));
+    while(pos != -1)
+    {
+        // plugin names start with a '*' since a URI cannot it is safe
+        if(all_plugin_permissions[start] == '*')
+        {
+            ++start;
+            plugin_name = all_plugin_permissions.mid(start, pos - start);
+        }
+        else
+        {
+            if(plugin_name.isEmpty())
+            {
+                // by returning true the cache will be rebuilt and hopefully
+                // correctly so we don't get an empty string here!
+                return true;
+            }
+            f_plugin_permissions[plugin_name].push_back(all_plugin_permissions.mid(start, pos - start));
+        }
+        start = pos + 1;
+        pos = all_plugin_permissions.indexOf('\n', start);
+    }
+    // there is no left over in that string unless the save_to_user_cache()
+    // fails somehow (i.e. all lines end with '\n')
+
+    f_using_plugin_cache = true;
+
+    // success, data came from cache
+    return true;
+}
+
+
+/** \brief Write the current user rights to the cache.
+ *
+ * This function saves the current user rights to the cache. This is
+ * the opposite function to the read_from_user_cache() function.
+ *
+ * The write is automatically called when the sets_t destructor is
+ * called. That way we are sure that the cache is updated appropriately.
+ *
+ * The function does nothing if the user data came from reading the cache
+ * since obviously in that case the data is the exact same.
+ */
+void permissions::sets_t::save_to_plugin_cache()
+{
+    // if we are using the cache, no need to save anything
+    if(f_using_plugin_cache)
+    {
+        return;
+    }
+
+    // this should have been called in the read, but we cannot assume the
+    // read function was called...
+    get_cache_table();
+
+    QString const & cache_key(get_plugin_cache_key());
+
+    QByteArray value;
+    uint64_t const start_date(f_snap->get_start_date());
+    QtCassandra::setInt64Value(value, start_date);
+    for(req_sets_t::const_iterator it(f_plugin_permissions.begin()); it != f_plugin_permissions.end(); ++it)
+    {
+        QtCassandra::appendStringValue(value, QString("*%1\n").arg(it.key()));
+        for(auto right : it.value())
+        {
+            QtCassandra::appendStringValue(value, QString("%1\n").arg(right));
+        }
+    }
+
+    details::g_cache_table->row(f_ipath.get_key())->cell(cache_key)->setValue(value);
 }
 
 
@@ -509,7 +887,7 @@ void permissions::sets_t::add_user_right(QString right)
         {
             if(f_user_rights[i] == right)
             {
-                // that's exactly the same, no need to have it twice
+                // that is exactly the same, no need to have it twice
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
                 std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (already present)" << std::endl;
@@ -867,6 +1245,7 @@ void permissions::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
     SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
     SNAP_LISTEN(permissions, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(permissions, "links", links::links, modified_link, _1, _2);
 }
 
 
@@ -976,11 +1355,24 @@ void permissions::content_update(int64_t variables_timestamp)
  */
 bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
 {
+    // if the user data was cached and is still valid, then we are done here
+    //
+    // TBD: is this the correct location for that call?
+    //
+    //      (it could be done before call get_user_rights() although since
+    //      this very first impl function is a direct call, we don't really
+    //      waste much time at all.)
+    //
+    if(sets.read_from_user_cache())
+    {
+        return false;
+    }
+
     QString const & login_status(sets.get_login_status());
 
     // if spammers are logged in they don't get access to anything anyway
     // (i.e. they are UNDER visitors!)
-    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const & site_key(f_snap->get_site_key_with_slash());
     if(login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER))
     {
         perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer", sets);
@@ -996,7 +1388,7 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
             // unfortunately, whatever the login status, if we were not given
             // a valid user path, we just cannot test anything else than
             // some kind of visitor
-            QString const user_key(sets.get_user_path());
+            QString const & user_key(sets.get_user_path());
 //#ifdef DEBUG
 //std::cout << "  +-> user key = [" << user_key << "]" << std::endl;
 //#endif
@@ -1017,6 +1409,9 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
                 if(!content_table->exists(user_ipath.get_key()))
                 {
                     // that user is gone, this will generate a 500 by Apache
+                    // (that should not happen, otherwise we may want to
+                    // look into a way to change the user in a plain
+                    // returning visitor)
                     throw permissions_exception_invalid_path("could not access user \"" + user_ipath.get_key() + "\"");
                 }
 
@@ -1139,7 +1534,20 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
  */
 bool permissions::get_plugin_permissions_impl(permissions * perms, sets_t & sets)
 {
-    static_cast<void>(perms);
+    NOTUSED(perms);
+
+    // if the user data was cached and is still valid, then we are done here
+    //
+    // TBD: is this the correct location for that call?
+    //
+    //      (it could be done before call get_user_rights() although since
+    //      this very first impl function is a direct call, we don't really
+    //      waste much time at all.)
+    //
+    if(sets.read_from_plugin_cache())
+    {
+        return false;
+    }
 
     // the user plugin cannot include the permissions plugin (since the
     // permissions plugin includes the user plugin) so we implement this
@@ -1147,7 +1555,7 @@ bool permissions::get_plugin_permissions_impl(permissions * perms, sets_t & sets
     content::path_info_t & ipath(sets.get_ipath());
     if(ipath.get_cpath().left(5) == "user/")
     {
-        // user/### cannot be a dynamic path so we do not need to checl
+        // user/### cannot be a dynamic path so we do not need to check
         // for a possibly renamed ipath at this level
         QString const user_id(ipath.get_cpath().mid(5));
         QByteArray id_str(user_id.toUtf8());
@@ -1227,7 +1635,7 @@ std::cerr << "from " << user_id << " -> ";
                 }
             }
             QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
-            char const *dynamic(get_name(name_t::SNAP_NAME_PERMISSIONS_DYNAMIC));
+            char const * dynamic(get_name(name_t::SNAP_NAME_PERMISSIONS_DYNAMIC));
             if(!row->exists(dynamic))
             {
                 // well, there is a page, but it does not authorize sub-pages
@@ -1409,7 +1817,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
         QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
         bool const redirect_method(method == "GET" || method == "POST");
 
-        users::users *users_plugin(users::users::instance());
+        users::users * users_plugin(users::users::instance());
         if(users_plugin->get_user_key().isEmpty())
         {
             // special case of spammers
@@ -1696,23 +2104,27 @@ QString const & permissions::get_user_path()
  */
 void permissions::on_access_allowed(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result)
 {
-    // check that the action is defined in the database (i.e. valid)
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
-    if(!content_table->exists(key))
+    if(f_valid_actions.find(action) == f_valid_actions.end())
     {
-        // TODO it is rather easy to get here so we need to test whether
-        //      the same IP does it over and over again and block them if so
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
-                "Unknown Action",
-                "The action you are trying to performed is not known by Snap!",
-                QString("permissions::on_access_allowed() was used with action \"%1\".").arg(action));
-        NOTREACHED();
+        // check that the action is defined in the database (i.e. valid)
+        QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+        QString const site_key(f_snap->get_site_key_with_slash());
+        QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
+        if(!content_table->exists(key))
+        {
+            // TODO it is rather easy to get here so we need to test whether
+            //      the same IP does it over and over again and block them if so
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
+                    "Unknown Action",
+                    "The action you are trying to performed is not known by Snap!",
+                    QString("permissions::on_access_allowed() was used with action \"%1\".").arg(action));
+            NOTREACHED();
+        }
+        f_valid_actions[action] = true;
     }
 
     // setup a 'sets' object
-    sets_t sets(user_path, ipath, action, login_status);
+    sets_t sets(f_snap, user_path, ipath, action, login_status);
 
     // first we get the user rights for that action because in most cases
     // that's a lot smaller and if empty we do not have to get anything else
@@ -1775,6 +2187,7 @@ void permissions::add_user_rights(QString const & group, sets_t & sets)
     // TODO: we probably want to change that "contains()" call with
     //       a "startsWith()" but we need to know whether "group"
     //       may include the protocol, domain name, port...
+    //
     if(group.contains(get_name(name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH)))
     {
         throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use sets.add_user_right() directly");
@@ -2121,16 +2534,26 @@ void permissions::on_backend_action(QString const & action)
  */
 void permissions::check_permissions(QString const & email, QString const & page, QString const & action, QString const & status)
 {
-    // check that the action is defined in the database (i.e. valid)
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
-    if(!content_table->exists(key))
+    // Note that this check is about determining the list of pages
+    // attached to a user and a page in regard to a given action
+    // so it can be slow
+    //
+    // it is otherwise similar to the 
+
+    if(f_valid_actions.find(action) == f_valid_actions.end())
     {
-        // TODO it is rather easy to get here so we need to test whether
-        //      the same IP does it over and over again and block them if so
-        std::cerr << "error: " << action << " is not a known action.\n";
-        return;
+        // check that the action is defined in the database (i.e. valid)
+        QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+        QString const site_key(f_snap->get_site_key_with_slash());
+        QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
+        if(!content_table->exists(key))
+        {
+            // TODO it is rather easy to get here so we need to test whether
+            //      the same IP does it over and over again and block them if so
+            std::cerr << "error: " << action << " is not a known action.\n";
+            return;
+        }
+        f_valid_actions[action] = true;
     }
 
     // define the path to the user data from his email
@@ -2147,7 +2570,7 @@ void permissions::check_permissions(QString const & email, QString const & page,
     char const * login_status(get_name(details::login_status_from_string(status)));
 
     // setup a 'sets' object
-    sets_t sets(user_path, ipath, action, login_status);
+    sets_t sets(f_snap, user_path, ipath, action, login_status);
 
     // first we get the user rights for that action because in most cases
     // that's a lot smaller and if empty we do not have to get anything else
@@ -2522,6 +2945,37 @@ void permissions::on_generate_header_content(content::path_info_t & ipath, QDomE
 
         // generate!
         ;
+}
+
+
+/** \brief Whenever a permissions link changes we reset the caches.
+ *
+ * To make sure that the permissions caches are up to date we have
+ * to update the cache time stamp. This signal let us know whether
+ * a permissions link was modified and if so we update the
+ * timestamp. To make sure that we get the correct date we get
+ * the real current date here (opposed to the usual get_start_time()
+ * call.) This means that the cache will remain invalid throughout
+ * this request...
+ *
+ * \param[in] link  The link information being modified.
+ * \param[in] created  Whether this was a new link (true) or not.
+ */
+void permissions::on_modified_link(links::link_info const & link, bool const created)
+{
+    NOTUSED(created);
+
+    if(!link.name().startsWith(QString("%1::").arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))))
+    {
+        // not a permission link, who cares
+        return;
+    }
+
+    // a permissions link got modified, reset the timestamp date and time
+    int64_t last_updated(f_snap->get_current_date());
+    QtCassandra::QCassandraValue value;
+    value.setInt64Value(last_updated);
+    f_snap->set_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED), value);
 }
 
 

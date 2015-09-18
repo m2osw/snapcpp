@@ -121,6 +121,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CONTENT_BREADCRUMBS_PARENT:
         return "content::breadcrumbs_parent";
 
+    case name_t::SNAP_NAME_CONTENT_CACHE_TABLE:
+        return "cache";
+
     case name_t::SNAP_NAME_CONTENT_CHILDREN:
         return "content::children";
 
@@ -531,6 +534,9 @@ void content::initial_update(int64_t variables_timestamp)
 
     get_processing_table();
     f_processing_table.reset();
+
+    get_cache_table();
+    f_cache_table.reset();
 }
 
 
@@ -723,9 +729,38 @@ QtCassandra::QCassandraTable::pointer_t content::get_processing_table()
 {
     if(!f_processing_table)
     {
-        f_processing_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_PROCESSING_TABLE), "Website content table.");
+        f_processing_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_PROCESSING_TABLE), "Website processing table.");
     }
     return f_processing_table;
+}
+
+
+/** \brief Initialize the cache table.
+ *
+ * This function creates the cache table if it does not already exist.
+ * Otherwise it simply initializes the f_cache_table variable member.
+ *
+ * If the function is not able to create the table an exception is raised.
+ *
+ * The cache table is used to save preprocessed data for content, branch,
+ * and revision tables. The rows are the same as those found in the content
+ * table. The cached data is saved using various field names.
+ *
+ * Each plugin may cache data in a variety of ways. At this point there is
+ * no specific scheme defining how the data saved in the cache table should
+ * be handled. In all cases, though, there needs to be a way to invalidate
+ * the cache (i.e. save the date when the cache was created so you can
+ * detect whether it is still valid or not.)
+ *
+ * \return The pointer to the content table.
+ */
+QtCassandra::QCassandraTable::pointer_t content::get_cache_table()
+{
+    if(!f_cache_table)
+    {
+        f_cache_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_CACHE_TABLE), "Website cache table.");
+    }
+    return f_cache_table;
 }
 
 
@@ -825,7 +860,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_revision_table()
 {
     if(!f_revision_table)
     {
-        f_revision_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_REVISION_TABLE), "Website data table.");
+        f_revision_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_REVISION_TABLE), "Website revision table.");
     }
     return f_revision_table;
 }
@@ -867,7 +902,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_files_table()
  *
  * \return A pointer to the snap_child running this process.
  */
-snap_child *content::get_snap()
+snap_child * content::get_snap()
 {
     if(!f_snap)
     {
