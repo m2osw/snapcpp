@@ -168,7 +168,7 @@ QString dbutils::byte_to_hex( char const byte )
  *
  * \return The resulting string.
  */
-QString dbutils::key_to_string( QByteArray const& key )
+QString dbutils::key_to_string( QByteArray const & key )
 {
     QString ret;
     int const max_length(key.size());
@@ -714,15 +714,11 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             {
                 // md5 in binary
                 QByteArray const& buf(c->value().binaryValue());
-                int const max_length(buf.size());
                 if( display_only )
                 {
                     v += "(md5) ";
                 }
-                for(int i(0); i < max_length; ++i)
-                {
-                    v += byte_to_hex(buf[i]);
-                }
+                v += key_to_string(buf);
             }
             break;
 

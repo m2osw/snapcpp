@@ -73,9 +73,9 @@ public:
     };
     typedef QVector<part_t> part_vector_t; // do NOT use a map, we want to keep them in order!
 
-                        WeightedHttpString(const QString & str);
+                        WeightedHttpString(QString const & str);
 
-    QString const&      get_string() const { return f_str; }
+    QString const &     get_string() const { return f_str; }
     float               get_level(QString const & name);
     part_vector_t const get_parts() const { return f_parts; }
 

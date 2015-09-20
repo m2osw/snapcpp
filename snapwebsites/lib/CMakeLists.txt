@@ -76,6 +76,7 @@ QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
 )
 
 add_library( ${PROJECT_NAME} SHARED
+    cache_control.cpp                           # Parse / handle Cache-Control settings
     compression.cpp                             # Compress/decompress data
     dbutils.h                                   # Utilities to help convert coded table and row names
     dbutils.cpp                                 # and column data.
@@ -103,6 +104,7 @@ add_library( ${PROJECT_NAME} SHARED
     snap_cassandra.cpp                          # Encapuslate initiating a connection to the database.
     snap_config.cpp                             # class to read in configuration
     snap_child.cpp                              # requests processing
+    snap_child_cache_control.cpp                # Manage cache controls in the snap_child class
     snap_exception.cpp                          # exception stack backtrack
     snap_expr.cpp                               # snap C-like expression compiler and execution environment
     snap_image.cpp                              # image handling

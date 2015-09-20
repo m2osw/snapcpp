@@ -809,7 +809,7 @@ int check_dependency(dependencies_t *d)
         {
             expected_versions = QString(d->f_versions).split(',');
         }
-        snap::snap_version::version_vector_t versions(dep.get_versions());
+        snap::snap_version::version::vector_t versions(dep.get_versions());
         int version_max(versions.size());
         if(version_max != expected_versions.size())
         {
@@ -834,7 +834,7 @@ int check_dependency(dependencies_t *d)
         {
             expected_browsers = QString(d->f_browsers).split(',');
         }
-        snap::snap_version::name_vector_t browsers(dep.get_browsers());
+        snap::snap_version::name::vector_t browsers(dep.get_browsers());
         int browser_max(browsers.size());
         if(browser_max != expected_browsers.size())
         {

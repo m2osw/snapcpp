@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Enter your email address and password to log in.</p>[form::source]]]>
     </param>
+    <param name="content::cache_control" revision="global" overwrite="yes">no-store</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/user/register</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
@@ -68,6 +69,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Enter your email address and a password to register.</p>[form::source]]]>
     </param>
+    <param name="content::cache_control" revision="global" overwrite="yes">no-store</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="robotstxt::nofollow" to="robotstxt::nofollow" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
@@ -136,6 +138,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Please enter your new password twice and click Save.</p>[form::source]]]>
     </param>
+    <param name="content::cache_control" revision="global" overwrite="yes">no-store</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/user/register</link>
     <param name="form::source">replace-password-form</param>

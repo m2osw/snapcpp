@@ -17,21 +17,21 @@
 
 #include "snap_child.h"
 
-#include "snap_uri.h"
-#include "not_reached.h"
-#include "snapwebsites.h"
-#include "plugins.h"
-#include "snap_image.h"
-#include "snap_utf8.h"
-#include "snap_expr.h"
-#include "log.h"
-#include "qlockfile.h"
-#include "http_strings.h"
-#include "mkgmtime.h"
-#include "snap_magic.h"
 #include "compression.h"
+#include "http_strings.h"
+#include "log.h"
+#include "mkgmtime.h"
+#include "not_reached.h"
+#include "plugins.h"
+#include "qlockfile.h"
 #include "qstring_stream.h"
 #include "snap_exception.h"
+#include "snap_expr.h"
+#include "snap_image.h"
+#include "snap_uri.h"
+#include "snap_utf8.h"
+#include "snapwebsites.h"
+#include "snap_magic.h"
 
 #include <QtCassandra/QCassandraLock.h>
 #include <QtSerialization/QSerialization.h>
@@ -49,8 +49,6 @@
 #include <sys/time.h>
 
 #include <QDirIterator>
-#include <QDateTime>
-#include <QCoreApplication>
 
 #include "poison.h"
 
@@ -98,7 +96,7 @@ namespace
 {
 
 // list of plugins that we cannot do without
-char const *g_minimum_plugins[] =
+char const * g_minimum_plugins[] =
 {
     "attachment",
     "content",
@@ -123,12 +121,12 @@ char const *g_minimum_plugins[] =
     "users"
 };
 
-char const *g_week_day_name[] =
+char const * g_week_day_name[] =
 {
     "Sunday", "Monday", "Tuesday", "Wedneday", "Thursday", "Friday", "Saturday"
 };
 int const g_week_day_length[] = { 6, 6, 7, 8, 8, 6, 8 }; // strlen() of g_week_day_name's
-char const *g_month_name[] =
+char const * g_month_name[] =
 {
     "January", "February", "Marsh", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -3519,14 +3517,14 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
         controlled_vars::tbool_t    f_running;
         controlled_vars::fbool_t    f_started;
 
-        environment_map_t&          f_env;
-        environment_map_t&          f_browser_cookies;
+        environment_map_t &         f_env;
+        environment_map_t &         f_browser_cookies;
         QString                     f_name;
         QString                     f_value;
 
         controlled_vars::fbool_t    f_has_post;
-        environment_map_t&          f_post;
-        post_file_map_t&            f_files;
+        environment_map_t &         f_post;
+        post_file_map_t &           f_files;
         controlled_vars::tbool_t    f_post_first;
         controlled_vars::tbool_t    f_post_header;
         QByteArray                  f_post_line;
@@ -4699,8 +4697,8 @@ void snap_child::canonicalize_options()
 
     // server defined compression is named "*" (i.e. server chooses)
     // so first we check for gzip because we support that compression
-    // and that's our favorite for now (will change later with sdpy
-    // support...)
+    // and that is our favorite for now (will change later with sdpy
+    // support eventually...)
     compression_vector_t compressions;
     bool got_gzip(false);
     float const gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
@@ -4767,6 +4765,9 @@ void snap_child::canonicalize_options()
         }
     }
 
+    // *** CACHE CONTROL ***
+    cache_control_settings cache_control(snapenv("HTTP_CACHE_CONTROL"), false);
+
     // *** SAVE RESULTS ***
     f_language = lang;
     f_country = country;
@@ -4783,6 +4784,7 @@ void snap_child::canonicalize_options()
     f_revision_key = QString("%1.%2").arg(f_branch).arg(f_revision);
 
     f_compressions.swap(compressions);
+    f_client_cache_control = cache_control;
 }
 
 
@@ -5273,7 +5275,7 @@ bool snap_child::load_file(post_file_t& file)
  *
  * \return The value of the specified variable.
  */
-QString snap_child::snapenv(QString const& name) const
+QString snap_child::snapenv(QString const & name) const
 {
     if(name == get_name(name_t::SNAP_NAME_CORE_SERVER_PROTOCOL))
     {
@@ -5705,7 +5707,7 @@ QByteArray snap_child::get_output() const
  *
  * \param[in] data  The array of byte to append to the buffer.
  */
-void snap_child::output(QByteArray const& data)
+void snap_child::output(QByteArray const & data)
 {
     f_output.write(data);
 }
@@ -5721,7 +5723,7 @@ void snap_child::output(QByteArray const& data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(QString const& data)
+void snap_child::output(QString const & data)
 {
     f_output.write(data.toUtf8());
 }
@@ -5738,7 +5740,7 @@ void snap_child::output(QString const& data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(std::string const& data)
+void snap_child::output(std::string const & data)
 {
     f_output.write(data.c_str(), data.length());
 }
@@ -5755,7 +5757,7 @@ void snap_child::output(std::string const& data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(char const *data)
+void snap_child::output(char const * data)
 {
     f_output.write(data);
 }
@@ -5772,7 +5774,7 @@ void snap_child::output(char const *data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(wchar_t const *data)
+void snap_child::output(wchar_t const * data)
 {
     f_output.write(QString::fromWCharArray(data).toUtf8());
 }
@@ -5812,7 +5814,7 @@ void snap_child::trace(QString const & data)
  * \param[in] data  The data to send to the listener.
  *                  Generally a printable string.
  */
-void snap_child::trace(std::string const& data)
+void snap_child::trace(std::string const & data)
 {
     if(f_is_being_initialized)
     {
@@ -5829,7 +5831,7 @@ void snap_child::trace(std::string const& data)
  * \param[in] data  The data to send to the listener.
  *                  Generally a printable string.
  */
-void snap_child::trace(char const *data)
+void snap_child::trace(char const * data)
 {
     trace(std::string(data));
 }
@@ -5858,7 +5860,7 @@ void snap_child::trace(char const *data)
  * \note
  * You can trick the description paragraph by adding a closing
  * paragraph tag (</p>) at the start and an opening paragraph
- * tag (</p>) at the end of your description.
+ * tag (<p>) at the end of your description.
  *
  * \warning
  * This function does NOT return. It calls exit(1) once done.
@@ -5868,7 +5870,7 @@ void snap_child::trace(char const *data)
  * \param[in] err_description  HTML message about the problem.
  * \param[in] err_details  Server side text message with details that are logged only.
  */
-void snap_child::die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details)
+void snap_child::die(http_code_t err_code, QString err_name, QString const & err_description, QString const & err_details)
 {
     if(f_died)
     {
@@ -5914,6 +5916,8 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
             {
                 throw snap_logic_exception("server pointer is nullptr");
             }
+            // as we are at it, make sure that the session is re-attached
+            server->attach_to_session();
 
             QString signature;
             QString const site_key(get_site_key());
@@ -5961,6 +5965,7 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
     exit(1);
 }
 
+
 /** \brief Ensure that the http_name variable is not empty.
  *
  * This function sets the content of the \p http_name variable if empty. It
@@ -5971,7 +5976,7 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
  * \param[in] http_code  The code used to determine the http_name value.
  * \param[in,out] http_name  The http request name to set if not already defined.
  */
-void snap_child::define_http_name(http_code_t http_code, QString& http_name)
+void snap_child::define_http_name(http_code_t http_code, QString & http_name)
 {
     if(http_name.isEmpty())
     {
@@ -6138,7 +6143,7 @@ void snap_child::define_http_name(http_code_t http_code, QString& http_name)
  * \param[in] value  The value to assign to that header.
  * \param[in] modes  Where the header will be used.
  */
-void snap_child::set_header(QString const& name, QString const& value, header_mode_t modes)
+void snap_child::set_header(QString const & name, QString const & value, header_mode_t modes)
 {
     {
         // name cannot include controls or separators and only CHARs
@@ -6246,7 +6251,7 @@ void snap_child::set_header(QString const& name, QString const& value, header_mo
     else
     {
         // Note that even the Status needs to be a field
-        // because we're using Apache and they expect such
+        // because we are using Apache and they expect such
         http_header_t header;
         header.f_header = name + ": " + v;
         header.f_modes = modes;
@@ -6291,12 +6296,12 @@ bool snap_child::has_header(const QString& name) const
  *
  * \return The value of this header, "" if undefined.
  */
-QString snap_child::get_header(QString const& name) const
+QString snap_child::get_header(QString const & name) const
 {
     header_map_t::const_iterator it(f_header.find(name.toLower()));
     if(it == f_header.end())
     {
-        // it's not defined
+        // it is not defined
         return "";
     }
 
@@ -6333,6 +6338,11 @@ QString snap_child::get_header(QString const& name) const
  */
 void snap_child::output_headers(header_mode_t modes)
 {
+    // The Cache-Control information are not output until here because
+    // we have a couple of settings (page and server) and it is just
+    // way to complicated to recompute the correct caches each time
+    set_cache_control();
+
     // Output the status first (we may want to order the HTTP header
     // fields by type and output them ordered by type as defined in
     // the HTTP reference chapter 4.2)
@@ -6388,7 +6398,7 @@ void snap_child::set_cookie(http_cookie const& cookie_info)
 
     // TODO: the privacy-policy URI should be locked if we want this to
     //       continue to work forever
-    f_cookies[cookie_info.get_name()].set_comment_url(f_site_key_with_slash + "privacy-policy");
+    f_cookies[cookie_info.get_name()].set_comment_url(f_site_key_with_slash + "terms-and-conditions/privacy-policy");
 }
 
 
@@ -6790,6 +6800,7 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
     }
 }
 
+
 /** \brief After adding content, call this function to save it.
  *
  * When we add content with the add_xml() and add_xml_dom() functions,
@@ -6871,7 +6882,7 @@ void snap_child::new_content()
  *
  * \param[in,out] path  The path to canonicalize.
  */
-void snap_child::canonicalize_path(QString& path)
+void snap_child::canonicalize_path(QString & path)
 {
     // we get the length on every loop because it could be reduced!
     int i(0);
@@ -6995,21 +7006,19 @@ void snap_child::execute()
     // Normally Apache overwrites this information
     set_header("Server", "Snap! C++", HEADER_MODE_EVERYWHERE);
 
-    // By default all pages are to expire in 1 minute (TBD)
-    //QDateTime expires(QDateTime().toUTC());
-    //expires.setTime_t(f_start_date / 1000000); // micro-seconds
-    // TODO:
-    // WARNING: the ddd and MMM are localized, we probably need to "fix"
-    //          the locale before this call (?)
-    //expires.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
-    set_header("Expires", "Sat,  1 Jan 2000 00:00:00 GMT", HEADER_MODE_EVERYWHERE);
-
     // The Date field is added by Apache automatically
     // adding it here generates a 500 Internal Server Error
-    //set_header("Date", expires.toString("ddd, dd MMM yyyy hh:mm:ss") + " GMT");
+    //QDateTime date(QDateTime().toUTC());
+    //date.setTime_t(f_start_date / 1000000); // micro-seconds
+    //set_header("Date", date.toString("ddd, dd MMM yyyy hh:mm:ss") + " GMT");
 
-    // XXX it feels like Apache2 adds another no-cache at the end of the list
-    set_header("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0", HEADER_MODE_EVERYWHERE);
+    // cache controls are now defined in f_server_cache_control
+    // and f_page_cache_control; the defaults are not exactly what
+    // we want, so we change them in the f_page_cache_control
+    //
+    //set_cache_control(0, false, true);
+    f_page_cache_control.set_no_store(true);
+    f_page_cache_control.set_must_revalidate(true);
 
     // By default we expect [X]HTML in the output
     set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
@@ -7139,73 +7148,85 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
     //      buffer so that way here we can "adjust" the compression as
     //      required
 
-    // TODO add compression capabilities with bz2, lzma and sdch as
-    //      may be supported by the browser (although sdch is not
-    //      possible here as long as we require/use Apache2)
-    http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
-
-    // TODO image file formats that are already compressed should not be
-    //      recompressed (i.e. JPEG, GIF, PNG...)
-
-    // it looks like some browsers use that one instead of plain "gzip"
-    // try both just in case
-    QString const content_type(get_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER)));
-    // at this point we only attempt to compress known text formats
-    // (should we instead have a list of mime types that we do not want to
-    // compress? before, attempting to compress the "wrong" files would
-    // make the browsers fail badly... but today not so much.)
-    if(content_type.startsWith("text/plain;")
-    || content_type.startsWith("text/html;")
-    || content_type.startsWith("text/xml;")
-    || content_type.startsWith("text/css;")
-    || content_type.startsWith("text/javascript;"))
+    // was the output buffer generated from an already compressed file?
+    // if so, then skip the encoding handling
+    QString const current_content_encoding(get_header("Content-Encoding"));
+    if(current_content_encoding.isEmpty())
     {
-        float const gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
-        float const deflate_level(encodings.get_level("deflate"));
-        if(gzip_level > 0.0f && gzip_level >= deflate_level)
+        // TODO image file formats that are already compressed should not be
+        //      recompressed (i.e. JPEG, GIF, PNG...)
+
+        // at this point we only attempt to compress known text formats
+        // (should we instead have a list of mime types that we do not want to
+        // compress? before, attempting to compress the "wrong" files would
+        // make the browsers fail badly... but today not so much.)
+        //
+        QString const content_type(get_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER)));
+        if(content_type.startsWith("text/plain;")
+        || content_type.startsWith("text/html;")
+        || content_type.startsWith("text/xml;")
+        || content_type.startsWith("text/css;")
+        || content_type.startsWith("text/javascript;"))
         {
-            // browser asked for gzip with higher preference
-            QString compressor("gzip");
-            output_data = compression::compress(compressor, output_data, 100, true);
-            if(compressor == "gzip")
+            // TODO add compression capabilities with bz2, lzma and sdch as
+            //      may be supported by the browser (although sdch is not
+            //      possible here as long as we require/use Apache2)
+            http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
+
+            // it looks like some browsers use "x-gzip" instead of
+            // plain "gzip"; also our default (i.e. "*") is gzip so
+            // check that value here too
+            //
+            float const gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
+
+            // plain zlib data is named "deflate"
+            float const deflate_level(encodings.get_level("deflate"));
+
+            if(gzip_level > 0.0f && gzip_level >= deflate_level)
             {
-                // compression succeeded
-                set_header("Content-Encoding", "gzip", HEADER_MODE_EVERYWHERE);
+                // browser asked for gzip with higher preference
+                QString compressor("gzip");
+                output_data = compression::compress(compressor, output_data, 100, true);
+                if(compressor == "gzip")
+                {
+                    // compression succeeded
+                    set_header("Content-Encoding", "gzip", HEADER_MODE_EVERYWHERE);
+                }
             }
-        }
-        else if(deflate_level > 0.0f)
-        {
-            QString compressor("deflate");
-            output_data = compression::compress(compressor, output_data, 100, true);
-            if(compressor == "deflate")
+            else if(deflate_level > 0.0f)
             {
-                // compression succeeded
-                set_header("Content-Encoding", "deflate", HEADER_MODE_EVERYWHERE);
+                QString compressor("deflate");
+                output_data = compression::compress(compressor, output_data, 100, true);
+                if(compressor == "deflate")
+                {
+                    // compression succeeded
+                    set_header("Content-Encoding", "deflate", HEADER_MODE_EVERYWHERE);
+                }
+            }
+            else
+            {
+                // Code 406 is in the spec. (RFC2616) but frankly?!
+                float const identity_level(encodings.get_level("identity"));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(!f_died && identity_level == 0.0f)
+#pragma GCC diagnostic pop
+                {
+                    die(http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
+                        "Your client requested a compression that we do not offer and it does not accept content without compression.",
+                        "a client requested content with Accept-Encoding: identity;q=0 and no other compression we understand");
+                    NOTREACHED();
+                }
+                // The "identity" SHOULD NOT be used with the Content-Encoding
+                // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
+                //set_header("Content-Encoding", "identity", HEADER_MODE_EVERYWHERE);
             }
         }
         else
         {
-            // Code 406 is in the spec. (RFC2616) but frankly?!
-            float const identity_level(encodings.get_level("identity"));
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(!f_died && identity_level == 0.0f)
-#pragma GCC diagnostic pop
-            {
-                die(http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
-                    "Your client requested a compression that we do not offer and it does not accept content without compression.",
-                    "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
-                NOTREACHED();
-            }
-            // The "identity" SHOULD NOT be used with the Content-Encoding
-            // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
-            //set_header("Content-Encoding", "identity", HEADER_MODE_EVERYWHERE);
+            // note that "html"-output is NOT html in this case!
+            // (most likely an image... but any document really)
         }
-    }
-    else
-    {
-        // note that "html"-output is NOT html in this case!
-        // (most likely an image... but any document really)
     }
 
     QString const size(QString("%1").arg(output_data.size()));

@@ -56,6 +56,7 @@ add_library(content SHARED
 
     # various parts of the content plugin
     backend.cpp
+    cache_control.cpp
     clone.cpp
     destroy.cpp
     revision.cpp

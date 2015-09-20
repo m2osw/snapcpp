@@ -121,6 +121,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CONTENT_BREADCRUMBS_PARENT:
         return "content::breadcrumbs_parent";
 
+    case name_t::SNAP_NAME_CONTENT_CACHE_CONTROL:
+        return "content::cache_control";
+
     case name_t::SNAP_NAME_CONTENT_CACHE_TABLE:
         return "cache";
 
@@ -378,20 +381,22 @@ namespace
  * sure JavaScript files get added to the right place when
  * uploaded to the website.
  */
-char const *js_extensions[] =
+char const * js_extensions[] =
 {
     // longer first
     ".min.js",
     ".org.js",
     ".js",
+    //".as", -- TODO allow AS files as original JS files
     nullptr
 };
 
-char const *css_extensions[] =
+char const * css_extensions[] =
 {
     // longer first
     ".min.css",
     ".org.css",
+    //".scss", -- TODO allow SCSS files as original CSS files
     ".css",
     nullptr
 };
@@ -1303,8 +1308,14 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
             NOTREACHED();
         }
 
-        if(attachment_filename.contains("_"))
+        // get the filename without the extension
+        //
+        QString const fn(attachment_filename.left(attachment_filename.length() - extension.length()));
+        if(fn.contains("_"))
         {
+            // WARNING: the following code says ".js" and js_filename even
+            //          though all of that also works for ".css" files.
+            //
             // if there is a "_" then we have a file such as
             //
             //   <name>_<version>.js
@@ -1329,8 +1340,8 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
                         "The version in the filename is not equal to the one defined in the file.");
                 NOTREACHED();
             }
-            // TBD can we verify the browser defined in the filename
-            //     against Browsers field found in the file?
+            // TODO verify the browser defined in the filename
+            //      against Browsers field found in the file
 
             // remove the version and browser information from the filename
             attachment_filename = js_filename.get_name() + extension;
@@ -1343,16 +1354,18 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
         }
         else
         {
-            // in this case the name is just <name> and must be
+            // in this case the name is just <name> and must match
             //
             //    [a-z][-a-z0-9]*[a-z0-9]
             //
-            // get the filename without the extension
-            QString const fn(attachment_filename.left(attachment_filename.length() - extension.length()));
+            // TBD: I removed the namespace, it does not look like we
+            //      should support filename such as css::name.js and
+            //      now we have a separate function to check the basic
+            //      filename so I could remove the namespace support here
+            //
             QString name_string(fn);
-            QString namespace_string;
             QString errmsg;
-            if(!snap_version::validate_name(name_string, errmsg, namespace_string))
+            if(!snap_version::validate_basic_name(name_string, errmsg))
             {
                 // unacceptable filename
                 f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Invalid Filename",
@@ -1545,8 +1558,74 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
 
     // make a full reference back to the attachment (which may not yet
     // exist at this point, we do that next)
+    QString ref_cell_name;
+    if(is_css || is_js)
+    {
+        // CSS and JavaScript filenames are forced to include the version
+        // and we generally want to use the minified version (I am not too
+        // sure how to handle that one right now though.)
+        //
+        ref_cell_name = QString("%1::%2%3/%4_%5.min.%6")
+                            .arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE))
+                            .arg(site_key)
+                            .arg(file.get_parent_cpath())
+                            .arg(fv.get_name())
+                            .arg(fv.get_version_string())
+                            .arg(is_css ? "css" : "js");
+
+        // TODO: also include the browser? I'm not too sure how we can
+        //       handle this one correct here because it will depend on
+        //       the browser the end user has and not a static information
+        //       (i.e. fv has a get_browsers(), PLURAL...)
+
+        {
+            // verify that we do not already have a reference
+            // if we do, make sure it is one to one equivalent to what we
+            // just generated
+            //
+            QtCassandra::QCassandraColumnRangePredicate references_column_predicate;
+            references_column_predicate.setCount(10);
+            references_column_predicate.setIndex(); // behave like an index
+            QString const start_ref(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
+            references_column_predicate.setStartColumnName(start_ref);
+            references_column_predicate.setEndColumnName(start_ref + QtCassandra::QCassandraColumnPredicate::last_char);
+
+            files_table->row(md5)->clearCache();
+            files_table->row(md5)->readCells(references_column_predicate);
+            QtCassandra::QCassandraCells const ref_cells(files_table->row(md5)->cells());
+            if(!ref_cells.isEmpty())
+            {
+                if(ref_cells.size() > 1)
+                {
+                    throw snap_logic_exception(QString("JavaScript or CSS file \"%1\" has more than one reference to this website...").arg(post_file.get_filename()));
+                }
+                QtCassandra::QCassandraCell::pointer_t ref_cell(*ref_cells.begin());
+                if(ref_cell->columnName() != ref_cell_name)
+                {
+                    // this could be an error, but we can just refresh the
+                    // wrong reference with the new correct one instead
+                    // (i.e. existing files that used the old scheme are
+                    // automatically updated that way)
+                    SNAP_LOG_WARNING("JavaScript or CSS file \"")
+                            (post_file.get_filename())
+                            ("\" has an existing reference \"")
+                            (ref_cell->columnName())
+                            ("\" which is not equal to the expected string \"")
+                            (ref_cell_name)
+                            ("\"...");
+                    files_table->row(md5)->dropCell(ref_cell->columnName(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                }
+            }
+        }
+    }
+    else
+    {
+        ref_cell_name = QString("%1::%2")
+                            .arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE))
+                            .arg(attachment_ipath.get_key());
+    }
     signed char const ref(1);
-    files_table->row(md5)->cell(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(attachment_ipath.get_key()))->setValue(ref);
+    files_table->row(md5)->cell(ref_cell_name)->setValue(ref);
 
     QByteArray attachment_ref;
     attachment_ref.append(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
@@ -1787,9 +1866,9 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
         //snap_version::versioned_filename js_filename(".js");
         //js_filename.set_filename(attachment_filename);
         // the name is formatted to allow us to quickly find the files
-        // we're interested in; for that we put the name first, then the
+        // we are interested in; for that we put the name first, then the
         // browser, and finally the version which is saved as integers
-        snap_version::name_vector_t browsers(fv.get_browsers());
+        snap_version::name::vector_t browsers(fv.get_browsers());
         int const bmax(browsers.size());
         bool const all(bmax == 1 && browsers[0].get_name() == "all");
         for(int i(0); i < bmax; ++i)
@@ -3504,6 +3583,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
     //      can include the content plugin; the one advantage would be that
     //      the get_name() from the JavaScript plugin would then make use
     //      of the "local" name_t::SNAP_NAME_JAVASCRIPT_...
+    //
     if(f_added_javascripts.contains(name))
     {
         // already added, we are done
@@ -3524,14 +3604,15 @@ void content::add_javascript(QDomDocument doc, QString const & name)
 
     // TODO: at this point I read all the entries with "name_..."
     //       we will want to first check with the user's browser and
-    //       then check with "any" as the browser name if no specific
-    //       script is found
+    //       then check with "any"/"all" as the browser name if no
+    //       specific script is found
     //
     //       Also the following loop does NOT handle dependencies in
     //       a full tree to determine what would be best; instead it
     //       makes uses of the latest and if a file does not match
     //       the whole process fails even if by not using the latest
     //       would have worked
+    //
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(10); // small because we generally really only are interested by the first 1 unless marked as insecure or not yet updated on that website
     column_predicate.setIndex(); // behave like an index
@@ -3545,9 +3626,15 @@ void content::add_javascript(QDomDocument doc, QString const & name)
         QtCassandra::QCassandraCells const cells(javascript_row->cells());
         if(cells.isEmpty())
         {
+            // no script found, error appears at the end of the function
             break;
         }
         // handle one batch
+        //
+        // WARNING: the cells is a map so we want to walk it backward since
+        //          maps are sorted "in the wrong direction" for a reverse
+        //          read...
+        //
         QMapIterator<QByteArray, QtCassandra::QCassandraCell::pointer_t> c(cells);
         c.toBack();
         while(c.hasPrevious())
@@ -3559,32 +3646,35 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             // not exactly instantaneous in Cassandra
             QtCassandra::QCassandraCell::pointer_t cell(c.value());
             QtCassandra::QCassandraValue const file_md5(cell->value());
-            if(file_md5.nullValue())
+            if(file_md5.size() != 16)
             {
                 // cell is invalid?
-                SNAP_LOG_ERROR("invalid JavaScript MD5 for \"")(name)("\", it is empty");
+                SNAP_LOG_ERROR("invalid JavaScript MD5 for \"")(name)("\", it is not exactly 16 bytes.");
                 continue;
             }
             QByteArray const key(file_md5.binaryValue());
             if(!files_table->exists(key))
             {
                 // file does not exist?!
-                // TODO: we probably want to report that problem
-                SNAP_LOG_ERROR("JavaScript for \"")(name)("\" could not be found with its MD5");
+                //
+                // TODO: we probably want to report that problem to the
+                //       administrator with some form of messaging.
+                //
+                SNAP_LOG_ERROR("JavaScript for \"")(name)("\" could not be found with its MD5 \"")(dbutils::key_to_string(key))("\".");
                 continue;
             }
             QtCassandra::QCassandraRow::pointer_t row(files_table->row(key));
             if(!row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE)))
             {
                 // secure field missing?! (file was probably deleted)
-                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" does not have a ")(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" does not have a ")(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))(" field.");
                 continue;
             }
             QtCassandra::QCassandraValue const secure(row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))->value());
             if(secure.nullValue())
             {
                 // secure field missing?!
-                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has an empty ")(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has an empty ")(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))(" field.");
                 continue;
             }
             signed char const sflag(secure.signedCharValue());
@@ -3592,7 +3682,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             {
                 // not secure
 #ifdef DEBUG
-                SNAP_LOG_DEBUG("JavaScript named \"")(name)("\" is marked as being insecure");
+                SNAP_LOG_DEBUG("JavaScript named \"")(name)("\" is marked as being insecure.");
 #endif
                 continue;
             }
@@ -3604,6 +3694,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             //
             // TODO: allow for remote paths by checking a flag in the file
             //       saying "remote" (i.e. to use Google Store and alike)
+            //
             QtCassandra::QCassandraColumnRangePredicate references_column_predicate;
             references_column_predicate.setCount(1);
             references_column_predicate.setIndex(); // behave like an index
@@ -3623,7 +3714,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
                 // last) file and see whether that one is satisfactory...
                 // the process continues untill all the versions of
                 // a file were checked
-                SNAP_LOG_WARNING("file referenced as JavaScript \"")(name)("\" has no reference back to \"")(site_key)("\" (this happens if your website is not 100% up to date)");
+                SNAP_LOG_WARNING("file referenced as JavaScript \"")(name)("\" has no reference back to \"")(site_key)("\" (this happens if your website is not 100% up to date).");
                 continue;
             }
             // the key of this cell is the path we want to use to the file
@@ -3631,7 +3722,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             QtCassandra::QCassandraValue const ref_string(ref_cell->value());
             if(ref_string.nullValue()) // bool true cannot be empty
             {
-                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has an invalid reference back to ")(site_key)(" (empty)");
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has an invalid reference back to ")(site_key)(" (empty).");
                 continue;
             }
 
@@ -3672,8 +3763,8 @@ void content::add_javascript(QDomDocument doc, QString const & name)
                         if(dep.set_dependency(dep_string.stringValue()))
                         {
                             // TODO: add version and browser tests
-                            QString const& dep_name(dep.get_name());
-                            QString const& dep_namespace(dep.get_namespace());
+                            QString const & dep_name(dep.get_name());
+                            QString const & dep_namespace(dep.get_namespace());
                             if(dep_namespace == "css")
                             {
                                 add_css(doc, dep_name);
@@ -3684,6 +3775,9 @@ void content::add_javascript(QDomDocument doc, QString const & name)
                             }
                             else
                             {
+                                // note: since the case when dep_namespace is empty is already
+                                //       managed, when we reach this line it is not empty
+                                //
                                 f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Invalid Dependency",
                                         QString("JavaScript dependency \"%1::%2\" has a non-supported namespace.").arg(dep_namespace).arg(name),
                                         QString("The namespace is expected to be \"javascripts\" (or empty,) or \"css\"."));
@@ -3702,7 +3796,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             //      version with the User Agent match. This may not always
             //      be desirable though.
 //#ifdef DEBUG
-//SNAP_LOG_TRACE() << "Adding JavaScript [" << name << "] [" << ref_cell->columnName().mid(start_ref.length() - 1) << "]";
+//SNAP_LOG_TRACE("Adding JavaScript [")(name)("] [")(ref_cell->columnName().mid(start_ref.length() - 1))("]");
 //#endif
             QDomNodeList metadata(doc.elementsByTagName("metadata"));
             QDomNode javascript_tag(metadata.at(0).firstChildElement("javascript"));
@@ -3716,10 +3810,15 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             script_tag.setAttribute("type", "text/javascript");
             script_tag.setAttribute("charset", "utf-8");
             javascript_tag.appendChild(script_tag);
-            return; // we're done since we found our script and added it
+            return; // we are done since we found our script and added it
         }
     }
 
+    // If the installation of a script fails, then it will not appear
+    // in the "javascripts" row... this usually means the JavaScript
+    // header is not valid (i.e. missing the version, invalid dependency,
+    // field syntax error, etc.)
+    //
     f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
             "JavaScript \"" + name + "\" was not found. Was it installed?",
             "The named JavaScript was not found in the \"javascripts\" row of the \"files\" table.");

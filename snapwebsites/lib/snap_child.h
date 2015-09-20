@@ -16,11 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snap_uri.h"
-#include "snap_signals.h"
-#include "snap_exception.h"
-#include "snap_version.h"
+#include "cache_control.h"
 #include "http_cookie.h"
+#include "snap_exception.h"
+#include "snap_signals.h"
+#include "snap_uri.h"
+#include "snap_version.h"
 #include "udp_client_server.h"
 
 #include <controlled_vars/controlled_vars_need_init.h>
@@ -104,6 +105,7 @@ public:
         HTTP_CODE_CONTINUE = 100,
         HTTP_CODE_SWITCHING_PROTOCOLS = 101,
         HTTP_CODE_PROCESSING = 102,
+        HTTP_CODE_RESPONSE_IS_STALE = 110, // If we return a cached page
 
         HTTP_CODE_OK = 200,
         HTTP_CODE_CREATED = 201,
@@ -328,6 +330,10 @@ public:
     void                        init_start_date();
     int64_t                     get_start_date() const { return f_start_date; }
     time_t                      get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
+    cache_control_settings const & client_cache_control() const;
+    cache_control_settings &    server_cache_control();
+    cache_control_settings &    page_cache_control();
+    bool                        no_caching() const;
     void                        set_header(QString const & name, QString const & value, header_mode_t modes = HEADER_MODE_NO_ERROR);
     void                        set_cookie(http_cookie const & cookie);
     void                        set_ignore_cookies();
@@ -377,6 +383,7 @@ public:
     // TODO translations? (not too important though)
     void                        page_redirect(QString const & path, http_code_t http_code = http_code_t::HTTP_CODE_MOVED_PERMANENTLY, QString const & reason_brief = "Moved", QString const & reason = "This page has moved");
     void                        die(http_code_t err_code, QString err_name, QString const & err_description, QString const & err_details);
+    void                        not_modified();
     static void                 define_http_name(http_code_t http_code, QString & http_name);
     void                        finish_update();
 
@@ -439,6 +446,7 @@ private:
     void                        write(char const * data, ssize_t size);
     void                        write(char const * str);
     void                        write(QString const & str);
+    void                        set_cache_control();
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
 
@@ -472,6 +480,9 @@ private:
     snap_version::version_number_t              f_revision;
     QString                                     f_revision_key;
     compression_vector_t                        f_compressions;
+    cache_control_settings                      f_client_cache_control;
+    cache_control_settings                      f_server_cache_control;
+    cache_control_settings                      f_page_cache_control;
 };
 
 typedef std::vector<snap_child *> snap_child_vector_t;

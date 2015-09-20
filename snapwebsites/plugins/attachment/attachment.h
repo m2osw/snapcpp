@@ -48,6 +48,14 @@ public:
     attachment_exception_invalid_content_xml(QString const &     what_msg) : attachment_exception(what_msg) {}
 };
 
+class attachment_exception_invalid_filename : public attachment_exception
+{
+public:
+    attachment_exception_invalid_filename(char const *        what_msg) : attachment_exception(what_msg) {}
+    attachment_exception_invalid_filename(std::string const & what_msg) : attachment_exception(what_msg) {}
+    attachment_exception_invalid_filename(QString const &     what_msg) : attachment_exception(what_msg) {}
+};
+
 
 
 
@@ -89,8 +97,8 @@ private:
     void                content_update(int64_t variables_timestamp);
     void                backend_action_extract_file();
 
-    bool                check_for_uncompressed_file(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    bool                check_for_minified_css(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
+    bool                check_for_uncompressed_file(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+    bool                check_for_minified_js_or_css(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info, QString const & extension);
 
     zpsnap_child_t      f_snap;
 };

@@ -276,7 +276,7 @@ void path_info_t::force_revision(snap_version::version_number_t revision)
 }
 
 
-void path_info_t::force_extended_revision(QString const& revision, QString const& filename)
+void path_info_t::force_extended_revision(QString const & revision, QString const & filename)
 {
     snap_version::version v;
     if(!v.set_version_string(revision))
@@ -288,8 +288,8 @@ void path_info_t::force_extended_revision(QString const& revision, QString const
     {
         throw snap_logic_exception(QString("invalid version string (%1) in \"%2\" (force_extended_revision): not enough numbers (at least 1 required).").arg(revision).arg(filename));
     }
-    f_branch = version_numbers[0];
-    f_revision = snap_version::SPECIAL_VERSION_EXTENDED;
+    force_branch(version_numbers[0]);
+    force_revision(snap_version::SPECIAL_VERSION_EXTENDED);
 
     // WARNING: the revision string includes the branch
     f_revision_string = v.get_version_string();

@@ -192,7 +192,7 @@ int64_t cookie_consent_silktide::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 8, 18, 23, 5, 34, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 19, 2, 8, 34, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

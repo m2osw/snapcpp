@@ -44,6 +44,7 @@ enum class name_t
     SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_HOME,
     SNAP_NAME_CONTENT_BREADCRUMBS_HOME_LABEL,
     SNAP_NAME_CONTENT_BREADCRUMBS_PARENT,
+    SNAP_NAME_CONTENT_CACHE_CONTROL,
     SNAP_NAME_CONTENT_CACHE_TABLE,
     SNAP_NAME_CONTENT_CHILDREN,
     SNAP_NAME_CONTENT_CLONE,
@@ -736,6 +737,9 @@ public:
     void                on_backend_process();
     void                on_load_file(snap_child::post_file_t & file, bool & found);
     void                on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
+
+    // cache control
+    void                set_cache_control_page(path_info_t ipath);
 
     // content plugin signals
     SNAP_SIGNAL(new_content, (path_info_t & path), (path));
