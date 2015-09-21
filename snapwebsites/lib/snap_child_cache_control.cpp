@@ -265,14 +265,14 @@ void snap_child::set_cache_control()
     // if the client requested "no-cache" or "no-store" we return a
     // cache control header which bypasses all caches, very important!
     //
-SNAP_LOG_WARNING("no caching? ")(no_caching() ? "no-caching" : "CACHING!")
-    (" - ")(f_client_cache_control.get_no_cache() ? "client no-caching" : "client CACHING!")
-    (" - ")(f_client_cache_control.get_no_store() ? "client no-store" : "client STORE!")
-    (" - ")(f_page_cache_control.get_no_cache() ? "page no-cache" : "page CACHING!")
-    (" - ")(f_server_cache_control.get_no_store() ? "server no-store" : "server STORE!")
-    (" - ")(f_page_cache_control.get_max_age() <= 0 ? QString("page max-age=%1").arg(f_page_cache_control.get_max_age()) : "page NO-MAX-AGE!")
-    (" - ")(f_server_cache_control.get_max_age() <= 0 ? "server max-age" : "server NO-MAX-AGE!")
-;
+//SNAP_LOG_WARNING("no caching? ")(no_caching() ? "no-caching" : "CACHING!")
+//    (" - ")(f_client_cache_control.get_no_cache() ? "client no-caching" : "client CACHING!")
+//    (" - ")(f_client_cache_control.get_no_store() ? "client no-store" : "client STORE!")
+//    (" - ")(f_page_cache_control.get_no_cache() ? "page no-cache" : "page CACHING!")
+//    (" - ")(f_server_cache_control.get_no_store() ? "server no-store" : "server STORE!")
+//    (" - ")(f_page_cache_control.get_max_age() <= 0 ? QString("page max-age=%1").arg(f_page_cache_control.get_max_age()) : "page NO-MAX-AGE!")
+//    (" - ")(f_server_cache_control.get_max_age() <= 0 ? "server max-age" : "server NO-MAX-AGE!")
+//;
     if(no_caching())
     {
         // using Pragma for older browsers, although from what I have read
@@ -330,6 +330,10 @@ SNAP_LOG_WARNING("no caching? ")(no_caching() ? "no-caching" : "CACHING!")
         // get the smallest max_age specified
         int64_t const max_age(f_page_cache_control.minimum(f_page_cache_control.get_max_age(), f_server_cache_control.get_max_age()));
         cache_control_fields << QString("max-age=%1").arg(max_age);
+
+        // This is the default when only max-age is specified
+        //cache_control_fields << QString("post-check=%1").arg(max_age);
+        //cache_control_fields << QString("pre-check=%1").arg(max_age);
 
         // choose between public and private (or neither)
         if(f_page_cache_control.get_private()

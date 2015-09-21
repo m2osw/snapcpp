@@ -28,6 +28,7 @@
 #include <iostream>
 
 #include <QFile>
+#include <QLocale>
 
 #include "poison.h"
 
@@ -501,6 +502,13 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
 
             // Chrome and IE check this header for CSS and JS data
             f_snap->set_header("X-Content-Type-Options", "nosniff");
+
+            // get the last modification time of this very version
+            QtCassandra::QCassandraValue revision_modification(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
+            QDateTime expires(QDateTime().toUTC());
+            expires.setTime_t(revision_modification.safeInt64Value() / 1000000);
+            QLocale us_locale(QLocale::English, QLocale::UnitedStates);
+            f_snap->set_header("Last-Modified", us_locale.toString(expires, "ddd, dd MMM yyyy hh:mm:ss' GMT'"), snap_child::HEADER_MODE_EVERYWHERE);
 
             // tell the path plugin that we know how to handle this one
             plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
