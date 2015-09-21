@@ -63,14 +63,13 @@ find_package( SnapBuild        REQUIRED )
 ################################################################################
 # Third party libraries
 #
-#add_subdirectory( thrift )
+ConfigureMakeProject( PROJECT_NAME thrift NOINC_DEBVERS )
+
 
 
 ################################################################################
 # Snap libraries
 #
-ConfigureMakeProject( PROJECT_NAME thrift NOINC_DEBVERS )
-
 ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
 
 ConfigureMakeProject( PROJECT_NAME zipios )
