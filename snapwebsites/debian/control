@@ -11,7 +11,8 @@ Build-Depends: debhelper, cmake,
     libtld-dev (>= 1.5.1.34~trusty), libqtcassandra-dev (>= 0.5.21.137~trusty),
     libqtserialization-dev (>= 0.1.16.348~trusty), closure-linter (>= 2.3.13),
     libas2js-dev (>= 0.1.13.348~trusty), libssl-dev (>= 1.0.1),
-    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.6.51~trusty)
+    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.6.51~trusty),
+    libevent-dev (>= 2.0.21)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/

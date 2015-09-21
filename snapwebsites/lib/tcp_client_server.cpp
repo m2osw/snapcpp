@@ -1100,9 +1100,9 @@ std::string bio_client::get_client_addr() const
  * \sa read_line()
  * \sa write()
  */
-int bio_client::read(char *buf, size_t size)
+int bio_client::read(char * buf, size_t size)
 {
-    int r(static_cast<int>(BIO_read(f_bio.get(), buf, size)));
+    int const r(static_cast<int>(BIO_read(f_bio.get(), buf, size)));
     if(r <= -2)
     {
         // the BIO is not implemented

@@ -61,6 +61,7 @@ endif()
 include_directories(
     SYSTEM
         ${MAGIC_INCLUDE_PATH}
+        ${LIBEVENT2_INCLUDE_DIRS}
         ${LOG4CPLUS_INCLUDE_DIRS}
         ${QT_INCLUDES}
         ${LIBPROCPS_INCLUDE_DIRS}
@@ -102,6 +103,7 @@ add_library( ${PROJECT_NAME} SHARED
     row_model.cpp                               # libQtCassandra row model for use with a QTableView object.
     snap_backend.cpp                            # A type of snap_child, but for backends only
     snap_cassandra.cpp                          # Encapuslate initiating a connection to the database.
+    snap_communicator.cpp                       # handle any number of sockets with a single process.
     snap_config.cpp                             # class to read in configuration
     snap_child.cpp                              # requests processing
     snap_child_cache_control.cpp                # Manage cache controls in the snap_child class
@@ -133,6 +135,7 @@ target_link_libraries( ${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${MAGIC_LIBRARY}
+    ${LIBEVENT2_LIBRARIES}
     ${LIBPROCPS_LIBRARIES}
     ${OPENSSL_LIBRARIES}
     ${THRIFT_LIBRARIES}
