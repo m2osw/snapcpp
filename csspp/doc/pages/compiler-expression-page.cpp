@@ -1510,9 +1510,13 @@
  *
  * http://scottsievert.github.io/blog/2015/04/23/image-sqrt/
  *
+ * See also the XYZ color space (by CIE):
+ *
+ * https://en.wikipedia.org/wiki/CIE_1931_color_space
+ *
  * The correct math would be to calculate the squares of the components,
- * multiply them by their weight, divide by the sum of the weights,
- * and finally compute the square root of that result:
+ * multiply them by their respective weight, divide by the sum of the
+ * weights, and finally compute the square root of that number:
  *
  * \f[
  * \large component_{result} = \sqrt\frac{compoment_{a}^{2} \, weight_{a} + component_{b}^{2} \, weight_{b}}{weight_{a} + weight_{b}}
