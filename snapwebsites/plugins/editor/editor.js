@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.368
+ * Version: 0.0.3.370
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -3493,6 +3493,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function setSaving(new_status: boolean, will_redirect: boolean);
  *      function changed();
  *      function getSaveDialog() : EditorSaveDialog;
+ *      function getDefaultButton() : jQuery;
  *      function resetTimeout();
  *      function formTimedout();
  *      function setTimedoutCallback(f: function(EditorForm));
@@ -4253,6 +4254,37 @@ snapwebsites.EditorForm.prototype.getSaveDialog = function()
         this.saveDialog_ = new snapwebsites.EditorSaveDialog(this);
     }
     return this.saveDialog_;
+};
+
+
+/** \brief Retrieve the default button if there is one.
+ *
+ * This function searches for the DOM object that has class
+ * "editor-default-button". In most cases this is an anchor.
+ *
+ * The function may return an empty jQuery list.
+ *
+ * \note
+ * If the function finds more than one default button, then it
+ * returns the first that is not currently disabled.
+ *
+ * @return {jQuery}  The jQuery representation of the DOM object.
+ */
+snapwebsites.EditorForm.prototype.getDefaultButton = function()
+{
+    // search the list in default buttons for one that is not currently
+    // disabled or hidden
+    //
+    // TODO: in debug mode we should check to see whether we have more than
+    //       one answer because if so it is probably a bug (i.e. you cannot
+    //       have more than one visible default button at a time)
+    //
+    // TODO: I need to check for disabled items; but for that we need to
+    //       have an idea of how we mark an anchor as disabled and enforcing
+    //       that state... (we want to switch to using button widgets and
+    //       not direct anchors, but that is the next round.)
+    //
+    return this.getFormWidget().find(".editor-default-button").filter(":visible").first();
 };
 
 
@@ -6226,14 +6258,18 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widg
 
     c.keydown(function(e)
         {
+            var editor_form;
+
             if(e.which === 13)
             {
-                // prevent enter from doing anything here
-                //
-                // TODO: actually we want return to apply the submit if
-                //       there is one
+                // prevent enter default behavior
                 //
                 e.preventDefault();
+
+                // if editor has a default button, click it
+                //
+                editor_form = editor_widget.getEditorForm();
+                editor_form.getDefaultButton().click();
             }
         });
 
