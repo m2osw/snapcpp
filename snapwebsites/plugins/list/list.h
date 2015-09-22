@@ -188,6 +188,37 @@ public:
     static int const LIST_PROCESSING_LATENCY = 10 * 1000000; // 10 seconds in micro-seconds
     static int const LIST_MAXIMUM_ITEMS = 10000; // maximum number of items returned by read_list()
 
+    // pages given a smaller priority are processed earlier
+    typedef unsigned char       priority_t;
+
+    static priority_t const     LIST_PRIORITY_NOW       =   0;      // first page on the list
+    static priority_t const     LIST_PRIORITY_IMPORTANT =  10;      // user / developer says thiss page is really important and should be worked on ASAP
+    static priority_t const     LIST_PRIORITY_NEW_PAGE  =  20;      // a new page that was just created
+    static priority_t const     LIST_PRIORITY_RESET     =  50;      // user asked for a manual reset of (many) pages
+    static priority_t const     LIST_PRIORITY_UPDATES   = 180;      // updates from content.xml files
+    static priority_t const     LIST_PRIORITY_SLOW      = 200;      // from this number up, do not process if any other pages were processed
+    static priority_t const     LIST_PRIORITY_REVIEW    = 230;      // once in a while, review all the pages, just in case we missed something
+
+    class safe_priority_t
+    {
+    public:
+        safe_priority_t(priority_t priority)
+            : f_list_plugin(list::instance())
+            , f_priority(f_list_plugin->get_priority())
+        {
+            f_list_plugin->set_priority(priority);
+        }
+
+        ~safe_priority_t()
+        {
+            f_list_plugin->set_priority(f_priority);
+        }
+
+    private:
+        list *              f_list_plugin;
+        priority_t          f_priority;
+    };
+
                         list();
                         ~list();
 
@@ -212,6 +243,9 @@ public:
     void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
     void                on_modified_link(links::link_info const & link, bool const created);
 
+    void                set_priority(priority_t priority);
+    priority_t          get_priority() const;
+
     list_item_vector_t  read_list(content::path_info_t & ipath, int start, int count);
 
     // links test suite
@@ -220,6 +254,7 @@ public:
 private:
     void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
+    void                add_all_pages_to_list_table(QString const & f);
     int                 generate_all_lists(QString const & site_key);
     int                 generate_all_lists_for_page(QString const & site_key, QString const & row_key, int64_t update_request_time);
     int                 generate_list_for_page(content::path_info_t & page_key, content::path_info_t & list_ipath, int64_t update_request_time);
@@ -244,6 +279,7 @@ private:
     snap_expr::expr::expr_map_t             f_item_key_expressions;
     controlled_vars::fbool_t                f_ping_backend;
     controlled_vars::fbool_t                f_list_link;
+    priority_t                              f_priority = LIST_PRIORITY_NEW_PAGE;   // specific order in which pages should be worked on
 };
 
 

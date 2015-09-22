@@ -21,12 +21,13 @@
 #include "../path/path.h"
 #include "../output/output.h"
 
-#include "not_reached.h"
-#include "snap_expr.h"
-#include "qdomhelpers.h"
 #include "dbutils.h"
 #include "log.h"
+#include "not_reached.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 #include "snap_backend.h"
+#include "snap_expr.h"
 
 #include <csspp/csspp.h>
 #include <QtCassandra/QCassandraLock.h>
@@ -39,6 +40,7 @@
 
 
 SNAP_PLUGIN_START(list, 1, 0)
+
 
 /** \brief Get a fixed list name.
  *
@@ -1388,10 +1390,10 @@ void list::on_generate_page_content(content::path_info_t & ipath, QDomElement & 
  */
 void list::on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type)
 {
-    static_cast<void>(owner);
-    static_cast<void>(type);
+    NOTUSED(owner);
+    NOTUSED(type);
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
     // if a list is defined in this content, make sure to mark the
@@ -1435,7 +1437,7 @@ void list::on_create_content(content::path_info_t & ipath, QString const & owner
  */
 void list::on_modified_link(links::link_info const & link, bool const created)
 {
-    static_cast<void>(created);
+    NOTUSED(created);
 
     // no need to record the fact that we added a link in a list
     // (that is, at this point a list script cannot depend on the
@@ -1474,11 +1476,21 @@ void list::on_modified_content(content::path_info_t & ipath)
 {
     // if the same page is modified multiple times then we overwrite the
     // same entry multiple times
+    content::content * content_plugin(content::content::instance());
     QString const site_key(f_snap->get_site_key_with_slash());
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     QtCassandra::QCassandraTable::pointer_t listref_table(get_listref_table());
     int64_t const start_date(f_snap->get_start_date());
+
     QByteArray key;
+    priority_t priority(f_priority);
+    // content cannot access list information so we have to change the
+    // priority for it...
+    if(content_plugin->is_updating())
+    {
+        priority = LIST_PRIORITY_UPDATES;
+    }
+    QtCassandra::appendUnsignedCharValue(key, priority);
     QtCassandra::appendInt64Value(key, start_date);
     QtCassandra::appendStringValue(key, ipath.get_key());
 
@@ -1533,7 +1545,6 @@ void list::on_modified_content(content::path_info_t & ipath)
     // just in case the row changed, we delete the pre-compiled (cached)
     // scripts (this could certainly be optimized but really the scripts
     // are compiled so quickly that it won't matter.)
-    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QString const branch_key(ipath.get_branch_key());
     branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
@@ -1568,6 +1579,48 @@ void list::on_attach_to_session()
         // send a PING to the backend
         f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
     }
+}
+
+
+/** \brief Change the priority.
+ *
+ * This function saves a new priority to use on any future pages being
+ * created or modified (see the on_modified_content() function.)
+ *
+ * The priority should NOT be changed by directly calling this function.
+ * Instead, you want to use the safe_priority_t object on your stack.
+ * For example, when the user is trying to reset a page in a list,
+ * the processing function uses:
+ *
+ * \code
+ *     {
+ *         safe_priority_t safe_priority(LIST_PRIORITY_RESET);
+ *         on_modified_content(ipath);
+ *     }
+ * \endcode
+ *
+ * The use of the { ... } makes sure that the priority gets modified only
+ * for that specific call to on_modified_content().
+ *
+ * \param[in] priority  The new priority to use for any future addition
+ *                      of pages to the list table.
+ */
+void list::set_priority(priority_t priority)
+{
+    f_priority = priority;
+}
+
+
+/** \brief Retrieve the current list priority.
+ *
+ * This function returns the priority that the list is to used to and
+ * any pages to its list of pages to be processed.
+ *
+ * \return The current priority.
+ */
+list::priority_t list::get_priority() const
+{
+    return f_priority;
 }
 
 
@@ -1643,13 +1696,13 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
                     .arg(start).arg(count));
     }
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
     QString const branch_key(ipath.get_branch_key());
     QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(branch_key));
 
-    char const *ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
+    char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
     int const len(static_cast<int>(strlen(ordered_pages) + 2));
 
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -1832,78 +1885,115 @@ void list::on_backend_action(QString const & action)
 
         QString const site_key(f_snap->get_site_key_with_slash());
         QString const core_plugin_threshold(get_name(snap::name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
+        QString const last_updated(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED));
         // loop until stopped
         for(;;)
         {
+            int did_work(0);
+
             // verify that the site is ready, if not, do not process lists yet
             QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
             if(!threshold.nullValue())
             {
+                f_snap->init_start_date();
+                int64_t const start_date(f_snap->get_start_date());
+
                 //list_table->clearCache(); -- we do that below in the loop no need here
                 content_table->clearCache();
                 branch_table->clearCache();
                 revision_table->clearCache();
 
-                // work as long as there is work to do
-                bool worked(false);
-                int did_work(1);
-                while(did_work != 0)
-                {
-                    did_work = 0;
-                    QtCassandra::QCassandraRowPredicate row_predicate;
-                    row_predicate.setCount(1000);
-                    for(;;)
-                    {
-                        list_table->clearCache();
-                        uint32_t const count(list_table->readRows(row_predicate));
-                        if(count == 0)
-                        {
-                            // no more lists to process
-                            break;
-                        }
-                        QtCassandra::QCassandraRows const rows(list_table->rows());
-                        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
-                                o != rows.end(); ++o)
-                        {
-                            // do not work on standalone websites
-                            if(!(*o)->exists(get_name(name_t::SNAP_NAME_LIST_STANDALONE)))
-                            {
-                                f_snap->init_start_date();
-                                QString const key(QString::fromUtf8(o.key().data()));
-                                if(key.startsWith(site_key))
-                                {
-                                    worked = true;
-                                    did_work |= generate_new_lists(key);
-                                    did_work |= generate_all_lists(key);
-                                }
-                            }
+                // WARNING: Old code assumed that we could work on more than
+                //          one website within a single backend child...
+                //
+                // // work as long as there is work to do
+                // bool worked(false);
+                // int did_work(1);
+                // while(did_work != 0)
+                // {
+                //     did_work = 0;
+                //     QtCassandra::QCassandraRowPredicate row_predicate;
+                //     row_predicate.setCount(1000);
+                //     for(;;)
+                //     {
+                //         list_table->clearCache();
+                //         uint32_t const count(list_table->readRows(row_predicate));
+                //         if(count == 0)
+                //         {
+                //             // no more lists to process
+                //             break;
+                //         }
+                //         QtCassandra::QCassandraRows const rows(list_table->rows());
+                //         for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                //                 o != rows.end(); ++o)
+                //         {
+                //             // do not work on standalone websites
+                //             if(!(*o)->exists(get_name(name_t::SNAP_NAME_LIST_STANDALONE)))
+                //             {
+                //                 f_snap->init_start_date();
+                //                 QString const key(QString::fromUtf8(o.key().data()));
+                //                 //if(key.startsWith(site_key))
+                //                 if(key == site_key)
+                //                 {
+                //                     worked = true;
+                //                     did_work |= generate_new_lists(key);
+                //                     did_work |= generate_all_lists(key);
+                //                 }
+                //             }
 
-                            // quickly end this process if the user requested a stop
-                            if(backend->stop_received())
-                            {
-                                // clean STOP
-                                // we have to exit otherwise we'd get called again with
-                                // the next website!?
-                                exit(0);
-                            }
-                        }
-                    }
-                }
+                //             // quickly end this process if the user requested a stop
+                //             if(backend->stop_received())
+                //             {
+                //                 // clean STOP
+                //                 // we have to exit otherwise we'd get called again with
+                //                 // the next website!?
+                //                 exit(0);
+                //             }
+                //         }
+                //     }
+                // }
 
-                // if nothing happened (i.e. the list table was empty), we
-                // still want to run the process once with the site_key as
-                // the function parameters
-                if(!worked)
-                {
-                    // here we do not need did_work anymore
-                    generate_new_lists(site_key);
-                    generate_all_lists(site_key);
+                // // if nothing happened (i.e. the list table was empty), we
+                // // still want to run the process once with the site_key as
+                // // the function parameters
+                // if(!worked)
+                // {
+                    did_work |= generate_new_lists(site_key);
+                    did_work |= generate_all_lists(site_key);
 
                     // TBD -- really required?
                     // note that also these last 2 calls should not be required
                     // (since nothing changed in the lists, there is no need
                     // for it to be checked) -- yet once in a while we miss
                     // something and having such will probably help
+                // }
+
+                if(did_work == 0)
+                {
+                    // no work, check against the last time we did some
+                    // work and if long enough since, re-add the entire
+                    // website to the list table...
+                    //
+                    QtCassandra::QCassandraValue last_updated_value(f_snap->get_site_parameter(last_updated));
+                    int64_t last_time(last_updated_value.safeInt64Value());
+                    if(start_date - last_time > 15 * 60 * 1000000)
+                    {
+                        // re-add the entire website (this is really not
+                        // efficient, but makes it way surer that things
+                        // get in lists; note that with the priority
+                        // scheme it pushes this data at the very end
+                        // so we should be just fine...)
+                        add_all_pages_to_list_table(site_key);
+                    }
+                }
+                else
+                {
+                    // we did some work, update the time when we last did
+                    // some work
+                    //
+                    QtCassandra::QCassandraValue last_updated_value;
+                    last_updated_value.setInt64Value(start_date);
+                    f_snap->set_site_parameter(last_updated, last_updated_value);
                 }
             }
 
@@ -1917,8 +2007,15 @@ void list::on_backend_action(QString const & action)
 
             // sleep till next PING (but max. 5 minutes)
             //
+            // Here we want to quit this child process, but we need a
+            // mechanism to let the backend process know whether we did
+            // work or not; if we did work then the backend process
+            // should not go to sleep, instead it should call us back
+            // ASAP so we can finish up with all our lists as quickly
+            // as possible
+            //
             snap_backend::message_t message;
-            if( backend->pop_message( message, 5 * 60 * 1000 ) )
+            if( backend->pop_message( message, (did_work == 0 ? 5 * 60 * 1000 : 0 ) ) )
             {
                 // quickly end this process if the user requested a stop
                 if(backend->stop_received())
@@ -1928,6 +2025,10 @@ void list::on_backend_action(QString const & action)
                     // the next website!?
                     exit(0);
                 }
+
+                // we only understand STOP and PING, so if we did not
+                // receive the STOP message yet, we got a PING (or
+                // at least assume so)
 
                 // Because there is a delay of LIST_PROCESSING_LATENCY
                 // between the time when the user generates the PING and
@@ -2003,6 +2104,68 @@ void list::on_backend_action(QString const & action)
         throw snap_logic_exception(QString("list.cpp:on_backend_action(): list::on_backend_action(\"%1\") called with an unknown action...").arg(action));
     }
 }
+
+
+/** \brief Add all website pages to the list table.
+ *
+ * This function is used once in a while whenever no other data is being
+ * processed by the list backend processes. It adds all the pages of
+ * a website back to the list table so they all get re-processed.
+ *
+ * Since these are added with a very slow priority, they are likely to
+ * be ignored for a while if important work appears in the list.
+ *
+ * \param[in] site_key  The key of the site to add for review in the list of
+ *                      pages to check with the list backend processes.
+ */
+void list::add_all_pages_to_list_table(QString const & site_key)
+{
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    safe_priority_t safe_priority(LIST_PRIORITY_REVIEW);
+
+    QtCassandra::QCassandraRowPredicate row_predicate;
+    row_predicate.setCount(1000);
+    for(;;)
+    {
+        content_table->clearCache();
+        uint32_t const count(content_table->readRows(row_predicate));
+        if(count == 0)
+        {
+            // no more pages to process
+            break;
+        }
+        QtCassandra::QCassandraRows const rows(content_table->rows());
+        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                o != rows.end(); ++o)
+        {
+            QString key(QString::fromUtf8(o.key().data()));
+            if(key.startsWith(site_key))
+            {
+                content::path_info_t page_ipath;
+                page_ipath.set_path(o.key());
+                on_modified_content(page_ipath);
+            }
+
+            // The STOP is problematic because we would stop mid-way meaning that
+            // some pages could end up being processed over and over whereas
+            // others not at all... to support a stop in this loop we would
+            // need to know where we stopped to start again at that position
+            // next time (only rows are not sorted so we cannot really do
+            // that...)
+            //
+            // // quickly end this process if the user requested a stop
+            // if(backend->stop_received())
+            // {
+            //     // clean STOP
+            //     // we have to exit otherwise we'd get called again with
+            //     // the next website!?
+            //     exit(0);
+            // }
+        }
+    }
+}
+
 
 
 /** \brief Implementation of the backend process signal.
@@ -2357,6 +2520,7 @@ int list::generate_all_lists(QString const & site_key)
         QtCassandra::QCassandraCells const cells(list_row->cells());
         if(cells.isEmpty())
         {
+            // we reached the end of the list
             //continue_work = false;
             break;
         }
@@ -2372,41 +2536,57 @@ int list::generate_all_lists(QString const & site_key)
             QtCassandra::QCassandraCell::pointer_t cell(*c);
             // the key starts with the "start date" and it is followed by a
             // string representing the row key in the content table
-            QByteArray const& key(cell->columnKey());
-            if(static_cast<size_t>(key.size()) < sizeof(int64_t))
+            QByteArray const & key(cell->columnKey());
+            if(static_cast<size_t>(key.size()) < sizeof(unsigned char) + sizeof(int64_t))
             {
                 // drop any invalid entries, no need to keep them here
                 list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
                 continue;
             }
 
-            int64_t const page_start_date(QtCassandra::int64Value(key, 0));
-            if(page_start_date + LIST_PROCESSING_LATENCY > start_date)
+            priority_t const priority(QtCassandra::safeUnsignedCharValue(key, 0));
+
+            int64_t const update_request_time(QtCassandra::safeInt64Value(key, sizeof(unsigned char)));
+            if(update_request_time + LIST_PROCESSING_LATENCY > start_date)
             {
                 // since the columns are sorted, anything after that will be
                 // inaccessible date wise
-                continue_work = false;
+                //
+                // since we added a priority we cannot just have
+                //
+                //    continue_workd = false;
+                //
+                // as is...
+                //
+                if(priority >= LIST_PRIORITY_SLOW && did_work != 0)
+                {
+                    // stop the loop if the only thing left are slow pokes
+                    // and some work was already done
+                    //
+                    continue_work = false;
+                }
                 break;
             }
 
+            QString const row_key(QtCassandra::stringValue(key, sizeof(unsigned char) + sizeof(int64_t)));
+
             // print out the row being worked on
             // (if it crashes it is really good to know where)
-            int64_t const update_request_time(QtCassandra::uint64Value(key, 0));
             {
                 char buf[64];
                 struct tm t;
                 time_t const seconds(update_request_time / 1000000);
                 gmtime_r(&seconds, &t);
                 strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                QString const name(QString("%1.%2 (%3) %4")
+                QString const name(QString("[%1] %2.%3 (%4) %5")
+                            .arg(static_cast<int>(priority))
                             .arg(buf)
                             .arg(update_request_time % 1000000, 6, 10, QChar('0'))
                             .arg(update_request_time)
-                            .arg(QtCassandra::stringValue(key, sizeof(int64_t))));
+                            .arg(row_key));
                 SNAP_LOG_TRACE("list plugin working on column \"")(name)("\"");
             }
 
-            QString const row_key(QtCassandra::stringValue(key, sizeof(int64_t)));
             did_work |= generate_all_lists_for_page(site_key, row_key, update_request_time);
 
             // we handled that page for all the lists that we have on
@@ -2547,7 +2727,9 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
             return 0;
         }
 
-        // TODO testing just the row is not enough to know whether it was deleted
+        // TODO: testing just the row is not enough to know whether it was deleted
+        //       (I think we will also always have content::created in the
+        //       branch assuming it was properly created)
         if(!branch_table->exists(page_ipath.get_branch_key()))
         {
             // branch disappeared... ignore
@@ -2561,9 +2743,10 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
         QString const list_key_in_page(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_KEY)).arg(list_ipath.get_key()));
         bool const included(run_list_check(list_ipath, page_ipath));
         QString const new_item_key(run_list_item_key(list_ipath, page_ipath));
-        QString const new_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
         if(included)
         {
+            QString const new_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
+
             // the check script says to include this item in this list;
             // first we need to check to find under which key it was
             // included if it is already there because it may have
@@ -2646,6 +2829,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     }
     catch(...)
     {
+        SNAP_LOG_ERROR("an unknown exception occurred while attempting to create the list for page \"")(page_ipath.get_key())("\".");
         did_work = 1;
     }
 
@@ -2847,7 +3031,7 @@ QString list::run_list_item_key(content::path_info_t & list_ipath, content::path
                 {
                     // TODO: generate a double error!
                     //       this should really not happen
-                    //       because "0" is definitively a valid script
+                    //       because "\"---\"" is definitively a valid script
                     return "";
                 }
             }

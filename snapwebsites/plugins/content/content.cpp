@@ -2080,18 +2080,38 @@ bool content::load_attachment(QString const & key, attachment_file & file, bool 
  */
 bool content::modified_content_impl(path_info_t & ipath)
 {
-    QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
-    QString const branch_key(ipath.get_branch_key());
-    if(!branch_table->exists(branch_key))
-    {
-        // the row doesn't exist?!
-        SNAP_LOG_WARNING("Page \"")(branch_key)("\" does not exist. We cannot do anything about it being modified.");
-        return false;
-    }
-    QtCassandra::QCassandraRow::pointer_t row(branch_table->row(branch_key));
-
     int64_t const start_date(f_snap->get_start_date());
-    row->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+
+    {
+        // although we could use the CREATED of the last revision, we would need
+        // special handling to know which one that is (because the last is not
+        // always the current revision); also if data in the branch changes,
+        // we get here too and that would have nothing to do with the last revision
+        //
+        QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+        QString const key(ipath.get_key());
+        if(!content_table->exists(key))
+        {
+            // the row does not exist?!
+            SNAP_LOG_WARNING("Page \"")(key)("\" does not exist. We cannot do anything about it being modified.");
+            return false;
+        }
+        QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
+        row->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+    }
+
+    {
+        QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
+        QString const branch_key(ipath.get_branch_key());
+        if(!branch_table->exists(branch_key))
+        {
+            // the row does not exist?!
+            SNAP_LOG_WARNING("Page \"")(branch_key)("\" does not exist. We cannot do anything about it being modified.");
+            return false;
+        }
+        QtCassandra::QCassandraRow::pointer_t row(branch_table->row(branch_key));
+        row->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+    }
 
     return true;
 }
@@ -2213,7 +2233,7 @@ QtCassandra::QCassandraValue content::get_content_parameter(path_info_t& ipath, 
  * \sa add_param()
  * \sa add_link()
  */
-void content::add_xml(const QString& plugin_name)
+void content::add_xml(QString const & plugin_name)
 {
     if(!plugins::verify_plugin_name(plugin_name))
     {
@@ -2250,7 +2270,7 @@ void content::add_xml(const QString& plugin_name)
  * \param[in] dom  The DOM to add to the content system.
  * \param[in] plugin_name  The name of the plugin loading this data.
  */
-void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
+void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
 {
     QDomNodeList content_nodes(dom.elementsByTagName(get_name(name_t::SNAP_NAME_CONTENT_TAG)));
     int const max_nodes(content_nodes.size());
@@ -2795,7 +2815,7 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
  * \param[in] path  The path of the content being added.
  * \param[in] plugin_owner  The name of the plugin managing this content.
  */
-void content::add_content(const QString& path, const QString& plugin_owner)
+void content::add_content(QString const & path, QString const & plugin_owner)
 {
     if(!plugins::verify_plugin_name(plugin_owner))
     {
@@ -3104,6 +3124,26 @@ void content::on_save_content()
     {
         return;
     }
+
+    class restore_flag_t
+    {
+    public:
+        restore_flag_t(controlled_vars::fbool_t & flag)
+            : f_flag(flag)
+        {
+            f_flag = true;
+        }
+
+        ~restore_flag_t()
+        {
+            f_flag = false;
+        }
+
+    private:
+        controlled_vars::fbool_t &  f_flag;
+    };
+
+    restore_flag_t raii_updating(f_updating);
 
     QString const primary_owner(get_name(name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER));
     QString const site_key(f_snap->get_site_key_with_slash());
@@ -3432,7 +3472,6 @@ void content::on_save_content()
     // needs to generate a shorturl, there is no real default other than:
     // that page has no shorturl.)
     f_snap->trace("Generate missing pages (parents of other pages).\n");
-    f_updating = true;
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
     {
@@ -3461,10 +3500,12 @@ void content::on_save_content()
         status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
         ipath.set_status(status);
     }
-    f_updating = false;
 
     // we are done with that set of data, release it from memory
     f_blocks.clear();
+
+    // RAII takes care of this one now
+    //f_updating = false;
 }
 
 
@@ -4036,6 +4077,26 @@ void content::add_css(QDomDocument doc, QString const& name)
             "CSS \"" + name + "\" was not found. Was it installed?",
             "The named CSS was not found in the \"css\" row of the \"files\" table.");
     NOTREACHED();
+}
+
+
+/** \brief Check whether the created pages are from the content.xml
+ *
+ * While updating a website, many callbacks get called, such as
+ * the on_modified_content(), and these may need to know whether
+ * the update is from content.xml data or an end user creating
+ * a page.
+ *
+ * This function returns true when the content module is creating
+ * data from various content.xml files. Since the process locks
+ * others out, it should be pretty safe.
+ *
+ * \return true if the content plugin is currently running updates
+ *         from content.xml data.
+ */
+bool content::is_updating()
+{
+    return f_updating;
 }
 
 

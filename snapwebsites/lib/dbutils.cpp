@@ -305,8 +305,16 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     {
         name = key_to_string( key );
     }
-    else if((f_tableName == "list" && f_rowName != "*standalone*")
-         || (f_tableName == "files" && f_rowName == "images"))
+    else if((f_tableName == "list" && f_rowName != "*standalone*"))
+    {
+        unsigned char priority(QtCassandra::safeUnsignedCharValue(key, 0));
+        QString const time(microseconds_to_string(QtCassandra::safeInt64Value(key, sizeof(unsigned char)), true));
+        name = QString("%1 %2 %3")
+                .arg(static_cast<int>(priority))
+                .arg(time)
+                .arg(QtCassandra::stringValue(key, sizeof(unsigned char) + sizeof(uint64_t)));
+    }
+    else if((f_tableName == "files" && f_rowName == "images"))
     {
         QString const time(microseconds_to_string(QtCassandra::safeInt64Value(key, 0), true));
         name = QString("%1 %4").arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
@@ -385,7 +393,6 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     )
     {
         // signed 8 bit value
-        // cast to integer so arg() doesn't take it as a character
         return column_type_t::CT_int8_value;
     }
     else if(n == "content::final"
@@ -493,6 +500,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "epayment_paypal::oauth2_expires"
          || n == "images::modified"
          || n == "list::last_updated"
+         || n == "permissions::last_updated"
          || n.endsWith("::sendmail::created")
          || n == "sendmail::unsubscribe_on"
          || n == "sessions::date"
