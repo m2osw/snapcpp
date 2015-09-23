@@ -138,6 +138,14 @@ inline char charValueOrNull(const QByteArray& array, const int index = 0, const 
     return array.at(index);
 }
 
+inline char safeCharValue(const QByteArray& array, const int index = 0, const char default_value = 0)
+{
+    if(static_cast<unsigned int>(index) >= static_cast<unsigned int>(array.size())) {
+        return default_value;
+    }
+    return static_cast<char>(array.at(index));
+}
+
 inline void appendSignedCharValue(QByteArray& array, const signed char value)
 {
     appendCharValue(array, value);
@@ -161,7 +169,15 @@ inline signed char signedCharValueOrNull(const QByteArray& array, const int inde
     if(static_cast<unsigned int>(index) >= static_cast<unsigned int>(array.size())) {
         return default_value;
     }
-    return array.at(index);
+    return static_cast<signed char>(array.at(index));
+}
+
+inline signed char safeSignedCharValue(const QByteArray& array, const int index = 0, const signed char default_value = 0)
+{
+    if(static_cast<unsigned int>(index) >= static_cast<unsigned int>(array.size())) {
+        return default_value;
+    }
+    return static_cast<signed char>(array.at(index));
 }
 
 inline void appendUnsignedCharValue(QByteArray& array, const unsigned char value)
@@ -188,6 +204,14 @@ inline unsigned char unsignedCharValueOrNull(const QByteArray& array, const int 
         return default_value;
     }
     return array.at(index);
+}
+
+inline unsigned char safeUnsignedCharValue(const QByteArray& array, const int index = 0, const unsigned char default_value = 0)
+{
+    if(static_cast<unsigned int>(index) >= static_cast<unsigned int>(array.size())) {
+        return default_value;
+    }
+    return static_cast<unsigned char>(array.at(index));
 }
 
 // Int16
