@@ -1962,6 +1962,7 @@ void list::on_backend_action(QString const & action)
 {
     content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
+    QtCassandra::QCassandraTable::pointer_t cache_table(content_plugin->get_cache_table());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
@@ -1993,6 +1994,17 @@ void list::on_backend_action(QString const & action)
         // loop until stopped
         for(;;)
         {
+            // once we run for 100 items of 10ms and return to the backend
+            // process, these will not be required since we will have a new
+            // process each time anyway
+            //
+            f_snap->reset_site_table();
+            list_table->clearCache();
+            cache_table->clearCache();
+            content_table->clearCache();
+            branch_table->clearCache();
+            revision_table->clearCache();
+
             int did_work(0);
 
             f_snap->init_start_date();
@@ -2003,14 +2015,10 @@ void list::on_backend_action(QString const & action)
             // TODO: move this verification to the backend class
             //
             // verify that the site is ready, if not, do not process lists yet
+            //
             QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
             if(!threshold.nullValue())
             {
-                //list_table->clearCache(); -- we do that below in the loop no need here
-                content_table->clearCache();
-                branch_table->clearCache();
-                revision_table->clearCache();
-
                 // WARNING: Old code assumed that we could work on more than
                 //          one website within a single backend child...
                 //
@@ -2673,7 +2681,7 @@ int list::generate_all_lists(QString const & site_key)
     //       the oldest entries are automatically worked on first
     //
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100); // do one round then exit
+    column_predicate.setCount(100); // do one round then exit (we also check time and run at most 10ms too)
     column_predicate.setIndex(); // behave like an index
 
     int did_work(0);
@@ -2738,8 +2746,11 @@ int list::generate_all_lists(QString const & site_key)
                     // and some work was already done
                     //
                     continue_work = false;
+                    break;
                 }
-                break;
+
+                // otherwise try with the next entry
+                continue;
             }
 
             QString const row_key(QtCassandra::stringValue(key, sizeof(unsigned char) + sizeof(int64_t)));
@@ -2777,7 +2788,7 @@ int list::generate_all_lists(QString const & site_key)
             int64_t const loop_current_time(f_snap->get_current_date());
             if(loop_current_time - loop_start_time > 10 * 1000000)
             {
-                //continue_work = false;
+                //continue_work = false; -- no need to do this, we can just break
                 break;
             }
         }
@@ -2842,6 +2853,7 @@ int list::generate_all_lists_for_page(QString const & site_key, QString const & 
         QString const key(child_info.key());
         content::path_info_t list_ipath;
         list_ipath.set_path(key);
+//SNAP_LOG_WARNING("generate list \"")(list_ipath.get_key())("\" for page \"")(page_ipath.get_key());
         did_work |= generate_list_for_page(page_ipath, list_ipath, update_request_time);
     }
 
@@ -2919,6 +2931,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
         QString const new_item_key(run_list_item_key(list_ipath, page_ipath));
         if(included)
         {
+//SNAP_LOG_WARNING("------- include this item");
             QString const new_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
 
             // the check script says to include this item in this list;

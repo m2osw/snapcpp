@@ -318,6 +318,7 @@ public:
     bool                        is_debug() const;
     static char const *         get_running_server_version();
     QString                     get_server_parameter(QString const & name);
+    void                        reset_site_table();
     QtCassandra::QCassandraValue get_site_parameter(QString const & name);
     void                        set_site_parameter(QString const & name, QtCassandra::QCassandraValue const & value);
     void                        improve_signature(QString const & path, QString & signature);

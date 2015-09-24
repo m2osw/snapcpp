@@ -1365,6 +1365,9 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
     //
     if(sets.read_from_user_cache())
     {
+        // no need for other plugins to run since we got the user rights
+        // from the cache
+        //
         return false;
     }
 
@@ -1489,6 +1492,8 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
             }
         }
     }
+
+    // give other plugins a chance to add their own links
     return true;
 }
 
@@ -2974,22 +2979,21 @@ void permissions::on_modified_link(links::link_info const & link, bool const cre
     // a permissions link got modified, reset the timestamp date and time
     // so any existing caches are reset
     //
-    // we use 'last_updated + 1' so that all caches in this session
-    // will be ignored which is important; it will also re-generate
-    // the permissions the next time the user access the website
+    // we use 'last_updated + EXPECTED_TIME_ACCURACY_EPSILON' so that all
+    // caches in this session will be ignored which is important; it will
+    // also re-generate the permissions the next time the user access the
+    // website; this also affects backend processes for that long (10ms
+    // at time of writing)
     //
-    // TODO: I do not think that will work right though, the list
-    //       plugin could mess this up by checking the permissions
-    //       right after the main thread... (I'm pretty darn sure
-    //       of that actually! and that's not just the pagelist
-    //       backend, it could be any backend...)
-    //
-    //       one solution may be to includes the + 1 to + 0.1s
-    //       assuming computers cannot be off by more than 0.05s
+    // TODO: if the accuracy epsilon is too small, we get problems...
+    //       if it is "too large", we get slowness which people should
+    //       be able to survive... we would need to have a strong PTP
+    //       service running and see what kind of accuracy we can get
+    //       on a large network
     //
     int64_t last_updated(f_snap->get_current_date());
     QtCassandra::QCassandraValue value;
-    value.setInt64Value(last_updated + 1);
+    value.setInt64Value(last_updated + EXPECTED_TIME_ACCURACY_EPSILON);
     f_snap->set_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED), value);
 }
 

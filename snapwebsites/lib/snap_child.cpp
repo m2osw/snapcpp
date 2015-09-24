@@ -5076,6 +5076,26 @@ void snap_child::site_redirect()
     // TBD -- should we also redirect the f_domain_key and f_website_key?
 
     // the site table is the old one, we want to switch to the new one
+    reset_site_table();
+}
+
+
+/** \brief Reset the site table so one can make sure to use the latest version.
+ *
+ * In a backend that does not restart all the time, we may need to reset
+ * the site table.
+ *
+ * This function clears the memory cache of the existing site table, if
+ * one exists in memory, and then it resets the site table pointer.
+ * The next time a user calls the set_site_parameter() or get_site_parameter()
+ * a new site table object is created and filled as required.
+ */
+void snap_child::reset_site_table()
+{
+    if(f_site_table)
+    {
+        f_site_table->clearCache();
+    }
     f_site_table.reset();
 }
 

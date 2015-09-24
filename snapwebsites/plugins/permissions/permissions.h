@@ -104,6 +104,8 @@ class permissions : public plugins::plugin
                   , public server::backend_action
 {
 public:
+    static int64_t const        EXPECTED_TIME_ACCURACY_EPSILON = 10000; // 10ms
+
     class sets_t
     {
     public:

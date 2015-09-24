@@ -310,7 +310,7 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
         {
             // although query_option("") works as expected by returning ""
             // we avoid the call to the get_uri() by testing early
-            snap_uri const& uri(f_snap->get_uri());
+            snap_uri const & uri(f_snap->get_uri());
             layout_name = uri.query_option(qs_layout);
         }
     }
