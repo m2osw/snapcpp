@@ -83,6 +83,13 @@ namespace snap
  *
  * This function returns the date, in micro seconds (seconds x 1,000,000)
  * when the child was forked from the server.
+ *
+ * In some situation, it may be useful to reset this time to the clock.
+ * In most cases this is done in backends. This is done by calling
+ * init_start_date().
+ *
+ * \sa init_start_date()
+ * \sa get_start_time()
  */
 
 /** \fn int64_t get_start_time() const
@@ -90,6 +97,11 @@ namespace snap
  *
  * This function returns the date in seconds (same as a Unix date)
  * when the child was forked from the server.
+ *
+ * This is the same date as get_start_date() would returned, divided
+ * by 1 million (rounded down).
+ *
+ * \sa get_start_date()
  */
 
 namespace
@@ -2440,8 +2452,9 @@ snap_child::~snap_child()
  *
  * This function does not modified the start date of the current process.
  *
- * \sa reset_start_date()
+ * \sa init_start_date()
  * \sa get_start_date()
+ * \sa get_start_time()
  */
 int64_t snap_child::get_current_date()
 {

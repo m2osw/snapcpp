@@ -2021,7 +2021,7 @@ QString const & permissions::get_login_status()
 {
     if(f_login_status.isEmpty())
     {
-        users::users *users_plugin(users::users::instance());
+        users::users * users_plugin(users::users::instance());
         f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
         if(!users_plugin->user_is_a_spammer())
         {
@@ -2865,7 +2865,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
         // though...
         status = "returning_registered";
     }
-//std::cerr << "perms(\"" << path << "\", \"" << user_path << "\", \"" << action << "\", \"" << status << "\")\n";
+    //SNAP_LOG_WARNING("perms(\"")(path)("\", \"")(user_path)("\", \"")(action)("\", \"")(status)("\")");
 
     // setup the parameters to the access_allowed() signal
     content::path_info_t ipath;
@@ -2884,7 +2884,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
     QtCassandra::QCassandraValue value;
     value.setBoolValue(allowed.allowed());
     result.set_value(snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
-//std::cerr << "\n***\n*** exit call perms " << (allowed.allowed() ? "allowed!" : "forbidden") << "\n***\n";
+    //SNAP_LOG_WARNING("exit call perms \"")(allowed.allowed() ? "allowed!" : "forbidden")("\"");
 }
 
 
@@ -2972,9 +2972,24 @@ void permissions::on_modified_link(links::link_info const & link, bool const cre
     }
 
     // a permissions link got modified, reset the timestamp date and time
+    // so any existing caches are reset
+    //
+    // we use 'last_updated + 1' so that all caches in this session
+    // will be ignored which is important; it will also re-generate
+    // the permissions the next time the user access the website
+    //
+    // TODO: I do not think that will work right though, the list
+    //       plugin could mess this up by checking the permissions
+    //       right after the main thread... (I'm pretty darn sure
+    //       of that actually! and that's not just the pagelist
+    //       backend, it could be any backend...)
+    //
+    //       one solution may be to includes the + 1 to + 0.1s
+    //       assuming computers cannot be off by more than 0.05s
+    //
     int64_t last_updated(f_snap->get_current_date());
     QtCassandra::QCassandraValue value;
-    value.setInt64Value(last_updated);
+    value.setInt64Value(last_updated + 1);
     f_snap->set_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED), value);
 }
 

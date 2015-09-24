@@ -47,6 +47,7 @@ enum class name_t
     SNAP_NAME_LIST_PAGE_SIZE,
     SNAP_NAME_LIST_PROCESSLIST,
     SNAP_NAME_LIST_RESETLISTS,
+    SNAP_NAME_LIST_RESETSITE,
     SNAP_NAME_LIST_SELECTOR,
     SNAP_NAME_LIST_SIGNAL_NAME,
     SNAP_NAME_LIST_STANDALONE,
@@ -219,6 +220,26 @@ public:
         priority_t          f_priority;
     };
 
+    class safe_start_date_offset_t
+    {
+    public:
+        safe_start_date_offset_t(int64_t start_date_offset)
+            : f_list_plugin(list::instance())
+            , f_start_date_offset(f_list_plugin->get_start_date_offset())
+        {
+            f_list_plugin->set_start_date_offset(start_date_offset);
+        }
+
+        ~safe_start_date_offset_t()
+        {
+            f_list_plugin->set_start_date_offset(f_start_date_offset);
+        }
+
+    private:
+        list *              f_list_plugin;
+        int64_t             f_start_date_offset;
+    };
+
                         list();
                         ~list();
 
@@ -245,6 +266,9 @@ public:
 
     void                set_priority(priority_t priority);
     priority_t          get_priority() const;
+
+    void                set_start_date_offset(int64_t offset_us);
+    int64_t             get_start_date_offset() const;
 
     list_item_vector_t  read_list(content::path_info_t & ipath, int start, int count);
 
@@ -279,7 +303,9 @@ private:
     snap_expr::expr::expr_map_t             f_item_key_expressions;
     controlled_vars::fbool_t                f_ping_backend;
     controlled_vars::fbool_t                f_list_link;
-    priority_t                              f_priority = LIST_PRIORITY_NEW_PAGE;   // specific order in which pages should be worked on
+    priority_t                              f_priority = LIST_PRIORITY_NEW_PAGE;                // specific order in which pages should be worked on
+    int64_t                                 f_start_date_offset = LIST_PROCESSING_LATENCY;      // minimum amount of time to wait for the next data
+    int64_t                                 f_date_limit = 0;
 };
 
 

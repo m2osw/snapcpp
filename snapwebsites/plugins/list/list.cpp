@@ -97,8 +97,11 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LIST_PROCESSLIST: // --action processlist
         return "processlist";
 
-    case name_t::SNAP_NAME_LIST_RESETLISTS:
-        return "resetlist";
+    case name_t::SNAP_NAME_LIST_RESETLISTS: // --action resetlists
+        return "resetlists";
+
+    case name_t::SNAP_NAME_LIST_RESETSITE: // --action resetsite
+        return "resetsite";
 
     case name_t::SNAP_NAME_LIST_SELECTOR: // all, public, children, hand-picked, type=name, ...
         return "list::selector";
@@ -1480,34 +1483,23 @@ void list::on_modified_content(content::path_info_t & ipath)
     QString const site_key(f_snap->get_site_key_with_slash());
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     QtCassandra::QCassandraTable::pointer_t listref_table(get_listref_table());
-    int64_t const start_date(f_snap->get_start_date());
 
     QByteArray key;
+
+    int64_t const start_date(f_snap->get_start_date());
+    int64_t key_start_date(start_date + f_start_date_offset);
     priority_t priority(f_priority);
+
     // content cannot access list information so we have to change the
     // priority for it...
     if(content_plugin->is_updating())
     {
+        // +1h is quite arbitrary, but we assume that a website may have
+        // a few lists that may require the entire setup to be complete
+        key_start_date += 60LL * 60LL * 1000000LL;
+
         priority = LIST_PRIORITY_UPDATES;
     }
-    QtCassandra::appendUnsignedCharValue(key, priority);
-    QtCassandra::appendInt64Value(key, start_date);
-    QtCassandra::appendStringValue(key, ipath.get_key());
-
-    // we can insert before the eventual delete below because
-    // when 'key' does not change, we skip the delete!
-    // however, we assume 100% that all computers have the exact
-    // same clock
-    bool const modified(true);
-    list_table->row(site_key)->cell(key)->setValue(modified);
-
-    // prepare before lock
-    QtCassandra::QCassandraValue timed_key;
-    timed_key.setBinaryValue(key);
-    timed_key.setTtl(86400 * 3); // 3 days--the list should be updated within 5 min. so 3 days is in case it crashed or did not start, maybe?
-
-    // compute ref_key early
-    QString const ref_key(QString("%1#ref").arg(site_key));
 
     {
         // we need to have this run by a single process at a time
@@ -1517,17 +1509,43 @@ void list::on_modified_content(content::path_info_t & ipath)
         // handle a reference so it is possible to delete the old key for that
         // very page later (i.e. if the page changes multiple times before the
         // list processes have time to catch up)
-        QtCassandra::QCassandraValue existing_entry(listref_table->row(ref_key)->cell(ipath.get_key())->value());
+        QtCassandra::QCassandraValue existing_entry(listref_table->row(site_key)->cell(ipath.get_key())->value());
         if(!existing_entry.nullValue())
         {
-            QByteArray old_key(existing_entry.binaryValue());
+            QByteArray const old_key(existing_entry.binaryValue());
+
+            // get the smallest of the two priority, we need to keep that
+            // smaller number
+            //
+            priority_t old_priority(QtCassandra::safeUnsignedCharValue(old_key, 0));
+            int64_t old_key_start_date(QtCassandra::safeUnsignedCharValue(old_key, 0));
+
+            // keep the smallest priority
+            priority = std::min(priority, old_priority);
+            // keep the latest date at which to update
+            key_start_date = std::max(key_start_date, old_key_start_date);
+
+            // create the key with the new or old priority, whichever is
+            // smaller
+            //
+            QtCassandra::appendUnsignedCharValue(key, priority);
+            QtCassandra::appendInt64Value(key, key_start_date);
+            QtCassandra::appendStringValue(key, ipath.get_key());
+
             if(old_key != key)
             {
                 // drop only if the key changed (i.e. if the code modifies the
                 // same page over and over again within the same child process,
                 // then the key will not change.)
+                //
                 list_table->row(site_key)->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
             }
+        }
+        else
+        {
+            QtCassandra::appendUnsignedCharValue(key, priority);
+            QtCassandra::appendInt64Value(key, key_start_date);
+            QtCassandra::appendStringValue(key, ipath.get_key());
         }
 
         //
@@ -1539,8 +1557,19 @@ void list::on_modified_content(content::path_info_t & ipath)
         //      which is not a big deal (XXX I really think we can delete
         //      those using the start_date saved in the cells to sort them!)
         //
-        listref_table->row(ref_key)->cell(ipath.get_key())->setValue(timed_key);
+        QtCassandra::QCassandraValue timed_key;
+        timed_key.setBinaryValue(key);
+        timed_key.setTtl(86400 * 3); // 3 days--the list should be updated within 5 min. so 3 days is in case it crashed or did not start, maybe?
+
+        listref_table->row(site_key)->cell(ipath.get_key())->setValue(timed_key);
     }
+
+    // we insert after because the old key may have had a smaller
+    // priority and we need to keep that smaller priority
+    //
+    bool const modified(true);
+    list_table->row(site_key)->cell(key)->setValue(modified);
+//SNAP_LOG_WARNING("adding new page \"")(ipath.get_key())("\" to list table (priority: ")(priority)(", offset: ")((key_start_date - start_date) / 1000000);
 
     // just in case the row changed, we delete the pre-compiled (cached)
     // scripts (this could certainly be optimized but really the scripts
@@ -1621,6 +1650,80 @@ void list::set_priority(priority_t priority)
 list::priority_t list::get_priority() const
 {
     return f_priority;
+}
+
+
+/** \brief Change the start date offset to increase latency.
+ *
+ * The offset is defined in microseconds. It defines the amount of time
+ * it takes before the list plugin is allowed to process that page. By
+ * default is is set to LIST_PROCESSING_LATENCY, which at time of writing
+ * is 10 seconds.
+ *
+ * In most cases you do not need to change this value. However, if you
+ * are working with a special plugin that needs to create many pages,
+ * especially permissions to change who has access to those pages, then
+ * the process may take more or around the default 10 seconds. In that,
+ * you want to change the start date offset with a (much) larger amount.
+ *
+ * You should never call this function directly. Instead look into
+ * using the RAII class safe_start_date_offset, which will automatically
+ * restore the default offset once you are done.
+ *
+ * \code
+ *      {
+ *          // set your my_new_offset value to the amount in microseconds
+ *          // you want the list plugin to wait before processing your
+ *          // new content
+ *          //
+ *          list::safe_start_date_offset saved_offset(my_new_offset);
+ *
+ *          content::content::instance()->create_content(...);
+ *      }
+ * \endcode
+ *
+ * \note
+ * The minimum value of offset_us is LIST_PROCESSING_LATENCY.
+ * We also clamp to a maximum of 24h.
+ *
+ * \param[in] offset_us  The offset to add to the start date of items
+ *                       added to the list.
+ */
+void list::set_start_date_offset(int64_t offset_us)
+{
+    if(offset_us < LIST_PROCESSING_LATENCY)
+    {
+        f_start_date_offset = LIST_PROCESSING_LATENCY;
+    }
+    else if(offset_us > 24LL * 60LL * 60LL * 1000000LL)
+    {
+        f_start_date_offset = 24LL * 60LL * 60LL * 1000000LL;
+    }
+    else
+    {
+        f_start_date_offset = offset_us;
+    }
+}
+
+
+/** \brief Retrieve the start date offset.
+ *
+ * By default, the act of creating or modifying a page is registered for
+ * immediate processing by the list plugin.
+ *
+ * There are cases, however, where an item is created and needs some time
+ * before getting 100% ready. This offset defines how long the list plugin
+ * should wait.
+ *
+ * The default wait is LIST_PROCESSING_LATENCY, which at time of writing is
+ * 10 seconds.
+ *
+ * \return The offset to add to the start date when registering a page for
+ *         reprocessing after modification, in microseconds.
+ */
+int64_t list::get_start_date_offset() const
+{
+    return f_start_date_offset;
 }
 
 
@@ -1794,6 +1897,7 @@ void list::on_register_backend_action(server::backend_action_map_t & actions)
     actions[get_name(name_t::SNAP_NAME_LIST_PROCESSLIST)] = this;
     actions[get_name(name_t::SNAP_NAME_LIST_STANDALONELIST)] = this;
     actions[get_name(name_t::SNAP_NAME_LIST_RESETLISTS)] = this;
+    actions[get_name(name_t::SNAP_NAME_LIST_RESETSITE)] = this;
 }
 
 
@@ -1856,7 +1960,7 @@ char const * list::get_signal_name(QString const & action) const
  */
 void list::on_backend_action(QString const & action)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
@@ -1885,19 +1989,23 @@ void list::on_backend_action(QString const & action)
 
         QString const site_key(f_snap->get_site_key_with_slash());
         QString const core_plugin_threshold(get_name(snap::name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
-        QString const last_updated(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED));
+        //QString const last_updated(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED));
         // loop until stopped
         for(;;)
         {
             int did_work(0);
 
+            f_snap->init_start_date();
+            //int64_t const start_date(f_snap->get_start_date());
+            // date limit is now + 5 minutes
+            f_date_limit = f_snap->get_start_date() + 5LL * 60LL * 1000000LL;
+
+            // TODO: move this verification to the backend class
+            //
             // verify that the site is ready, if not, do not process lists yet
             QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
             if(!threshold.nullValue())
             {
-                f_snap->init_start_date();
-                int64_t const start_date(f_snap->get_start_date());
-
                 //list_table->clearCache(); -- we do that below in the loop no need here
                 content_table->clearCache();
                 branch_table->clearCache();
@@ -1968,33 +2076,39 @@ void list::on_backend_action(QString const & action)
                     // something and having such will probably help
                 // }
 
-                if(did_work == 0)
-                {
-                    // no work, check against the last time we did some
-                    // work and if long enough since, re-add the entire
-                    // website to the list table...
-                    //
-                    QtCassandra::QCassandraValue last_updated_value(f_snap->get_site_parameter(last_updated));
-                    int64_t last_time(last_updated_value.safeInt64Value());
-                    if(start_date - last_time > 15 * 60 * 1000000)
-                    {
-                        // re-add the entire website (this is really not
-                        // efficient, but makes it way surer that things
-                        // get in lists; note that with the priority
-                        // scheme it pushes this data at the very end
-                        // so we should be just fine...)
-                        add_all_pages_to_list_table(site_key);
-                    }
-                }
-                else
-                {
-                    // we did some work, update the time when we last did
-                    // some work
-                    //
-                    QtCassandra::QCassandraValue last_updated_value;
-                    last_updated_value.setInt64Value(start_date);
-                    f_snap->set_site_parameter(last_updated, last_updated_value);
-                }
+                // That scheme makes the list work 24/7 which is not too good
+                // because then it accesses the database constantly... I
+                // think we can have a backend process for that so that way
+                // we can make sure to reset a database once in a while if
+                // it looks like some lists are not up to snuff, but otherwise
+                // we will change the timings when creating some pages.
+                //if(did_work == 0)
+                //{
+                //    // no work, check against the last time we did some
+                //    // work and if long enough since, re-add the entire
+                //    // website to the list table...
+                //    //
+                //    QtCassandra::QCassandraValue last_updated_value(f_snap->get_site_parameter(last_updated));
+                //    int64_t last_time(last_updated_value.safeInt64Value());
+                //    if(start_date - last_time > 15 * 60 * 1000000)
+                //    {
+                //        // re-add the entire website (this is really not
+                //        // efficient, but makes it way surer that things
+                //        // get in lists; note that with the priority
+                //        // scheme it pushes this data at the very end
+                //        // so we should be just fine...)
+                //        add_all_pages_to_list_table(site_key);
+                //    }
+                //}
+                //else
+                //{
+                //    // we did some work, update the time when we last did
+                //    // some work
+                //    //
+                //    QtCassandra::QCassandraValue last_updated_value;
+                //    last_updated_value.setInt64Value(start_date);
+                //    f_snap->set_site_parameter(last_updated, last_updated_value);
+                //}
             }
 
             // Stop on error
@@ -2014,8 +2128,29 @@ void list::on_backend_action(QString const & action)
             // ASAP so we can finish up with all our lists as quickly
             // as possible
             //
+            int64_t date_limit(f_date_limit - f_snap->get_current_date());
+            if(date_limit < 0
+            || did_work != 0)
+            {
+                date_limit = 0;
+            }
+            else if(date_limit > 5LL * 60LL * 1000000LL)
+            {
+                // wait at most 5 min.
+                //
+                // note that should never happen since we start with
+                // "now + 5min." in f_date_limit and only reduce that
+                // value in the loops below
+                //
+                date_limit = 5LL * 60LL * 1000000LL;
+            }
+//SNAP_LOG_WARNING("waiting amount = ")(date_limit / 1000000LL)(" . ")(date_limit % 1000000LL);
+            // we round the time up because otherwise we could get out
+            // of the pop_message() one millisecond too soon and waste
+            // and entire round trip
+            //
             snap_backend::message_t message;
-            if( backend->pop_message( message, (did_work == 0 ? 5 * 60 * 1000 : 0 ) ) )
+            if( backend->pop_message( message, (date_limit + 999) / 1000LL ) )
             {
                 // quickly end this process if the user requested a stop
                 if(backend->stop_received())
@@ -2030,6 +2165,12 @@ void list::on_backend_action(QString const & action)
                 // receive the STOP message yet, we got a PING (or
                 // at least assume so)
 
+                // Note: I applied a couple of fixes in regard to the
+                //       latency although once we have the proper
+                //       snap_communicator processing, we will need
+                //       yet another fix (i.e. the wait has to be
+                //       reflected there too)
+                //
                 // Because there is a delay of LIST_PROCESSING_LATENCY
                 // between the time when the user generates the PING and
                 // the time we can make use of the data, we sleep here
@@ -2044,10 +2185,10 @@ void list::on_backend_action(QString const & action)
                 // TBD -- should we add 1 sec., just in case?
                 // TBD -- should we check for other UDP packets while
                 //        waiting?
-                struct timespec wait;
-                wait.tv_sec = LIST_PROCESSING_LATENCY / 1000000;
-                wait.tv_nsec = (LIST_PROCESSING_LATENCY % 1000000) * 1000;
-                nanosleep(&wait, NULL);
+                //struct timespec wait;
+                //wait.tv_sec = LIST_PROCESSING_LATENCY / 1000000;
+                //wait.tv_nsec = (LIST_PROCESSING_LATENCY % 1000000) * 1000;
+                //nanosleep(&wait, NULL);
             }
             // else -- 5 min. time out or we received the STOP message
 
@@ -2076,12 +2217,21 @@ void list::on_backend_action(QString const & action)
         on_modified_content(ipath);
         f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
     }
+    else if(action == get_name(name_t::SNAP_NAME_LIST_RESETSITE))
+    {
+        // re-add all the pages back to the list table; this is very similar
+        // to the "resetlists", only instead of reseting the lists themselves,
+        // we "reset" the pages that may go in those lists
+        //
+        add_all_pages_to_list_table(f_snap->get_site_key_with_slash());
+    }
     else if(action == get_name(name_t::SNAP_NAME_LIST_RESETLISTS))
     {
         // go through all the lists and delete the compiled script, this
         // will force the list code to regenerate all the lists; this
         // should be useful only when the code changes in such a way
         // that the current lists may not be 100% correct as they are
+        //
         int64_t const start_date(f_snap->get_start_date());
         content::path_info_t ipath;
         QString const site_key(f_snap->get_site_key_with_slash());
@@ -2271,6 +2421,8 @@ int list::generate_new_lists(QString const & site_key)
 
     int did_work(0);
 
+    QVector<QString> lists_to_work_on;
+
     content::path_info_t ipath;
     ipath.set_path(site_key + get_name(name_t::SNAP_NAME_LIST_TAXONOMY_PATH));
     links::link_info info(get_name(name_t::SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
@@ -2285,67 +2437,81 @@ int list::generate_new_lists(QString const & site_key)
         if(last_updated.nullValue()
         || last_updated.int64Value() == 0)
         {
-            SNAP_LOG_TRACE("list plugin working on new list \"")(list_ipath.get_key())("\"");
+            lists_to_work_on.push_back(list_ipath.get_key());
+        }
+    }
 
-            QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
-            QString const selector(list_row->cell(get_name(name_t::SNAP_NAME_LIST_SELECTOR))->value().stringValue());
+    for(auto it : lists_to_work_on)
+    {
+        content::path_info_t list_ipath;
+        list_ipath.set_path(it);
 
-            if(selector == "children")
+        // IMPORTANT NOTE: We may see this message many times for a brand
+        //                 new list; this happens when no items are ready
+        //                 to be added so the list continues to look like
+        //                 it is brand new... (i.e. list::last_updated is
+        //                 not getting set to anything)
+        //
+        SNAP_LOG_TRACE("list plugin working on new list \"")(list_ipath.get_key())("\"");
+
+        QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
+        QString const selector(list_row->cell(get_name(name_t::SNAP_NAME_LIST_SELECTOR))->value().stringValue());
+
+        if(selector == "children")
+        {
+            did_work |= generate_new_list_for_children(site_key, list_ipath);
+        }
+        else if(selector.startsWith("children="))
+        {
+            content::path_info_t root_ipath;
+            root_ipath.set_path(selector.mid(9));
+            did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, false);
+        }
+        else if(selector == "descendants")
+        {
+            did_work |= generate_new_list_for_descendants(site_key, list_ipath);
+        }
+        else if(selector.startsWith("descendants="))
+        {
+            content::path_info_t root_ipath;
+            root_ipath.set_path(selector.mid(12));
+            did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, true);
+        }
+        else if(selector == "public")
+        {
+            did_work |= generate_new_list_for_public(site_key, list_ipath);
+        }
+        else if(selector.startsWith("type="))
+        {
+            // user can specify any type!
+            did_work |= generate_new_list_for_type(site_key, list_ipath, selector.mid(5));
+        }
+        else if(selector.startsWith("hand-picked="))
+        {
+            // user can specify any page directly!
+            did_work |= generate_new_list_for_hand_picked_pages(site_key, list_ipath, selector.mid(12));
+        }
+        else // "all"
+        {
+            if(selector != "all")
             {
-                did_work |= generate_new_list_for_children(site_key, list_ipath);
-            }
-            else if(selector.startsWith("children="))
-            {
-                content::path_info_t root_ipath;
-                root_ipath.set_path(selector.mid(9));
-                did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, false);
-            }
-            else if(selector == "descendants")
-            {
-                did_work |= generate_new_list_for_descendants(site_key, list_ipath);
-            }
-            else if(selector.startsWith("descendants="))
-            {
-                content::path_info_t root_ipath;
-                root_ipath.set_path(selector.mid(12));
-                did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, true);
-            }
-            else if(selector == "public")
-            {
-                did_work |= generate_new_list_for_public(site_key, list_ipath);
-            }
-            else if(selector.startsWith("type="))
-            {
-                // user can specify any type!
-                did_work |= generate_new_list_for_type(site_key, list_ipath, selector.mid(5));
-            }
-            else if(selector.startsWith("hand-picked="))
-            {
-                // user can specify any page directly!
-                did_work |= generate_new_list_for_hand_picked_pages(site_key, list_ipath, selector.mid(12));
-            }
-            else // "all"
-            {
-                if(selector != "all")
+                if(selector.isEmpty())
                 {
-                    if(selector.isEmpty())
-                    {
-                        // the default is all because we cannot really know
-                        // what pages should be checked (although the field
-                        // is considered mandatory, but we ought to forget
-                        // once in a while)
-                        SNAP_LOG_WARNING("Mandatory field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" not defined for \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
-                    }
-                    else
-                    {
-                        // this could happen if you are running different
-                        // versions of snap and an old backend hits a new
-                        // still unknown selector
-                        SNAP_LOG_WARNING("Field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" set to unknown value \"")(selector)("\" in \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
-                    }
+                    // the default is all because we cannot really know
+                    // what pages should be checked (although the field
+                    // is considered mandatory, but we ought to forget
+                    // once in a while)
+                    SNAP_LOG_WARNING("Mandatory field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" not defined for \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
                 }
-                did_work |= generate_new_list_for_all_pages(site_key, list_ipath);
+                else
+                {
+                    // this could happen if you are running different
+                    // versions of snap and an old backend hits a new
+                    // still unknown selector
+                    SNAP_LOG_WARNING("Field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" set to unknown value \"")(selector)("\" in \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
+                }
             }
+            did_work |= generate_new_list_for_all_pages(site_key, list_ipath);
         }
     }
 
@@ -2546,9 +2712,17 @@ int list::generate_all_lists(QString const & site_key)
 
             priority_t const priority(QtCassandra::safeUnsignedCharValue(key, 0));
 
+            // Note: we now include the latency in the key so we do not
+            //       test it here anymore
+            //
             int64_t const update_request_time(QtCassandra::safeInt64Value(key, sizeof(unsigned char)));
-            if(update_request_time + LIST_PROCESSING_LATENCY > start_date)
+            if(update_request_time > start_date)
             {
+                if(update_request_time < f_date_limit)
+                {
+                    f_date_limit = update_request_time;
+                }
+
                 // since the columns are sorted, anything after that will be
                 // inaccessible date wise
                 //

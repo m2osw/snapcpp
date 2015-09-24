@@ -35,10 +35,10 @@
 
 #include <iostream>
 
-//#include <QList>
 #include <QBuffer>
 
 #include "poison.h"
+
 
 namespace snap
 {
@@ -60,7 +60,7 @@ namespace
  * static function and should only be called once.
  */
 QtCassandra::QCassandraContext::pointer_t   g_context;
-}
+} // no name namespace
 
 
 
@@ -2404,6 +2404,7 @@ public:
         }
         QRegExp re(pattern, cs, QRegExp::RegExp2);
         QtCassandra::QCassandraValue value;
+//SNAP_LOG_WARNING("exact match pattern: \"")(pattern)("\", str \"")(str)("\".");
         value.setBoolValue(re.exactMatch(str));
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }

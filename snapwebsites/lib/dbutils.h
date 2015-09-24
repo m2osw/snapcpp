@@ -65,6 +65,7 @@ private:
         CT_time_microseconds,
         CT_time_seconds,
         CT_time_microseconds_and_string,
+        CT_priority_and_time_microseconds_and_string,
         CT_hexarray_value,
         CT_hexarray_limited_value,
         CT_md5array_value,

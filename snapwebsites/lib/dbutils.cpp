@@ -545,7 +545,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     else if(f_tableName == "listref"
          )
     {
-        return column_type_t::CT_time_microseconds_and_string;
+        return column_type_t::CT_priority_and_time_microseconds_and_string;
     }
     else if(n == "sessions::random"
          || n == "users::password::salt"
@@ -678,6 +678,16 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
                 v = QString("%1 %2")
                             .arg(microseconds_to_string(QtCassandra::safeInt64Value(value, 0), true))
                             .arg(QtCassandra::stringValue(value, sizeof(int64_t)));
+            }
+            break;
+
+            case column_type_t::CT_priority_and_time_microseconds_and_string:
+            {
+                QByteArray value(c->value().binaryValue());
+                v = QString("%1 %2 %3")
+                            .arg(static_cast<int>(QtCassandra::safeUnsignedCharValue(value, 0)))
+                            .arg(microseconds_to_string(QtCassandra::safeInt64Value(value, sizeof(unsigned char)), true))
+                            .arg(QtCassandra::stringValue(value, sizeof(unsigned char) + sizeof(int64_t)));
             }
             break;
 
@@ -989,6 +999,60 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v )
 
             // concatenate the result
             QByteArray tms;
+            appendInt64Value( tms, tt * 1000000 + ns );
+            appendStringValue( tms, str );
+            cvalue.setBinaryValue(tms);
+        }
+        break;
+
+        case column_type_t::CT_priority_and_time_microseconds_and_string:
+        {
+            // String will be of the form: "priority %Y-%m-%d %H:%M:%S.%N string"
+            //
+            snap_string_list datetime_split ( v.split(' ') );
+            if(datetime_split.size() < 3)
+            {
+                return;
+            }
+            QString          const priority_str   ( datetime_split[0] );
+            snap_string_list const date_split     ( datetime_split[1].split('-') );
+            snap_string_list const time_split     ( datetime_split[2].split(':') );
+
+            bool ok(false);
+            int priority(priority_str.toInt(&ok, 10));
+            if(!ok)
+            {
+                return;
+            }
+            if(date_split.size() != 3)
+            {
+                return;
+            }
+            if(time_split.size() != 3)
+            {
+                return;
+            }
+
+            datetime_split.removeFirst();
+            datetime_split.removeFirst();
+            datetime_split.removeFirst();
+            QString const str(datetime_split.join(" "));
+            //
+            tm to;
+            to.tm_sec  = time_split[2].toInt();
+            to.tm_min  = time_split[1].toInt();
+            to.tm_hour = time_split[0].toInt();
+            to.tm_mday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt() - 1;
+            to.tm_year = date_split[0].toInt() - 1900; // TODO handle the microseconds decimal number
+
+            int64_t ns((time_split[2].toDouble() - to.tm_sec) * 1000000.0);
+            //
+            time_t const tt( mkgmtime( &to ) );
+
+            // concatenate the result
+            QByteArray tms;
+            appendUnsignedCharValue( tms, static_cast<unsigned char>(priority) );
             appendInt64Value( tms, tt * 1000000 + ns );
             appendStringValue( tms, str );
             cvalue.setBinaryValue(tms);
