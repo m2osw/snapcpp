@@ -1549,7 +1549,7 @@ QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
  */
 void sendmail::post_email(email const & e)
 {
-    // we do not accept to send an email email
+    // we do not accept to send an empty email
     if(e.get_attachment_count() == 0 && e.get_email_path().isEmpty())
     {
         throw sendmail_exception_invalid_argument("An email must have at least one attachment or the email path defined");
@@ -1567,11 +1567,11 @@ void sendmail::post_email(email const & e)
     copy.set_site_key(f_snap->get_site_key());
     QString const key(f_snap->get_unique_number());
     copy.set_email_key(key);
-    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
+    QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     QtCassandra::QCassandraValue value;
     QString const data(copy.serialize());
     value.setStringValue(data);
-    table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW))->cell(key)->setValue(value);
+    emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW))->cell(key)->setValue(value);
 
     // signal the listening server if IP is available (send PING)
     f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_SENDMAIL)));
@@ -1934,8 +1934,8 @@ void sendmail::process_emails()
     // (see post_email() for proof)
     QString const site_key(f_snap->get_site_key());
 
-    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
-    QtCassandra::QCassandraRow::pointer_t row(table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW)));
+    QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
+    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(100); // should this be a parameter?
     column_predicate.setIndex(); // behave like an index
@@ -2022,11 +2022,11 @@ void sendmail::attach_email(email const & e)
         return;
     }
 
-    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
-    QtCassandra::QCassandraRow::pointer_t lists(table->row(get_name(name_t::SNAP_NAME_SENDMAIL_LISTS)));
+    QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
+    QtCassandra::QCassandraRow::pointer_t lists(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_LISTS)));
 
     // read all the emails
-    QString const& site_key(e.get_site_key());
+    QString const & site_key(e.get_site_key());
     tld_email_list::tld_email_t m;
     bool is_list(false);
     while(list.next(m))
@@ -2101,7 +2101,7 @@ void sendmail::attach_user_email(email const & e)
     //      (it may be easier to implement events to send emails
     //      from anyway and use that from the user plugin and avoid
     //      the sendmail reference in the user plugin)
-    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
+    QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     users::users * users_plugin(users::users::instance());
     char const * email_key(users::get_name(users::name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
     QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
@@ -2122,7 +2122,7 @@ void sendmail::attach_user_email(email const & e)
         throw sendmail_exception_invalid_argument("To: field does not include at least one email");
     }
     QString const key(m.f_email_only.c_str());
-    QtCassandra::QCassandraRow::pointer_t row(table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(key));
     QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue email_data(cell->value());
@@ -2209,14 +2209,14 @@ void sendmail::attach_user_email(email const & e)
     QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(key));
 
     QtCassandra::QCassandraValue index_value;
-    const char *index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
-    if(table->exists(index))
+    char const * index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
+    if(emails_table->exists(index))
     {
         // the index already exists, check to see whether that cell exists
-        if(table->row(index)->exists(index_key))
+        if(emails_table->row(index)->exists(index_key))
         {
             // it exists, we need to concatenate the values
-            index_value = table->row(index)->cell(index_key)->value();
+            index_value = emails_table->row(index)->cell(index_key)->value();
         }
     }
     if(!index_value.nullValue())
@@ -2227,7 +2227,7 @@ void sendmail::attach_user_email(email const & e)
     {
         index_value.setStringValue(unique_key);
     }
-    table->row(index)->cell(index_key)->setValue(index_value);
+    emails_table->row(index)->cell(index_key)->setValue(index_value);
 }
 
 
@@ -2239,9 +2239,9 @@ void sendmail::attach_user_email(email const & e)
  */
 void sendmail::run_emails()
 {
-    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
+    QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     const char *index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
-    QtCassandra::QCassandraRow::pointer_t row(table->row(index));
+    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(index));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setStartColumnName("0");
     // we use +1 otherwise immediate emails are sent 5 min. later!
@@ -2310,8 +2310,8 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
                                     .arg(get_name(name_t::SNAP_NAME_SENDMAIL_SENDING_STATUS)));
 
     // first check the status to make sure it is to be sent
-    QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
-    QtCassandra::QCassandraRow::pointer_t row(table->row(key));
+    QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
+    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(key));
     QtCassandra::QCassandraValue const sent_value(row->cell(sending_status)->value());
     QString const sent_status(sent_value.stringValue());
     if(sent_status == get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_SENT)
@@ -2872,7 +2872,7 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void sendmail::on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token)
 {
     static_cast<void>(ipath);
     static_cast<void>(plugin_owner);
