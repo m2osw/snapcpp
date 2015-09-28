@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.30
+ * Version: 0.0.1.31
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -595,7 +595,11 @@ snapwebsites.ServerAccess.prototype.setData = function(data)
     {
         // in this case we expect a standard simple field name/value
         // object or a FormData, define the type depending on that
-        this.dataType_ = data instanceof FormData
+        //
+        // We have to test whether FormData is defined, if not Opera
+        // fails on the 'instanceof'
+        //
+        this.dataType_ = typeof FormData != "undefined" && data instanceof FormData
                     ? snapwebsites.ServerAccess.FORM_
                     : snapwebsites.ServerAccess.OBJECT_;
 

@@ -147,7 +147,7 @@ int64_t server_access::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 19, 2, 9, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 27, 2, 51, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -275,7 +275,6 @@ void server_access::create_ajax_result(content::path_info_t & ipath, bool succes
         f_ajax_data.erase(f_ajax_data.begin());
     }
 
-    //server_access_plugin->ajax_redirect(ipath.get_parameter("redirect"), ipath.get_parameter("target"));
     process_ajax_result(ipath, f_success);
 }
 
