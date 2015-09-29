@@ -1858,6 +1858,7 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
  * \li processlist
  * \li standalonelist
  * \li resetlists
+ * \li resetsite
  *
  * The "pagelist" is used by the backend to continuously and as fast as
  * possible build lists of pages. It understands PINGs so one can wake
@@ -1883,6 +1884,12 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
  * the existing list scripts (but not the content of the lists.) This
  * will force the list process to recalculate the entire list instead
  * of just a few changes.
+ *
+ * The "resetsite" adds all the pages to the 'list' table. This will
+ * force the system to re-check each time as time allows. In this case
+ * the pages are give a really low priority which means pretty much all
+ * other requests will be worked on first. This is similar to running
+ * "resetlists" except that it does not recompute lists in one go.
  *
  * \note
  * At this time there is a 10 seconds delay between a PING and the
@@ -2232,6 +2239,7 @@ void list::on_backend_action(QString const & action)
         // we "reset" the pages that may go in those lists
         //
         add_all_pages_to_list_table(f_snap->get_site_key_with_slash());
+        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_RESETLISTS))
     {
