@@ -27,7 +27,7 @@
 namespace quoted_printable
 {
 
-std::string encode(const std::string& input, int flags)
+std::string encode(std::string const & input, int flags)
 {
     class result
     {
@@ -206,7 +206,7 @@ std::string encode(const std::string& input, int flags)
             }
         }
 
-        void add_string(const char *s)
+        void add_string(char const * s)
         {
             bool const lone_periods((f_flags & QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD) != 0);
             // reset the buffer, just in case
@@ -254,12 +254,12 @@ std::string encode(const std::string& input, int flags)
 }
 
 
-std::string decode(const std::string& input)
+std::string decode(std::string const & input)
 {
     class result
     {
     public:
-        result(const std::string& input)
+        result(std::string const & input)
             //: f_result("") -- auto-initiazlied
             : f_input(input)
             , f_str(f_input.c_str())
@@ -359,9 +359,9 @@ std::string decode(const std::string& input)
         }
 
     private:
-        std::string f_input;
-        std::string f_result;
-        const char *f_str;
+        std::string     f_input;
+        std::string     f_result;
+        char const *    f_str = nullptr;
     };
 
     result r(input);

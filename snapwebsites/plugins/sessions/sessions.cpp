@@ -317,7 +317,7 @@ void sessions::session_info::set_plugin_owner(QString const& plugin_owner)
  * \sa get_page_path()
  * \sa set_object_path()
  */
-void sessions::session_info::set_page_path(QString const& page_path)
+void sessions::session_info::set_page_path(QString const & page_path)
 {
     f_page_path = page_path;
 }
@@ -334,7 +334,7 @@ void sessions::session_info::set_page_path(QString const& page_path)
  * \sa get_page_path()
  * \sa set_object_path()
  */
-void sessions::session_info::set_page_path(content::path_info_t& page_ipath)
+void sessions::session_info::set_page_path(content::path_info_t & page_ipath)
 {
     f_page_path = page_ipath.get_cpath();
 }
@@ -1104,7 +1104,7 @@ void sessions::on_generate_main_content(content::path_info_t& ipath, QDomElement
  * \sa save_session
  * \sa load_session
  */
-QString sessions::create_session(session_info& info)
+QString sessions::create_session(session_info & info)
 {
     // creating a session of less than 1 minute?!
     time_t time_limit(info.get_time_limit());
@@ -1113,19 +1113,19 @@ QString sessions::create_session(session_info& info)
     if((time_limit != 0 && time_limit <= now + 60)
     || (time_to_live != 0 && time_to_live <= 60))
     {
-        throw sessions_exception_invalid_parameter("you cannot create a session of 1 minute or less");
+        throw sessions_exception_invalid_parameter("you cannot create a session of 1 minute or less.");
     }
 
     // make sure that we have at least one path defined
     // (this is our session key so it is required)
     if(info.get_page_path().isEmpty() && info.get_object_path().isEmpty())
     {
-        throw sessions_exception_invalid_parameter("any session must have at least one path defined");
+        throw sessions_exception_invalid_parameter("any session must have at least one path defined.");
     }
 
     if(info.get_user_agent().isEmpty())
     {
-        throw sessions_exception_invalid_parameter("all sessions must have a user agent specified");
+        throw sessions_exception_invalid_parameter("all sessions must have a user agent specified.");
     }
 
     // TODO? Need we set a specific OpenSSL random generator?

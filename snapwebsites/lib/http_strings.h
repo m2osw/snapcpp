@@ -16,9 +16,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include <controlled_vars/controlled_vars_fauto_init.h>
+
+#include <QMap>
 #include <QString>
 #include <QVector>
-#include <controlled_vars/controlled_vars_fauto_init.h>
 
 namespace snap
 {
@@ -34,15 +36,20 @@ public:
     class part_t
     {
     public:
+        typedef QVector<part_t> vector_t; // do NOT use a map, we want to keep them in order!
+
+        // part_t() is for the vector, otherwise we cannot initialize it properly
         part_t()
             //: f_name("") -- auto-init
             //, f_level(0.0f) -- auto-init
         {
         }
 
-        part_t(QString const & name, float level)
+        // an authoritative document at the IANA clearly says that
+        // the default level (quality value) is 1.0f.
+        part_t(QString const & name)
             : f_name(name)
-            , f_level(level)
+            , f_level(1.0f)
         {
         }
 
@@ -56,6 +63,27 @@ public:
             return f_level;
         }
 
+        void set_level(float const level)
+        {
+            f_level = level;
+        }
+
+        QString get_parameter(QString const & name) const
+        {
+            if(!f_param.contains(name))
+            {
+                return "";
+            }
+            return f_param[name];
+        }
+
+        void add_parameter(QString const & name, QString const & value)
+        {
+            f_param[name] = value;
+        }
+
+        QString to_string() const;
+
         /** \brief Operator used to sort elements.
          *
          * This oeprator overload is used by the different sort
@@ -67,21 +95,24 @@ public:
         }
 
     private:
+        typedef QMap<QString, QString>      parameters_t;
+
         QString                     f_name;
         controlled_vars::zfloat_t   f_level; // q=0.8
         // TODO add support for any other parameter
+        parameters_t                f_param;
     };
-    typedef QVector<part_t> part_vector_t; // do NOT use a map, we want to keep them in order!
 
-                        WeightedHttpString(QString const & str);
+                            WeightedHttpString(QString const & str);
 
-    QString const &     get_string() const { return f_str; }
-    float               get_level(QString const & name);
-    part_vector_t const get_parts() const { return f_parts; }
+    QString const &         get_string() const { return f_str; }
+    float                   get_level(QString const & name);
+    part_t::vector_t &      get_parts() { return f_parts; }
+    QString                 to_string() const;
 
 private:
-    QString             f_str;
-    part_vector_t       f_parts; // do NOT use a map, we want to keep them in order
+    QString                 f_str;
+    part_t::vector_t        f_parts; // do NOT use a map, we want to keep them in order
 };
 
 

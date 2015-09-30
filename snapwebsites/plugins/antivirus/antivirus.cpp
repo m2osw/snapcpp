@@ -21,6 +21,7 @@
 
 #include "process.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include "poison.h"
 
@@ -158,7 +159,7 @@ int64_t antivirus::do_update(int64_t last_updated)
  */
 void antivirus::content_update(int64_t variables_timestamp)
 {
-    (void)variables_timestamp;
+    NOTUSED(variables_timestamp);
     content::content::instance()->add_xml(get_plugin_name());
 }
 

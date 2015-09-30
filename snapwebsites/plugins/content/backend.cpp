@@ -409,7 +409,7 @@ void content::backend_process_files()
 
     QString const site_key(f_snap->get_site_key_with_slash());
     QByteArray const site_key_buffer(site_key.toUtf8());
-    char const *site_key_utf8(site_key_buffer.data());
+    char const * site_key_utf8(site_key_buffer.data());
 
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(name_t::SNAP_NAME_CONTENT_FILES_NEW)));

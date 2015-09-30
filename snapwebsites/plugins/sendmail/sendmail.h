@@ -33,9 +33,12 @@ enum class name_t
 {
     SNAP_NAME_SENDMAIL,
     SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST,
+    SNAP_NAME_SENDMAIL_CONTENT_DISPOSITION,
+    SNAP_NAME_SENDMAIL_CONTENT_LANGUAGE,
     SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING,
     SNAP_NAME_SENDMAIL_CONTENT_TYPE,
     SNAP_NAME_SENDMAIL_CREATED,
+    SNAP_NAME_SENDMAIL_DATE,
     SNAP_NAME_SENDMAIL_EMAIL,
     SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION,
     SNAP_NAME_SENDMAIL_EMAILS_TABLE,
@@ -56,6 +59,8 @@ enum class name_t
     SNAP_NAME_SENDMAIL_LEVEL_PURPLELIST,
     SNAP_NAME_SENDMAIL_LEVEL_WHITELIST,
     SNAP_NAME_SENDMAIL_LISTS,
+    SNAP_NAME_SENDMAIL_LIST_UNSUBSCRIBE,
+    SNAP_NAME_SENDMAIL_MESSAGE_ID,
     SNAP_NAME_SENDMAIL_MIME_VERSION,
     SNAP_NAME_SENDMAIL_NEW,
     SNAP_NAME_SENDMAIL_PING,
@@ -153,9 +158,10 @@ public:
 
             void                    set_data(QByteArray const & data, QString mime_type);
             QByteArray              get_data() const;
+            void                    set_content_disposition(QString const & filename, int64_t modification_date = 0, QString const & attachment_type = "attachment");
             void                    add_header(QString const & name, QString const & value);
             QString                 get_header(QString const & name) const;
-            const header_map_t &    get_all_headers() const;
+            header_map_t &          get_all_headers();
             void                    add_related(email_attachment const & data);
             int                     get_related_count() const;
             email_attachment &      get_related(int index) const;
@@ -246,6 +252,7 @@ private:
     void                    attach_user_email(email const & e);
     void                    run_emails();
     void                    sendemail(QString const & key, QString const & unique_key);
+    void                    copy_filename_to_content_type(email::header_map_t & attachment_headers);
 
     zpsnap_child_t                  f_snap;
     snap_backend::zpsnap_backend_t  f_backend;

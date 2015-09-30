@@ -142,7 +142,7 @@ void cache_control_settings::set_cache_info(QString const & info, bool const int
     http_strings::WeightedHttpString client_cache_control(info);
 
     // no go through the list of parts and handle them appropriately
-    http_strings::WeightedHttpString::part_vector_t cache_control_parts(client_cache_control.get_parts());
+    http_strings::WeightedHttpString::part_t::vector_t const & cache_control_parts(client_cache_control.get_parts());
     for(auto c : cache_control_parts)
     {
         // get the part name

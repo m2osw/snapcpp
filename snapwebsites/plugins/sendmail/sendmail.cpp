@@ -22,6 +22,7 @@
 #include "../users/users.h"
 #include "../sessions/sessions.h"
 
+#include "http_strings.h"
 #include "log.h"
 #include "mkgmtime.h"
 #include "snap_magic.h"
@@ -67,6 +68,12 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST:
         return "Bypass-Blacklist";
 
+    case name_t::SNAP_NAME_SENDMAIL_CONTENT_DISPOSITION:
+        return "Content-Disposition";
+
+    case name_t::SNAP_NAME_SENDMAIL_CONTENT_LANGUAGE:
+        return "Content-Language";
+
     case name_t::SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING:
         return "Content-Transfer-Encoding";
 
@@ -75,6 +82,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_SENDMAIL_CREATED:
         return "sendmail::created";
+
+    case name_t::SNAP_NAME_SENDMAIL_DATE:
+        return "Date";
 
     case name_t::SNAP_NAME_SENDMAIL_EMAIL:
         return "sendmail::email";
@@ -135,6 +145,12 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_SENDMAIL_LISTS:
         return "lists";
+
+    case name_t::SNAP_NAME_SENDMAIL_LIST_UNSUBSCRIBE:
+        return "List-Unsubscribe";
+
+    case name_t::SNAP_NAME_SENDMAIL_MESSAGE_ID:
+        return "Message-ID";
 
     case name_t::SNAP_NAME_SENDMAIL_MIME_VERSION:
         return "MIME-Version";
@@ -253,16 +269,31 @@ sendmail::email::email_attachment::~email_attachment()
  *
  * If you know the MIME type of the data, it is smart to define it when
  * calling this function so that way you avoid asking the magic library
- * for it. This will save time as the magic library is much slower.
+ * for it. This will save time as the magic library is much slower and
+ * if you are positive about the type, it will be correct whereas the
+ * magic library could return an invalid value.
+ *
+ * Also, if this is a file attachment, make sure to add a
+ * Content-Disposition header to define the filename and
+ * modification date as in:
+ *
+ * \code
+ *   Content-Disposition: attachment; filename=my-attachment.pdf;
+ *     modification-date="Tue, 29 Sep 2015 16:12:15 -0800";
+ * \endcode
+ *
+ * See the set_content_disposition() function to easily add this
+ * field.
  *
  * \param[in] data  The data to attach to this email.
  * \param[in] mime_type  The MIME type of the data if known,
  *                       otherwise leave empty.
  *
- * \sa add_header();
- * \sa get_mime_type();
+ * \sa add_header()
+ * \sa get_mime_type()
+ * \sa set_content_disposition()
  */
-void sendmail::email::email_attachment::set_data(const QByteArray& data, QString mime_type)
+void sendmail::email::email_attachment::set_data(QByteArray const & data, QString mime_type)
 {
     f_data = data;
 
@@ -322,6 +353,70 @@ QString sendmail::email::email_attachment::get_header(const QString& name) const
 }
 
 
+/** \brief Add the Content-Disposition field.
+ *
+ * Helper function to add the Content-Disposition without having to
+ * generate the string of the field by hand.
+ *
+ * The disposition is expected to be of type "attachment" by default.
+ * You may change that by changing the last parameter to this function.
+ *
+ * The function also accepts a filename and a date. If the date is set
+ * to zero (default) then time() is used.
+ *
+ * \code
+ *      sendmail::sendmail::email e;
+ *      ...
+ *      sendmail::sendmail::email::email_attachment a;
+ *      a.set_data(some_pdf_buffer, "application/pdf");
+ *      a.set_content_disposition("your-file.pdf");
+ *      e.add_attachment(a);
+ *      ...
+ *      sendmail::sendmail::instance()->post_email(e);
+ * \endcode
+ *
+ * \warning
+ * The modification_date is a an int64_t type in microsecond
+ * as most often used in Snap! Emails only use dates with a
+ * one second precision so the milli and micro seconds will
+ * generally be ignored.
+ *
+ * \param[in] filename  The name of this attachment file.
+ * \param[in] modification_date  The last modification date of this file.
+ *                               Defaults to zero meaning use now.
+ *                               Value is in microseconds.
+ * \param[in] attachment_type  The type of attachment, defaults to "attachment"
+ *                             which is all you need in most cases.
+ */
+void sendmail::email::email_attachment::set_content_disposition(QString const & filename, int64_t modification_date, QString const & attachment_type)
+{
+    // TODO: make use of a WeightedHTTPString::to_string() (class to be renamed!)
+
+    // type
+    QString content_disposition(QString("%1;").arg(attachment_type));
+
+    // filename
+    if(!filename.isEmpty())
+    {
+        content_disposition = QString("%1 filename=%2;")
+                .arg(content_disposition)
+                .arg(snap_uri::urlencode(filename));
+    }
+
+    // modificate-date
+    if(modification_date == 0)
+    {
+        modification_date = time(nullptr) * 1000000;
+    }
+    content_disposition = QString("%1 modification-date=\"%2\";")
+            .arg(content_disposition)
+            .arg(content::content::instance()->get_snap()->date_to_string(modification_date, snap_child::date_format_t::DATE_FORMAT_EMAIL));
+
+    // save the result in the headers
+    add_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_DISPOSITION), content_disposition);
+}
+
+
 /** \brief Header of this attachment.
  *
  * Each attachment can be assigned a set of headers such as the Content-Type
@@ -359,7 +454,7 @@ QString sendmail::email::email_attachment::get_header(const QString& name) const
  *
  * \sa set_data()
  */
-void sendmail::email::email_attachment::add_header(const QString& name, const QString& value)
+void sendmail::email::email_attachment::add_header(QString const & name, QString const & value)
 {
     if(name.isEmpty())
     {
@@ -375,14 +470,21 @@ void sendmail::email::email_attachment::add_header(const QString& name, const QS
  * This function returns the map of the headers defined in this email
  * attachment. This can be used to quickly scan all the headers.
  *
+ * It is modify-able making it possible for various functions to modify
+ * the fields as required by the final send process. It should be used
+ * with very high level care. (see function copy_filename_to_content_type()
+ * for an example.)
+ *
  * \note
  * It is important to remember that since this function returns a reference
  * to the map of headers, it may break if you call add_header() while going
  * through the references.
  *
  * \return A direct reference to the internal header map.
+ *
+ * \sa copy_filename_to_content_type()
  */
-const sendmail::email::header_map_t& sendmail::email::email_attachment::get_all_headers() const
+sendmail::email::header_map_t & sendmail::email::email_attachment::get_all_headers()
 {
     return f_header;
 }
@@ -431,7 +533,7 @@ const sendmail::email::header_map_t& sendmail::email::email_attachment::get_all_
  *
  * \param[in] data  The attachment to add to this attachment by copy.
  */
-void sendmail::email::email_attachment::add_related(const email_attachment& data)
+void sendmail::email::email_attachment::add_related(email_attachment const & data)
 {
     if(f_is_sub_attachment)
     {
@@ -626,7 +728,7 @@ sendmail::email::~email()
  *
  * \param[in] from  The name and email address of the sender
  */
-void sendmail::email::set_from(QString const& from)
+void sendmail::email::set_from(QString const & from)
 {
     tld_email_list emails;
     if(emails.parse(from.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
@@ -733,7 +835,7 @@ const QString& sendmail::email::get_site_key() const
  *
  * \param[in] email_path  The path to a page that will be used as the email subject, body, and attachments
  */
-void sendmail::email::set_email_path(const QString& email_path)
+void sendmail::email::set_email_path(QString const & email_path)
 {
     f_email_path = email_path;
 }
@@ -750,7 +852,7 @@ void sendmail::email::set_email_path(const QString& email_path)
  * \return The path to the page to be used to generate the email subject and
  *         title.
  */
-const QString& sendmail::email::get_email_path() const
+QString const & sendmail::email::get_email_path() const
 {
     return f_email_path;
 }
@@ -863,7 +965,7 @@ void sendmail::email::set_priority(email_priority_t priority)
  *
  * \param[in] subject  The subject of the email.
  */
-void sendmail::email::set_subject(const QString& subject)
+void sendmail::email::set_subject(QString const & subject)
 {
     f_header[get_name(name_t::SNAP_NAME_SENDMAIL_SUBJECT)] = subject;
 }
@@ -908,7 +1010,7 @@ void sendmail::email::set_subject(const QString& subject)
  * \param[in] name  A valid header name.
  * \param[in] value  The value of this header.
  */
-void sendmail::email::add_header(const QString& name, const QString& value)
+void sendmail::email::add_header(QString const & name, QString const & value)
 {
     tld_email_field_type type(tld_email_list::email_field_type(name.toUtf8().data()));
     if(type == TLD_EMAIL_FIELD_TYPE_INVALID)
@@ -956,7 +1058,7 @@ void sendmail::email::add_header(const QString& name, const QString& value)
  *
  * \return The current value of that header or an empty string if undefined.
  */
-QString sendmail::email::get_header(const QString& name) const
+QString sendmail::email::get_header(QString const & name) const
 {
     if(name.isEmpty())
     {
@@ -967,6 +1069,7 @@ QString sendmail::email::get_header(const QString& name) const
         return f_header[name];
     }
 
+    // return f_header[name] -- this would create an entry for f_header[name] for nothing
     return "";
 }
 
@@ -983,7 +1086,7 @@ QString sendmail::email::get_header(const QString& name) const
  *
  * \return A direct reference to the internal header map.
  */
-const sendmail::email::header_map_t& sendmail::email::get_all_headers() const
+const sendmail::email::header_map_t & sendmail::email::get_all_headers() const
 {
     return f_header;
 }
@@ -1657,7 +1760,7 @@ void sendmail::on_init_editor_widget(content::path_info_t & ipath, QString const
                 if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
                 {
                     QString const & object_path(info.get_object_path());
-                    int pos(object_path.lastIndexOf("/"));
+                    int const pos(object_path.lastIndexOf("/"));
                     if(pos > 0)
                     {
                         QString const to(object_path.mid(pos + 1));
@@ -2288,6 +2391,70 @@ void sendmail::run_emails()
 }
 
 
+/** \brief Copy the filename if defined.
+ *
+ * Check whether the filename is defined in the Content-Disposition
+ * or the Content-Type fields and make sure to duplicate it in
+ * both fields. This ensures that most email systems have access
+ * to the filename.
+ *
+ * \note
+ * The valid location of the filename is the Content-Disposition,
+ * but it has been saved in the 'name' sub-field of the Content-Type
+ * field and some tools only check that field.
+ *
+ * \param[in,out] attachment_headers  The headers to be checked for
+ *                                    a filename.
+ */
+void sendmail::copy_filename_to_content_type(email::header_map_t & attachment_headers)
+{
+    if(attachment_headers.contains(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_DISPOSITION))
+    && attachment_headers.contains(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)))
+    {
+        // both fields are defined, copy the filename as required
+        QString content_disposition(attachment_headers[get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_DISPOSITION)]);
+        QString content_type(attachment_headers[get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)]);
+
+        http_strings::WeightedHttpString content_disposition_subfields(content_disposition);
+        http_strings::WeightedHttpString content_type_subfields(content_type);
+
+        http_strings::WeightedHttpString::part_t::vector_t & content_disposition_parts(content_disposition_subfields.get_parts());
+        http_strings::WeightedHttpString::part_t::vector_t & content_type_parts(content_type_subfields.get_parts());
+
+        if(content_disposition_parts.size() > 0
+        && content_type_parts.size() > 0)
+        {
+            // we only use part 1 (there should not be more than one though)
+            QString const filename(content_disposition_parts[0].get_parameter("filename"));
+            if(!filename.isEmpty())
+            {
+                // okay, we found the filename in the Content-Disposition,
+                // copy that to the Content-Type
+                //
+                // Note: we always force the name parameter so if it was
+                //       already defined, we make sure it is the same as
+                //       in the Content-Disposition field
+                //
+                content_type_parts[0].add_parameter("name", filename);
+                attachment_headers[get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = content_type_subfields.to_string();
+            }
+            else
+            {
+                QString const name(content_type_parts[0].get_parameter("name"));
+                if(!name.isEmpty())
+                {
+                    // Somehow the filename is defined in the Content-Type field
+                    // so copy it to the Content-Disposition too (where it should be)
+                    //
+                    content_disposition_parts[0].add_parameter("filename", name);
+                    attachment_headers[get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_DISPOSITION)] = content_disposition_subfields.to_string();
+                }
+            }
+        }
+    }
+}
+
+
 /** \brief This function actually sends the email.
  *
  * This function is the one that actually takes the email and sends it to
@@ -2564,14 +2731,14 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         headers[get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = "multipart/mixed;\n  boundary=\"" + boundary + "\"";
         headers[get_name(name_t::SNAP_NAME_SENDMAIL_MIME_VERSION)] = "1.0";
     }
-    if(!headers.contains("Date"))
+    if(!headers.contains(get_name(name_t::SNAP_NAME_SENDMAIL_DATE)))
     {
         // the date must be specified in English only which prevents us from
         // using the strftime() or QDateTime functions which are affected by
         // the current locale of the server
-        headers["Date"] = f_snap->date_to_string(time(nullptr) * 1000000, snap_child::date_format_t::DATE_FORMAT_EMAIL);
+        headers[get_name(name_t::SNAP_NAME_SENDMAIL_DATE)] = f_snap->date_to_string(time(nullptr) * 1000000, snap_child::date_format_t::DATE_FORMAT_EMAIL);
     }
-    if(!headers.contains("Message-ID"))
+    if(!headers.contains(get_name(name_t::SNAP_NAME_SENDMAIL_MESSAGE_ID)))
     {
         // if the message identifier was not created by the user, we want
         // to create it ourselves for tracking purposes (in case we receive
@@ -2594,26 +2761,35 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         info.set_time_to_live(86400 * 30);  // 30 days
         QString const message_id(sessions::sessions::instance()->create_session(info));
 
-        headers["Message-ID"] = "<" + message_id + "@snapwebsites>";
+        headers[get_name(name_t::SNAP_NAME_SENDMAIL_MESSAGE_ID)] = "<" + message_id + "@snapwebsites>";
     }
-    if(!headers.contains("Content-Language"))
+    if(!headers.contains(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_LANGUAGE)))
     {
         // TODO this needs to be defined as we generate the page
         // XXX should that be 'block specific' or is email wide okay?
-        headers["Content-Language"] = "en-us";
+        headers[get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_LANGUAGE)] = "en-us";
     }
-    if(!headers.contains("List-Unsubscribe"))
+    if(!headers.contains(get_name(name_t::SNAP_NAME_SENDMAIL_LIST_UNSUBSCRIBE)))
     {
-        headers["List-Unsubscribe"] =  f_snap->get_site_key_with_slash()
-                    + "unsubscribe/"
-                    + f_email.get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION));
+        headers[get_name(name_t::SNAP_NAME_SENDMAIL_LIST_UNSUBSCRIBE)] =
+            QString("%1unsubscribe/%2")
+                    .arg(f_snap->get_site_key_with_slash())
+                    .arg(f_email.get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION)));
     }
+
     for(email::header_map_t::const_iterator it(headers.begin());
                                             it != headers.end();
                                             ++it)
     {
+        // TODO: the it.value() needs to be URI encoded to be valid
+        //       in an email; if some characters appear that need
+        //       encoding, we should err (we probably want to
+        //       capture those in the add_header() though)
+        //
         f << it.key() << ": " << it.value() << std::endl;
     }
+
+    // XXX: allow administrators to change that info somehow?
     f << "X-Generated-By: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)" << std::endl
       << "X-Mailer: Snap! Websites C++ v" SNAPWEBSITES_VERSION_STRING " (http://snapwebsites.org/)" << std::endl;
 
@@ -2675,7 +2851,8 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         {
             email::email_attachment attachment(f_email.get_attachment(i));
             f << "--" << boundary << std::endl;
-            email::header_map_t attachment_headers(attachment.get_all_headers());
+            email::header_map_t & attachment_headers(attachment.get_all_headers());
+            copy_filename_to_content_type(attachment_headers);
             for(email::header_map_t::const_iterator it(attachment_headers.begin());
                                                     it != attachment_headers.end();
                                                     ++it)

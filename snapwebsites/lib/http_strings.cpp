@@ -17,6 +17,8 @@
 
 #include "http_strings.h"
 
+#include "log.h"
+
 #include "poison.h"
 
 namespace snap
@@ -27,13 +29,34 @@ namespace http_strings
 
 
 
-WeightedHttpString::WeightedHttpString(const QString& str)
+QString WeightedHttpString::part_t::to_string() const
+{
+    QString result;
+
+    result = f_name;
+    for(parameters_t::const_iterator it(f_param.begin());
+                                     it != f_param.end();
+                                     ++it)
+    {
+        QString p(it.key());
+        if(!it.value().isEmpty())
+        {
+            p = QString("%1=%2").arg(p).arg(it.value());
+        }
+        result = QString("%1; %2").arg(result).arg(p);
+    }
+
+    return result;
+}
+
+
+WeightedHttpString::WeightedHttpString(QString const & str)
     : f_str(str)
     //, f_parts() -- auto-init
 {
     QByteArray utf8(f_str.toUtf8());
-    const char *s(utf8.data());
-    while(*s != '\0')
+    char const * s(utf8.data());
+    for(;;)
     {
         while(isspace(*s) || *s == ',')
         {
@@ -43,18 +66,20 @@ WeightedHttpString::WeightedHttpString(const QString& str)
         {
             break;
         }
-        const char *v(s);
+        char const * v(s);
         while(*s != '\0' && *s != ',' && *s != ';')
         {
             ++s;
         }
+        // TODO: add support for a value assigned to the first entry?
+        //       (and thus mark it a part as well)
+        //
         QString name(QString::fromUtf8(v, static_cast<int>(s - v)));
         name = name.simplified();
-        // an authoritative document at the IANA clearly says that
-        // the default level (quality value) is 1.0f.
-        float level(1.0f);
+        part_t part(name);
         // read all the parameters, although we only keep
         // the 'q' parameter at this time
+        //
         while(*s == ';')
         {
             ++s;
@@ -65,38 +90,52 @@ WeightedHttpString::WeightedHttpString(const QString& str)
             }
             QString param_name(QString::fromUtf8(v, static_cast<int>(s - v)));
             param_name = param_name.simplified();
-            QString param_value;
-            if(*s == '=')
+            if(!param_name.isEmpty())
             {
+                QString param_value;
+                if(*s == '=')
+                {
+                    ++s;
+                    v = s;
+                    while(*s != '\0' && *s != ',' && *s != ';')
+                    {
+                        ++s;
+                    }
+                    param_value = QString::fromUtf8(v, static_cast<int>(s - v));
+                    param_value = param_value.trimmed();
+                }
+                part.add_parameter(param_name, param_value);
+
+                if(param_name == "q")
+                {
+                    bool ok(false);
+                    float const level(param_value.toFloat(&ok));
+                    if(ok && level >= 0)
+                    {
+                        part.set_level(level);
+                    }
+                }
+                // TODO add support for other parameters, "charset" is one of
+                //      them in the Accept header which we want to support
+            }
+            else if(*s == '=')
+            {
+                // just ignore that entry...
                 ++s;
-                v = s;
                 while(*s != '\0' && *s != ',' && *s != ';')
                 {
                     ++s;
                 }
-                param_value = QString::fromUtf8(v, static_cast<int>(s - v));
-                param_value = param_value.trimmed();
+
+                SNAP_LOG_ERROR("found a spurious equal sign in a weighted string");
             }
-            if(param_name == "q")
-            {
-                bool ok(false);
-                level = param_value.toFloat(&ok);
-                if(!ok || level < 0)
-                {
-                    // not okay, keep 1.0f instead
-                    level = 1.0f;
-                }
-            }
-            // TODO add support for other parameters, "charset" is one of
-            //      them in the Accept header which we want to support
         }
-        part_t part(name, level);
         f_parts.push_back(part);
     }
 }
 
 
-float WeightedHttpString::get_level(const QString& name)
+float WeightedHttpString::get_level(QString const & name)
 {
     const int max_parts(f_parts.size());
     for(int i(0); i < max_parts; ++i)
@@ -107,6 +146,22 @@ float WeightedHttpString::get_level(const QString& name)
         }
     }
     return -1.0f;
+}
+
+
+QString WeightedHttpString::to_string() const
+{
+    QString result;
+    const int max_parts(f_parts.size());
+    for(int i(0); i < max_parts; ++i)
+    {
+        if(!result.isEmpty())
+        {
+            result += ", ";
+        }
+        result += f_parts[i].to_string();
+    }
+    return result;
 }
 
 
