@@ -2549,7 +2549,7 @@ void snap_child::set_timezone(QString const& timezone)
  *
  * \param[in] locale  Name of the locale as understood by setlocale(3).
  */
-void snap_child::set_locale(QString const& locale)
+void snap_child::set_locale(QString const & locale)
 {
     static_cast<void>(locale);
     // force new locale

@@ -4623,7 +4623,7 @@ void users::on_set_locale()
     QString const user_path(get_user_path());
     if(user_path != get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH))
     {
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
         content::path_info_t user_ipath;

@@ -92,6 +92,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION:
         return "sendmail::email_encryption";
 
+    case name_t::SNAP_NAME_SENDMAIL_EMAIL_FREQUENCY:
+        return "Email-Frequency";
+
     case name_t::SNAP_NAME_SENDMAIL_EMAILS_TABLE:
         return "emails";
 
@@ -2152,7 +2155,7 @@ void sendmail::attach_email(email const & e)
                         // TODO
                         // what if um is the name of a list? We would
                         // have to add that to a list which itself
-                        // gets processed
+                        // gets processed (i.e. recursive adds)
                         emails.push_back(um);
                     }
                 }
@@ -2212,6 +2215,7 @@ void sendmail::attach_user_email(email const & e)
     // TBD: would we need to have a lock to test whether the user
     //      exists? since we are not about to add it ourselves, I
     //      do not think it is necessary
+    //
     QString const to(e.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
     tld_email_list list;
     if(list.parse(to.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
@@ -2224,6 +2228,7 @@ void sendmail::attach_user_email(email const & e)
     {
         throw sendmail_exception_invalid_argument("To: field does not include at least one email");
     }
+    // Note: here the list of emails is always 1 item
     QString const key(m.f_email_only.c_str());
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(key));
     QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
@@ -2258,11 +2263,23 @@ void sendmail::attach_user_email(email const & e)
     row->cell(unique_key + "::" + get_name(name_t::SNAP_NAME_SENDMAIL_CREATED))->setValue(start_date);
 
     // try to retrieve the mail frequency the user likes, but first check
-    // whether the email has one because if so it overrides the user's choice
+    // whether this email address was assign one because if so it overrides
+    // the user's choice; also the programmer can assign one to the email,
+    // but that will be ignored if the user defined his own frequency
+    //
     QtCassandra::QCassandraValue freq_value(row->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value());
     if(freq_value.nullValue())
     {
         freq_value = users_table->row(key)->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
+        if(freq_value.nullValue())
+        {
+            // programmer defined a frequency parameter in the email?
+            // (this is NOT a header because we do not want to forward
+            // that in the email itself)
+            //
+            QString const email_freq(e.get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL_FREQUENCY)));
+            freq_value.setStringValue(email_freq);
+        }
     }
 
     char const * immediate(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE));
@@ -2307,6 +2324,32 @@ void sendmail::attach_user_email(email const & e)
         }
         t.tm_isdst = 0; // mkgmtime() ignores DST... (i.e. UTC is not affected)
         unix_date = mkgmtime(&t);
+
+        // TODO: apply user's locale
+        //
+        // There is some code that is used in other places to tweak the
+        // locale. We may want to look at the having a way to specify
+        // the user and setup the locale for that specific user. But
+        // I'm not too sure right now how we can change our UTC date
+        // to a user locale, but we'll have to test all of that.
+        //
+        //  QLocale us_locale(QLocale::English, QLocale::UnitedStates);
+        //  QString date(us_locale.toString(expires, "ddd, dd MMM yyyy hh:mm:ss' GMT'"));
+        //
+        //{
+        //    content::content * content_plugin(content::content::instance());
+        //    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+
+        //    content::path_info_t user_ipath;
+        //    user_ipath.set_path(user_path);
+
+        //    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
+        //    QString const user_locale(revision_row->cell(get_name(name_t::SNAP_NAME_USERS_LOCALE))->value().stringValue());
+        //    if(!user_locale.isEmpty())
+        //    {
+        //        locale::locale::instance()->set_current_locale(user_locale);
+        //    }
+        //}
     }
 
     QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(key));
@@ -2734,8 +2777,8 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     if(!headers.contains(get_name(name_t::SNAP_NAME_SENDMAIL_DATE)))
     {
         // the date must be specified in English only which prevents us from
-        // using the strftime() or QDateTime functions which are affected by
-        // the current locale of the server
+        // using the strftime()
+        //
         headers[get_name(name_t::SNAP_NAME_SENDMAIL_DATE)] = f_snap->date_to_string(time(nullptr) * 1000000, snap_child::date_format_t::DATE_FORMAT_EMAIL);
     }
     if(!headers.contains(get_name(name_t::SNAP_NAME_SENDMAIL_MESSAGE_ID)))
