@@ -2304,7 +2304,7 @@ void sendmail::attach_user_email(email const & e)
     {
         bool ok(false);
         int const time_offset(minimum_time.toInt(&ok, 10));
-        if(ok && time_offset >= 0)
+        if(ok && time_offset >= 0 && time_offset <= 366 * 24 * 60 * 60)
         {
             unix_date += time_offset;
         }
@@ -2313,6 +2313,7 @@ void sendmail::attach_user_email(email const & e)
             SNAP_LOG_ERROR("Minimum time \"")(minimum_time)("\" is not a valid offset. It has to be a positive integer or be undefined (default is 0).");
         }
     }
+    int const minimum_date(unix_date);
 
     // calculate the maximum time
     QString const maximum_time(e.get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_MAXIMUM_TIME)));
@@ -2329,6 +2330,11 @@ void sendmail::attach_user_email(email const & e)
         {
             SNAP_LOG_ERROR("Maximum time \"")(maximum_time)("\" is not a valid offset. It has to be a positive integer or be undefined (default is 1 year).");
         }
+    }
+    if(minimum_date > time_limit)
+    {
+        time_limit = minimum_date;
+        SNAP_LOG_ERROR("Minimum time \"")(minimum_date)("\" is larger than maximum time \"")(time_limit)("\". Using minimum as both, minimum and maximum.");
     }
 
     // TODO: add user's timezone adjustment or the following math is wrong
