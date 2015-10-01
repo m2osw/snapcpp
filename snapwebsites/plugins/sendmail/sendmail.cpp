@@ -152,11 +152,17 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_SENDMAIL_LIST_UNSUBSCRIBE:
         return "List-Unsubscribe";
 
+    case name_t::SNAP_NAME_SENDMAIL_MAXIMUM_TIME:
+        return "Maximum-Time";
+
     case name_t::SNAP_NAME_SENDMAIL_MESSAGE_ID:
         return "Message-ID";
 
     case name_t::SNAP_NAME_SENDMAIL_MIME_VERSION:
         return "MIME-Version";
+
+    case name_t::SNAP_NAME_SENDMAIL_MINIMUM_TIME:
+        return "Minimum-Time";
 
     case name_t::SNAP_NAME_SENDMAIL_NEW:
         return "new";
@@ -2288,8 +2294,43 @@ void sendmail::attach_user_email(email const & e)
     {
         frequency = freq_value.stringValue();
     }
+
     // default date for immediate emails
     time_t unix_date(time(nullptr));
+
+    // programmer may have added an offset to the default date
+    QString const minimum_time(e.get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_MINIMUM_TIME)));
+    if(!minimum_time.isEmpty())
+    {
+        bool ok(false);
+        int const time_offset(minimum_time.toInt(&ok, 10));
+        if(ok && time_offset >= 0)
+        {
+            unix_date += time_offset;
+        }
+        else
+        {
+            SNAP_LOG_ERROR("Minimum time \"")(minimum_time)("\" is not a valid offset. It has to be a positive integer or be undefined (default is 0).");
+        }
+    }
+
+    // calculate the maximum time
+    QString const maximum_time(e.get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_MAXIMUM_TIME)));
+    int time_limit(unix_date + 366 * 24 * 60 * 60); // 1 year max. by default
+    if(!maximum_time.isEmpty())
+    {
+        bool ok(false);
+        int const limit(maximum_time.toInt(&ok, 10));
+        if(ok && limit >= 0)
+        {
+            time_limit = unix_date + limit;
+        }
+        else
+        {
+            SNAP_LOG_ERROR("Maximum time \"")(maximum_time)("\" is not a valid offset. It has to be a positive integer or be undefined (default is 1 year).");
+        }
+    }
+
     // TODO: add user's timezone adjustment or the following math is wrong
     if(frequency != immediate)
     {
@@ -2350,6 +2391,12 @@ void sendmail::attach_user_email(email const & e)
         //        locale::locale::instance()->set_current_locale(user_locale);
         //    }
         //}
+    }
+
+    // no matter what we cannot go over the time_limit
+    if(unix_date > time_limit)
+    {
+        unix_date = time_limit;
     }
 
     QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(key));
