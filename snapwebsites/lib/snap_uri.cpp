@@ -491,7 +491,7 @@ QString const& snap_uri::get_original_uri() const
  * This function concatenate all the URI parts in a fully qualified URI
  * and returns the result.
  *
- * This function does NOT take the rules in account (since it doesn't
+ * This function does NOT take the rules in account (since it does not
  * know anything about them.) So you may want to consider using the
  * snap_uri_rules::process_uri() function instead.
  *

@@ -94,6 +94,7 @@ add_subdirectory(snap_software_description)
 add_subdirectory(taxonomy)
 add_subdirectory(test_plugin_suite)
 add_subdirectory(test_plugin)
+add_subdirectory(tracker)
 add_subdirectory(users)
 add_subdirectory(versions)
 

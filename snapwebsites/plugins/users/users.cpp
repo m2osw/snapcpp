@@ -3408,7 +3408,7 @@ int64_t users::get_user_identifier(QString const & user_path) const
  * \return The email address of the user, if the user is defined in the
  *         database.
  */
-QString users::get_user_email(QString const& user_path)
+QString users::get_user_email(QString const & user_path)
 {
     return get_user_email(get_user_identifier(user_path));
 }
@@ -4032,7 +4032,7 @@ void users::attach_to_session(QString const& name, QString const& data)
  *
  * \sa attach_to_session()
  */
-QString users::detach_from_session(QString const& name)
+QString users::detach_from_session(QString const & name)
 {
     return sessions::sessions::instance()->detach_from_session(*f_info, name);
 }
@@ -4592,7 +4592,7 @@ bool users::user_is_logged_in()
  * \param[in] path  The path to the page that generated the error.
  * \param[in,out] signature  The HTML signature to improve.
  */
-void users::on_improve_signature(QString const& path, QString& signature)
+void users::on_improve_signature(QString const & path, QString & signature)
 {
     (void)path;
     if(!f_user_key.isEmpty())

@@ -282,6 +282,9 @@ QString dbutils::get_row_name( QCassandraRow::pointer_t p_r ) const
         }
         else
         {
+            // except for a few special cases
+            // TODO: add tests to make sure only known keys do not get
+            //       defined as MD5 sums
             ret = key;
         }
     }
@@ -361,6 +364,11 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         //const QByteArray& name(c->columnKey());
         QtCassandra::QCassandraValue const identifier(c->columnKey());
         name = QString("%1").arg(identifier.int64Value());
+    }
+    else if(f_tableName == "tracker")
+    {
+        QtCassandra::QCassandraValue const start_date(c->columnKey());
+        name = microseconds_to_string(start_date.int64Value(), true);
     }
     else
     {

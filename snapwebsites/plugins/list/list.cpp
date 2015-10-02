@@ -3203,7 +3203,7 @@ QString list::run_list_item_key(content::path_info_t & list_ipath, content::path
     {
         e = snap_expr::expr::expr_pointer_t(new snap_expr::expr);
         QByteArray program;
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
         QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->value());
         if(compiled_script.nullValue())

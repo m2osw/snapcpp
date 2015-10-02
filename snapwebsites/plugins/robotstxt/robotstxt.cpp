@@ -152,27 +152,11 @@ int64_t robotstxt::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2015, 1, 10, 20, 38, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
-/** \brief First update to run for the robotstxt plugin.
- *
- * This function is the first update for the robotstxt plugin. It installs
- * the initial robots.txt page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void robotstxt::initial_update(int64_t variables_timestamp)
-{
-    // this is now done by the install content process
-    //path::path::instance()->add_path("robotstxt", "robots.txt", variables_timestamp);
-}
-#pragma GCC diagnostic pop
 
 /** \brief Update the content with our references.
  *
@@ -181,13 +165,13 @@ void robotstxt::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void robotstxt::content_update(int64_t variables_timestamp)
 {
+    NOTUSED(variables_timestamp);
+
     content::content::instance()->add_xml("robotstxt");
 }
-#pragma GCC diagnostic pop
+
 
 /** \brief Check for the "robots.txt" path.
  *

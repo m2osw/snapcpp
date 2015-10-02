@@ -1571,6 +1571,7 @@ public:
         {
             // TBD: should we just return a string with an error in it
             //      instead of throwing?
+            //
             throw snap_expr_exception_not_accessible(
                     QString("cell() called with a set of parameters specifying access to a secure table (table \"%1\", row \"%2\", cell \"%3\"); no data will be returned.")
                             .arg(table_name).arg(row_name).arg(cell_name));

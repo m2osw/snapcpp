@@ -87,6 +87,7 @@ add_library( ${PROJECT_NAME} SHARED
     http_client_server.cpp                      # implementation of the HTTP protocol
     http_cookie.cpp                             # HTTP cookie, server side
     http_strings.cpp                            # parse HTTP strings (Accept strings in particular)
+    inet_helpers.cpp                            # helper functions in link with the network
     log.cpp                                     # log4cplus support
     mkgmtime.c                                  # mktime() with a UTC time
     mounts.cpp                                  # read /proc/mounts or some other mount point file
