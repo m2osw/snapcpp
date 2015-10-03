@@ -1562,7 +1562,7 @@ public:
         QString const table_name(sub_results[0].get_string("cell(1)"));
         QString const row_name(sub_results[1].get_string("cell(2)"));
         QString const cell_name(sub_results[2].get_string("cell(3)"));
-//std::cerr << "cell(\"" << table_name << "\", \"" << row_name << "\", \"" << cell_name << "\")\n";
+//SNAP_LOG_WARNING("cell(")(table_name)(", ")(row_name)(", ")(cell_name)(") -> ...");
 
         // verify whether reading the content is considered secure
         server::accessible_flag_t accessible;
@@ -1582,7 +1582,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY, value);
     }
 
-    static void call_cell_exists(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_cell_exists(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(!g_context)
         {
@@ -1590,15 +1590,43 @@ public:
         }
         if(sub_results.size() != 3)
         {
-            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell_exists() expected exactly 3");
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell_exists(), expected exactly 3");
         }
         QString const table_name(sub_results[0].get_string("cell_exist(1)"));
         QString const row_name(sub_results[1].get_string("cell_exist(2)"));
         QString const cell_name(sub_results[2].get_string("cell_exist(3)"));
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->table(table_name)->row(row_name)->exists(cell_name));
+//SNAP_LOG_WARNING("cell_exists(")(table_name)(", ")(row_name)(", ")(cell_name)(") -> ")(value.boolValue() ? "true" : "false");
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
+
+    // This cannot work right in an international website
+    // The dates should be saved as int64_t values in the database instead
+    //static void call_date_to_us(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    //{
+    //    if(!g_context)
+    //    {
+    //        throw snap_expr_exception_not_ready("date_to_us() function not available, g_context is NULL");
+    //    }
+    //    if(sub_results.size() != 1)
+    //    {
+    //        throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call date_to_us(), expected exactly 1");
+    //    }
+    //    QString const date_str(sub_results[0].get_string("date_to_us(1)"));
+
+    //    // we only support MM/DD/YYYY
+    //    struct tm time_info;
+    //    memset(&time_info, 0, sizeof(time_info));
+    //    time_info.tm_mon = date_str.mid(0, 2).toInt() - 1;
+    //    time_info.tm_mday = date_str.mid(3, 2).toInt();
+    //    time_info.tm_year = date_str.mid(6, 4).toInt() - 1900;
+    //    time_t t(mkgmtime(&time_info));
+
+    //    QtCassandra::QCassandraValue value;
+    //    value.setInt64Value(t * 1000000);
+    //    result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    //}
 
     static void call_format(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
@@ -3420,6 +3448,10 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
         "cell_exists",
         expr_node::call_cell_exists
     },
+    //{ // converts a date to microseconds
+    //    "date_to_us",
+    //    expr_node::call_date_to_us
+    //},
     { // cast to format
         "format",
         expr_node::call_format

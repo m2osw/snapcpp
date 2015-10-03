@@ -7106,6 +7106,11 @@ void snap_child::execute()
     // primary owner
     server->execute(f_uri.path());
 
+    // TODO: look into moving this call to the exit() function since
+    //       it should be called no matter what (or maybe have some
+    //       form of RAII, but if exit() gets called, RAII will not
+    //       do us any good...)
+    //
     // now that execution is over, we want to re-attach whatever did
     // not make it in this session (i.e. a message that was posted
     // after messages were added to the current page, or this page
@@ -7719,7 +7724,7 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
  *
  * \return The date and time as a Unix time_t number, -1 if the convertion fails.
  */
-time_t snap_child::string_to_date(QString const& date)
+time_t snap_child::string_to_date(QString const & date)
 {
     struct parser_t
     {
@@ -7864,7 +7869,7 @@ time_t snap_child::string_to_date(QString const& date)
             return true;
         }
 
-        bool integer(unsigned int min_len, unsigned int max_len, unsigned int min_value, unsigned int max_value, int& result)
+        bool integer(unsigned int min_len, unsigned int max_len, unsigned int min_value, unsigned int max_value, int & result)
         {
             unsigned int u_result = 0;
             unsigned int count(0);

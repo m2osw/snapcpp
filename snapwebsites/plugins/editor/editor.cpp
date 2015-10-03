@@ -1159,6 +1159,28 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
         return false;
     }
 
+    if(value_info.get_data_type() == "date")
+    {
+        value_info.set_type_name("date");
+
+        int64_t const date(value_info.get_value().safeInt64Value());
+        if(date != 0)
+        {
+            value_info.result() = locale::locale::instance()->format_date(date / 1000000);
+        }
+        value_info.set_status(value_to_string_info_t::status_t::DONE);
+        return false;
+    }
+
+    if(value_info.get_data_type() == "time")
+    {
+        value_info.set_type_name("time");
+
+        value_info.result() = locale::locale::instance()->format_time(value_info.get_value().safeInt64Value() / 1000000);
+        value_info.set_status(value_to_string_info_t::status_t::DONE);
+        return false;
+    }
+
     return true;
 }
 
@@ -1251,6 +1273,8 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
     }
 
     // simple US date for now (MM-DD-YYYY), needs to be extended
+    // (format NOT even checked properly!!!)
+    //
     if(value_info.get_data_type() == "ms-date-us")
     {
         value_info.set_type_name("date");
@@ -1274,6 +1298,72 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
         time_info.tm_year = value_info.get_data().mid(6, 4).toInt() - 1900;
         time_t t(mkgmtime(&time_info));
         value_info.result().setInt64Value(t * 1000000); // seconds to microseconds
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
+        return false;
+    }
+
+    // convert a date using the current locale which we expect is
+    // specific to the current user (if the user is not logged in
+    // then we should fallback to the website default.)
+    //
+    // the result is in microseconds like most other dates we use in Snap!
+    //
+    if(value_info.get_data_type() == "date")
+    {
+        value_info.set_type_name("date");
+
+        // convert a date to 64 bit value in micro seconds
+        //
+        // TODO: verify that this works as expected for various
+        //       user of various locales and timezones.
+        //
+        // Note that the date should already have been verified so we
+        // should not get an error code here.
+        //
+        locale::locale::parse_error_t errcode;
+        time_t const t(locale::locale::instance()->parse_date(value_info.get_data(), errcode));
+        if(errcode == locale::locale::parse_error_t::PARSE_NO_ERROR)
+        {
+            value_info.result().setInt64Value(t * 1000000); // seconds to microseconds
+        }
+        else
+        {
+            // use 0 on failure
+            value_info.result().setInt64Value(0);
+        }
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
+        return false;
+    }
+
+    // convert a string representing a time using the current locale
+    // which we expect is specific to the current user (if the user is
+    // not logged in then we should fallback to the website default.)
+    //
+    // the result is in microseconds like most other dates we use in Snap!
+    //
+    if(value_info.get_data_type() == "time")
+    {
+        value_info.set_type_name("time");
+
+        // convert a time to 64 bit value in micro seconds
+        //
+        // TODO: verify that this works as expected for various
+        //       user of various locales and timezones.
+        //
+        // Note that the time should already have been verified so we
+        // should not get an error code here.
+        //
+        locale::locale::parse_error_t errcode;
+        time_t const t(locale::locale::instance()->parse_time(value_info.get_data(), errcode));
+        if(errcode == locale::locale::parse_error_t::PARSE_NO_ERROR)
+        {
+            value_info.result().setInt64Value(t * 1000000); // seconds to microseconds
+        }
+        else
+        {
+            // use 0 on failure
+            value_info.result().setInt64Value(0);
+        }
         value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
@@ -2867,7 +2957,18 @@ bool editor::validate_editor_post_for_widget_impl(
                     else if(date != 0)
                     {
                         // break parts date / time
-                        snap_string_list parts(value.split(" "));
+                        snap_string_list parts;
+                        if(date == 3)
+                        {
+                            // TODO: look at create a parse_date_and_time()
+                            //       function instead
+                            //
+                            parts = value.split(" ");
+                        }
+                        else
+                        {
+                            parts << value;
+                        }
 
                         // remove empty entries (i.e. multiple spaces)
                         for(int i(parts.size() - 1); i >= 0; i--)
@@ -2896,13 +2997,18 @@ bool editor::validate_editor_post_for_widget_impl(
                             // check date?
                             if(date == 1 || date == 3)
                             {
-                                // accept / or - as separators
-                                snap_string_list date_parts(parts[0].split('/'));
-                                if(date_parts.size() != 3)
-                                {
-                                    date_parts = parts[0].split('-');
-                                }
-                                if(date_parts.size() != 3)
+                                // use the locale to make sure we get a check depending on the
+                                // user locale; also the separator varies depending on the locale
+                                // (i.e. dashes (-), slashes (/), periods (.), etc.)
+                                //
+                                // TBD: we were testing the validity of the date below (i.e. so
+                                //      as to avoid certain days in 1752) although that really
+                                //      depends on the locale and if a function has to take
+                                //      care of that test it will be the parse_date()
+                                //
+                                locale::locale::parse_error_t errcode;
+                                locale_plugin->parse_date(parts[0], errcode);
+                                if(errcode != locale::locale::parse_error_t::PARSE_NO_ERROR)
                                 {
                                     messages->set_error(
                                         "Invalid Value",
@@ -2914,70 +3020,89 @@ bool editor::validate_editor_post_for_widget_impl(
                                     ).set_widget_name(widget_name);
                                     info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                                 }
-                                else
-                                {
-                                    // TODO: use the user current locale information
-                                    //       to know whether the date is MM/DD/YYYY
-                                    //       or something else...
-                                    bool ok(false);
-                                    int const month(date_parts[0].toInt(&ok));
-                                    int day(0);
-                                    int year(0);
-                                    if(ok)
-                                    {
-                                        day = date_parts[1].toInt(&ok);
-                                        if(ok)
-                                        {
-                                            year = date_parts[2].toInt(&ok);
-                                        }
-                                    }
-                                    if(!ok)
-                                    {
-                                        messages->set_error(
-                                            "Invalid Value",
-                                            QString("\"%1\" is not a valid date for \"%2\", all three parts are not valid numbers.")
-                                                    .arg(form::form::html_64max(value, is_secret)).arg(label),
-                                            QString("the date did not validate for \"%1\"")
-                                                    .arg(widget_name),
-                                            false
-                                        ).set_widget_name(widget_name);
-                                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
-                                    }
-                                    else
-                                    {
-                                        // the maximum number of days depends on the
-                                        // year, use our snap_child function for that
-                                        if(month == 9 && year == 1752)
-                                        {
-                                            if(day < 1 || (day > 2 && day < 14) || day > 30)
-                                            {
-                                                messages->set_error(
-                                                    "Invalid Value",
-                                                    QString("\"%1\" is not a valid date in \"%2\" (Note that September 1752 is missing days 3 to 13).")
-                                                            .arg(form::form::html_64max(value, is_secret)).arg(label),
-                                                    QString("the date did not validate for \"%1\"")
-                                                            .arg(widget_name),
-                                                    false
-                                                ).set_widget_name(widget_name);
-                                                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
-                                            }
-                                        }
-                                        else if(month < 1 || month > 12
-                                        || day < 1 || day > f_snap->last_day_of_month(month, year)
-                                        || year < 1 || year > 3000)
-                                        {
-                                            messages->set_error(
-                                                "Invalid Value",
-                                                QString("\"%1\" is not a valid date in \"%2\".")
-                                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
-                                                QString("the date did note validate for \"%1\"")
-                                                        .arg(widget_name),
-                                                false
-                                            ).set_widget_name(widget_name);
-                                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
-                                        }
-                                    }
-                                }
+
+//                                // accept / or - as separators
+//                                snap_string_list date_parts(parts[0].split('/'));
+//                                if(date_parts.size() != 3)
+//                                {
+//                                    date_parts = parts[0].split('-');
+//                                }
+//                                if(date_parts.size() != 3)
+//                                {
+//                                    messages->set_error(
+//                                        "Invalid Value",
+//                                        QString("\"%1\" is not a valid date for \"%2\".")
+//                                                .arg(form::form::html_64max(value, is_secret)).arg(label),
+//                                        QString("the date did not validate for \"%1\"")
+//                                                .arg(widget_name),
+//                                        false
+//                                    ).set_widget_name(widget_name);
+//                                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+//                                }
+//                                else
+//                                {
+//                                    // TODO: use the user current locale information
+//                                    //       to know whether the date is MM/DD/YYYY
+//                                    //       or something else...
+//                                    bool ok(false);
+//                                    int const month(date_parts[0].toInt(&ok));
+//                                    int day(0);
+//                                    int year(0);
+//                                    if(ok)
+//                                    {
+//                                        day = date_parts[1].toInt(&ok);
+//                                        if(ok)
+//                                        {
+//                                            year = date_parts[2].toInt(&ok);
+//                                        }
+//                                    }
+//                                    if(!ok)
+//                                    {
+//                                        messages->set_error(
+//                                            "Invalid Value",
+//                                            QString("\"%1\" is not a valid date for \"%2\", all three parts are not valid numbers.")
+//                                                    .arg(form::form::html_64max(value, is_secret)).arg(label),
+//                                            QString("the date did not validate for \"%1\"")
+//                                                    .arg(widget_name),
+//                                            false
+//                                        ).set_widget_name(widget_name);
+//                                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+//                                    }
+//                                    else
+//                                    {
+//                                        // the maximum number of days depends on the
+//                                        // year, use our snap_child function for that
+//                                        if(month == 9 && year == 1752)
+//                                        {
+//                                            if(day < 1 || (day > 2 && day < 14) || day > 30)
+//                                            {
+//                                                messages->set_error(
+//                                                    "Invalid Value",
+//                                                    QString("\"%1\" is not a valid date in \"%2\" (Note that September 1752 is missing days 3 to 13).")
+//                                                            .arg(form::form::html_64max(value, is_secret)).arg(label),
+//                                                    QString("the date did not validate for \"%1\"")
+//                                                            .arg(widget_name),
+//                                                    false
+//                                                ).set_widget_name(widget_name);
+//                                                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+//                                            }
+//                                        }
+//                                        else if(month < 1 || month > 12
+//                                        || day < 1 || day > f_snap->last_day_of_month(month, year)
+//                                        || year < 1 || year > 3000)
+//                                        {
+//                                            messages->set_error(
+//                                                "Invalid Value",
+//                                                QString("\"%1\" is not a valid date in \"%2\".")
+//                                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
+//                                                QString("the date did note validate for \"%1\"")
+//                                                        .arg(widget_name),
+//                                                false
+//                                            ).set_widget_name(widget_name);
+//                                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+//                                        }
+//                                    }
+//                                }
                             }
                             // check time?
                             if(date == 2 || date == 3)
@@ -2985,60 +3110,9 @@ bool editor::validate_editor_post_for_widget_impl(
                                 // get part 1 if we also had a date (date == 3)
                                 // accept : or . as separator
                                 int const index(date == 2 ? 0 : 1);
-                                snap_string_list time_parts(parts[index].split(":"));
-                                if(time_parts.size() == 3
-                                && time_parts.size() == 2)
-                                {
-                                    time_parts = parts[index].split(".");
-                                }
-                                if(time_parts.size() == 3
-                                && time_parts.size() == 2)
-                                {
-                                    bool ok(false);
-                                    int const hours(time_parts[0].toInt(&ok));
-                                    int minutes(0);
-                                    int seconds(0);
-                                    if(ok)
-                                    {
-                                        minutes = time_parts[1].toInt(&ok);
-                                        if(ok && time_parts.size() == 3)
-                                        {
-                                            seconds = time_parts[2].toInt(&ok);
-                                        }
-                                    }
-                                    if(!ok)
-                                    {
-                                        messages->set_error(
-                                            "Invalid Value",
-                                            QString("\"%1\" is not a valid time for \"%2\", the two or three parts are not valid numbers.")
-                                                    .arg(form::form::html_64max(value, is_secret)).arg(label),
-                                            QString("the time did not validate for \"%1\"")
-                                                    .arg(widget_name),
-                                            false
-                                        ).set_widget_name(widget_name);
-                                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
-                                    }
-                                    else
-                                    {
-                                        // the maximum number of days depends on the
-                                        // year, use our snap_child function for that
-                                        if(hours   < 0 || hours   >= 24
-                                        || minutes < 0 || minutes >= 59
-                                        || seconds < 0 || seconds >= 59)
-                                        {
-                                            messages->set_error(
-                                                "Invalid Value",
-                                                QString("\"%1\" is not a valid time in \"%2\".")
-                                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
-                                                QString("the time did validate for \"%1\"")
-                                                        .arg(widget_name),
-                                                false
-                                            ).set_widget_name(widget_name);
-                                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
-                                        }
-                                    }
-                                }
-                                else
+                                locale::locale::parse_error_t errcode;
+                                locale_plugin->parse_time(parts[index], errcode);
+                                if(errcode != locale::locale::parse_error_t::PARSE_NO_ERROR)
                                 {
                                     messages->set_error(
                                         "Invalid Value",
@@ -3050,6 +3124,72 @@ bool editor::validate_editor_post_for_widget_impl(
                                     ).set_widget_name(widget_name);
                                     info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                                 }
+
+//                                snap_string_list time_parts(parts[index].split(":"));
+//                                if(time_parts.size() == 3
+//                                && time_parts.size() == 2)
+//                                {
+//                                    time_parts = parts[index].split(".");
+//                                }
+//                                if(time_parts.size() == 3
+//                                && time_parts.size() == 2)
+//                                {
+//                                    bool ok(false);
+//                                    int const hours(time_parts[0].toInt(&ok));
+//                                    int minutes(0);
+//                                    int seconds(0);
+//                                    if(ok)
+//                                    {
+//                                        minutes = time_parts[1].toInt(&ok);
+//                                        if(ok && time_parts.size() == 3)
+//                                        {
+//                                            seconds = time_parts[2].toInt(&ok);
+//                                        }
+//                                    }
+//                                    if(!ok)
+//                                    {
+//                                        messages->set_error(
+//                                            "Invalid Value",
+//                                            QString("\"%1\" is not a valid time for \"%2\", the two or three parts are not valid numbers.")
+//                                                    .arg(form::form::html_64max(value, is_secret)).arg(label),
+//                                            QString("the time did not validate for \"%1\"")
+//                                                    .arg(widget_name),
+//                                            false
+//                                        ).set_widget_name(widget_name);
+//                                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+//                                    }
+//                                    else
+//                                    {
+//                                        // the maximum number of days depends on the
+//                                        // year, use our snap_child function for that
+//                                        if(hours   < 0 || hours   >= 24
+//                                        || minutes < 0 || minutes >= 59
+//                                        || seconds < 0 || seconds >= 59)
+//                                        {
+//                                            messages->set_error(
+//                                                "Invalid Value",
+//                                                QString("\"%1\" is not a valid time in \"%2\".")
+//                                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
+//                                                QString("the time did validate for \"%1\"")
+//                                                        .arg(widget_name),
+//                                                false
+//                                            ).set_widget_name(widget_name);
+//                                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+//                                        }
+//                                    }
+//                                }
+//                                else
+//                                {
+//                                    messages->set_error(
+//                                        "Invalid Value",
+//                                        QString("\"%1\" is not a valid time for \"%2\".")
+//                                                .arg(form::form::html_64max(value, is_secret)).arg(label),
+//                                        QString("the time did not validate for \"%1\"")
+//                                                .arg(widget_name),
+//                                        false
+//                                    ).set_widget_name(widget_name);
+//                                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+//                                }
                             }
                         }
                     }
@@ -4403,7 +4543,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
 
     static_cast<void>(ctemplate);
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
 
     QDomDocument editor_widgets(get_editor_widgets(ipath));
 //std::cerr << "***\n*** Use editor? " << (editor_widgets.isNull() ? "no" : "YES") << " widgets for " << ipath.get_key() << "\n***\n";
@@ -4493,6 +4633,11 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     revision_row->clearCache();
     secret_row->clearCache();
     draft_row->clearCache();
+
+    // make sure dates and times are properly handled
+    locale::locale * locale_plugin(locale::locale::instance());
+    locale_plugin->set_timezone();
+    locale_plugin->set_locale();
 
     QString action;
     QDomElement form_mode(snap_dom::get_element(editor_widgets, "mode", false));

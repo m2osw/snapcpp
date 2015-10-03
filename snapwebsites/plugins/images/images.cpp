@@ -48,7 +48,7 @@ SNAP_PLUGIN_START(images, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -190,7 +190,7 @@ images::~images()
  *
  * \param[in] snap  The child handling this request.
  */
-void images::on_bootstrap(snap_child *snap)
+void images::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -213,7 +213,7 @@ void images::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the images plugin.
  */
-images *images::instance()
+images * images::instance()
 {
     return g_plugin_images_factory.instance();
 }
@@ -251,7 +251,7 @@ int64_t images::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 28, 23, 16, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 2, 16, 17, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -318,7 +318,7 @@ void images::content_update(int64_t variables_timestamp)
  * \param[in] ipath  The path being checked.
  * \param[in] plugin_info  The current information about this path plugin.
  */
-void images::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+void images::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     // in this case we ignore the result, all we are interested in is
     // whatever is put in the plugin info object

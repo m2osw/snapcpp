@@ -193,7 +193,7 @@ void locale_settings::on_set_locale()
         // check for a locale
         content::path_info_t settings_ipath;
         settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
         QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
         locale_plugin->set_current_locale(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_LOCALE))->value().stringValue());

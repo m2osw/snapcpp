@@ -1176,7 +1176,7 @@ time_t locale::parse_time(QString const & time_str, parse_error_t & errcode)
             result += second;
         }
 
-        // skip spaces after the time
+        // skip spaces after the time (optional)
         while(s->isSpace())
         {
             ++s;
