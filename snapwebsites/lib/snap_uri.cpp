@@ -1537,7 +1537,10 @@ QString snap_uri::query_string() const
         {
             // add the value only if not empty
             result += "=";
-            result += urlencode(it.value());
+            // we now support commas in URIs because... well... it is
+            // common and it won't break anything
+            //
+            result += urlencode(it.value(), ",");
         }
     }
     return result;
