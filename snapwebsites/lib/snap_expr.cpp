@@ -2476,6 +2476,30 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
+    static void call_tolower(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call tolower() expected exactly 1");
+        }
+        QString const str(sub_results[0].get_string("tolower(1)"));
+        QtCassandra::QCassandraValue value;
+        value.setStringValue(str.toLower());
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
+    }
+
+    static void call_toupper(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call toupper() expected exactly 1");
+        }
+        QString const str(sub_results[0].get_string("tolower(1)"));
+        QtCassandra::QCassandraValue value;
+        value.setStringValue(str.toUpper());
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
+    }
+
     static void call_uint16(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         if(sub_results.size() != 1)
@@ -3503,6 +3527,14 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
     { // check whether a named table exists
         "table_exists",
         expr_node::call_table_exists
+    },
+    { // convert string to lowercase
+        "tolower",
+        expr_node::call_tolower
+    },
+    { // convert string to uppercase
+        "toupper",
+        expr_node::call_tolower
     },
     { // cast to uint16
         "uint16",

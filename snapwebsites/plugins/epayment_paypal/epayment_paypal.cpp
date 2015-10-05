@@ -408,7 +408,7 @@ QtCassandra::QCassandraTable::pointer_t epayment_paypal::get_epayment_paypal_tab
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
-void epayment_paypal::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void epayment_paypal::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
 {
     static_cast<void>(ipath);
     static_cast<void>(metadata);
@@ -463,7 +463,7 @@ void epayment_paypal::on_generate_header_content(content::path_info_t& ipath, QD
     content::path_info_t settings_ipath;
     settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_SETTINGS_PATH));
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
     QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
 
@@ -514,7 +514,7 @@ void epayment_paypal::on_generate_header_content(content::path_info_t& ipath, QD
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void epayment_paypal::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void epayment_paypal::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
     // our pages are like any standard pages
     output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
@@ -532,7 +532,7 @@ void epayment_paypal::on_generate_main_content(content::path_info_t& ipath, QDom
  *
  * \return true if the path was properly displayed, false otherwise.
  */
-bool epayment_paypal::on_path_execute(content::path_info_t& ipath)
+bool epayment_paypal::on_path_execute(content::path_info_t & ipath)
 {
     QString const cpath(ipath.get_cpath());
 std::cerr << "***\n*** epayment_paypal::on_path_execute() cpath = [" << cpath << "]\n***\n";
@@ -944,7 +944,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             QtCassandra::QCassandraTable::pointer_t epayment_paypal_table(get_epayment_paypal_table());
 
             QString const token(main_uri.query_option("token"));
-std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\n";
+SNAP_LOG_WARNING("*** token is [")(token)("] [")(main_uri.full_domain())("]");
             QString const date_invoice(epayment_paypal_table->row(main_uri.full_domain())->cell("agreement/" + token)->value().stringValue());
             int const pos(date_invoice.indexOf(','));
             if(pos < 1)
@@ -974,7 +974,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             content::path_info_t invoice_ipath;
             invoice_ipath.set_path(invoice);
 
-            epayment::epayment *epayment_plugin(epayment::epayment::instance());
+            epayment::epayment * epayment_plugin(epayment::epayment::instance());
 
             // TODO: add a test to see whether the invoice has already been
             //       accepted, if so running the remainder of the code here
@@ -996,7 +996,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
                 break;
             }
 
-            content::content *content_plugin(content::content::instance());
+            content::content * content_plugin(content::content::instance());
             QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
             QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
             QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
@@ -1350,8 +1350,6 @@ int8_t epayment_paypal::get_maximum_repeat_failures()
  * \param[in,out] http  The HTTP request handler.
  * \param[out] token_type  Returns the type of OAuth2 used (i.e. "Bearer").
  * \param[out] access_token  Returns the actual OAuth2 cookie.
- * \param[in,out] secret_row  The row were invoice related secret data
- *                            is to be saved.
  *
  * \return true if the OAuth2 token is valid; false in all other cases.
  */
@@ -3193,7 +3191,7 @@ std::cerr << "***\n*** JSON BODY: ["
     }
 
     // create the AJAX response
-    server_access::server_access *server_access_plugin(server_access::server_access::instance());
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
     server_access_plugin->create_ajax_result(ipath, success);
     server_access_plugin->ajax_append_data(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_TOKEN_POST_FIELD), click.toUtf8());
     server_access_plugin->ajax_redirect(redirect_url);

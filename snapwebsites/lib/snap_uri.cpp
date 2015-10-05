@@ -893,6 +893,11 @@ bool snap_uri::process_domain(QString const & full_domain_name,
  * The only potential problem is when you get an out of memory error
  * while allocating a string.
  *
+ * \todo
+ * Check that the URL is not an IPv4 or IPv6 address. Such will always
+ * fail and we should look into avoiding the use of an exception in
+ * that circumstance.
+ *
  * \exception snap_uri_exception_invalid_uri
  * If the domain cannot properly be broken up in sub-domains,
  * the doman name and the tld, then this exception is raised.

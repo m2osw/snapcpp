@@ -787,11 +787,9 @@ int tcp_server::get_last_accepted_socket() const
  * \param[in] port  The port the server is listening on.
  * \param[in] mode  Whether to use SSL when connecting.
  */
-bio_client::bio_client(std::string const& addr, int port, mode_t mode)
+bio_client::bio_client(std::string const & addr, int port, mode_t mode)
     //: f_bio(nullptr) -- auto-init
     //, f_ssl_ctx(nullptr) -- auto-init
-    //, f_port(port)
-    //, f_addr(addr)
 {
     if(port < 0 || port >= 65536)
     {
