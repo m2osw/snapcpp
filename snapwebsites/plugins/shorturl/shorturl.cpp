@@ -21,6 +21,7 @@
 #include "../messages/messages.h"
 
 #include "not_reached.h"
+#include "not_used.h"
 #include "log.h"
 
 #include <QtCassandra/QCassandraLock.h>
@@ -40,7 +41,7 @@ SNAP_PLUGIN_START(shorturl, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -100,14 +101,14 @@ shorturl::~shorturl()
  *
  * \param[in] snap  The child handling this request.
  */
-void shorturl::on_bootstrap(snap_child *snap)
+void shorturl::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
     SNAP_LISTEN(shorturl, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(shorturl, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(shorturl, "content", content::content, page_cloned, _1);
-    SNAP_LISTEN(shorturl, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(shorturl, "path", path::path, check_for_redirect, _1);
 }
 
 /** \brief Get a pointer to the shorturl plugin.
@@ -119,7 +120,7 @@ void shorturl::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the shorturl plugin.
  */
-shorturl *shorturl::instance()
+shorturl * shorturl::instance()
 {
     return g_plugin_shorturl_factory.instance();
 }
@@ -231,11 +232,81 @@ QtCassandra::QCassandraTable::pointer_t shorturl::get_shorturl_table()
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool shorturl::on_path_execute(content::path_info_t& ipath)
+bool shorturl::on_path_execute(content::path_info_t & ipath)
 {
     f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
+}
+
+
+/** \brief Check for paths under "s/..." and redirect them.
+ *
+ * As expected, this function redirects the user, with a 301, to the
+ * page specified in a ShortCut. The plugin knows that the user hit
+ * a shortcut if the path starts with "s/".
+ *
+ * If the specified shortcut does not exist on that website, then
+ * the system does a soft redirect to "s". We should look in a
+ * way to actually prevent caching of such a request since (1) it
+ * includes an error and (2) that shortcut URI may become a valid
+ * redirect later.
+ *
+ * The function uses the 301 code when redirecting because a 302 or
+ * 303 do not work as expected in terms of SEO. That is, the juice
+ * you would otherwise receive would be lost.
+ *
+ * \todo
+ * We want to allow administrator to define the shortcut path
+ * instead of "s/...". That has to be done in the settings before
+ * the shorturl plugin gets installed (either that or we do nothing
+ * until that data is defined.) This is very important because
+ * changing that information later is very problematic (i.e. all
+ * the old URIs will stop working.)
+ *
+ * \param[in] ipath  The path the user is going to now.
+ */
+void shorturl::on_check_for_redirect(content::path_info_t & ipath)
+{
+    if(ipath.get_cpath().startsWith("s/"))
+    {
+        QString const identifier(ipath.get_cpath().mid(2));
+        QString const url(get_shorturl(identifier, 36));
+        if(!url.isEmpty())
+        {
+            // TODO: add an easy to use/see tracking system for the
+            //       shorturl plugin so an administrator can see who
+            //       used which shorturl
+
+            // redirect the user
+            //
+            // TODO: the HTTP link header should not use the set_header()
+            //       because we may have many links and they should all
+            //       appear in one "Link: ..." line
+            //
+            QString const http_link("<" + ipath.get_key() + ">; rel=shorturl");
+            f_snap->set_header(get_name(name_t::SNAP_NAME_SHORTURL_HTTP_LINK), http_link, snap_child::HEADER_MODE_REDIRECT);
+
+            // SEO wise, using HTTP_CODE_FOUND (and probably HTTP_CODE_SEE_OTHER)
+            // is not as good as HTTP_CODE_MOVED_PERMANENTLY...
+            f_snap->page_redirect(url, snap_child::http_code_t::HTTP_CODE_MOVED_PERMANENTLY);
+            NOTREACHED();
+        }
+
+        // This is nearly an error; we do not expect users to be sent to
+        // invalid shortcuts (although old pages that got deleted have their
+        // shortcuts invalidated too...)
+        //
+        messages::messages::instance()->set_error(
+            "Shortcut Not Found",
+            QString("The shortcut you specified (%1) was not found on this website.").arg(identifier),
+            "shorturl::on_check_for_redirect() could not find specified shortcut.",
+            false
+        );
+
+        // soft redirect to /s
+        ipath.set_path("s");
+    }
 }
 
 
@@ -259,32 +330,7 @@ bool shorturl::on_path_execute(content::path_info_t& ipath)
  */
 void shorturl::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-    if(ipath.get_cpath().startsWith("s/"))
-    {
-        QString url(get_shorturl(ipath.get_cpath().mid(2), 36));
-        if(!url.isEmpty())
-        {
-            // redirect the user
-            // TODO: the HTTP link header should not use the set_header()
-            //       because we may have many links and they should all
-            //       appear in one "Link: ..." line
-            QString const http_link("<" + ipath.get_cpath() + ">; rel=shorturl");
-            f_snap->set_header(get_name(name_t::SNAP_NAME_SHORTURL_HTTP_LINK), http_link, snap_child::HEADER_MODE_REDIRECT);
-            f_snap->page_redirect(url, snap_child::http_code_t::HTTP_CODE_FOUND);
-            NOTREACHED();
-        }
-        // else -- warn or something?
-
-        // TODO: make some form of copy from ipath first?
-        content::path_info_t shortcut_path;
-        shortcut_path.set_path("s");
-        output::output::instance()->on_generate_main_content(shortcut_path, page, body, ctemplate);
-    }
-    else
-    {
-        // a type is just like a regular page
-        output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
-    }
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 
@@ -301,7 +347,7 @@ void shorturl::on_generate_main_content(content::path_info_t& ipath, QDomElement
  * \return The full path to the Short URL or an empty string if the
  *         conversion fails.
  */
-QString shorturl::get_shorturl(QString const& id, int base)
+QString shorturl::get_shorturl(QString const & id, int base)
 {
     bool ok;
     uint64_t const identifier(id.toULongLong(&ok, base));
@@ -357,10 +403,10 @@ QString shorturl::get_shorturl(uint64_t identifier)
  * \param[in,out] metadata  The body being generated.
  * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
-void shorturl::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void shorturl::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
 {
-    static_cast<void>(header);
-    static_cast<void>(ctemplate);
+    NOTUSED(header);
+    NOTUSED(ctemplate);
 
     content::field_search::search_result_t result;
 
@@ -400,10 +446,10 @@ void shorturl::on_generate_header_content(content::path_info_t& ipath, QDomEleme
  * \return This function returns true if this plugin does not considers
  *         the \p ipath as a path that does not require a short URL.
  */
-bool shorturl::allow_shorturl_impl(content::path_info_t& ipath, QString const& owner, QString const& type, bool& allow)
+bool shorturl::allow_shorturl_impl(content::path_info_t & ipath, QString const & owner, QString const & type, bool & allow)
 {
-    static_cast<void>(owner);
-    static_cast<void>(type);
+    NOTUSED(owner);
+    NOTUSED(type);
 
     // do not ever create short URLs for admin pages
     if(ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/"))
@@ -527,22 +573,6 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
 }
 
 
-/** \brief Check whether \p cpath matches our introducer.
- *
- * This function checks that cpath matches the shorturl introducer which
- * is "/s/" by default.
- *
- * \param[in,out] ipath  The path being handled dynamically.
- * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
- */
-void shorturl::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
-{
-    if(ipath.get_cpath().left(2) == "s/")
-    {
-        // tell the path plugin that this is ours
-        plugin_info.set_plugin(this);
-    }
-}
 
 
 /** \brief Someone just cloned a page.

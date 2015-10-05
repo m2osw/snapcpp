@@ -873,7 +873,7 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
                 f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                             "Plugin Missing",
                             "This page is not currently available as its plugin is not currently installed.",
-                            "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + owner + ") does not yet implement the path_execute() function.");
+                            "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + owner + ") does not yet implement the on_path_execute() function.");
             }
             else
             {

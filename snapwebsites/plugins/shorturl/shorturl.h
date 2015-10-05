@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../sessions/sessions.h"
 #include "../path/path.h"
+#include "../sessions/sessions.h"
 
 namespace snap
 {
@@ -49,7 +49,10 @@ public:
 
 
 
-class shorturl : public plugins::plugin, public path::path_execute, public layout::layout_content
+class shorturl
+        : public plugins::plugin
+        , public path::path_execute
+        , public layout::layout_content
 {
 public:
     static const sessions::sessions::session_info::session_id_t SHORTURL_SESSION_ID_SETTINGS = 1;      // settings-form.xml
@@ -63,12 +66,23 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_shorturl_table();
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(content::path_info_t & ipath);
-    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, const QString & ctemplate);
-    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, const QString & ctemplate);
+
+    // content plugin signals
     void                on_create_content(content::path_info_t & path, const QString & owner, const QString & type);
-    void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
     void                on_page_cloned(content::content::cloned_tree_t const & tree);
+
+    // layout plugin signals
+    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, const QString & ctemplate);
+
+    // layout::layout_content implementation
+    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, const QString & ctemplate);
+
+    // path plugin signals
+    void                on_check_for_redirect(content::path_info_t & ipath);
+    //void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+
+    // path::path_execute implementation
+    virtual bool        on_path_execute(content::path_info_t & ipath);
 
     QString             get_shorturl(QString const & id, int base);
     QString             get_shorturl(uint64_t identifier);
