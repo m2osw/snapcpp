@@ -23,6 +23,8 @@
 
 #include <wait.h>
 #include <fcntl.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 
 namespace snap
@@ -462,7 +464,7 @@ std::cerr << "*** process backend [" << action << "] with uri = [" << key << "]\
 }
 
 
-std::string snap_backend::get_signal_name_from_action(QString const& action)
+std::string snap_backend::get_signal_name_from_action(QString const & action)
 {
     // in order to retrieve the signal name, we need a complete list of
     // plugins as a child process gets, so here we create a child and let
@@ -581,7 +583,7 @@ std::string snap_backend::get_signal_name_from_action(QString const& action)
  *
  * \param[in] uri  The URI of the site to be checked.
  */
-void snap_backend::process_backend_uri(QString const& uri)
+void snap_backend::process_backend_uri(QString const & uri)
 {
     // create a child process so the data between sites does not get
     // shared (also the Cassandra data would remain in memory increasing
@@ -607,6 +609,65 @@ void snap_backend::process_backend_uri(QString const& uri)
         wait(&status);
         // TODO: check status?
         return;
+    }
+
+    auto p_server( f_server.lock() );
+    if(!p_server)
+    {
+        throw snap_logic_exception("snap_backend::process_backend_uri(): server pointer is NULL");
+    }
+
+    QString const action(p_server->get_parameter("__BACKEND_ACTION"));
+
+    QString const nice_value(p_server->get_parameter("backend_nice"));
+    if(!nice_value.isEmpty())
+    {
+        // TODO: add support to allow for a nice value specific to each
+        //       backend (i.e. pagelist could have 3; maybe something like
+        //       backend_nice=5,pagelist:3 so all use 5 except the pagelist
+        //       that would use 3)
+        int nice(-1);
+        snap_string_list values(nice_value.split(','));
+        int const max_values(values.size());
+        for(int idx(0); idx < max_values; ++idx)
+        {
+            bool ok(false);
+            snap_string_list const named_value(values[idx].split(':'));
+            if(named_value.size() == 1)
+            {
+                nice = named_value[0].toInt(&ok, 10);
+                if(!ok || nice < 0 || nice > 19)
+                {
+                    nice = -1;
+                    SNAP_LOG_ERROR("the backend_nice value \"")(named_value[0])("\" could not be parsed as a decimal number or is too small (less than 0) or too large (more than 19).");
+                }
+                break;
+            }
+            else if(named_value.size() == 2)
+            {
+                if(named_value[0] == action)
+                {
+                    nice = named_value[1].toInt(&ok, 10);
+                    if(!ok || nice < 0 || nice > 19)
+                    {
+                        nice = -1;
+                        SNAP_LOG_ERROR("the backend_nice value \"")(named_value[0])(":")(named_value[1])("\" could not be parsed as a decimal number or is too small (less than 0) or too large (more than 19).");
+                    }
+                    break;
+                }
+                // check name validity?
+            }
+            else
+            {
+                SNAP_LOG_ERROR("the backend_nice value \"")(values[idx])("\" does not represent a valid entry. Ignoring.");
+            }
+        }
+        // got a specific nice value?
+        if(nice != -1)
+        {
+            // process 0 represents 'self'
+            setpriority(PRIO_PROCESS, 0, nice);
+        }
     }
 
     // set the URI; if user supplied it, then it can fail!
@@ -641,13 +702,6 @@ void snap_backend::process_backend_uri(QString const& uri)
 
     f_ready = true;
 
-    auto p_server( f_server.lock() );
-    if(!p_server)
-    {
-        throw snap_logic_exception("snap_backend::process_backend_uri(): server pointer is NULL");
-    }
-
-    QString const action(p_server->get_parameter("__BACKEND_ACTION"));
     if(!action.isEmpty())
     {
         server::backend_action_map_t actions;
