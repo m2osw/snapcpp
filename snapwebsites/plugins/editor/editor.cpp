@@ -83,7 +83,7 @@ int const g_default_timeout = 1440;
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -1482,10 +1482,14 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     if(!editor_widgets.isNull())
     {
         // a default (data driven) redirect to apply when saving an editor form
+        //
+        // we do that early so other plugins may change the value when they
+        // get called
+        //
         if(!on_save.isNull() && on_save.hasAttribute("redirect"))
         {
             QString const redirect(on_save.attribute("redirect"));
-            //if(redirect == "...") { ... } -- some dynamic redirect? (i.e. parent)
+            //if(redirect == "...") { ... } -- support some semi-dynamic redirects? (i.e. parent)
             server_access::server_access::instance()->ajax_redirect(redirect, on_save.attribute("target"));
         }
 
