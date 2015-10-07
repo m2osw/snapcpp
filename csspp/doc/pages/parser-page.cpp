@@ -479,9 +479,9 @@
  *  </div>
  * \endhtmlonly
  *
- * A <a href="declaration">declaration</a> list is a list of
+ * A <a href="#declaration">declaration</a> list is a list of
  * <a href="#declaration">declarations</a> separated by semi-colons.
- * Such a list can be started with an <a href="#at-rule">at-rule</a>
+ * Such a list can be started with an <a href="#at-rule">at-rule</a>.
  *
  * Whitespaces can appear to separate various elements in such a list.
  * 
@@ -860,7 +860,7 @@
  * component-value to the letter. All the other grammar rules expect
  * a list of component-value which may also be empty. However, the
  * main difference not conveyed in the graphs is the fact that a
- * <a href="curlybracket-block">{}-block</a> can only be used at the end
+ * <a href="#curlybracket-block">{}-block</a> can only be used at the end
  * of a list of 'component-value' entries.
  * (see http://www.w3.org/TR/css-syntax-3/#consume-a-qualified-rule0).
  * In other words, the following are three 'component-value' entries
