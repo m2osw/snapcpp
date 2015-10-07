@@ -88,7 +88,7 @@ enum class name_t
     SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH,
     SNAP_NAME_EDITOR_TYPE_FORMAT_PATH
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class editor : public plugins::plugin
@@ -276,7 +276,7 @@ private:
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
     void                editor_save(content::path_info_t & ipath, sessions::sessions::session_info & info);
-    void                editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access *server_access_plugin);
+    void                editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access * server_access_plugin);
     void                editor_create_new_branch(content::path_info_t & ipath);
     bool                save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget);
 

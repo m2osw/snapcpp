@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.370
+ * Version: 0.0.3.375
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -6260,7 +6260,7 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widg
         {
             var editor_form;
 
-            if(e.which === 13)
+            if(e.which === 13 && that.acceptReturnAsDefaultButton())
             {
                 // prevent enter default behavior
                 //
@@ -6281,6 +6281,21 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widg
                     that.verifyValue_(editor_widget);
                 }, 0);
         });
+};
+
+
+/** \brief Check whether Return is allowed to auto-send the form.
+ *
+ * This is a virtual function that can be used to prevent the default
+ * behavior of the Return key which auto-clicks the default button
+ * if this function returns true (which is the default.)
+ *
+ * @return {boolean}  true if the Return is allowed to auto-click the
+ *                    default button to auto-send the form to the server.
+ */
+snapwebsites.EditorWidgetTypeLineEdit.prototype.acceptReturnAsDefaultButton = function()
+{
+    return true;
 };
 
 
@@ -6426,7 +6441,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
     // we just closed.)
     w.click(function(e)
         {
-            var visible = w.is(".disabled") || d.is(":visible");
+            var visible = w.is(".disabled") || that.isDropdownOpen();
 
             // avoid default browser behavior
             e.preventDefault();
@@ -6466,7 +6481,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 // avoid default browser behavior
                 e.preventDefault();
 
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     that.selectItem(editor_widget, "down");
                 }
@@ -6481,7 +6496,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 // avoid default browser behavior
                 e.preventDefault();
 
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     that.selectItem(editor_widget, "up");
                 }
@@ -6493,7 +6508,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 37: // arrow left
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6502,7 +6517,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 39: // arrow right
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6511,7 +6526,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 36: // home
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6520,7 +6535,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 35: // end
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6529,7 +6544,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 33: // page up
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6538,7 +6553,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 34: // page down
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6547,7 +6562,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 27: // escape (close, no changes)
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6556,14 +6571,15 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 13: // return (select)
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
                     e.stopPropagation();
-                    item = d.children(".dropdown-selection")
-                            .children(".dropdown-item")
-                            .filter(".active");
+
+                    item = that.openDropdown_.children(".dropdown-selection")
+                                             .children(".dropdown-item")
+                                             .filter(".active");
                     if(item.exists())
                     {
                         that.itemClicked(editor_widget, item);
@@ -6574,7 +6590,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
             default:
                 // not too sure how we could extend that to UTF-16...
                 // right now, A to Z works well
-                if(d.is(":visible") && e.which >= 65 && e.which <= 90)
+                if(that.isDropdownOpen() && e.which >= 65 && e.which <= 90)
                 {
                     that.selectItem(editor_widget, String.fromCharCode(e.which).toLowerCase());
                 }
@@ -6582,6 +6598,22 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
 
             }
         });
+};
+
+
+/** \brief Check whether the dropdown is open.
+ *
+ * This function returns true if the dropdown is currently open.
+ *
+ * Testing whether a widget is visible (":visible" in CSS/jQuery) is
+ * not going to work correctly if the dropdown opens using a cloned
+ * version of the dropdown list.
+ *
+ * @return {boolean}  true if the dropdown is currently opened.
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.isDropdownOpen = function()
+{
+    return !!this.openDropdown_;
 };
 
 
@@ -6771,7 +6803,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.selectItem = function(editor_wid
 {
     var w = editor_widget.getWidget(),
         //c = editor_widget.getWidgetContent(),
-        d = w.children(".dropdown-items"),
+        d = this.openDropdown_,
         item = d.children(".dropdown-selection").children(".dropdown-item").not(".hidden"),
         pos = item.index(item.filter(".active")),
         inc = 1,
@@ -7142,6 +7174,19 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, valu
     }
 
     return false;
+};
+
+
+/** \brief Check whether the dropdown is open, if so, prevent auto-send.
+ *
+ * This function checks whether the dropdown is currently open. If so,
+ * make sure that the default button does not get clicked.
+ *
+ * @return {boolean}  true if the dropdown is closed, false otherwise.
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.acceptReturnAsDefaultButton = function()
+{
+    return !this.isDropdownOpen();
 };
 
 

@@ -247,7 +247,60 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <!-- there are items, put them in a list for the dropdown -->
             <xsl:attribute name="class">dropdown-items zordered</xsl:attribute>
             <ul class="dropdown-selection">
-              <xsl:for-each select="preset/item">
+
+              <!-- WARNING: the order of this xsl:choose is VERY important -->
+              <xsl:choose>
+                <!-- search for one @value that matches $value, this is the preferred method of selection -->
+                <xsl:when test="$value != '' and preset/item[$value = @value]">
+                  <xsl:for-each select="preset/item">
+                    <li>
+                      <xsl:attribute name="class">dropdown-item<xsl:if
+                          test="$value = @value"> selected</xsl:if><xsl:if
+                          test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+                      <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+                      <xsl:copy-of select="./node()"/>
+                    </li>
+                  </xsl:for-each>
+                </xsl:when>
+                <!-- value is defined, use it... -->
+                <xsl:when test="$value != ''">
+                  <!-- if we did not match an @value, then we assume there are none (TBD?) -->
+                  <xsl:for-each select="preset/item">
+                    <li>
+                      <xsl:attribute name="class">dropdown-item<xsl:if
+                          test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+                      <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+                      <xsl:copy-of select="./node()"/>
+                    </li>
+                  </xsl:for-each>
+                </xsl:when>
+                <!-- programmer specified a default -->
+                <xsl:when test="preset/item[@default = 'default']">
+                  <xsl:for-each select="preset/item">
+                    <li>
+                      <xsl:attribute name="class">dropdown-item<xsl:if
+                          test="@default = 'default'"> selected</xsl:if><xsl:if
+                          test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+                      <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+                      <xsl:copy-of select="./node()"/>
+                    </li>
+                  </xsl:for-each>
+                </xsl:when>
+                <xsl:otherwise>
+                  <!-- otherwise use the default node -->
+                  <xsl:for-each select="preset/item">
+                    <li>
+                      <xsl:attribute name="class">dropdown-item<xsl:if
+                          test="$value = node() or ../../default/node() = node()"> selected</xsl:if><xsl:if
+                          test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+                      <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+                      <xsl:copy-of select="./node()"/>
+                    </li>
+                  </xsl:for-each>
+                </xsl:otherwise>
+              </xsl:choose>
+
+              <!--xsl:for-each select="preset/item">
                 <li>
                   <xsl:attribute name="class">dropdown-item<xsl:if
                       test="@default = 'default' or $value = @value or $value = node() or ../../default/node() = node()"> selected</xsl:if><xsl:if
@@ -255,7 +308,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                   <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
                   <xsl:copy-of select="./node()"/>
                 </li>
-              </xsl:for-each>
+              </xsl:for-each-->
             </ul>
           </xsl:when>
           <xsl:otherwise>
