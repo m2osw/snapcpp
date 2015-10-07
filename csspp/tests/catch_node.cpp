@@ -170,7 +170,23 @@ TEST_CASE("Node types", "[node] [type]")
             {
                 REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
             }
+            n->set_lowercase_string("test-boolean-string");
+            REQUIRE(n->get_lowercase_string() == "test-boolean-string");
+            REQUIRE(n->get_string() == "");
+            if(w == csspp::node_type_t::STRING)
+            {
+                // the lowercase string has no effect on the boolean value
+                REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
+            }
             n->set_string("test-string");
+            REQUIRE(n->get_string() == "test-string");
+            REQUIRE(n->get_lowercase_string() == "test-boolean-string");
+            if(w == csspp::node_type_t::STRING)
+            {
+                REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_TRUE);
+            }
+            n->set_lowercase_string("test-lowercase-string");
+            REQUIRE(n->get_lowercase_string() == "test-lowercase-string");
             REQUIRE(n->get_string() == "test-string");
             if(w == csspp::node_type_t::STRING)
             {

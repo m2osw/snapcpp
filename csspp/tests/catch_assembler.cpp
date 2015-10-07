@@ -218,14 +218,14 @@ TEST_CASE("Assemble rules", "[assembler]")
             case csspp::output_mode_t::COMPACT:
                 REQUIRE(out.str() ==
 "div { color: #fff; font-size: 1.3em }\n"
-"span { border: 3px solid #f5c3c2; border-bottom-width: 1px; font: 17.2px/1.35em arial }\n"
+"span { border: 3px solid #f5c3c2; border-bottom-width: 1px; font: 17.2px/1.35em Arial }\n"
 + csspp_test::get_close_comment()
                     );
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
                 REQUIRE(out.str() ==
-"div{color:#fff;font-size:1.3em}span{border:3px solid #f5c3c2;border-bottom-width:1px;font:17.2px/1.35em arial}\n"
+"div{color:#fff;font-size:1.3em}span{border:3px solid #f5c3c2;border-bottom-width:1px;font:17.2px/1.35em Arial}\n"
 + csspp_test::get_close_comment()
                     );
                 break;
@@ -241,7 +241,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "{\n"
 "  border: 3px solid #f5c3c2;\n"
 "  border-bottom-width: 1px;\n"
-"  font: 17.2px/1.35em arial;\n"
+"  font: 17.2px/1.35em Arial;\n"
 "}\n"
 + csspp_test::get_close_comment()
                     );
@@ -250,7 +250,7 @@ TEST_CASE("Assemble rules", "[assembler]")
             case csspp::output_mode_t::TIDY:
                 REQUIRE(out.str() ==
 "div{color:#fff;font-size:1.3em}\n"
-"span{border:3px solid #f5c3c2;border-bottom-width:1px;font:17.2px/1.35em arial}\n"
+"span{border:3px solid #f5c3c2;border-bottom-width:1px;font:17.2px/1.35em Arial}\n"
 + csspp_test::get_close_comment()
                     );
                 break;
@@ -537,7 +537,7 @@ TEST_CASE("Assemble rules", "[assembler]")
                << "  content: string(unique_id());\n"
                << "  border: 3px unique_id() lightsteelblue;\n"
                << "}\n"
-               << "a\n"
+               << "a.withColor\n"
                << "{\n"
                << "  padding: unique_id();\n"
                << "}\n"
@@ -573,14 +573,14 @@ TEST_CASE("Assemble rules", "[assembler]")
             case csspp::output_mode_t::COMPACT:
                 REQUIRE(out.str() ==
 "div { content: \"_csspp_unique1\"; border: 3px _csspp_unique2 #b0c4de }\n"
-"a { padding: _csspp_unique3 }\n"
+"a.withColor { padding: _csspp_unique3 }\n"
 + csspp_test::get_close_comment()
                     );
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
                 REQUIRE(out.str() ==
-"div{content:\"_csspp_unique1\";border:3px _csspp_unique2 #b0c4de}a{padding:_csspp_unique3}\n"
+"div{content:\"_csspp_unique1\";border:3px _csspp_unique2 #b0c4de}a.withColor{padding:_csspp_unique3}\n"
 + csspp_test::get_close_comment()
                     );
                 break;
@@ -592,7 +592,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "  content: \"_csspp_unique1\";\n"
 "  border: 3px _csspp_unique2 #b0c4de;\n"
 "}\n"
-"a\n"
+"a.withColor\n"
 "{\n"
 "  padding: _csspp_unique3;\n"
 "}\n"
@@ -603,7 +603,7 @@ TEST_CASE("Assemble rules", "[assembler]")
             case csspp::output_mode_t::TIDY:
                 REQUIRE(out.str() ==
 "div{content:\"_csspp_unique1\";border:3px _csspp_unique2 #b0c4de}\n"
-"a{padding:_csspp_unique3}\n"
+"a.withColor{padding:_csspp_unique3}\n"
 + csspp_test::get_close_comment()
                     );
                 break;
@@ -660,7 +660,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "\xc3\xa9t\xc3\xa9 { color: #ffd700 }\n"
 "\\33 21 { color: rgba(210,180,140,.8) }\n"
 "\\36 face { color: #da70d6 }\n"
-"\\30 blur { color: #d8bfd8 }\n"
+"\\30 BLUR { color: #d8bfd8 }\n"
 "this\\.and\\.that { color: #f0fff0 }\n"
 "\xe4\x96\x82 { color: #696969 }\n"
 "\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb { color: #8b0000 }\n"
@@ -674,7 +674,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "\xc3\xa9t\xc3\xa9{color:#ffd700}"
 "\\33 21{color:rgba(210,180,140,.8)}"
 "\\36 face{color:#da70d6}"
-"\\30 blur{color:#d8bfd8}"
+"\\30 BLUR{color:#d8bfd8}"
 "this\\.and\\.that{color:#f0fff0}"
 "\xe4\x96\x82{color:#696969}"
 "\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb{color:#8b0000}"
@@ -698,7 +698,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "{\n"
 "  color: #da70d6;\n"
 "}\n"
-"\\30 blur\n"
+"\\30 BLUR\n"
 "{\n"
 "  color: #d8bfd8;\n"
 "}\n"
@@ -727,7 +727,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "\xc3\xa9t\xc3\xa9{color:#ffd700}\n"
 "\\33 21{color:rgba(210,180,140,.8)}\n"
 "\\36 face{color:#da70d6}\n"
-"\\30 blur{color:#d8bfd8}\n"
+"\\30 BLUR{color:#d8bfd8}\n"
 "this\\.and\\.that{color:#f0fff0}\n"
 "\xe4\x96\x82{color:#696969}\n"
 "\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb{color:#8b0000}\n"

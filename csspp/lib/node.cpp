@@ -339,6 +339,18 @@ void node::set_string(std::string const & str)
     f_string = str;
 }
 
+std::string const & node::get_lowercase_string() const
+{
+    type_supports_string(f_type);
+    return f_lowercase_string;
+}
+
+void node::set_lowercase_string(std::string const & str)
+{
+    type_supports_string(f_type);
+    f_lowercase_string = str;
+}
+
 integer_t node::get_integer() const
 {
     type_supports_integer(f_type);

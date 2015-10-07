@@ -39,10 +39,15 @@ distribution directory (or dev/INSTALL in the csspp project itself.)
 We will be looking at making this simpler with time... for now, the
 environment is a bit convoluted.
 
+# Documentation
+
+The [documentation](http://csspp.org/documentation/csspp-doc-1.0/ "CSS Preprocessor Documentation")
+is available online. A copy can be downloaded from SourceForge.net.
+
 # Contact
 
 If you have any problems, questions, suggestions, feel free to post
 them here:
 
-  https://sourceforge.net/p/csspp/tickets/
+[https://sourceforge.net/p/csspp/tickets/](https://sourceforge.net/p/csspp/tickets/)
 

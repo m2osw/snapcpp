@@ -137,6 +137,8 @@ public:
     position const &    get_position() const;
     std::string const & get_string() const;
     void                set_string(std::string const & str);
+    std::string const & get_lowercase_string() const;
+    void                set_lowercase_string(std::string const & str);
     integer_t           get_integer() const;
     void                set_integer(integer_t integer);
     bool                get_boolean() const;
@@ -192,6 +194,7 @@ private:
     integer_t           f_integer = 0;
     decimal_number_t    f_decimal_number = 0.0;
     std::string         f_string;
+    std::string         f_lowercase_string;
     list_t              f_children;
     variable_table_t    f_variables;
     flag_table_t        f_flags;

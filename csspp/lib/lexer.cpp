@@ -822,6 +822,7 @@ wide_char_t lexer::escape()
 node::pointer_t lexer::identifier(wide_char_t c)
 {
     std::string id;
+    std::string lowercase_id;
     node_type_t type(node_type_t::IDENTIFIER);
 
     if(c == '%')
@@ -838,6 +839,7 @@ node::pointer_t lexer::identifier(wide_char_t c)
     if(c == '-')
     {
         id += "-";
+        lowercase_id += "-";
         c = getc();
     }
 
@@ -846,12 +848,14 @@ node::pointer_t lexer::identifier(wide_char_t c)
         c = escape();
         if(c != 0xFFFD)
         {
-            id += wctomb(std::tolower(c));
+            id += wctomb(c);
+            lowercase_id += wctomb(std::tolower(c));
         }
     }
     else if(is_start_identifier(c))
     {
-        id += wctomb(std::tolower(c));
+        id += wctomb(c);
+        lowercase_id += wctomb(std::tolower(c));
     }
     else
     {
@@ -884,7 +888,8 @@ node::pointer_t lexer::identifier(wide_char_t c)
         {
             break;
         }
-        id += wctomb(std::tolower(c));
+        id += wctomb(c);
+        lowercase_id += wctomb(std::tolower(c));
     }
 
     // this can happen if the '\' was followed by EOF
@@ -901,7 +906,7 @@ node::pointer_t lexer::identifier(wide_char_t c)
 
     if(c == '(' && type != node_type_t::AT_KEYWORD)
     {
-        if(id == "url")
+        if(lowercase_id == "url")
         {
             // very special case of a URL
             // (this is nearly like a function except that the parameter
@@ -977,7 +982,9 @@ node::pointer_t lexer::identifier(wide_char_t c)
         {
             // special case of a function
             node::pointer_t n(new node(node_type_t::FUNCTION, f_start_position));
-            n->set_string(id);
+            // functions are always considered case insensitive
+            // (although some Microsoft old extensions were case sensitive...)
+            n->set_string(lowercase_id);
             return n;
         }
     }
@@ -987,6 +994,7 @@ node::pointer_t lexer::identifier(wide_char_t c)
     // we got an identifier
     node::pointer_t n(new node(type, f_start_position));
     n->set_string(id);
+    n->set_lowercase_string(lowercase_id);
     return n;
 }
 
