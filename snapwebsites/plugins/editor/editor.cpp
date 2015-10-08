@@ -415,7 +415,8 @@ QString editor::description() const
  * This works for newly installed plugins and older plugins that were
  * updated.
  *
- * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
+ * \param[in] last_updated  The UTC Unix date when the website was last
+ *            updated (in micro seconds).
  *
  * \return The UTC Unix date of the last update of this plugin.
  */
@@ -423,7 +424,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 10, 7, 3, 14, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 7, 14, 7, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -434,7 +435,8 @@ int64_t editor::do_update(int64_t last_updated)
  * Send our content to the database so the system can find us when a
  * user references our administration pages, etc.
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \param[in] variables_timestamp  The timestamp for all the variables
+ *            added to the database by this update (in micro-seconds).
  */
 void editor::content_update(int64_t variables_timestamp)
 {

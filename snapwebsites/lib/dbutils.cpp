@@ -180,20 +180,40 @@ QString dbutils::key_to_string( QByteArray const & key )
 }
 
 
-QByteArray dbutils::string_to_key( const QString& str )
+QByteArray dbutils::string_to_key( QString const & str )
 {
     QByteArray ret;
     snap_string_list numList( str.split(' ') );
 
-    for( auto str_num : numList )
+    // TODO: we may want to seperate functions to clearly know whether
+    //       we are checking an MD5 or not
+    //
+    if(numList.size() == 1 && str.length() == 32)
     {
-        bool ok( false );
-        ret.push_back( static_cast<char>( str_num.toInt( &ok, 16 ) ) );
-        if( !ok )
+        for(int i(0); i < 32; i += 2)
         {
-            throw snap_exception( "Cannot convert to num! Not base 16." );
+            QString val(str.mid(i, 2));
+            bool ok( false );
+            ret.push_back( static_cast<char>( val.toInt( &ok, 16 ) ) );
+            if( !ok )
+            {
+                throw snap_exception( "Cannot convert to number! Not base 16." );
+            }
         }
     }
+    else
+    {
+        for( auto str_num : numList )
+        {
+            bool ok( false );
+            ret.push_back( static_cast<char>( str_num.toInt( &ok, 16 ) ) );
+            if( !ok )
+            {
+                throw snap_exception( "Cannot convert to number! Not base 16 or too large." );
+            }
+        }
+    }
+
     return ret;
 }
 

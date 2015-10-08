@@ -91,6 +91,7 @@ enum class name_t
     SNAP_NAME_CONTENT_LONG_TITLE,
     SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME,
     SNAP_NAME_CONTENT_MODIFIED,
+    SNAP_NAME_CONTENT_NEWFILE,
     SNAP_NAME_CONTENT_ORIGINAL_PAGE,
     SNAP_NAME_CONTENT_OUTPUT_PLUGIN,
     SNAP_NAME_CONTENT_PAGE,
@@ -822,6 +823,7 @@ private:
     void        backend_process_files();
     void        backend_action_dir_resources();
     void        backend_action_destroy_page();
+    void        backend_action_new_file();
     void        backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
     void        backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
 

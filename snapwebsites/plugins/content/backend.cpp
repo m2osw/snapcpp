@@ -86,6 +86,10 @@ SNAP_PLUGIN_EXTENSION_START(content)
  *                    We did not try, but you certainly can destroy "/"
  *                    which means the entire website will go away and not
  *                    function at all anymore.
+ * \li newfile -- add the specified md5 to the new row of the files table
+ *                so that way that file will get rescanned and reprocessed
+ *                in case it were necessary to do so (because you changed
+ *                the code, for example.)
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
@@ -95,6 +99,7 @@ void content::on_register_backend_action(server::backend_action_map_t & actions)
     actions[get_name(name_t::SNAP_NAME_CONTENT_FORCERESETSTATUS)] = this;
     actions[get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES)] = this;
     actions[get_name(name_t::SNAP_NAME_CONTENT_DESTROYPAGE)] = this;
+    actions[get_name(name_t::SNAP_NAME_CONTENT_NEWFILE)] = this;
 }
 
 
@@ -125,6 +130,10 @@ void content::on_backend_action(QString const & action)
     {
         backend_action_destroy_page();
     }
+    else if(action == get_name(name_t::SNAP_NAME_CONTENT_NEWFILE))
+    {
+        backend_action_new_file();
+    }
     else
     {
         // unknown action (we should not have been called with that name!)
@@ -133,6 +142,17 @@ void content::on_backend_action(QString const & action)
 }
 
 
+/** \brief Reset the status of all pages.
+ *
+ * This function goes through the list of all pages in your website
+ * and resets the status. When creating a page, the status is set in
+ * such a way that the page cannot be changed by other processes.
+ * Only, if your creation process fails, which happens... then
+ * the page remains in an inconsistent state and it cannot be accessed
+ * or deleted. This process resets that state.
+ *
+ * This action does not use any parameter at this time.
+ */
 void content::backend_action_reset_status(bool const force)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
@@ -213,6 +233,8 @@ void content::backend_action_reset_status(bool const force)
  *
  * This is useful to debug your code and make sure that all the resources
  * you expect to be available are.
+ *
+ * This action does not use any parameter at this time.
  */
 void content::backend_action_dir_resources()
 {
@@ -226,12 +248,73 @@ void content::backend_action_dir_resources()
  * completely. This actual blows up the page right there and
  * should NOT be used, ever, except by programmers who made small
  * mistakes and want to remove a page or two once in a while.
+ *
+ * This action makes use of the following parameters:
+ *
+ * \li PAGE_URL -- the URL to the page to be destroyed.
  */
 void content::backend_action_destroy_page()
 {
     path_info_t ipath;
     ipath.set_path(f_snap->get_server_parameter("PAGE_URL"));
     destroy_page(ipath);
+}
+
+
+/** \brief Mark a file as new so the backend process reprocess it.
+ *
+ * The content backend processes new files to determine whether they
+ * are in need a compression and minification (optimization for CSS
+ * and JavaScript.)
+ *
+ * If your code somehow changed, then you may need to mark some files
+ * as in need for reprocessing.
+ *
+ * The action makes use of the following parameters:
+ *
+ * \li MD5 -- the md5 of the file to be pinged.
+ */
+void content::backend_action_new_file()
+{
+    QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
+    QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(name_t::SNAP_NAME_CONTENT_FILES_NEW)));
+
+    QString const md5(f_snap->get_server_parameter("MD5"));
+    QByteArray const key(dbutils::string_to_key(md5));
+    unsigned char const changed(1);
+    new_row->cell(key)->setValue(changed);
+
+    // we also have to reset all the reference back to 1 instead of 2
+    // otherwise nothing happens...
+    //
+    QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(key));
+    QtCassandra::QCassandraColumnRangePredicate reference_column_predicate;
+    reference_column_predicate.setStartColumnName(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE));
+    reference_column_predicate.setEndColumnName(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
+    reference_column_predicate.setCount(100);
+    reference_column_predicate.setIndex(); // behave like an index
+    unsigned char const one(1);
+    for(;;)
+    {
+        file_row->clearCache();
+        file_row->readCells(reference_column_predicate);
+        QtCassandra::QCassandraCells const content_cells(file_row->cells());
+        if(content_cells.isEmpty())
+        {
+            break;
+        }
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator cc(content_cells.begin());
+                cc != content_cells.end();
+                ++cc)
+        {
+            // get the email from the database
+            // we expect empty values once in a while because a dropCell() is
+            // not exactly instantaneous in Cassandra
+            QtCassandra::QCassandraCell::pointer_t content_cell(*cc);
+            content_cell->setValue(one);
+        }
+    }
 }
 
 
@@ -490,12 +573,14 @@ void content::backend_process_files()
                                         attachment_file file(f_snap);
                                         if(!load_attachment(attachment_key, file, true))
                                         {
+                                            SNAP_LOG_ERROR("the files backend could not load attachment at \"")(attachment_key.data())("\".");
+
                                             signed char const sflag(CONTENT_SECURE_UNDEFINED);
                                             file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
                                             file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
                                             file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString("Attachment could not be loaded."));
 
-                                            // TODO generate an email about the error...
+                                            // TODO generate a message about the error...
                                         }
                                         else
                                         {
@@ -518,7 +603,15 @@ void content::backend_process_files()
                                     if(!secure.allowed())
                                     {
                                         // TODO: warn the author that his file was
-                                        //       quanranteened and will not be served
+                                        //       quanranteened and will not be served;
+                                        //       this should send a message and not
+                                        //       a direct email...
+                                        //
+                                        // TBD: we also want to choose whether we
+                                        //      send the message once per instance
+                                        //      (since each instance may be a different
+                                        //      user) or just once for all instances
+                                        //
                                         //...sendmail()...
                                     }
 

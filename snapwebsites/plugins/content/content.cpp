@@ -259,6 +259,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CONTENT_MODIFIED:
         return "content::modified";
 
+    case name_t::SNAP_NAME_CONTENT_NEWFILE:
+        return "newfile";
+
     case name_t::SNAP_NAME_CONTENT_ORIGINAL_PAGE:
         return "content::original_page";
 
@@ -1939,7 +1942,7 @@ bool content::is_final(QString const& key)
  * and if so, loads it in the specified file parameter.
  *
  * \param[in] key  The key to the attachment to load.
- * \param[in] file  The file will be loaded in this structure.
+ * \param[in,out] file  The file will be loaded in this structure.
  * \param[in] load_data  Whether the data should be loaded (true by default.)
  *
  * \return true if the attachment was successfully loaded.
@@ -1948,6 +1951,22 @@ bool content::load_attachment(QString const & key, attachment_file & file, bool 
 {
     path_info_t ipath;
     ipath.set_path(key);
+
+    // for CSS and JS files, the filename includes the version and .min.
+    // which is not in the standard path, we have to remove those here
+    snap_string_list segments(ipath.get_segments());
+    if(segments.size() >= 3
+    && (segments[0] == "css" || segments[0] == "js"))
+    {
+        snap_string_list const name(segments.last().split("_"));
+        // TODO: later we may have a browser name in the filename?
+        if(name.size() == 2)
+        {
+            segments.pop_back();
+            segments << (name[0] + "." + segments[0]);
+            ipath.set_path(segments.join("/"));
+        }
+    }
 
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     if(!content_table->exists(ipath.get_key()))
