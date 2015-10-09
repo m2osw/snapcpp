@@ -309,6 +309,10 @@ public:
         working_t                   get_working() const;
         bool                        is_working() const;
 
+        // convert to/from string for scripts
+        static std::string          status_name_to_string(state_t const state);
+        static state_t              string_to_status_name(std::string const & state);
+
     private:
         safe_error_t                f_error;
         safe_state_t                f_state;
@@ -738,6 +742,9 @@ public:
     void                on_backend_process();
     void                on_load_file(snap_child::post_file_t & file, bool & found);
     void                on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
+
+    // server signal implementation
+    void                on_add_snap_expr_functions(snap_expr::functions_t & functions);
 
     // cache control
     void                set_cache_control_page(path_info_t ipath);

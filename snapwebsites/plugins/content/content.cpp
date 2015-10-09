@@ -442,6 +442,7 @@ void content::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN0(content, "server", server, save_content);
+    SNAP_LISTEN(content, "server", server, add_snap_expr_functions, _1);
     SNAP_LISTEN(content, "server", server, register_backend_action, _1);
     SNAP_LISTEN0(content, "server", server, backend_process);
     SNAP_LISTEN(content, "server", server, load_file, _1, _2);

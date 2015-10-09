@@ -42,7 +42,7 @@ SNAP_PLUGIN_START(links, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {

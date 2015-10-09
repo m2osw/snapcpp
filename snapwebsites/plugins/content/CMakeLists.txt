@@ -59,6 +59,7 @@ add_library(content SHARED
     cache_control.cpp
     clone.cpp
     destroy.cpp
+    expr_functions.cpp
     revision.cpp
 
     # sub-classes offered by the content plugin

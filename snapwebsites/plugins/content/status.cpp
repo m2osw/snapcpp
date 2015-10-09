@@ -762,9 +762,116 @@ bool path_info_t::status_t::is_working() const
 }
 
 
+/** \brief Convert \p state to a string.
+ *
+ * This function converts the specified \p state number to a string.
+ *
+ * The state is expected to be a value returned by the get_state()
+ * function.
+ *
+ * \exception content_exception_content_invalid_state
+ * The state must be one of the defined state_t enumerations. Anything
+ * else and this function raises this exception.
+ *
+ * \param[in] state  The state to convert to a string.
+ *
+ * \return The string representing the \p state.
+ */
+std::string path_info_t::status_t::status_name_to_string(status_t::state_t const state)
+{
+    switch(state)
+    {
+    case status_t::state_t::UNKNOWN_STATE:
+        return "unknown";
+
+    case status_t::state_t::CREATE:
+        return "create";
+
+    case status_t::state_t::NORMAL:
+        return "normal";
+
+    case status_t::state_t::HIDDEN:
+        return "hidden";
+
+    case status_t::state_t::MOVED:
+        return "moved";
+
+    case status_t::state_t::DELETED:
+        return "deleted";
+
+    }
+
+    throw content_exception_content_invalid_state("Unknown status.");
+}
 
 
-path_info_t::raii_status_t::raii_status_t(path_info_t& ipath, status_t now, status_t end)
+/** \brief Convert a string to a state.
+ *
+ * This function converts a string to a page state. If the string does
+ * not represent a valid state, then the function returns UNKNOWN_STATE.
+ *
+ * The string must be all lowercase.
+ *
+ * \param[in] state  The \p state to convert to a number.
+ *
+ * \return The number representing the specified \p state string or UNKNOWN_STATE.
+ */
+path_info_t::status_t::state_t path_info_t::status_t::string_to_status_name(std::string const & state)
+{
+    // this is the default if nothing else matches
+    //if(state == "unknown")
+    //{
+    //    return status_t::state_t::UNKNOWN_STATE;
+    //}
+    if(state == "create")
+    {
+        return status_t::state_t::CREATE;
+    }
+    if(state == "normal")
+    {
+        return status_t::state_t::NORMAL;
+    }
+    if(state == "hidden")
+    {
+        return status_t::state_t::HIDDEN;
+    }
+    if(state == "moved")
+    {
+        return status_t::state_t::MOVED;
+    }
+    if(state == "deleted")
+    {
+        return status_t::state_t::DELETED;
+    }
+    // TBD: should we understand "unknown" and throw here instead?
+    return status_t::state_t::UNKNOWN_STATE;
+}
+
+
+
+
+
+/** \brief Handle the status of a page safely.
+ *
+ * This class saves the current status of a page and restores it when
+ * the class gets destroyed with the hope that the page status will
+ * always stay valid. We still have a "resetstate" action and call
+ * that function from our backend whenever the backend runs.
+ *
+ * The object is actually used to change the status to the status
+ * specified in \p now. You may set \p now to the current status
+ * if you do not want to change it until you are done.
+ *
+ * The \p end parameter is what the status will be once the function
+ * ends and this RAII object gets destroyed. This could be the
+ * current status to restore the status after you are done with your
+ * work.
+ *
+ * \param[in] ipath  The path of the page of which the path is to be safe.
+ * \param[in] now  The status of the page when the constructor returns.
+ * \param[in] end  The status of the page when the destructor returns.
+ */
+path_info_t::raii_status_t::raii_status_t(path_info_t & ipath, status_t now, status_t end)
     : f_ipath(ipath)
     , f_end(end)
 {
@@ -799,18 +906,47 @@ path_info_t::raii_status_t::raii_status_t(path_info_t& ipath, status_t now, stat
 }
 
 
+/** \brief This destructor attempts to restore the page status.
+ *
+ * This function is the counter part of the constructor. It ensures that
+ * the state changes to what you want it to be when you release the
+ * RAII object.
+ */
 path_info_t::raii_status_t::~raii_status_t()
 {
     status_t current(f_ipath.get_status());
     if(f_end.get_state() != status_t::state_t::UNKNOWN_STATE)
     {
-        current.set_state(f_end.get_state());
+        // avoid exceptions in destructors
+        try
+        {
+            current.set_state(f_end.get_state());
+        }
+        catch(...)
+        {
+            SNAP_LOG_ERROR("caught exception in raii_status_t::~raii_status_t() -- set_state() failed");
+        }
     }
     if(f_end.get_working() != status_t::working_t::UNKNOWN_WORKING)
     {
-        current.set_working(f_end.get_working());
+        // avoid exceptions in destructors
+        try
+        {
+            current.set_working(f_end.get_working());
+        }
+        catch(...)
+        {
+            SNAP_LOG_ERROR("caught exception in raii_status_t::~raii_status_t() -- set_working() failed");
+        }
     }
-    f_ipath.set_status(current);
+    try
+    {
+        f_ipath.set_status(current);
+    }
+    catch(...)
+    {
+        SNAP_LOG_ERROR("caught exception in raii_status_t::~raii_status_t() -- set_status() failed");
+    }
 }
 
 
