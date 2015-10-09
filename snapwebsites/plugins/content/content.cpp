@@ -1043,9 +1043,11 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
         // TODO We probably should test whether that content-types exists
         //      because if not it's certainly completely invalid (i.e. the
         //      programmer mistyped the type [again].)
+        //
         //      However, we have to be very careful as the initialization
         //      process may not be going in the right order and thus not
         //      have created the type yet when this starts to happen.
+        //
         QString const destination_key(site_key + "types/taxonomy/system/content-types/" + (type.isEmpty() ? "page" : type));
         path_info_t destination_ipath;
         destination_ipath.set_path(destination_key);

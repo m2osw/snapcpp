@@ -89,7 +89,7 @@ void content::invalid_revision_control(QString const& version)
  *
  * \return The current revision number.
  */
-snap_version::version_number_t content::get_current_branch(QString const& key, bool working_branch)
+snap_version::version_number_t content::get_current_branch(QString const & key, bool working_branch)
 {
     QString current_branch_key(QString("%1::%2")
                         .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
@@ -916,7 +916,7 @@ QString content::get_revision_key(QString const& key, snap_version::version_numb
  *
  * \return The revision key as used in the data table.
  */
-QString content::generate_revision_key(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale)
+QString content::generate_revision_key(QString const & key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const & locale)
 {
     if(locale.isEmpty())
     {
@@ -958,7 +958,7 @@ QString content::generate_revision_key(QString const& key, snap_version::version
  *
  * \return The revision key as used in the data table.
  */
-QString content::generate_revision_key(QString const& key, QString const& revision, QString const& locale)
+QString content::generate_revision_key(QString const & key, QString const & revision, QString const & locale)
 {
     if(locale.isEmpty())
     {
