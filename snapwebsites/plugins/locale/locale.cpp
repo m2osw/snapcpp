@@ -15,25 +15,15 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "qunicodestring.h"
-
 #include "snap_locale.h"
 
-#include "../editor/editor.h"
-#include "../output/output.h"
-
-#include "not_reached.h"
-
-#include <libtld/tld.h>
-#include <QtSerialization/QSerialization.h>
+#include "qunicodestring.h"
 
 #include <unicode/datefmt.h>
 #include <unicode/errorcode.h>
 #include <unicode/locid.h>
 #include <unicode/smpdtfmt.h>
 #include <unicode/timezone.h>
-
-#include <iostream>
 
 #include "poison.h"
 

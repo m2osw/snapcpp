@@ -17,7 +17,7 @@
 #pragma once
 
 #include "../content/content.h"
-#include "../test_plugin/test_plugin.h"
+#include "../test_plugin_suite/test_plugin_suite.h"
 
 namespace snap
 {

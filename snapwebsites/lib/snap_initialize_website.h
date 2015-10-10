@@ -23,10 +23,6 @@
 
 #include <QtCassandra/QCassandra.h>
 
-#include <QString>
-
-#include <deque>
-
 namespace snap
 {
 

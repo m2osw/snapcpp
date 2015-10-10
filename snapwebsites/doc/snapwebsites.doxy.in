@@ -659,14 +659,20 @@ INPUT                  = @snapwebsites_project_SOURCE_DIR@/lib \
                          @snapwebsites_project_BINARY_DIR@/lib/snapwebsites.h \
                          @snapwebsites_project_SOURCE_DIR@/plugins/antivirus \
                          @snapwebsites_project_SOURCE_DIR@/plugins/attachment \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/avatar \
                          @snapwebsites_project_SOURCE_DIR@/plugins/carousel \
                          @snapwebsites_project_SOURCE_DIR@/plugins/char_chart \
                          @snapwebsites_project_SOURCE_DIR@/plugins/content \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/cookie_consent_silktide \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/ecommerce \
                          @snapwebsites_project_SOURCE_DIR@/plugins/editor \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/epayment \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/epayment_paypal \
                          @snapwebsites_project_SOURCE_DIR@/plugins/favicon \
                          @snapwebsites_project_SOURCE_DIR@/plugins/feed \
                          @snapwebsites_project_SOURCE_DIR@/plugins/filter \
                          @snapwebsites_project_SOURCE_DIR@/plugins/form \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/hashtag \
                          @snapwebsites_project_SOURCE_DIR@/plugins/header \
                          @snapwebsites_project_SOURCE_DIR@/plugins/images \
                          @snapwebsites_project_SOURCE_DIR@/plugins/info \
@@ -675,13 +681,18 @@ INPUT                  = @snapwebsites_project_SOURCE_DIR@/lib \
                          @snapwebsites_project_SOURCE_DIR@/plugins/links \
                          @snapwebsites_project_SOURCE_DIR@/plugins/list \
                          @snapwebsites_project_SOURCE_DIR@/plugins/listener \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/locale \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/locale_settings \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/locale_widgets \
                          @snapwebsites_project_SOURCE_DIR@/plugins/mailinglist \
                          @snapwebsites_project_SOURCE_DIR@/plugins/menu \
                          @snapwebsites_project_SOURCE_DIR@/plugins/messages \
                          @snapwebsites_project_SOURCE_DIR@/plugins/mimetype \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/oauth2 \
                          @snapwebsites_project_SOURCE_DIR@/plugins/output \
                          @snapwebsites_project_SOURCE_DIR@/plugins/path \
                          @snapwebsites_project_SOURCE_DIR@/plugins/permissions \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/qrcode \
                          @snapwebsites_project_SOURCE_DIR@/plugins/robotstxt \
                          @snapwebsites_project_SOURCE_DIR@/plugins/search \
                          @snapwebsites_project_SOURCE_DIR@/plugins/sendmail \
@@ -689,8 +700,13 @@ INPUT                  = @snapwebsites_project_SOURCE_DIR@/lib \
                          @snapwebsites_project_SOURCE_DIR@/plugins/sessions \
                          @snapwebsites_project_SOURCE_DIR@/plugins/shorturl \
                          @snapwebsites_project_SOURCE_DIR@/plugins/sitemapxml \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/snap_software_description \
                          @snapwebsites_project_SOURCE_DIR@/plugins/taxonomy \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/test_plugin \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/test_plugin_suite \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/tracker \
                          @snapwebsites_project_SOURCE_DIR@/plugins/users \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/versions \
                          @snapwebsites_project_SOURCE_DIR@/plugins/zoom
 
 # This tag can be used to specify the character encoding of the source files

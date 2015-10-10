@@ -21,7 +21,6 @@
 
 #include <QFile>
 
-#include <iostream>
 #include <memory>
 #include <sstream>
 

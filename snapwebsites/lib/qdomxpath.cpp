@@ -25,15 +25,8 @@
 #include <controlled_vars/controlled_vars_no_enum_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 
-#include <iostream>
 #include <iomanip>
 #include <limits>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#include <QVector>
-#include <QMap>
-#pragma GCC diagnostic pop
 
 #include "poison.h"
 

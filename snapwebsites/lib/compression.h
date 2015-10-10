@@ -23,8 +23,6 @@
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 
-#include <QString>
-
 #include <unistd.h>
 
 #include "poison.h"

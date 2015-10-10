@@ -22,8 +22,6 @@
 
 #include <controlled_vars/controlled_vars_no_init.h>
 
-#include <iostream>
-
 #include <QList>
 #include <QPointer>
 

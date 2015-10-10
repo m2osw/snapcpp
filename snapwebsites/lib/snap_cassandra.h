@@ -22,7 +22,6 @@
 #include <controlled_vars/controlled_vars.h>
 #include <QtCassandra/QCassandra.h>
 
-#include <QString>
 
 namespace snap
 {

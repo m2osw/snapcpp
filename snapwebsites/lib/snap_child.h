@@ -18,7 +18,6 @@
 
 #include "cache_control.h"
 #include "http_cookie.h"
-#include "snap_exception.h"
 #include "snap_signals.h"
 #include "snap_uri.h"
 #include "snap_version.h"
@@ -28,8 +27,6 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
-
-#include <stdlib.h>
 
 #include <QBuffer>
 

@@ -20,13 +20,10 @@
 
 #include "snap_string_list.h"
 
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-
 #include <QtSerialization/QSerializationReader.h>
 #include <QtSerialization/QSerializationFieldTag.h>
 #include <QtSerialization/QSerializationWriter.h>
 
-#include <QString>
 #include <QMap>
 
 namespace snap

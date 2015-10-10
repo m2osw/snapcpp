@@ -23,10 +23,7 @@
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_ptr_auto_init.h>
 
-#include <stdexcept>
 #include <memory>
-
-#include <QString>
 
 
 namespace snap

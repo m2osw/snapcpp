@@ -24,7 +24,6 @@
 
 #include "dbutils.h"
 #include "log.h"
-#include "not_reached.h"
 #include "qhtmlserializer.h"
 #include "qxmlmessagehandler.h"
 
@@ -120,7 +119,7 @@ test_plugin::~test_plugin()
  *
  * \param[in] snap  The child handling this request.
  */
-void test_plugin::on_bootstrap(snap_child *snap)
+void test_plugin::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -138,7 +137,7 @@ void test_plugin::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the test_plugin plugin.
  */
-test_plugin *test_plugin::instance()
+test_plugin * test_plugin::instance()
 {
     return g_plugin_test_plugin_factory.instance();
 }

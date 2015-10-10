@@ -23,8 +23,6 @@
 #include <QDomDocument>
 #include <QFile>
 
-#include <iostream>
-
 #include "poison.h"
 
 namespace snap

@@ -23,9 +23,6 @@
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldBasicTypes.h>
 #include <QtSerialization/QSerializationFieldString.h>
-#include <QtSerialization/QSerializationFieldTag.h>
-
-#include <iostream>
 
 #include <libtld/tld.h>
 #include <netdb.h>

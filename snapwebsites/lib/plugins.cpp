@@ -18,7 +18,6 @@
 #include "plugins.h"
 #include "log.h"
 
-#include <iostream>
 #include <qstring_stream.h>
 
 #include <dlfcn.h>

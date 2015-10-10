@@ -25,8 +25,8 @@
 
 #include <proc/readproc.h>
 
-#include <QString>
 #include <QVector>
+
 
 namespace snap
 {

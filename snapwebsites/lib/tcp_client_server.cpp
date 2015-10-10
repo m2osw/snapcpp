@@ -19,7 +19,6 @@
 
 #include "not_reached.h"
 
-#include <iostream>
 #include <sstream>
 
 #include <string.h>

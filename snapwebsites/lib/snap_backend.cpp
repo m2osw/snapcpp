@@ -19,11 +19,9 @@
 
 #include "snapwebsites.h"
 #include "log.h"
-#include "not_reached.h"
 
 #include <wait.h>
 #include <fcntl.h>
-#include <sys/time.h>
 #include <sys/resource.h>
 
 

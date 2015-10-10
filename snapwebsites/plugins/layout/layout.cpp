@@ -20,6 +20,7 @@
 #include "../filter/filter.h"
 #include "../javascript/javascript.h"
 #include "../taxonomy/taxonomy.h"
+#include "../path/path.h"
 
 #include "log.h"
 #include "qdomreceiver.h"

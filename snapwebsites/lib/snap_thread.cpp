@@ -19,8 +19,6 @@
 
 #include "log.h"
 
-#include <sys/time.h>
-
 #include "poison.h"
 
 

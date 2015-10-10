@@ -17,17 +17,12 @@
 
 #include "snapwebsites.h"
 
-#include "plugins.h"
 #include "signal.h"
 #include "log.h"
-#include "not_reached.h"
 #include "tcp_client_server.h"
 #include "snap_backend.h"
 #include "snap_cassandra.h"
-#include "snap_string_list.h"
 
-#include <iostream>
-#include <memory>
 #include <sstream>
 
 #include <QFile>

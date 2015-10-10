@@ -21,14 +21,8 @@
 #include "http_strings.h"
 #include "log.h"
 #include "mkgmtime.h"
-#include "not_reached.h"
-#include "plugins.h"
 #include "qlockfile.h"
-#include "qstring_stream.h"
-#include "snap_exception.h"
-#include "snap_expr.h"
 #include "snap_image.h"
-#include "snap_uri.h"
 #include "snap_utf8.h"
 #include "snapwebsites.h"
 #include "snap_magic.h"
@@ -38,15 +32,12 @@
 #include <libtld/tld.h>
 
 #include <sstream>
-#include <memory>
 
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <wait.h>
 #include <sys/prctl.h>
-#include <sys/socket.h>
-#include <sys/time.h>
 
 #include <QDirIterator>
 

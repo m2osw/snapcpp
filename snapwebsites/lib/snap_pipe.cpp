@@ -19,8 +19,6 @@
 
 #include "qstring_stream.h"
 
-#include <iostream>
-
 #include "poison.h"
 
 

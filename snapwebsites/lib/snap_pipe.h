@@ -16,19 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snap_exception.h"
 #include "snap_thread.h"
-
-#include <controlled_vars/controlled_vars_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
-#include <controlled_vars/controlled_vars_ptr_auto_init.h>
 
 #include <sstream>
 #include <stdio.h>
 
-#include <QString>
 #include <QVector>
-
 
 namespace snap
 {

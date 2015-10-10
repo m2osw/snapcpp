@@ -17,11 +17,9 @@
 
 #include "process.h"
 
-#include "snap_thread.h"
 #include "log.h"
 
 #include <controlled_vars/controlled_vars_no_init.h>
-#include <controlled_vars/controlled_vars_ptr_need_init.h>
 #include <controlled_vars/controlled_vars_ptr_no_init.h>
 
 #include <stdio.h>

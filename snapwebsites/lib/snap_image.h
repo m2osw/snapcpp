@@ -20,7 +20,6 @@
 
 #include <controlled_vars/controlled_vars_auto_init.h>
 
-#include <QString>
 #include <QVector>
 #include <QSharedPointer>
 
