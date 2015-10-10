@@ -198,7 +198,10 @@ char const * get_name(name_t name)
  *
  * \note
  * We do not repair list links when a page is cloned. If the clone is
- * to be part of a list the links will be updated accordingly.
+ * to be part of a list the links will be updated accordingly. This
+ * means if you do not write specialized code to make sure the clone
+ * is a list, the "list::type" link is missing and thus no checks
+ * are done to update the list data of the clone.
  */
 
 
@@ -3580,7 +3583,7 @@ void list::on_replace_token(content::path_info_t & ipath, QString const & plugin
 
 void list::on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box, QString const & ctemplate)
 {
-    static_cast<void>(page_cpath);
+    NOTUSED(page_cpath);
 
     output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
 }
@@ -3588,7 +3591,7 @@ void list::on_generate_boxes_content(content::path_info_t & page_cpath, content:
 
 void list::on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
-    static_cast<void>(destination_branch);
+    NOTUSED(destination_branch);
 
     QtCassandra::QCassandraCells left_cells;
 

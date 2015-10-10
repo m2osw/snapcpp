@@ -1579,8 +1579,8 @@ void links::fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_c
             throw links_exception_invalid_name("invalid link field name, no namespace found");
         }
         QString const plugin_name(name.mid(0, namespace_end));
-        plugins::plugin *plugin_owner(plugins::get_plugin(plugin_name));
-        links_cloned *link_owner(dynamic_cast<links_cloned *>(plugin_owner));
+        plugins::plugin * plugin_owner(plugins::get_plugin(plugin_name));
+        links_cloned * link_owner(dynamic_cast<links_cloned *>(plugin_owner));
         if(link_owner != nullptr)
         {
             // the repair itself is exactly the same as for a cloned page,
