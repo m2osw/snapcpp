@@ -1411,7 +1411,7 @@ void links::delete_link(link_info const& info, int const delete_record_count)
  * \param[in] source  The source link.
  * \param[in] destination  The destination link.
  */
-void links::delete_this_link(link_info const& source, link_info const& destination)
+void links::delete_this_link(link_info const & source, link_info const & destination)
 {
     if(source.is_unique())
     {
