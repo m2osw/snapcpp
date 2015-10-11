@@ -1103,17 +1103,21 @@ void server::set_translation(QString const xml_data)
  * This function ensures that the Cassandra database includes the default
  * context and tables (domain, website, contents.)
  *
- * This is called once each time the server is started. It doesn't matter
- * too much as it is quite fast. Only the core tables are checked. Plug-ins
- * can create new tables on the fly so it doesn't matter as much. We may
+ * This is called once each time the server is started. It does npt matter
+ * too much as it is quite fast. Only the core tables are checked. We may
  * later provide a way for plugins to create different contexts but at
  * this point we expect all of them to only make use of the Core provided
  * context.
  *
+ * Currently, plugins create new tables on the fly, although in a large
+ * cluster that is not a valid strategy because the creation of a table
+ * has to be synchronized throughout the entire cluster and that is very
+ * slow on large cluster.
+ *
  * \todo
- * If we do not call this function, the f_cassandra_host and f_cassandra_port
- * do not get defined. This is a problem that should be addressed at some
- * point.
+ * If this function does not get called, the f_cassandra_host and
+ * f_cassandra_port do not get defined. This is a problem that should
+ * be addressed at some point.
  */
 void server::prepare_cassandra()
 {
