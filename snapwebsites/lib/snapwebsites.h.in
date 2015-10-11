@@ -27,6 +27,7 @@
 #include <advgetopt/advgetopt.h>
 
 #include <QDomDocument>
+#include <QTranslator>
 
 
 #define    SNAPWEBSITES_VERSION_MAJOR   @SNAPWEBSITES_VERSION_MAJOR@
@@ -198,6 +199,7 @@ public:
     static size_t       thread_count();
     void                set_default_config_filename(QString const & filename) { f_config_filename = filename; }
     void                config( int argc, char * argv[] );
+    void                set_translation(QString const xml_data);
     QString             get_parameter(QString const & param_name) const;
     void                set_parameter( const QString & param_name, const QString& value );
     void                prepare_qtapp( int argc, char *argv[] );
@@ -264,6 +266,9 @@ private:
     void stop_thread_func();
 
     static pointer_t                        g_instance;
+
+    QTranslator                             f_translator;
+    QByteArray                              f_translation_xml;
 
     std::string                             f_servername;
     controlled_vars::fbool_t                f_debug;

@@ -1058,8 +1058,43 @@ void server::prepare_qtapp( int argc, char *argv[] )
 
     if(!g_application)
     {
+        // We install a translator early, but language files are only
+        // loaded if the user is logged in or a website specified a
+        // locale which is not "en" or "en_US".
+        //
         g_application = QPointer<QCoreApplication>( new QCoreApplication(argc, argv) );
+        g_application->installTranslator(&f_translator);
     }
+}
+
+
+/** \brief Change the current translation.
+ *
+ * This function is called whenever a new translation becomes available.
+ * In most cases this happens whenever a user is logged in the system.
+ *
+ * At some point we may want to provide a translation capability from
+ * the server settings so one can have most error messages translated
+ * in their main country language instead of the default English.
+ *
+ * The \p xml_data buffer is XML as output by Qt Linguist. We actually
+ * make use of our own translation tool in Snap! and have a backend
+ * process which gathers all the translations and generates one XML
+ * file for each given language.
+ *
+ * \param[in] xml_data  The XML data representing the translation as
+ *                      expected by QTranslator.
+ */
+void server::set_translation(QString const xml_data)
+{
+    // WARNING: the translation must not disappear when installed from
+    //          using the load(char const *, int) overload function so
+    //          we keep a copy in f_translation_xml
+    //
+    f_translation_xml = xml_data.toUtf8();
+
+    // we use a cast because .data() returns a 'char *'
+    f_translator.load(reinterpret_cast<uchar const *>(f_translation_xml.data()), f_translation_xml.size());
 }
 
 
