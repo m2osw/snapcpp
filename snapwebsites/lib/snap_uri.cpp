@@ -1961,6 +1961,7 @@ QString snap_uri::urldecode(QString const& uri, bool relax)
                 || *u == '~' || *u == '!'
                 || *u == '@' || *u == ','
                 || *u == ';' || *u == ':'
+                || *u == '(' || *u == ')'
         )
         {
             // The tilde (~), when used, is often to indicate a user a la
