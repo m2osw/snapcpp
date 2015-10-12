@@ -145,6 +145,9 @@ const char *get_name(name_t name)
     case name_t::SNAP_NAME_USERS_LOGIN_REFERRER:
         return "users::login_referrer";
 
+    case name_t::SNAP_NAME_USERS_LOGIN_SESSION:
+        return "users::login_session";
+
     case name_t::SNAP_NAME_USERS_LOGOUT_IP:
         return "users::logout_ip";
 
@@ -156,6 +159,9 @@ const char *get_name(name_t name)
 
     case name_t::SNAP_NAME_USERS_MODIFIED:
         return "users::modified";
+
+    case name_t::SNAP_NAME_USERS_MULTISESSIONS:
+        return "users::multisessions";
 
     case name_t::SNAP_NAME_USERS_MULTIUSER:
         return "users::multiuser";
@@ -767,13 +773,11 @@ void users::user_logout()
 {
     // the software is requesting to log the user out
     //
-    // inside the user_logout() function and this way
-    // we right away cancel the session
+    // cancel the session
     f_info->set_object_path("/user/");
 
-    // drop the referrer if there is one, it is a
-    // security issue to keep that info on an explicit
-    // log out!
+    // drop the referrer if there is one, it is a security
+    // issue to keep that info on an explicit log out!
     static_cast<void>(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
 
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
@@ -789,6 +793,9 @@ void users::user_logout()
     row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
 
     sessions::sessions::instance()->save_session(*f_info, false);
+
+    // Login session was destroyed so we really do not need it here anymore
+    row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
 
     f_user_key.clear();
     f_user_logged_in = false;
@@ -1670,6 +1677,9 @@ void users::verify_user(content::path_info_t& ipath)
 
     if(!f_user_key.isEmpty())
     {
+        // TODO: consider moving this parameter to the /admin/settings/users
+        //       page instead (unless we want to force a "save to sites table"?)
+        //
         QtCassandra::QCassandraValue const multiuser(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_MULTIUSER)));
         if(multiuser.nullValue() || !multiuser.signedCharValue())
         {
@@ -1689,6 +1699,11 @@ void users::verify_user(content::path_info_t& ipath)
         f_info->set_object_path("/user/");
         f_info->set_time_to_live(86400 * 5);  // 5 days
         bool const new_random(f_info->get_date() + 60 * 5 * 1000000 < f_snap->get_start_date());
+
+        // drop the referrer if there is one, it is a security
+        // issue to keep that info on an almost explicit log out!
+        static_cast<void>(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+
         sessions::sessions::instance()->save_session(*f_info, new_random);
 
         QString const user_cookie_name(get_user_cookie_name());
@@ -1711,6 +1726,9 @@ void users::verify_user(content::path_info_t& ipath)
         // Save the user IP address when logged out
         value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
         row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
+
+        // Login session was destroyed so we really do not need it here anymore
+        row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
 
         f_user_key.clear();
     }
@@ -2227,7 +2245,7 @@ void users::process_login_form(login_mode_t login_mode)
  * \return A string representing an error, an empty string if the login worked
  *         and the user is not being redirected.
  */
-QString users::login_user(QString const& key, QString const& password, bool& validation_required, login_mode_t login_mode)
+QString users::login_user(QString const & key, QString const& password, bool & validation_required, login_mode_t login_mode)
 {
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
 
@@ -2244,7 +2262,7 @@ QString users::login_user(QString const& key, QString const& password, bool& val
             messages::messages::instance()->set_error(
                 "Could Not Log You In",
                 "Somehow your user identifier is not available. Without it we cannot log your in.",
-                QString("users::process_login_form() could not load the user identifier, the row exists but the cell did not make it (%1/%2).")
+                QString("users::login_user() could not load the user identifier, the row exists but the cell did not make it (%1/%2).")
                              .arg(key).arg(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER)),
                 false
             );
@@ -2369,6 +2387,40 @@ QString users::login_user(QString const& key, QString const& password, bool& val
                 f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
                 sessions::sessions::instance()->save_session(*f_info, true); // force new random session number
 
+                // if there was another active login for that very use, we
+                // want to cancel it and also display a message to the
+                // user about the fact
+                QString const previous_session(row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION))->value().stringValue());
+                if(!previous_session.isEmpty())
+                {
+                    // Administrator can turn off that feature
+                    QtCassandra::QCassandraValue const multisessions(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_MULTISESSIONS)));
+                    if(multisessions.nullValue() || !multisessions.signedCharValue())
+                    {
+                        // close session
+                        sessions::sessions::session_info old_session;
+                        sessions::sessions::instance()->load_session(previous_session, old_session, false);
+                        old_session.set_object_path("/user/");
+
+                        // drop the referrer if there is one, it is a security
+                        // issue to keep that info on an "explicit" log out!
+                        static_cast<void>(sessions::sessions::instance()->detach_from_session(old_session, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+
+                        sessions::sessions::instance()->save_session(old_session, false);
+
+                        messages::messages::instance()->set_error(
+                            "Two Sessions",
+                            "We detected that you had another session opened. The other session was closed.",
+                            QString("users::login_user() deleted old session \"%1\" for user \"%2\".")
+                                         .arg(old_session.get_session_key())
+                                         .arg(key),
+                            false
+                        );
+
+                        // go on, this is not a fatal error
+                    }
+                }
+
                 http_cookie cookie(f_snap, get_user_cookie_name(), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
                 cookie.set_expire_in(86400 * 5);  // 5 days
                 cookie.set_http_only(); // make it a tad bit safer
@@ -2398,6 +2450,10 @@ QString users::login_user(QString const& key, QString const& password, bool& val
                 // Save the user IP address when logging in
                 value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
                 row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_IP))->setValue(value);
+
+                // Save the user latest session so we can implement the
+                // "one session per user" feature (which is the default)
+                row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION))->setValue(f_info->get_session_key());
 
                 // Tell all the other plugins that the user is now logged in
                 // you may specify a URI to where the user should be sent on

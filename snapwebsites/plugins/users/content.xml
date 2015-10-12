@@ -155,6 +155,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <mime-type>image/png</mime-type>
     </attachment>
   </content>
+  <content path="/admin/settings/users">
+    <param name="content::title" revision="revision">User Settings</param>
+    <param name="content::body" revision="revision">
+        <![CDATA[<p>Set of settings specific to the Users plugin.</p>]]>
+    </param>
+    <!-- do not allow multi-login by default; set to 1 to allow such -->
+    <param name="users::multiple_login" revision="revision">0</param>
+    <!-- TODO: create a form, see info plugin for details / how to -->
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/private</link>
+  </content>
   <content path="/admin/email/users">
     <param name="content::title" revision="revision">User Emails</param>
     <param name="content::body" revision="revision">
