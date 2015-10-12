@@ -2408,13 +2408,12 @@ QString users::login_user(QString const & key, QString const& password, bool & v
 
                         sessions::sessions::instance()->save_session(old_session, false);
 
-                        messages::messages::instance()->set_error(
+                        messages::messages::instance()->set_warning(
                             "Two Sessions",
                             "We detected that you had another session opened. The other session was closed.",
                             QString("users::login_user() deleted old session \"%1\" for user \"%2\".")
                                          .arg(old_session.get_session_key())
-                                         .arg(key),
-                            false
+                                         .arg(key)
                         );
 
                         // go on, this is not a fatal error
