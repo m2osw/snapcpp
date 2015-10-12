@@ -631,7 +631,7 @@ sessions::session_info::session_id_t sessions::session_info::get_session_id() co
  *
  * \sa set_session_key()
  */
-QString const& sessions::session_info::get_session_key() const
+QString const & sessions::session_info::get_session_key() const
 {
     return f_session_key;
 }
@@ -1213,14 +1213,14 @@ QString sessions::create_session(session_info & info)
  * \param[in,out] info  The session info to save.
  * \param[in] new_random  Whether the session should be given a new random number.
  */
-void sessions::save_session(session_info& info, bool const new_random)
+void sessions::save_session(session_info & info, bool const new_random)
 {
     if(new_random)
     {
         info.set_session_random();
     }
 
-    QString key(f_snap->get_website_key() + "/" + info.get_session_key());
+    QString const key(f_snap->get_website_key() + "/" + info.get_session_key());
 
     // define timestamp for the session value in seconds
     time_t const time_limit(info.get_time_limit());

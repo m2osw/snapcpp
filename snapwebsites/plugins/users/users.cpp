@@ -795,7 +795,16 @@ void users::user_logout()
     sessions::sessions::instance()->save_session(*f_info, false);
 
     // Login session was destroyed so we really do not need it here anymore
-    row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+    QString const last_login_session(row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION))->value().stringValue());
+    if(last_login_session == f_info->get_session_key())
+    {
+        // when clicking the "Log Out" button, we may already have been
+        // logged out and if that is the case the session may not be
+        // the same, hence the previous test to make sure we only delete
+        // the session identifier that correspond to the last session
+        //
+        row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+    }
 
     f_user_key.clear();
     f_user_logged_in = false;
@@ -1728,7 +1737,16 @@ void users::verify_user(content::path_info_t& ipath)
         row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
 
         // Login session was destroyed so we really do not need it here anymore
-        row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        QString const last_login_session(row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION))->value().stringValue());
+        if(last_login_session == f_info->get_session_key())
+        {
+            // when clicking the "Log Out" button, we may already have been
+            // logged out and if that is the case the session may not be
+            // the same, hence the previous test to make sure we only delete
+            // the session identifier that correspond to the last session
+            //
+            row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        }
 
         f_user_key.clear();
     }
