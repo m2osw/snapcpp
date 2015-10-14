@@ -23,6 +23,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -263,9 +264,9 @@ bool output::on_path_execute(content::path_info_t & ipath)
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  A fallback path in case ipath is not satisfactory.
  */
-void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void output::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
-    static_cast<void>(page);
+    NOTUSED(page);
 
     // if the content is the main page then define the titles and body here
     //
@@ -360,8 +361,7 @@ void output::on_generate_boxes_content(content::path_info_t& page_cpath, content
  */
 void output::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
-    static_cast<void>(page);
-    static_cast<void>(ctemplate);
+    NOTUSED(ctemplate);
 
     // create information mainly used in the HTML <head> tag
     QString up;

@@ -17,11 +17,13 @@
 
 #include "snapwebsites.h"
 
-#include "signal.h"
 #include "log.h"
-#include "tcp_client_server.h"
+#include "not_used.h"
+#include "signal.h"
 #include "snap_backend.h"
 #include "snap_cassandra.h"
+#include "snap_communicator.h"
+#include "tcp_client_server.h"
 
 #include <sstream>
 
@@ -360,6 +362,19 @@ namespace
             advgetopt::getopt::end_of_options
         }
     };
+
+    struct connection_t
+    {
+        snap_communicator::pointer_t                    f_communicator;
+        snap_communicator::snap_connection::pointer_t   f_listener;
+        snap_communicator::snap_connection::pointer_t   f_temporary_timer;
+    };
+
+    /** \brief The pointers to communicator elements.
+     *
+     * The communicator we use to run the server events.
+     */
+    connection_t *          g_connection;
 }
 //namespace
 
@@ -1222,6 +1237,7 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
     return table;
 }
 
+
 /** \brief Detach the server unless in foreground mode.
  *
  * This function detaches the server unless it is in foreground mode.
@@ -1282,7 +1298,7 @@ void server::detach()
  *
  * \return A UDP server smart pointer.
  */
-server::udp_server_t server::udp_get_server( QString const& udp_addr_port )
+server::udp_server_t server::udp_get_server( QString const & udp_addr_port )
 {
     // TODO: we should have a common function to read and transform the
     //       parameter to a valid IP/Port pair (see above)
@@ -1300,7 +1316,7 @@ server::udp_server_t server::udp_get_server( QString const& udp_addr_port )
         }
         else
         {
-            throw snap_exception("invalid [IPv6]:port specification, port missing for UDP listener");
+            throw snap_exception("invalid [IPv6]:port specification, port missing for UDP ");
         }
     }
     else if(p != -1)
@@ -1311,7 +1327,7 @@ server::udp_server_t server::udp_get_server( QString const& udp_addr_port )
     }
     else
     {
-        throw snap_exception("invalid IPv4:port specification, port missing for UDP listener");
+        throw snap_exception("invalid IPv4:port specification, port missing for UDP ");
     }
     //
     udp_server_t server( new udp_client_server::udp_server(addr.toUtf8().data(), port.toInt()) );
@@ -1319,7 +1335,7 @@ server::udp_server_t server::udp_get_server( QString const& udp_addr_port )
     {
         // this should not happen since std::badalloc is raised when allocation fails
         // and the new operator will rethrow any exception that the constructor throws
-        throw snap_exception("server for the UDP listener could not be allocated");
+        throw snap_exception("server for the UDP  could not be allocated");
     }
     return server;
 }
@@ -1352,7 +1368,7 @@ server::udp_server_t server::udp_get_server( QString const& udp_addr_port )
  * \param[in] udp_addr_port  The server:port string to connect to.
  * \param[in] message        The message to send, "PING" by default.
  */
-void server::udp_ping_server( const QString& udp_addr_port, char const *message )
+void server::udp_ping_server( QString const & udp_addr_port, char const * message )
 {
     QString addr, port;
     int const bracket(udp_addr_port.lastIndexOf("]"));
@@ -1404,6 +1420,215 @@ bool server::nofork() const
 #endif
 
 
+
+// TODO: once we have the snapcommunicator tool remove this ugly thing!
+class temporary_timer : public snap_communicator::snap_timer
+{
+public:
+
+temporary_timer(server * s)
+    : snap_timer(1000000) // wake up once per second
+    , f_server(s)
+{
+}
+
+// snap_communicator::snap_timer implementation
+virtual void process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client)
+{
+    NOTUSED(we);
+    NOTUSED(new_client);
+
+    f_server->check_listen_runner();
+}
+
+private:
+    server *            f_server;
+};
+
+
+void server::check_listen_runner()
+{
+    switch( f_listen_runner->get_word() )
+    {
+    case snap_listen_thread::word_t::WORD_SERVER_STOP:
+        SNAP_LOG_INFO("Stopping server.");
+        if(g_connection && g_connection->f_communicator)
+        {
+            g_connection->f_communicator->remove_connection(g_connection->f_listener);
+            g_connection->f_communicator->remove_connection(g_connection->f_temporary_timer);
+        }
+        break;
+
+    case snap_listen_thread::word_t::WORD_LOG_RESET:
+        SNAP_LOG_INFO("Logging reconfiguration.");
+        logging::reconfigure();
+        break;
+
+    case snap_listen_thread::word_t::WORD_WAITING:
+        // go back and listen some more
+        break;
+
+    }
+}
+
+
+
+/** \brief Our version of snap_server_client_connection object.
+ *
+ * The snap_server_client_connection class has a pure virtual function
+ * which is not defined and thus it cannot be instantiated. In order
+ * to have a way to instantiate such an object, we create our own class
+ * and implement the process_signal() function.
+ */
+class client_impl : public snap_communicator::snap_server_client_connection
+{
+public:
+                                client_impl(int socket);
+
+    // snap_communicator::snap_server_client_connection implementation
+    virtual void                process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
+};
+
+
+/** \brief Initialize a client socket.
+ *
+ * The client socket gets initialized with the specified 'socket'
+ * parameter.
+ */
+client_impl::client_impl(int socket)
+    : snap_server_client_connection(socket)
+{
+}
+
+
+/** \brief Instantiation of process_signal().
+ *
+ * This function is an instantiation of the process_signal() so we
+ * can create a client_impl object and return that in
+ * listener_impl::create_new_connection().
+ *
+ * The function just raises an exception because it is not expected
+ * to ever be caleld.
+ *
+ * \exception snap_logic_exception
+ * This exception is always raised because this instance of this function
+ * should never get called.
+ *
+ * \param[in] we  The event received.
+ * \param[in,out] new_client  The new client which was created (for
+ *                            listening servers only).
+ */
+void client_impl::process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client)
+{
+    NOTUSED(we);
+    NOTUSED(new_client);
+
+    // our client should never be added to a snap_communicator object
+    throw snap_logic_exception("client_impl::process_signal() was called when it should not even be added to a snap_communicator.");
+}
+
+
+
+/** \brief Handle new connections from clients.
+ *
+ * This function is an implementation of the snap server so we can
+ * handle new connections from various clients.
+ */
+class listener_impl : public snap_communicator::snap_server_connection
+{
+public:
+                                listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close);
+
+    // snap_communicator::snap_server_connection implementation
+    virtual void                process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
+
+    // snap_communicator::snap_server_connection implementation
+    virtual snap_connection::pointer_t           create_new_connection(int socket);
+
+private:
+    // this is owned by a server function so no need for a smart pointer
+    server *            f_server;
+};
+
+
+
+/** \brief The listener initialization.
+ *
+ * The listener receives a pointer back to the snap::server object and
+ * information on how to generate the new network connection to listen
+ * on incoming connections from clients.
+ *
+ * The server listens to two types of messages:
+ *
+ * \li accept() -- a new connection is accepted from a client
+ * \li recv() -- a UDP message was received
+ *
+ * \param[in] s  The server we are listening for.
+ * \param[in] addr  The address to listen on. Most often it is 0.0.0.0.
+ * \param[in] port  The port to listen on.
+ * \param[in] max_connections  The maximum number of connections to keep
+ *            waiting; if more arrive, refuse them until we are done with
+ *            some existing connections.
+ * \param[in] reuse_addr  Whether to let the OS reuse that socket immediately.
+ * \param[in] auto_close  Whether to automatically close the socket once more
+ *            needed anymore.
+ */
+listener_impl::listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
+    : snap_server_connection(addr, port, max_connections, reuse_addr, auto_close)
+    , f_server(s)
+{
+}
+
+
+/** \brief This callback is called whenever something happens on the server.
+ *
+ * This is called whenever something happens to the server, which may be
+ * a new connection from a client or receiving a UDP signal (most often
+ * a STOP command.)
+ *
+ * The function processes the events by calling functions on the server.
+ *
+ * \param[in] we  The event that just triggered this call.
+ * \param[in,out] new_client  The connection pointer when the event
+ *                            is EVENT_ACCPT.
+ */
+void listener_impl::process_signal(snap_communicator::what_event_t we, snap_communicator::snap_connection::pointer_t new_client)
+{
+    if((we & snap_communicator::EVENT_ACCEPT) != 0)
+    {
+        // a new client just connected
+        //
+        f_server->process_connection(new_client->get_socket());
+    }
+    // else throw because we should not receive anything else?
+}
+
+
+/** \brief This callback creates a new connection.
+ *
+ * When the server receives a client request, this function gets called
+ * to create a new connection object which is compatible with the
+ * snap_comminicator environment.
+ *
+ * You may create the connection, call various functions to further
+ * your setup (although watch out, the address and ports get set when
+ * this function returns,) and even add this object to your
+ * snap_communicator object.
+ *
+ * \param[in] socket  The socket just returned by accept().
+ *
+ * \return A pointer to a snap_connection object.
+ */
+snap_communicator::snap_connection::pointer_t listener_impl::create_new_connection(int socket)
+{
+    // use the default provided client connection object
+    snap_communicator::snap_server_client_connection::pointer_t connection(new client_impl(socket));
+    connection->set_name("child connection");
+    connection->keep_alive();
+    return connection;
+}
+
+
 /** \brief Listen to incoming connections.
  *
  * This function loops over a listen waiting for connections to this
@@ -1453,7 +1678,7 @@ void server::listen()
     }
 
     // convert the address information
-    QHostAddress a(host[0]);
+    QHostAddress const a(host[0]);
     if(a.isNull())
     {
         SNAP_LOG_FATAL("invalid address specification in \"")(host[0])(":")(host[1])("\".");
@@ -1461,7 +1686,7 @@ void server::listen()
     }
 
     // convert the port information
-    long p = host[1].toLong(&ok);
+    long const p = host[1].toLong(&ok);
     if(!ok || p < 0 || p > 65535)
     {
         SNAP_LOG_FATAL("invalid port specification in \"")(host[0])(":")(host[1])("\".");
@@ -1486,109 +1711,119 @@ void server::listen()
         }
     }
 
+    // setup our priority scheme
+    snap_communicator::priority_t priority;
+    priority.set_priorities(10);
+    //priority.set_timeout(-1); -- never timeout
+    priority.set_max_callbacks(10); // run up to 10 callbacks before checking for new events
+    priority.set_min_priority(3);   // even priority 0, 1, 2 are all run before any others
+
+    // create a communicator
+    //
+    // only we use a bare pointer because otherwise the child processes
+    // attempt to destroy these objects and that does not work right
+    //
+    g_connection = new connection_t;
+    g_connection->f_communicator.reset(new snap_communicator(priority));
+
+    // create a listener, for new arriving client connections
+    //
+    // auto-close is set to false because the accept() is not directly used
+    // on the tcp_server object
+    //
+    g_connection->f_listener.reset(new listener_impl(this, host[0].toUtf8().data(), p, max_pending_connections, true, false));
+    g_connection->f_listener->set_name("server listener");
+    g_connection->f_communicator->add_connection(g_connection->f_listener);
+
+    g_connection->f_temporary_timer.reset(new temporary_timer(this));
+    g_connection->f_temporary_timer->set_name("server timer");
+    g_connection->f_communicator->add_connection(g_connection->f_temporary_timer);
+
     // Listener thread
+    //
+    // TODO: replace with a listener class which is a snap_communicator
+    //       client connected to the snapcommunicator server
     //
     udp_server_t udp_signals( udp_get_server( get_parameter("snapserver_udp_signal") ) );
     f_listen_runner.reset( new snap_listen_thread( udp_signals ) );
     f_listen_thread.reset( new snap_thread("server::listen::thread", f_listen_runner.get() ) );
     if( !f_listen_thread->start() )
     {
-        SNAP_LOG_FATAL("cannot start listener thread!");
+        SNAP_LOG_FATAL("cannot start thread!");
         exit(1);
     }
 
-    // initialize the server
-    tcp_client_server::tcp_server s(host[0].toUtf8().data(), static_cast<int>(p), static_cast<int>(max_pending_connections), true, true);
+//    // initialize the server
+//    tcp_client_server::tcp_server s(host[0].toUtf8().data(), static_cast<int>(p), static_cast<int>(max_pending_connections), true, true);
 
     // the server was successfully started
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"" + f_parameters["server_name"] + "\" started.");
 
-    // wait until we get killed
+    // prevent SIGCHLD from killing us (i.e. completely ignore those actually)
     {
         sigset_t set;
         sigemptyset(&set);
         sigaddset(&set, SIGCHLD);
         sigprocmask(SIG_BLOCK, &set, nullptr);
     }
-    for(;;)
-    {
-        // capture zombies first
-        snap_child_vector_t::size_type max_children(f_children_running.size());
-        for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
-        {
-            if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
-            {
-                // it's ready, so it can be reused now
-                f_children_waiting.push_back(f_children_running[idx]);
-                f_children_running.erase(f_children_running.begin() + idx);
 
-                // removed one child so decrement index:
-                --idx;
-                --max_children;
-            }
-        }
+    // run until we get killed
+    g_connection->f_communicator->run();
 
-        // retrieve all the connections and process them
-        // timeout so we can check the listen thread runner
-        //
-        //const int socket( s.accept( 500 /*1/2 sec*/ ) );
-        int socket = -1;
-        while( (socket = s.accept( 1000 /*1 sec*/ )) == -2 )
-        {
-            switch( f_listen_runner->get_word() )
-            {
-            case snap_listen_thread::word_t::WORD_SERVER_STOP:
-                SNAP_LOG_INFO("Stopping server.");
-                return;
-                break;
+    // if we are returning that is because the signals were removed from
+    // the communicator so we can now destroy the communicator
+    g_connection->f_communicator.reset();
 
-            case snap_listen_thread::word_t::WORD_LOG_RESET:
-                SNAP_LOG_INFO("Logging reconfiguration.");
-                logging::reconfigure();
-                break;
-
-            case snap_listen_thread::word_t::WORD_WAITING:
-                // go back and listen some more
-                break;
-
-            }
-        }
-
-        if( socket != -1 )
-        {
-            // callee becomes the owner of socket
-            process_connection( socket );
-        }
-    }
-}
-
-
-/** \brief Handle caught signals
- *
- * Catch the signal, then log the signal, then terminate with 1 status.
- */
-void server::sighandler( int sig )
-{
-    QString signame;
-    bool output_stack_trace = true;
-    switch( sig )
-    {
-        case SIGSEGV : signame = "SIGSEGV"; break;
-        case SIGBUS  : signame = "SIGBUS";  break;
-        case SIGFPE  : signame = "SIGFPE";  break;
-        case SIGILL  : signame = "SIGILL";  break;
-        case SIGTERM : signame = "SIGTERM"; output_stack_trace = false; break;
-        case SIGINT  : signame = "SIGINT";  output_stack_trace = false; break;
-        default      : signame = "UNKNOWN";
-    }
-
-    if( output_stack_trace )
-    {
-        snap_exception_base::output_stack_trace();
-    }
-    //
-    SNAP_LOG_FATAL("signal caught: ")(signame);
-    g_instance->exit(1);
+//    for(;;)
+//    {
+//        // capture zombies first
+//        snap_child_vector_t::size_type max_children(f_children_running.size());
+//        for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
+//        {
+//            if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
+//            {
+//                // it's ready, so it can be reused now
+//                f_children_waiting.push_back(f_children_running[idx]);
+//                f_children_running.erase(f_children_running.begin() + idx);
+//
+//                // removed one child so decrement index:
+//                --idx;
+//                --max_children;
+//            }
+//        }
+//
+//        // retrieve all the connections and process them
+//        // timeout so we can check the listen thread runner
+//        //
+//        //const int socket( s.accept( 500 /*1/2 sec*/ ) );
+//        int socket = -1;
+//        while( (socket = s.accept( 1000 /*1 sec*/ )) == -2 )
+//        {
+//            switch( f_listen_runner->get_word() )
+//            {
+//            case snap_listen_thread::word_t::WORD_SERVER_STOP:
+//                SNAP_LOG_INFO("Stopping server.");
+//                return;
+//                break;
+//
+//            case snap_listen_thread::word_t::WORD_LOG_RESET:
+//                SNAP_LOG_INFO("Logging reconfiguration.");
+//                logging::reconfigure();
+//                break;
+//
+//            case snap_listen_thread::word_t::WORD_WAITING:
+//                // go back and listen some more
+//                break;
+//
+//            }
+//        }
+//
+//        if( socket != -1 )
+//        {
+//            // callee becomes the owner of socket
+//            process_connection( socket );
+//        }
+//    }
 }
 
 
@@ -1601,7 +1836,7 @@ void server::sighandler( int sig )
  */
 void server::process_connection(int socket)
 {
-    snap_child *child;
+    snap_child * child;
 
     // we're handling one more connection, whether it works or
     // not we increase our internal counter
@@ -1640,8 +1875,48 @@ void server::process_connection(int socket)
 #pragma GCC diagnostic ignored "-Wunused-result"
         write(socket, err.c_str(), err.size());
 #pragma GCC diagnostic pop
-        // socket will be closed by the next accept() call
     }
+
+    // this was done in the tcp_server::accept() and with the new interface,
+    // in snap_communicator::snap_server_client_connection::~snap_server_client_connection()
+    //close(socket);
+}
+
+
+/** \brief Handle caught signals
+ *
+ * Catch the signal, then log the signal, then terminate with 1 status.
+ */
+void server::sighandler( int sig )
+{
+    QString signame;
+    bool output_stack_trace(true);
+    switch( sig )
+    {
+        case SIGSEGV : signame = "SIGSEGV"; break;
+        case SIGBUS  : signame = "SIGBUS";  break;
+        case SIGFPE  : signame = "SIGFPE";  break;
+        case SIGILL  : signame = "SIGILL";  break;
+        case SIGTERM : signame = "SIGTERM"; output_stack_trace = false; break;
+        case SIGINT  : signame = "SIGINT";  output_stack_trace = false; break;
+        default      : signame = "UNKNOWN"; break;
+    }
+
+    if( output_stack_trace )
+    {
+        snap_exception_base::output_stack_trace();
+    }
+    //
+    SNAP_LOG_FATAL("signal caught: ")(signame);
+
+    // is server available?
+    if(g_instance)
+    {
+        g_instance->exit(1);
+    }
+
+    // server not available, exit directly
+    ::exit(1);
 }
 
 
@@ -2062,7 +2337,7 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
  *
  * \sa udp_ping_server()
  */
-void server::udp_ping(char const *name, char const *message)
+void server::udp_ping(char const * name, char const * message)
 {
     udp_ping_server( get_parameter(name), message );
 }
@@ -2077,10 +2352,10 @@ void server::udp_ping(char const *name, char const *message)
  * should be logged or not. In most cases it probably will be set to
  * false to avoid large amounts of logs.
  *
- * \param[in] snap  The snap pointer.
+ * \param[in,out] snap  The snap pointer.
  * \param[in] log  The log flag, if true send all errors to the loggers.
  */
-quiet_error_callback::quiet_error_callback(snap_child *snap, bool log)
+quiet_error_callback::quiet_error_callback(snap_child * snap, bool log)
     : f_snap(snap)
     , f_log(log)
     //, f_error(false) -- auto-init
@@ -2140,10 +2415,10 @@ void quiet_error_callback::on_error(snap_child::http_code_t const err_code, QStr
  * \param[in] http_code  The HTTP code to be returned to the user.
  */
 void quiet_error_callback::on_redirect(
-        /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
-        /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t const http_code)
+        /* message::set_error() */ QString const & err_name, QString const & err_description, QString const & err_details, bool err_security,
+        /* snap_child::page_redirect() */ QString const & path, snap_child::http_code_t const http_code)
 {
-    static_cast<void>(err_security);
+    NOTUSED(err_security);
 
     f_error = true;
     if(f_log)
@@ -2201,15 +2476,15 @@ bool quiet_error_callback::has_error() const
  * is expected to be used to run the process ASAP (i.e. another process
  * made a change that this backend may be interested in checking out.)
  *
- * If the func returns the null pointer, no UDP listener is created.
+ * If the func returns the null pointer, no UDP  is created.
  *
  * \param[in] action  The name of the action.
  *
  * \return nullptr or a pointer to a signal name.
  */
-char const *server::backend_action::get_signal_name(QString const& action) const
+char const * server::backend_action::get_signal_name(QString const & action) const
 {
-    static_cast<void>(action);
+    NOTUSED(action);
     return nullptr;
 }
 

@@ -108,6 +108,7 @@ public:
         virtual what_event_t        get_events() const = 0;
         virtual void                process_signal(what_event_t we, pointer_t new_client) = 0;
         virtual pointer_t           create_new_connection(int socket);
+        virtual bool                valid_socket() const;
 
         int                         get_priority() const;
         void                        set_priority(int priority);
@@ -135,20 +136,26 @@ public:
         : public snap_connection
     {
     public:
+        typedef std::shared_ptr<snap_timer>    pointer_t;
+
                                     snap_timer(int64_t timeout_us);
 
         virtual int                 get_socket() const;
         virtual what_event_t        get_events() const;
+        virtual bool                valid_socket() const;
     };
 
     class snap_signal
         : public snap_connection
     {
     public:
+        typedef std::shared_ptr<snap_signal>    pointer_t;
+
                                     snap_signal(int posix_signal);
 
+        // snap_connection implementation
         virtual int                 get_socket() const;
-        virtual what_event_t        events() const;
+        virtual what_event_t        get_events() const;
 
     private:
         int                         f_signal; // i.e. SIGHUP, SIGTERM...
@@ -159,10 +166,13 @@ public:
         , public snap_connection
     {
     public:
+        typedef std::shared_ptr<snap_client_connection>    pointer_t;
+
                                     snap_client_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
 
+        // snap_connection implementation
         virtual int                 get_socket() const;
-        virtual what_event_t        events() const;
+        virtual what_event_t        get_events() const;
     };
 
     // TODO: switch the tcp_server to a bio_server once available
@@ -171,11 +181,14 @@ public:
         , public snap_connection
     {
     public:
+        typedef std::shared_ptr<snap_server_connection>    pointer_t;
+
                                     snap_server_connection(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
 
+        // snap_connection implementation
         virtual bool                is_listener() const;
         virtual int                 get_socket() const;
-        virtual what_event_t        events() const;
+        virtual what_event_t        get_events() const;
     };
 
     class snap_server_client_connection
@@ -183,14 +196,20 @@ public:
         : public snap_connection
     {
     public:
-                                    snap_server_client_connection(int socket);
+        typedef std::shared_ptr<snap_server_client_connection>    pointer_t;
 
+                                    snap_server_client_connection(int socket);
+        virtual                     ~snap_server_client_connection();
+
+        // snap_connection implementation
         virtual int                 get_socket() const;
-        virtual what_event_t        events() const;
+        virtual what_event_t        get_events() const;
 
         void                        set_address(struct sockaddr * address, size_t length);
         size_t                      get_address(struct sockaddr & address) const;
         std::string                 get_addr() const;
+
+        void                        keep_alive() const;
 
     private:
         int                         f_socket;
@@ -204,12 +223,12 @@ public:
 
     bool                        add_connection(snap_connection::pointer_t connection);
     bool                        remove_connection(snap_connection::pointer_t connection);
-    bool                        run();
+    virtual bool                run();
 
 private:
     struct snap_communicator_impl;
 
-    std::unique_ptr<snap_communicator_impl> f_impl;
+    std::shared_ptr<snap_communicator_impl> f_impl;
     snap_connection::vector_t               f_connections;
     priority_t                              f_priority;
 };

@@ -16,11 +16,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snap_child.h"
-#include "snap_expr.h"
 #include "plugins.h"
-#include "snap_listen_thread.h"
+#include "snap_child.h"
 #include "snap_config.h"
+#include "snap_expr.h"
+#include "snap_listen_thread.h"
 
 #include <controlled_vars/controlled_vars_limited_need_enum_init.h>
 
@@ -139,6 +139,9 @@ private:
 };
 
 
+// implementation specific class
+class listener_impl;
+
 
 class server : public plugins::plugin
 {
@@ -246,6 +249,10 @@ public:
     SNAP_SIGNAL_WITH_MODE(add_snap_expr_functions, (snap_expr::functions_t & functions), (functions), NEITHER);
     SNAP_SIGNAL_WITH_MODE(output_result, (QString const & uri_path, QByteArray & output), (uri_path, output), NEITHER);
 
+// TODO: temporary function until the event listener is a full class
+//       that listens to snapcommunicator and not directly on a UDP port
+void check_listen_runner();
+
 protected:
                                 server();
     static server::pointer_t    get_instance();
@@ -257,13 +264,14 @@ protected:
     snap_config                             f_parameters;
 
 private:
-    //typedef QMap<QString, QString>                parameter_map_t;
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
-    static void sighandler( int sig );
+    friend class listener_impl;
 
-    void process_connection(int socket);
-    void stop_thread_func();
+    static void                             sighandler( int sig );
+
+    void                                    process_connection(int socket);
+    void                                    stop_thread_func();
 
     static pointer_t                        g_instance;
 

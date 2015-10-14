@@ -41,10 +41,13 @@
 
 #include "snap_communicator.h"
 
+#include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
 
 #include <sstream>
+
+#include <unistd.h>
 
 #include <event2/event.h>
 #include <event2/listener.h>
@@ -175,14 +178,13 @@ void snap_accept_callback(struct evconnlistener * listener, evutil_socket_t s, s
     snap_communicator::snap_connection * sc(reinterpret_cast<snap_communicator::snap_connection *>(ctx));
 
     // create a client
-    //snap_communicator::snap_connection::pointer_t client(new snap_communicator::snap_server_client_connection(s));
     snap_communicator::snap_connection::pointer_t client(sc->create_new_connection(s));
     if(!client)
     {
         // allocation failed
         throw snap_communicator_initialization_error("snap_accept_callback(): creating of a new client connection from an accept failed.");
     }
-    snap_communicator::snap_server_client_connection *server_client(dynamic_cast<snap_communicator::snap_server_client_connection *>(client.get()));
+    snap_communicator::snap_server_client_connection * server_client(dynamic_cast<snap_communicator::snap_server_client_connection *>(client.get()));
     if(server_client == nullptr)
     {
         // invalid type
@@ -245,9 +247,14 @@ struct snap_communicator::snap_connection::snap_connection_impl
         {
             // this should NEVER happen since connections are saved as
             // shared pointer in a snap_communicator object
-            std::cerr << "*** ERROR: a snap_connection() is being destroyed while still attached to an event_base object.\n";
+            std::cerr << "*** ERROR: snap_connection() \"" << f_name << "\" is being destroyed while still attached to an event_base object.\n";
             std::terminate();
         }
+    }
+
+    void set_name(std::string const & name)
+    {
+        f_name = name;
     }
 
     void create_event(struct event_base * event_base, snap_connection::pointer_t connection)
@@ -255,7 +262,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
         // we cannot be attached more than once
         if(f_created)
         {
-            throw snap_communicator_initialization_error("snap_connection_impl::create_event(): connection is already attached.");
+            throw snap_communicator_initialization_error("snap_connection_impl::create_event(): connection \"" + f_name + "\" is already attached.");
         }
 
         if(connection->is_listener())
@@ -271,7 +278,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
                     ));
             if(!f_listener)
             {
-                throw snap_communicator_initialization_error("snap_connection_impl::create_event(): event could not be allocated.");
+                throw snap_communicator_initialization_error("snap_connection_impl::create_event(): event could not be allocated for \"" + f_name + "\".");
             }
 
             // no priority?!
@@ -295,7 +302,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
                     ));
             if(!f_event)
             {
-                throw snap_communicator_initialization_error("snap_connection_impl::create_event(): event could not be allocated.");
+                throw snap_communicator_initialization_error("snap_connection_impl::create_event(): event could not be allocated for \"" + f_name + "\".");
             }
 
             event_priority_set(f_event.get(), connection->get_priority());
@@ -303,7 +310,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
 
         // it worked, we are now created
         // (note that there is no destruction of an event...
-        // I'm not too sure how they get unallocated!)
+        // I am not too sure how they get unallocated!)
         f_created = true;
     }
 
@@ -312,7 +319,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
         // we must be attached to get destroyed
         if(!f_created)
         {
-            throw snap_communicator_initialization_error("snap_connection_impl::attach_event(): connection was not yet created.");
+            throw snap_communicator_initialization_error("snap_connection_impl::attach_event(): connection \"" + f_name + "\" was not yet created.");
         }
 
         if(f_event)
@@ -366,7 +373,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
         }
         else
         {
-            throw snap_communicator_parameter_error("snap_connection_impl::attach_event(): called with no event and no listener.");
+            throw snap_communicator_parameter_error("snap_connection_impl::attach_event(): connection \"" + f_name + "\" called with no event and no listener.");
         }
 
         f_attached = true;
@@ -377,7 +384,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
         // we must be attached to get destroyed
         if(!f_attached)
         {
-            throw snap_communicator_initialization_error("snap_connection_impl::detach_event(): connection event is not attached.");
+            throw snap_communicator_initialization_error("snap_connection_impl::detach_event(): connection \"" + f_name + "\" event is not attached.");
         }
 
         if(f_event)
@@ -390,7 +397,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
             int const r(event_del(f_event.get()));
             if(r != 0)
             {
-                throw snap_communicator_initialization_error("snap_connection_impl::detach_event(): event could not be deleted.");
+                throw snap_communicator_initialization_error("snap_connection_impl::detach_event(): connection \"" + f_name + "\" event could not be deleted.");
             }
         }
         else if(f_listener)
@@ -399,7 +406,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
         }
         else
         {
-            throw snap_communicator_parameter_error("snap_connection_impl::detach_event(): called with no event and no listener.");
+            throw snap_communicator_parameter_error("snap_connection_impl::detach_event(): connection \"" + f_name + "\" called with no event and no listener.");
         }
 
         // it worked, we are now attached
@@ -408,6 +415,7 @@ struct snap_communicator::snap_connection::snap_connection_impl
 
     unique_event_t          f_event;
     unique_listener_t       f_listener;
+    std::string             f_name;
     bool                    f_created = false;
     bool                    f_attached = false;
     bool                    f_has_timer = false; // to palliate from the fact we do not yet have event_remove_timer() support
@@ -466,7 +474,7 @@ struct snap_communicator::snap_communicator_impl
      */
     void setup_config(struct event_config * event_cfg, priority_t const & priority)
     {
-        // first makesure our priority_t object is valid
+        // first make sure our priority_t object is valid
         priority.validate();
 
         if(priority.get_priorities() == 1)
@@ -483,16 +491,12 @@ struct snap_communicator::snap_communicator_impl
 
         // setup has some valid values
         struct timeval tv;
-        struct timeval *tvp;
+        struct timeval * tvp(nullptr);
         if(timeout != -1)
         {
             tv.tv_sec  = timeout / 1000000;
             tv.tv_usec = timeout % 1000000;
             tvp = &tv;
-        }
-        else
-        {
-            tvp = nullptr;
         }
         event_config_set_max_dispatch_interval(
                     event_cfg,
@@ -843,6 +847,7 @@ std::string const & snap_communicator::snap_connection::get_name() const
  */
 void snap_communicator::snap_connection::set_name(std::string const & name)
 {
+    f_impl->set_name(name);
     f_name = name;
 }
 
@@ -885,6 +890,24 @@ snap_communicator::snap_connection::pointer_t snap_communicator::snap_connection
     // an implementation of this virtual function in your server class
     //
     throw snap_communicator_parameter_error("snap_communicator::snap_connection::create_new_connection() called, it has to be implemented in your snap_server_connection class.");
+}
+
+
+/** \brief Check whether the socket is valid for this connection.
+ *
+ * Some connections do not make use of a socket so just checking
+ * whether the socket is -1 is not a good way to know whether the
+ * socket is valid.
+ *
+ * The default function assumes that a socket has to be 0 or more
+ * to be valid. Other connection implementations may overload this
+ * function to allow other values.
+ *
+ * \return true if the socket is valid.
+ */
+bool snap_communicator::snap_connection::valid_socket() const
+{
+    return get_socket() >= 0;
 }
 
 
@@ -938,7 +961,10 @@ int64_t snap_communicator::snap_connection::get_timeout() const
 void snap_communicator::snap_connection::set_timeout(int64_t timeout_us)
 {
     f_timeout = timeout_us;
-    f_impl->attach_event(timeout_us);
+    if(f_impl->f_created)
+    {
+        f_impl->attach_event(timeout_us);
+    }
 }
 
 
@@ -965,7 +991,7 @@ void snap_communicator::snap_connection::set_timeout(int64_t timeout_us)
 */
 snap_communicator::snap_timer::snap_timer(int64_t timeout_us)
 {
-set_timeout(timeout_us);
+    set_timeout(timeout_us);
 }
 
 
@@ -1000,6 +1026,18 @@ int snap_communicator::snap_timer::get_socket() const
 int snap_communicator::snap_timer::get_events() const
 {
     return 0;
+}
+
+
+/** \brief Tell that the socket is always valid.
+ *
+ * This function always returns true since the timer never uses a socket.
+ *
+ * \return Always true.
+ */
+bool snap_communicator::snap_timer::valid_socket() const
+{
+    return true;
 }
 
 
@@ -1079,10 +1117,12 @@ int snap_communicator::snap_signal::get_socket() const
  *
  * \return Always EVENT_SIGNAL.
  */
-int snap_communicator::snap_signal::events() const
+int snap_communicator::snap_signal::get_events() const
 {
     return EVENT_SIGNAL;
 }
+
+
 
 
 
@@ -1141,7 +1181,7 @@ int snap_communicator::snap_client_connection::get_socket() const
  *
  * \return The events to listen to for this connection.
  */
-int snap_communicator::snap_client_connection::events() const
+int snap_communicator::snap_client_connection::get_events() const
 {
     return EVENT_READ | EVENT_WRITE;
 }
@@ -1165,7 +1205,7 @@ int snap_communicator::snap_client_connection::events() const
  * \param[in] port  The port to listen on.
  * \param[in] max_connections  The number of connections to keep in the listen queue.
  * \param[in] reuse_addr  Whether to mark the socket with the SO_REUSEADDR flag.
- * \param[in] auto_close  Automatically close the the client socket in accept and the destructor.
+ * \param[in] auto_close  Automatically close the client socket in accept and the destructor.
  */
 snap_communicator::snap_server_connection::snap_server_connection(std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
     : tcp_server(addr, port, max_connections, reuse_addr, auto_close)
@@ -1218,7 +1258,7 @@ int snap_communicator::snap_server_connection::get_socket() const
  *
  * \return The events to listen to for this connection.
  */
-int snap_communicator::snap_server_connection::events() const
+int snap_communicator::snap_server_connection::get_events() const
 {
     return EVENT_READ | EVENT_WRITE;
 }
@@ -1237,12 +1277,29 @@ int snap_communicator::snap_server_connection::events() const
  * This constructor initializes a client connection from a socket
  * that we received from an accept() call.
  *
- * \param[in] sc  The snap_communicator pointer.
+ * The destructor will automatically close that socket on destruction.
+ *
  * \param[in] socket  The socket that acecpt() returned.
  */
 snap_communicator::snap_server_client_connection::snap_server_client_connection(int socket)
-    : f_socket(socket)
+    : f_socket(socket < 0 ? -1 : socket)
 {
+}
+
+
+/** \brief Make sure the socket gets released once we are done witht he connection.
+ *
+ * This destructor makes sure that the socket gets closed.
+ */
+snap_communicator::snap_server_client_connection::~snap_server_client_connection()
+{
+    // at this point, we should never get a socket with -1, but just in
+    // case that could happen later
+    //
+    if(f_socket != -1)
+    {
+        close(f_socket);
+    }
 }
 
 
@@ -1269,7 +1326,7 @@ int snap_communicator::snap_server_client_connection::get_socket() const
  *
  * \return The events to listen to for this connection.
  */
-int snap_communicator::snap_server_client_connection::events() const
+int snap_communicator::snap_server_client_connection::get_events() const
 {
     return EVENT_READ | EVENT_WRITE;
 }
@@ -1358,6 +1415,29 @@ std::string snap_communicator::snap_server_client_connection::get_addr() const
 }
 
 
+/** \brief Ask the OS to keep the socket alive.
+ *
+ * This function marks the socket with the SO_KEEPALIVE flag. This means
+ * the OS implementation of the network stack should regularly send
+ * small messages over the network to keep the connection alive.
+ *
+ * The function returns whether the function works or not. If the function
+ * fails, it logs a warning and returns.
+ */
+void snap_communicator::snap_server_client_connection::keep_alive() const
+{
+    if(f_socket != -1)
+    {
+        int optval(1);
+        socklen_t const optlen(sizeof(optval));
+        if(setsockopt(f_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
+        {
+            SNAP_LOG_WARNING("snap_communicator::snap_server_client_connection::keep_alive(): an error occurred trying to mark socket with SO_KEEPALIVE.");
+        }
+    }
+}
+
+
 
 ///////////////////////
 // Snap Communicator //
@@ -1428,7 +1508,7 @@ void snap_communicator::reinit()
  */
 bool snap_communicator::add_connection(snap_connection::pointer_t connection)
 {
-    if(connection->get_socket() == -1)
+    if(!connection->valid_socket())
     {
         throw snap_communicator_parameter_error("snap_communicator::add_connection(): connection without a socket cannot be added to a snap_communicator object.");
     }
@@ -1515,7 +1595,7 @@ bool snap_communicator::run()
     {
         // event loop exited because of something else than an empty set
         // of events in the event_base
-        throw snap_communicator_runtime_error("snap_communicator.cpp: an error occured in the event dispatch loop.");
+        throw snap_communicator_runtime_error("snap_communicator.cpp: an error occurred in the event dispatch loop.");
     }
 
     return r == 1;

@@ -115,6 +115,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>List of users on your Snap! Website.</p>]]>
     </param>
     <link name="permissions::direct::action::administrer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <!-- by default you need administration rights to see all the users
+         registered on a website; administrator can then make the list
+         public if he wants to. -->
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
   <content path="/user/me">

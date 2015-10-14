@@ -353,7 +353,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 9, 10, 3, 48, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 12, 18, 20, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1129,6 +1129,7 @@ void users::on_generate_main_content(content::path_info_t & ipath, QDomElement &
                 // TODO: write user listing (similar to the /admin page
                 //       in gathering the info)
                 //list_users(body);
+                output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
                 return;
             }
             else if(cpath == "user/password/replace")
@@ -1369,7 +1370,7 @@ void users::prepare_replace_password_form(QDomElement& body)
  * see his profile. The administrators can see any profile. Otherwise
  * only public profiles and the user own profile are accessible.
  */
-void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElement& body)
+void users::show_user(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     QString user_path(ipath.get_cpath());
     int64_t identifier(0);
@@ -2405,11 +2406,11 @@ QString users::login_user(QString const & key, QString const& password, bool & v
                 f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
                 sessions::sessions::instance()->save_session(*f_info, true); // force new random session number
 
-                // if there was another active login for that very use, we
-                // want to cancel it and also display a message to the
+                // if there was another active login for that very user,
+                // we want to cancel it and also display a message to the
                 // user about the fact
                 QString const previous_session(row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION))->value().stringValue());
-                if(!previous_session.isEmpty())
+                if(!previous_session.isEmpty() && previous_session != f_info->get_session_key())
                 {
                     // Administrator can turn off that feature
                     QtCassandra::QCassandraValue const multisessions(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_MULTISESSIONS)));

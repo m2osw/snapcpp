@@ -1,6 +1,6 @@
 /*
  * Name: output
- * Version: 0.0.8
+ * Version: 0.0.9
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -19,15 +19,15 @@ div.user-messages
 	border-radius: 5px;
 	background-color: #e0ffe0;
 }
-div.user-messages.error-messages
-{
-	border: 2px solid red;
-	background-color: #ffe0e0;
-}
 div.user-messages.warning-messages
 {
 	border: 2px solid #ff8030;
 	background-color: #ffce89;
+}
+div.user-messages.error-messages
+{
+	border: 2px solid red;
+	background-color: #ffe0e0;
 }
 div.user-messages .close-button
 {

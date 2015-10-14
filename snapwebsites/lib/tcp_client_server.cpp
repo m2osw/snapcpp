@@ -17,7 +17,9 @@
 
 #include "tcp_client_server.h"
 
+#include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <sstream>
 
@@ -442,9 +444,9 @@ int tcp_client::write(const char *buf, size_t size)
  * \param[in] port  The port to listen on.
  * \param[in] max_connections  The number of connections to keep in the listen queue.
  * \param[in] reuse_addr  Whether to mark the socket with the SO_REUSEADDR flag.
- * \param[in] auto_close  Automatically close the the client socket in accept and the destructor.
+ * \param[in] auto_close  Automatically close the client socket in accept and the destructor.
  */
-tcp_server::tcp_server(const std::string& addr, int port, int max_connections, bool reuse_addr, bool auto_close)
+tcp_server::tcp_server(std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
     : f_max_connections(max_connections < 1 ? MAX_CONNECTIONS : max_connections)
     , f_socket(-1)
     , f_port(port)
@@ -498,6 +500,7 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
 
     if(bind(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)
     {
+        close(f_socket);
         throw tcp_client_server_runtime_error("could not bind the socket to \"" + f_addr + "\"");
     }
 
@@ -505,6 +508,7 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
     // acquire connections
     if(listen(f_socket, f_max_connections) < 0)
     {
+        close(f_socket);
         throw tcp_client_server_runtime_error("could not listen to the socket bound to \"" + f_addr + "\"");
     }
 }
@@ -716,10 +720,13 @@ int tcp_server::accept( int const max_wait_ms )
     // mark the new connection with the SO_KEEPALIVE flag
     if(f_accepted_socket != -1 && f_keepalive)
     {
-        // if this fails, we ignore the error (TODO log an INFO message)
+        // if this fails, we ignore the error, but still log the event
         int optval(1);
         socklen_t const optlen(sizeof(optval));
-        static_cast<void>(setsockopt(f_accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen));
+        if(setsockopt(f_accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
+        {
+            SNAP_LOG_WARNING("tcp_server::accept(): an error occurred trying to mark accepted socket with SO_KEEPALIVE.");
+        }
     }
 
     return f_accepted_socket;

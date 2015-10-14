@@ -2699,7 +2699,7 @@ bool snap_child::process(int socket)
     {
         // this is a bug!
         // WARNING: At this point we CANNOT call the die() function
-        //          (we're not the child and have the wrong socket)
+        //          (we are not the child and have the wrong socket)
         SNAP_LOG_FATAL("BUG: snap_child::process() called when the process is still in use.");
         return false;
     }
@@ -2713,7 +2713,7 @@ bool snap_child::process(int socket)
         if(p == -1)
         {
             // WARNING: At this point we CANNOT call the die() function
-            //          (we're not the child and have the wrong socket)
+            //          (we are not the child and have the wrong socket)
             SNAP_LOG_FATAL("snap_child::process() could not create child process, dropping connection.");
             return false;
         }
@@ -2726,6 +2726,8 @@ bool snap_child::process(int socket)
         return true;
     }
 
+    f_socket = socket;
+
     try
     {
         f_ready = false;
@@ -2734,7 +2736,6 @@ bool snap_child::process(int socket)
 
         // child process
         f_is_child = true;
-        f_socket = socket;
 
         read_environment();         // environment to QMap<>
         setup_uri();                // the raw URI

@@ -81,10 +81,12 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     virtual bool        on_path_execute(content::path_info_t & ipath);
-    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
     virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes, QString const & ctemplate);
     void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
     void                on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+
+    // layout::layout_content implementation
+    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
 
     static QString      phone_to_uri(QString const phone, phone_number_type_t const type);
     void                breadcrumb(content::path_info_t & ipath, QDomElement parent);

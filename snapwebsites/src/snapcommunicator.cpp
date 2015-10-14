@@ -52,9 +52,9 @@
  * |                        |     |                                         |
  * |  +----------------+  Connect |  +----------------+                     |
  * |  |     Snap       |<----------->|     Snap       |<-------+            |
- * |  |  Communicator  |    |     |  |  Communicator  |        | images     |
+ * |  |  Communicator  |  (TCP/IP)|  |  Communicator  |        | images     |
  * |  +----------------+    |     |  +----------------+        |  PING      |
- * |      ^                 |     |      ^                     |            |
+ * |      ^                 |     |      ^                     |  (UDP)     |
  * |      | Connect         |     |      | Connect      +----------------+  |
  * |      | (TCP/IP)        |     |      | (TCP/IP)     |   Snap Child   |  |
  * |      |                 |     |      |              |    Process     |  |
@@ -83,12 +83,11 @@
  * http://snapwebsites.org/implementation/feature-requirements/inter-process-signalling-core
  */
 
-class snap_communicator_server
+class snap_communicator_server : public server
 {
 public:
     typedef std::shared_ptr<snap_communicator_server>     pointer_t;
 
-                                snap_communicator_server(int argc, char *argv[]);
                                 snap_communicator_server(snap_communicator_server const & src) = delete;
     snap_communicator_server &  operator = (snap_communicator_server const & rhs) = delete;
                                 ~snap_communicator_server();
@@ -102,7 +101,7 @@ private:
 };
 
 
-snap_communicator_server::snap_communicator_server(int argc, char *argv[])
+snap_communicator_server::snap_communicator_server(int argc, char * argv[])
 {
     f_opt.reset(
         new advgetopt::getopt(argc, argv, g_snapserver_options, g_configuration_files, "SNAPCOMMUNICATOR_OPTIONS")
