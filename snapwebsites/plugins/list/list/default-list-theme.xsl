@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:snap="snap:snap">
 	<xsl:param name="layout-name">default-list</xsl:param>
 	<xsl:param name="layout-area">default-list-theme</xsl:param>
-	<xsl:param name="layout-modified">2014-02-19 18:10:24</xsl:param>
+	<xsl:param name="layout-modified">2015-10-14 21:33:24</xsl:param>
 
 	<xsl:template match="snap">
 		<div class="list-wrapper">
@@ -32,6 +32,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<xsl:copy-of select="item/node()"/>
 				</xsl:for-each>
 			</ul>
+			<xsl:if test="page/body/navigation">
+				<div class="navigation"><xsl:copy-of select="page/body/navigation/node()"/></div>
+			</xsl:if>
 		</div>
 	</xsl:template>
 </xsl:stylesheet>

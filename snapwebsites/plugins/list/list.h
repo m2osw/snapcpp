@@ -59,7 +59,7 @@ enum class name_t
     SNAP_NAME_LIST_THEME,
     SNAP_NAME_LIST_TYPE
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class list_exception : public snap_exception

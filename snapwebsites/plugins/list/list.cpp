@@ -437,8 +437,8 @@ void paging_t::set_start_offset(int32_t start_offset)
  */
 int32_t paging_t::get_start_offset() const
 {
-    int const offset(f_start_offset < 1 ? 0 : static_cast<int>(f_start_offset));
-    return offset + (f_page - 1) * get_page_size() + 1;
+    int const offset(f_start_offset < 1 ? 1 : static_cast<int>(f_start_offset));
+    return offset + (f_page - 1) * get_page_size();
 }
 
 
@@ -609,7 +609,7 @@ QString paging_t::generate_query_string_info(int32_t page_offset) const
     int32_t const page_size(get_page_size());
 
     bool need_comma(false);
-    if(f_start_offset > 0)
+    if(f_start_offset > 1)
     {
         // keep using the offset if defined
         int32_t offset(f_start_offset + page_offset * page_size);
@@ -748,7 +748,7 @@ void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32
     // no navigation necessary if the number of items is limited and
     // that limit is smaller or equal to the size of one page
     if((f_maximum_number_of_items != -1 && f_maximum_number_of_items <= f_page_size)
-    || get_number_of_items() < f_page_size)
+    || get_number_of_items() <= f_page_size)
     {
         return;
     }
@@ -1055,7 +1055,7 @@ int32_t paging_t::get_previous_page() const
 int32_t paging_t::get_total_pages() const
 {
     int32_t const page_size(get_page_size());
-    return (get_number_of_items() - f_start_offset + page_size - 1) / page_size;
+    return (get_number_of_items() + page_size - f_start_offset) / page_size;
 }
 
 
@@ -3276,12 +3276,14 @@ QString list::run_list_item_key(content::path_info_t & list_ipath, content::path
  * [list::theme(path="<list path>", theme="<theme name>", start="<start>", count="<count>")]
  * \endcode
  *
- * Theme the list define at \<list path\> with the theme \<theme name\>.
+ * Theme the list defined at \<list path\> with the theme \<theme name\>.
  * You may skip some items and start with item \<start\> instead of item 0.
  * You may specified the number of items to display with \<count\>. Be
  * careful because by default all the items are shown (Although there is a
- * system limit which at this time is 10,000 that still a LARGE list!)
- * The theme name, start, and count paramters are optional.
+ * system limit which at this time is 10,000 which is still a very LARGE
+ * list!) The theme name, start, and count parameters are optional.
+ * The path is mandatory. It can be empty if the root page was transformed
+ * into a list.
  *
  * \param[in,out] ipath  The path to the page being worked on.
  * \param[in] plugin_owner  The plugin owner of the ipath data.
@@ -3290,9 +3292,8 @@ QString list::run_list_item_key(content::path_info_t & list_ipath, content::path
  */
 void list::on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(plugin_owner);
+    NOTUSED(xml);
 
     // a list::... token?
     if(!token.is_namespace("list::"))
@@ -3416,7 +3417,11 @@ void list::on_replace_token(content::path_info_t & ipath, QString const & plugin
             // TODO: use a paging_t object to read the list so we can
             //       append a navigation and handle the page parameter
             //
-            list_item_vector_t items(read_list(list_ipath, start, count));
+            paging_t paging(f_snap, list_ipath);
+            paging.set_start_offset(start + 1);
+            paging.set_maximum_number_of_items(count);
+            paging.process_query_string_info();
+            list_item_vector_t items(paging.read_list());
             snap_child::post_file_t f;
 
             // Load the list body
@@ -3463,7 +3468,7 @@ void list::on_replace_token(content::path_info_t & ipath, QString const & plugin
             }
             QString const item_theme_xsl(QString::fromUtf8(f.get_data()));
 
-            layout::layout *layout_plugin(layout::layout::instance());
+            layout::layout * layout_plugin(layout::layout::instance());
             QDomDocument list_doc(layout_plugin->create_document(list_ipath, list_plugin));
             layout_plugin->create_body(list_doc, list_ipath, list_body_xsl, list_content);
             // TODO: fix this problem (i.e. /products, /feed...)
@@ -3507,7 +3512,7 @@ void list::on_replace_token(content::path_info_t & ipath, QString const & plugin
                 // (opposed to the test when going to the page or generating
                 // the list in the first place)
                 item_ipath.set_parameter("mode", "display");
-                plugin *item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
+                plugin * item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
                 if(!list_error_callback.has_error() && item_plugin)
                 {
                     // put each box in a filter tag so that way we have
@@ -3569,6 +3574,11 @@ void list::on_replace_token(content::path_info_t & ipath, QString const & plugin
                     ++index; // index only counts items added to the output
                 }
             }
+
+            QDomElement navigation_tag(list_doc.createElement("navigation"));
+            body.appendChild(navigation_tag);
+            paging.generate_list_navigation(navigation_tag, f_snap->get_uri(), 5, true, true, true);
+
 //std::cerr << "resulting XML [" << list_doc.toString(-1) << "]\n";
 
             // now theme the list as a whole
