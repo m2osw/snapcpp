@@ -112,7 +112,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/user">
     <param name="content::title" revision="revision">User</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>List of users on your Snap! Website.</p>]]>
+      <![CDATA[<p>List of users on your Snap! Website.</p><div class="user-list">[list::theme("user")]</div>]]>
     </param>
     <link name="permissions::direct::action::administrer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
     <!-- by default you need administration rights to see all the users
@@ -120,6 +120,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
          public if he wants to. -->
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
+    <!-- create a list of users sorted by reversed identifiers -->
+    <!-- reverse order (larger identifier first) -->
+    <param name="list::original_item_key_script" overwrite="yes">
+      <![CDATA[string(9223372036854775807 - int64(segment(path, "/", 1)))]]>
+    </param>
+    <!-- exactly 2 segments, the first being "user" and the second being an integer -->
+    <param name="list::original_test_script" overwrite="yes">
+      <![CDATA[parent(path) == "user" && is_integer(segment(path, "/", 1))]]>
+    </param>
+    <param name="list::selector">children</param>
+    <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
   </content>
   <content path="/user/me">
     <param name="content::title" revision="revision">User Profile</param>
@@ -263,6 +274,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>This page type represents a user page. These pages have a different set of permissions which allows website owners to completely hide their list of registered users.</p>]]>
     </param>
+    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/not-main-page">
     <param name="taxonomy::name">users::user_page</param>

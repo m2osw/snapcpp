@@ -467,20 +467,22 @@ void process::kill_service()
     {
         if( timeout > 0 )
         {
-            SNAP_LOG_INFO() << "process " << f_name << " is still running. Wating " << timeout << " more counts.";
+            SNAP_LOG_INFO("process ")(f_name)(" is still running. Wating ")(timeout)(" more counts.");
         }
+        // Once we have snapcommunicator, the wait could be reduced, although
+        // some backend may take a long time to get out...
         //
-        usleep( 10000 );
+        usleep( 400000 );
         --timeout;
 
         if( timeout == 0 || timeout == -1 )
         {
-            const int signal = (timeout == 0)? SIGTERM: SIGKILL;
-            SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to respond to signal, using -" << signal;
-            const int retval = ::kill( f_pid, signal );
+            int const signal((timeout == 0) ? SIGTERM : SIGKILL);
+            SNAP_LOG_WARNING("process ")(f_name)(", pid=")(f_pid)(", failed to respond to signal, using -")(signal);
+            int const retval(::kill( f_pid, signal ));
             if( retval == -1 )
             {
-                SNAP_LOG_WARNING() << "Unable to kill process " << f_name << ", pid=" << f_pid << "! errno=" << errno;
+                SNAP_LOG_WARNING("Unable to kill process ")(f_name)(", pid=")(f_pid)("! errno=")(errno);
                 break;
             }
             if( timeout == 0 )
@@ -492,7 +494,7 @@ void process::kill_service()
         {
             // stop the loop
             //
-            SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to terminate properly...";
+            SNAP_LOG_WARNING("process ")(f_name)(", pid=")(f_pid)(", failed to terminate properly...");
             break;
         }
     }

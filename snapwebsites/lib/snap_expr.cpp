@@ -2114,7 +2114,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32, value);
     }
 
-    static void call_int64(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_int64(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 1)
         {
@@ -2186,14 +2186,14 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64, value);
     }
 
-    static void call_int8(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_int8(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 1)
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call int8() expected exactly 1");
         }
         int8_t r(0);
-        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        QtCassandra::QCassandraValue const & v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
         case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
@@ -2258,6 +2258,45 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8, value);
     }
 
+    static void call_is_integer(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call is_integer() expected exactly 1");
+        }
+        bool r(false);
+        QtCassandra::QCassandraValue const & v(sub_results[0].get_value());
+        switch(sub_results[0].get_type())
+        {
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
+            break;
+
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
+            r = true;
+            break;
+
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
+            // make sure it is a valid integer
+            v.stringValue().toLongLong(&r, 10);
+            break;
+
+        }
+        QtCassandra::QCassandraValue value;
+        value.setBoolValue(r);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
     static void call_parent(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         if(sub_results.size() != 1)
@@ -2320,7 +2359,7 @@ public:
         }
     }
 
-    static void call_string(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_string(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 1)
         {
@@ -3487,6 +3526,10 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
     { // cast to int8
         "int8",
         expr_node::call_int8
+    },
+    { // check whether parameter is an integer
+        "is_integer",
+        expr_node::call_is_integer
     },
     { // retrieve the parent of a path (remove the last /foo name)
         "parent",
