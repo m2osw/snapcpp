@@ -20,8 +20,9 @@
 #include "../listener/listener.h"
 #include "../messages/messages.h"
 
-#include "log.h"
 #include "dbutils.h"
+#include "log.h"
+#include "not_used.h"
 #include "snap_image.h"
 
 #include <iostream>
@@ -385,22 +386,22 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
 
     // get the key of that attachment, it should be a file md5
     QtCassandra::QCassandraValue attachment_key(revision_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
-    if(attachment_key.nullValue())
+    if(attachment_key.size() != 16)
     {
-        // no key?!
+        // no or invalid key?!
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
     // the field name is the basename of the ipath preceeded by the
     // "content::attachment::data" default name
-    QString cpath(ipath.get_cpath());
+    QString const cpath(ipath.get_cpath());
     int const pos(cpath.lastIndexOf("/"));
     if(pos <= 0)
     {
         // what the heck happened?!
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
-    QString filename(cpath.mid(pos + 1));
+    QString const filename(cpath.mid(pos + 1));
     QString field_name(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA)).arg(filename));
 
     // Does the file exist at this point?
@@ -408,7 +409,30 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
     if(!files_table->exists(attachment_key.binaryValue())
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
-        return virtual_path_t::VIRTUAL_PATH_NOT_AVAILABLE;
+        // often, the original image can be used as is because the
+        // sub-image is just an "optimization"; this has to be asked
+        // by the end user by adding the fallback=ok query string
+        snap_uri const & uri(f_snap->get_uri());
+        if(!uri.has_query_option("fallback")
+        || uri.query_option("fallback") != "ok")
+        {
+            // no fallback
+            return virtual_path_t::VIRTUAL_PATH_NOT_AVAILABLE;
+        }
+
+        // the fallback option is set to "ok", check for the default
+        // field; check the default attachment key
+        field_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
+        if(!files_table->exists(attachment_key.binaryValue())
+        || !files_table->row(attachment_key.binaryValue())->exists(field_name))
+        {
+            return virtual_path_t::VIRTUAL_PATH_NOT_AVAILABLE;
+        }
+
+        // Note: the permissions will prevent this from happening
+        //       if the parent page does not include a field:
+        //         permissions::dynamic
+        //       of 1 or more
     }
 
     // tell the path plugin that we know how to handle this one
@@ -419,10 +443,9 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
 }
 
 
-void images::on_listener_check(snap_uri const& uri, content::path_info_t& page_ipath, QDomDocument doc, QDomElement result)
+void images::on_listener_check(snap_uri const & uri, content::path_info_t & page_ipath, QDomDocument doc, QDomElement result)
 {
-    static_cast<void>(uri);
-    static_cast<void>(doc);
+    NOTUSED(uri);
 
     path::dynamic_plugin_t info;
     switch(check_virtual_path(page_ipath, info))
@@ -454,7 +477,7 @@ void images::on_listener_check(snap_uri const& uri, content::path_info_t& page_i
 }
 
 
-bool images::on_path_execute(content::path_info_t& ipath)
+bool images::on_path_execute(content::path_info_t & ipath)
 {
     // TODO: we probably do not want to check for attachments to send if the
     //       action is not "view"...
@@ -561,10 +584,10 @@ bool images::on_path_execute(content::path_info_t& ipath)
  * \param[in] owner  The plugin owner of the page.
  * \param[in] type  The type of the page.
  */
-void images::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
+void images::on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type)
 {
-    static_cast<void>(owner);
-    static_cast<void>(type);
+    NOTUSED(owner);
+    NOTUSED(type);
 
     //
     // TODO: automate connections between new pages and image transformations
@@ -617,7 +640,7 @@ void images::on_modified_content(content::path_info_t & ipath)
     {
         // here we do not need to loop, if we find at least one link then
         // request the backend to regenerate these different views
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
         QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
 
@@ -1290,7 +1313,7 @@ SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
 }
 
 
-bool images::func_alpha(parameters_t& params)
+bool images::func_alpha(parameters_t & params)
 {
     QString const mode(params.f_params[0].toLower());
     if(mode == "off" || mode == "deactivate")
@@ -1317,7 +1340,7 @@ bool images::func_alpha(parameters_t& params)
 }
 
 
-bool images::func_create(parameters_t& params)
+bool images::func_create(parameters_t & params)
 {
     Magick::Image im;
     params.f_image_stack.push_back(im);
@@ -1325,7 +1348,7 @@ bool images::func_create(parameters_t& params)
 }
 
 
-bool images::func_density(parameters_t& params)
+bool images::func_density(parameters_t & params)
 {
     bool valid(false);
     int const x(params.f_params[0].toInt(&valid));
@@ -1443,14 +1466,14 @@ bool images::func_resize(parameters_t & params)
 }
 
 
-bool images::func_swap(parameters_t& params)
+bool images::func_swap(parameters_t & params)
 {
     std::iter_swap(params.f_image_stack.end() - 1, params.f_image_stack.end() - 2);
     return true;
 }
 
 
-bool images::func_write(parameters_t& params)
+bool images::func_write(parameters_t & params)
 {
     // param 1 is the ipath (key)
     // param 2 is the name used to save the file in the files table

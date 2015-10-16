@@ -24,6 +24,7 @@
 #include "http_strings.h"
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -94,7 +95,7 @@ attachment::~attachment()
  *
  * \param[in] snap  The child handling this request.
  */
-void attachment::on_bootstrap(snap_child *snap)
+void attachment::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -115,7 +116,7 @@ void attachment::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the attachment plugin.
  */
-attachment *attachment::instance()
+attachment * attachment::instance()
 {
     return g_plugin_attachment_factory.instance();
 }
@@ -170,7 +171,7 @@ int64_t attachment::do_update(int64_t last_updated)
  */
 void attachment::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -205,7 +206,8 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t & ipath, path::
 
     // TODO: will other plugins check for their own extension schemes?
     //       (I would imagine that this plugin will support more than
-    //       just the .min and .gz extensions...)
+    //       just the .min.css/js and .gz extensions...)
+    //
     QString const cpath(ipath.get_cpath());
 
     if(cpath.endsWith(".min.css") || cpath.endsWith(".min.css.gz"))
@@ -239,12 +241,12 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t & ipath, path::
  * This entry allows us to return an uncompressed version of the file
  * if it exists.
  *
- * \param[in] ipath  The path being checked.
- * \param[in] plugin_info  The dynamic plugin information.
+ * \param[in,out] ipath  The path being checked.
+ * \param[in,out] plugin_info  The dynamic plugin information.
  *
  * \return true if this was a match.
  */
-bool attachment::check_for_uncompressed_file(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+bool attachment::check_for_uncompressed_file(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     QString cpath(ipath.get_cpath());
     cpath = cpath.left(cpath.length() - 3);
@@ -547,14 +549,14 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool attachment::on_path_execute(content::path_info_t& ipath)
+bool attachment::on_path_execute(content::path_info_t & ipath)
 {
     // TODO: we probably do not want to check for attachments to send if the
     //       action is not "view"...
 
     // attachments should never be saved with a compression extension
     //
-    // HOWEVER, we'd like to offer a way for the system to allow extensions
+    // HOWEVER, we would like to offer a way for the system to allow extensions
     // but if we are here the system already found the page and thus found
     // it with[out] the extension as defined in the database...
     //
@@ -574,7 +576,7 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
         attachment_ipath.set_path(renamed);
         field_name = ipath.get_parameter("attachment_field");
 
-        // the version may have been tweaked too
+        // the version may have been tweaked too?
         QString const version(ipath.get_parameter("attachment_version"));
         if(!version.isEmpty())
         {
@@ -605,7 +607,8 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
         // somehow the file key is not available
         f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
                 QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
-                QString("Could not find field \"%1\" of file \"%2\" (maybe renamed \"%3\").")
+                QString("Could not find field \"%2\" of file \"%3\" (maybe renamed \"%4\").")
+                        .arg(ipath.get_key())
                         .arg(field_name)
                         .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
                         .arg(renamed));
@@ -620,9 +623,11 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
         // somehow the file data is not available
         f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
                 QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
-                QString("Could not find field \"%1\" of file \"%2\".")
-                        .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA))
-                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+                QString("Could not find field \"%2\" of file \"%3\" (maybe renamed \"%4\").")
+                        .arg(ipath.get_key())
+                        .arg(field_name)
+                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
+                        .arg(renamed));
         NOTREACHED();
     }
 

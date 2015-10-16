@@ -1564,7 +1564,7 @@ bool permissions::get_plugin_permissions_impl(permissions * perms, sets_t & sets
         // for a possibly renamed ipath at this level
         QString const user_id(ipath.get_cpath().mid(5));
         QByteArray id_str(user_id.toUtf8());
-        char const *s;
+        char const * s;
         for(s = id_str.data(); *s != '\0'; ++s)
         {
             if(*s < '0' || *s > '9')

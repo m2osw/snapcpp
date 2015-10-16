@@ -649,7 +649,7 @@ void path::add_restore_link_to_signature_for(QString const page_path)
     ipath.set_parameter("action", "restore");
     quiet_error_callback restore_error_callback(f_snap, true);
     verify_permissions(ipath, restore_error_callback);
-    if(restore_error_callback.has_error())
+    if(!restore_error_callback.has_error())
     {
         f_add_restore_link_to_signature.push_back(ipath.get_cpath());
     }
