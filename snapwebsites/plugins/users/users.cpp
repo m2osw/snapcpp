@@ -2849,8 +2849,8 @@ void users::process_replace_password_form()
                     // Also save the digest since it could change en-route
                     row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
 
-                    int64_t const start_time(f_snap->get_start_time());
-                    row->cell(get_name(name_t::SNAP_NAME_USERS_MODIFIED))->setValue(start_time);
+                    int64_t const start_date(f_snap->get_start_date());
+                    row->cell(get_name(name_t::SNAP_NAME_USERS_MODIFIED))->setValue(start_date);
 
                     // Unlink from the password tag too
                     links::links::instance()->delete_link(user_status_info);
@@ -2863,7 +2863,7 @@ void users::process_replace_password_form()
                     //      and ask them when the user request the new password or
                     //      when he comes back in the replace password form
                     f_info->set_object_path("/user/" + f_user_changing_password_key);
-                    f_info->set_login_limit(start_time + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
+                    f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
                     sessions::sessions::instance()->save_session(*f_info, true); // force a new random session number
 
                     http_cookie cookie(f_snap, get_user_cookie_name(), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));

@@ -726,14 +726,21 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             {
                 // 64 bit value (seconds)
                 uint64_t time(c->value().uint64Value());
-                char buf[64];
-                struct tm t;
-                time_t const seconds(time);
-                gmtime_r(&seconds, &t);
-                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                v = display_only
-                  ? QString("%1 (%2)").arg(buf).arg(time)
-                  : QString("%1").arg(buf);
+                if(time == 0)
+                {
+                    v = "time not set (0)";
+                }
+                else
+                {
+                    char buf[64];
+                    struct tm t;
+                    time_t const seconds(time);
+                    gmtime_r(&seconds, &t);
+                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                    v = display_only
+                            ? QString("%1 (%2)").arg(buf).arg(time)
+                            : QString("%1").arg(buf);
+                }
             }
             break;
 
