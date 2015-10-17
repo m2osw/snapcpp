@@ -36,6 +36,7 @@
 #include <syslog.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 
 #include "poison.h"
@@ -1469,6 +1470,31 @@ void server::check_listen_runner()
         break;
 
     }
+
+// TODO:
+// We MUST check for zombies, only here is not a good location (since we
+// want to remove this timer...)
+//
+// We want to look into using the SIGCHLD which will require us to have
+// protections (i.e. a temporary masking of the signal while doing any
+// kind of work) so it will be a bit more work than just adding one
+// connection declaration.
+
+    // capture zombies first
+    snap_child_vector_t::size_type max_children(f_children_running.size());
+    for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
+    {
+        if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
+        {
+            // it's ready, so it can be reused now
+            f_children_waiting.push_back(f_children_running[idx]);
+            f_children_running.erase(f_children_running.begin() + idx);
+
+            // removed one child so decrement index:
+            --idx;
+            --max_children;
+        }
+    }
 }
 
 
@@ -1577,6 +1603,12 @@ listener_impl::listener_impl(server * s, std::string const & addr, int port, int
     : snap_server_connection(addr, port, max_connections, reuse_addr, auto_close)
     , f_server(s)
 {
+    if(get_socket() != -1)
+    {
+        // libevent does not like blocking sockets...
+        int optval(1);
+        ioctl(get_socket(), FIONBIO, &optval);
+    }
 }
 
 
@@ -1838,7 +1870,7 @@ void server::process_connection(int socket)
 {
     snap_child * child;
 
-    // we're handling one more connection, whether it works or
+    // we are handling one more connection, whether it works or
     // not we increase our internal counter
     ++f_connections_count;
 

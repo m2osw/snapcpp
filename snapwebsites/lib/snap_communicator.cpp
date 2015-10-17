@@ -1537,7 +1537,10 @@ bool snap_communicator::add_connection(snap_connection::pointer_t connection)
     //
     // At this time we do not support Edge Triggered events (EV_ET)
     //
-    connection->f_impl->create_event(f_impl->f_event_base.get(), connection);
+    if(!connection->f_impl->f_created)
+    {
+        connection->f_impl->create_event(f_impl->f_event_base.get(), connection);
+    }
     connection->f_impl->attach_event(connection->get_timeout());
 
     f_connections.push_back(connection);
