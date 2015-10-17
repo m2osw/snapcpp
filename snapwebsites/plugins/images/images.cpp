@@ -91,14 +91,99 @@ images::func_t const images::g_commands[] =
         &images::func_alpha
     },
     {
+        "background_color",
+        1, 1, 1,
+        &images::func_background_color
+    },
+    {
+        "blur",
+        0, 2, 1,
+        &images::func_blur
+    },
+    {
+        "border",
+        1, 1, 1,
+        &images::func_border
+    },
+    {
+        "border_color",
+        1, 1, 1,
+        &images::func_border_color
+    },
+    {
+        "charcoal",
+        0, 2, 1,
+        &images::func_charcoal
+    },
+    {
+        "composite",
+        1, 1, 1,
+        &images::func_composite
+    },
+    {
+        "contrast",
+        1, 1, 1,
+        &images::func_contrast
+    },
+    {
         "create",
         0, 0, 0,
         &images::func_create
     },
     {
+        "crop",
+        1, 1, 1,
+        &images::func_crop
+    },
+    {
         "density",
         1, 2, 1,
         &images::func_density
+    },
+    {
+        "emboss",
+        0, 2, 1,
+        &images::func_emboss
+    },
+    {
+        "erase",
+        0, 0, 1,
+        &images::func_erase
+    },
+    {
+        "flip",
+        0, 0, 1,
+        &images::func_flip
+    },
+    {
+        "flop",
+        0, 0, 1,
+        &images::func_flop
+    },
+    {
+        "matte_color",
+        1, 1, 1,
+        &images::func_matte_color
+    },
+    {
+        "modulate",
+        3, 3, 1,
+        &images::func_modulate
+    },
+    {
+        "negate",
+        0, 1, 1,
+        &images::func_negate
+    },
+    {
+        "normalize",
+        0, 0, 1,
+        &images::func_normalize
+    },
+    {
+        "oil_paint",
+        1, 1, 1,
+        &images::func_oil_paint
     },
     {
         "on_error",
@@ -116,14 +201,54 @@ images::func_t const images::g_commands[] =
         &images::func_read
     },
     {
+        "reduce_noise",
+        0, 1, 1,
+        &images::func_reduce_noise
+    },
+    {
         "resize",
-        1, 2, 1,
+        1, 1, 1,
         &images::func_resize
+    },
+    {
+        "rotate",
+        1, 1, 1,
+        &images::func_rotate
+    },
+    {
+        "shade",
+        3, 3, 1,
+        &images::func_shade
+    },
+    {
+        "shadow",
+        4, 4, 1,
+        &images::func_shadow
+    },
+    {
+        "sharpen",
+        2, 2, 1,
+        &images::func_sharpen
+    },
+    {
+        "shear",
+        2, 2, 1,
+        &images::func_shear
+    },
+    {
+        "solarize",
+        1, 1, 1,
+        &images::func_solarize
     },
     {
         "swap",
         0, 0, 2,
         &images::func_swap
+    },
+    {
+        "trim",
+        0, 0, 1,
+        &images::func_trim
     },
     {
         "write",
@@ -1250,7 +1375,7 @@ Magick::Image images::apply_image_script(QString const & script, content::path_i
 
             // transform variables (if any) to actual paths
 // for now keep a log to see what is happening
-SNAP_LOG_INFO() << " ++ [" << params.f_command << "]";
+SNAP_LOG_INFO(" ++ [")(params.f_command)("]");
             for(int k(0); k < params.f_params.size(); ++k)
             {
                 int start_pos(0);
@@ -1313,6 +1438,47 @@ SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
 }
 
 
+bool images::get_color(QString str, Magick::Color & color)
+{
+    // TODO: add support for rgb(), rgba(), hsl(), hsla(), yuv(), yuva()
+    if(str[0] == '#')
+    {
+        // '#' was specified, remove it before parsing the color
+        str = str.mid(1);
+    }
+
+    bool valid(false);
+    int const int_color(str.toInt(&valid, 16));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid RGB Color",
+                QString("Color \"%1\" is not valid.").arg(str),
+                "Specified color is not valid.",
+                false);
+        return false;
+    }
+
+    // internally we use an RGB color because we cannot be sure
+    // what the Quantum is (we could also pass the color directly
+    // to the constructor, but that would certainly prevent us
+    // from supporting a growing number of color definitions.)
+    //
+    Magick::ColorRGB rgb;
+
+    rgb.red  (((int_color >> 16) & 255) / 255.0);
+    rgb.green(((int_color >>  8) & 255) / 255.0);
+    rgb.blue (((int_color >>  0) & 255) / 255.0);
+
+    // also make sure it is 100% opaque
+    rgb.alphaQuantum(0.0);
+
+    color = rgb;
+
+    return true;
+}
+
+
 bool images::func_alpha(parameters_t & params)
 {
     QString const mode(params.f_params[0].toLower());
@@ -1340,10 +1506,187 @@ bool images::func_alpha(parameters_t & params)
 }
 
 
+bool images::func_background_color(parameters_t & params)
+{
+    // matte color is HTML like RGB (i.e. #123456)
+    //
+    Magick::Color color;
+    if(!get_color(params.f_params[0], color))
+    {
+        return false;
+    }
+    params.f_image_stack.back().backgroundColor(color);
+
+    return true;
+}
+
+
+bool images::func_blur(parameters_t & params)
+{
+    double radius(1.0);
+    double sigma(0.5);
+    bool valid(false);
+
+    size_t const size(params.f_params.size());
+    if(size >= 1)
+    {
+        radius = params.f_params[0].toDouble(&valid);
+        if(!valid
+        || radius < 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Radius",
+                    QString("blur() expects a positive double or null number, \"%1\" is not valid.").arg(params.f_params[0]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+    if(size >= 2)
+    {
+        sigma = params.f_params[1].toDouble(&valid);
+        if(!valid
+        || sigma <= 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Sigma",
+                    QString("blur() expects a positive double number, \"%1\" is not valid.").arg(params.f_params[1]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+
+    params.f_image_stack.back().blur(radius, sigma);
+    return true;
+}
+
+
+bool images::func_border(parameters_t & params)
+{
+    Magick::Geometry geometry(params.f_params[0].toUtf8().data());
+    params.f_image_stack.back().border(geometry);
+    return true;
+}
+
+
+bool images::func_border_color(parameters_t & params)
+{
+    // matte color is HTML like RGB (i.e. #123456)
+    //
+    Magick::Color color;
+    if(!get_color(params.f_params[0], color))
+    {
+        return false;
+    }
+    params.f_image_stack.back().borderColor(color);
+
+    return true;
+}
+
+
+bool images::func_charcoal(parameters_t & params)
+{
+    double radius(1.0);
+    double sigma(0.5);
+    bool valid(false);
+
+    size_t const size(params.f_params.size());
+    if(size >= 1)
+    {
+        radius = params.f_params[0].toDouble(&valid);
+        if(!valid
+        || radius < 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Radius",
+                    QString("charcoal() expects a positive double or null number, \"%1\" is not valid.").arg(params.f_params[0]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+    if(size >= 2)
+    {
+        sigma = params.f_params[1].toDouble(&valid);
+        if(!valid
+        || sigma <= 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Sigma",
+                    QString("charcoal() expects a positive double number, \"%1\" is not valid.").arg(params.f_params[1]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+
+    params.f_image_stack.back().charcoal(radius, sigma);
+    return true;
+}
+
+
+bool images::func_composite(parameters_t & params)
+{
+    QString const composite_str(params.f_params[0].toLower());
+    Magick::CompositeOperator composite_operator(Magick::UndefinedCompositeOp);
+
+    // TODO: add all composite operators
+    // file:///usr/share/doc/imagemagick/www/Magick++/Enumerations.html#CompositeOperator
+    //
+
+    if(composite_str == "over")
+    {
+        composite_operator = Magick::OverCompositeOp;
+    }
+    if(composite_str == "copy")
+    {
+        composite_operator = Magick::CopyCompositeOp;
+    }
+    else
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Parameters",
+                QString("Unknown composite parameter \"%1\".").arg(composite_str),
+                QString("Invalid parameters in \"%1\"").arg(params.f_command),
+                false);
+        return false;
+    }
+    params.f_image_stack.back().compose(composite_operator);
+    return true;
+}
+
+
+bool images::func_contrast(parameters_t & params)
+{
+    bool valid(false);
+    int const contrast(params.f_params[0].toInt(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Parameters",
+                QString("contrast() expects an integer as parameter \"%1\".").arg(params.f_params[0]),
+                QString("Invalid parameters in \"%1\"").arg(params.f_command),
+                false);
+        return false;
+    }
+    params.f_image_stack.back().contrast(contrast);
+    return true;
+}
+
+
 bool images::func_create(parameters_t & params)
 {
     Magick::Image im;
     params.f_image_stack.push_back(im);
+    return true;
+}
+
+
+bool images::func_crop(parameters_t & params)
+{
+    Magick::Geometry geometry(params.f_params[0].toUtf8().data());
+    params.f_image_stack.back().crop(geometry);
     return true;
 }
 
@@ -1374,6 +1717,173 @@ bool images::func_density(parameters_t & params)
         return false;
     }
     params.f_image_stack.back().density(Magick::Geometry(x, y));
+    return true;
+}
+
+
+bool images::func_emboss(parameters_t & params)
+{
+    double radius(1.0);
+    double sigma(0.5);
+    bool valid(false);
+
+    size_t const size(params.f_params.size());
+    if(size >= 1)
+    {
+        radius = params.f_params[0].toDouble(&valid);
+        if(!valid
+        || radius < 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Radius",
+                    QString("emboss() expects a positive or null double number, \"%1\" is not valid.").arg(params.f_params[0]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+    if(size >= 2)
+    {
+        sigma = params.f_params[1].toDouble(&valid);
+        if(!valid
+        || sigma <= 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Sigma",
+                    QString("emboss() expects a positive double number, \"%1\" is not valid.").arg(params.f_params[1]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+
+    params.f_image_stack.back().emboss(radius, sigma);
+    return true;
+}
+
+
+bool images::func_erase(parameters_t & params)
+{
+    params.f_image_stack.back().erase();
+    return true;
+}
+
+
+bool images::func_flip(parameters_t & params)
+{
+    params.f_image_stack.back().flip();
+    return true;
+}
+
+
+bool images::func_flop(parameters_t & params)
+{
+    params.f_image_stack.back().flop();
+    return true;
+}
+
+
+bool images::func_matte_color(parameters_t & params)
+{
+    // matte color is HTML like RGB (i.e. #123456)
+    //
+    Magick::Color color;
+    if(!get_color(params.f_params[1], color))
+    {
+        return false;
+    }
+    params.f_image_stack.back().matteColor(color);
+
+    return true;
+}
+
+
+bool images::func_modulate(parameters_t & params)
+{
+    bool valid(false);
+
+    double const brightness(params.f_params[0].toDouble(&valid));
+    if(!valid
+    || brightness < 0.0
+    || brightness > 2.0)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Brightness",
+                QString("modulate() expects a double number between 0.0 and 2.0, \"%1\" is not valid.").arg(params.f_params[0]),
+                "Somehow the specified page has no image",
+                false);
+        return false;
+    }
+
+    double const saturation(params.f_params[1].toDouble(&valid));
+    if(!valid
+    || saturation < 0.0
+    || saturation > 2.0)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Saturation",
+                QString("modulate() expects a double number between 0.0 and 2.0, \"%1\" is not valid.").arg(params.f_params[1]),
+                "Somehow the specified page has no image",
+                false);
+        return false;
+    }
+
+    double const hue(params.f_params[2].toDouble(&valid));
+    if(!valid
+    || hue < 0.0
+    || hue > 2.0)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Hue",
+                QString("modulate() expects a double number between 0.0 and 2.0, \"%1\" is not valid.").arg(params.f_params[2]),
+                "Somehow the specified page has no image",
+                false);
+        return false;
+    }
+
+    // do not ask... ImageMagick likes percent values as values
+    // between 0 to 100...
+    //
+    params.f_image_stack.back().modulate(brightness * 100.0, saturation * 100.0, hue * 100.0);
+    return true;
+}
+
+
+bool images::func_negate(parameters_t & params)
+{
+    bool grayscale(false);
+    if(params.f_params.size() > 0)
+    {
+        grayscale = params.f_params[0] == "true";
+    }
+
+    params.f_image_stack.back().negate(grayscale);
+    return true;
+}
+
+
+bool images::func_normalize(parameters_t & params)
+{
+    params.f_image_stack.back().normalize();
+    return true;
+}
+
+
+bool images::func_oil_paint(parameters_t & params)
+{
+    bool valid(false);
+    double radius(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Radius",
+                QString("oil_paint() expects a double number representing a radius, \"%1\" is not valid.").arg(params.f_params[0]),
+                "Somehow the specified page has no image",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().oilPaint(radius);
     return true;
 }
 
@@ -1449,9 +1959,35 @@ bool images::func_read(parameters_t & params)
         messages::messages msg;
         msg.set_error("Invalid Image File",
                 QString("Image in \"%1\" could not be read.").arg(ipath.get_revision_key()),
-                "Somehow loading this image file failed with an exception.",
+                QString("Somehow loading this image file failed with an exception: %1").arg(e.what()),
                 false);
         return false;
+    }
+
+    return true;
+}
+
+
+bool images::func_reduce_noise(parameters_t & params)
+{
+    if(params.f_params.size() > 0)
+    {
+        bool valid(false);
+        double order(params.f_params[0].toDouble(&valid));
+        if(!valid)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Order",
+                    QString("reduce_noise() expects a double number representing an order, \"%1\" is not valid.").arg(params.f_params[0]),
+                    "The parameter is not valid",
+                    false);
+            return false;
+        }
+        params.f_image_stack.back().reduceNoise(order);
+    }
+    else
+    {
+        params.f_image_stack.back().reduceNoise();
     }
 
     return true;
@@ -1466,9 +2002,216 @@ bool images::func_resize(parameters_t & params)
 }
 
 
+bool images::func_rotate(parameters_t & params)
+{
+    bool valid(false);
+    double const angle(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Angle",
+                QString("rotate() expects a double number representing an angle, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+    params.f_image_stack.back().rotate(angle);
+
+    return true;
+}
+
+
+bool images::func_shade(parameters_t & params)
+{
+    bool valid(false);
+
+    double const azimuth(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Azimuth",
+                QString("shade() expects a double number representing the azimuth, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    double const elevation(params.f_params[1].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Elevation",
+                QString("shade() expects a double number representing the elevation, \"%1\" is not valid.").arg(params.f_params[1]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    bool const color_shading(params.f_params[2] == "true");
+
+    params.f_image_stack.back().shade(azimuth, elevation, color_shading);
+
+    return true;
+}
+
+
+bool images::func_shadow(parameters_t & params)
+{
+    bool valid(false);
+
+    double const opacity(params.f_params[0].toDouble(&valid));
+    if(!valid
+    || opacity < 0.0)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Opacity",
+                QString("shadow() expects a positive or null double number representing the opacity, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    double const sigma(params.f_params[1].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Sigma",
+                QString("shadow() expects a double number representing sigma, \"%1\" is not valid.").arg(params.f_params[1]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    ssize_t const x(params.f_params[2].toInt(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Horizontal Position",
+                QString("shadow() expects an integer representing the horizontal position, \"%1\" is not valid.").arg(params.f_params[2]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    ssize_t const y(params.f_params[3].toInt(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Vertical Position",
+                QString("shadow() expects an integer representing the vertical position, \"%1\" is not valid.").arg(params.f_params[3]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    // The shadow() function generates a shadow from an existing image
+    // but it does not do the compositing work; also you want to set
+    // the background color to black (generally) first because by default
+    // your shadow will be white...
+    //
+    Magick::Image im(params.f_image_stack.back());
+    params.f_image_stack.back().shadow(opacity * 100.0, sigma, x, y);
+    params.f_image_stack.back().composite(im, x >= 0 ? 0 : -x, y >= 0 ? 0 : -y, Magick::OverCompositeOp);
+
+    return true;
+}
+
+
+bool images::func_sharpen(parameters_t & params)
+{
+    bool valid(false);
+
+    double const radius(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Radius",
+                QString("sharpen() expects a double number representing the radius, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    double const sigma(params.f_params[1].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Elevation",
+                QString("sharpen() expects a double number representing sigma, \"%1\" is not valid.").arg(params.f_params[1]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().sharpen(radius, sigma);
+
+    return true;
+}
+
+
+bool images::func_shear(parameters_t & params)
+{
+    bool valid(false);
+
+    double const x(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Horizontal Shear",
+                QString("shear() expects a double number representing the horizontal shear, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    double const y(params.f_params[1].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Vertizontal Shear",
+                QString("shear() expects a double number representing the vertizontal shear, \"%1\" is not valid.").arg(params.f_params[1]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().shear(x, y);
+
+    return true;
+}
+
+
+bool images::func_solarize(parameters_t & params)
+{
+    bool valid(false);
+
+    double const factor(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Factor",
+                QString("solirize() expects a double number representing the factor, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().solarize(factor);
+
+    return true;
+}
+
+
 bool images::func_swap(parameters_t & params)
 {
     std::iter_swap(params.f_image_stack.end() - 1, params.f_image_stack.end() - 2);
+    return true;
+}
+
+
+bool images::func_trim(parameters_t & params)
+{
+    params.f_image_stack.back().trim();
     return true;
 }
 

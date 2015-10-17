@@ -40,7 +40,7 @@ enum class name_t
     SNAP_NAME_IMAGES_SCRIPT,
     SNAP_NAME_IMAGES_SIGNAL_NAME
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class images_exception : public snap_exception
@@ -84,7 +84,7 @@ public:
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
 
-    void                on_bootstrap(snap_child *snap);
+    void                on_bootstrap(snap_child * snap);
     void                on_register_backend_action(server::backend_action_map_t& actions);
     void                on_versions_libraries(filter::filter::token_info_t & token);
     virtual char const *get_signal_name(QString const & action) const;
@@ -125,15 +125,41 @@ private:
     void                content_update(int64_t variables_timestamp);
     int64_t             transform_images();
     bool                do_image_transformations(QString const & image_key);
+    bool                get_color(QString str, Magick::Color & color);
 
     bool                func_alpha(parameters_t & params);
+    bool                func_background_color(parameters_t & params);
+    bool                func_blur(parameters_t & params);
+    bool                func_border(parameters_t & params);
+    bool                func_border_color(parameters_t & params);
+    bool                func_charcoal(parameters_t & params);
+    bool                func_composite(parameters_t & params);
+    bool                func_contrast(parameters_t & params);
     bool                func_create(parameters_t & params);
+    bool                func_crop(parameters_t & params);
     bool                func_density(parameters_t & params);
+    bool                func_emboss(parameters_t & params);
+    bool                func_erase(parameters_t & params);
+    bool                func_flip(parameters_t & params);
+    bool                func_flop(parameters_t & params);
+    bool                func_matte_color(parameters_t & params);
+    bool                func_modulate(parameters_t & params);
+    bool                func_negate(parameters_t & params);
+    bool                func_normalize(parameters_t & params);
+    bool                func_oil_paint(parameters_t & params);
     bool                func_on_error(parameters_t & params);
     bool                func_pop(parameters_t & params);
     bool                func_read(parameters_t & params);
+    bool                func_reduce_noise(parameters_t & params);
     bool                func_resize(parameters_t & params);
+    bool                func_rotate(parameters_t & params);
+    bool                func_shade(parameters_t & params);
+    bool                func_shadow(parameters_t & params);
+    bool                func_sharpen(parameters_t & params);
+    bool                func_shear(parameters_t & params);
+    bool                func_solarize(parameters_t & params);
     bool                func_swap(parameters_t & params);
+    bool                func_trim(parameters_t & params);
     bool                func_write(parameters_t & params);
 
     zpsnap_child_t                  f_snap;
