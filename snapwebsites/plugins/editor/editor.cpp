@@ -27,6 +27,7 @@
 #include "log.h"
 #include "mkgmtime.h"
 #include "not_reached.h"
+#include "not_used.h"
 #include "qdomhelpers.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
@@ -1388,12 +1389,14 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
     {
         value_info.set_type_name("HTML");
 
+        QString value(value_info.get_data());
+        value = verify_html_validity(value);
+
         // like a string, but convert inline images too
         //
         // TODO: verify that the HTML code is indeed valid HTML
         //       (valid XML like code and all tags are known)
         //
-        QString value(value_info.get_data());
         parse_out_inline_img(value_info.get_ipath(), value, value_info.get_widget());
         value_info.result().setStringValue(value);
         value_info.set_status(string_to_value_info_t::status_t::DONE);
@@ -4191,18 +4194,20 @@ bool editor::replace_uri_token_impl(editor_uri_token& token_info)
  */
 bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(secret_row);
+    NOTUSED(ipath);
+    NOTUSED(secret_row);
 
     if(f_snap->postenv_exists("title"))
     {
-        QString const title(f_snap->postenv("title"));
+        QString title(f_snap->postenv("title"));
+        title = verify_html_validity(title);
         // TODO: XSS filter title
         revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
     }
     if(f_snap->postenv_exists("body"))
     {
         QString body(f_snap->postenv("body"));
+        body = verify_html_validity(body);
         // TODO: find a way to detect whether images are allowed in this
         //       field and if not make sure that if we find some err
         //
@@ -4220,6 +4225,46 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
 }
 
 
+/** \brief Verify HTML data and make sure it is valid XML.
+ *
+ * This function takes a string representing HTML that comes from a client.
+ * The string may not represent valid XML data so here we change a few tags
+ * so they work as expected.
+ *
+ * Since we expect the data to come from a decent browser and user, we do
+ * not check everything in detail. We just make fix the few tags we know
+ * are at times sent to us improperly.
+ *
+ * \todo
+ * Should we make this a filter function instead?
+ *
+ * \param[in] body  The HTML to fix.
+ *
+ * \return The fixed HTML.
+ */
+QString editor::verify_html_validity(QString body)
+{
+    // any starting spaces
+    QRegExp const re_start("^(<br *\\/?>| |\\t|\\n|\\r|\\v|\\f|&nbsp;|&#160;|&#xA0;)+");
+    body.replace(re_start, "");
+
+    // any ending spaces
+    QRegExp const re_end("(<br *\\/?>| |\\t|\\n|\\r|\\v|\\f|&nbsp;|&#160;|&#xA0;)+$");
+    body.replace(re_end, "");
+
+    // replace <br> with <br/>
+    QRegExp const br_without_slash("<br *>");
+    body.replace(br_without_slash, "<br/>");
+
+    // replace <hr> with <hr/>
+    QRegExp const hr_without_slash("<hr *>");
+    body.replace(hr_without_slash, "<hr/>");
+
+    // return the result
+    return body;
+}
+
+
 /** \brief Transform inline images into links.
  *
  * This function takes a value that was posted by the user of an editor
@@ -4231,7 +4276,7 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
  * \param[in,out] body  The HTML to be parsed and "fixed."
  * \param[in] widget  The tag representing the widget being saved.
  */
-void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body, QDomElement widget)
+void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, QDomElement widget)
 {
     QDomDocument doc;
     //doc.setContent("<?xml version='1.1' encoding='utf-8'?><element>" + body + "</element>");

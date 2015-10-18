@@ -187,7 +187,7 @@ using namespace QtCassandra;
 class snapdb
 {
 public:
-    snapdb(int argc, char *argv[]);
+    snapdb(int argc, char * argv[]);
 
     void usage(advgetopt::getopt::status_t status);
     void info();
@@ -241,7 +241,7 @@ bool snapdb::confirm_drop_check() const
 }
 
 
-snapdb::snapdb(int argc, char *argv[])
+snapdb::snapdb(int argc, char * argv[])
     : f_cassandra( QCassandra::create() )
     , f_host("localhost") // default
     , f_port(9160) //default

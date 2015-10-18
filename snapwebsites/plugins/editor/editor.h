@@ -279,6 +279,7 @@ private:
     void                editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access * server_access_plugin);
     void                editor_create_new_branch(content::path_info_t & ipath);
     bool                save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget);
+    QString             verify_html_validity(QString body);
 
     zpsnap_child_t          f_snap;
     QDomDocument            f_editor_form;          // XSL from editor-form.xsl + other plugin extensions
