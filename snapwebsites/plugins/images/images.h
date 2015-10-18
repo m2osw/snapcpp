@@ -142,6 +142,7 @@ private:
     bool                func_erase(parameters_t & params);
     bool                func_flip(parameters_t & params);
     bool                func_flop(parameters_t & params);
+    bool                func_hash(parameters_t & params);
     bool                func_matte_color(parameters_t & params);
     bool                func_modulate(parameters_t & params);
     bool                func_negate(parameters_t & params);

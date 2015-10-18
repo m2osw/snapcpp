@@ -161,6 +161,11 @@ images::func_t const images::g_commands[] =
         &images::func_flop
     },
     {
+        "hash",
+        5, 5, 1,
+        &images::func_hash
+    },
+    {
         "matte_color",
         1, 1, 1,
         &images::func_matte_color
@@ -1783,12 +1788,145 @@ bool images::func_flop(parameters_t & params)
 }
 
 
+bool images::func_hash(parameters_t & params)
+{
+    bool valid(false);
+
+    double const start_offset(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for start offset, \"%1\" is not valid.").arg(params.f_params[0]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    double const thickness(params.f_params[1].toDouble(&valid));
+    if(!valid
+    || thickness <= 0.1)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for thickness, \"%1\" is not valid.").arg(params.f_params[1]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    double const space(params.f_params[2].toDouble(&valid));
+    if(!valid
+    || space <= 0.1)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for space, \"%1\" is not valid.").arg(params.f_params[2]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    double angle(params.f_params[3].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for space, \"%1\" is not valid.").arg(params.f_params[3]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    Magick::Color color;
+    if(!get_color(params.f_params[4], color))
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for space, \"%1\" is not valid.").arg(params.f_params[4]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().strokeColor(color);
+    params.f_image_stack.back().strokeWidth(thickness);
+
+    // if the hash is perfectly horizontal or vertical, then we only need
+    // one loop again the "opposite edge"; here we have two conditional
+    // loops to test those two special cases:
+    //
+    double x1(0.0);
+    double y1(0.0);
+    double x2(0.0);
+    double y2(0.0);
+
+    size_t width(params.f_image_stack.back().columns());
+    size_t height(params.f_image_stack.back().rows());
+
+    angle = fmod(angle, 360.0) * M_PI / 180.0;
+
+    double const increment(thickness + space);
+
+    // TODO: we want to have an integer as an index and multiply
+    //       the thickness + start position instead of incremental
+    //       position as doing now...
+    //
+    //           pos = start [+ offset] + increment * index
+    //
+    //       (the offset would be the moving backward by gap as we do
+    //       in the last case)
+    //
+    if(sin(fabs(angle)) < 0.000001)
+    {
+        // "perfectly" horizontal lines
+        // we could use splice unless some of the numbers were not integers...
+        x1 = 0.0;
+        x2 = width;
+        for(y1 = start_offset + thickness / 2.0; y1 < width + thickness; y1 += increment)
+        {
+            y2 = y1;
+            params.f_image_stack.back().draw(Magick::DrawableLine(x1, y1, x2, y2));
+        }
+    }
+    else if(cos(fabs(angle)) < 0.000001)
+    {
+        // "perfectly" vertical lines
+        y1 = 0.0;
+        y2 = height;
+        for(x1 = start_offset + thickness / 2.0; x1 < width; x1 += increment)
+        {
+            x2 = x1;
+            params.f_image_stack.back().draw(Magick::DrawableLine(x1, y1, x2, y2));
+        }
+    }
+    else
+    {
+        // we can go from left to right in the image and draw lines
+        x1 = start_offset + thickness / 2.0;
+        y1 = 0.0;
+        y2 = height;
+        double const gap(height / tan(angle));
+        if(gap > 0)
+        {
+            x1 -= ceil(gap / increment) * increment;
+        }
+        for(x2 = x1 + height / tan(angle); x1 < width + thickness || x2 < width + thickness; x1 += increment, x2 = x1 + gap)
+        {
+            params.f_image_stack.back().draw(Magick::DrawableLine(x1, y1, x2, y2));
+        }
+    }
+
+    return true;
+}
+
+
 bool images::func_matte_color(parameters_t & params)
 {
     // matte color is HTML like RGB (i.e. #123456)
     //
     Magick::Color color;
-    if(!get_color(params.f_params[1], color))
+    if(!get_color(params.f_params[0], color))
     {
         return false;
     }
