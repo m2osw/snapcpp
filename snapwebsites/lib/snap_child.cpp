@@ -5226,31 +5226,91 @@ void snap_child::page_redirect(QString const & path, http_code_t http_code, QStr
                     .arg(static_cast<int>(http_code))
                     .arg(http_name), HEADER_MODE_REDIRECT);
 
-    // TODO the URI MUST be encoded
-    set_header("Location", uri.get_uri(), HEADER_MODE_REDIRECT);
+    snap_string_list const show_redirects(server->get_parameter("show_redirects").split(","));
+
+    if(!show_redirects.contains("refresh-only"))
+    {
+        // the get_uri() returns an HTTP encoded string
+        set_header("Location", uri.get_uri(), HEADER_MODE_REDIRECT);
+    }
 
     // also the default is already text/html we force it again in case this
     // function is called after someone changed this header
     set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
 
-    // compute the body ahead so we can get its size
-    // (should we support getting the content of a page? since 99.9999% of
+    // compute the body
+    // (TBD: should we support getting the content of a page? since 99.9999% of
     // the time this content is ignored, I would say no.)
     //
-    // TODO: we may want to us a DOM because that way all parameters are
-    //       automatically checked for validity for the place where they
-    //       are inserted!
-    QString const body(QString("<html><head>"
-            "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
-            "<title>%2</title>"
-            "<meta http-equiv=\"Refresh\" content=\"0; url=%4\"/>"
-            "<meta name=\"ROBOTS\" content=\"NOINDEX\"/>" // no need for the NOFOLLOW on this one
-            "</head><body><h1>%2</h1><p>%3. New location: "
-            "<a href=\"%4\">%4</a>.</p></body></html>")
-        .arg(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
-        .arg(reason_brief)
-        .arg(reason)
-        .arg(uri.get_uri()));
+    QString body;
+    {
+        QDomDocument doc;
+        // html
+        QDomElement html(doc.createElement("html"));
+        doc.appendChild(html);
+        // html/head
+        QDomElement head(doc.createElement("head"));
+        html.appendChild(head);
+        // html/head/meta[@http-equiv=...][@content=...]
+        QDomElement meta_locale(doc.createElement("meta"));
+        head.appendChild(meta_locale);
+        meta_locale.setAttribute("http-equiv", get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER));
+        meta_locale.setAttribute("content", "text/html; charset=utf-8");
+        // html/head/title/...
+        QDomElement title(doc.createElement("title"));
+        head.appendChild(title);
+        QDomText title_text(doc.createTextNode(reason_brief));
+        title.appendChild(title_text);
+        // html/head/meta[@http-equiv=...][@content=...]
+        if(show_redirects.contains("refresh-only")
+        || !show_redirects.contains("no-refresh"))
+        {
+            QDomElement meta_refresh(doc.createElement("meta"));
+            head.appendChild(meta_refresh);
+            meta_refresh.setAttribute("http-equiv", "Refresh");
+            int timeout(0);
+            if(show_redirects.contains("one-minute"))
+            {
+                timeout = 60;
+            }
+            meta_refresh.setAttribute("content", QString("%1; url=%2").arg(timeout).arg(uri.get_uri()));
+        }
+        // html/head/meta[@http-equiv=...][@content=...]
+        QDomElement meta_robots(doc.createElement("meta"));
+        head.appendChild(meta_robots);
+        meta_robots.setAttribute("name", "ROBOTS");
+        meta_robots.setAttribute("content", "NOINDEX");
+        // html/body
+        QDomElement body_tag(doc.createElement("body"));
+        html.appendChild(body_tag);
+
+        // include an actual body?
+        if(show_redirects.contains("include-body"))
+        {
+            // html/body/h1
+            QDomElement h1(doc.createElement("h1"));
+            body_tag.appendChild(h1);
+            QDomText h1_text(doc.createTextNode(reason_brief));
+            h1.appendChild(h1_text);
+            // html/body/p
+            QDomElement p(doc.createElement("p"));
+            body_tag.appendChild(p);
+            QDomText p_text1(doc.createTextNode(QString("%1 New location: ").arg(reason)));
+            p.appendChild(p_text1);
+            // html/body/a
+            QDomElement a(doc.createElement("a"));
+            a.setAttribute("href", uri.get_uri());
+            p.appendChild(a);
+            QDomText a_text(doc.createTextNode(uri.get_uri()));
+            a.appendChild(a_text);
+            // html/body/p (text after anchor)
+            QDomText p_text2(doc.createTextNode("."));
+            p.appendChild(p_text2);
+        }
+
+        // save the result
+        body = doc.toString(-1);
+    }
 
     output_result(HEADER_MODE_REDIRECT, body.toUtf8());
 

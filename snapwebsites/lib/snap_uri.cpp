@@ -492,6 +492,9 @@ QString const& snap_uri::get_original_uri() const
  * know anything about them.) So you may want to consider using the
  * snap_uri_rules::process_uri() function instead.
  *
+ * \note
+ * The returned URI is already encoded as required by HTTP and such.
+ *
  * \param[in] use_hash_bang  When this flag is set to true the URI is returned
  * as a hash bang (i.e. domain/path becomes domain/#!path).
  *
@@ -528,7 +531,7 @@ QString snap_uri::get_uri(bool use_hash_bang) const
     uri += "/";
 
     // path if no hash bang
-    QString p(path());
+    QString const p(path());
     if(!use_hash_bang && p.length() > 0)
     {
         // avoid a double slash if possible
