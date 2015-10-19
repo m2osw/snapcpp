@@ -3823,6 +3823,25 @@ void snap_child::setup_uri()
     QString extension;
     if(path != "." && path != "..")
     {
+        // TODO: make the size (2048) a variable? (parameter in
+        //       snapserver.conf)
+        //
+        // TODO: maybe we should redirect instead of dying in this case?
+        //
+        // I'm not totally sure this test is really necessary,
+        // but it probably won't hurt for a while (Drupal was
+        // limiting to 128 in the database and that was way
+        // too small, but 2048 is the longest you can use
+        // with Internet Explorer)
+        //
+        if(path.length() > 2048)
+        {
+            // See SNAP-99 for more info about this limit
+            die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                         "The path of this request is too long.",
+                         "We accept paths up to 2048 characters.");
+            NOTREACHED();
+        }
         f_uri.set_path(path);
         int limit(path.lastIndexOf('/'));
         if(limit == -1)

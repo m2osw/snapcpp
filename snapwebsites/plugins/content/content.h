@@ -127,7 +127,7 @@ enum class name_t
     SNAP_NAME_CONTENT_UPDATED,
     SNAP_NAME_CONTENT_VARIABLE_REVISION
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class content_exception : public snap_exception
@@ -330,6 +330,7 @@ public:
         status_t const              f_end;
     };
 
+    typedef std::shared_ptr<path_info_t>            pointer_t;
     typedef std::vector<path_info_t *>              vector_path_info_t;
     typedef std::map<std::string, path_info_t *>    map_path_info_t;
 
