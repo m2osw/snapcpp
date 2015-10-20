@@ -781,11 +781,11 @@ void attachment::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells
 }
 
 
-void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& path)
+void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path)
 {
     struct default_error_t
     {
-        default_error_t(snap_child *snap, snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& path)
+        default_error_t(snap_child * snap, snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path)
             : f_snap(snap)
             , f_err_code(err_code)
             , f_err_name(err_name)
@@ -794,7 +794,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         {
         }
 
-        void emit_error(QString const& more_details)
+        void emit_error(QString const & more_details)
         {
             // log the extract details, we do not need to re-log the error
             // info which the path plugin has already done
@@ -803,38 +803,21 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
                 SNAP_LOG_FATAL("attachment::on_handle_error_by_mime_type(): ")(more_details);
             }
 
-            // force header to text/html anywa
+            // force header to text/html anyway
             f_snap->set_header(get_name(::snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", snap_child::HEADER_MODE_EVERYWHERE);
 
-            // get signature, if we are here, we have Cassandra so directly
-            // get that value
-            QString const site_key(f_snap->get_site_key());
-            QtCassandra::QCassandraValue site_name(f_snap->get_site_parameter(snap::get_name(::snap::name_t::SNAP_NAME_CORE_SITE_NAME)));
-            QString signature(QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue()));
-            f_snap->improve_signature(f_path, signature);
+            // generate the body
+            QString const html(f_snap->error_body(f_err_code, f_err_name, f_err_description));
 
-            // same error as in the snap_child::die() function
-            // (although with time it will certainly change...)
-            QString const html(QString("<html><head>"
-                            "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
-                            "<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\"/>"
-                            "<title>Snap Server Error</title>"
-                            "</head>"
-                            "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
-                    .arg(snap::get_name(::snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
-                    .arg(static_cast<int>(f_err_code))
-                    .arg(f_err_name)
-                    .arg(f_err_description)
-                    .arg(signature));
             f_snap->output_result(snap_child::HEADER_MODE_ERROR, html.toUtf8());
         }
 
     private:
         zpsnap_child_t          f_snap;
         snap_child::http_code_t f_err_code;
-        QString const&          f_err_name;
-        QString const&          f_err_description;
-        QString const&          f_path;
+        QString const &         f_err_name;
+        QString const &         f_err_description;
+        QString const &         f_path;
     } default_err(f_snap, err_code, err_name, err_description, path);
 
     // in this case we want to return a file with the same format as the

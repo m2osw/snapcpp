@@ -38,16 +38,15 @@
 
 //#include "../messages/messages.h" -- we now have 2 levels (messages and output) so we could include messages.h here
 
-#include "plugins.h"
-#include "log.h"
 #include "compression.h"
-#include "not_reached.h"
-#include "dom_util.h"
 #include "dbutils.h"
+#include "log.h"
+#include "not_reached.h"
+#include "plugins.h"
+#include "qdomhelpers.h"
 #include "snap_magic.h"
 #include "snap_image.h"
 #include "snap_version.h"
-#include "qdomhelpers.h"
 
 #include <QtCassandra/QCassandraLock.h>
 

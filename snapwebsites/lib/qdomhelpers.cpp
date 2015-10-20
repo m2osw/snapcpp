@@ -32,6 +32,81 @@ namespace snap_dom
 {
 
 
+/** \brief Retrieve a tag, create it if it doesn't exist.
+ *
+ * This function searches for an element which is expected to exist and
+ * have one instance. If not found, it creates it (by default, you may
+ * prevent the creation by setting the \p create parameter to false.)
+ *
+ * The result is the tag set to the tag we've found if the function
+ * returns true. When false is returned, tag is not modified.
+ *
+ * \param[in] tag_name  The name of the tag to search or create.
+ * \param[in] element  The parent element of the tag to find or create.
+ * \param[in] tag  The found tag (i.e. the answer of this function.)
+ * \param[in] create  Whether the tag is created if it doesn't exist yet.
+ *
+ * \return true when the tag was found or created and can be returned.
+ */
+bool get_tag(QString const & tag_name, QDomElement & element, QDomElement & tag, bool create)
+{
+    QDomNodeList all_tags(element.elementsByTagName(tag_name));
+    switch(all_tags.count())
+    {
+    case 0:
+        if(create)
+        {
+            // missing, create a new one and retrieve it back out
+            tag = element.ownerDocument().createElement(tag_name);
+            element.appendChild(tag);
+        }
+        else
+        {
+            return false;
+        }
+        break;
+
+    case 1:
+        // we have it already!
+        {
+            QDomNode node(all_tags.at(0));
+            if(!node.isElement())
+            {
+                return false;
+            }
+            tag = node.toElement();
+        }
+        break;
+
+    default:
+        // we have a problem here
+        return false;
+
+    }
+
+    return true;
+}
+
+
+/** \brief Useful function to append a string of text to a QDomNode.
+ *
+ * This function appends a node of text at the end of the specified \p child
+ * node. This is simply creating a text node and appending it.
+ *
+ * \note
+ * This is equivalent to insert_html_string_to_xml_doc() when \p plain_text
+ * does not include any tags or entities.
+ *
+ * \param[in,out] child  DOM element where the plain text is to be inserted.
+ * \param[in] plain_text  The plain text to append.
+ */
+void append_plain_text_to_node(QDomNode & child, QString const & plain_text)
+{
+    QDomText text(child.ownerDocument().createTextNode(plain_text));
+    child.appendChild(text);
+}
+
+
 /** \brief Useful function that transforms a QString to XML.
  *
  * When inserting a string in the XML document and that string may include

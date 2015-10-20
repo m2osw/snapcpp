@@ -1818,7 +1818,7 @@ bool snap_uri::operator >= (const snap_uri& rhs) const
  *
  * \return The encoded URI, it may be equal to the input.
  */
-QString snap_uri::urlencode(const QString& uri, const char *accepted)
+QString snap_uri::urlencode(QString const & uri, char const * accepted)
 {
     QString encoded;
 

@@ -22,6 +22,8 @@
 #include "../output/output.h"
 
 #include "not_reached.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 
 #include <QFile>
 
@@ -143,6 +145,7 @@ void favicon::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
+    SNAP_LISTEN(favicon, "server", server, improve_signature, _1, _2, _3);
     SNAP_LISTEN(favicon, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
     SNAP_LISTEN(favicon, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
@@ -240,7 +243,7 @@ void favicon::content_update(int64_t variables_timestamp)
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool favicon::on_path_execute(content::path_info_t& ipath)
+bool favicon::on_path_execute(content::path_info_t & ipath)
 {
     // favicon.ico happens all the time so it is much faster to test here
     // like this...
@@ -266,10 +269,10 @@ bool favicon::on_path_execute(content::path_info_t& ipath)
         return true;
     }
 
-    // not too sure right now whether we'd have a true here (most
-    // certainly though)
     f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
+    // not too sure right now whether we'd have a true here (most
+    // certainly though)
     return true;
 }
 
@@ -401,7 +404,7 @@ void favicon::output(content::path_info_t& ipath)
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void favicon::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void favicon::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
     // our settings pages are like any standard pages
     output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
@@ -418,16 +421,16 @@ void favicon::on_generate_main_content(content::path_info_t& ipath, QDomElement&
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
-void favicon::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void favicon::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
-    static_cast<void>(page);
-    static_cast<void>(ctemplate);
+    NOTUSED(page);
+    NOTUSED(ctemplate);
 
     content::field_search::search_result_t result;
 
     get_icon(ipath, result);
 
-    // add the favicon.ico name at the end of the path we've found
+    // add the favicon.ico name at the end of the path we have found
     QString icon_path;
     if(result.isEmpty())
     {
@@ -464,7 +467,7 @@ void favicon::on_generate_page_content(content::path_info_t& ipath, QDomElement&
  * \param[in] ipath  The page for which we are searching the icon
  * \param[out] result  The result is saved in this array.
  */
-void favicon::get_icon(content::path_info_t& ipath, content::field_search::search_result_t& result)
+void favicon::get_icon(content::path_info_t & ipath, content::field_search::search_result_t & result)
 {
     result.clear();
 
@@ -508,6 +511,58 @@ void favicon::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dyna
         // tell the path plugin that this is ours
         plugin_info.set_plugin(this);
     }
+}
+
+
+/** \brief Improves the error signature.
+ *
+ * This function adds the favicon link to the header.
+ *
+ * \param[in] path  The path to the page that generated the error.
+ * \param[in] doc  The DOM document.
+ * \param[in,out] signature_tag  The DOM element where signature anchors are added.
+ */
+void favicon::on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag)
+{
+    NOTUSED(path);
+    NOTUSED(signature_tag);
+
+    // check whether a favicon is defined
+    content::path_info_t ipath;
+    content::field_search::search_result_t result;
+    get_icon(ipath, result);
+
+    QString icon_path;
+
+    if(result.isEmpty())
+    {
+        icon_path = f_snap->get_site_key_with_slash() + "favicon.ico";
+    }
+    else
+    {
+        icon_path = result[0].stringValue();
+    }
+
+    QDomElement head;
+    QDomElement root(doc.documentElement());
+    if(!snap_dom::get_tag("head", root, head, false))
+    {
+        throw snap_logic_exception("favicon::on_improve_signature(): get_tag() of \"head\" failed.");
+    }
+
+    FIELD_SEARCH
+        (content::field_search::command_t::COMMAND_ELEMENT, head)
+        (content::field_search::command_t::COMMAND_NEW_CHILD_ELEMENT, "link")
+        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "rel=shortcut icon")
+        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "type=image/x-icon") // should be vnd.microsoft.icon but that's not supported everywhere yet
+        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "href=" + icon_path)
+        // TODO retrieve the image sizes from the database so we can
+        //      use the real sizes here
+        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "width=16")
+        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "height=16")
+
+        // generate
+        ;
 }
 
 

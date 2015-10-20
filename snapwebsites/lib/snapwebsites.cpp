@@ -110,7 +110,7 @@ namespace snap
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -134,11 +134,11 @@ char const *get_name(name_t name)
         return "sites";
 
     // names used by CORE (server and snap_child)
-    case name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER:
-        return "Content-Type";
-
     case name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
         return "core::administrator_email";
+
+    case name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER:
+        return "Content-Type";
 
     case name_t::SNAP_NAME_CORE_COOKIE_DOMAIN:
         return "core::cookie_domain";
@@ -190,6 +190,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_CORE_SITE_SHORT_NAME:
         return "core::site_short_name";
+
+    case name_t::SNAP_NAME_CORE_STATUS_HEADER:
+        return "Status";
 
     case name_t::SNAP_NAME_CORE_USER_COOKIE_NAME:
         return "core::user_cookie_name";

@@ -21,8 +21,10 @@
 #include "../messages/messages.h"
 #include "../server_access/server_access.h"
 
-#include "not_reached.h"
 #include "log.h"
+#include "not_reached.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 #include "qstring_stream.h"
 #include "snap_uri.h"
 
@@ -355,7 +357,7 @@ void path::on_bootstrap(::snap::snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(path, "server", server, execute, _1);
-    SNAP_LISTEN(path, "server", server, improve_signature, _1, _2);
+    SNAP_LISTEN(path, "server", server, improve_signature, _1, _2, _3);
 }
 
 
@@ -701,10 +703,10 @@ void path::verify_permissions(content::path_info_t & ipath, permission_error_cal
  */
 bool path::access_allowed_impl(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result)
 {
-    static_cast<void>(user_path);
-    static_cast<void>(ipath);
-    static_cast<void>(action);
-    static_cast<void>(login_status);
+    NOTUSED(user_path);
+    NOTUSED(ipath);
+    NOTUSED(action);
+    NOTUSED(login_status);
 
     return result.allowed();
 }
@@ -1014,15 +1016,27 @@ bool path::check_for_redirect_impl(content::path_info_t & ipath)
  * errors.
  *
  * \param[in] path  The path to the page that generated the error.
- * \param[in,out] signature  The HTML signature to improve.
+ * \param[in] doc  The DOM document.
+ * \param[in,out] signature_tag  The HTML signature to improve.
  */
-void path::on_improve_signature(QString const & url_path, QString & signature)
+void path::on_improve_signature(QString const & url_path, QDomDocument doc, QDomElement signature_tag)
 {
     if(f_add_restore_link_to_signature.contains(url_path))
     {
         QString const qs_action(f_snap->get_server_parameter("qs_action"));
-        // should we have a target="_top" in this one?
-        signature += " <a href=\"?" + qs_action + "=restore\">Restore Deleted Page</a>";
+
+        // add a space between the previous link and this one
+        snap_dom::append_plain_text_to_node(signature_tag, " ");
+
+        // add a link to the user account
+        QDomElement a_tag(doc.createElement("a"));
+        a_tag.setAttribute("class", "restore");
+        //a_tag.setAttribute("target", "_top"); -- I do not think _top will work here
+        a_tag.setAttribute("href", QString("?%1=restore").arg(qs_action));
+        // TODO: translate
+        snap_dom::append_plain_text_to_node(a_tag, "Restore Deleted Page");
+
+        signature_tag.appendChild(a_tag);
     }
 }
 

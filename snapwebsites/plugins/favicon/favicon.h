@@ -67,6 +67,9 @@ public:
     void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
     virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
 
+    // server signal
+    void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);
+
 private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);

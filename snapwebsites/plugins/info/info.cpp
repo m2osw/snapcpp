@@ -23,8 +23,10 @@
 #include "../users/users.h"
 #include "../output/output.h"
 
-#include "not_reached.h"
 #include "log.h"
+#include "not_reached.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 
 #include "poison.h"
 
@@ -108,7 +110,7 @@ void info::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(info, "server", server, improve_signature, _1, _2);
+    SNAP_LISTEN(info, "server", server, improve_signature, _1, _2, _3);
     SNAP_LISTEN(info, "editor", editor::editor, finish_editor_form_processing, _1, _2);
 }
 
@@ -176,7 +178,7 @@ int64_t info::do_update(int64_t last_updated)
  */
 void info::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -261,17 +263,18 @@ void info::on_finish_editor_form_processing(content::path_info_t & ipath, bool &
  * rights to access administrative pages.
  *
  * \param[in] path  The path on which the error occurs.
- * \param[in,out] signature  The HTML signature to improve.
+ * \param[in] doc  The DOMDocument object.
+ * \param[in,out] signature_tag  The signature tag to improve.
  */
-void info::on_improve_signature(QString const & path, QString & signature)
+void info::on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag)
 {
-    static_cast<void>(path);
+    NOTUSED(path);
 
     // only check if user is logged in
     if(users::users::instance()->user_is_logged_in())
     {
         // only show the /admin link if the user can go there
-        permissions::permissions *permissions_plugin(permissions::permissions::instance());
+        permissions::permissions * permissions_plugin(permissions::permissions::instance());
         QString const & login_status(permissions_plugin->get_login_status());
         content::path_info_t page_ipath;
         page_ipath.set_path("/admin");
@@ -279,8 +282,18 @@ void info::on_improve_signature(QString const & path, QString & signature)
         path::path::instance()->access_allowed(permissions_plugin->get_user_path(), page_ipath, "administer", login_status, allowed);
         if(allowed.allowed())
         {
+            // add a space between the previous link and this one
+            snap_dom::append_plain_text_to_node(signature_tag, " ");
+
+            // add a link to the user account
+            QDomElement a_tag(doc.createElement("a"));
+            a_tag.setAttribute("class", "administration");
+            a_tag.setAttribute("target", "_top");
+            a_tag.setAttribute("href", "/admin");
             // TODO: translate
-            signature += " <a href=\"/admin\" target=\"_top\">Administration</a>";
+            snap_dom::append_plain_text_to_node(a_tag, "Administration");
+
+            signature_tag.appendChild(a_tag);
         }
     }
 }

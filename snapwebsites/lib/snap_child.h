@@ -29,6 +29,7 @@
 #include <QtCassandra/QCassandraContext.h>
 
 #include <QBuffer>
+#include <QDomDocument>
 
 namespace snap
 {
@@ -318,7 +319,8 @@ public:
     void                        reset_site_table();
     QtCassandra::QCassandraValue get_site_parameter(QString const & name);
     void                        set_site_parameter(QString const & name, QtCassandra::QCassandraValue const & value);
-    void                        improve_signature(QString const & path, QString & signature);
+    void                        improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);
+    QString                     error_body(http_code_t err_code, QString const & err_name, QString const & err_description);
     QtCassandra::QCassandraContext::pointer_t get_context() { return f_context; }
     QString const &             get_domain_key() const { return f_domain_key; }
     QString const &             get_website_key() const { return f_website_key; }

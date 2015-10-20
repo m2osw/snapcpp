@@ -49,8 +49,8 @@ enum class name_t
     SNAP_NAME_SITES,            // Cassandra Table used for sites (one site per row)
 
     // names used by core (server & snap_child)
-    SNAP_NAME_CORE_CONTENT_TYPE_HEADER,
     SNAP_NAME_CORE_ADMINISTRATOR_EMAIL,
+    SNAP_NAME_CORE_CONTENT_TYPE_HEADER,
     SNAP_NAME_CORE_COOKIE_DOMAIN,
     SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE,
     SNAP_NAME_CORE_HTTP_REQUEST_METHOD,
@@ -68,6 +68,7 @@ enum class name_t
     SNAP_NAME_CORE_SITE_NAME,
     SNAP_NAME_CORE_SITE_READY,
     SNAP_NAME_CORE_SITE_SHORT_NAME,
+    SNAP_NAME_CORE_STATUS_HEADER,
     SNAP_NAME_CORE_USER_COOKIE_NAME
 };
 char const *get_name(name_t name) __attribute__ ((const));
@@ -242,8 +243,7 @@ public:
                              QString const & accepted_tags,
                              QString const & accepted_attributes),
                             (node, accepted_tags, accepted_attributes), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(improve_signature, (QString const & path, QString & signature),
-                                   (path, signature), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(improve_signature, (QString const & path, QDomDocument doc, QDomElement & signature_tag), (path, doc, signature_tag), NEITHER);
     SNAP_SIGNAL(load_file, (snap_child::post_file_t & file, bool & found), (file, found));
     SNAP_SIGNAL_WITH_MODE(table_is_accessible, (QString const & table, accessible_flag_t & accessible), (table, accessible), NEITHER);
     SNAP_SIGNAL_WITH_MODE(add_snap_expr_functions, (snap_expr::functions_t & functions), (functions), NEITHER);

@@ -17,10 +17,9 @@
 
 #include "search.h"
 
-//#include "../content/content.h"
-
 #include "not_reached.h"
-#include "dom_util.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 
 #include "poison.h"
 
@@ -78,7 +77,7 @@ void search::on_bootstrap(::snap::snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(search, "server", server, improve_signature, _1, _2);
+    SNAP_LISTEN(search, "server", server, improve_signature, _1, _2, _3);
     SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
@@ -155,21 +154,30 @@ void search::content_update(int64_t variables_timestamp)
  * errors.
  *
  * \param[in] path  The path to the page that generated the error.
- * \param[in,out] signature  The HTML signature to improve.
+ * \param[in] doc  The DOM document.
+ * \param[in,out] signature_tag  The DOM element where signature anchors are added.
  */
-void search::on_improve_signature(QString const & path, QString & signature)
+void search::on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag)
 {
-    // TODO: we probably want translations? (in which case we
-    //       want the signature to be in an XML document.)
     QString query(path);
     query.replace('/', ' ');
     query = query.simplified();
     // the query should never be empty since the home page should always work...
     if(!query.isEmpty())
     {
-        query.replace(" ", "%20");
-        // should we have a target="_top" in this one?
-        signature += " <a href=\"/search?search=" + query + "\">Search Our Website</a>";
+        // add a space between the previous link and this one
+        snap_dom::append_plain_text_to_node(signature_tag, " ");
+
+        // add a link to the user account
+        QDomElement a_tag(doc.createElement("a"));
+        a_tag.setAttribute("class", "search");
+        //a_tag.setAttribute("target", "_top"); -- I do not think _top makes sense in this case
+        // TODO: we may want the save the language and not force a /search like this...
+        a_tag.setAttribute("href", QString("/search?search=%1").arg(snap_uri::urlencode(query, "~")));
+        // TODO: translate
+        snap_dom::append_plain_text_to_node(a_tag, "Search Our Website");
+
+        signature_tag.appendChild(a_tag);
     }
 }
 
@@ -192,7 +200,7 @@ void search::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     QDomDocument doc(page.ownerDocument());
 
     QDomElement bookmarks;
-    dom_util::get_tag("bookmarks", body, bookmarks);
+    snap_dom::get_tag("bookmarks", body, bookmarks);
 
     QDomElement link(doc.createElement("link"));
     link.setAttribute("rel", "search");

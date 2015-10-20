@@ -215,10 +215,12 @@ public:
     void                    on_detach_from_session();
     void                    on_define_locales(QString & locales);
     void                    on_create_content(content::path_info_t & path, QString const & owner, QString const & type);
-    void                    on_improve_signature(QString const & path, QString & signature);
     void                    on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
     void                    on_set_locale();
     void                    on_set_timezone();
+
+    // server signal implementation
+    void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);
 
     virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
     virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);

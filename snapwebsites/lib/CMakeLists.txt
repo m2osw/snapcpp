@@ -81,7 +81,6 @@ add_library( ${PROJECT_NAME} SHARED
     compression.cpp                             # Compress/decompress data
     dbutils.h                                   # Utilities to help convert coded table and row names
     dbutils.cpp                                 # and column data.
-    dom_util.cpp                                # DOM utilities
     floats.cpp                                  # Floats helper functions
     fuzzy_string_compare.cpp                    # Compare strings in a fuzzy manner
     http_client_server.cpp                      # implementation of the HTTP protocol

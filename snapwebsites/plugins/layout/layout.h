@@ -88,6 +88,9 @@ public:
     void                on_load_file(snap_child::post_file_t & file, bool & found);
     void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
+    // server signal implementation
+    bool                on_improve_signature(QString const & path, QDomDocument doc, QDomElement & signature_tag);
+
     QString             get_layout(content::path_info_t & ipath, const QString & column_name, bool use_qs_theme);
     QDomDocument        create_document(content::path_info_t & ipath, plugin *content_plugin);
     QString             apply_layout(content::path_info_t & ipath, layout_content *plugin, const QString & ctemplate = "");

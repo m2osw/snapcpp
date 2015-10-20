@@ -42,8 +42,10 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(::snap::snap_child *snap);
-    void                    on_improve_signature(QString const & path, QString & signature);
     void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+
+    // server signal implementation
+    void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature);
 
 private:
     void                    content_update(int64_t variables_timestamp);

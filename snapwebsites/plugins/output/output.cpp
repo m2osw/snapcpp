@@ -449,14 +449,14 @@ void output::on_generate_page_content(content::path_info_t & ipath, QDomElement 
             (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "navigation")
 
             // Index
-            (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "link")
+            (content::field_search::command_t::COMMAND_NEW_CHILD_ELEMENT, "link")
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "rel=top")
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "title=Index") // TODO: translate
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "href=" + f_snap->get_site_key())
             (content::field_search::command_t::COMMAND_PARENT_ELEMENT)
 
             // Up
-            (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "link")
+            (content::field_search::command_t::COMMAND_NEW_CHILD_ELEMENT, "link")
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "rel=up")
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "title=Up") // TODO: translate
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "href=" + up)

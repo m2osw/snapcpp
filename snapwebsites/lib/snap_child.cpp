@@ -21,6 +21,7 @@
 #include "http_strings.h"
 #include "log.h"
 #include "mkgmtime.h"
+#include "qdomhelpers.h"
 #include "qlockfile.h"
 #include "snap_image.h"
 #include "snap_utf8.h"
@@ -5674,16 +5675,17 @@ QString snap_child::get_server_parameter(QString const & name)
  * content are welcome to use it too.
  *
  * \param[in] path  The path to the page that is being generated.
- * \param[out] signature  The signature string, the result is saved here.
+ * \param[in] doc  The document holding the data.
+ * \param[in,out] signature_tag  The signature tag which is to be improved.
  */
-void snap_child::improve_signature(QString const & path, QString & signature)
+void snap_child::improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag)
 {
     server::pointer_t server(f_server.lock());
     if(!server)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
-    return server->improve_signature(path, signature);
+    return server->improve_signature(path, doc, signature_tag);
 }
 
 
@@ -5999,12 +6001,18 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const & err
         }
         else
         {
+            // Make sure that the session is re-attached
+            server::pointer_t server( f_server.lock() );
+            if(!server)
+            {
+                throw snap_logic_exception("server pointer is nullptr");
+            }
+            server->attach_to_session();
+
             // On error we do not return the HTTP protocol, only the Status field
             // it just needs to be first to make sure it works right
-            set_header("Status",
-                       QString("%1 %2\n")
-                            .arg(static_cast<int>(err_code))
-                            .arg(err_name),
+            set_header(get_name(name_t::SNAP_NAME_CORE_STATUS_HEADER),
+                       QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name),
                        HEADER_MODE_ERROR);
 
             // content type is HTML, we reset this header because it could have
@@ -6014,46 +6022,12 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const & err
                        "text/html; charset=utf8",
                        HEADER_MODE_EVERYWHERE);
 
-            // Generate the signature
-            server::pointer_t server( f_server.lock() );
-            if(!server)
-            {
-                throw snap_logic_exception("server pointer is nullptr");
-            }
-            // as we are at it, make sure that the session is re-attached
-            server->attach_to_session();
+            // TODO: the HTML could also come from a user defined
+            //       page so that way it can get a translated
+            //       message without us having to do anything
+            //       (but probably only for 403 and 404 pages?)
 
-            QString signature;
-            QString const site_key(get_site_key());
-            if(f_cassandra)
-            {
-                // TODO: the description could also come from a user defined
-                //       page so that way it can get a translated message
-                //       (only for some 4XX errors though)
-
-                QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
-                signature = QString("<a href=\"%1\" target=\"_top\">%2</a>").arg(site_key).arg(site_name.stringValue());
-                server->improve_signature(f_uri.path(), signature);
-            }
-            else if(!site_key.isEmpty())
-            {
-                signature = QString("<a href=\"%1\" target=\"_top\">%1</a>").arg(site_key);
-                server->improve_signature(f_uri.path(), signature);
-            }
-            // else -- no signature...
-
-            // HTML output
-            QString const html(QString("<html><head>"
-                            "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
-                            "<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\"/>"
-                            "<title>Snap Server Error</title>"
-                            "</head>"
-                            "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
-                    .arg(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
-                    .arg(static_cast<int>(err_code))
-                    .arg(err_name)
-                    .arg(err_description)
-                    .arg(signature));
+            QString const html(error_body(err_code, err_name, err_description));
 
             // in case there are any cookies, send them along too
             output_result(HEADER_MODE_ERROR, html.toUtf8());
@@ -6067,6 +6041,99 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const & err
 
     // exit with an error
     exit(1);
+}
+
+
+/** \brief Create the body of an HTTP error.
+ *
+ * This function generates an error page for an HTTP error. Thus far,
+ * it is used by the die() function and an equivalent in the attachment
+ * plugin.
+ *
+ * \param[in] err_code  The error code such as 501 or 503.
+ * \param[in] err_name  The name of the error such as "Service Not Available".
+ * \param[in] err_description  HTML message about the problem.
+ */
+QString snap_child::error_body(http_code_t err_code, QString const & err_name, QString const & err_description)
+{
+    QString const title(QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name));
+
+    // html
+    QDomDocument doc;
+    QDomElement html(doc.createElement("html"));
+    doc.appendChild(html);
+
+    // html/head
+    QDomElement head(doc.createElement("head"));
+    html.appendChild(head);
+
+    // html/head/meta[@http-equiv=...][@content=...]
+    QDomElement meta_locale(doc.createElement("meta"));
+    head.appendChild(meta_locale);
+    meta_locale.setAttribute("http-equiv", get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER));
+    meta_locale.setAttribute("content", "text/html; charset=utf-8");
+
+    // html/head/meta[@name=...][@content=...]
+    QDomElement meta_robots(doc.createElement("meta"));
+    head.appendChild(meta_robots);
+    meta_robots.setAttribute("name", "ROBOTS");
+    meta_robots.setAttribute("content", "NOINDEX");
+
+    // html/head/title/...
+    QDomElement title_tag(doc.createElement("title"));
+    head.appendChild(title_tag);
+    snap_dom::append_plain_text_to_node(title_tag, title);
+
+    // html/body
+    QDomElement body_tag(doc.createElement("body"));
+    html.appendChild(body_tag);
+
+    // html/body/h1/...
+    QDomElement h1_tag(doc.createElement("h1"));
+    h1_tag.setAttribute("class", "error");
+    body_tag.appendChild(h1_tag);
+    snap_dom::append_plain_text_to_node(h1_tag, title);
+
+    // html/body/p[@class=description]/...
+    QDomElement description_tag(doc.createElement("p"));
+    description_tag.setAttribute("class", "description");
+    body_tag.appendChild(description_tag);
+    // the description may include HTML tags
+    snap_dom::insert_html_string_to_xml_doc(description_tag, err_description);
+
+    // html/body/p[@class=signature]/...
+    QDomElement signature_tag(doc.createElement("p"));
+    signature_tag.setAttribute("class", "signature");
+    body_tag.appendChild(signature_tag);
+
+    // now generate the signature tag anchors
+    QString const site_key(get_site_key());
+    if(f_cassandra)
+    {
+        QtCassandra::QCassandraValue const site_name(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
+        QDomElement a_tag(doc.createElement("a"));
+        a_tag.setAttribute("class", "home");
+        a_tag.setAttribute("target", "_top");
+        a_tag.setAttribute("href", site_key);
+        signature_tag.appendChild(a_tag);
+        snap_dom::append_plain_text_to_node(a_tag, site_name.stringValue());
+
+        improve_signature(f_uri.path(), doc, signature_tag);
+    }
+    else if(!site_key.isEmpty())
+    {
+        QDomElement a_tag(doc.createElement("a"));
+        a_tag.setAttribute("class", "home");
+        a_tag.setAttribute("target", "_top");
+        a_tag.setAttribute("href", site_key);
+        signature_tag.appendChild(a_tag);
+        snap_dom::append_plain_text_to_node(a_tag, site_key);
+
+        improve_signature(f_uri.path(), doc, signature_tag);
+    }
+    // else -- no signature...
+
+    return doc.toString(-1);
 }
 
 

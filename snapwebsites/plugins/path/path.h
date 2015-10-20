@@ -76,7 +76,7 @@ public:
     plugin *                        get_plugin(content::path_info_t & uri_path, permission_error_callback & err_callback);
     void                            verify_permissions(content::path_info_t & ipath, permission_error_callback & err_callback);
     QString                         define_action(content::path_info_t & ipath);
-    void                            on_improve_signature(QString const & url_path, QString & signature);
+    void                            on_improve_signature(QString const & url_path, QDomDocument doc, QDomElement signature);
 
     void                            add_restore_link_to_signature_for(QString const page_path);
 

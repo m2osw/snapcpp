@@ -75,7 +75,7 @@ public:
     virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
 
     // server signals
-    void                    on_improve_signature(QString const & path, QString & signature);
+    void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature);
 
     // editor signals
     void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);

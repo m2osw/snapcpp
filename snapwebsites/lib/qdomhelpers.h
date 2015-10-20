@@ -45,6 +45,8 @@ public:
 
 
 
+bool            get_tag(QString const & tag_name, QDomElement & element, QDomElement & tag, bool create = true);
+void            append_plain_text_to_node(QDomNode & child, QString const & plain_text);
 void            insert_html_string_to_xml_doc(QDomNode & child, QString const & xml);
 void            insert_node_to_xml_doc(QDomNode & child, QDomNode const & node);
 QString         xml_to_string(QDomNode & node);

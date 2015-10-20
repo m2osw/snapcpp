@@ -25,18 +25,9 @@
 
 #include "content.h"
 
-#include "plugins.h"
-#include "log.h"
 #include "compression.h"
-#include "not_reached.h"
-#include "dom_util.h"
 #include "dbutils.h"
-#include "snap_magic.h"
-#include "snap_image.h"
-#include "snap_version.h"
-#include "qdomhelpers.h"
-
-#include <QtCassandra/QCassandraLock.h>
+#include "log.h"
 
 #include <csspp/assembler.h>
 #include <csspp/compiler.h>
@@ -44,12 +35,6 @@
 #include <csspp/parser.h>
 
 #include <iostream>
-
-#include <openssl/md5.h>
-
-#include <QFile>
-#include <QUuid>
-#include <QTextStream>
 
 #include "poison.h"
 

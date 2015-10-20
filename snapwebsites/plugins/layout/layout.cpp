@@ -31,6 +31,7 @@
 #include "qdomxpath.h"
 //#include "qdomnodemodel.h" -- at this point the DOM Node Model seems bogus.
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 #include <fstream>
@@ -132,6 +133,7 @@ void layout::on_bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(layout, "server", server, load_file, _1, _2);
+    SNAP_LISTEN(layout, "server", server, improve_signature, _1, _2, _3);
     SNAP_LISTEN(layout, "content", content::content, copy_branch_cells, _1, _2, _3);
 }
 
@@ -1592,7 +1594,7 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
  */
 bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
 {
-    static_cast<void>(header);
+    NOTUSED(header);
 
     content::path_info_t main_ipath;
     main_ipath.set_path(f_snap->get_uri().path());
@@ -1835,9 +1837,44 @@ void layout::add_layout_from_resources_done(QString const & name)
 
 void layout::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
-    static_cast<void>(destination_branch);
+    NOTUSED(destination_branch);
 
     content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(name_t::SNAP_NAME_LAYOUT_NAMESPACE));
+}
+
+
+bool layout::on_improve_signature(QString const & path, QDomDocument doc, QDomElement & signature_tag)
+{
+    NOTUSED(path);
+    NOTUSED(signature_tag);
+
+    QDomElement head;
+    QDomElement root(doc.documentElement());
+    if(snap_dom::get_tag("head", root, head, false))
+    {
+        QDomElement generator(doc.createElement("link"));
+        generator.setAttribute("rel", "bookmark");
+        generator.setAttribute("type", "text/html");
+        // TODO: translate
+        generator.setAttribute("title", "Generator");
+        generator.setAttribute("href", "http://snapwebsites.org/");
+        head.appendChild(generator);
+
+        QDomElement top(doc.createElement("link"));
+        top.setAttribute("rel", "top");
+        top.setAttribute("type", "text/html");
+        // TODO: translate
+        top.setAttribute("title", "Index");
+        top.setAttribute("href", f_snap->get_site_key());
+        head.appendChild(top);
+
+        QDomElement meta_tag(doc.createElement("meta"));
+        meta_tag.setAttribute("name", "generator");
+        meta_tag.setAttribute("content", "Snap! Websites");
+        head.appendChild(meta_tag);
+    }
+
+    return true;
 }
 
 

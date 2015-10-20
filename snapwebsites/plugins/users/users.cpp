@@ -39,18 +39,19 @@
 #include "../sendmail/sendmail.h"
 #include "../server_access/server_access.h"
 
-#include "qstring_stream.h"
-#include "not_reached.h"
 #include "log.h"
+#include "not_reached.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
+#include "qstring_stream.h"
 
 #include <iostream>
 
 #include <QtCassandra/QCassandraLock.h>
+#include <QFile>
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
-#include <boost/static_assert.hpp>
-#include <QFile>
 
 #include "poison.h"
 
@@ -371,7 +372,7 @@ int64_t users::do_update(int64_t last_updated)
  */
 void users::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_users_table();
 }
@@ -388,7 +389,7 @@ void users::initial_update(int64_t variables_timestamp)
  */
 void users::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
     content::content::instance()->add_xml(get_plugin_name());
 }
 
@@ -426,7 +427,7 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "server", server, attach_to_session);
     SNAP_LISTEN0(users, "server", server, detach_from_session);
     SNAP_LISTEN(users, "server", server, define_locales, _1);
-    SNAP_LISTEN(users, "server", server, improve_signature, _1, _2);
+    SNAP_LISTEN(users, "server", server, improve_signature, _1, _2, _3);
     SNAP_LISTEN(users, "server", server, table_is_accessible, _1, _2);
     SNAP_LISTEN0(users, "locale", locale::locale, set_locale);
     SNAP_LISTEN0(users, "locale", locale::locale, set_timezone);
@@ -778,7 +779,7 @@ void users::user_logout()
 
     // drop the referrer if there is one, it is a security
     // issue to keep that info on an explicit log out!
-    static_cast<void>(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+    NOTUSED(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
 
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(f_user_key));
@@ -1198,8 +1199,8 @@ void users::on_generate_boxes_content(content::path_info_t& page_cpath, content:
 
 void users::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(ctemplate);
+    NOTUSED(ipath);
+    NOTUSED(ctemplate);
 
     QDomDocument doc(header.ownerDocument());
 
@@ -1253,7 +1254,7 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
 
 void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-    static_cast<void>(ctemplate);
+    NOTUSED(ctemplate);
 
     // TODO: convert using field_search
     QDomDocument doc(page.ownerDocument());
@@ -1299,8 +1300,8 @@ void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& p
 
 void users::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
 {
-    static_cast<void>(owner);
-    static_cast<void>(type);
+    NOTUSED(owner);
+    NOTUSED(type);
 
     if(!f_user_key.isEmpty())
     {
@@ -1339,7 +1340,7 @@ void users::on_create_content(content::path_info_t& ipath, QString const& owner,
  */
 void users::prepare_replace_password_form(QDomElement& body)
 {
-    static_cast<void>(body);
+    NOTUSED(body);
 
     // make sure the user is properly setup
     if(user_is_logged_in())
@@ -1712,7 +1713,7 @@ void users::verify_user(content::path_info_t& ipath)
 
         // drop the referrer if there is one, it is a security
         // issue to keep that info on an almost explicit log out!
-        static_cast<void>(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+        NOTUSED(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
 
         sessions::sessions::instance()->save_session(*f_info, new_random);
 
@@ -2107,7 +2108,7 @@ void users::send_to_replace_password_page(QString const& email, bool const set_s
  */
 void users::on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info)
 {
-    static_cast<void>(session_info);
+    NOTUSED(session_info);
 
     QString const cpath(ipath.get_cpath());
     if(cpath == "login")
@@ -2423,7 +2424,7 @@ QString users::login_user(QString const & key, QString const& password, bool & v
 
                         // drop the referrer if there is one, it is a security
                         // issue to keep that info on an "explicit" log out!
-                        static_cast<void>(sessions::sessions::instance()->detach_from_session(old_session, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+                        NOTUSED(sessions::sessions::instance()->detach_from_session(old_session, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
 
                         sessions::sessions::instance()->save_session(old_session, false);
 
@@ -4517,9 +4518,9 @@ void users::encrypt_password(QString const& digest, QString const& password, QBy
  */
 void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(ipath);
+    NOTUSED(plugin_owner);
+    NOTUSED(xml);
 
     if(!token.is_namespace("users::"))
     {
@@ -4664,17 +4665,27 @@ bool users::user_is_logged_in()
  * errors. This is done only if the user is logged in.
  *
  * \param[in] path  The path to the page that generated the error.
- * \param[in,out] signature  The HTML signature to improve.
+ * \param[in] doc  The DOM document.
+ * \param[in,out] signature_tag  The DOM element where signature anchors are added.
  */
-void users::on_improve_signature(QString const & path, QString & signature)
+void users::on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag)
 {
-    (void)path;
+    NOTUSED(path);
+
     if(!f_user_key.isEmpty())
     {
-        QString const link(get_user_path());
+        // add a space between the previous link and this one
+        snap_dom::append_plain_text_to_node(signature_tag, " ");
 
+        // add a link to the user account
+        QDomElement a_tag(doc.createElement("a"));
+        a_tag.setAttribute("class", "user-account");
+        a_tag.setAttribute("target", "_top");
+        a_tag.setAttribute("href", QString("/%1").arg(get_user_path()));
         // TODO: translate
-        signature += " <a href=\"/" + link + "\" target=\"_top\">My Account</a>";
+        snap_dom::append_plain_text_to_node(a_tag, "My Account");
+
+        signature_tag.appendChild(a_tag);
     }
 }
 
@@ -4756,7 +4767,7 @@ void users::on_set_timezone()
  */
 void users::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning)
 {
-    static_cast<void>(cloning);
+    NOTUSED(cloning);
 
     if(source.name() == get_name(name_t::SNAP_NAME_USERS_AUTHOR)
     && destination.name() == get_name(name_t::SNAP_NAME_USERS_AUTHORED_PAGES))
