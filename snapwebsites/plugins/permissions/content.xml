@@ -359,6 +359,56 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::action::view" to="permissions::link_action" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
   </content>
+  <!--
+    STATUS
+
+    The following list defines the basic content status because a user
+    must have enough permission to access a certain status other than
+    normal. The normal status is included for completeness, but it will
+    not be checked in the permissions.
+  -->
+  <content path="/types/permissions/status">
+    <param name="content::title" revision="revision">Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The status of a page defines a permission that a user must have to access a page having that status.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/unknown">
+    <param name="content::title" revision="revision">Unknown Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The unknown status should never happen. This generally means something went wrong so giving permission to this state is not safe in regard to your database stability.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/create">
+    <param name="content::title" revision="revision">Create Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The create status represents a page being created. The page is not complete yet and it should not be accessed until marked with another status. The backend will automatically change pages with invalid status, including the "create" status to another status if they stay in that state for more than 10 minutes.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/normal">
+    <param name="content::title" revision="revision">Normal Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The normal status is generally not used because anyone has access to the normal status, so to save time we do not give that permission and as a result we cannot require the user to have this permission.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/hidden">
+    <param name="content::title" revision="revision">Hidden Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The hidden status is normally offered to administrators so they can access their hidden pages. Other users will get a 404 instead.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/moved">
+    <param name="content::title" revision="revision">Moved Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The moved status is often given to all maintainers of a website. Other users get redirected from those pages so having a permission does not matter anyway.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/deleted">
+    <param name="content::title" revision="revision">Deleted Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The deleted status allows a user to access a deleted page. However, the system handles this pages differently, creating a 404 error and a signature with a link to allow administrators to restore such a page.</p>]]>
+    </param>
+  </content>
 
   <!-- User specific entries (put here to avoid a loop between permissions and users plugins) -->
   <content path="/types/permissions/rights/administer/user">

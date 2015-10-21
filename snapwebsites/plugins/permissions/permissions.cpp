@@ -209,6 +209,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH:
         return "types/permissions/rights";
 
+    case name_t::SNAP_NAME_PERMISSIONS_STATUS_PATH:
+        return "types/permissions/status";
+
     case name_t::SNAP_NAME_PERMISSIONS_USERS_PATH:
         return "types/permissions/users";
 
@@ -1297,7 +1300,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 6, 23, 19, 26, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 20, 17, 1, 26, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1663,6 +1666,24 @@ std::cerr << "from " << user_id << " -> ";
 
     content::path_info_t page_ipath;
     page_ipath.set_path(key);
+
+    // if the state is normal, no additional or out of the ordinary
+    // permissions are required; otherwise the user needs to have
+    // enough permissions (additional group) to access the page
+    //
+    content::path_info_t::status_t const status(page_ipath.get_status());
+    if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
+    {
+        std::string const status_name(content::path_info_t::status_t::status_name_to_string(status.get_state()));
+        content::path_info_t status_ipath;
+        status_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_PERMISSIONS_STATUS_PATH)).arg(status_name.c_str()));
+
+        // here we use the permissions plugin name because the content
+        // plugin is already used by the "normal" permissions
+        //
+        sets.add_plugin_permission(get_plugin_name(), status_ipath.get_key());
+    }
+
     {
         // check local links for this action
         QString const direct_link_start_name(
@@ -2979,6 +3000,19 @@ void permissions::on_modified_link(links::link_info const & link, bool const cre
     // a permissions link got modified, reset the timestamp date and time
     // so any existing caches are reset
     //
+    reset_permissions_cache();
+}
+
+
+/** \brief Reset last updated time for permissions cache.
+ *
+ * This function saves 'now' as the current permission time threshold.
+ * This is important because certain things (such as changing a link)
+ * requires the permissions currently cached to be ignored. This
+ * function updates that threshold.
+ */
+void permissions::reset_permissions_cache()
+{
     // we use 'last_updated + EXPECTED_TIME_ACCURACY_EPSILON' so that all
     // caches in this session will be ignored which is important; it will
     // also re-generate the permissions the next time the user access the
@@ -2989,9 +3023,9 @@ void permissions::on_modified_link(links::link_info const & link, bool const cre
     //       if it is "too large", we get slowness which people should
     //       be able to survive... we would need to have a strong PTP
     //       service running and see what kind of accuracy we can get
-    //       on a large network
+    //       on a "large" network
     //
-    int64_t last_updated(f_snap->get_current_date());
+    int64_t const last_updated(f_snap->get_current_date());
     QtCassandra::QCassandraValue value;
     value.setInt64Value(last_updated + EXPECTED_TIME_ACCURACY_EPSILON);
     f_snap->set_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED), value);

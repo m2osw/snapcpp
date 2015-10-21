@@ -64,6 +64,7 @@ enum class name_t
     SNAP_NAME_PERMISSIONS_PATH,
     SNAP_NAME_PERMISSIONS_PLUGIN,
     SNAP_NAME_PERMISSIONS_RIGHTS_PATH,
+    SNAP_NAME_PERMISSIONS_STATUS_PATH,
     SNAP_NAME_PERMISSIONS_USERS_PATH,
     SNAP_NAME_PERMISSIONS_VIEW_NAMESPACE
 };
@@ -189,6 +190,7 @@ public:
     void                    add_plugin_permissions(QString const & plugin_name, QString const & group, sets_t & sets);
     QString const &         get_login_status();
     QString const &         get_user_path();
+    void                    reset_permissions_cache();
 
 private:
     void                    content_update(int64_t variables_timestamp);

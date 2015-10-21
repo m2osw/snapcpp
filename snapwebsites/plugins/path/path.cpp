@@ -488,9 +488,9 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
 
         if(status.get_state() == content::path_info_t::status_t::state_t::DELETED)
         {
-            // TODO: these are rather complicated business rules which
+            // TODO: these are rather complicated business rules, which
             //       may need to be somewhere else than the get_plugin()
-            //       function?
+            //       function (?)
             //
             // See: http://webmasters.stackexchange.com/questions/42252/whats-the-best-http-code-for-dynamically-deleted-pages
             // According to that question/answer, the best practice is:

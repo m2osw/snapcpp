@@ -309,7 +309,7 @@ public:
         working_t                   get_working() const;
         bool                        is_working() const;
 
-        // convert to/from string for scripts
+        // convert to/from string for scripts, permissions, etc.
         static std::string          status_name_to_string(state_t const state);
         static state_t              string_to_status_name(std::string const & state);
 
