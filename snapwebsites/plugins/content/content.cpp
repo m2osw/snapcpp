@@ -1838,8 +1838,8 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
     parent_row->cell(name)->setValue(attachment_ipath.get_key());
 
     // mark all attachments as final (i.e. cannot create children below an attachment)
-    signed char final(1);
-    content_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FINAL))->setValue(final);
+    signed char const final_page(1);
+    content_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FINAL))->setValue(final_page);
 
     // in this case 'post' represents the filename as sent by the
     // user, the binary data is in the corresponding file

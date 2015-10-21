@@ -26,11 +26,13 @@ namespace sitemapxml
 enum class name_t
 {
     SNAP_NAME_SITEMAPXML_COUNT,
+    SNAP_NAME_SITEMAPXML_FILENAME_NUMBER_XML,
     SNAP_NAME_SITEMAPXML_FREQUENCY,
     SNAP_NAME_SITEMAPXML_INCLUDE,
     SNAP_NAME_SITEMAPXML_NAMESPACE,
-    SNAP_NAME_SITEMAPXML_SITEMAP_XML,
-    SNAP_NAME_SITEMAPXML_PRIORITY
+    SNAP_NAME_SITEMAPXML_PRIORITY,
+    SNAP_NAME_SITEMAPXML_SITEMAP_NUMBER_XML,
+    SNAP_NAME_SITEMAPXML_SITEMAP_XML
 };
 const char * get_name(name_t name) __attribute__ ((const));
 
@@ -59,42 +61,79 @@ public:
     sitemapxml_exception_invalid_xslt_data(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
 };
 
+class sitemapxml_exception_missing_uri : public sitemapxml_exception
+{
+public:
+    sitemapxml_exception_missing_uri(char const *        what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_uri(std::string const & what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_uri(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
+};
+
 
 
 
 class sitemapxml : public plugins::plugin, public path::path_execute
 {
 public:
+    class url_image
+    {
+    public:
+        typedef std::vector<url_image>      vector_t;
+
+        void            set_uri(QString const & uri);
+        void            set_title(QString const & title);
+        void            set_caption(QString const & caption);
+        void            set_geo_location(QString const & geo_location);
+        void            set_license_uri(QString const & license_uri);
+
+        QString const & get_uri() const;
+        QString const & get_title() const;
+        QString const & get_caption() const;
+        QString const & get_geo_location() const;
+        QString const & get_license_uri() const;
+
+    private:
+        QString         f_uri;                  // the image URI
+        QString         f_title;                // the image title
+        QString         f_caption;              // the image caption / description
+        QString         f_geo_location;         // the location where the photo was taken (as a human name: Limerick, Ireland)
+        QString         f_license_uri;          // a URI to the license assigned to this image
+    };
+
     class url_info
     {
     public:
-        static const int FREQUENCY_NONE = 0;
-        static const int FREQUENCY_NEVER = -1;
-        static const int FREQUENCY_MIN = 60; // 1 minute
-        static const int FREQUENCY_MAX = 31536000; // 1 year
+        static int const FREQUENCY_NONE = 0;
+        static int const FREQUENCY_NEVER = -1;
+        static int const FREQUENCY_MIN = 60; // 1 minute
+        static int const FREQUENCY_MAX = 31536000; // 1 year
 
-                    url_info();
+                                    url_info();
 
-        void        set_uri(QString const & uri);
-        void        set_priority(float priority);
-        void        set_last_modification(time_t last_modification);
-        void        set_frequency(int frequency);
+        void                        set_uri(QString const & uri);
+        void                        set_priority(float priority);
+        void                        set_last_modification(time_t last_modification);
+        void                        set_frequency(int frequency);
+        void                        add_image(url_image const & image);
+        void                        reset_images();
 
-        QString     get_uri() const;
-        float       get_priority() const;
-        time_t      get_last_modification() const;
-        int         get_frequency() const;
+        QString                     get_uri() const;
+        float                       get_priority() const;
+        time_t                      get_last_modification() const;
+        int                         get_frequency() const;
+        url_image::vector_t const & get_images() const;
 
-        bool        operator < (url_info const & rhs) const;
+        bool                        operator < (url_info const & rhs) const;
 
     private:
         typedef controlled_vars::auto_init<time_t, 0>   ztime_t;
         typedef controlled_vars::auto_init<int, 604800> weekly_t;
 
-        QString                     f_uri;                    // the page URI
-        controlled_vars::mfloat_t   f_priority;                // 0.001 to 1.0, default 0.5
+        QString                     f_uri;                  // the page URI
+        controlled_vars::mfloat_t   f_priority;             // 0.001 to 1.0, default 0.5
         ztime_t                     f_last_modification;    // Unix date when it was last modified
         weekly_t                    f_frequency;            // number of seconds between modifications
+        url_image::vector_t         f_images;               // an array of images
     };
     typedef std::vector<url_info>        url_info_list_t;
 
@@ -114,12 +153,14 @@ public:
     // class path_execute
     virtual bool            on_path_execute(content::path_info_t & ipath);
 
-    SNAP_SIGNAL(generate_sitemapxml, (sitemapxml *sitemap), (sitemap));
+    SNAP_SIGNAL(generate_sitemapxml, (sitemapxml * sitemap), (sitemap));
 
     void                    add_url(url_info const & url);
 
 private:
     void                    content_update(int64_t variables_timestamp);
+    void                    generate_one_sitemap(int32_t const position, size_t & index);
+    void                    generate_sitemap_index(int32_t position);
 
     zpsnap_child_t          f_snap;
     url_info_list_t         f_url_info;

@@ -29,6 +29,7 @@ DTD of the XSLT 2.0.
                          xmlns CDATA #IMPLIED
                          xmlns:fn CDATA #IMPLIED
                          xmlns:html CDATA #IMPLIED
+                         xmlns:image CDATA #IMPLIED
                          xmlns:sitemap CDATA #IMPLIED
                          xmlns:snap CDATA #IMPLIED
                          xmlns:xsl CDATA #IMPLIED
