@@ -3018,7 +3018,6 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 did_work = 1;
             }
         }
-
     }
     catch(std::exception const & e)
     {

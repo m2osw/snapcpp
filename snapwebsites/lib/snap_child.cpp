@@ -7843,6 +7843,7 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
  * Formats that we support:
  *
  * \code
+ *      YYYY-MM-DD
  *      DD-MMM-YYYY HH:MM:SS TZ
  *      DD-MMM-YYYY HH:MM:SS TZ
  *      WWW DD-MMM-YYYY HH:MM:SS TZ
@@ -7866,7 +7867,7 @@ time_t snap_child::string_to_date(QString const & date)
 {
     struct parser_t
     {
-        parser_t(QString const& date)
+        parser_t(QString const & date)
             : f_date(date.simplified().toLower().toUtf8())
             , f_s(f_date.data())
             //, f_time_info() -- initialized below
@@ -8217,6 +8218,37 @@ time_t snap_child::string_to_date(QString const & date)
                 }
                 ++f_s; // skip the comma
                 skip_spaces();
+            }
+
+            // support for YYYY-MM-DD
+            if(f_date.size() == 10
+            && f_s[4] == '-'
+            && f_s[7] == '-')
+            {
+                if(!integer(4, 4, 0, 3000, f_time_info.tm_year))
+                {
+                    return false;
+                }
+                if(*f_s != '-')
+                {
+                    return false;
+                }
+                ++f_s;
+                if(!integer(2, 2, 1, 12, f_time_info.tm_mon))
+                {
+                    return false;
+                }
+                --f_time_info.tm_mon; // expect 0 to 11 in final structure
+                if(*f_s != '-')
+                {
+                    return false;
+                }
+                ++f_s;
+                if(!integer(2, 2, 1, 31, f_time_info.tm_mday))
+                {
+                    return false;
+                }
+                return true;
             }
 
             if(!integer(1, 2, 1, 31, f_time_info.tm_mday))

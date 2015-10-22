@@ -25,6 +25,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 #include "qdomhelpers.h"
 #include "qdomxpath.h"
 #include "qhtmlserializer.h"
@@ -175,7 +176,7 @@ int64_t feed::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 13, 14, 15, 42, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 22, 3, 42, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -192,7 +193,7 @@ int64_t feed::do_update(int64_t last_updated)
  */
 void feed::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -209,8 +210,8 @@ void feed::content_update(int64_t variables_timestamp)
  */
 void feed::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-    static_cast<void>(page);
-    static_cast<void>(ctemplate);
+    NOTUSED(page);
+    NOTUSED(ctemplate);
 
     // avoid those links on administrative pages, totally useless!
     if(ipath.get_cpath().startsWith("admin/"))
@@ -218,7 +219,7 @@ void feed::on_generate_page_content(content::path_info_t& ipath, QDomElement& pa
         return;
     }
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
     content::path_info_t attachment_type_ipath;
@@ -262,7 +263,8 @@ void feed::on_generate_page_content(content::path_info_t& ipath, QDomElement& pa
  */
 void feed::on_backend_process()
 {
-    SNAP_LOG_TRACE() << "backend_process: process feed.rss content.";
+    snap_uri const & main_uri(f_snap->get_uri());
+    SNAP_LOG_TRACE("backend_process: process feed.rss content for \"")(main_uri.get_uri())("\".");
 
     generate_feeds();
 }
@@ -278,9 +280,9 @@ void feed::on_backend_process()
  */
 void feed::generate_feeds()
 {
-    content::content *content_plugin(content::content::instance());
-    layout::layout *layout_plugin(layout::layout::instance());
-    path::path *path_plugin(path::path::instance());
+    content::content * content_plugin(content::content::instance());
+    layout::layout * layout_plugin(layout::layout::instance());
+    path::path * path_plugin(path::path::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
@@ -353,7 +355,7 @@ void feed::generate_feeds()
         // various feed APIs
         //
         // TODO: fix the max. # of entries to make use of a user defined setting instead
-        list::list *list_plugin(list::list::instance());
+        list::list * list_plugin(list::list::instance());
         list::list_item_vector_t list(list_plugin->read_list(child_ipath, 0, 100));
         bool first(true);
         QDomDocument result;
@@ -366,13 +368,43 @@ void feed::generate_feeds()
             // only pages that can be handled by layouts are added
             // others are silently ignored
             quiet_error_callback feed_error_callback(f_snap, true);
-            plugins::plugin *layout_ready(path_plugin->get_plugin(page_ipath, feed_error_callback));
-            layout::layout_content *layout_ptr(dynamic_cast<layout::layout_content *>(layout_ready));
+            plugins::plugin * layout_ready(path_plugin->get_plugin(page_ipath, feed_error_callback));
+            layout::layout_content * layout_ptr(dynamic_cast<layout::layout_content *>(layout_ready));
             if(layout_ptr)
             {
+                // since we are a backend, the main ipath remains equal
+                // to the home page and that is what gets used to generate
+                // the path to each page in the feed data so we have to
+                // change it before we apply the layout
+                f_snap->set_uri_path(QString("/%1").arg(page_ipath.get_cpath()));
+
                 QDomDocument doc(layout_plugin->create_document(page_ipath, layout_ready));
                 // should we have a ctemplate for this create body?
                 layout_plugin->create_body(doc, page_ipath, feed_parser_layout, layout_ptr, "", false, "feed-parser");
+
+                QDomNodeList long_dates(doc.elementsByTagName("created-long-date"));
+                int const max_long_dates(long_dates.size());
+                for(int idx(0); idx < max_long_dates; ++idx)
+                {
+                    QDomNode short_date(long_dates.at(idx));
+                    QDomElement long_date_element(short_date.toElement());
+                    time_t const date(f_snap->string_to_date(long_date_element.text()));
+                    struct tm t;
+                    localtime_r(&date, &t);
+                    char date2822[256];
+                    strftime(date2822, sizeof(date2822), "%a, %d %b %Y %T %z", &t);
+                    for(;;)
+                    {
+                        QDomNode child(long_date_element.firstChild());
+                        if(child.isNull())
+                        {
+                            break;
+                        }
+                        long_date_element.removeChild(child);
+                    }
+                    snap_dom::append_plain_text_to_node(long_date_element, date2822);
+                }
+
                 if(first)
                 {
                     first = false;
@@ -395,7 +427,7 @@ void feed::generate_feeds()
         // only create the feed output if data was added to the result
         if(!first)
         {
-            locale::locale *locale_plugin(locale::locale::instance());
+            locale::locale * locale_plugin(locale::locale::instance());
             locale_plugin->set_timezone();
             locale_plugin->set_locale();
 
@@ -453,22 +485,40 @@ void feed::generate_feeds()
                 data.appendChild(date_text);
             }
 
-            // /snap/head/metadata/desc[@type="now"]/data
+            // /snap/head/metadata/desc[@type="feed::now"]/data
+            // /snap/head/metadata/desc[@type="feed::now-long-date"]/data
             //
             // for lastBuildDate
             {
                 time_t now(time(nullptr));
                 struct tm t;
                 localtime_r(&now, &t);
-                char date2822[256];
-                strftime(date2822, sizeof(date2822), "%a, %d %b %Y %T %z", &t);
-                QDomElement desc(result.createElement("desc"));
-                metadata_tag.appendChild(desc);
-                desc.setAttribute("type", "feed::now");
-                QDomElement data(result.createElement("data"));
-                desc.appendChild(data);
-                QDomText date_text(result.createTextNode(QString::fromUtf8(date2822)));
-                data.appendChild(date_text);
+
+                // for Atom
+                {
+                    char date3339[256];
+                    strftime(date3339, sizeof(date3339), "%Y-%m-%d", &t);
+                    QDomElement desc(result.createElement("desc"));
+                    metadata_tag.appendChild(desc);
+                    desc.setAttribute("type", "feed::now");
+                    QDomElement data(result.createElement("data"));
+                    desc.appendChild(data);
+                    QDomText date_text(result.createTextNode(QString::fromUtf8(date3339)));
+                    data.appendChild(date_text);
+                }
+
+                // for RSS
+                {
+                    char date2822[256];
+                    strftime(date2822, sizeof(date2822), "%a, %d %b %Y %T %z", &t);
+                    QDomElement desc(result.createElement("desc"));
+                    metadata_tag.appendChild(desc);
+                    desc.setAttribute("type", "feed::now-long-date");
+                    QDomElement data(result.createElement("data"));
+                    desc.appendChild(data);
+                    QDomText date_text(result.createTextNode(QString::fromUtf8(date2822)));
+                    data.appendChild(date_text);
+                }
             }
 
             {

@@ -358,7 +358,7 @@ double variable_t::get_floating_point(QString const& name) const
 }
 
 
-QString variable_t::get_string(QString const& name) const
+QString variable_t::get_string(QString const & name) const
 {
     switch(get_type())
     {
@@ -1620,7 +1620,7 @@ public:
     //    result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     //}
 
-    static void call_format(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_format(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() < 1)
         {
@@ -1718,14 +1718,14 @@ public:
                 return number;
             }
 
-            variable_t const& get_next_variable()
+            variable_t const & get_next_variable()
             {
                 if(f_index >= f_sub_results.size())
                 {
                     throw snap_expr_exception_invalid_data("invalid number of parameters to call format(), your format requires more parameters than is currently allowed");
                 }
-                variable_t const& r(f_sub_results[f_index]);
-                ++f_position;
+                variable_t const & r(f_sub_results[f_index]);
+                ++f_index;
                 return r;
             }
 
@@ -2322,6 +2322,43 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
+    static void call_preg_replace(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    {
+        int const size(sub_results.size());
+        if(size != 3)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call preg_replace() expected exactly 3");
+        }
+        QString pattern(sub_results[0].get_string("preg_replace(1)"));
+        QString const replacement(sub_results[1].get_string("preg_replace(2)"));
+        QString str(sub_results[2].get_string("preg_replace(3)"));
+        QString flags;
+
+        // pattern may include a set of flags after the ending '/'
+        Qt::CaseSensitivity cs(Qt::CaseSensitive);
+        if(pattern.length() >= 2
+        && pattern[0] == '/')
+        {
+            int const end(pattern.lastIndexOf('/'));
+            if(end <= 0)
+            {
+                throw snap_expr_exception_invalid_number_of_parameters("invalid pattern for preg_replace() if it starts with a '/' it must end with another '/'");
+            }
+            flags = pattern.mid(end + 1);
+            pattern = pattern.mid(1, end - 2);
+        }
+        if(flags.contains("i"))
+        {
+            cs = Qt::CaseInsensitive;
+        }
+        QRegExp re(pattern, cs, QRegExp::RegExp2);
+        str.replace(re, replacement); // this does the replacement in place
+        QtCassandra::QCassandraValue value;
+SNAP_LOG_WARNING("preg_replace \"")(pattern)("\" -> \"")(str)("\".");
+        value.setStringValue(str);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
+    }
+
     static void call_row_exists(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         if(!g_context)
@@ -2431,7 +2468,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
-    static void call_strlen(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_strlen(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 1)
         {
@@ -2443,7 +2480,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64, value);
     }
 
-    static void call_strmatch(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_strmatch(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         int const size(sub_results.size());
         if(size < 2 || size > 3)
@@ -3534,6 +3571,10 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
     { // retrieve the parent of a path (remove the last /foo name)
         "parent",
         expr_node::call_parent
+    },
+    { // replace parts of a string
+        "preg_replace",
+        expr_node::call_preg_replace
     },
     { // check whether a row exists in a table
         "row_exists",

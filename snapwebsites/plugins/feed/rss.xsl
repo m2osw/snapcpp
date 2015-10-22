@@ -39,10 +39,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					...
 				</category>
 			</xsl:for-each-->
+			<!-- TODO: check whether comments are allowed on that page -->
 			<comments><xsl:copy-of select="url/node()"/>#comments</comments>
 			<!--enclosure>...</enclosure-->
 			<guid><xsl:copy-of select="url/node()"/></guid>
-			<pubDate><xsl:copy-of select="created/node()"/></pubDate>
+			<pubDate><xsl:copy-of select="created-long-date/node()"/></pubDate>
 			<source url="{/snap/head/metadata/desc[@type='website_uri']/data/node()}"><xsl:copy-of select="/snap/head/metadata/desc[@type='name']/data/node()"/></source>
 		</item>
 	</xsl:template>
@@ -65,8 +66,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<!--managingEditor><xsl:copy-of select=""/><managingEditor-->
 				<!--webMaster><xsl:copy-of select=""/><webMaster-->
 				<!-- TODO: change pubDate with the last publication date of the data instead -->
-				<pubDate><xsl:value-of select="head/metadata/desc[@type='feed::now']/data/node()"/></pubDate>
-				<lastBuildDate><xsl:value-of select="head/metadata/desc[@type='feed::now']/data/node()"/></lastBuildDate>
+				<pubDate><xsl:value-of select="head/metadata/desc[@type='feed::now-long-date']/data/node()"/></pubDate>
+				<lastBuildDate><xsl:value-of select="head/metadata/desc[@type='feed::now-long-date']/data/node()"/></lastBuildDate>
 				<!--category>...</category-->
 				<generator>Snap! Websites <xsl:value-of select="head/metadata/desc[@type='version']/data/node()"/></generator>
 				<docs>http://www.rssboard.org/rss-specification</docs>
@@ -76,10 +77,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<!-- user defined -->
 							<xsl:value-of select="head/metadata/desc[@type='ttl']/data/node()"/>
 						</xsl:when>
-						<xsl:otherwise>
-							<!-- default is 1 week -->
-							10080
-						</xsl:otherwise>
+						<!-- default is 1 week -->
+						<xsl:otherwise>10080</xsl:otherwise>
 					</xsl:choose></ttl>
 				<!--image>
 					<title><xsl:copy-of select="head/metadata/desc[@type='name']/data/node()"/></title>

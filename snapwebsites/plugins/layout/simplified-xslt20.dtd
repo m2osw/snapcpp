@@ -367,6 +367,7 @@ DTD of the XSLT 2.0.
 <!ELEMENT url ANY>
 <!ELEMENT author ANY>
 <!ELEMENT created ANY>
+<!ELEMENT created-long-date ANY>
 <!ELEMENT copyright ANY>
 <!ELEMENT description ANY>
 

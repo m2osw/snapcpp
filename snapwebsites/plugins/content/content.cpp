@@ -42,7 +42,7 @@
 #include "dbutils.h"
 #include "log.h"
 #include "not_reached.h"
-#include "plugins.h"
+#include "not_used.h"
 #include "qdomhelpers.h"
 #include "snap_magic.h"
 #include "snap_image.h"
@@ -523,7 +523,7 @@ int64_t content::do_update(int64_t last_updated)
  */
 void content::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_content_table();
     f_content_table.reset();
@@ -584,7 +584,7 @@ void content::initial_update(int64_t variables_timestamp)
  */
 void content::remove_files_compressor(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
 
@@ -621,7 +621,7 @@ void content::remove_files_compressor(int64_t variables_timestamp)
  */
 void content::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 }
 
 

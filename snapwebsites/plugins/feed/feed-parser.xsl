@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<xsl:copy-of select="page/body/titles"/>
 			<xsl:copy-of select="page/body/author"/>
 			<xsl:copy-of select="page/body/created"/>
+			<created-long-date><xsl:copy-of select="page/body/created/node()"/></created-long-date>
 			<xsl:if test="page/body/owner != ''">
 				<copyright>Copyright &#xA9; <xsl:copy-of select="$year_range"/> by <xsl:copy-of select="page/body/owner"/></copyright>
 			</xsl:if>
