@@ -425,7 +425,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 10, 7, 14, 7, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 22, 19, 53, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -441,7 +441,7 @@ int64_t editor::do_update(int64_t last_updated)
  */
 void editor::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -481,8 +481,8 @@ void editor::on_generate_main_content(content::path_info_t & ipath, QDomElement 
  */
 void editor::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(ctemplate);
+    NOTUSED(ipath);
+    NOTUSED(ctemplate);
 
     QDomDocument doc(header.ownerDocument());
 
@@ -605,9 +605,9 @@ void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::
                                          QDomElement const& widget, QString const& widget_name,
                                          QString const& widget_type, bool const is_secret)
 {
-    static_cast<void>(widget);
-    static_cast<void>(widget_type);
-    static_cast<void>(is_secret);
+    NOTUSED(widget);
+    NOTUSED(widget_type);
+    NOTUSED(is_secret);
 
     messages::messages *messages(messages::messages::instance());
 
@@ -653,7 +653,7 @@ void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::
  */
 void editor::on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info)
 {
-    static_cast<void>(session_info);
+    NOTUSED(session_info);
 
     QString const cpath(ipath.get_cpath());
     if(cpath == "admin/drafts/new")
@@ -746,7 +746,7 @@ void editor::process_new_draft()
     content::path_info_t draft_ipath;
     draft_ipath.set_path(new_draft_key);
     draft_ipath.force_branch(content_plugin->get_current_user_branch(new_draft_key, locale, true));
-    draft_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+    draft_ipath.force_revision(snap_version::SPECIAL_VERSION_FIRST_REVISION);
     draft_ipath.force_locale(locale);
     content_plugin->create_content(draft_ipath, owner, "page/draft");
 
@@ -2077,7 +2077,7 @@ QString editor::clean_post_value(QString const & widget_type, QString value)
  */
 void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access * server_access_plugin)
 {
-    static_cast<void>(info);
+    NOTUSED(info);
 
     // get the editor widgets and save them in a map
     typedef std::map<QString, QDomElement> widget_map_t;
@@ -4592,7 +4592,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     };
     static added_form_file_support_t g_added_editor_form_js_css(added_form_file_support_t::ADDED_FORM_FILE_NONE);
 
-    static_cast<void>(ctemplate);
+    NOTUSED(ctemplate);
 
     content::content * content_plugin(content::content::instance());
 
@@ -4960,7 +4960,7 @@ bool editor::prepare_editor_form_impl(editor *e)
 {
     // no need to use 'e' in this implementation,
     // it is useful in other plugins though
-    static_cast<void>(e);
+    NOTUSED(e);
 
     // if we already computed that document, return false immediately
     if(!f_editor_form.documentElement().isNull())
@@ -4977,7 +4977,7 @@ bool editor::prepare_editor_form_impl(editor *e)
 
 void editor::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
 {
-    static_cast<void>(page_cpath);
+    NOTUSED(page_cpath);
 
     // generate the editor content
     // TODO: see if there wouldn't be a cleaner way to do this
@@ -4999,7 +4999,7 @@ void editor::on_generate_boxes_content(content::path_info_t& page_cpath, content
  */
 void editor::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning)
 {
-    static_cast<void>(cloning);
+    NOTUSED(cloning);
 
     links::link_info src(source.name(), source.is_unique(), clone, branch_number);
     links::links::instance()->create_link(src, destination);

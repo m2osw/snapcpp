@@ -2354,7 +2354,6 @@ public:
         QRegExp re(pattern, cs, QRegExp::RegExp2);
         str.replace(re, replacement); // this does the replacement in place
         QtCassandra::QCassandraValue value;
-SNAP_LOG_WARNING("preg_replace \"")(pattern)("\" -> \"")(str)("\".");
         value.setStringValue(str);
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }

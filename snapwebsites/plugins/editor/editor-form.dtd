@@ -79,6 +79,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT attachment EMPTY>
 <!ATTLIST attachment type CDATA "attachment"
+                     browse (yes|no) "yes"
                      owner CDATA #IMPLIED
                      identification CDATA #IMPLIED
                      force-filename CDATA #IMPLIED

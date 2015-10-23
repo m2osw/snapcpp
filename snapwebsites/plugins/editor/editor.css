@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.27
+ * Version: 0.0.1.32
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -286,6 +286,47 @@
 .editable.dropped-file-with-preview-box .snap-editor-background-content
 {
 	text-align: center;
+}
+
+/* images are added at z-index: 1 */
+.editable.image-box .browse-block,
+.editable.dropped-file-with-preview-box .browse-block
+{
+	position: absolute;
+	z-index: 2;
+}
+
+.editable.image-box .browse-block a.browse-button,
+.editable.dropped-file-with-preview-box .browse-block a.browse-button
+{
+	border: 1px solid black;
+	border-radius: 5px;
+	background-color: #b0e8a0;
+	display: inline-block;
+	padding: 10px;
+	margin: 10px;
+	font-weight: bold;
+	text-align: center;
+	text-decoration: none;
+	box-shadow: 2px 2px 4px #666666;
+	opacity: 0.2;
+	transition: opacity 0.5s ease-in-out;
+}
+
+.editable.image-box:hover .browse-block a.browse-button,
+.editable.dropped-file-with-preview-box:hover .browse-block a.browse-button
+{
+	opacity: 1;
+	transition: opacity 0.5s ease;
+}
+
+/* hide the <input type="file"> widget */
+.editable.image-box .browse-block .hidden.file-input,
+.editable.dropped-file-with-preview-box .browse-block .hidden.file-input
+{
+	width: 0;
+	height: 0;
+	overflow: hidden;
 }
 
 

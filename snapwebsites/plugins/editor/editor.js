@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.375
+ * Version: 0.0.3.393
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -5408,7 +5408,8 @@ snapwebsites.Editor.prototype.registerWidgetType = function(widget_type) // virt
  *
  *  private:
  *      function droppedImageConvert_(e: ProgressEvent) : void;
- *      function droppedFile_(e: ProgressEvent) : void;
+ *      function droppedFiles_(e: ProgressEvent) : void;
+ *      function droppedFileLoaded_(e: ProgressEvent) : void;
  *  };
  * \endcode
  *
@@ -5562,7 +5563,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
     //       should only override the the droppedImage()
     //       and droppedAttachment() functions instead
     //
-    c.on("drop",function(e)
+    c.on("drop", function(e)
         {
             var i,                      // loop index
                 r,                      // file reader object
@@ -5601,51 +5602,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
             if(e.originalEvent.dataTransfer
             && e.originalEvent.dataTransfer.files.length)
             {
-                accept_images = that_element.hasClass("image");
-                accept_files = that_element.hasClass("attachment");
-                if(accept_images || accept_files)
-                {
-                    // TODO: add a test, in case length > 1 and the destination
-                    //       widget expects exactly 1 file, then generate an
-                    //       error because we cannot know which file the user
-                    //       really intended to drop (maybe we could offer a
-                    //       selection, assuming we do not lose the necessary
-                    //       info...) We could also just have a max. # of
-                    //       possible drops and if `length > max` then err.
-                    //
-                    file_loaded = function(e)
-                        {
-                            that.droppedFile_(e);
-                        };
-                    for(i = 0; i < e.originalEvent.dataTransfer.files.length; ++i)
-                    {
-                        // For images we do not really care about that info, for uploads we will
-                        // use it so I keep that here for now to not have to re-research it...
-                        //console.log("  filename = [" + e.originalEvent.dataTransfer.files[i].name
-                        //          + "] + size = " + e.originalEvent.dataTransfer.files[i].size
-                        //          + " + type = " + e.originalEvent.dataTransfer.files[i].type
-                        //          + "\n");
-
-                        // read the image so we can make sure it is indeed an
-                        // image and ignore any other type of files
-                        r = new FileReader();
-                        r.snapEditorWidget = editor_widget;
-                        r.snapEditorFile = e.originalEvent.dataTransfer.files[i];
-                        r.snapEditorIndex = i;
-                        r.snapEditorAcceptImages = accept_images;
-                        r.snapEditorAcceptFiles = accept_files;
-                        r.onload = file_loaded;
-
-                        //
-                        // TBD: right now we only check the first few bytes
-                        //      but we may want to increase that size later
-                        //      to allow for JPEG that have the width and
-                        //      height defined (much) further in the stream
-                        //      (at times at the end!?)
-                        //
-                        r.readAsArrayBuffer(r.snapEditorFile.slice(0, 64));
-                    }
-                }
+                that.droppedFiles_(editor_widget, e.originalEvent.dataTransfer.files, false);
             }
 
             return false;
@@ -5685,6 +5642,85 @@ snapwebsites.EditorWidgetType.prototype.setupEditButton = function(editor_widget
 /*jslint unparam: false */ // noempty: true -- not support in current version
 
 
+/** \brief Check all the files attached to an element.
+ *
+ * This function checks all the files that were either dragged and
+ * dropped on a DIV or selected with a Browse button (\<input type="file">).
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget that received
+ *                                                   the file.
+ * @param {FileList} files  An array of files as received by a Drag & Drop
+ *                          or an input file element.
+ * @param {boolean} display_image  Whether to display the image in the element
+ *                                 ('true' for the input file element only.)
+ *
+ * @return {boolean}  true if at least one file was added.
+ *
+ * @private
+ */
+snapwebsites.EditorWidgetType.prototype.droppedFiles_ = function(editor_widget, files, display_image)
+{
+    var that = this,
+        i,
+        r,
+        file_loaded,
+        accept_images,
+        accept_files,
+        c = editor_widget.getWidgetContent();
+
+    // make sure the element accepts something
+    accept_images = c.hasClass("image");
+    accept_files = c.hasClass("attachment");
+    if(!accept_images && !accept_files)
+    {
+        return false;
+    }
+
+    // we need 'that' so the function has to be dynamically created
+    file_loaded = function(e)
+        {
+            that.droppedFileLoaded_(e);
+        };
+
+    for(i = 0; i < files.length; ++i)
+    {
+        // TODO: ameliorate support of "plain" attachments
+        //
+        // For images we do not really care about that info, for uploads we
+        // will use it so I keep that here for now to not have to
+        // re-research it...
+        //console.log("  filename = [" + files[i].name
+        //          + "] + size = " + files[i].size
+        //          + " + type = " + files[i].type
+        //          + "\n");
+
+        // read the image so we can make sure it is indeed an
+        // image and ignore any other type of files
+        r = new FileReader();
+        r.snapEditorWidget = editor_widget;
+        r.snapEditorFile = files[i];
+        r.snapEditorIndex = i;
+        r.snapEditorAcceptImages = accept_images;
+        r.snapEditorAcceptFiles = accept_files;
+        r.snapEditorDisplayImage = display_image;
+        r.onload = file_loaded;
+
+        //
+        // TBD: right now we only check the first few bytes
+        //      but we may want to increase that size later
+        //      to allow for JPEG that have the width and
+        //      height defined (much) further in the stream
+        //      (at times at the end!?) TIFF is another format
+        //      that most often require accessing data near
+        //      the end of the file.
+        //
+        r.readAsArrayBuffer(r.snapEditorFile.slice(0, 64));
+    }
+
+    return i > 0;
+};
+
+
 /** \brief Got the content of a dropped file.
  *
  * This function analyze the dropped file content. If recognized then we
@@ -5695,7 +5731,7 @@ snapwebsites.EditorWidgetType.prototype.setupEditButton = function(editor_widget
  * @private
  * @final
  */
-snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
+snapwebsites.EditorWidgetType.prototype.droppedFileLoaded_ = function(e)
 {
     var that = this,
         r,
@@ -5736,13 +5772,9 @@ snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
     {
         // generate an error
         //
-        // TODO: we do not yet have code to dynamically generate errors
-        //       (we can show messages when created by the server, and
-        //       want the same thing with errors, but that's not yet
-        //       available...)
-        //       -- This is not correct anymore, we now do have a way to
-        //          dynamically generate errors!
-        //
+        snapwebsites.OutputInstance.displayOneMessage(
+                "File Format Not Known",
+                "We do not understand the file format of this file. As such we refuse it for security reasons.");
     }
 };
 
@@ -5769,7 +5801,7 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
     img.onload = function()
         {
             // keep this function here because it is a full closure (it
-            // uses 'img' 'that', and even 'e')
+            // uses 'img', 'that', and even 'e')
 
             var sizes,
                 limit_width = 0,
@@ -5862,7 +5894,7 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
 
     // TBD: still a valid test? img.readyState is expected to be a string!
     //
-    // a fix for browsers that don't call onload() if the image is
+    // a fix for browsers that do not call onload() if the image is
     // already considered loaded by now
     if(img.complete || img.readyState == 4)
     {
@@ -7464,9 +7496,14 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.getType = function() // virtual
  */
 snapwebsites.EditorWidgetTypeImageBox.prototype.initializeWidget = function(widget) // virtual
 {
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+    var that = this,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
         w = editor_widget.getWidget(),
-        background = w.children(".snap-editor-background");
+        c = editor_widget.getWidgetContent(),
+        snap_editor_element = c.parents('.snap-editor'),
+        background = w.children(".snap-editor-background"),
+        browse_button,
+        browse_input_file;
 
     snapwebsites.EditorWidgetTypeImageBox.superClass_.initializeWidget.call(this, widget);
 
@@ -7476,6 +7513,61 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.initializeWidget = function(widg
     background.css("width", snapwebsites.castToNumber(w.width(), "ImageBox widget width"))
               .css("margin-top", (snapwebsites.castToNumber(w.height(), "ImageBox widget height")
                                       - snapwebsites.castToNumber(background.height(), "ImageBox background height")) / 2);
+
+    // by default we offer the Drag & Drop area and also show a Browse
+    // button to let people browse their hard drive with the normal
+    // file manager instead of a drag & drop which can be annoying to some
+    //
+    if(snap_editor_element.hasClass("browse"))
+    {
+        // there is no browse button by default, we have to create it;
+        // also we do not want the Browser super ugly one to appear so
+        // we create that one and place it inside a div that is so
+        // small that no one can see it (but it needs to exist and
+        // be otherwise considered visible.)
+        jQuery(
+                "<div class='browse-block'>"
+                + "<div class='hidden file-input'>"
+                  + "<input type='file'/>"
+                + "</div>"
+                + "<a href='#' class='browse-button'>Browse</a>"
+              + "</div>"
+              )
+                .prependTo(snap_editor_element);
+
+        browse_button = snap_editor_element.find(".browse-block a.browse-button");
+        browse_input_file = snap_editor_element.find(".browse-block .hidden.file-input input");
+
+        // connect the new browse-button anchor
+        browse_button.click(function(e)
+            {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // simulate a click on the hidden file-input button
+                browse_input_file.click();
+            });
+
+        // when a file is selected, on OK you get a change()
+        browse_input_file.change(function(e)
+            {
+                if(this.files
+                && this.files.length)
+                {
+                    // TODO: add a test, in case length > 1 and the destination
+                    //       widget expects exactly 1 file, then generate an
+                    //       error because we cannot know which file the user
+                    //       really intended to drop (maybe we could offer a
+                    //       selection, assuming we do not lose the necessary
+                    //       info...) We could also just have a max. # of
+                    //       possible drops and if `length > max` then err.
+                    //
+                    that.droppedFiles_(editor_widget, this.files, true);
+                }
+
+                return false;
+            });
+    }
 };
 
 

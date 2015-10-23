@@ -43,9 +43,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="type"/>
     <div field_type="dropped-file-with-preview">
       <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
+      <!--
+        Note:
+        by default browse is expected to say yes, the programmer has to
+        add browse="no" to not get the browse button
+      -->
       <xsl:attribute name="class"><xsl:if
           test="$action = 'edit'">snap-editor </xsl:if>editable dropped-file-with-preview-box <xsl:value-of
           select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if
+          test="not(attachment[@browse='no'])"> browse</xsl:if><xsl:if
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
           select="concat(' ', classes)"/></xsl:attribute>
@@ -117,6 +123,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <xsl:attribute name="class"><xsl:if
           test="$action = 'edit'">snap-editor </xsl:if>editable image-box <xsl:value-of
           select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if
+          test="not(attachment[@browse='no'])"> browse</xsl:if><xsl:if
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of
           select="concat(' ', classes)"/></xsl:attribute>
