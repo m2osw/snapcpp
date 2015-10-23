@@ -215,7 +215,7 @@ public:
     void                    on_detach_from_session();
     void                    on_define_locales(QString & locales);
     void                    on_create_content(content::path_info_t & path, QString const & owner, QString const & type);
-    void                    on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                    on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
     void                    on_set_locale();
     void                    on_set_timezone();
 

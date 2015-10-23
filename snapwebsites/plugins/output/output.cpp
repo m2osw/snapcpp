@@ -96,7 +96,7 @@ void output::on_bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
-    SNAP_LISTEN(output, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(output, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 
@@ -565,14 +565,12 @@ void output::on_generate_page_content(content::path_info_t & ipath, QDomElement 
  * \li content::created -- the date when this page was created
  *
  * \param[in,out] ipath  The path to the page being worked on.
- * \param[in] plugin_owner  The plugin that owns this ipath content.
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void output::on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token)
+void output::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(xml);
 
     if(!token.is_namespace("content::"))
     {

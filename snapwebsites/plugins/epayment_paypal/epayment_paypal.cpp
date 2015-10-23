@@ -23,8 +23,9 @@
 
 #include "log.h"
 #include "not_reached.h"
-#include "tcp_client_server.h"
+#include "not_used.h"
 #include "qdomhelpers.h"
+#include "tcp_client_server.h"
 
 #include <QtCassandra/QCassandraLock.h>
 
@@ -258,7 +259,7 @@ void epayment_paypal::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(epayment_paypal, "server", server, process_post, _1);
     SNAP_LISTEN(epayment_paypal, "server", server, table_is_accessible, _1, _2);
     SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(epayment_paypal, "epayment", epayment::epayment, repeat_payment, _1, _2, _3);
 }
 
@@ -3199,11 +3200,10 @@ std::cerr << "***\n*** JSON BODY: ["
 }
 
 
-void epayment_paypal::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void epayment_paypal::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(ipath);
+    NOTUSED(xml);
 
     if(!token.is_namespace("epayment_paypal::"))
     {

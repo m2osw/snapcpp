@@ -24,6 +24,7 @@
 
 #include "dbutils.h"
 #include "log.h"
+#include "not_used.h"
 #include "qhtmlserializer.h"
 #include "qxmlmessagehandler.h"
 
@@ -124,7 +125,7 @@ void test_plugin::on_bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(test_plugin, "server", server, process_post, _1);
-    SNAP_LISTEN(test_plugin, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(test_plugin, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 
@@ -254,10 +255,9 @@ QtCassandra::QCassandraTable::pointer_t test_plugin::get_test_results_table()
  * replaced by the version of this plugin. To get the version
  * of all the plugins, send the user to the /admin/versions page.
  */
-void test_plugin::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void test_plugin::on_replace_token(content::path_info_t& ipath, QDomDocument& xml, filter::filter::token_info_t& token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
+    NOTUSED(ipath);
 
     if(!token.is_namespace("test_plugin::"))
     {

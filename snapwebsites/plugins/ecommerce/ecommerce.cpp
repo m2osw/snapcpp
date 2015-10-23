@@ -24,8 +24,9 @@
 #include "../permissions/permissions.h"
 #include "../shorturl/shorturl.h"
 
-#include "qdomxpath.h"
 #include "not_reached.h"
+#include "not_used.h"
+#include "qdomxpath.h"
 
 #include <QtCassandra/QCassandraLock.h>
 
@@ -392,7 +393,7 @@ void ecommerce::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(ecommerce, "server", server, process_post, _1);
     SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(ecommerce, "epayment", epayment::epayment, generate_invoice, _1, _2, _3);
-    SNAP_LISTEN(ecommerce, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(ecommerce, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(ecommerce, "path", path::path, preprocess_path, _1, _2);
 }
 
@@ -1596,11 +1597,10 @@ bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t p
 }
 
 
-void ecommerce::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void ecommerce::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(ipath);
+    NOTUSED(xml);
 
     if(!token.is_namespace("ecommerce::"))
     {

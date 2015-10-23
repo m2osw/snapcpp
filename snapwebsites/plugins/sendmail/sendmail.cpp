@@ -25,11 +25,12 @@
 #include "http_strings.h"
 #include "log.h"
 #include "mkgmtime.h"
-#include "snap_magic.h"
-#include "qdomxpath.h"
-#include "qdomhelpers.h"
-#include "quoted_printable.h"
+#include "not_used.h"
 #include "process.h"
+#include "qdomhelpers.h"
+#include "qdomxpath.h"
+#include "quoted_printable.h"
+#include "snap_magic.h"
 #include "snap_pipe.h"
 
 #include <libtld/tld.h>
@@ -1466,7 +1467,7 @@ void sendmail::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(sendmail, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(sendmail, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
     SNAP_LISTEN(sendmail, "editor", editor::editor, finish_editor_form_processing, _1, _2);
@@ -3141,14 +3142,12 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
  * \li [sendmail::parameter(name="parameter name")]
  *
  * \param[in,out] ipath  The path to the page being worked on.
- * \param[in] plugin_owner  The owner of this ipath content.
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void sendmail::on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token)
+void sendmail::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
+    NOTUSED(ipath);
 
     if(!token.is_namespace("sendmail::"))
     {

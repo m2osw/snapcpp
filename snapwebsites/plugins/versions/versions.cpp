@@ -21,6 +21,7 @@
 #include "../permissions/permissions.h"
 
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <csspp/csspp.h>
 #include <libtld/tld.h>
@@ -96,7 +97,7 @@ void versions::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(versions, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(versions, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 
@@ -169,23 +170,22 @@ void versions::content_update(int64_t variables_timestamp)
 
 
 
-void versions::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void versions::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(ipath);
+    NOTUSED(xml);
 
-    users::users *users_plugin(users::users::instance());
+    users::users * users_plugin(users::users::instance());
     QString const user_path(users_plugin->get_user_path());
     if(token.is_token("versions::versions")
     && !user_path.isEmpty())
     {
         content::path_info_t page_ipath;
         page_ipath.set_path("admin/versions");
-        permissions::permissions *permissions_plugin(permissions::permissions::instance());
-        QString const& login_status(permissions_plugin->get_login_status());
+        permissions::permissions * permissions_plugin(permissions::permissions::instance());
+        QString const & login_status(permissions_plugin->get_login_status());
         content::permission_flag allowed;
-        path::path *path_plugin(path::path::instance());
+        path::path * path_plugin(path::path::instance());
         path_plugin->access_allowed
             ( user_path         // current user
             , page_ipath        // this page

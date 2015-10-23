@@ -1167,7 +1167,7 @@ void list::on_bootstrap(snap_child * snap)
     SNAP_LISTEN(list, "content", content::content, modified_content, _1);
     SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
     SNAP_LISTEN(list, "links", links::links, modified_link, _1, _2);
-    SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3);
 
     SNAP_TEST_PLUGIN_SUITE_LISTEN(list);
 }
@@ -3285,13 +3285,11 @@ QString list::run_list_item_key(content::path_info_t & list_ipath, content::path
  * into a list.
  *
  * \param[in,out] ipath  The path to the page being worked on.
- * \param[in] plugin_owner  The plugin owner of the ipath data.
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void list::on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token)
+void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    NOTUSED(plugin_owner);
     NOTUSED(xml);
 
     // a list::... token?

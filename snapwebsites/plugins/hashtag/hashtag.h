@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../content/content.h"
+#include "../filter/filter.h"
 
 namespace snap
 {
@@ -54,7 +54,7 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    void                on_filter_text(content::path_info_t & ipath, QDomDocument & xml, QString & result, bool & changed);
+    void                on_filter_text(filter::filter::filter_text_t & txt_filt);
 
 private:
     void                content_update(int64_t variables_timestamp);

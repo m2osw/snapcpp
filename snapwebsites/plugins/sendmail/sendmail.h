@@ -234,7 +234,7 @@ public:
     void                    on_bootstrap(snap_child * snap);
     void                    on_register_backend_action(server::backend_action_map_t & actions);
     void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
-    void                    on_replace_token(content::path_info_t & cpath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                    on_replace_token(content::path_info_t & cpath, QDomDocument & xml, filter::filter::token_info_t & token);
     void                    on_init_editor_widget(content::path_info_t  & ipath, QString const  & field_id, QString const  & field_type, QDomElement  & widget, QtCassandra::QCassandraRow::pointer_t row);
     void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
 

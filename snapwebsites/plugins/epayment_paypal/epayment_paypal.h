@@ -143,7 +143,7 @@ public:
     void                        on_process_post(QString const & uri_path);
     virtual bool                on_path_execute(content::path_info_t & ipath);
     virtual void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, const QString & ctemplate);
-    void                        on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
     void                        on_repeat_payment(content::path_info_t & first_invoice_ipath, content::path_info_t & previous_invoice_ipath, content::path_info_t & new_invoice_ipath);
 
 private:

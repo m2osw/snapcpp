@@ -50,7 +50,7 @@ SNAP_PLUGIN_START(feed, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -759,6 +759,9 @@ void feed::generate_feeds()
             }
         }
     }
+
+    // just in case, reset the main URI
+    f_snap->set_uri_path("/");
 }
 
 

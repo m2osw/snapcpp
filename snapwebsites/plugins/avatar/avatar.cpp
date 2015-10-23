@@ -17,6 +17,8 @@
 
 #include "avatar.h"
 
+#include "not_used.h"
+
 #include <openssl/md5.h>
 
 #include "poison.h"
@@ -80,7 +82,7 @@ void avatar::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(avatar, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(avatar, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 
@@ -148,17 +150,16 @@ int64_t avatar::do_update(int64_t last_updated)
  */
 void avatar::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
 
 
-void avatar::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void avatar::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(ipath);
+    NOTUSED(xml);
 
     if(!token.is_namespace("avatar::"))
     {

@@ -79,7 +79,7 @@ public:
     virtual bool                on_path_execute(content::path_info_t & ipath);
     virtual void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, const QString & ctemplate);
     void                        on_generate_invoice(content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment::epayment_product_list & plist);
-    void                        on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
     void                        on_preprocess_path(content::path_info_t & ipath, plugins::plugin *path_plugin);
 
     SNAP_SIGNAL(product_allowed, (QDomElement product, content::path_info_t product_ipath), (product, product_ipath));

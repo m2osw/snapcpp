@@ -20,13 +20,14 @@
 #include "../content/content.h"
 #include "../messages/messages.h"
 
+#include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
-#include "qdomhelpers.h"
-#include "qxmlmessagehandler.h"
 #include "qstring_stream.h"
-#include "log.h"
+#include "qxmlmessagehandler.h"
 
 #include <QXmlQuery>
 #include <QFile>
@@ -156,7 +157,7 @@ void form::on_bootstrap(::snap::snap_child *snap)
 
     SNAP_LISTEN(form, "server", server, process_post, _1);
     SNAP_LISTEN(form, "content", content::content, copy_branch_cells, _1, _2, _3);
-    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(form, "layout", layout::layout, filtered_content, _1, _2, _3);
 }
 
@@ -1490,11 +1491,11 @@ int form::count_html_lines(QString const& html)
  *
  * \return Always return true so other plugins have a chance to validate too.
  */
-bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info,
-                                         QDomElement const& widget, QString const& widget_name,
-                                         QString const& widget_type, bool const is_secret)
+bool form::validate_post_for_widget_impl(content::path_info_t & ipath, sessions::sessions::session_info & info,
+                                         QDomElement const & widget, QString const & widget_name,
+                                         QString const & widget_type, bool const is_secret)
 {
-    messages::messages *messages(messages::messages::instance());
+    messages::messages * messages(messages::messages::instance());
 
     // get the value we are going to validate
     QString const value(f_snap->postenv(widget_name));
@@ -2051,13 +2052,12 @@ void form::used_tab_id(int used)
  * \li [form::settings]
  *
  * \param[in,out] ipath  The path to the page being worked on.
- * \param[in] plugin_owner  The plugin owner of the ipath data.
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void form::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(xml);
+    NOTUSED(xml);
 
     // a form::... token?
     if(!token.is_namespace("form::"))
@@ -2065,6 +2065,7 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         return;
     }
 
+    QString const plugin_owner(ipath.get_parameter("token_owner"));
     QString const site_key(f_snap->get_site_key_with_slash());
     QDomDocument form_doc;
     QString source;

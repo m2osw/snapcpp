@@ -64,7 +64,7 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child * snap);
-    void                on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
     SNAP_SIGNAL_WITH_MODE(versions_libraries, (filter::filter::token_info_t & token), (token), START_AND_DONE);
     SNAP_SIGNAL_WITH_MODE(versions_tools, (filter::filter::token_info_t & token), (token), START_AND_DONE);

@@ -20,6 +20,7 @@
 #include "../locale/snap_locale.h"
 
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <unicode/uversion.h>
 
@@ -101,7 +102,7 @@ void locale_settings::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN0(locale_settings, "locale", locale::locale, set_locale);
     SNAP_LISTEN0(locale_settings, "locale", locale::locale, set_timezone);
-    SNAP_LISTEN(locale_settings, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(locale_settings, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 
@@ -245,11 +246,10 @@ std::cerr << "*** Set locale_settings/LOCALE timezone [" << timezone_name << "]\
  * \li [locale::locale-list] -- create an HTML table with the list of
  *                              countries available on this system
  */
-void locale_settings::on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token)
+void locale_settings::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(ipath);
+    NOTUSED(xml);
 
     if(!token.is_namespace("locale::"))
     {

@@ -90,20 +90,20 @@ bool get_tag(QString const & tag_name, QDomElement & element, QDomElement & tag,
 
 /** \brief Useful function to append a string of text to a QDomNode.
  *
- * This function appends a node of text at the end of the specified \p child
- * node. This is simply creating a text node and appending it.
+ * This function appends a node of text at the end of the specified \p node.
+ * This is simply creating a text node and appending it.
  *
  * \note
  * This is equivalent to insert_html_string_to_xml_doc() when \p plain_text
  * does not include any tags or entities.
  *
- * \param[in,out] child  DOM element where the plain text is to be inserted.
+ * \param[in,out] node  DOM element where the plain text is to be inserted.
  * \param[in] plain_text  The plain text to append.
  */
-void append_plain_text_to_node(QDomNode & child, QString const & plain_text)
+void append_plain_text_to_node(QDomNode & node, QString const & plain_text)
 {
-    QDomText text(child.ownerDocument().createTextNode(plain_text));
-    child.appendChild(text);
+    QDomText text(node.ownerDocument().createTextNode(plain_text));
+    node.appendChild(text);
 }
 
 
@@ -111,38 +111,38 @@ void append_plain_text_to_node(QDomNode & child, QString const & plain_text)
  *
  * When inserting a string in the XML document and that string may include
  * HTML code, call this function, it will first convert the string to XML
- * then insert the result as children of the \p child element.
+ * then insert the result as children of the \p node element.
  *
  * \warning
  * If the string is plain text, YOU are responsible for converting the
  * \<, \>, and \& characters before calling this function. Or maybe just
  * make use of the doc.createTextNode(plain_text) function.
  *
- * \param[in,out] child  DOM element receiving the result as children nodes.
+ * \param[in,out] node  DOM element receiving the result as children nodes.
  * \param[in] xml  The input XML string.
  */
-void insert_html_string_to_xml_doc(QDomNode & child, QString const & xml)
+void insert_html_string_to_xml_doc(QDomNode & node, QString const & xml)
 {
     // parsing the XML can be slow, try to avoid that if possible
-    int const max(xml.length());
-    for(int idx(0); idx < max; ++idx)
+    for(QChar const * s(xml.data()); !s->isNull(); ++s)
     {
-        // Note: we do not have to check for '>' because a '>' by itself
-        //       is a spurious character in the stream which most parsers
-        //       accept properly; however, we must use the wrapper scheme
-        //       if we have a '<' (a tag) or a '&' (an entity)
-        ushort c(xml[idx].unicode());
-        if(c == '<' || c == '&')
+        switch(s->unicode())
         {
-            QDomDocument xml_doc("wrapper");
-            xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
-            insert_node_to_xml_doc(child, xml_doc.documentElement());
+        case '<':
+        case '>':
+        case '&':
+            // this requires the full XML round trip
+            {
+                QDomDocument xml_doc("wrapper");
+                xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
+                insert_node_to_xml_doc(node, xml_doc.documentElement());
+            }
             return;
+
         }
     }
 
-    QDomText text(child.ownerDocument().createTextNode(xml));
-    child.appendChild(text);
+    append_plain_text_to_node(node, xml);
 }
 
 
@@ -517,7 +517,7 @@ QDomElement create_element(QDomNode parent, QString const& path)
  * We may want to support any type of entities which I think the current
  * implementation will fail to convert (because XML is limit to 3...)
  *
- * \param[in] html  The input that includes trags.
+ * \param[in] html  The input that includes tags.
  *
  * \return The text found in the html string if any.
  */

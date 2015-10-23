@@ -21,6 +21,7 @@
 #include "../messages/messages.h"
 
 #include "log.h"
+#include "not_used.h"
 #include "qdomxpath.h"
 #include "qdomhelpers.h"
 #include "qstring_stream.h"
@@ -32,6 +33,66 @@
 
 
 SNAP_PLUGIN_START(filter, 1, 0)
+
+
+
+filter::filter_text_t::filter_text_t(content::path_info_t & ipath, QDomDocument & xml_document, QString const & text)
+    : f_ipath(ipath)
+    , f_xml_document(xml_document)
+    , f_text(text)
+    //, f_changed(false) -- auto-init
+    //, f_support_edit(true) -- auto-init
+{
+}
+
+
+void filter::filter_text_t::set_support_edit(bool support_edit)
+{
+    f_support_edit = support_edit;
+}
+
+
+bool filter::filter_text_t::get_support_edit() const
+{
+    return f_support_edit;
+}
+
+
+content::path_info_t & filter::filter_text_t::get_ipath()
+{
+    return f_ipath;
+}
+
+
+bool filter::filter_text_t::has_changed() const
+{
+    return f_changed;
+}
+
+
+QDomDocument & filter::filter_text_t::get_xml_document() const
+{
+    return f_xml_document;
+}
+
+
+void filter::filter_text_t::set_text(QString const & text)
+{
+    if(f_text != text)
+    {
+        f_text = text;
+        f_changed = true;
+    }
+}
+
+
+QString const & filter::filter_text_t::get_text() const
+{
+    return f_text;
+}
+
+
+
 
 /** \brief Initialize the filter plugin.
  *
@@ -61,7 +122,7 @@ filter::~filter()
  *
  * \return A pointer to the filter plugin.
  */
-filter *filter::instance()
+filter * filter::instance()
 {
     return g_plugin_filter_factory.instance();
 }
@@ -92,7 +153,7 @@ QString filter::description() const
  *
  * \param[in] snap  The child handling this request.
  */
-void filter::on_bootstrap(::snap::snap_child *snap)
+void filter::on_bootstrap(::snap::snap_child * snap)
 {
     f_snap = snap;
 
@@ -141,17 +202,18 @@ void filter::on_bootstrap(::snap::snap_child *snap)
  * \param[in] accepted_tags  The list of tags kept in the text.
  * \param[in] accepted_attributes  The list of attributes kept in the tags.
  */
-void filter::on_xss_filter(QDomNode& node,
-                           QString const& accepted_tags,
-                           QString const& accepted_attributes)
+void filter::on_xss_filter(QDomNode & node,
+                           QString const & accepted_tags,
+                           QString const & accepted_attributes)
 {
     // initialize the array of tags so it starts and ends with spaces
     // this allows for much faster searches (i.e. indexOf())
-    const QString tags(" " + accepted_tags + " ");
+    QString const tags(" " + accepted_tags + " ");
 
     QString attr(" " + accepted_attributes + " ");
-    const bool attr_refused = accepted_attributes[0] == '!';
-    if(attr_refused) {
+    bool const attr_refused(accepted_attributes[0] == '!');
+    if(attr_refused)
+    {
         // erase the '!' from the attr string
         attr.remove(1, 1);
     }
@@ -181,8 +243,9 @@ void filter::on_xss_filter(QDomNode& node,
         // Is this node a tag? (i.e. an element)
         if(n.isElement())
         {
-            QDomElement e = n.toElement();
-            const QString& name = e.tagName();
+            QDomElement e(n.toElement());
+            // check whether this tag is acceptable
+            QString const & name(e.tagName());
             if(tags.indexOf(" " + name.toLower() + " ") == -1)
             {
 //qDebug() << "removing tag: [" << name << "] (" << tags << ")\n";
@@ -194,8 +257,8 @@ void filter::on_xss_filter(QDomNode& node,
                 && name != "xmp" && name != "plaintext")
                 {
                     // in this case we can just remove the tag itself but keep
-                    // its children which we have to move up once
-                    QDomNode c = n.firstChild();
+                    // its children which we have to move up one level
+                    QDomNode c(n.firstChild());
                     while(!c.isNull())
                     {
                         QDomNode next_sibling(c.nextSibling());
@@ -216,10 +279,10 @@ void filter::on_xss_filter(QDomNode& node,
                 // remove unwanted attributes too
                 QDomNamedNodeMap attributes(n.attributes());
                 int const max_attr(attributes.length());
-                for(int i = 0; i < max_attr; ++i)
+                for(int i(0); i < max_attr; ++i)
                 {
-                    QDomAttr a = attributes.item(i).toAttr();
-                    QString const& attr_name = a.name();
+                    QDomAttr const a(attributes.item(i).toAttr());
+                    QString const & attr_name(a.name());
                     if((attr.indexOf(" " + attr_name.toLower() + " ") == -1) ^ attr_refused)
                     {
                         e.removeAttribute(attr_name);
@@ -282,17 +345,15 @@ void filter::on_xss_filter(QDomNode& node,
  * \li [year] -- the 4-digit year when the request started
  *
  * \param[in,out] ipath  The canonicalized path linked with this XML document.
- * \param[in] plugin_owner  The plugin owning this ipath content.
  * \param[in,out] xml  The XML document where tokens are being replaced.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  *
  * \return true if other plugins may work on the replacement, and return
  *         false if this function already converted the token
  */
-bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token)
+bool filter::replace_token_impl(content::path_info_t & ipath, QDomDocument & xml, token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
+    NOTUSED(ipath);
 
     if(token.is_token("test"))
     {
@@ -436,7 +497,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
     class filter_state_t
     {
     public:
-        filter_state_t(QDomDocument doc, content::path_info_t& path)
+        filter_state_t(QDomDocument doc, content::path_info_t & path)
             //: f_state() -- auto-init
         {
             state_t s;
@@ -472,7 +533,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             }
         }
 
-        QString const& owner() const
+        QString const & owner() const
         {
             if(f_state.isEmpty())
             {
@@ -482,14 +543,16 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             return f_state.last().f_owner;
         }
 
-        content::path_info_t& ipath() const
+        content::path_info_t & ipath() const
         {
             if(f_state.isEmpty())
             {
                 throw snap_logic_exception("filter state stack empty on a path() call");
             }
 
-            return const_cast<content::path_info_t&>(f_state.last().f_ipath);
+            content::path_info_t & last_ipath(const_cast<content::path_info_t &>(f_state.last().f_ipath));
+            last_ipath.set_parameter("token_owner", f_state.last().f_owner);
+            return last_ipath;
         }
 
     private:
@@ -503,24 +566,211 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
         QVector<state_t>    f_state;
     };
 
+    // Avoid recursivity
+    typedef QMap<QString, bool> save_paths_t;
+    static save_paths_t g_ipaths;
+
+    // list of ipaths are saved in g_ipaths to avoid infinite loop
+    if(g_ipaths.contains(ipath.get_key()))
+    {
+        // we do not throw, instead we want to "return" an error
+        // however we're not (yet) replacing a token here so we just
+        // generate a "standard" message
+        QString paths;
+        for(save_paths_t::const_iterator it(g_ipaths.begin());
+                                        it != g_ipaths.end();
+                                        ++it)
+        {
+            if(!paths.isEmpty())
+            {
+                paths += ", ";
+            }
+            paths += it.key();
+        }
+        // Lists have a HUGE problem with this one... for now I'm
+        // turning off the error message because in most cases it
+        // is not a real problem (We can move on...)
+        //
+        SNAP_LOG_ERROR("One or more tokens are looping back to page \"")(ipath.get_key())("\" (all paths are: \"")(paths)("\").");
+        //messages::messages::instance()->set_error(
+        //    "Recursive Token(s)",
+        //    QString("One or more tokens are looping back to page \"%1\" (all paths are: \"%2\").").arg(ipath.get_key()).arg(paths),
+        //    QString("to fix, look at the tokens that loop"),
+        //    false
+        //);
+        return;
+    }
+    struct add_remove_path_t
+    {
+        add_remove_path_t(save_paths_t & map, content::path_info_t & ipath)
+            : f_map(map)
+            , f_ipath(ipath)
+        {
+            f_map[f_ipath.get_key()] = true;
+        }
+
+        ~add_remove_path_t()
+        {
+            f_map.remove(f_ipath.get_key());
+        }
+
+        save_paths_t&           f_map;
+        content::path_info_t&   f_ipath;
+    };
+    add_remove_path_t safe_ipath(g_ipaths, ipath);
+
+    // start the token replacement
+    filter_state_t state(xml, ipath);
+
+    QDomNode n(xml.firstChild());
+    while(!n.isNull())
+    {
+        QVector<QDomNode> to_pop;
+
+        // determine the next pointer so we can delete this node
+        QDomNode parent(n.parentNode());
+        QDomNode next(n.firstChild());
+        if(next.isNull())
+        {
+            next = n.nextSibling();
+            if(next.isNull())
+            {
+                QDomNode p(parent);
+                do
+                {
+                    to_pop.push_back(p);
+                    next = p.nextSibling();
+                    p = p.parentNode();
+                }
+                while(next.isNull() && !p.isNull());
+            }
+        }
+
+        // TODO support comments, instructions, etc.
+
+        // we want to transform tokens in text areas and in attributes
+        if(n.isCDATASection())
+        {
+            // this works too, although the final result is still "plain text"!
+            // (it must be xslt that converts the contents of CDATA sections)
+            //
+            // TODO: if the CDATA section includes tags, then this will not
+            //       work quite as expected (i.e. it could "convert" and
+            //       even break tags.)
+            //
+            QDomCDATASection cdata_section(n.toCDATASection());
+//std::cerr << "*** CDATA section [" << cdata_section.data() << "]\n";
+
+            //text_t t(f_snap, this, state.ipath(), state.owner(), xml, cdata_section.data());
+            filter_text_t txt_filt(state.ipath(), xml, cdata_section.data());
+            filter_text(txt_filt); //state.ipath(), xml, result, changed);
+            if(txt_filt.has_changed())
+            {
+//std::cerr << "replace CDATA [" << cdata_section.data() << "]\n";
+                // replace the text with its contents
+                cdata_section.setData(txt_filt.get_text());
+            }
+        }
+        else if(n.isText())
+        {
+            QDomText text(n.toText());
+            //text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
+            filter_text_t txt_filt(state.ipath(), xml, text.data());
+            filter_text(txt_filt); //state.ipath(), xml, result, changed);
+            if(txt_filt.has_changed())
+            {
+//SNAP_LOG_WARNING("***\n*** replace text [")(text.data())("] with [")(t.result())("]\n***\n");
+                // replace the text with its contents
+                snap_dom::replace_node_with_html_string(n, txt_filt.get_text());
+            }
+        }
+        else if(n.isElement())
+        {
+            QDomElement e(n.toElement());
+
+            // apply the replacement to all the attributes of each tag
+            QDomNamedNodeMap attrs(e.attributes());
+            int const max_attrs(attrs.size());
+            for(int i(0); i < max_attrs; ++i)
+            {
+                QDomAttr a(attrs.item(i).toAttr());
+                //text_t t(f_snap, this, state.ipath(), state.owner(), xml, a.value(), false);
+                filter_text_t txt_filt(state.ipath(), xml, a.value());
+                txt_filt.set_support_edit(false);
+                filter_text(txt_filt); //state.ipath(), xml, result, changed);
+                if(txt_filt.has_changed())
+                {
+                    // TBD: should we warn the user that some of his
+                    //      tokens and other generated data included
+                    //      a tag or two...
+                    //
+                    a.setValue(snap_dom::remove_tags(txt_filt.get_text()));
+                }
+            }
+
+            QString const tag_name(e.tagName());
+            // TBD -- is it a problem to have hard coded tag names here?
+            if(tag_name == "snap" || tag_name == "filter")
+            {
+                // if the element has no children then we do
+                // not want to push anything because it will
+                // not get popped properly otherwise
+                QDomNode child = n.firstChild();
+                if(!child.isNull())
+                {
+                    state.push(e);
+                }
+            }
+        }
+
+        // we need to pop this one after handling or we get the
+        // wrong information in the tag before exiting a tag
+        // (also must be popped in order, i.e. FIFO)
+        int const pop_max(to_pop.size());
+        for(int i(0); i < pop_max; ++i)
+        {
+            state.pop(to_pop[i]);
+        }
+
+        // the rest is considered to be text
+        n = next;
+    }
+}
+
+
+/** \brief Filter a text area.
+ *
+ * The signal is given each time the input XML includes a tag with
+ * some text. Only each filter may transform that text in HTML.
+ *
+ * The filter_text_t class includes functions to retrieve the
+ * text between each tag since it may end up including tags
+ * even if it starts with just text. If you want to insert
+ * a \<, then make sure to addt he entity \&lt;.
+ *
+ * \param[in,out] txt_filt  The text filter class used to access the
+ *                          resulting string.
+ *
+ * \return true if the filter_text() signal should be propagated.
+ */
+bool filter::filter_text_impl(filter_text_t & txt_filt)
+{
     class text_t
     {
     public:
         typedef ushort char_t;
 
         text_t(
-                snap_child *snap,
-                filter *f,
-                content::path_info_t& ipath,
-                QString const& owner,
-                QDomDocument& xml,
-                QString const& text,
+                snap_child * snap,
+                filter * f,
+                content::path_info_t & ipath,
+                QDomDocument & xml,
+                QString const & text,
                 bool support_edit = true
             )
             : f_snap(snap)
             , f_filter(f)
             , f_ipath(ipath)
-            , f_owner(owner)
             , f_xml(xml)
             , f_index(0)
             , f_extra_index(0)
@@ -560,17 +810,10 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
                 }
             }
 
-            // TBD: we may be able to move this very class in the
-            //      filter_text_impl() instead...
-            if(!f_result.isEmpty())
-            {
-                f_filter->filter_text(f_ipath, f_xml, f_result, changed);
-            }
-
             return changed;
         }
 
-        QString const& result() const
+        QString const & result() const
         {
             return f_result;
         }
@@ -695,7 +938,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
 
             // valid input, now verify that it does exist in the current
             // installation
-            f_filter->replace_token(f_ipath, f_owner, f_xml, info);
+            f_filter->replace_token(f_ipath, f_xml, info);
             if(!info.f_found)
             {
                 // the token is not known, that's an error so we do not
@@ -705,6 +948,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             // TODO: at this point this check test whether the page as a
             //       whole is in edit mode, when some parts may not be
             //       editable to the current user
+            //
             if(f_support_edit && f_snap->get_action() == "edit")
             {
                 // if the editor is turned on, then we want to mark all
@@ -933,7 +1177,6 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
         snap_child *                f_snap;
         filter *                    f_filter;
         content::path_info_t        f_ipath;
-        QString                     f_owner;
         QDomDocument                f_xml;
         controlled_vars::mint32_t   f_index;
         controlled_vars::mint32_t   f_extra_index;
@@ -945,158 +1188,13 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
         controlled_vars::mlbool_t   f_support_edit;
     };
 
-    // Avoid recursivity
-    typedef QMap<QString, bool> save_paths_t;
-    static save_paths_t g_ipaths;
-
-    // list of ipaths are saved in g_ipaths to avoid infinite loop
-    if(g_ipaths.contains(ipath.get_key()))
+    text_t t(f_snap, this, txt_filt.get_ipath(), txt_filt.get_xml_document(), txt_filt.get_text(), txt_filt.get_support_edit());
+    if(t.parse())
     {
-        // we do not throw, instead we want to "return" an error
-        // however we're not (yet) replacing a token here so we just
-        // generate a "standard" message
-        QString paths;
-        for(save_paths_t::const_iterator it(g_ipaths.begin());
-                                        it != g_ipaths.end();
-                                        ++it)
-        {
-            if(!paths.isEmpty())
-            {
-                paths += ", ";
-            }
-            paths += it.key();
-        }
-        // Lists have a HUGE problem with this one... for now I'm
-        // turning off the error message because in most cases it
-        // is not a real problem (We can move on...)
-        //
-        SNAP_LOG_ERROR("One or more tokens are looping back to page \"")(ipath.get_key())("\" (all paths are: \"")(paths)("\").");
-        //messages::messages::instance()->set_error(
-        //    "Recursive Token(s)",
-        //    QString("One or more tokens are looping back to page \"%1\" (all paths are: \"%2\").").arg(ipath.get_key()).arg(paths),
-        //    QString("to fix, look at the tokens that loop"),
-        //    false
-        //);
-        return;
+        txt_filt.set_text(t.result());
     }
-    struct add_remove_path_t
-    {
-        add_remove_path_t(save_paths_t& map, content::path_info_t& ipath)
-            : f_map(map)
-            , f_ipath(ipath)
-        {
-            f_map[f_ipath.get_key()] = true;
-        }
 
-        ~add_remove_path_t()
-        {
-            f_map.remove(f_ipath.get_key());
-        }
-
-        save_paths_t&           f_map;
-        content::path_info_t&   f_ipath;
-    };
-    add_remove_path_t safe_ipath(g_ipaths, ipath);
-
-    // start the token replacement
-    filter_state_t state(xml, ipath);
-
-    QDomNode n(xml.firstChild());
-    while(!n.isNull())
-    {
-        QVector<QDomNode> to_pop;
-
-        // determine the next pointer so we can delete this node
-        QDomNode parent(n.parentNode());
-        QDomNode next(n.firstChild());
-        if(next.isNull())
-        {
-            next = n.nextSibling();
-            if(next.isNull())
-            {
-                QDomNode p(parent);
-                do
-                {
-                    to_pop.push_back(p);
-                    next = p.nextSibling();
-                    p = p.parentNode();
-                }
-                while(next.isNull() && !p.isNull());
-            }
-        }
-
-        // TODO support comments, instructions, etc.
-
-        // we want to transform tokens in text areas and in attributes
-        if(n.isCDATASection())
-        {
-            // this works too, although the final result is still plain text!
-            // (it must be xslt that converts the contents of CDATA sections)
-            QDomCDATASection cdata_section(n.toCDATASection());
-//std::cerr << "*** CDATA section [" << cdata_section.data() << "]\n";
-            text_t t(f_snap, this, state.ipath(), state.owner(), xml, cdata_section.data());
-            if(t.parse())
-            {
-//std::cerr << "replace CDATA [" << cdata_section.data() << "]\n";
-                // replace the text with its contents
-                cdata_section.setData(t.result());
-            }
-        }
-        else if(n.isText())
-        {
-            QDomText text(n.toText());
-            text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
-            if(t.parse())
-            {
-//SNAP_LOG_WARNING("***\n*** replace text [")(text.data())("] with [")(t.result())("]\n***\n");
-                // replace the text with its contents
-                snap_dom::replace_node_with_html_string(n, t.result());
-            }
-        }
-        else if(n.isElement())
-        {
-            QDomElement e(n.toElement());
-
-            // apply the replacement to all the attributes of each tag
-            QDomNamedNodeMap attrs(e.attributes());
-            int const max_attrs(attrs.size());
-            for(int i(0); i < max_attrs; ++i)
-            {
-                QDomAttr a(attrs.item(i).toAttr());
-                text_t t(f_snap, this, state.ipath(), state.owner(), xml, a.value(), false);
-                if(t.parse())
-                {
-                    a.setValue(t.result());
-                }
-            }
-
-            QString const tag_name(e.tagName());
-            // TBD -- is it a problem to have hard coded tag names here?
-            if(tag_name == "snap" || tag_name == "filter")
-            {
-                // if the element has no children then we do
-                // not want to push anything because it will
-                // not get popped properly otherwise
-                QDomNode child = n.firstChild();
-                if(!child.isNull())
-                {
-                    state.push(e);
-                }
-            }
-        }
-
-        // we need to pop this one after handling or we get the
-        // wrong information in the tag before exiting a tag
-        // (also must be popped in order, i.e. FIFO)
-        int const pop_max(to_pop.size());
-        for(int i(0); i < pop_max; ++i)
-        {
-            state.pop(to_pop[i]);
-        }
-
-        // the rest is considered to be text
-        n = next;
-    }
+    return true;
 }
 
 
@@ -1110,7 +1208,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
  *
  * \return true if the filtering did not change anything.
  */
-bool filter::filter_uri(QString& uri)
+bool filter::filter_uri(QString & uri)
 {
     typedef ushort char_t;
 
@@ -1162,7 +1260,7 @@ bool filter::filter_uri(QString& uri)
         messages::messages::instance()->set_error(
             "Invalid Character",
             QString("One or more characters in the URL that you chose for your page was refused and thus your URL was changed to \"%1\".").arg(uri),
-            QString("removed unwanted characters \"%1\"").arg(unwanted),
+            QString("removed unwanted character(s) \"%1\"").arg(unwanted),
             false
         );
     }
@@ -1171,7 +1269,7 @@ bool filter::filter_uri(QString& uri)
 }
 
 
-QString filter::encode_text_for_html(QString const& text)
+QString filter::encode_text_for_html(QString const & text)
 {
     QString quoted(text);
 

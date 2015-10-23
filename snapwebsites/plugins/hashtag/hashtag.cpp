@@ -19,6 +19,9 @@
 
 #include "../filter/filter.h"
 
+#include "not_used.h"
+#include "qdomhelpers.h"
+
 #include "poison.h"
 
 
@@ -86,7 +89,7 @@ void hashtag::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(hashtag, "filter", filter::filter, filter_text, _1, _2, _3, _4);
+    SNAP_LISTEN(hashtag, "filter", filter::filter, filter_text, _1);
 }
 
 
@@ -162,47 +165,40 @@ void hashtag::content_update(int64_t variables_timestamp)
 }
 
 
-/** \brief Read all the XML text and replace its hashtags.
+/** \brief Check the text data in the XML and replace hashtags.
  *
- * This function searches all the XML text and replace the tokens it finds
- * in these texts with the corresponding replacement value.
+ * This function searches the text nodes and replace the hashtags it
+ * finds in these with a link to a hashtag (a taxonomy tag.) This
+ * allows one to find all the pages that were tagged one way or
+ * the other.
  *
- * The currently supported syntax is:
+ * Hashtags are just the same as on Facebook and Twitter. For
+ * example, "#plugin" would point to the tag named plugin.
  *
- * \code
- *   '[' <name> [ '(' [ [ <name> '=' ] <param> ',' ... ] ')' ] ']'
- * \endcode
+ * The system can be setup to hide the hash character (#), which
+ * is useful if you want to create something such as a glossary.
  *
- * where \<name> is composed of letter, digit, and colon characters.
- *
- * where \<param> is composed of identifiers, numbers, or quoted strings
- * (' or "); parameters are separated by commas and can be named if
- * preceded by a name and an equal sign.
- *
- * Spaces are allowed between parameters and parenthesis. However, no space
- * is allowed after the opening square bracket ([). Spaces are ignored and
- * are not required.
- *
- * \param[in,out] ipath  The canonicalized path being processed.
- * \param[in,out] xml  The document being filtered.
- * \param[in,out] result  The text to be filtered.
- * \param[in,out] changed  Whether the filter changed anything in result.
+ * \param[in,out] txt_filt  The text filter parameters.
  */
-void hashtag::on_filter_text(content::path_info_t& ipath, QDomDocument& xml, QString& result, bool& changed)
+void hashtag::on_filter_text(filter::filter::filter_text_t & txt_filt)
 {
-    static_cast<void>(ipath);
-
     // initialized only if needed
-    content::content *content_plugin(nullptr);
+    content::content * content_plugin(nullptr);
     QtCassandra::QCassandraTable::pointer_t content_table;
     QtCassandra::QCassandraTable::pointer_t revision_table;
     QString link_settings;
 
     bool first(true);
     bool added_css(false);
+    bool changed(false);
 
+    // TODO: we still need to implement the functions to get each text
+    //       separately instead of one large block that can include
+    //       tags (because we already replaced some tokens, etc.)
+    //
+    QString result(txt_filt.get_text());
     int const max(result.length());
-    for(int pos = result.indexOf('#'); pos != -1 && pos + 1 < max; pos = result.indexOf('#', pos + 1))
+    for(int pos(result.indexOf('#')); pos != -1 && pos + 1 < max; pos = result.indexOf('#', pos + 1))
     {
         QChar c(result.at(pos + 1));
         if(c.isLetterOrNumber())
@@ -246,7 +242,7 @@ void hashtag::on_filter_text(content::path_info_t& ipath, QDomDocument& xml, QSt
                 {
                     a = QString("<a href=\"/%1\" title=\"%2\" class=\"hashtag-link hashtag-%3\">%4<b>%5</b></a>")
                             .arg(hash_ipath.get_cpath())
-                            .arg(title)
+                            .arg(snap_dom::remove_tags(title)) // titles are HTML code
                             .arg(link_settings) // class "hashtag-hashtag", "hashtag-standard", "hashtag-invisible"
                             .arg(link_settings == "hashtag" ? "<s>#</s>" : "")
                             .arg(hash);
@@ -255,13 +251,18 @@ void hashtag::on_filter_text(content::path_info_t& ipath, QDomDocument& xml, QSt
                     if(!added_css)
                     {
                         added_css = true;
-                        content_plugin->add_css(xml, "hashtag");
+                        content_plugin->add_css(txt_filt.get_xml_document(), "hashtag");
                     }
                 }
                 result.replace(start, pos - start, a);
                 changed = true;
             }
         }
+    }
+
+    if(changed)
+    {
+        txt_filt.set_text(result);
     }
 }
 

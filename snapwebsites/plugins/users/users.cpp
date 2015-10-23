@@ -435,7 +435,7 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
-    SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3);
 
     f_info.reset(new sessions::sessions::session_info);
 }
@@ -4516,10 +4516,9 @@ void users::encrypt_password(QString const& digest, QString const& password, QBy
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
     NOTUSED(ipath);
-    NOTUSED(plugin_owner);
     NOTUSED(xml);
 
     if(!token.is_namespace("users::"))

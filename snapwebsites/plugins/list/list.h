@@ -258,7 +258,7 @@ public:
     void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
     void                on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
     void                on_modified_content(content::path_info_t & ipath);
-    void                on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
     virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes, QString const & ctemplate);
     void                on_attach_to_session();
     void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
