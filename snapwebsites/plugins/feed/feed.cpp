@@ -299,7 +299,7 @@ void feed::generate_feeds()
     //       end marker URI and title--and whether to use that anchor.)
     //
     filter::filter::filter_teaser_info_t teaser_info;
-    teaser_info.set_max_words(100);
+    teaser_info.set_max_words(200);
     teaser_info.set_max_tags(100);
     teaser_info.set_end_marker("[...]");
 
