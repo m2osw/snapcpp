@@ -345,9 +345,19 @@ public:
         void                        set_max_tags(int tags);
         int                         get_max_tags() const;
 
+        void                        set_end_marker(QString const & end_marker);
+        QString const &             get_end_marker() const;
+
+        void                        set_end_marker_uri(QString const & uri, QString const & title);
+        QString const &             get_end_marker_uri() const;
+        QString const &             get_end_marker_uri_title() const;
+
     private:
-        controlled_vars::zint32_t   f_words;        // max. # of words
-        controlled_vars::zint32_t   f_tags;         // max. # of tags
+        controlled_vars::zint32_t   f_words;            // max. # of words
+        controlled_vars::zint32_t   f_tags;             // max. # of tags
+        QString                     f_end_marker;       // i.e. usually "..." or "[...]" or a "read more" link
+        QString                     f_end_marker_uri;   // main page URI
+        QString                     f_end_marker_uri_title;
     };
 
                         filter();
@@ -362,7 +372,7 @@ public:
 
     static bool         filter_uri(QString & uri);
     static QString      encode_text_for_html(QString const & text);
-    static void         body_to_teaser(QDomElement body, filter_teaser_info_t const & info);
+    static bool         body_to_teaser(QDomElement body, filter_teaser_info_t const & info);
 
     SNAP_SIGNAL(replace_token, (content::path_info_t & ipath, QDomDocument & xml, token_info_t & token), (ipath, xml, token));
     SNAP_SIGNAL(filter_text, (filter_text_t & txt_filt), (txt_filt));

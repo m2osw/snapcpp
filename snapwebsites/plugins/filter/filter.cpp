@@ -29,6 +29,8 @@
 #include <iostream>
 #include <cctype>
 
+#include <QTextStream>
+
 #include "poison.h"
 
 
@@ -115,6 +117,37 @@ void filter::filter_teaser_info_t::set_max_tags(int tags)
 int filter::filter_teaser_info_t::get_max_tags() const
 {
     return f_tags;
+}
+
+
+void filter::filter_teaser_info_t::set_end_marker(QString const & end_marker)
+{
+    f_end_marker = end_marker;
+}
+
+
+QString const & filter::filter_teaser_info_t::get_end_marker() const
+{
+    return f_end_marker;
+}
+
+
+void filter::filter_teaser_info_t::set_end_marker_uri(QString const & uri, QString const & title)
+{
+    f_end_marker_uri = uri;
+    f_end_marker_uri_title = title;
+}
+
+
+QString const & filter::filter_teaser_info_t::get_end_marker_uri() const
+{
+    return f_end_marker_uri;
+}
+
+
+QString const & filter::filter_teaser_info_t::get_end_marker_uri_title() const
+{
+    return f_end_marker_uri_title;
 }
 
 
@@ -1352,16 +1385,46 @@ QString filter::encode_text_for_html(QString const & text)
  * it may end up cutting a token in half... and also it would not
  * take in account any kind of length from what the token outputs.
  *
+ * \todo
+ * Add support for many more options in generating a teaser:
+ * a) add a size in characters (although we do not want to cut
+ * words, we can limit to word just before that limit) -- this
+ * could be useful for twitter if we calculate the length of
+ * the URI before hand!
+ * b) look into counting words properly when cut out by inline
+ * tags (i.e. "B<b>ol</b>d" is considered to be one word, but
+ * right now we see 3...)
+ * c) probably a different function, but cutting out a page
+ * content around a specific snippet of text would be wonderful
+ * (i.e. like in a search result on Google)
+ *
  * \param[in,out] body  The body to tweak as per the specified \p info.
  * \param[in] info  The information used to tweak the body.
+ *
+ * \return true if the body was somehow reduced for the teaser.
  */
-void filter::body_to_teaser(QDomElement body, filter_teaser_info_t const & info)
+bool filter::body_to_teaser(QDomElement body, filter_teaser_info_t const & info)
 {
     NOTUSED(body);
     NOTUSED(info);
 
+    int const max_words(info.get_max_words());
+    int const max_tags(info.get_max_tags());
+    QString const & end_marker(info.get_end_marker());
+    QString const & end_marker_uri(info.get_end_marker_uri());
+    QString const & end_marker_uri_title(info.get_end_marker_uri_title());
+
+    int count_words(0);
+    int count_tags(0);
+    bool add_end_marker(!end_marker.isEmpty());
+    bool reduced(false);
+
+    QDomDocument doc(body.ownerDocument());
+
     QDomNode n(body.firstChild());
-    while(!n.isNull())
+    while(!n.isNull()
+    && count_tags < max_tags
+    && count_words < max_words)
     {
         // determine the next pointer so we can delete this node
         QDomNode parent(n.parentNode());
@@ -1371,13 +1434,13 @@ void filter::body_to_teaser(QDomElement body, filter_teaser_info_t const & info)
             next = n.nextSibling();
             if(next.isNull())
             {
-                QDomNode p(parent);
-                if(p == body)
+                if(parent == body)
                 {
                     // in this case we do not walk the entire tree,
                     // instead we walk all the nodes below body.
                     break;
                 }
+                QDomNode p(parent);
                 do
                 {
                     next = p.nextSibling();
@@ -1387,8 +1450,11 @@ void filter::body_to_teaser(QDomElement body, filter_teaser_info_t const & info)
             }
         }
 
+        ++count_tags;
+
 #if 0
-        // we want to count words in any kind of text areas
+        // at this time I don't think we need support for CDATA sections
+        // here (because I think they should already be gone?)
         if(n.isCDATASection())
         {
             // this works too, although the final result is still "plain text"!
@@ -1401,7 +1467,6 @@ void filter::body_to_teaser(QDomElement body, filter_teaser_info_t const & info)
             QDomCDATASection cdata_section(n.toCDATASection());
 //std::cerr << "*** CDATA section [" << cdata_section.data() << "]\n";
 
-            //text_t t(f_snap, this, state.ipath(), state.owner(), xml, cdata_section.data());
             filter_text_t txt_filt(state.ipath(), xml, cdata_section.data());
             filter_text(txt_filt);
             if(txt_filt.has_changed())
@@ -1411,24 +1476,144 @@ void filter::body_to_teaser(QDomElement body, filter_teaser_info_t const & info)
                 cdata_section.setData(txt_filt.get_text());
             }
         }
-        else if(n.isText())
+        else
+#endif
+        if(n.isText())
         {
-            QDomText text(n.toText());
-            //text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
-            filter_text_t txt_filt(state.ipath(), xml, text.data());
-            filter_text(txt_filt); //state.ipath(), xml, result, changed);
-            if(txt_filt.has_changed())
+            // TODO: note that words that are "cut" by tags may not
+            //       make it properly in out counting here...
+            //       for example there is one work which we will
+            //       actually see as 4 words right now...
+            //
+            //          <b>B</b><i>o</i><u>l</u><s>d</s>
+            //
+            QDomText text_tag(n.toText());
+            QString const text(text_tag.data());
+            snap_string_list words(text.split(' '));
+            count_words += words.size();
+            if(count_words >= max_words)
             {
-//SNAP_LOG_WARNING("***\n*** replace text [")(text.data())("] with [")(t.result())("]\n***\n");
-                // replace the text with its contents
-                snap_dom::replace_node_with_html_string(n, txt_filt.get_text());
+                // we need to strip out a few words
+                reduced = true;
+                int const limit(max_words - count_words + words.size());
+                words = words.mid(0, limit);
+                if(!end_marker.isEmpty() && end_marker_uri.isEmpty())
+                {
+                    words << end_marker;
+                    text_tag.setData(words.join(" "));
+                }
+                else if(!end_marker.isEmpty())
+                {
+                    text_tag.setData(words.join(" ") + " ");
+
+                    // in this case we create an anchor
+                    QDomElement anchor(doc.createElement("a"));
+                    anchor.setAttribute("class", "teaser-end-marker");
+                    anchor.setAttribute("href", end_marker_uri);
+                    if(!end_marker_uri_title.isEmpty())
+                    {
+                        anchor.setAttribute("title", end_marker_uri_title);
+                    }
+                    snap_dom::append_plain_text_to_node(anchor, end_marker);
+                    parent.insertAfter(anchor, n);
+                }
+                else
+                {
+                    text_tag.setData(words.join(" ") + " ");
+                }
+
+                // we are done with the end marker, it was added
+                add_end_marker = false;
             }
         }
-#endif
 
-        // the rest is considered to be text
+        // continue with the next tag
         n = next;
     }
+
+    // if we reached a maximum, we delete everything after the
+    // reduction point; we have a special loop because we cannot
+    // go to the first child of elements as we do in the previous
+    // loop... (since that first child will get removed from the
+    // tree when we delete its parent element!)
+    //
+    if(count_tags >= max_tags
+    || count_words >= max_words)
+    {
+        // TBD: the reduced flag may need to be set only if the
+        //      tag being removed includes something visible
+        //      (i.e. text / image / canvas / hr...)
+        //
+        reduced = true;
+
+        while(!n.isNull())
+        {
+            // determine the next pointer so we can delete this node
+            QDomNode parent(n.parentNode());
+            QDomNode next(n.nextSibling());
+            if(next.isNull())
+            {
+                if(parent == body)
+                {
+                    // in this case we do not walk the entire tree,
+                    // instead we walk all the nodes below body.
+                    break;
+                }
+                QDomNode p(parent);
+                do
+                {
+                    next = p.nextSibling();
+                    p = p.parentNode();
+                }
+                while(next.isNull() && !p.isNull());
+            }
+
+            parent.removeChild(n);
+
+            // continue with the next tag
+            n = next;
+        }
+    }
+
+    // we may still have 'add_end_marker' set to true because we did not
+    // remove any tags / words... in which case we do not want to add
+    // the end_marker because that is used to show that part of the text
+    // was removed.
+    //
+    if(add_end_marker && reduced)
+    {
+        // if we could not add it to an existing tag, we add a paragraph
+        // at the bottom of the teaser...
+        //
+        QDomElement p(doc.createElement("p"));
+        p.setAttribute("class", "teaser-end-paragraph");
+        body.appendChild(p);
+        if(end_marker_uri.isEmpty())
+        {
+            snap_dom::append_plain_text_to_node(p, end_marker);
+        }
+        else
+        {
+            // in this case we create an anchor
+            QDomElement anchor(doc.createElement("a"));
+            anchor.setAttribute("class", "teaser-end-marker");
+            anchor.setAttribute("href", end_marker_uri);
+            if(!end_marker_uri_title.isEmpty())
+            {
+                anchor.setAttribute("title", end_marker_uri_title);
+            }
+            snap_dom::append_plain_text_to_node(anchor, end_marker);
+            p.appendChild(anchor);
+        }
+    }
+
+    // let the XSLT know that we recuced this body
+    if(reduced)
+    {
+        body.setAttribute("teaser", "reduced");
+    }
+
+    return reduced;
 }
 
 

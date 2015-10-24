@@ -18,7 +18,7 @@
 #include "feed.h"
 
 #include "../attachment/attachment.h"
-#include "../content/content.h"
+#include "../filter/filter.h"
 #include "../list/list.h"
 #include "../locale/snap_locale.h"
 #include "../path/path.h"
@@ -294,6 +294,15 @@ void feed::generate_feeds()
 
     int64_t const start_date(f_snap->get_start_date());
 
+    // TODO: make use of the feed definitions instead of hard coded values
+    //       forthe number of words, max tags, end marker (And below the
+    //       end marker URI and title--and whether to use that anchor.)
+    //
+    filter::filter::filter_teaser_info_t teaser_info;
+    teaser_info.set_max_words(100);
+    teaser_info.set_max_tags(100);
+    teaser_info.set_end_marker("[...]");
+
     // first loop through the list of feeds defined under /feed
     content::path_info_t ipath;
     ipath.set_path("feed");
@@ -404,6 +413,14 @@ void feed::generate_feeds()
                     }
                     snap_dom::append_plain_text_to_node(long_date_element, date2822);
                 }
+
+                // TODO: The URI title needs to come from settings of the
+                //       current feed and not hard coded text. That way it
+                //       will also be translatable by the administrator.
+                //
+                QDomElement output_description(snap_dom::get_child_element(doc, "snap/page/body/output/description"));
+                teaser_info.set_end_marker_uri(page_ipath.get_key(), "Click to read the full article.");
+                filter::filter::body_to_teaser(output_description, teaser_info);
 
                 if(first)
                 {
