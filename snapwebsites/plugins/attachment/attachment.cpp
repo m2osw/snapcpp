@@ -1043,6 +1043,92 @@ void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t
 }
 
 
+/** \brief Delete all the attachments found under the specified path.
+ *
+ * This function checks all the children of the specified \p ipath and
+ * if any one of them is an attachment, it gets deleted. If the page
+ * was already marked as deleted, then nothing happens.
+ *
+ * The function returns the number of files deleted. If the page
+ * at \p ipath does not exist, then the function returns -1.
+ *
+ * \param[in,out] ipath  The path to the page of which attachments are
+ *                       to be deleted.
+ *
+ * \return -1 on errors, 0 or more representing the number of attachments
+ *         that got deleted.
+ */
+int attachment::delete_all_attachments(content::path_info_t & ipath)
+{
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+
+    // page exists at all?
+    if(!content_table->exists(ipath.get_key())
+    || !content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    {
+        // error: page does not exist
+        return -1;
+    }
+
+    int count(0);
+
+    // check each child, but remember that a child may not be an
+    // attachment, if may be a normal child (as in a book or
+    // a blog with various ways of defining when this and that gets
+    // posted.)
+    //
+    links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_CHILDREN), false, ipath.get_key(), ipath.get_branch());
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+    links::link_info child_info;
+    while(link_ctxt->next_link(child_info))
+    {
+        content::path_info_t child_ipath;
+        child_ipath.set_path(child_info.key());
+
+        // verify that the child exists
+        //
+        if(!content_table->exists(child_ipath.get_key())
+        || !content_table->row(child_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+        {
+            continue;
+        }
+
+        // ignore pages that are not currently normal or hidden
+        // (i.e. hidden pages can be deleted)
+        //
+        content::path_info_t::status_t const status(child_ipath.get_status());
+        if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL
+        && status.get_state() != content::path_info_t::status_t::state_t::HIDDEN)
+        {
+            continue;
+        }
+
+        // check whether we have an attachment key in the revision
+        // (it has to be there if this page represents an attachment)
+        //
+        // TBD: Should we check for other clues?
+        //      1. page owner could be anything, but if attachment, then
+        //         we know for sure that it is an attachment
+        //      2. the page is marked as being final (content::final == 1)
+        //      3. branch includes one or more back references
+        //
+        QtCassandra::QCassandraValue const attachment_key(revision_table->row(child_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+        if(attachment_key.nullValue())
+        {
+            // not considered an attachment, leave this one alone
+            continue;
+        }
+
+        // okay, we consider this child to be an attachment, delete!
+        content_plugin->trash_page(child_ipath);
+        ++count;
+    }
+
+    return count;
+}
+
 
 SNAP_PLUGIN_END()
 

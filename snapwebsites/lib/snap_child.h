@@ -205,7 +205,7 @@ public:
     typedef QMap<QString, QString>  environment_map_t;
 
     // Note: the information saved in files come from the POST and
-    // is not to be trusted (especially the mime type)
+    //       is not to be trusted (especially the mime type)
     class post_file_t
     {
     public:
@@ -239,8 +239,8 @@ public:
         QString                     f_filename;
         QString                     f_original_mime_type;
         QString                     f_mime_type;
-        controlled_vars::zint64_t   f_creation_time;
-        controlled_vars::zint64_t   f_modification_time;
+        controlled_vars::zint64_t   f_creation_time;        // time_t
+        controlled_vars::zint64_t   f_modification_time;    // time_t
         QByteArray                  f_data;
         controlled_vars::zuint32_t  f_size;
         controlled_vars::zuint32_t  f_index;

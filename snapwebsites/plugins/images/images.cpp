@@ -514,6 +514,14 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, 
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
+    // make sure that the page is NORMAL
+    content::path_info_t::status_t status(parent_ipath.get_status());
+    if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
+    {
+        // this could be deleted or hidden...
+        return virtual_path_t::VIRTUAL_PATH_INVALID;
+    }
+
     // get the key of that attachment, it should be a file md5
     QtCassandra::QCassandraValue attachment_key(revision_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.size() != 16)

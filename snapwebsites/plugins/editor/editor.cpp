@@ -1429,7 +1429,7 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
  * \param[in,out] ipath  The path to the page being updated.
  * \param[in,out] info  The session information, for the validation, just in case.
  */
-void editor::editor_save(content::path_info_t& ipath, sessions::sessions::session_info& info)
+void editor::editor_save(content::path_info_t & ipath, sessions::sessions::session_info & info)
 {
 
 //
@@ -2096,6 +2096,7 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
         //bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
     }
 
+    // by default let the attachment plugin handle attachments
     QString const default_attachment_owner(attachment::attachment::instance()->get_plugin_name());
 
     QString const widget_names(f_snap->postenv("_editor_widget_names"));
@@ -2110,7 +2111,7 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
             // TBD: should we check each field name BEFORE saving anything?
             f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Field Name Not Acceptable",
                 QString("Editor widget named \"%1\" is not valid.").arg(names[i]),
-                "Somehow the client sent us a reply with an invalid name.");
+                "Somehow the client sent us a reply with an invalid widget name.");
             NOTREACHED();
         }
         QDomNodeList attachment_tags(w->second.elementsByTagName("attachment"));
@@ -2151,6 +2152,7 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
         //      and we do not (currently) offer scripts that can access
         //      attachment directly.
         content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
+
         QString const attachment_cpath(the_attachment.get_attachment_cpath());
         if(!attachment_cpath.isEmpty())
         {
@@ -2160,6 +2162,8 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
             QString const mimetype(the_attachment.get_file().get_mime_type());
             //server_access_plugin->ajax_append_data("attachment-mimetype", mimetype.toUtf8());
             QString const site_key(f_snap->get_site_key_with_slash());
+
+            // TODO: do not keep hard coded MIME types and paths
             // MIME type to icon, we need to have a map that can easily be
             // updated (probably  directly uploaded in the database for each
             // website so each webmaster can tweak their own map.)
@@ -4331,6 +4335,15 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
                 }
                 if(used_filenames.contains(ff))
                 {
+                    // add "-<changed>" to the filename just before the
+                    // extension; note that the parameter 'changed' is
+                    // always unique and incremented on each iteration
+                    // which means it may not be incremented one by
+                    // one when it comes to saving the files to the
+                    // database (i.e. if 2 has a different filename
+                    // then 3 has the same as 1, not you have 1 saved
+                    // as is, and 3 saved with "-2" and not "-1".)
+                    //
                     int const p1(ff.lastIndexOf('.'));
                     int const p2(ff.lastIndexOf('/'));
                     if(p1 > p2)
@@ -4344,7 +4357,10 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
                         ff = QString("%1-%2").arg(ff).arg(changed);
                     }
                 }
-                used_filenames.push_back(ff);
+                //else -- although we should be able to do that, a hacker could send us a matching filename of a name with -<number>...
+                {
+                    used_filenames.push_back(ff);
+                }
                 bool const valid(save_inline_image(ipath, img, src, ff, widget));
                 if(valid)
                 {
@@ -4381,7 +4397,7 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
  *                      save as "image.<type>"
  * \param[in] widget  The widget being saved.
  */
-bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString filename, QDomElement widget)
+bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget)
 {
     static uint32_t g_index = 0;
 
@@ -4401,9 +4417,12 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
         return false;
     }
 
+    // TODO: add the necessary to allow extensions defined by the
+    //       administrator.
+    //
     // the type of image (i.e. "png", "jpeg", "gif"...)
     // we set that up so we know that it is "jpeg" and not "jpg"
-    QString type(src.mid(11, p - 11));
+    QString const type(src.mid(11, p - 11));
     if(type != "png"
     && type != "jpeg"
     && type != "gif")
@@ -4442,8 +4461,8 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
 //void filter::filter_filename(QString& filename, QString const& extension (a.k.a. type))
 //{
     // TODO: we should move this code fixing up the filename in a filter
-    //       function because we probably give access to other plugins
-    //       to such a feature.
+    //       function because we probably want to give access to other
+    //       plugins to such a feature.
 
     // by default we want to use the widget forced filename if defined
     // otherwise use the user defined filename
@@ -4509,6 +4528,14 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     QString identification;
     QDomNodeList attachment_tags(widget.elementsByTagName("attachment"));
     int const max_attachments(attachment_tags.size());
+
+    // NOTE: This max_attachments test is already done in the
+    //       parse_out_inline_img() function
+    if(max_attachments >= 2)
+    {
+        throw editor_exception_too_many_tags(QString("you can have 0 or 1 attachment tag in a widget, you have %1 right now.").arg(max_attachments));
+    }
+
     QString widget_identification; // this one is #IMPLIED
     QDomElement attachment_tag;
     if(max_attachments == 1)

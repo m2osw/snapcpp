@@ -6084,6 +6084,11 @@ QString snap_child::error_body(http_code_t err_code, QString const & err_name, Q
     head.appendChild(title_tag);
     snap_dom::append_plain_text_to_node(title_tag, title);
 
+    // html/head/style/...
+    QDomElement style_tag(doc.createElement("style"));
+    head.appendChild(style_tag);
+    snap_dom::append_plain_text_to_node(style_tag, "body{font-family:sans-serif}");
+
     // html/body
     QDomElement body_tag(doc.createElement("body"));
     html.appendChild(body_tag);

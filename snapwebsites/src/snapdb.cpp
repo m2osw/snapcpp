@@ -359,6 +359,7 @@ void snapdb::drop_tables(bool all)
     // we access a page; obviously this is VERY dangerous on
     // a live system!
     context->dropTable("branch");
+    context->dropTable("cache");
     context->dropTable("content");
     context->dropTable("emails");
     context->dropTable("epayment_paypal");
@@ -371,10 +372,11 @@ void snapdb::drop_tables(bool all)
     context->dropTable("processing");
     context->dropTable("revision");
     context->dropTable("secret");
-    context->dropTable("serverstats");
     context->dropTable("sessions");
     context->dropTable("shorturl");
     context->dropTable("sites");
+    context->dropTable("test_results");
+    context->dropTable("tracker");
     context->dropTable("users");
 
     if(all)
@@ -382,7 +384,7 @@ void snapdb::drop_tables(bool all)
         // for those who also want to test the snapmanager work too
         context->dropTable("domains");
         context->dropTable("websites");
-        context->dropTable("serverstats");
+        context->dropTable("serverstats"); // from snapwatchdog
     }
 
     // wait until all the tables are 100% dropped

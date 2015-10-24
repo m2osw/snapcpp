@@ -161,7 +161,7 @@ void path_info_t::set_path(QString const & path)
  *
  * \sa set_path()
  */
-void path_info_t::set_real_path(QString const& path)
+void path_info_t::set_real_path(QString const & path)
 {
     if(!f_initialized
     || (path != f_real_cpath && path != f_real_key))
@@ -227,7 +227,7 @@ void path_info_t::set_main_page(bool main_page)
  * \param[in] name  The name of the parameter.
  * \param[in] value  The value of this parameter.
  */
-void path_info_t::set_parameter(QString const& name, QString const& value)
+void path_info_t::set_parameter(QString const & name, QString const & value)
 {
     f_parameters[name] = value;
 }
@@ -264,7 +264,7 @@ void path_info_t::force_extended_revision(QString const & revision, QString cons
     {
         throw snap_logic_exception(QString("invalid version string (%1) in \"%2\" (force_extended_revision).").arg(revision).arg(filename));
     }
-    snap_version::version_numbers_vector_t const& version_numbers(v.get_version());
+    snap_version::version_numbers_vector_t const & version_numbers(v.get_version());
     if(version_numbers.size() < 1)
     {
         throw snap_logic_exception(QString("invalid version string (%1) in \"%2\" (force_extended_revision): not enough numbers (at least 1 required).").arg(revision).arg(filename));
@@ -277,14 +277,39 @@ void path_info_t::force_extended_revision(QString const & revision, QString cons
 }
 
 
-void path_info_t::force_locale(QString const& locale)
+/** \brief Set the locale to use in the revision key.
+ *
+ * Whenever you save a revision entry, it includes a specific language.
+ * The locale defines the content of the revision as being in that
+ * language.
+ *
+ * We support two special locales:
+ *
+ * \li "" -- the empty string represents a language agnostic revision.
+ *     This could be a photo which no lettering.
+ * \li "xx" -- the special "xx" language represents a neutral language.
+ *     This means translation can still be created and will properly
+ *     be distinguished. The "xx" revision is used when no other
+ *     languages match the user's language.
+ *
+ * \param[in] locale  The locale two letter abbreviation.
+ */
+void path_info_t::force_locale(QString const & locale)
 {
     // TBD: not too sure how valid this is...
     f_locale = locale;
 }
 
 
-void path_info_t::get_parent(path_info_t& parent_ipath) const
+/** \brief Defines the parent of an info path.
+ *
+ * The \p parent_ipath is set to the parent of 'this' path_info_t object.
+ *
+ * The parent of the root path is itself.
+ *
+ * \param[out] parent_ipath  The info path that will represent the parent.
+ */
+void path_info_t::get_parent(path_info_t & parent_ipath) const
 {
     int const pos(f_cpath.lastIndexOf("/"));
     if(pos <= 0)
@@ -323,7 +348,7 @@ void path_info_t::get_child(path_info_t & child_ipath, QString const & child) co
 }
 
 
-snap_child *path_info_t::get_snap() const
+snap_child * path_info_t::get_snap() const
 {
     return f_snap;
 }
@@ -370,7 +395,7 @@ bool path_info_t::is_main_page() const
 }
 
 
-QString path_info_t::get_parameter(QString const& name) const
+QString path_info_t::get_parameter(QString const & name) const
 {
     return f_parameters.contains(name) ? f_parameters[name] : "";
 }
@@ -497,7 +522,7 @@ path_info_t::status_t path_info_t::get_status() const
  *
  * \param[in] status  The new status for this page.
  */
-void path_info_t::set_status(status_t const& status)
+void path_info_t::set_status(status_t const & status)
 {
     // make sure it is not an error
     if(status.is_error())

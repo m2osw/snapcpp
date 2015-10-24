@@ -513,8 +513,6 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     else if(n == "content::created"
          || n == "content::cloned"
          || n == "content::files::created"
-         || n == "content::files::creation_time"
-         || n == "content::files::modification_time"
          || n == "content::files::secure::last_check"
          || n == "content::files::updated"
          || n == "content::modified"
@@ -566,7 +564,9 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // 64 bit value (microseconds)
         return column_type_t::CT_time_microseconds;
     }
-    else if(n == "sessions::login_limit"
+    else if(n == "content::files::creation_time"
+         || n == "content::files::modification_time"
+         || n == "sessions::login_limit"
          || n == "sessions::time_limit"
          )
     {

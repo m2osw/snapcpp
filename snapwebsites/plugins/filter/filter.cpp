@@ -94,6 +94,30 @@ QString const & filter::filter_text_t::get_text() const
 
 
 
+void filter::filter_teaser_info_t::set_max_words(int words)
+{
+    f_words = words;
+}
+
+
+int filter::filter_teaser_info_t::get_max_words() const
+{
+    return f_words;
+}
+
+
+void filter::filter_teaser_info_t::set_max_tags(int tags)
+{
+    f_tags = tags;
+}
+
+
+int filter::filter_teaser_info_t::get_max_tags() const
+{
+    return f_tags;
+}
+
+
 /** \brief Initialize the filter plugin.
  *
  * This function is used to initialize the filter plugin object.
@@ -661,9 +685,8 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             QDomCDATASection cdata_section(n.toCDATASection());
 //std::cerr << "*** CDATA section [" << cdata_section.data() << "]\n";
 
-            //text_t t(f_snap, this, state.ipath(), state.owner(), xml, cdata_section.data());
             filter_text_t txt_filt(state.ipath(), xml, cdata_section.data());
-            filter_text(txt_filt); //state.ipath(), xml, result, changed);
+            filter_text(txt_filt);
             if(txt_filt.has_changed())
             {
 //std::cerr << "replace CDATA [" << cdata_section.data() << "]\n";
@@ -674,9 +697,8 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
         else if(n.isText())
         {
             QDomText text(n.toText());
-            //text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
             filter_text_t txt_filt(state.ipath(), xml, text.data());
-            filter_text(txt_filt); //state.ipath(), xml, result, changed);
+            filter_text(txt_filt);
             if(txt_filt.has_changed())
             {
 //SNAP_LOG_WARNING("***\n*** replace text [")(text.data())("] with [")(t.result())("]\n***\n");
@@ -694,10 +716,9 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             for(int i(0); i < max_attrs; ++i)
             {
                 QDomAttr a(attrs.item(i).toAttr());
-                //text_t t(f_snap, this, state.ipath(), state.owner(), xml, a.value(), false);
                 filter_text_t txt_filt(state.ipath(), xml, a.value());
                 txt_filt.set_support_edit(false);
-                filter_text(txt_filt); //state.ipath(), xml, result, changed);
+                filter_text(txt_filt);
                 if(txt_filt.has_changed())
                 {
                     // TBD: should we warn the user that some of his
@@ -1204,6 +1225,11 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
  * system. The parsing is mainly to ensure valid URIs for most search
  * engines.
  *
+ * \note
+ * This is used to fix the URI (path really) of a page when the path
+ * was specified by the client and could be tainted (not 100% given
+ * by our JavaScript code--our our JS code is not quite perfect...)
+ *
  * \param[in,out] uri  The URI to filter, changed in place if required.
  *
  * \return true if the filtering did not change anything.
@@ -1269,6 +1295,30 @@ bool filter::filter_uri(QString & uri)
 }
 
 
+/** \brief Replace special character in entities.
+ *
+ * This function transforms the specified text with entities instead
+ * of special HTML characters. For example, the quote and less than (\<)
+ * are two character that have special meaning in HTML. These get
+ * transformed to corresponding entities.
+ *
+ * The transformation handles the following characters:
+ *
+ * \li " -- becomes \&quot;
+ * \li \< -- becomes \&lt;
+ * \li \> -- becomes \&gt;
+ * \li \& -- becomes \&amp;
+ * \li ' -- becomes \&#39;
+ *
+ * Note that " and ' are transformed because if the text is to be used
+ * in an attribute, it needs to be encoded that way (although you should
+ * really be using setAttribute() on a DOM to make 100% you get things
+ * right in the end.)
+ *
+ * \param[in] text  The text to filter.
+ *
+ * \return A copy of the text, filtered.
+ */
 QString filter::encode_text_for_html(QString const & text)
 {
     QString quoted(text);
@@ -1282,6 +1332,103 @@ QString filter::encode_text_for_html(QString const & text)
           .replace('\'', "&#39;");
 
     return quoted;
+}
+
+
+/** \brief From the body XML of a page, calculates the teaser.
+ *
+ * This function calculates the teaser (small snippet) of a page.
+ *
+ * The function removes elements and possibly words from the body
+ * in order for the body to have a certain size in terms of
+ * characters, words, tags...
+ *
+ * The changes are made directly to the input element. The \p body
+ * node is expected to be a root and it does not itself get modified.
+ *
+ * \warning
+ * You must call this function after you applied all the other
+ * filters (token filterings, hashtag, external links, etc.) otherwise
+ * it may end up cutting a token in half... and also it would not
+ * take in account any kind of length from what the token outputs.
+ *
+ * \param[in,out] body  The body to tweak as per the specified \p info.
+ * \param[in] info  The information used to tweak the body.
+ */
+void filter::body_to_teaser(QDomElement body, filter_teaser_info_t const & info)
+{
+    NOTUSED(body);
+    NOTUSED(info);
+
+    QDomNode n(body.firstChild());
+    while(!n.isNull())
+    {
+        // determine the next pointer so we can delete this node
+        QDomNode parent(n.parentNode());
+        QDomNode next(n.firstChild());
+        if(next.isNull())
+        {
+            next = n.nextSibling();
+            if(next.isNull())
+            {
+                QDomNode p(parent);
+                if(p == body)
+                {
+                    // in this case we do not walk the entire tree,
+                    // instead we walk all the nodes below body.
+                    break;
+                }
+                do
+                {
+                    next = p.nextSibling();
+                    p = p.parentNode();
+                }
+                while(next.isNull() && !p.isNull());
+            }
+        }
+
+#if 0
+        // we want to count words in any kind of text areas
+        if(n.isCDATASection())
+        {
+            // this works too, although the final result is still "plain text"!
+            // (it must be xslt that converts the contents of CDATA sections)
+            //
+            // TODO: if the CDATA section includes tags, then this will not
+            //       work quite as expected (i.e. it could "convert" and
+            //       even break tags.)
+            //
+            QDomCDATASection cdata_section(n.toCDATASection());
+//std::cerr << "*** CDATA section [" << cdata_section.data() << "]\n";
+
+            //text_t t(f_snap, this, state.ipath(), state.owner(), xml, cdata_section.data());
+            filter_text_t txt_filt(state.ipath(), xml, cdata_section.data());
+            filter_text(txt_filt);
+            if(txt_filt.has_changed())
+            {
+//std::cerr << "replace CDATA [" << cdata_section.data() << "]\n";
+                // replace the text with its contents
+                cdata_section.setData(txt_filt.get_text());
+            }
+        }
+        else if(n.isText())
+        {
+            QDomText text(n.toText());
+            //text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
+            filter_text_t txt_filt(state.ipath(), xml, text.data());
+            filter_text(txt_filt); //state.ipath(), xml, result, changed);
+            if(txt_filt.has_changed())
+            {
+//SNAP_LOG_WARNING("***\n*** replace text [")(text.data())("] with [")(t.result())("]\n***\n");
+                // replace the text with its contents
+                snap_dom::replace_node_with_html_string(n, txt_filt.get_text());
+            }
+        }
+#endif
+
+        // the rest is considered to be text
+        n = next;
+    }
 }
 
 

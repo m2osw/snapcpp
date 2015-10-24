@@ -7750,7 +7750,7 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
     // mark widget as processing (allows for CSS effects)
     w.addClass("processing-attachment");
 
-    // show a waiting rotating image
+    // show a "Please Wait" image
     editor_widget.showWaitImage();
 
     if(!this.serverAccess_)

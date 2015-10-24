@@ -336,18 +336,33 @@ public:
         bool                    f_support_edit = true;
     };
 
+    class filter_teaser_info_t
+    {
+    public:
+        void                        set_max_words(int words);
+        int                         get_max_words() const;
+
+        void                        set_max_tags(int tags);
+        int                         get_max_tags() const;
+
+    private:
+        controlled_vars::zint32_t   f_words;        // max. # of words
+        controlled_vars::zint32_t   f_tags;         // max. # of tags
+    };
+
                         filter();
                         ~filter();
 
     static filter *     instance();
     virtual QString     description() const;
-    static bool         filter_uri(QString & uri);
 
     void                on_bootstrap(::snap::snap_child *snap);
     void                on_xss_filter(QDomNode & node, QString const & accepted_tags, QString const & accepted_attributes);
     void                on_token_filter(content::path_info_t & ipath, QDomDocument & xml);
 
+    static bool         filter_uri(QString & uri);
     static QString      encode_text_for_html(QString const & text);
+    static void         body_to_teaser(QDomElement body, filter_teaser_info_t const & info);
 
     SNAP_SIGNAL(replace_token, (content::path_info_t & ipath, QDomDocument & xml, token_info_t & token), (ipath, xml, token));
     SNAP_SIGNAL(filter_text, (filter_text_t & txt_filt), (txt_filt));

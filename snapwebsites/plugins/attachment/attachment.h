@@ -93,6 +93,8 @@ public:
     // server::backend_action
     virtual void        on_backend_action(QString const & action);
 
+    int                 delete_all_attachments(content::path_info_t & ipath);
+
 private:
     void                content_update(int64_t variables_timestamp);
     void                backend_action_extract_file();

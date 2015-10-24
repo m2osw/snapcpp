@@ -973,12 +973,28 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
     QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
     if(row->exists(primary_owner))
     {
+        // it already exists, but it could have been deleted before
+        // in which case we need to resurect the page back to NORMAL
+        //
+        path_info_t::status_t status(ipath.get_status());
+        if(status.get_state() == path_info_t::status_t::state_t::DELETED)
+        {
+            // restore to a NORMAL page (here we probably need to
+            // force a new branch so the user would not see the old
+            // revisions...)
+            //
+            SNAP_LOG_WARNING("Re-instating (i.e. \"Undeleting\") page \"")(ipath.get_key())("\" as we received a create_page() request on a deleted page.");
+            status.reset_state(path_info_t::status_t::state_t::NORMAL, path_info_t::status_t::working_t::NOT_WORKING);
+            ipath.set_status(status);
+        }
+
         // the row already exists, this is considered created.
         // (we may later want to have a repair_content signal
         // which we could run as an action from the backend...)
         // however, if it were created by an add_xml() call,
         // then the on_create_content() of all the other plugins
         // should probably be called (i.e. f_updating is true then)
+        //
         return f_updating;
     }
 
@@ -1251,7 +1267,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
     snap_child::post_file_t const & post_file(file.get_file());
     QString attachment_filename(post_file.get_basename());
 
-    // make sure that the parent of the attachment isn't final
+    // make sure that the parent of the attachment is not final
     if(is_final(parent_key))
     {
         // the user was trying to add content under a final leaf
@@ -1762,24 +1778,27 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
             // it exists, check the filename first
             if(parent_row->exists(name))
             {
-                // check the filename
+                // get the filename (attachment key)
                 QString old_attachment_key(parent_row->cell(name)->value().stringValue());
                 if(!old_attachment_key.isEmpty() && old_attachment_key != attachment_ipath.get_key())
                 {
-                    // that's not the same filename, drop it
-                    // WE CANNOT JUST DROP A ROW, it breaks all the links, etc.
-                    // TODO: implement a delete_content() function which
-                    //       does all the necessary work (and actually move
-                    //       the content to the trashcan)
-                    //content_table->dropRow(old_attachment_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-
-                    // TODO: nothing should be deleted in our system, instead
-                    //       it should be put in a form of trashcan; in this
-                    //       case it could remain an attachment, only moved
-                    //       to a special "old attachments" list
+                    // that is not the same filename, trash the old one
+                    //
+                    SNAP_LOG_INFO("deleting now unused attachment \"")(old_attachment_key)("\".");
+                    path_info_t old_attachment_ipath;
+                    old_attachment_ipath.set_path(old_attachment_key);
+                    trash_page(old_attachment_ipath);
 
                     // TBD if I'm correct, the md5 reference was already dropped
                     //     in the next if() blocks...
+                    //
+                    // TODO: we most certainly need to remove all the
+                    //       references found in the branch table whenever
+                    //       we replace/delete a file; right now that
+                    //       just cumulates which is fine because I do not
+                    //       think I use them really; although it could
+                    //       be that I properly remove the reference in
+                    //       the files table and not in the branch table...
                 }
             }
         }
@@ -1796,6 +1815,20 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
                     // (i.e. the file may already exist but the path
                     //       may not be there anymore)
                     parent_row->cell(name)->setValue(attachment_ipath.get_key());
+
+                    path_info_t::status_t status(attachment_ipath.get_status());
+                    if(status.get_state() == path_info_t::status_t::state_t::DELETED)
+                    {
+                        // restore to a NORMAL page
+                        //
+                        // TODO: we may need to force a new branch so the user
+                        //       would not see the old revisions (unless he
+                        //       is an administrator)
+                        //
+                        SNAP_LOG_WARNING("Re-instating (i.e. \"Undeleting\") page \"")(attachment_ipath.get_key())("\" as we received a create_page() request on a deleted page.");
+                        status.reset_state(path_info_t::status_t::state_t::NORMAL, path_info_t::status_t::working_t::NOT_WORKING);
+                        attachment_ipath.set_status(status);
+                    }
 
                     modified_content(attachment_ipath);
 

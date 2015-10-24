@@ -610,7 +610,7 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
         // this key does not exist as is in the database, but...
         // it may be a dynamically defined path, check for a
         // plugin that would have defined such a path
-//std::cerr << "Testing for page dynamically [" << ipath.get_cpath() << "]\n";
+//SNAP_LOG_TRACE("Testing for page dynamically [")(ipath.get_cpath())("]");
         dynamic_plugin_t dp;
         can_handle_dynamic_path(ipath, dp);
 
