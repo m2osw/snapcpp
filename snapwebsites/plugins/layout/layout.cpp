@@ -335,27 +335,38 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
             {
                 // no layout, check the .conf
                 layout_value = f_snap->get_server_parameter(column_name);
-            }
-            if(layout_value.nullValue())
-            {
-                // user did not define any layout, set the value to "default"
-                layout_value = QString("\"default\"");
+                if(layout_value.nullValue())
+                {
+                    // user did not define any layout, set the value to "default"
+                    layout_value = QString("\"default\"");
+                }
+                else
+                {
+                    // the name coming from the server .conf file will
+                    // not be JavaScript, only a name, change it so it
+                    // is compatible with the rest of the code below
+                    layout_value.setStringValue(QString("\"%1\"").arg(layout_value.stringValue()));
+                }
             }
         }
 
         QString const layout_script(layout_value.stringValue());
 
         bool run_script(true);
+        bool const ends_with_quote_colon(layout_script.endsWith("\";"));
         if(layout_script.startsWith("\"")
-        && (layout_script.endsWith("\"") || layout_script.endsWith("\";")))
+        && (layout_script.endsWith("\"") || ends_with_quote_colon)
+        && layout_script.length() >= 3)
         {
             run_script = false;
-            QByteArray const utf8(layout_script.toUtf8());
-            for(char const *s(utf8.data() + 1); *s != '\0'; ++s)
+            QString const check_name(layout_script.mid(1, layout_script.length() - (ends_with_quote_colon ? 3 : 2)));
+            QByteArray const utf8(check_name.toUtf8());
+            for(char const *s(utf8.data()); *s != '\0'; ++s)
             {
                 if((*s < 'a' || *s > 'z')
                 && (*s < 'A' || *s > 'Z')
                 && (*s < '0' || *s > '9')
+                && *s != '-'
                 && *s != '_')
                 {
                     run_script = true;
@@ -363,26 +374,19 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
                 }
             }
         }
-//std::cerr << "Layout selection with [" << layout_script << "] or " << run_script << " for " << ipath.get_key() << "\n";
+//SNAP_LOG_INFO("Layout selection with [")(layout_script)("] run_script = ")(run_script)(" for ")(ipath.get_key());
 
         if(run_script)
         {
             // TODO: remove dependency on JS with an event on this one!
             //       (TBD: as far as I know this is okay now)
-            QVariant v(javascript::javascript::instance()->evaluate_script(layout_script));
+            QVariant const v(javascript::javascript::instance()->evaluate_script(layout_script));
             layout_name = v.toString();
         }
         else
         {
             // remove the quotes really quick, we avoid the whole JS deal!
-            if(layout_script.endsWith("\";"))
-            {
-                layout_name = layout_script.mid(1, layout_script.length() - 3);
-            }
-            else
-            {
-                layout_name = layout_script.mid(1, layout_script.length() - 2);
-            }
+            layout_name = layout_script.mid(1, layout_script.length() - (ends_with_quote_colon ? 3 : 2));
         }
 
         // does it look like the script failed? if so get a default
@@ -405,6 +409,7 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
             if((*s < 'a' || *s > 'z')
             && (*s < 'A' || *s > 'Z')
             && (*s < '0' || *s > '9')
+            && *s != '-'
             && *s != '_')
             {
                 // tainted layout/theme name
@@ -964,7 +969,7 @@ void layout::extract_js_and_css(QDomDocument & doc, QDomDocument & doc_output)
  * \param[in] doc  The document we're working on.
  * \param[in] layout_name  The name of the layout being worked on.
  */
-void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_name, QDomDocument doc)
+void layout::generate_boxes(content::path_info_t & ipath, QString const & layout_name, QDomDocument doc)
 {
     // the list of boxes is defined in the database under (GLOBAL)
     //    admin/layouts/<layout_name>[layout::boxes]
@@ -1025,9 +1030,9 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
         (content::field_search::command_t::COMMAND_PATH_ELEMENT, "/snap/head/metadata/boxes")
         // if boxes exist in doc then that is our result
         (content::field_search::command_t::COMMAND_IF_ELEMENT_NULL, 1)
-        (content::field_search::command_t::COMMAND_ELEMENT_TEXT)
-        (content::field_search::command_t::COMMAND_RESULT, box_names)
-        (content::field_search::command_t::COMMAND_GOTO, 100)
+            (content::field_search::command_t::COMMAND_ELEMENT_TEXT)
+            (content::field_search::command_t::COMMAND_RESULT, box_names)
+            (content::field_search::command_t::COMMAND_GOTO, 100)
 
         // no boxes in source document
         (content::field_search::command_t::COMMAND_LABEL, 1)
@@ -1103,8 +1108,8 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
                         box_error_callback.clear_error();
                         content::path_info_t box_ipath;
                         box_ipath.set_path(child_info.key());
-                        box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
-SNAP_LOG_TRACE() << "box_ipath key = " << box_ipath.get_key() << ", branch_key=" << box_ipath.get_branch_key();
+                        box_ipath.set_parameter("action", "view"); // we are always only viewing those boxes from here
+SNAP_LOG_TRACE("box_ipath key = ")(box_ipath.get_key())(", branch_key=")(box_ipath.get_branch_key());
                         plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
                         if(!box_error_callback.has_error() && box_plugin)
                         {

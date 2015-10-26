@@ -33,6 +33,14 @@ enum class name_t
     SNAP_NAME_FEED_EXTENSION,
     SNAP_NAME_FEED_MIMETYPE,
     SNAP_NAME_FEED_PAGE_LAYOUT,
+    SNAP_NAME_FEED_SETTINGS_ALLOW_MAIN_ATOM_XML,
+    SNAP_NAME_FEED_SETTINGS_ALLOW_MAIN_RSS_XML,
+    SNAP_NAME_FEED_SETTINGS_DEFAULT_LOGO,
+    SNAP_NAME_FEED_SETTINGS_PATH,
+    SNAP_NAME_FEED_SETTINGS_TEASER_END_MARKER,
+    SNAP_NAME_FEED_SETTINGS_TEASER_TAGS,
+    SNAP_NAME_FEED_SETTINGS_TEASER_WORDS,
+    SNAP_NAME_FEED_SETTINGS_TOP_MAXIMUM_NUMBER_OF_ITEMS_IN_ANY_FEED,
     SNAP_NAME_FEED_TITLE,
     SNAP_NAME_FEED_TTL,
     SNAP_NAME_FEED_TYPE
@@ -56,6 +64,7 @@ public:
                         feed();
                         ~feed();
 
+    // plugin implementation
     static feed *       instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
@@ -64,9 +73,13 @@ public:
     void                on_backend_process();
     void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
 
+    // editor signal
+    void                on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
+
 private:
     void                content_update(int64_t variables_timestamp);
     void                generate_feeds();
+    void                mark_attachment_as_feed(snap::content::attachment_file & attachment);
 
     zpsnap_child_t      f_snap;
     QString             f_feed_parser_xsl;

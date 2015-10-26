@@ -80,15 +80,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<!-- default is 1 week -->
 						<xsl:otherwise>10080</xsl:otherwise>
 					</xsl:choose></ttl>
-				<!--image>
-					<title><xsl:copy-of select="head/metadata/desc[@type='name']/data/node()"/></title>
-					<link><xsl:copy-of select="head/metadata/desc[@type='website_uri']/data/node()"/></link>
-					<!== the description is the img title attribute ==>
-					<description feed-cdata="yes"><xsl:copy-of select="head/metadata/desc[@type='description']/data/node()"/></description>
-					<url>...</url>
-					<width>...</width>
-					<height>...</height>
-				</image-->
+				<xsl:if test="head/metadata/desc[@type='feed::default_logo']/data">
+					<image>
+						<title><xsl:copy-of select="head/metadata/desc[@type='name']/data/node()"/></title>
+						<link><xsl:copy-of select="head/metadata/desc[@type='website_uri']/data/node()"/></link>
+						<!-- the description is the img title attribute -->
+						<description feed-cdata="yes"><xsl:copy-of select="head/metadata/desc[@type='description']/data/node()"/></description>
+						<url><xsl:value-of select="head/metadata/desc[@type='feed::default_logo']/data/img/@src"/></url>
+						<width><xsl:value-of select="head/metadata/desc[@type='feed::default_logo']/data/img/@width"/></width>
+						<height><xsl:value-of select="head/metadata/desc[@type='feed::default_logo']/data/img/@height"/></height>
+					</image>
+				</xsl:if>
 				<!--rating>PICS rating</rating-->
 
 				<xsl:apply-templates select="page/body/output"/>

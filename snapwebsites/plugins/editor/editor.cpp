@@ -425,7 +425,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 10, 22, 19, 53, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 26, 3, 14, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -4283,7 +4283,6 @@ QString editor::verify_html_validity(QString body)
 void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, QDomElement widget)
 {
     QDomDocument doc;
-    //doc.setContent("<?xml version='1.1' encoding='utf-8'?><element>" + body + "</element>");
     doc.setContent(QString("<element>%1</element>").arg(body));
     QDomNodeList imgs(doc.elementsByTagName("img"));
 
@@ -4296,12 +4295,14 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
         throw editor_exception_too_many_tags(QString("you can have 0 or 1 attachment tag in a widget, you have %1 right now.").arg(max_attachments));
     }
     QString force_filename; // this one is #IMPLIED
+    QString force_path("#"); // this one is #IMPLIED
     if(max_attachments == 1)
     {
         QDomElement attachment_tag(attachment_tags.at(0).toElement());
         if(!attachment_tag.isNull())
         {
             force_filename = attachment_tag.attribute("force-filename", ""); // this one is #IMPLIED
+            force_path = attachment_tag.attribute("force-path", "#"); // this one is #IMPLIED
         }
     }
 
@@ -4361,15 +4362,33 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
                 {
                     used_filenames.push_back(ff);
                 }
-                bool const valid(save_inline_image(ipath, img, src, ff, widget));
+                content::path_info_t attachment_ipath;
+                if(force_path == "#")
+                {
+                    attachment_ipath = ipath;
+                }
+                else
+                {
+                    attachment_ipath.set_path(force_path);
+                }
+                bool const valid(save_inline_image(attachment_ipath, img, src, ff, widget));
                 if(valid)
                 {
                     ++changed;
+
+                    // TODO: check whether the img tag has a width/height
+                    //       which are (way) smaller than the image, and
+                    //       if so create a script to have a resized version
+                    //       and use that version instead (i.e. will be a
+                    //       lot faster to load)
                 }
                 else
                 {
                     // remove that tag, it is not considered valid so it
                     // may cause harm, who knows...
+                    //
+                    // TODO: let the user know what we have just done
+                    //
                     img.parentNode().removeChild(img);
                 }
             }

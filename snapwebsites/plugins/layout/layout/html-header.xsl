@@ -92,7 +92,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="href"/>
     <xsl:param name="type"/>
     <xsl:param name="title"/>
-    <link rel="alternate" type="{$type}" title="{$title}" href="{$href}"/>
+    <xsl:variable name="sub-title">
+      <xsl:choose>
+        <xsl:when test="$type = 'application/atom+xml'"> (Atom)</xsl:when>
+        <xsl:when test="$type = 'application/rss+xml'"> (RSS)</xsl:when>
+      </xsl:choose>
+    </xsl:variable>
+    <link rel="alternate" type="{$type}" title="{$title}{$sub-title}" href="{$href}"/>
   </xsl:template>
 
 

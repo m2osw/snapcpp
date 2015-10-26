@@ -54,7 +54,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
      (line-edit|text-edit|image-box|...)
      but that would prevent extensions from being used so we keep the
      NMTOKEN in that place... -->
-<!ELEMENT widget (label|tooltip|help|background-value|attachment|sizes|filters|required|classes|value|preset|default|state)*>
+<!ELEMENT widget (label|tooltip|help|background-value|attachment|sizes|filters|geometry|required|classes|value|preset|default|state)*>
 <!ATTLIST widget id ID #REQUIRED
                  type NMTOKEN #REQUIRED
                  field CDATA #IMPLIED
@@ -98,6 +98,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                class CDATA ""
                value CDATA #IMPLIED> <!-- value is the result, i.e. you could use 0, 1, 2, 3, instead of the string in the dropdown -->
 
+<!ELEMENT regex (#PCDATA)*>
+<!ATTLIST regex name CDATA #IMPLIED
+                match (yes|no) "yes">
+
+<!ELEMENT geometry EMPTY>
+<!ATTLIST geometry width CDATA "-1"
+                   height CDATA "-1">
+
+<!ELEMENT uri (#PCDATA)>
+<!ATTLIST uri match (yes|no) "yes">
+
 <!ELEMENT sizes (absolute-min|min|absolute-max|max|min-lines|max-lines|resize)+>
 <!ELEMENT absolute-min (#PCDATA)>
 <!ELEMENT min (#PCDATA)>
@@ -106,20 +117,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT min-lines (#PCDATA)>
 <!ELEMENT max-lines (#PCDATA)>
 <!ELEMENT resize (#PCDATA)>
-
 <!ELEMENT filters (extensions|regex|min-value|max-value|min-date|max-date|min-time|max-time|uri|validate)+>
 <!ELEMENT extensions (#PCDATA)>
-<!ELEMENT regex (#PCDATA)*>
-<!ATTLIST regex name CDATA #IMPLIED>
-<!ATTLIST regex match (yes|no) "yes">
 <!ELEMENT min-value (#PCDATA)>
 <!ELEMENT max-value (#PCDATA)>
 <!ELEMENT min-date (#PCDATA)>
 <!ELEMENT max-date (#PCDATA)>
 <!ELEMENT min-time (#PCDATA)>
 <!ELEMENT max-time (#PCDATA)>
-<!ELEMENT uri (#PCDATA)>
-<!ATTLIST uri match (yes|no) "yes">
 <!ELEMENT validate (#PCDATA)>
 
 <!-- HTML tags that are used in default values or background values

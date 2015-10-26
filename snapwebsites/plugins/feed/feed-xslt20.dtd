@@ -161,6 +161,8 @@ DTD of the XSLT 2.0.
 <!ELEMENT comments ANY>
 <!ELEMENT enclosure ANY>
 <!ELEMENT guid ANY>
+<!ELEMENT height ANY>
+<!ELEMENT width ANY>
 
 <!ELEMENT source ANY>
 <!ATTLIST source url CDATA #REQUIRED>

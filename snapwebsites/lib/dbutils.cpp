@@ -407,6 +407,9 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     || n == "content::breadcrumbs_show_home"
     || n == "content::prevent_delete"
     || n == "epayment_paypal::debug"
+    || n == "feed::allow_main_atom_xml"
+    || n == "feed::allow_main_rss_xml"
+    || n == "feed::publish_full_article"
     || n == "oauth2::enable"
     || n == "permissions::dynamic"
     || n == "users::multiuser"
@@ -471,9 +474,12 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         return column_type_t::CT_uint32_value;
     }
-    else if(n == "sessions::check_flags"
-         || n == "cookie_consent_silktide::javascript_version"
+    else if(n == "cookie_consent_silktide::javascript_version"
          || n == "cookie_consent_silktide::consent_duration"
+         || n == "feed::teaser_tags"
+         || n == "feed::teaser_words"
+         || n == "feed::top_maximum_number_of_items_in_any_feed"
+         || n == "sessions::check_flags"
          )
     {
         return column_type_t::CT_int64_value;

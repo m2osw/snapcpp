@@ -3426,7 +3426,7 @@ void content::on_save_content()
 
 // TODO only repeat if the parent did not exist, otherwise we assume the
 //      parent created its own parent/children link already.
-//printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
+//SNAP_LOG_TRACE("parent/children [")(src)("]/[")(dst)("]");
             links::links::instance()->create_link(source, destination);
         }
     }

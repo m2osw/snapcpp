@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.393
+ * Version: 0.0.3.394
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -5881,12 +5881,13 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
                         h = limit_height;
                     }
                 }
+                jQuery(img)
+                    .css({top: (limit_height - h) / 2, left: (limit_width - w) / 2, position: "relative"});
             }
             jQuery(img)
                 .attr("width", w)
                 .attr("height", h)
-                .attr("filename", e.target.snapEditorFile.name)
-                .css({top: (limit_height - h) / 2, left: (limit_width - w) / 2, position: "relative"});
+                .attr("filename", e.target.snapEditorFile.name);
 
             that.droppedImage(e, img);
         };

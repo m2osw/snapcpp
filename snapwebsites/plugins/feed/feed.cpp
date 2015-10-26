@@ -75,6 +75,30 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_FEED_PAGE_LAYOUT:
         return "feed::page_layout";
 
+    case name_t::SNAP_NAME_FEED_SETTINGS_ALLOW_MAIN_ATOM_XML:
+        return "feed::allow_main_atom_xml";
+
+    case name_t::SNAP_NAME_FEED_SETTINGS_ALLOW_MAIN_RSS_XML:
+        return "feed::allow_main_rss_xml";
+
+    case name_t::SNAP_NAME_FEED_SETTINGS_DEFAULT_LOGO:
+        return "feed::default_logo";
+
+    case name_t::SNAP_NAME_FEED_SETTINGS_PATH:
+        return "admin/settings/feed";
+
+    case name_t::SNAP_NAME_FEED_SETTINGS_TEASER_END_MARKER:
+        return "feed::teaser_end_marker";
+
+    case name_t::SNAP_NAME_FEED_SETTINGS_TEASER_TAGS:
+        return "feed::teaser_tags";
+
+    case name_t::SNAP_NAME_FEED_SETTINGS_TEASER_WORDS:
+        return "feed::teaser_words";
+
+    case name_t::SNAP_NAME_FEED_SETTINGS_TOP_MAXIMUM_NUMBER_OF_ITEMS_IN_ANY_FEED:
+        return "feed::top_maximum_number_of_items_in_any_feed";
+
     case name_t::SNAP_NAME_FEED_TITLE:
         return "feed::title";
 
@@ -176,7 +200,7 @@ int64_t feed::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 10, 22, 3, 42, 42, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 26, 0, 54, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -250,6 +274,47 @@ void feed::on_generate_page_content(content::path_info_t& ipath, QDomElement& pa
 }
 
 
+/** \brief Make copies of attachments as required.
+ *
+ * The Feed plugin allows users to define a different path for their
+ * various feeds. This function saves those files in different
+ * locations.
+ *
+ * \param[in] ipath  The path to the feed settings.
+ * \param[in] succeeded  Whether the save succeeded.
+ */
+void feed::on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded)
+{
+    if(!succeeded
+    || ipath.get_cpath() != "admin/settings/feed")
+    {
+        return;
+    }
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(ipath.get_revision_key()));
+
+    QtCassandra::QCassandraValue value;
+
+    if(!settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_ALLOW_MAIN_RSS_XML))->value().safeSignedCharValue(0, 0))
+    {
+        // if this one is off, then make sure the file is deleted if it exists
+        content::path_info_t rss_xml_ipath;
+        rss_xml_ipath.set_path("rss.xml");
+        content_plugin->trash_page(rss_xml_ipath);
+    }
+
+    if(!settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_ALLOW_MAIN_ATOM_XML))->value().safeSignedCharValue(0, 0))
+    {
+        // if this one is off, then make sure the file is deleted if it exists
+        content::path_info_t atom_xml_ipath;
+        atom_xml_ipath.set_path("atom.xml");
+        content_plugin->trash_page(atom_xml_ipath);
+    }
+}
+
+
 /** \brief Implementation of the backend process signal.
  *
  * This function captures the backend processing signal which is sent
@@ -294,14 +359,21 @@ void feed::generate_feeds()
 
     int64_t const start_date(f_snap->get_start_date());
 
+    content::path_info_t feed_settings_ipath;
+    feed_settings_ipath.set_path(get_name(name_t::SNAP_NAME_FEED_SETTINGS_PATH));
+    QtCassandra::QCassandraRow::pointer_t feed_settings_row(revision_table->row(feed_settings_ipath.get_revision_key()));
+
     // TODO: make use of the feed definitions instead of hard coded values
     //       forthe number of words, max tags, end marker (And below the
     //       end marker URI and title--and whether to use that anchor.)
     //
     filter::filter::filter_teaser_info_t teaser_info;
-    teaser_info.set_max_words(200);
-    teaser_info.set_max_tags(100);
-    teaser_info.set_end_marker("[...]");
+    teaser_info.set_max_words (feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_WORDS     ))->value().safeInt64Value(0, 200));
+    teaser_info.set_max_tags  (feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_TAGS      ))->value().safeInt64Value(0, 100));
+    teaser_info.set_end_marker(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_END_MARKER))->value().stringValue());
+
+    QString const default_logo(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_DEFAULT_LOGO))->value().stringValue());
+    int64_t const top_max_items(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TOP_MAXIMUM_NUMBER_OF_ITEMS_IN_ANY_FEED))->value().safeInt64Value(0, 100));
 
     // first loop through the list of feeds defined under /feed
     content::path_info_t ipath;
@@ -363,9 +435,13 @@ void feed::generate_feeds()
         // creation or publication date of the page as expected by the
         // various feed APIs
         //
-        // TODO: fix the max. # of entries to make use of a user defined setting instead
+        // TODO: fix the max. # of entries to make use of a user defined
+        //       setting for that specific feed (instead of 100).
+        //
+        int64_t const feed_max_items(100);
+
         list::list * list_plugin(list::list::instance());
-        list::list_item_vector_t list(list_plugin->read_list(child_ipath, 0, 100));
+        list::list_item_vector_t list(list_plugin->read_list(child_ipath, 0, std::min(top_max_items, feed_max_items)));
         bool first(true);
         QDomDocument result;
         int const max_items(list.size());
@@ -414,13 +490,15 @@ void feed::generate_feeds()
                     snap_dom::append_plain_text_to_node(long_date_element, date2822);
                 }
 
-                // TODO: The URI title needs to come from settings of the
-                //       current feed and not hard coded text. That way it
-                //       will also be translatable by the administrator.
-                //
-                QDomElement output_description(snap_dom::get_child_element(doc, "snap/page/body/output/description"));
-                teaser_info.set_end_marker_uri(page_ipath.get_key(), "Click to read the full article.");
-                filter::filter::body_to_teaser(output_description, teaser_info);
+                // generate the teaser
+                if(teaser_info.get_max_words() > 0)
+                {
+                    QDomElement output_description(snap_dom::get_child_element(doc, "snap/page/body/output/description"));
+                    // do not create a link, often those are removed in some
+                    // weird way; readers will make the title a link anyway
+                    //teaser_info.set_end_marker_uri(page_ipath.get_key(), "Click to read the full article.");
+                    filter::filter::body_to_teaser(output_description, teaser_info);
+                }
 
                 if(first)
                 {
@@ -512,6 +590,7 @@ void feed::generate_feeds()
                 localtime_r(&now, &t);
 
                 // for Atom
+                // /snap/head/metadata/desc[@type="feed::now"]/data/...
                 {
                     char date3339[256];
                     strftime(date3339, sizeof(date3339), "%Y-%m-%d", &t);
@@ -525,6 +604,7 @@ void feed::generate_feeds()
                 }
 
                 // for RSS
+                // /snap/head/metadata/desc[@type="feed::now-long-date"]/data/...
                 {
                     char date2822[256];
                     strftime(date2822, sizeof(date2822), "%a, %d %b %Y %T %z", &t);
@@ -535,6 +615,18 @@ void feed::generate_feeds()
                     desc.appendChild(data);
                     QDomText date_text(result.createTextNode(QString::fromUtf8(date2822)));
                     data.appendChild(date_text);
+                }
+
+                // the feed image/logo/icon
+                // /snap/head/metadata/desc[@type="feed::default_logo"]/data/img[@src=...][@width=...][@height=...]
+                if(!default_logo.isEmpty())
+                {
+                    QDomElement desc(result.createElement("desc"));
+                    metadata_tag.appendChild(desc);
+                    desc.setAttribute("type", "feed::default_logo");
+                    QDomElement data(result.createElement("data"));
+                    desc.appendChild(data);
+                    snap_dom::insert_html_string_to_xml_doc(data, default_logo);
                 }
             }
 
@@ -753,24 +845,48 @@ void feed::generate_feeds()
                     // TODO: we probably want to test the return value
                     content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
 
-                    // mark the attachment (Feed data) as such
                     {
                         content::path_info_t attachment_ipath;
                         attachment_ipath.set_path(attachment.get_attachment_cpath());
 
-                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(name_t::SNAP_NAME_FEED_TITLE))->setValue(title);
-                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(name_t::SNAP_NAME_FEED_EXTENSION))->setValue(extension);
-                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(name_t::SNAP_NAME_FEED_MIMETYPE))->setValue(mimetype);
+                        QtCassandra::QCassandraRow::pointer_t attachment_row(revision_table->row(attachment_ipath.get_revision_key()));
 
-                        content::path_info_t type_ipath;
-                        type_ipath.set_path(get_name(name_t::SNAP_NAME_FEED_ATTACHMENT_TYPE));
+                        attachment_row->cell(get_name(name_t::SNAP_NAME_FEED_TITLE))->setValue(title);
+                        attachment_row->cell(get_name(name_t::SNAP_NAME_FEED_EXTENSION))->setValue(extension);
+                        attachment_row->cell(get_name(name_t::SNAP_NAME_FEED_MIMETYPE))->setValue(mimetype);
+                    }
 
-                        QString const link_name(get_name(name_t::SNAP_NAME_FEED_TYPE));
-                        bool const source_unique(true);
-                        bool const destination_unique(false);
-                        links::link_info source(link_name, source_unique, attachment_ipath.get_key(), attachment_ipath.get_branch());
-                        links::link_info destination(link_name, destination_unique, type_ipath.get_key(), type_ipath.get_branch());
-                        links::links::instance()->create_link(source, destination);
+                    mark_attachment_as_feed(attachment);
+
+                    // TODO: this is to support the system main.rss -> rss.xml
+                    //       but this should be more much more friendly instead
+                    //       of a hack like this...
+                    //
+                    if(attachment.get_attachment_cpath() == "feed/main/main.rss")
+                    {
+                        int8_t const rss_xml(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_ALLOW_MAIN_RSS_XML))->value().safeSignedCharValue(0, 0));
+                        if(rss_xml)
+                        {
+                            // change filename to "/rss.xml"
+                            attachment.set_parent_cpath("");
+                            attachment.set_file_name("rss.xml");
+                            attachment.set_file_filename("rss.xml");
+                            content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+                            mark_attachment_as_feed(attachment);
+                        }
+                    }
+                    else if(attachment.get_attachment_cpath() == "feed/main/main.atom")
+                    {
+                        int8_t const atom_xml(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_ALLOW_MAIN_ATOM_XML))->value().safeSignedCharValue(0, 0));
+                        if(atom_xml)
+                        {
+                            // change filename to "/atom.xml"
+                            attachment.set_parent_cpath("");
+                            attachment.set_file_name("atom.xml");
+                            attachment.set_file_filename("atom.xml");
+                            content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+                            mark_attachment_as_feed(attachment);
+                        }
                     }
                 }
             }
@@ -781,6 +897,30 @@ void feed::generate_feeds()
     f_snap->set_uri_path("/");
 }
 
+
+/** \brief Mark the attachment (Feed data) as such.
+ *
+ * Since we allow users to save copies of various feeds in other
+ * places, we have a separate function to create the necessary
+ * links against the attachment files once saved.
+ *
+ * \param[in] attachment  The attachment that was just created.
+ */
+void feed::mark_attachment_as_feed(snap::content::attachment_file & attachment)
+{
+    content::path_info_t attachment_ipath;
+    attachment_ipath.set_path(attachment.get_attachment_cpath());
+
+    content::path_info_t type_ipath;
+    type_ipath.set_path(get_name(name_t::SNAP_NAME_FEED_ATTACHMENT_TYPE));
+
+    QString const link_name(get_name(name_t::SNAP_NAME_FEED_TYPE));
+    bool const source_unique(true);
+    bool const destination_unique(false);
+    links::link_info source(link_name, source_unique, attachment_ipath.get_key(), attachment_ipath.get_branch());
+    links::link_info destination(link_name, destination_unique, type_ipath.get_key(), type_ipath.get_branch());
+    links::links::instance()->create_link(source, destination);
+}
 
 
 

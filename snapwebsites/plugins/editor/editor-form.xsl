@@ -127,6 +127,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of
           select="concat(' ', classes)"/></xsl:attribute>
+      <xsl:attribute name="style"><xsl:if
+          test="geometry/@width">width:<xsl:value-of select="geometry/@width"/>px;</xsl:if><xsl:if
+          test="geometry/@height">height:<xsl:value-of select="geometry/@height"/>px;</xsl:if></xsl:attribute>
       <xsl:if test="background-value">
         <!-- by default "snap-editor-background" objects have "display: none"
              a script shows them on load once ready AND if the value is empty
@@ -141,6 +144,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <div>
         <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class">editor-content image no-toolbar<xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <xsl:if test="geometry"><xsl:attribute name="style"><xsl:if
+            test="geometry/@width">width:<xsl:value-of select="geometry/@width"/>px;</xsl:if><xsl:if
+            test="geometry/@height">height:<xsl:value-of select="geometry/@height"/>px;</xsl:if></xsl:attribute></xsl:if>
         <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
           <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
         </xsl:if>

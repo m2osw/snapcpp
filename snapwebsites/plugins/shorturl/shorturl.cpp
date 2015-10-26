@@ -452,9 +452,14 @@ bool shorturl::allow_shorturl_impl(content::path_info_t & ipath, QString const &
     NOTUSED(type);
 
     // do not ever create short URLs for admin pages
-    if(ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/"))
+    QString const cpath(ipath.get_cpath());
+    if(cpath.isEmpty()
+    || cpath == "admin"
+    || cpath.startsWith("admin/"))
     {
-        // do not allow those
+        // do not need on home page, do not allow any short URL on
+        // administration pages (no need really since those are not
+        // public pages)
         allow = false;
         return false;
     }

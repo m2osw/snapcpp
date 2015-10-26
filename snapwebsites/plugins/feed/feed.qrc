@@ -21,8 +21,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/plugins/feed">
     <file>content.xml</file>
   </qresource>
+  <qresource prefix="/xml/editor">
+    <file>feed-settings-page.xml</file>
+  </qresource>
   <qresource prefix="/xsl/layout">
     <file>feed-parser.xsl</file>
+    <file>feed-settings-parser.xsl</file>
   </qresource>
   <qresource prefix="/xsl/feed">
     <file>atom.xsl</file>

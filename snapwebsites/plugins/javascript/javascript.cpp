@@ -569,7 +569,7 @@ private:
  *
  * \return The result in a QVariant.
  */
-QVariant javascript::evaluate_script(QString const& script)
+QVariant javascript::evaluate_script(QString const & script)
 {
 //SNAP_LOG_TRACE() << "evaluating JS [" << script << "]\n";
     QScriptProgram program(script);
@@ -582,13 +582,13 @@ QVariant javascript::evaluate_script(QString const& script)
     QVariant variant(value.toVariant());
     if(value.isError())
     {
-// this happens if the script is not correct and it cannot be executed
-SNAP_LOG_TRACE() << "javascript: value says it's an error!\n";
+        // this happens if the script is not correct and it cannot be executed
+        SNAP_LOG_ERROR() << "javascript: value says there is an error in \"" << script << "\"!";
     }
     if(engine.hasUncaughtException())
     {
-QScriptValue e(engine.uncaughtException());
-SNAP_LOG_TRACE() << "javascript: result = " << engine.hasUncaughtException() << ", e = " << e.isError() << ", s = \"" << e.toString() << "\"\n";
+        QScriptValue e(engine.uncaughtException());
+        SNAP_LOG_ERROR() << "javascript: result = " << engine.hasUncaughtException() << ", e = " << e.isError() << ", s = \"" << e.toString() << "\"";
     }
     return value.toVariant();
 }
