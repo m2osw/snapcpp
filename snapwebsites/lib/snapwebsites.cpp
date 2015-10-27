@@ -197,6 +197,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_CORE_USER_COOKIE_NAME:
         return "core::user_cookie_name";
 
+    case name_t::SNAP_NAME_CORE_X_POWERED_BY_HEADER:
+        return "X-Powered-By";
+
     default:
         // invalid index
         throw snap_logic_exception(QString("invalid name_t::SNAP_NAME_CORE_... (%1)").arg(static_cast<int>(name)));
@@ -1489,7 +1492,7 @@ void server::check_listen_runner()
     {
         if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
         {
-            // it's ready, so it can be reused now
+            // it is ready, so it can be reused now
             f_children_waiting.push_back(f_children_running[idx]);
             f_children_running.erase(f_children_running.begin() + idx);
 

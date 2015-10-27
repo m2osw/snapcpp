@@ -92,6 +92,20 @@ add_executable(test_unix_timestamp
 add_dependencies( test_unix_timestamp test_prereqs )
 
 
+add_executable(test_ip_strings
+    test_ip_strings.cpp
+)
+add_dependencies( test_ip_strings test_prereqs )
+target_link_libraries(test_ip_strings
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    dl
+)
+
+
 add_executable(test_snap_udp_message
     test_snap_udp_message.cpp
 )

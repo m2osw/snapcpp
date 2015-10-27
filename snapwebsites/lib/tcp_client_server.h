@@ -148,5 +148,9 @@ private:
 };
 
 
+bool is_ipv4(char const * ip);
+bool is_ipv6(char const * ip);
+
+
 } // namespace tcp_client_server
 // vim: ts=4 sw=4 et

@@ -112,6 +112,7 @@ void tracker::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
+    SNAP_LISTEN0(tracker, "server", server, attach_to_session);
     SNAP_LISTEN0(tracker, "server", server, detach_from_session);
     SNAP_LISTEN(tracker, "server", server, register_backend_action, _1);
 }
@@ -247,28 +248,27 @@ QtCassandra::QCassandraTable::pointer_t tracker::get_tracker_table()
  * \note
  * We should probably have a different type of message although
  * at this point this message works for us just fine.
+ * See SNAP-129
  */
 void tracker::on_detach_from_session()
 {
     users::users * users_plugin(users::users::instance());
-    QtCassandra::QCassandraTable::pointer_t tracker_table(get_tracker_table());
     QString email;
 
-    QDomDocument doc;
-    QDomElement parent_tag(doc.createElement("trackdata"));
-    doc.appendChild(parent_tag);
+    QDomElement parent_tag(f_doc.createElement("trackdata"));
+    f_doc.appendChild(parent_tag);
 
     // save the URI, this is actually the point of this whole ordeal!
     // (we would also need to determine the type of page... i.e. attachment
     // or not and a few other things...)
     //
-    QDomElement uri_tag(doc.createElement("uri"));
+    QDomElement uri_tag(f_doc.createElement("uri"));
     parent_tag.appendChild(uri_tag);
     snap_uri const & uri(f_snap->get_uri());
-    QDomText uri_text(doc.createTextNode(uri.get_uri()));
+    QDomText uri_text(f_doc.createTextNode(uri.get_uri()));
     uri_tag.appendChild(uri_text);
 
-    QDomElement login_status(doc.createElement("login-status"));
+    QDomElement login_status(f_doc.createElement("login-status"));
     parent_tag.appendChild(login_status);
 
     // get the user path
@@ -295,7 +295,7 @@ void tracker::on_detach_from_session()
             // it is easier to do it here and makes it easier when looking
             // at the data too
             //
-            QDomElement email_tag(doc.createElement("email"));
+            QDomElement email_tag(f_doc.createElement("email"));
             parent_tag.appendChild(email_tag);
         }
     }
@@ -358,10 +358,58 @@ void tracker::on_detach_from_session()
     // the data is that XML file in the form of a string
     QtCassandra::QCassandraValue value;
     value.setTtl(86400 * 31);       // keep for 1 month (TODO: make it an editable preference)
-    value.setStringValue(doc.toString(-1));
+    value.setStringValue(f_doc.toString(-1));
 
     // now save the result in Cassandra
+    QtCassandra::QCassandraTable::pointer_t tracker_table(get_tracker_table());
     tracker_table->row(email)->cell(start_date_key)->setValue(value);
+}
+
+
+/** \brief Once we re-attach a session, we have the return code.
+ *
+ * This function is expected to be called (but at times that fails,
+ * hence the on_detach_from_session() implementation) when the
+ * request is furfilled one way or the other.
+ *
+ * Here we complement the document if we reach this function.
+ * Especially we want to save the HTTP code, especially errors,
+ * since by now it has to be known (saved in the headers.)
+ */
+void tracker::on_attach_to_session()
+{
+    bool changed(false);
+
+    QDomElement parent_tag(f_doc.documentElement());
+
+    // get the "Status: ..." if defined
+    if(f_snap->has_header(get_name(snap::name_t::SNAP_NAME_CORE_STATUS_HEADER)))
+    {
+        changed = true;
+
+        QString const status(f_snap->get_header(get_name(snap::name_t::SNAP_NAME_CORE_STATUS_HEADER)));
+
+        parent_tag.setAttribute("status", status);
+    }
+
+    if(changed)
+    {
+        QString const email(parent_tag.attribute("key"));
+
+        // the key is the date (64 bit in microseconds)
+        int64_t const start_date(f_snap->get_start_date());
+        QByteArray start_date_key;
+        QtCassandra::setInt64Value(start_date_key, start_date);
+
+        // the data is that XML file in the form of a string
+        QtCassandra::QCassandraValue value;
+        value.setTtl(86400 * 31);       // keep for 1 month (TODO: make it an editable preference)
+        value.setStringValue(f_doc.toString(-1));
+
+        // now save the result in Cassandra
+        QtCassandra::QCassandraTable::pointer_t tracker_table(get_tracker_table());
+        tracker_table->row(email)->cell(start_date_key)->setValue(value);
+    }
 }
 
 
@@ -413,6 +461,8 @@ void tracker::on_backend_action(QString const & action)
  */
 void tracker::on_backend_tracking_data()
 {
+    // TODO: actually implement such?!
+    // At this point I am more thinking of a raw UI view of the data
 }
 
 

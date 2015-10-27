@@ -87,6 +87,7 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_tracker_table();
 
     // server signals
+    void                on_attach_to_session();
     void                on_detach_from_session();
     void                on_register_backend_action(server::backend_action_map_t & actions);
 
@@ -100,6 +101,8 @@ private:
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraTable::pointer_t f_tracker_table;
+    QString                                 f_email;
+    QDomDocument                            f_doc;
 };
 
 

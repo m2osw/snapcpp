@@ -69,7 +69,8 @@ enum class name_t
     SNAP_NAME_CORE_SITE_READY,
     SNAP_NAME_CORE_SITE_SHORT_NAME,
     SNAP_NAME_CORE_STATUS_HEADER,
-    SNAP_NAME_CORE_USER_COOKIE_NAME
+    SNAP_NAME_CORE_USER_COOKIE_NAME,
+    SNAP_NAME_CORE_X_POWERED_BY_HEADER
 };
 char const *get_name(name_t name) __attribute__ ((const));
 

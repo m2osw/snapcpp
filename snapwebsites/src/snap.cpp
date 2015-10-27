@@ -58,14 +58,13 @@
 // SCRIPT_NAME=/cgi-bin/env_n_args.cgi
 //
 
-#include "tcp_client_server.h"
-#include "snapwebsites.h"
 #include "log.h"
+#include "not_reached.h"
+#include "snapwebsites.h"
+#include "tcp_client_server.h"
+
 #include <advgetopt/advgetopt.h>
-#include <unistd.h>
-#include <string.h>
-#include <iostream>
-#include <sstream>
+
 
 namespace
 {
@@ -141,10 +140,10 @@ namespace
 class snap_cgi
 {
 public:
-    snap_cgi( int argc, char *argv[] );
+    snap_cgi( int argc, char * argv[] );
     ~snap_cgi();
 
-    int error(const char *code, const char *msg);
+    int error(char const * code, char const * msg);
     bool verify();
     int process();
 
@@ -154,7 +153,8 @@ private:
     std::string         f_address;  // snap server address
 };
 
-snap_cgi::snap_cgi( int argc, char *argv[] )
+
+snap_cgi::snap_cgi( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapcgi_options, g_configuration_files, "SNAPCGI_OPTIONS")
     , f_port(4004)
     , f_address("0.0.0.0")
@@ -175,34 +175,35 @@ snap_cgi::snap_cgi( int argc, char *argv[] )
     snap::logging::configure_conffile( logconfig.c_str() );
 }
 
+
 snap_cgi::~snap_cgi()
 {
 }
 
-int snap_cgi::error(const char *code, const char *msg)
+
+int snap_cgi::error(char const * code, char const * msg)
 {
     SNAP_LOG_ERROR(msg);
 
-    std::cout   << "HTTP/1.1 " << code << std::endl
+    std::string body("<h1>Internal Server Error</h1>"
+                     "<p>Sorry! We found an invalid server configuration or some other error occured.</p>");
+
+    std::cout   << "Status: " << code                       << std::endl
                 << "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
-                << "Content-type: text/html" << std::endl
+                << "Connection: close"                      << std::endl
+                << "Content-Type: text/html; charset=utf-8" << std::endl
+                << "Content-Length: " << body.length()      << std::endl
+                << "X-Powered-By: snap.cgi"                 << std::endl
                 << std::endl
-                << "<h1>Internal Server Error</h1>" << std::endl
-                << "<p>Sorry! We found an invalid server configuration or some other error occured.</p>"
-                << std::endl
+                << body
                 ;
 
     return 1;
 }
 
+
 bool snap_cgi::verify()
 {
-    // The default is localhost:4004
-    //if( !f_opt.is_defined("snapserver") )
-    //{
-    //    throw tcp_client_server::tcp_client_server_parameter_error("the snapserver parameter is not defined.");
-    //}
-
     // If not defined, keep the default of localhost:4004
     if(f_opt.is_defined("snapserver"))
     {
@@ -218,11 +219,11 @@ bool snap_cgi::verify()
             // address first
             f_address = snapserver.substr(0, pos);
             // port follows
-            const std::string port(snapserver.substr(pos + 1));
+            std::string const port(snapserver.substr(pos + 1));
             f_port = 0;
-            for(const char *p(port.c_str()); *p != '\0'; ++p)
+            for(char const * p(port.c_str()); *p != '\0'; ++p)
             {
-                char c(*p);
+                char const c(*p);
                 if(c < '0' || c > '9')
                 {
                     SNAP_LOG_FATAL("Invalid port (found a character that is not a digit in \"")(snapserver)("\".");
@@ -232,71 +233,129 @@ bool snap_cgi::verify()
                 if(f_port > 65535)
                 {
                     SNAP_LOG_FATAL("Invalid port (Port number too large in \"")(snapserver)("\".");
-                    throw tcp_client_server::tcp_client_server_parameter_error("the port in the snapserver parameter is too large (we only support a number from 0 to 65535): " + snapserver + ".");
+                    throw tcp_client_server::tcp_client_server_parameter_error("the port in the snapserver parameter is too large (we only support a number from 1 to 65535): " + snapserver + ".");
                 }
             }
-            // XXX forbid port zero?
+            // forbid port zero
+            if(f_port <= 0)
+            {
+                SNAP_LOG_FATAL("Invalid port (Port number too small in \"")(snapserver)("\".");
+                throw tcp_client_server::tcp_client_server_parameter_error("the port in the snapserver parameter is too small (we only support a number from 1 to 65535): " + snapserver + ".");
+            }
         }
     }
 
     // catch "invalid" methods early so we do not waste
-    // any time with methods we do not support
-    // later we may add support for PUT, PATCH and DELETE though
-    // WARNING: do not use std::string because NULL will crash
-    char const *request_method(getenv("REQUEST_METHOD"));
-    if(request_method == NULL)
+    // any time with methods we do not support at all
+    //
+    // later we want to add support for PUT, PATCH and DELETE though
     {
-        SNAP_LOG_FATAL("Request method is not defined.");
-        std::cout   << "Status: 405 Method Not Defined"         << std::endl
-                    << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
-                    << "Allow: GET, HEAD, POST"                 << std::endl
-                    << "Content-Type: text/html; charset=utf-8" << std::endl
-                    << std::endl
-                    << "<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>";
-        return false;
-    }
-    if(strcmp(request_method, "GET") != 0
-    && strcmp(request_method, "HEAD") != 0
-    && strcmp(request_method, "POST") != 0)
-    {
-        SNAP_LOG_FATAL("Request method is \"")(request_method)("\", which we currently refuse.");
-        if(strcmp(request_method, "BREW") == 0)
-        {
-            // see http://tools.ietf.org/html/rfc2324
-            std::cout << "Status: 418 I'm a teapot" << std::endl;
-        }
-        else
-        {
-            std::cout << "Status: 405 Method Not Allowed" << std::endl;
-        }
+        // WARNING: do not use std::string because NULL will crash
         //
-        std::cout   << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
-                    << "Allow: GET, HEAD, POST"                 << std::endl
-                    << "Content-Type: text/html; charset=utf-8" << std::endl
-                    << std::endl
-                    << "<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>";
-        return false;
+        char const * request_method(getenv("REQUEST_METHOD"));
+        if(request_method == NULL)
+        {
+            SNAP_LOG_FATAL("Request method is not defined.");
+            std::string body("<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>");
+            std::cout   << "Status: 405 Method Not Defined"         << std::endl
+                        << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                        << "Allow: GET, HEAD, POST"                 << std::endl
+                        << "Connection: close"                      << std::endl
+                        << "Content-Type: text/html; charset=utf-8" << std::endl
+                        << "Content-Length: " << body.length()      << std::endl
+                        << "X-Powered-By: snap.cgi"                 << std::endl
+                        << std::endl
+                        << body;
+            return false;
+        }
+        if(strcmp(request_method, "GET") != 0
+        && strcmp(request_method, "HEAD") != 0
+        && strcmp(request_method, "POST") != 0)
+        {
+            SNAP_LOG_FATAL("Request method is \"")(request_method)("\", which we currently refuse.");
+            if(strcmp(request_method, "BREW") == 0)
+            {
+                // see http://tools.ietf.org/html/rfc2324
+                std::cout << "Status: 418 I'm a teapot" << std::endl;
+            }
+            else
+            {
+                std::cout << "Status: 405 Method Not Allowed" << std::endl;
+            }
+            //
+            std::string body("<html><head><title>Method Not Allowed</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>");
+            std::cout   << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                        << "Allow: GET, HEAD, POST"                 << std::endl
+                        << "Connection: close"                      << std::endl
+                        << "Content-Type: text/html; charset=utf-8" << std::endl
+                        << "Content-Length: " << body.length()      << std::endl
+                        << "X-Powered-By: snap.cgi"                 << std::endl
+                        << std::endl
+                        << body;
+            return false;
+        }
+    }
+
+    // WARNING: do not use std::string because NULL will crash
+    {
+        char const * http_host(getenv("HTTP_HOST"));
+        if(http_host == NULL)
+        {
+            error("503 Service Unavailable", "The host you want to connect to must be specified.");
+            return false;
+        }
+#ifdef _DEBUG
+        SNAP_LOG_DEBUG("HTTP_HOST=")(http_host);
+#endif
+        if(tcp_client_server::is_ipv4(http_host))
+        {
+            SNAP_LOG_ERROR("The host cannot be an IPv4 address.");
+            std::cout   << "Status: 444 No Response" << std::endl
+                        << "Connection: close" << std::endl
+                        << "X-Powered-By: snap.cgi" << std::endl
+                        << std::endl
+                        ;
+            // TODO: send IP to firewall
+            return false;
+        }
+        if(tcp_client_server::is_ipv6(http_host))
+        {
+            SNAP_LOG_ERROR("The host cannot be an IPv6 address.");
+            std::cout   << "Status: 444 No Response" << std::endl
+                        << "Connection: close" << std::endl
+                        << "X-Powered-By: snap.cgi" << std::endl
+                        << std::endl
+                        ;
+            // TODO: send IP to firewall
+            return false;
+        }
     }
 
     // success
     return true;
 }
 
+
 int snap_cgi::process()
 {
     // WARNING: do not use std::string because NULL will crash
-    char const *request_method( getenv("REQUEST_METHOD") );
+    char const * request_method( getenv("REQUEST_METHOD") );
     if(request_method == NULL)
     {
-        // the method was already checked before this call so it should always
-        // be defined...
+        // the method was already checked in the validate, before this
+        // call so it should always be defined...
+        //
         SNAP_LOG_FATAL("Method not defined in REQUEST_METHOD.");
+        std::string body("<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>");
         std::cout   << "Status: 405 Method Not Defined"         << std::endl
                     << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                    << "Connection: close"                      << std::endl
                     << "Allow: GET, HEAD, POST"                 << std::endl
                     << "Content-Type: text/html; charset=utf-8" << std::endl
+                    << "Content-Length: " << body.length()      << std::endl
+                    << "X-Powered-By: snap.cgi"                 << std::endl
                     << std::endl
-                    << "<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>";
+                    << body;
         return false;
     }
 #ifdef _DEBUG
@@ -312,10 +371,10 @@ int snap_cgi::process()
     {
         return error("504 Gateway Timeout", "error while writing to the child process (1).");
     }
-    for(char **e(environ); *e; ++e)
+    for(char ** e(environ); *e; ++e)
     {
         std::string env(*e);
-        const int len = static_cast<int>(env.size()); //strlen(*e);
+        int const len(static_cast<int>(env.size()));
         //
         // Replacing all '\n' in the env variables to '|'
         // to keep from causing the snap_child to complain and die.
@@ -449,7 +508,7 @@ int snap_cgi::process()
 }
 
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
     try
     {
@@ -462,13 +521,13 @@ int main(int argc, char *argv[])
             }
             return cgi.process();
         }
-        catch(const std::runtime_error& e)
+        catch(std::runtime_error const & e)
         {
             // this should never happen!
             cgi.error("503 Service Unavailable", ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
             return 1;
         }
-        catch(const std::logic_error& e)
+        catch(std::logic_error const & e)
         {
             // this should never happen!
             cgi.error("503 Service Unavailable", ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
@@ -481,7 +540,7 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
-    catch(std::exception const& e)
+    catch(std::exception const & e)
     {
         // we are in trouble, we cannot even answer
         std::cerr << "snap: exception: " << e.what() << std::endl;

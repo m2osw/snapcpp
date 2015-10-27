@@ -2597,7 +2597,7 @@ pid_t snap_child::fork_child()
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
-        throw snap_logic_exception("server pointer is nullptr");
+        throw snap_logic_exception("snap_child::fork_child(): server pointer is nullptr");
     }
 
 #ifdef SNAP_NO_FORK
@@ -2636,7 +2636,7 @@ pid_t snap_child::fork_child()
 
         if(count != 1)
         {
-            SNAP_LOG_WARNING("The number of threads before the fork() to create a snap_child is ")(count)(" when it should be 1.");
+            SNAP_LOG_WARNING("snap_child::fork_child(): The number of threads before the fork() to create a snap_child is ")(count)(" when it should be 1.");
         }
     }
     else
@@ -2658,7 +2658,7 @@ pid_t snap_child::fork_child()
         //
         if(getppid() != parent_pid)
         {
-            SNAP_LOG_FATAL("snap_backend::process_backend_uri() lost parent too soon and did not receive SIGHUP; quit immediately.");
+            SNAP_LOG_FATAL("snap_child::fork_child() lost parent too soon and did not receive SIGHUP; quit immediately.");
             exit(1);
             NOTREACHED();
         }
@@ -2692,7 +2692,11 @@ bool snap_child::process(int socket)
     {
         // this is a bug! die() on the spot
         // (here we ARE in the child process!)
-        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "Server Bug", "Your Snap! server detected a serious problem. Please check your logs for more information.", "snap_child::process() was called from the child process.");
+        die(
+            http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE,
+            "Server Bug",
+            "Your Snap! server detected a serious problem. Please check your logs for more information.",
+            "snap_child::process() was called from a child process.");
         return false;
     }
 
@@ -3419,28 +3423,39 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
             {
                 if(f_name == "HTTP_COOKIE")
                 {
-                    // special case
+                    // special case for cookies
                     snap_string_list cookies(f_value.split(';', QString::SkipEmptyParts));
+std::cerr << " HTTP_COOKIE = [\"" << f_value << "\"]\n";
                     int const max_strings(cookies.size());
                     for(int i(0); i < max_strings; ++i)
                     {
-                        QString name_value(cookies[i]);
+                        QString const name_value(cookies[i]);
                         snap_string_list nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
                         if(nv.size() == 2)
                         {
                             // XXX check with other systems to see
                             //     whether urldecode() is indeed
                             //     necessary here
-                            QString cookie_name(snap_uri::urldecode(nv[0], true));
-                            QString cookie_value(snap_uri::urldecode(nv[1], true));
+                            QString const cookie_name(snap_uri::urldecode(nv[0], true));
+                            QString const cookie_value(snap_uri::urldecode(nv[1], true));
+//std::cerr << " f_browser_cookies[\"" << cookie_name << "\"] = \"" << cookie_value << "\"; (\"" << cookies[i] << "\")\n";
                             if(f_browser_cookies.contains(cookie_name))
                             {
-                                die(QString("cookie \"%1\" defined twice")
+                                // This happens when you have a cookie with the
+                                // same name defined with multiple domains,
+                                // multiple paths, multiple expiration dates...
+                                //
+                                // Unfortunately, we are not told which one is
+                                // which when we reach this line of code, yet
+                                // the last one will be the most qualified one
+                                // according to most browsers and servers
+                                //
+                                // http://tools.ietf.org/html/rfc6265#section-5.4
+                                //
+                                SNAP_LOG_DEBUG(QString("cookie \"%1\" defined twice")
                                             .arg(cookie_name));
-                                NOTREACHED();
                             }
                             f_browser_cookies[cookie_name] = cookie_value;
-//std::cerr << " f_browser_cookies[\"" << cookie_name << "\"] = \"" << cookie_value << "\";\n";
                         }
                     }
                 }
@@ -3756,6 +3771,8 @@ void snap_child::setup_uri()
     // HOST (domain name including all sub-domains)
     if(f_env.count("HTTP_HOST") != 1)
     {
+        // this was tested in snap.cgi, but who knows who connected to us...
+        //
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                     "HTTP_HOST is required but not defined in your request.",
                     "HTTP_HOST was not defined in the user request");
@@ -6001,6 +6018,17 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const & err
         }
         else
         {
+            // On error we do not return the HTTP protocol, only the Status field
+            // it just needs to be first to make sure it works right
+            //
+            // IMPORTANT NOTE: we WANT the header to be set when we call
+            //                 the attach_to_session() function so someone
+            //                 can at least peruse it
+            //
+            set_header(get_name(name_t::SNAP_NAME_CORE_STATUS_HEADER),
+                       QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name),
+                       HEADER_MODE_ERROR);
+
             // Make sure that the session is re-attached
             server::pointer_t server( f_server.lock() );
             if(!server)
@@ -6008,12 +6036,6 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const & err
                 throw snap_logic_exception("server pointer is nullptr");
             }
             server->attach_to_session();
-
-            // On error we do not return the HTTP protocol, only the Status field
-            // it just needs to be first to make sure it works right
-            set_header(get_name(name_t::SNAP_NAME_CORE_STATUS_HEADER),
-                       QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name),
-                       HEADER_MODE_ERROR);
 
             // content type is HTML, we reset this header because it could have
             // been changed to something else and prevent the error from showing
@@ -6568,12 +6590,15 @@ void snap_child::output_headers(header_mode_t modes)
  * \sa cookie_is_defined()
  * \sa output_cookies()
  */
-void snap_child::set_cookie(http_cookie const& cookie_info)
+void snap_child::set_cookie(http_cookie const & cookie_info)
 {
     f_cookies[cookie_info.get_name()] = cookie_info;
 
     // TODO: the privacy-policy URI should be locked if we want this to
-    //       continue to work forever
+    //       continue to work forever (or have a way to retrieve and
+    //       cache that value; the snapserver.conf is probably not a
+    //       good idea because you could have thousands of websites
+    //       all with a different path)
     f_cookies[cookie_info.get_name()].set_comment_url(f_site_key_with_slash + "terms-and-conditions/privacy-policy");
 }
 
@@ -7195,6 +7220,9 @@ void snap_child::execute()
     //set_cache_control(0, false, true);
     f_page_cache_control.set_no_store(true);
     f_page_cache_control.set_must_revalidate(true);
+
+    // We are snapwebsites
+    set_header(get_name(name_t::SNAP_NAME_CORE_X_POWERED_BY_HEADER), "snapwebsites", HEADER_MODE_EVERYWHERE);
 
     // By default we expect [X]HTML in the output
     set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);

@@ -1226,5 +1226,304 @@ int bio_client::write(const char *buf, size_t size)
 }
 
 
+/** \brief Check wether a string represents an IPv4 address.
+ *
+ * This function quickly checks whether the specified string defines a
+ * valid IPv4 address. It supports all classes (a.b.c.d, a.b.c., a.b, a)
+ * and all numbers can be in decimal, hexadecimal, or octal.
+ *
+ * \note
+ * The function can be called with a null pointer in which case it
+ * immediate returns false.
+ *
+ * \param[in] ip  A pointer to a string holding an address.
+ *
+ * \return true if the \p ip string represents an IPv4 address.
+ */
+bool is_ipv4(char const * ip)
+{
+    if(ip == nullptr)
+    {
+        return false;
+    }
+
+    // we must have (1) a number then (2) a dot or end of string
+    // with a maximum of 4 numbers and 3 dots
+    //
+    int64_t addr[4];
+    size_t pos(0);
+    for(;; ++ip, ++pos)
+    {
+        if(*ip < '0' || *ip > '9' || pos >= sizeof(addr) / sizeof(addr[0]))
+        {
+            // not a valid number
+            return false;
+        }
+        int64_t value(0);
+
+        // number, may be decimal, octal, or hexadecimal
+        if(*ip == '0')
+        {
+            if(ip[1] == 'x' || ip[1] == 'X')
+            {
+                // expect hexadecimal
+                bool first(true);
+                for(ip += 2;; ++ip, first = false)
+                {
+                    if(*ip >= '0' && *ip <= '9')
+                    {
+                        value = value * 16 + *ip - '0';
+                    }
+                    else if(*ip >= 'a' && *ip <= 'f')
+                    {
+                        value = value * 16 + *ip - 'a' + 10;
+                    }
+                    else if(*ip >= 'A' && *ip <= 'F')
+                    {
+                        value = value * 16 + *ip - 'A' + 10;
+                    }
+                    else
+                    {
+                        if(first)
+                        {
+                            // not even one digit, not good
+                            return false;
+                        }
+                        // not valid hexadecimal, may be '.' or '\0' (tested below)
+                        break;
+                    }
+                    if(value >= 0x100000000)
+                    {
+                        // too large even if we have no dots
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                // expect octal
+                for(++ip; *ip >= '0' && *ip <= '8'; ++ip)
+                {
+                    value = value * 8 + *ip - '0';
+                    if(value >= 0x100000000)
+                    {
+                        // too large even if we have no dots
+                        return false;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // expect decimal
+            for(; *ip >= '0' && *ip <= '9'; ++ip)
+            {
+                value = value * 10 + *ip - '0';
+                if(value >= 0x100000000)
+                {
+                    // too large even if we have no dots
+                    return false;
+                }
+            }
+        }
+//std::cerr << "value[" << pos << "] = " << value << "\n";
+        addr[pos] = value;
+        if(*ip != '.')
+        {
+            if(*ip != '\0')
+            {
+                return false;
+            }
+            ++pos;
+            break;
+        }
+    }
+
+//std::cerr << "pos = " << pos << "\n";
+    switch(pos)
+    {
+    case 1:
+        // one large value is considered valid for IPv4
+        // max. was already checked
+        return true;
+
+    case 2:
+        return addr[0] < 256 && addr[1] < 0x1000000;
+
+    case 3:
+        return addr[0] < 256 && addr[1] < 256 && addr[2] < 0x10000;
+
+    case 4:
+        return addr[0] < 256 && addr[1] < 256 && addr[2] < 256 && addr[3] < 256;
+
+    //case 0: (can happen on empty string)
+    default:
+        // no values, that is incorrect!?
+        return false;
+
+    }
+
+    snap::NOTREACHED();
+}
+
+
+bool is_ipv6(char const * ip)
+{
+    if(ip == nullptr)
+    {
+        return false;
+    }
+
+    // an IPv6 is a set of 16 bit numbers separated by colon
+    // the last two numbers can represented in dot notation (ipv4 class a)
+    //
+    bool found_colon_colon(false);
+    int count(0);
+    if(*ip == ':'
+    && ip[1] == ':')
+    {
+        found_colon_colon = true;
+        ip += 2;
+    }
+    for(; *ip != '\0'; ++ip)
+    {
+        if(count >= 8)
+        {
+            return false;
+        }
+
+        // all numbers are in hexadecimal
+        int value(0);
+        bool first(true);
+        for(;; ++ip, first = false)
+        {
+            if(*ip >= '0' && *ip <= '9')
+            {
+                value = value * 16 + *ip - '0';
+            }
+            else if(*ip >= 'a' && *ip <= 'f')
+            {
+                value = value * 16 + *ip - 'a' + 10;
+            }
+            else if(*ip >= 'A' && *ip <= 'F')
+            {
+                value = value * 16 + *ip - 'A' + 10;
+            }
+            else
+            {
+                if(first)
+                {
+                    // not even one digit, not good
+                    return false;
+                }
+                // not valid hexadecimal, may be ':' or '\0' (tested below)
+                break;
+            }
+            if(value >= 0x10000)
+            {
+                // too large, must be 16 bit numbers
+                return false;
+            }
+        }
+        ++count;
+//std::cerr << count << ". value=" << value << " -> " << static_cast<int>(*ip) << "\n";
+        if(*ip == '\0')
+        {
+            break;
+        }
+
+        // note: if we just found a '::' then here *ip == ':' still
+        if(*ip == '.')
+        {
+            // if we have a '.' we must end with an IPv4 and we either
+            // need found_colon_colon to be true or the count must be
+            // exactly 6 (1 "missing" colon)
+            //
+            if(!found_colon_colon
+            && count != 7)  // we test with 7 because the first IPv4 number was already read
+            {
+                return false;
+            }
+            // also the value is 0 to 255 or it's an error too, but the
+            // problem here is that we need a decimal number and we just
+            // checked it as an hexadecimal...
+            //
+            if((value & 0x00f) >= 0x00a
+            || (value & 0x0f0) >= 0x0a0
+            || (value & 0xf00) >= 0xa00)
+            {
+                return false;
+            }
+            // transform back to a decimal number to verify the max.
+            //
+            value = (value & 0x00f) + (value & 0x0f0) / 16 * 10 + (value & 0xf00) / 256 * 100;
+            if(value > 255)
+            {
+                return false;
+            }
+            // now check the other numbers
+            int pos(1); // start at 1 since we already have 1 number checked
+            for(++ip; *ip != '\0'; ++ip, ++pos)
+            {
+                if(*ip < '0' || *ip > '9' || pos >= 4)
+                {
+                    // not a valid number
+                    return false;
+                }
+
+                // only expect decimal in this case in class d (a.b.c.d)
+                value = 0;
+                for(; *ip >= '0' && *ip <= '9'; ++ip)
+                {
+                    value = value * 10 + *ip - '0';
+                    if(value > 255)
+                    {
+                        // too large
+                        return false;
+                    }
+                }
+
+                if(*ip != '.')
+                {
+                    if(*ip != '\0')
+                    {
+                        return false;
+                    }
+                    break;
+                }
+            }
+
+            // we got a valid IPv4 at the end of IPv6 and we
+            // found the '\0' so we are all good...
+            //
+            return true;
+        }
+
+        if(*ip != ':')
+        {
+            return false;
+        }
+
+        // double colon?
+        if(ip[1] == ':')
+        {
+            if(!found_colon_colon && count < 6)
+            {
+                // we can accept one '::'
+                ++ip;
+                found_colon_colon = true;
+            }
+            else
+            {
+                // a second :: is not valid for an IPv6
+                return false;
+            }
+        }
+    }
+
+    return count == 8 || (count >= 1 && found_colon_colon);
+}
+
+
 } // namespace tcp_client_server
 // vim: ts=4 sw=4 et
