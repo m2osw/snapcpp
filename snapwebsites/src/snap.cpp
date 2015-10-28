@@ -27,35 +27,40 @@
 // # See also: http://www.cgi101.com/book/ch3/text.html
 //
 // # environment
-// UNIQUE_ID=TtISeX8AAAEAAHhHi7kAAAAB
-// HTTP_HOST=alexis.m2osw.com
-// HTTP_USER_AGENT=Mozilla/5.0 (X11; Linux i686 on x86_64; rv:8.0.1) Gecko/20111121 Firefox/8.0.1 SeaMonkey/2.5
-// HTTP_ACCEPT=text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-// HTTP_ACCEPT_LANGUAGE=en-us,en;q=0.8,fr-fr;q=0.5,fr;q=0.3
+// UNIQUE_ID=VjAW4H8AAAEAAC7d0YIAAAAE
+// SCRIPT_URL=/images/finball/20130711-lightning-by-Karl-Gehring.png
+// SCRIPT_URI=http://csnap.m2osw.com/images/finball/20130711-lightning-by-Karl-Gehring.png
+// CLEAN_SNAP_URL=1
+// HTTP_HOST=csnap.m2osw.com
+// HTTP_USER_AGENT=Mozilla/5.0 (X11; Linux i686 on x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 SeaMonkey/2.38
+// HTTP_ACCEPT=image/png,image/*;q=0.8,*/*;q=0.5
+// HTTP_ACCEPT_LANGUAGE=en-US,en;q=0.8,fr-FR;q=0.5,fr;q=0.3
 // HTTP_ACCEPT_ENCODING=gzip, deflate
-// HTTP_ACCEPT_CHARSET=ISO-8859-1,utf-8;q=0.7,*;q=0.7
+// HTTP_REFERER=http://csnap.m2osw.com/css/finball/finball_0.0.127.min.css
+// HTTP_COOKIE=cookieconsent_dismissed=yes; xUVt9AD6G4xKO_AU=036d371e8c10f340/2034695214
 // HTTP_CONNECTION=keep-alive
-// HTTP_COOKIE=SESS8b653582e586f876284c0be25de5ac73=d32eb1fccf3f3f3beb5bc2b9439dd160; DRUPAL_UID=1
 // HTTP_CACHE_CONTROL=max-age=0
-// HTTP_REFERER=http://snapwebsites.com/
-// PATH=/usr/local/bin:/usr/bin:/bin
+// PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 // SERVER_SIGNATURE=
 // SERVER_SOFTWARE=Apache
-// SERVER_NAME=alexis.m2osw.com
-// SERVER_ADDR=192.168.1.1
+// SERVER_NAME=csnap.m2osw.com
+// SERVER_ADDR=162.226.130.121
 // SERVER_PORT=80
-// REMOTE_HOST=adsl-64-166-38-38.dsl.scrm01.pacbell.net
-// REMOTE_ADDR=64.166.38.38
-// DOCUMENT_ROOT=/usr/clients/www/alexis.m2osw.com/public_html/
-// SERVER_ADMIN=alexis@m2osw.com
-// SCRIPT_FILENAME=/usr/clients/www/alexis.m2osw.com/cgi-bin/env_n_args.cgi
-// REMOTE_PORT=37722
+// REMOTE_HOST=halk.m2osw.com
+// REMOTE_ADDR=162.226.130.121
+// DOCUMENT_ROOT=/usr/clients/www/csnap.m2osw.com/public_html/
+// REQUEST_SCHEME=http
+// CONTEXT_PREFIX=/cgi-bin/
+// CONTEXT_DOCUMENT_ROOT=/usr/clients/www/csnap.m2osw.com/cgi-bin/
+// SERVER_ADMIN=webmaster@m2osw.com
+// SCRIPT_FILENAME=/usr/clients/www/csnap.m2osw.com/cgi-bin/snap.cgi
+// REMOTE_PORT=51596
 // GATEWAY_INTERFACE=CGI/1.1
 // SERVER_PROTOCOL=HTTP/1.1
 // REQUEST_METHOD=GET
-// QUERY_STRING=testing=environment
-// REQUEST_URI=/cgi-bin/env_n_args.cgi?testing=environment
-// SCRIPT_NAME=/cgi-bin/env_n_args.cgi
+// QUERY_STRING=
+// REQUEST_URI=/images/finball/20130711-lightning-by-Karl-Gehring.png
+// SCRIPT_NAME=/cgi-bin/snap.cgi
 //
 
 #include "log.h"
@@ -185,8 +190,17 @@ int snap_cgi::error(char const * code, char const * msg)
 {
     SNAP_LOG_ERROR(msg);
 
-    std::string body("<h1>Internal Server Error</h1>"
-                     "<p>Sorry! We found an invalid server configuration or some other error occured.</p>");
+    std::string body;
+    if(strncmp(code, "404 ", 4) == 0)
+    {
+        body = "<h1>Page Not Found</h1>"
+               "<p>The requested page was not found on this server.</p>";
+    }
+    else
+    {
+        body = "<h1>Internal Server Error</h1>"
+               "<p>Sorry! We found an invalid server configuration or some other error occured.</p>";
+    }
 
     std::cout   << "Status: " << code                       << std::endl
                 << "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
@@ -296,8 +310,9 @@ bool snap_cgi::verify()
         }
     }
 
-    // WARNING: do not use std::string because NULL will crash
     {
+        // WARNING: do not use std::string because NULL will crash
+        //
         char const * http_host(getenv("HTTP_HOST"));
         if(http_host == NULL)
         {
@@ -305,7 +320,7 @@ bool snap_cgi::verify()
             return false;
         }
 #ifdef _DEBUG
-        SNAP_LOG_DEBUG("HTTP_HOST=")(http_host);
+        //SNAP_LOG_DEBUG("HTTP_HOST=")(http_host);
 #endif
         if(tcp_client_server::is_ipv4(http_host))
         {
@@ -327,6 +342,44 @@ bool snap_cgi::verify()
                         << std::endl
                         ;
             // TODO: send IP to firewall
+            return false;
+        }
+    }
+
+    {
+        // WARNING: do not use std::string because NULL will crash
+        //
+        char const * request_uri(getenv("REQUEST_URI"));
+        if(request_uri == NULL)
+        {
+            // this should NEVER happen because without a path after the method
+            // we probably do not have our snap.cgi run anyway...
+            //
+            error("503 Service Unavailable", "The path to the page you want to read must be specified.");
+            return false;
+        }
+#ifdef _DEBUG
+        //SNAP_LOG_DEBUG("REQUEST_URI=")(request_uri);
+#endif
+
+        // if we receive this, someone tried to directly access our snap.cgi
+        // which will not work right so better err immediately
+        //
+        if(strncmp(request_uri, "/cgi-bin/", 9) == 0)
+        {
+            error("404 Page Not Found", "The REQUEST_URI cannot start with \"/cgi-bin/\".");
+            // TODO: send IP to firewall?
+            return false;
+        }
+
+        // TBD: we could test <protocol>:// instead of specifically http
+        //
+        if(strncmp(request_uri, "http://", 7) == 0
+        || strncmp(request_uri, "https://", 8) == 0)
+        {
+            // avoid proxy accesses
+            error("404 Page Not Found", "The REQUEST_URI cannot start with \"http[s]://\".");
+            // TODO: send IP to firewall?
             return false;
         }
     }
@@ -377,7 +430,7 @@ int snap_cgi::process()
         int const len(static_cast<int>(env.size()));
         //
         // Replacing all '\n' in the env variables to '|'
-        // to keep from causing the snap_child to complain and die.
+        // to prevent snap_child from complaining and die.
         //
         std::replace( env.begin(), env.end(), '\n', '|' );
 #ifdef _DEBUG

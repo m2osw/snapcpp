@@ -3819,32 +3819,34 @@ void snap_child::setup_uri()
                      "REQUEST_URI was not defined in the user's request");
         NOTREACHED();
     }
-    // This is useless since the URI points to the CGI which
-    // we are not interested in
-    //int p = f_env["REQUEST_URI"].indexOf('?');
-    //if(p == -1)
-    //{
-    //    f_uri.set_path(f_env["REQUEST_URI"]);
-    //}
-    //else
-    //{
-    //    f_uri.set_path(f_env["REQUEST_URI"].mid(0, p));
-    //}
-
-    server::pointer_t server( f_server.lock() );
-    if(!server)
+    // For some reasons I was thinking that the q=... was necessary to
+    // find the correct REQUEST_URI -- it is only if you want to allow
+    // for snap.cgi?q=... syntax in the client's agent, otherwise it
+    // is totally useless; since we do not want the ugly snap.cgi syntax
+    // we completely removed the need for it
+    //
+    // Get the path from the REQUEST_URI
+    // note that it includes the query string when there is one so we must
+    // make sure to remove that part if defined
+    //
+    QString path;
     {
-        throw snap_logic_exception("server pointer is nullptr");
+        int const p = f_env["REQUEST_URI"].indexOf('?');
+        if(p == -1)
+        {
+            path = f_env["REQUEST_URI"];
+        }
+        else
+        {
+            path = f_env["REQUEST_URI"].mid(0, p);
+        }
     }
-    QString const qs_path(server->get_parameter("qs_path"));
-    QString const path(f_uri.query_option(qs_path));
+
     QString extension;
     if(path != "." && path != "..")
     {
         // TODO: make the size (2048) a variable? (parameter in
         //       snapserver.conf)
-        //
-        // TODO: maybe we should redirect instead of dying in this case?
         //
         // I'm not totally sure this test is really necessary,
         // but it probably won't hurt for a while (Drupal was
@@ -3855,7 +3857,10 @@ void snap_child::setup_uri()
         if(path.length() > 2048)
         {
             // See SNAP-99 for more info about this limit
-            die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
+            //
+            // TBD: maybe we should redirect instead of dying in this case?
+            //
+            die(http_code_t::HTTP_CODE_REQUEST_URI_TOO_LONG, "",
                          "The path of this request is too long.",
                          "We accept paths up to 2048 characters.");
             NOTREACHED();
@@ -3898,7 +3903,7 @@ void snap_child::setup_uri()
     }
     f_uri.set_option("extension", extension);
 
-//std::cerr << "    set path to: [" << f_uri.query_option(qs_path) << "]\n";
+//std::cerr << "    set path to: [" << path << "]\n";
 //
 //std::cerr << "        original [" << f_uri.get_original_uri() << "]\n";
 //std::cerr << "             uri [" << f_uri.get_uri() << "] + #! [" << f_uri.get_uri(true) << "]\n";
@@ -3908,9 +3913,8 @@ void snap_child::setup_uri()
 //std::cerr << "          domain [" << f_uri.domain() << "]\n";
 //std::cerr << "     sub-domains [" << f_uri.sub_domains() << "]\n";
 //std::cerr << "            port [" << f_uri.get_port() << "]\n";
-//std::cerr << "            path [" << f_uri.path() << "] (" << qs_path << ")\n";
+//std::cerr << "            path [" << f_uri.path() << "] \n";
 //std::cerr << "    query string [" << f_uri.query_string() << "]\n";
-//std::cerr << "               q=[" << f_uri.query_option("q") << "]\n";
 }
 
 
@@ -5571,35 +5575,6 @@ QString snap_child::cookie(const QString& name) const
         return f_browser_cookies[name];
     }
     return QString();
-}
-
-
-/** \brief Get a proper URL for this access.
- *
- * This function transforms a local URL to a CGI URL if the site
- * was accessed that way.
- *
- * If the site was accessed without the /cgi-bin/snap.cgi then this function
- * returns the URL as is. If it was called with /cgi-bin/snap.cgi then the
- * URL is transformed to also be use the /cgi-bin/snap.cgi syntax.
- *
- * \param[in] url  The URL to transform.
- *
- * \return The URL matching the calling convention.
- */
-QString snap_child::snap_url(QString const& url) const
-{
-    if(snapenv("CLEAN_SNAP_URL") == "1")
-    {
-        return url;
-    }
-    // TODO: this should be coming from the database
-    if(url[0] == '/')
-    {
-        QString u(url);
-        return u.insert(1, "cgi-bin/snap.cgi?q=");
-    }
-    return "/cgi-bin/snap.cgi?q=" + url;
 }
 
 

@@ -379,7 +379,6 @@ public:
     QString                     cookie(QString const & name) const;
     void                        attach_to_session();
     bool                        load_file(post_file_t & file);
-    QString                     snap_url(QString const & url) const;
     // TODO translations? (not too important though)
     void                        page_redirect(QString const & path, http_code_t http_code = http_code_t::HTTP_CODE_MOVED_PERMANENTLY, QString const & reason_brief = "Moved", QString const & reason = "This page has moved");
     void                        die(http_code_t err_code, QString err_name, QString const & err_description, QString const & err_details);

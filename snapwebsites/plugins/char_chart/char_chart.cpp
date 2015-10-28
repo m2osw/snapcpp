@@ -611,7 +611,7 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
         //f_snap->output(QString("<p><a href='snap.cgi?q=/char-chart/%1'>Previous</a></p>").arg(chart_page - 1));
         QDomElement a_tag(doc.createElement("a"));
         p_tag.appendChild(a_tag);
-        a_tag.setAttribute("href", f_snap->snap_url(QString("/char-chart/%1").arg(chart_page - 1, 0, 16)));
+        a_tag.setAttribute("href", QString("/char-chart/%1").arg(chart_page - 1, 0, 16));
         QDomText text(doc.createTextNode("Previous"));
         a_tag.appendChild(text);
     }
@@ -627,7 +627,7 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
         //f_snap->output(QString("<p><a href='snap.cgi?q=/char-chart/%1'>Next</a></p>").arg(chart_page + 1));
         QDomElement a_tag(doc.createElement("a"));
         p_tag.appendChild(a_tag);
-        a_tag.setAttribute("href", f_snap->snap_url(QString("/char-chart/%1").arg(chart_page + 1, 0, 16)));
+        a_tag.setAttribute("href", QString("/char-chart/%1").arg(chart_page + 1, 0, 16));
         text = doc.createTextNode("Next");
         a_tag.appendChild(text);
     }

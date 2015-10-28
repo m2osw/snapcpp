@@ -606,7 +606,6 @@ server::server()
     //                       maybe some clear separate variables?
     f_parameters["listen"]         = "0.0.0.0:4004";
     f_parameters["plugins_path"]   = "/usr/lib/snapwebsites/plugins";
-    f_parameters["qs_path"]        = "q";
     f_parameters["qs_action"]      = "a";
     f_parameters["server_name"]    = "";
     f_parameters["wait_interval"]  = "5";  // default: 1 second
@@ -1026,7 +1025,6 @@ size_t server::thread_count()
  * \li default_plugins -- list of default plugins to initialize a new website
  * \li listen -- address:port to listen to (default 0.0.0.0:4004)
  * \li plugins -- path to the list of plugins
- * \li qs_path -- the variable holding the path in the URL; defaults to "q"
  * \li qs_action -- the variable holding the action over this path ("view" if not specified)
  * \li max_pending_connections -- the number of connections that can wait in
  *     the server queue, there is Snap default (i.e. the Qt TCP server default

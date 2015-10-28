@@ -225,10 +225,13 @@ bool versions::versions_libraries_impl(filter::filter::token_info_t& token)
 {
     token.f_replacement += "<h3>Libraries</h3><ul>";
 
-        // Server Version
+        // Snap! Server
     token.f_replacement += "<li>snapwebsite v";
     token.f_replacement += f_snap->get_running_server_version();
     token.f_replacement += " (compiled with " SNAPWEBSITES_VERSION_STRING ")</li>";
+        // CGI
+    token.f_replacement += "<li>Apache interface: ";
+    token.f_replacement += f_snap->snapenv("GATEWAY_INTERFACE");
         // Qt
     token.f_replacement += "<li>Qt v";
     token.f_replacement += qVersion();

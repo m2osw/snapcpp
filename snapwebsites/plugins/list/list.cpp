@@ -753,9 +753,6 @@ void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32
         return;
     }
 
-    QString const qs_path(f_snap->get_server_parameter("qs_path"));
-    uri.unset_query_option(qs_path);
-
     QDomDocument doc(element.ownerDocument());
     QDomElement ul(doc.createElement("ul"));
 
