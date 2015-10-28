@@ -179,8 +179,7 @@ main(int argc, char** argv)
             return 0;
         }
         if(std::string(argv[1]) == "--version") {
-            // send a STOP command to the server so it stops ASAP
-            // (useful when shutting down your computer)
+            // send a VERSION command to the server to get its version
             std::string const address(argv[2]);
             int const port = std::atoi(argv[3]);
             log4cplus::helpers::Socket socket(address, port);
@@ -190,8 +189,8 @@ main(int argc, char** argv)
                 return 2;
             }
             log4cplus::helpers::SocketBuffer buffer(sizeof(unsigned int));
-            unsigned int shutdown(static_cast<unsigned int>(-2));
-            buffer.appendInt(shutdown);        // -2 is the version request
+            unsigned int version_request(static_cast<unsigned int>(-2));
+            buffer.appendInt(version_request);        // -2 is the version request
             if(!socket.write(buffer)) {
                 std::cerr << "error: could not write to the server."
                           << std::endl;
