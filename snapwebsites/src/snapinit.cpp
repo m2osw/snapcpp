@@ -583,10 +583,10 @@ snap_init::snap_init( int argc, char * argv[] )
     }
     else
     {
-        if(f_config.contains("log_config"))
+        if(!f_config.contains("log_config"))
         {
             // use .conf definition when available
-            f_log_conf = f_config.contains("log_config");
+            f_log_conf = f_config["log_config"];
         }
         snap::logging::configure_conffile( f_log_conf );
         if(!list)
