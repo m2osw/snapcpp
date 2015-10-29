@@ -316,7 +316,7 @@ bool snap_cgi::verify()
         char const * http_host(getenv("HTTP_HOST"));
         if(http_host == NULL)
         {
-            error("503 Service Unavailable", "The host you want to connect to must be specified.");
+            error("400 Bad Request", "The host you want to connect to must be specified.");
             return false;
         }
 #ifdef _DEBUG
@@ -349,13 +349,13 @@ bool snap_cgi::verify()
     {
         // WARNING: do not use std::string because NULL will crash
         //
-        char const * request_uri(getenv("REQUEST_URI"));
+        char const * request_uri(getenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_URI)));
         if(request_uri == NULL)
         {
             // this should NEVER happen because without a path after the method
             // we probably do not have our snap.cgi run anyway...
             //
-            error("503 Service Unavailable", "The path to the page you want to read must be specified.");
+            error("400 Bad Request", "The path to the page you want to read must be specified.");
             return false;
         }
 #ifdef _DEBUG
@@ -379,6 +379,33 @@ bool snap_cgi::verify()
         {
             // avoid proxy accesses
             error("404 Page Not Found", "The REQUEST_URI cannot start with \"http[s]://\".");
+            // TODO: send IP to firewall?
+            return false;
+        }
+    }
+
+    {
+        // WARNING: do not use std::string because NULL will crash
+        //
+        char const * user_agent(getenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
+        if(user_agent == NULL)
+        {
+            // this should NEVER happen because without a path after the method
+            // we probably do not have our snap.cgi run anyway...
+            //
+            error("400 Bad Request", "The path to the page you want to read must be specified.");
+            return false;
+        }
+#ifdef _DEBUG
+        //SNAP_LOG_DEBUG("HTTP_USER_AGENT=")(request_uri);
+#endif
+
+        // if we receive this, someone tried to directly access our snap.cgi
+        // which will not work right so better err immediately
+        //
+        if(*user_agent == 0)
+        {
+            error("400 Bad Request", "The HTTP_USER_AGENT cannot be empty.");
             // TODO: send IP to firewall?
             return false;
         }

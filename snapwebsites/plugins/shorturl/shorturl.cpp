@@ -158,10 +158,11 @@ int64_t shorturl::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 12, 7, 16, 18, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 29, 3, 34, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
+
 
 /** \brief First update to run for the shorturl plugin.
  *
@@ -178,7 +179,7 @@ int64_t shorturl::do_update(int64_t last_updated)
  */
 void shorturl::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_shorturl_table();
     f_shorturl_table.reset();
@@ -194,7 +195,7 @@ void shorturl::initial_update(int64_t variables_timestamp)
  */
 void shorturl::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -453,8 +454,8 @@ bool shorturl::allow_shorturl_impl(content::path_info_t & ipath, QString const &
 
     // do not ever create short URLs for admin pages
     QString const cpath(ipath.get_cpath());
-    if(cpath.isEmpty()
-    || cpath == "admin"
+    if(cpath.isEmpty()                  // also marked as "no_shorturl" in content.xml
+    || cpath == "admin"                 // also marked as "no_shorturl" in content.xml
     || cpath.startsWith("admin/"))
     {
         // do not need on home page, do not allow any short URL on

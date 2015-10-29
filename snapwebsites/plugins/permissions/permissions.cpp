@@ -1840,7 +1840,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
         // the signal may set the flag to false to prevent such redirects
         bool redirect_to_login(true);
         permit_redirect_to_login_on_not_allowed(ipath, redirect_to_login);
-        QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+        QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
         bool const redirect_method(method == "GET" || method == "POST");
 
         users::users * users_plugin(users::users::instance());
@@ -2879,7 +2879,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
         // permissions for anonymous users is done with an empty user path
         user_path.clear();
     }
-    QString const action(sub_results[2].get_string("perms(3)"));
+    QString action(sub_results[2].get_string("perms(3)"));
     QString status;
     if(sub_results.size() == 4)
     {
@@ -2896,6 +2896,11 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
     // setup the parameters to the access_allowed() signal
     content::path_info_t ipath;
     ipath.set_path(path);
+    if(ipath.get_cpath() == "admin"
+    || ipath.get_cpath().startsWith("admin/"))
+    {
+        action = "administer";
+    }
     ipath.set_parameter("action", action);
     quiet_error_callback err_callback(content::content::instance()->get_snap(), false);
     path::path::instance()->validate_action(ipath, action, err_callback);

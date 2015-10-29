@@ -146,9 +146,6 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE:
         return "HTTP_ACCEPT_LANGUAGE";
 
-    case name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD:
-        return "REQUEST_METHOD";
-
     case name_t::SNAP_NAME_CORE_HTTP_USER_AGENT:
         return "HTTP_USER_AGENT";
 
@@ -172,6 +169,12 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_CORE_REDIRECT:
         return "core::redirect";
+
+    case name_t::SNAP_NAME_CORE_REQUEST_METHOD:
+        return "REQUEST_METHOD";
+
+    case name_t::SNAP_NAME_CORE_REQUEST_URI:
+        return "REQUEST_URI";
 
     case name_t::SNAP_NAME_CORE_RULES:
         return "core::rules";

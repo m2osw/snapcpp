@@ -2748,7 +2748,7 @@ bool snap_child::process(int socket)
         // keep that one in release so we can at least know of all
         // the hits to the server
         {
-            QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+            QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
             QString const agent(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
             SNAP_LOG_INFO("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
         }
@@ -3812,7 +3812,7 @@ void snap_child::setup_uri()
 
     // REQUEST URI
     // Although we ignore the URI, it MUST be there
-    if(f_env.count("REQUEST_URI") != 1)
+    if(f_env.count(snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI)) != 1)
     {
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                      "REQUEST_URI is required but not defined in your request.",
@@ -3831,14 +3831,14 @@ void snap_child::setup_uri()
     //
     QString path;
     {
-        int const p = f_env["REQUEST_URI"].indexOf('?');
+        int const p = f_env[snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI)].indexOf('?');
         if(p == -1)
         {
-            path = f_env["REQUEST_URI"];
+            path = f_env[snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI)];
         }
         else
         {
-            path = f_env["REQUEST_URI"].mid(0, p);
+            path = f_env[snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI)].mid(0, p);
         }
     }
 
@@ -5179,7 +5179,7 @@ void snap_child::page_redirect(QString const & path, http_code_t http_code, QStr
                 "The server snap_child::page_redirect() function was called before the website got canonicalized.");
         NOTREACHED();
     }
-    QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+    QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
     if(method != "GET"
     && method != "POST"
     && method != "HEAD")
@@ -7424,7 +7424,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
     // IMPORTANT NOTE: it looks like Apache2 removes the body no matter what
     //                 which is probably sensible... if a HEAD is used it is
     //                 not a browser anyway
-    if(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)) != "HEAD"
+    if(snapenv(get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD)) != "HEAD"
     /*|| (modes & HEADER_MODE_NO_ERROR) == 0 -- not working... */)
     {
         write(output_data, output_data.size());

@@ -525,10 +525,11 @@ QString users::get_user_cookie_name()
 void users::on_process_cookies()
 {
     // prevent cookies on a set of method that do not require them
-    QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+    QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
     if(method == "HEAD"
     || method == "TRACE")
     {
+        // do not log the user on HEAD and TRACE methods
         return;
     }
 
@@ -685,7 +686,7 @@ bool users::authenticated_user(QString const & key, sessions::sessions::session_
     // called with a seemingly valid key?
     if(key.isEmpty())
     {
-        SNAP_LOG_INFO("cannot authenticate user without a key");
+        SNAP_LOG_INFO("cannot authenticate user without a key (anonymous users get this message).");
         return false;
     }
 

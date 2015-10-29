@@ -199,7 +199,7 @@ void oauth2::on_bootstrap(::snap::snap_child *snap)
  * We use this signal to make sure that the OAuth2 identifier and secret
  * are defined. This will always happens after the settings page is created.
  */
-void oauth2::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
+void oauth2::on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type)
 {
     static_cast<void>(type);
 
@@ -213,7 +213,7 @@ void oauth2::on_create_content(content::path_info_t& ipath, QString const& owner
     {
         static void create(name_t n)
         {
-            content::content *content_plugin(content::content::instance());
+            content::content * content_plugin(content::content::instance());
             QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
 
             // make sure the secret does not include a ':' which is not
@@ -253,7 +253,7 @@ void oauth2::on_create_content(content::path_info_t& ipath, QString const& owner
  * \return true if the authentication parameters were properly defined,
  *         an error is generated otherwise.
  */
-bool oauth2::on_path_execute(content::path_info_t& ipath)
+bool oauth2::on_path_execute(content::path_info_t & ipath)
 {
     if(ipath.get_cpath() != "user/oauth2")
     {
@@ -262,7 +262,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
 
     f_snap->set_ignore_cookies();
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     content::path_info_t settings_ipath;
     settings_ipath.set_path("admin/settings/oauth2");
@@ -273,7 +273,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
         f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
                     "Unauthorized Authentication",
                     "This website does not authorize OAuth2 authentications at the moment.",
-                    "The OAuth2 system is currently disabled (%1 -> %2).");
+                    "The OAuth2 system is currently disabled.");
         NOTREACHED();
     }
     QString email(revision_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_EMAIL))->value().stringValue());
@@ -319,7 +319,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
         NOTREACHED();
     }
 
-    users::users *users_plugin(users::users::instance());
+    users::users * users_plugin(users::users::instance());
 
     // Check validity (i.e. is the application logged in?)
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
@@ -358,7 +358,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
             f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                         "Forbidden Authentication",
                         "Your OAuth2 identifier and secret do not match this website OAuth2 information.",
-                        QString("Invalid%1%2")
+                        QString("Invalid%1%2.")
                                 .arg(identifier != identifier_secret[0] ? " identifier" : "")
                                 .arg(secret     != identifier_secret[1] ? " secret"     : ""));
             NOTREACHED();
@@ -372,7 +372,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
     QString session_id;
     if(details.isEmpty())
     {
-        sessions::sessions::session_info const& session_info(users_plugin->get_session());
+        sessions::sessions::session_info const & session_info(users_plugin->get_session());
         session_id = QString("%1/%2")
                     .arg(session_info.get_session_key())
                     .arg(session_info.get_session_random());
@@ -380,7 +380,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
     }
     else
     {
-        SNAP_LOG_ERROR("Could not log this application in because the user attached to this website OAuth2 was not accepted. Details: ")(details);
+        SNAP_LOG_ERROR("Could not log in this application because the user attached to this website OAuth2 was not accepted. Details: ")(details);
     }
 
     // generate the result, an OAuth2 session
@@ -449,7 +449,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
 void oauth2::application_login()
 {
     // prevent login in with the "wrong" methods
-    QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+    QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
     if(method == "HEAD"
     || method == "TRACE")
     {
