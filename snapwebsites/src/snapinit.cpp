@@ -68,13 +68,11 @@ namespace
 
     /** \brief List of configuration files.
      *
-     * This variable is used as a list of configuration files. It may be
-     * empty.
+     * This variable is used as a list of configuration files. It is
+     * empty here because the configuration file may include parameters
+     * that are not otherwise defined as command line options.
      */
-    std::vector<std::string> const g_configuration_files = 
-    {
-        "/etc/snapwebsites/snapinit.conf"
-    };
+    std::vector<std::string> const g_configuration_files;
 
     /** \brief Command line options.
      *
@@ -110,8 +108,8 @@ namespace
             'c',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "config",
-            "/etc/snapwebsites/snapserver.conf",
-            "Configuration file to pass into servers.",
+            "/etc/snapwebsites/snapinit.conf",
+            "Configuration file to initialize snapinit.",
             advgetopt::getopt::optional_argument
         },
         {
@@ -154,15 +152,11 @@ namespace
             "Full path to the snapinit lockdir.",
             advgetopt::getopt::optional_argument
         },
-        // TODO: We should allow for a log filename definition
-        //       in the snapserver.conf file too that points
-        //       to a .properties file instead of a direct
-        //       filename!
         {
             'l',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "logfile",
-            "/var/log/snapwebsites/snapinit.log",
+            nullptr,
             "Full path to the snapinit logfile.",
             advgetopt::getopt::optional_argument
         },
@@ -173,6 +167,14 @@ namespace
             nullptr,
             "Only output to the console, not the log file.",
             advgetopt::getopt::no_argument
+        },
+        {
+            's',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "services_config",
+            nullptr,
+            "Configuration file to pass into servers.",
+            advgetopt::getopt::optional_argument
         },
         {
             '\0',
@@ -218,9 +220,9 @@ public:
     {
     }
 
-    void set_path( QString const& path )     { f_path = path; }
-    void set_config( QString const& config ) { f_config_filename = config; }
-    void set_debug( bool const debug )       { f_debug = debug; }
+    void set_path( QString const & path )     { f_path = path; }
+    void set_config( QString const & config ) { f_config_filename = config; }
+    void set_debug( bool const debug )        { f_debug = debug; }
 
     bool    exists() const;
     bool    run();
@@ -269,7 +271,7 @@ private:
  *
  * \return full path to the binary to launch
  */
-const QString& process::get_full_path() const
+QString const & process::get_full_path() const
 {
     if( f_full_path.isEmpty() )
     {
@@ -312,7 +314,7 @@ const QString& process::get_full_path() const
  */
 bool process::exists() const
 {
-    QString const& full_path( get_full_path() );
+    QString const & full_path( get_full_path() );
     return access(full_path.toUtf8().data(), R_OK | X_OK) == 0;
 }
 
@@ -380,7 +382,7 @@ bool process::run()
 }
 
 
-void process::handle_status( const int the_pid, const int status )
+void process::handle_status( int const the_pid, int const status )
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -506,14 +508,14 @@ class snap_init
 public:
     typedef std::shared_ptr<snap_init> pointer_t;
 
-    static void create_instance( int argc, char * argv[] );
-    static pointer_t instance();
-    ~snap_init();
+    static void         create_instance( int argc, char * argv[] );
+    static pointer_t    instance();
+                        ~snap_init();
 
-    void run_processes();
-    bool is_running();
+    void                run_processes();
+    bool                is_running();
 
-    static void sighandler( int sig );
+    static void         sighandler( int sig );
 
 private:
     typedef std::vector<std::string>        services_t;
@@ -524,64 +526,78 @@ private:
     QString              f_lock_filename;
     QFile                f_lock_file;
     snap::snap_config    f_config;
+    QString              f_log_conf;
     //snap::snap_cassandra f_cassandra;
 
     typedef std::vector<process::pointer_t> process_list_t;
     process_list_t f_process_list;
 
-    snap_init( int argc, char *argv[] );
+                        snap_init( int argc, char * argv[] );
 
-    void usage();
-    void validate();
-    void show_selected_servers() const;
-    void create_process( QString const& name );
-    bool verify_process( QString const& name );
-    void start_processes();
-    void monitor_processes();
-    void terminate_processes();
-    void start();
-    void restart();
-    void stop();
-    void remove_lock();
+    void                usage();
+    void                validate();
+    void                show_selected_servers() const;
+    process::pointer_t  get_process( QString const & name );
+    void                create_process( QString const & name );
+    bool                verify_process( QString const & name );
+    void                start_processes();
+    void                monitor_processes();
+    void                terminate_processes();
+    void                start();
+    void                restart();
+    void                stop();
+    void                remove_lock();
 };
 
 
 snap_init::pointer_t snap_init::f_instance;
 
 
-snap_init::snap_init( int argc, char *argv[] )
+snap_init::snap_init( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
     , f_lock_filename( QString("%1/%2")
                        .arg(f_opt.get_string("lockdir").c_str())
                        .arg(SNAPINIT_KEY)
                      )
     , f_lock_file( f_lock_filename )
+    , f_log_conf( "/etc/snapwebsites/snapinit.properties" )
 {
     if(f_opt.is_defined("version"))
     {
-        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        std::cout << SNAPWEBSITES_VERSION_STRING << std::endl;
         exit(1);
     }
 
     bool const list( f_opt.is_defined( "list" ) );
 
+    f_config.read_config_file( f_opt.get_string("config").c_str() );
+
+    // setup the logger
     if( f_opt.is_defined( "nolog" ) || f_opt.is_defined( "help" ) )
     {
         snap::logging::configure_console();
     }
+    else if( f_opt.is_defined("logfile") )
+    {
+        snap::logging::configure_logfile( QString::fromUtf8(f_opt.get_string( "logfile" ).c_str()) );
+    }
     else
     {
-        snap::logging::configure_logfile( f_opt.get_string("logfile").c_str() );
+        if(f_config.contains("log_config"))
+        {
+            // use .conf definition when available
+            f_log_conf = f_config.contains("log_config");
+        }
+        snap::logging::configure_conffile( f_log_conf );
         if(!list)
         {
             SNAP_LOG_INFO("---------------- snapinit manager started");
         }
     }
 
-    f_config.read_config_file( f_opt.get_string("config").c_str() );
     if(!f_config.contains("services"))
     {
-        SNAP_LOG_FATAL() << "the configuration file must list the services to start (i.e. services=server,images,pagelist,sendmail)";
+        SNAP_LOG_FATAL("the configuration file \"")(f_opt.get_string("config"))("\" must list the services to start (i.e. services=server,images,pagelist,sendmail)");
         exit( 1 );
     }
 
@@ -745,24 +761,40 @@ bool snap_init::backend_ready()
 #endif
 
 
-bool snap_init::verify_process( QString const& name )
+process::pointer_t snap_init::get_process( QString const & name )
 {
     // initialize a server as usual
-    process::pointer_t p;
-    p.reset( new process( name ) );
+    process::pointer_t p( new process( name ) );
     p->set_path( f_opt.get_string("binary_path").c_str() );
-    p->set_config( f_opt.get_string("config").c_str() );
+    p->set_debug( f_opt.is_defined("debug") );
+    if(f_opt.is_defined("services-config"))
+    {
+        p->set_config( f_opt.get_string("services-config").c_str() );
+    }
+    else if(!f_config["services_config"].isEmpty())
+    {
+        p->set_config( f_config["services_config"] );
+    }
+    else
+    {
+        // use the default otherwise
+        p->set_config( "/etc/snapwebsites/snapserver.conf" );
+    }
+    return p;
+}
+
+
+bool snap_init::verify_process( QString const & name )
+{
     // check whether the binary can be started
+    process::pointer_t p( get_process( name ) );
     return p->exists();
 }
 
 
 void snap_init::create_process( QString const & name )
 {
-    process::pointer_t p( new process( name ) );
-    p->set_path( f_opt.get_string("binary_path").c_str() );
-    p->set_config( f_opt.get_string("config").c_str() );
-    p->set_debug( f_opt.is_defined("debug") );
+    process::pointer_t p( get_process( name ) );
     p->run();
     f_process_list.push_back( p );
 }

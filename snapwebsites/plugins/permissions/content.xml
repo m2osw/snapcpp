@@ -327,17 +327,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <remove-link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</remove-link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user">
-    <param name="content::title" revision="revision">Visitor Group</param>
+    <param name="content::title" revision="revision">Returning Registered User Group</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+      <![CDATA[<p>Groups that can be used to manager permissions on the set of users who are registered, came back, and are not currently logged in.</p>]]>
     </param>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/private</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor">
-    <param name="content::title" revision="revision">Visitor Group</param>
+    <param name="content::title" revision="revision">Returning Visitor Group</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+      <![CDATA[<p>Groups that can be used to manager permissions on the set of users who came to your website before and came back for a visit.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor">

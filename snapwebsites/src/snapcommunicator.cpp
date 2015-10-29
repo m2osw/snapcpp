@@ -83,79 +83,91 @@
  * http://snapwebsites.org/implementation/feature-requirements/inter-process-signalling-core
  */
 
-class snap_communicator_server : public server
+class snap_communicator
 {
 public:
-    typedef std::shared_ptr<snap_communicator_server>     pointer_t;
+    typedef std::shared_ptr<snap_communicator>     pointer_t;
 
-                                snap_communicator_server(snap_communicator_server const & src) = delete;
-    snap_communicator_server &  operator = (snap_communicator_server const & rhs) = delete;
-                                ~snap_communicator_server();
+                                snap_communicator(snap::server::pointer_t s) = delete;
+
+                                snap_communicator(snap_communicator const & src) = delete;
+    snap_communicator &         operator = (snap_communicator const & rhs) = delete;
 
     void                        run();
 
 private:
-    getopt_ptr_t                f_opt;
-    tcp_server::pointer_t       f_tcp_server;
-    udp_server::pointer_t       f_udp_server;
+    snap::server::pointer_t     f_server;
 };
 
 
-snap_communicator_server::snap_communicator_server(int argc, char * argv[])
-{
-    f_opt.reset(
-        new advgetopt::getopt(argc, argv, g_snapserver_options, g_configuration_files, "SNAPCOMMUNICATOR_OPTIONS")
-    );
-}
-
-
-snap_communicator_server::~snap_communicator_server()
+snap_communicator::snap_communicator(snap::server::pointer_t s)
+    : f_server(s)
 {
 }
 
 
-snap_communicator_server::run()
+snap_communicator::run()
 {
 // TODO: actually implement that thing (most of the code will be in the
 //       library, though)
 
-std::string const& tcp_addr, int tcp_port, std::string const& udp_addr, int udp_port)
-    : f_tcp_server(tcp_addr, tcp_port)
-    , f_udp_server(udp_addr, udp_port)
+//std::string const& tcp_addr, int tcp_port, std::string const& udp_addr, int udp_port)
+//    : f_tcp_server(tcp_addr, tcp_port)
+//    , f_udp_server(udp_addr, udp_port)
+
+
 }
 
 
 
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
+    int exitval(1);
     try
     {
         // create a server object
-        snap::server::pointer_t s( new snap_communicator_server );
-        s->setup_as_backend();
+        snap::server::pointer_t s( snap::server::instance() );
+        //s->setup_as_backend();
 
         // parse the command line arguments (this also brings in the .conf params)
-        s->config(argc, argv);
+        //
+        s->config( argc, argv );
+
+        // if possible, detach the server
+        s->detach();
+        // Only the child (backend) process returns here
 
         // Now create the qt application instance
         //
         s->prepare_qtapp( argc, argv );
 
-        s->run();
+        // Run the snap communicator server; note that the snapcommunicator
+        // server is snap_communicator and not snap::server
+        //
+        snap::snap_communicator communicator( s );
+        communicator->run();
 
-        // exit via the server so the server can clean itself up properly
-        s->exit(0);
-        snap::NOTREACHED();
-
-        return 0;
+        exitval = 0;
     }
-    catch(std::exception const& e)
+    catch( snap::snap_exception const & except )
     {
-        // clean error and exit on exception
-        std::cerr << "snapcommunicator: exception: " << e.what() << std::endl;
-        return 1;
+        SNAP_LOG_FATAL("snapcommunicator: exception caught: ")(except.what());
     }
+    catch( std::exception const & std_except )
+    {
+        SNAP_LOG_FATAL("snapcommunicator: exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+    }
+    catch( ... )
+    {
+        SNAP_LOG_FATAL("snapcommunicator: unknown exception caught!");
+    }
+
+    // exit via the server so the server can clean itself up properly
+    snap::server::exit(exitval);
+
+    snap::NOTREACHED();
+    return 0;
 }
 
 // vim: ts=4 sw=4 et

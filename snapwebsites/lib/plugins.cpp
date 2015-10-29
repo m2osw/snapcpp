@@ -165,8 +165,8 @@ bool load(QString const& plugin_paths, plugin_ptr_t server, snap_string_list con
         QString const filename(find_plugin_filename(paths, name));
         if(filename.isEmpty())
         {
-            SNAP_LOG_ERROR() << "error: plugin named \"" << name << "\" ("
-                << filename << ") not found in the plugin directory."
+            SNAP_LOG_ERROR("plugin named \"")(name)("\" (")
+                (filename)(") not found in the plugin directory.")
                ;
             good = false;
             continue;

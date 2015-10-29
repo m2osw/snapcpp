@@ -652,7 +652,7 @@ server::~server()
  *
  * \param[in] code  The exit code, generally 0 or 1.
  */
-void server::exit( const int code )
+void server::exit( int const code )
 {
     // Destroy the snapwebsites server instance.
     //
@@ -778,10 +778,10 @@ void server::config(int argc, char *argv[])
     // Users may change their locale settings so a child may change
     // the locale for display formatting needs.
     //
-    char const *default_locale(std::setlocale(LC_ALL, "C.UTF-8"));
+    char const * default_locale(std::setlocale(LC_ALL, "C.UTF-8"));
     if(default_locale == nullptr)
     {
-        std::locale const& loc(std::locale("C"));
+        std::locale const & loc(std::locale("C"));
         std::locale::global(loc);  // default depends on LC_... vars
         std::cin.imbue(loc);
         std::cout.imbue(loc);
@@ -790,7 +790,7 @@ void server::config(int argc, char *argv[])
     else
     {
         // if we can use UTF-8, do so rather than just plain C
-        std::locale const& loc(std::locale("C.UTF-8"));
+        std::locale const & loc(std::locale("C.UTF-8"));
         std::locale::global(loc);  // default depends on LC_... vars
         std::cin.imbue(loc);
         std::cout.imbue(loc);
@@ -798,7 +798,8 @@ void server::config(int argc, char *argv[])
     }
     // TBD: we initialize the Qt library later, I do not think it will
     //      change the locale on us, but this is a TBD until otherwise
-    //      proven to be safe... (see QLocale)
+    //      proven to be safe... (see QLocale) -- and that could change
+    //      when we start using Qt 5.x
 
     // Parse command-line options...
     //

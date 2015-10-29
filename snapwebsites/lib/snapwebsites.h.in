@@ -185,7 +185,7 @@ public:
     static pointer_t    instance();
     virtual             ~server();
 
-    static void         exit( const int code );
+    static void         exit( int const code );
 
     static char const * version();
     static int          version_major();
@@ -206,8 +206,8 @@ public:
     void                config( int argc, char * argv[] );
     void                set_translation(QString const xml_data);
     QString             get_parameter(QString const & param_name) const;
-    void                set_parameter( const QString & param_name, const QString& value );
-    void                prepare_qtapp( int argc, char *argv[] );
+    void                set_parameter( QString const & param_name, QString const & value );
+    void                prepare_qtapp( int argc, char * argv[] );
     void                prepare_cassandra();
     QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
     void                detach();
@@ -215,7 +215,7 @@ public:
     void                backend();
     int                 cassandra_port() const { return f_cassandra_port; }
     QString const &     cassandra_host() const { return f_cassandra_host; }
-    void                udp_ping(char const *name, char const *message = "PING");
+    void                udp_ping(char const * name, char const * message = "PING");
 
     unsigned long       connections_count();
 

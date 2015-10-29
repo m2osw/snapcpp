@@ -445,11 +445,11 @@ std::cerr << "*** process backend [" << action << "] with uri = [" << key << "]\
         // return normally if no exception occured
         return;
     }
-    catch( snap_exception const& except )
+    catch( snap_exception const & except )
     {
         SNAP_LOG_FATAL("snap_backend::run_backend(): exception caught: ")(except.what());
     }
-    catch( std::exception const& std_except )
+    catch( std::exception const & std_except )
     {
         SNAP_LOG_FATAL("snap_backend::run_backend(): exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
     }

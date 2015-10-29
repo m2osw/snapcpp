@@ -1464,7 +1464,7 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
                         {
                             QString const right_key(right_info.key());
 
-                            // user -> permissions::action::...
+                            // user -> permissions::direct::action::...
                             perms->add_user_rights(right_key, sets);
                         }
                     }

@@ -160,7 +160,7 @@ namespace
  */
 void unconfigure()
 {
-    if(g_logging_type != logging_type_t::UNCONFIGURED_LOGGER )
+    if( g_logging_type != logging_type_t::UNCONFIGURED_LOGGER )
     {
         // shutdown the previous version before re-configuring
         // (this is done after a fork() call.)
@@ -248,20 +248,19 @@ void configure_console()
  * \sa server::config()
  * \sa unconfigure()
  */
-void configure_logfile( QString const& logfile )
+void configure_logfile( QString const & logfile )
 {
     unconfigure();
 
     if( logfile.isEmpty() )
     {
         throw snap_exception( "No output logfile specified!" );
-        NOTREACHED();
     }
 
     log4cplus::SharedAppenderPtr
             appender(new log4cplus::RollingFileAppender( logfile.toUtf8().data() ));
     appender->setName(LOG4CPLUS_TEXT("log_file"));
-    const log4cplus::tstring pattern
+    log4cplus::tstring const pattern
                 ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
                 + boost::replace_all_copy(server::instance()->servername(), "%", "%%").c_str()
                 + log4cplus::tstring("[%i]: %m (%b:%L)%n")
@@ -370,13 +369,16 @@ void configure_conffile(QString const & filename)
     if(!info.exists())
     {
         throw snap_exception( QObject::tr("Cannot open logger configuration file [%1].").arg(filename) );
-        NOTREACHED();
     }
 
     g_log_config_filename   = filename;
     g_logging_type          = logging_type_t::CONFFILE_LOGGER;
     g_last_logging_type     = logging_type_t::CONFFILE_LOGGER;
+
+    // note the doConfigure() may throw if the log.properties is invalid
+    //
     log4cplus::PropertyConfigurator::doConfigure(LOG4CPLUS_C_STR_TO_TSTRING(filename.toUtf8().data()));
+
     g_logger                = log4cplus::Logger::getInstance("snap");
     g_secure_logger         = log4cplus::Logger::getInstance("security");
 }

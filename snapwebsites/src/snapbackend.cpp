@@ -21,23 +21,25 @@
 #include "not_reached.h"
 
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
-    int exitval = 1;
+    int exitval(1);
     try
     {
         // create a server object
         snap::server::pointer_t s( snap::server::instance() );
         s->setup_as_backend();
 
-        // parse the command line arguments
-        s->config(argc, argv);
+        // parse the command line arguments (this also brings in the .conf params)
+        //
+        s->config( argc, argv );
 
         // if possible, detach the server
         s->detach();
         // Only the child (backend) process returns here
 
-        // now create the qt application instance
+        // Now create the qt application instance
+        //
         s->prepare_qtapp( argc, argv );
 
         // prepare the database
@@ -48,11 +50,11 @@ int main(int argc, char *argv[])
 
         exitval = 0;
     }
-    catch( snap::snap_exception const& except )
+    catch( snap::snap_exception const & except )
     {
         SNAP_LOG_FATAL("snapbackend: exception caught: ")(except.what());
     }
-    catch( std::exception const& std_except )
+    catch( std::exception const & std_except )
     {
         SNAP_LOG_FATAL("snapbackend: exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
     }

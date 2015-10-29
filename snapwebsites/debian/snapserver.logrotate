@@ -2,7 +2,7 @@
         weekly
 		su snapwebsites snapwebsites
         missingok
-        rotate 5
+        rotate 10
         postrotate
                 /usr/bin/snapsignal -a snapserver NLOG
         endscript
