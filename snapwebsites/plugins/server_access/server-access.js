@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.31
+ * Version: 0.0.1.32
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -685,6 +685,15 @@ snapwebsites.ServerAccess.prototype.setData = function(data)
  * be handled by a lower level object commont to the server access and
  * the editor (and both could request to be checked on unload...)
  *
+ * \todo
+ * Offers ways to send requests with other methods. Right now we only
+ * use POST. We can actually use any method such as HEAD, PUT, DELETE,
+ * PATCH, MOVE, COPY, LOCK, UNLOCK, OPTIONS, etc. Note that Microsoft
+ * Internet Explorer seems to limit the methods as shown here:
+ * https://msdn.microsoft.com/en-us/library/ms537505(v=vs.85).aspx
+ * More info can be found on WikiPedia:
+ * https://en.wikipedia.org/wiki/XMLHttpRequest
+ *
  * @param {Object|null=} opt_userdata  Any userdata that will be attached to
  *                                     the result sent to your callbacks.
  */
@@ -740,7 +749,7 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
     //       to have closure ensure we do not mess up this object parameters
     var ajax_options =
         {
-            type: "POST",
+            method: "POST",
             processData: this.dataType_ === snapwebsites.ServerAccess.OBJECT_,
             data: this.data_ ? this.data_ : { _ajax: 1 },
             error: function(jqxhr, result_status, error_msg)

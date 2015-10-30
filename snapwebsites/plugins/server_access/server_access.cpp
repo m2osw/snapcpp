@@ -90,7 +90,7 @@ server_access::~server_access()
  *
  * \param[in] snap  The child handling this request.
  */
-void server_access::on_bootstrap(snap_child *snap)
+void server_access::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -109,7 +109,7 @@ void server_access::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the server_access plugin.
  */
-server_access *server_access::instance()
+server_access * server_access::instance()
 {
     return g_plugin_server_access_factory.instance();
 }
@@ -147,7 +147,7 @@ int64_t server_access::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 27, 2, 51, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 20, 21, 12, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
