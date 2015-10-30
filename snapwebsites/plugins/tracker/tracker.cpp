@@ -305,7 +305,7 @@ void tracker::on_detach_from_session()
     //
     if(email.isEmpty())
     {
-        QString const remote_addr(f_snap->snapenv("REMOTE_ADDR"));
+        QString const remote_addr(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
 
         struct in6_addr addr6;
         int const r6(inet_pton(AF_INET6, remote_addr.toUtf8().data(), &addr6));

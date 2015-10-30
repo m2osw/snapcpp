@@ -170,6 +170,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_CORE_REDIRECT:
         return "core::redirect";
 
+    case name_t::SNAP_NAME_CORE_REMOTE_ADDR:
+        return "REMOTE_ADDR";
+
     case name_t::SNAP_NAME_CORE_REQUEST_METHOD:
         return "REQUEST_METHOD";
 

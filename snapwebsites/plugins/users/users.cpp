@@ -791,7 +791,7 @@ void users::user_logout()
     row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
 
     // Save the user IP address when logged out
-    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+    value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
     row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
 
     sessions::sessions::instance()->save_session(*f_info, false);
@@ -1736,7 +1736,7 @@ void users::verify_user(content::path_info_t& ipath)
         row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
 
         // Save the user IP address when logged out
-        value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+        value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
         row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
 
         // Login session was destroyed so we really do not need it here anymore
@@ -1867,7 +1867,7 @@ void users::verify_user(content::path_info_t& ipath)
     row->cell(get_name(name_t::SNAP_NAME_USERS_VERIFIED_ON))->setValue(value);
 
     // Save the user IP address when verified
-    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+    value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
     row->cell(get_name(name_t::SNAP_NAME_USERS_VERIFIED_IP))->setValue(value);
 
     // tell other plugins that a new user was created and let them add
@@ -2088,7 +2088,7 @@ void users::send_to_replace_password_page(QString const& email, bool const set_s
     row->cell(get_name(name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_ON))->setValue(value);
 
     // Save the user IP address when verified
-    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+    value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
     row->cell(get_name(name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_IP))->setValue(value);
 
     f_user_changing_password_key = email;
@@ -2468,7 +2468,7 @@ QString users::login_user(QString const & key, QString const& password, bool & v
                 row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_ON))->setValue(value);
 
                 // Save the user IP address when logging in
-                value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+                value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
                 row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_IP))->setValue(value);
 
                 // Save the user latest session so we can implement the
@@ -3759,7 +3759,7 @@ users::status_t users::register_user(QString const& email, QString const& passwo
         row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
 
         // Save the user IP address when registering
-        value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+        value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
         row->cell(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_IP))->setValue(value);
 
         // Date when the user was created (i.e. now)
@@ -4619,15 +4619,20 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
  */
 bool users::user_is_a_spammer()
 {
-    // TODO implement the actual test
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     char const * const black_list(get_name(name_t::SNAP_NAME_USERS_BLACK_LIST));
     if(users_table->exists(black_list))
     {
         // the row exists, check the IP
-        // TODO canonicalize the IP address as an IPv6 so it matches whatever
-        //      the system we're on
-        QString const ip(f_snap->snapenv("REMOTE_ADDR"));
+        //
+        // TODO: canonicalize the IP address so it matches every time
+        //       (i.e. IPv4 and IPv6 have several ways of being written)
+        //       see for example: tracker::on_detach_from_session()
+        //       The best will certainly be to have a function such as:
+        //
+        //           f_snap->get_canonicalized_remote_ip()
+        //
+        QString const ip(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
         QtCassandra::QCassandraRow::pointer_t row(users_table->row(black_list));
         if(row->exists(ip))
         {

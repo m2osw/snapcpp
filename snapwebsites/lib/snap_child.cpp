@@ -2750,7 +2750,8 @@ bool snap_child::process(int socket)
         {
             QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
             QString const agent(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
-            SNAP_LOG_INFO("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
+            QString const ip(snapenv(get_name(name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
+            SNAP_LOG_INFO("------------------------------------ ")(ip)(" new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
         }
 
         // now we connect to the DB

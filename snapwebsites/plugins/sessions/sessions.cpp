@@ -1298,7 +1298,7 @@ void sessions::save_session(session_info & info, bool const new_random)
     value.setInt64Value(f_snap->get_start_date());
     row->cell(get_name(name_t::SNAP_NAME_SESSIONS_DATE))->setValue(value);
 
-    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+    value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
     row->cell(get_name(name_t::SNAP_NAME_SESSIONS_REMOTE_ADDR))->setValue(value);
 
     value.setInt32Value(info.get_session_random());

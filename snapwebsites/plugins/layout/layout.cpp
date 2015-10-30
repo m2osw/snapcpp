@@ -1654,7 +1654,7 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=email]/data")
 
         // snap/head/metadata/desc[@type="remote_ip"]/data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->snapenv("REMOTE_ADDR"))
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)))
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=remote_ip]/data")
 
         // snap/head/metadata/desc[@type="action"]/data
