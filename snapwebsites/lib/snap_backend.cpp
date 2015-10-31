@@ -620,10 +620,6 @@ void snap_backend::process_backend_uri(QString const & uri)
     QString const nice_value(p_server->get_parameter("backend_nice"));
     if(!nice_value.isEmpty())
     {
-        // TODO: add support to allow for a nice value specific to each
-        //       backend (i.e. pagelist could have 3; maybe something like
-        //       backend_nice=5,pagelist:3 so all use 5 except the pagelist
-        //       that would use 3)
         int nice(-1);
         snap_string_list values(nice_value.split(','));
         int const max_values(values.size());

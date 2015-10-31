@@ -36,7 +36,6 @@
 #include <syslog.h>
 #include <errno.h>
 #include <signal.h>
-#include <sys/ioctl.h>
 #include <sys/stat.h>
 
 #include "poison.h"
@@ -386,6 +385,12 @@ namespace
     /** \brief The pointers to communicator elements.
      *
      * The communicator we use to run the server events.
+     *
+     * \todo
+     * At some point we need to look into whether it would be possible
+     * for us to use a shared pointer. At this point the g_connection
+     * gets allocated and never deleted (not a big deal since it is
+     * ONE instance for the entire time the process is running.)
      */
     connection_t *          g_connection;
 }
@@ -417,7 +422,7 @@ std::shared_ptr<server> server::g_instance;
  *
  * \return A pointer to a constant string representing the server version.
  */
-char const *server::version()
+char const * server::version()
 {
     return SNAPWEBSITES_VERSION_STRING;
 }
@@ -763,7 +768,7 @@ void server::show_version()
  * \param[in] argc  The number of arguments in argv.
  * \param[in] argv  The array of argument strings.
  */
-void server::config(int argc, char *argv[])
+void server::config(int argc, char * argv[])
 {
     // Stop on these signals, log them, then terminate.
     //
@@ -1048,7 +1053,7 @@ size_t server::thread_count()
  *
  * \return The value of the specified parameter.
  */
-QString server::get_parameter(QString const& param_name) const
+QString server::get_parameter(QString const & param_name) const
 {
     if(f_parameters.contains(param_name))
     {
@@ -1312,37 +1317,12 @@ void server::detach()
  */
 server::udp_server_t server::udp_get_server( QString const & udp_addr_port )
 {
-    // TODO: we should have a common function to read and transform the
-    //       parameter to a valid IP/Port pair (see above)
-    //
-    QString addr, port;
-    int const bracket( udp_addr_port.lastIndexOf("]") );
-    int const p( udp_addr_port.lastIndexOf(":") );
-    if( (bracket != -1) && (p != -1) )
-    {
-        if(p > bracket)
-        {
-            // IPv6 port specification
-            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
-            port = udp_addr_port.mid(p + 1); // ignore the ':'
-        }
-        else
-        {
-            throw snap_exception("invalid [IPv6]:port specification, port missing for UDP ");
-        }
-    }
-    else if(p != -1)
-    {
-        // IPv4 port specification
-        addr = udp_addr_port.mid(0, p); // ignore the ':'
-        port = udp_addr_port.mid(p + 1); // ignore the ':'
-    }
-    else
-    {
-        throw snap_exception("invalid IPv4:port specification, port missing for UDP ");
-    }
-    //
-    udp_server_t server( new udp_client_server::udp_server(addr.toUtf8().data(), port.toInt()) );
+    // the default port for our Snap! server UDP listener is 4007
+    QString addr;
+    int port;
+    get_addr_port(udp_addr_port, addr, port, 4007);
+
+    udp_server_t server( new udp_client_server::udp_server(addr.toUtf8().data(), port) );
     if(server.isNull())
     {
         // this should not happen since std::badalloc is raised when allocation fails
@@ -1382,38 +1362,108 @@ server::udp_server_t server::udp_get_server( QString const & udp_addr_port )
  */
 void server::udp_ping_server( QString const & udp_addr_port, char const * message )
 {
-    QString addr, port;
-    int const bracket(udp_addr_port.lastIndexOf("]"));
-    int const p(udp_addr_port.lastIndexOf(":"));
-    if(bracket != -1 && p != -1)
-    {
-        if(p > bracket)
-        {
-            // IPv6 port specification
-            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
-            port = udp_addr_port.mid(p + 1); // ignore the ':'
-        }
-        else
-        {
-            throw snapwebsites_exception_invalid_parameters("invalid [IPv6]:port specification, port missing for UDP ping");
-        }
-    }
-    else if(p != -1)
-    {
-        // IPv4 port specification
-        addr = udp_addr_port.mid(0, p); // ignore the ':'
-        port = udp_addr_port.mid(p + 1); // ignore the ':'
-    }
-    else
-    {
-        throw snapwebsites_exception_invalid_parameters("invalid IPv4:port specification, port missing for UDP ping");
-    }
-    udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
+    QString addr;
+    int port;
+    get_addr_port(udp_addr_port, addr, port);
+    udp_client_server::udp_client client(addr.toUtf8().data(), port);
     size_t const len(strlen(message));
     if(static_cast<size_t>(client.send(message, len)) != len) // we do not send the '\0'
     {
         // XXX: we need to determine whether we want to throw here
         throw snapwebsites_exception_io_error("send failed sending all the data");
+    }
+}
+
+
+/** \brief Retrieve an address and a port from a string.
+ *
+ * This function breaks up an address and a port number from a string.
+ *
+ * The address can either be an IPv4 address followed by a colon and
+ * the port number, or an IPv6 address written between square brackets
+ * ([::1]) followed by a colon and the port number.
+ *
+ * Port numbers are limited to a number between 1 and 65535 inclusive.
+ * They can only be specified in base 10.
+ *
+ * The port is optional only if a \p default_port is provided (by
+ * default the \p default_port parameter is set to zero meaning that
+ * it is not specified.)
+ *
+ * \exception snapwebsites_exception_invalid_parameters
+ * If any parameter is considered invalid (albeit the validity of the
+ * address is not checked since it could be a fully qualified domain
+ * name) then this exception is raised.
+ *
+ * \todo
+ * Add support for named ports? (i.e. as defined in /etc/services)
+ *
+ * \param[in] addr_port  The address and port pair.
+ * \param[out] addr  The address part, without the square brackets for IPv6
+ *             addresses.
+ * \param[out] port  The port number (1 to 65535 inclusive.)
+ * \param[in] default_port  To render the port specification optional, a
+ *            port number.
+ */
+void server::get_addr_port(QString const & addr_port, QString & addr, int & port, int const default_port)
+{
+    //addr.clear() -- not necessary, we do not return until the address gets defined
+    //port = 0 -- not necessary, we do not return until the port gets defined
+
+    QString port_str;
+    int const bracket(addr_port.lastIndexOf("]"));
+    int const p(addr_port.lastIndexOf(":"));
+    if(p != -1)
+    {
+        if(bracket != -1)
+        {
+            if(p > bracket)
+            {
+                // IPv6 port specification
+                addr = addr_port.mid(1, bracket - 1); // exclude the '[' and ']'
+                port_str = addr_port.mid(p + 1); // ignore the ':'
+            }
+            else
+            {
+                SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
+                throw snapwebsites_exception_invalid_parameters("server::get_addr_port(): invalid [IPv6]:port specification, port missing.");
+            }
+        }
+        else
+        {
+            // IPv4 port specification
+            addr = addr_port.mid(0, p); // ignore the ':'
+            port_str = addr_port.mid(p + 1); // ignore the ':'
+        }
+
+        // TODO: add support for named ports (i.e. read from /etc/services)
+        //
+
+        bool ok(false);
+        port = port_str.toInt(&ok, 10); // force base 10
+        if(!ok)
+        {
+            SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
+            throw snapwebsites_exception_invalid_parameters("server::get_addr_port(): invalid addr:port specification, port number is not valid.");
+        }
+    }
+    else if(default_port > 0)
+    {
+        addr = addr_port;
+        port = default_port;
+    }
+    else
+    {
+        SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
+        throw snapwebsites_exception_invalid_parameters("server::get_addr_port(): invalid addr:port specification, port missing and no default provided.");
+    }
+
+    // finally verify that the port is in range
+    if(port <= 0
+    || port > 65535)
+    {
+        SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
+        throw snapwebsites_exception_invalid_parameters("server::get_addr_port(): invalid addr:port specification, port number is out of bounds (1 .. 65535).");
     }
 }
 
@@ -1510,19 +1560,19 @@ void server::check_listen_runner()
 
 
 
-/** \brief Our version of snap_server_client_connection object.
+/** \brief Our version of snap_tcp_server_client_connection object.
  *
- * The snap_server_client_connection class has a pure virtual function
- * which is not defined and thus it cannot be instantiated. In order
- * to have a way to instantiate such an object, we create our own class
+ * The snap_tcp_server_client_connection class has a pure virtual function
+ * and thus it cannot be instantiated. In order to have a way to
+ * instantiate such an object, we create our own class
  * and implement the process_signal() function.
  */
-class client_impl : public snap_communicator::snap_server_client_connection
+class client_impl : public snap_communicator::snap_tcp_server_client_connection
 {
 public:
                                 client_impl(int socket);
 
-    // snap_communicator::snap_server_client_connection implementation
+    // snap_communicator::snap_tcp_server_client_connection implementation
     virtual void                process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
 };
 
@@ -1533,7 +1583,7 @@ public:
  * parameter.
  */
 client_impl::client_impl(int socket)
-    : snap_server_client_connection(socket)
+    : snap_tcp_server_client_connection(socket)
 {
 }
 
@@ -1545,7 +1595,7 @@ client_impl::client_impl(int socket)
  * listener_impl::create_new_connection().
  *
  * The function just raises an exception because it is not expected
- * to ever be caleld.
+ * to ever be called.
  *
  * \exception snap_logic_exception
  * This exception is always raised because this instance of this function
@@ -1571,15 +1621,15 @@ void client_impl::process_signal(snap_communicator::what_event_t we, snap_connec
  * This function is an implementation of the snap server so we can
  * handle new connections from various clients.
  */
-class listener_impl : public snap_communicator::snap_server_connection
+class listener_impl : public snap_communicator::snap_tcp_server_connection
 {
 public:
                                 listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close);
 
-    // snap_communicator::snap_server_connection implementation
+    // snap_communicator::snap_tcp_server_connection implementation
     virtual void                process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
 
-    // snap_communicator::snap_server_connection implementation
+    // snap_communicator::snap_tcp_server_connection implementation
     virtual snap_connection::pointer_t           create_new_connection(int socket);
 
 private:
@@ -1611,15 +1661,10 @@ private:
  *            needed anymore.
  */
 listener_impl::listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
-    : snap_server_connection(addr, port, max_connections, reuse_addr, auto_close)
+    : snap_tcp_server_connection(addr, port, max_connections, reuse_addr, auto_close)
     , f_server(s)
 {
-    if(get_socket() != -1)
-    {
-        // libevent does not like blocking sockets...
-        int optval(1);
-        ioctl(get_socket(), FIONBIO, &optval);
-    }
+    non_blocking();
 }
 
 
@@ -1633,7 +1678,7 @@ listener_impl::listener_impl(server * s, std::string const & addr, int port, int
  *
  * \param[in] we  The event that just triggered this call.
  * \param[in,out] new_client  The connection pointer when the event
- *                            is EVENT_ACCPT.
+ *                            is EVENT_ACCEPT.
  */
 void listener_impl::process_signal(snap_communicator::what_event_t we, snap_communicator::snap_connection::pointer_t new_client)
 {
@@ -1665,7 +1710,7 @@ void listener_impl::process_signal(snap_communicator::what_event_t we, snap_comm
 snap_communicator::snap_connection::pointer_t listener_impl::create_new_connection(int socket)
 {
     // use the default provided client connection object
-    snap_communicator::snap_server_client_connection::pointer_t connection(new client_impl(socket));
+    snap_communicator::snap_tcp_server_client_connection::pointer_t connection(new client_impl(socket));
     connection->set_name("child connection");
     connection->keep_alive();
     return connection;
@@ -1714,25 +1759,15 @@ void server::listen()
     {
         listen_info = "0.0.0.0:4004";
     }
-    snap_string_list host(listen_info.split(":"));
-    if(host.count() == 1)
-    {
-        host[1] = "4004";
-    }
+    QString addr;
+    int port;
+    get_addr_port(listen_info, addr, port, 4004);
 
     // convert the address information
-    QHostAddress const a(host[0]);
+    QHostAddress const a(addr);
     if(a.isNull())
     {
-        SNAP_LOG_FATAL("invalid address specification in \"")(host[0])(":")(host[1])("\".");
-        exit(1);
-    }
-
-    // convert the port information
-    long const p = host[1].toLong(&ok);
-    if(!ok || p < 0 || p > 65535)
-    {
-        SNAP_LOG_FATAL("invalid port specification in \"")(host[0])(":")(host[1])("\".");
+        SNAP_LOG_FATAL("invalid address specification in \"")(addr)(":")(port)("\".");
         exit(1);
     }
 
@@ -1756,10 +1791,10 @@ void server::listen()
 
     // setup our priority scheme
     snap_communicator::priority_t priority;
-    priority.set_priorities(10);
+    priority.set_priorities(10);    // allow priorities 0 to 9 (maybe 10?)
     //priority.set_timeout(-1); -- never timeout
     priority.set_max_callbacks(10); // run up to 10 callbacks before checking for new events
-    priority.set_min_priority(3);   // even priority 0, 1, 2 are all run before any others
+    priority.set_min_priority(3);   // event priority 0, 1, 2 are all run before any others
 
     // create a communicator
     //
@@ -1774,7 +1809,7 @@ void server::listen()
     // auto-close is set to false because the accept() is not directly used
     // on the tcp_server object
     //
-    g_connection->f_listener.reset(new listener_impl(this, host[0].toUtf8().data(), p, max_pending_connections, true, false));
+    g_connection->f_listener.reset(new listener_impl(this, addr.toUtf8().data(), port, max_pending_connections, true, false));
     g_connection->f_listener->set_name("server listener");
     g_connection->f_communicator->add_connection(g_connection->f_listener);
 
@@ -1921,7 +1956,7 @@ void server::process_connection(int socket)
     }
 
     // this was done in the tcp_server::accept() and with the new interface,
-    // in snap_communicator::snap_server_client_connection::~snap_server_client_connection()
+    // in snap_communicator::snap_tcp_server_client_connection::~snap_tcp_server_client_connection()
     //close(socket);
 }
 

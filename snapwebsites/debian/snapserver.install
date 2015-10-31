@@ -1,4 +1,5 @@
 usr/bin/cxpath usr/bin/snapbackend usr/bin/snapdb usr/bin/snapimg usr/bin/snapserver usr/bin/snapsiteinfo usr/bin/snapexpr usr/bin/snapinit usr/bin/snaplayout usr/bin/snapsignal usr/bin
 usr/share/snapwebsites/layouts/*
-conf/loggingserver.properties conf/log.properties conf/logserver.properties conf/snapserver.conf etc/snapwebsites/
+conf/loggingserver.properties conf/log.properties conf/logserver.properties conf/snapcommunicator.properties conf/snapinit.properties etc/snapwebsites/
+conf/snapcommunicator.conf conf/snapinit.conf conf/snapserver.conf etc/snapwebsites/
 conf/snap-apache2.conf etc/apache2/sites-available/

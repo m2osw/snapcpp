@@ -18,7 +18,9 @@
 
 #include "snap_exception.h"
 #include "tcp_client_server.h"
+#include "udp_client_server.h"
 
+#include <QMap>
 
 
 namespace snap
@@ -48,6 +50,39 @@ public:
     snap_communicator_runtime_error(std::string const & whatmsg) : snap_communicator_exception(whatmsg) {}
 };
 
+class snap_communicator_invalid_message : public snap_communicator_exception
+{
+public:
+    snap_communicator_invalid_message(std::string const & whatmsg) : snap_communicator_exception(whatmsg) {}
+};
+
+
+
+class snap_communicator_message
+{
+public:
+    typedef QMap<QString, QString>  parameters_t;
+
+    bool                    from_message(QString const & message);
+    QString                 to_message() const;
+
+    QString                 get_name() const;
+    void                    set_name(QString const & name);
+    QString                 get_command() const;
+    void                    set_command(QString const & command);
+    void                    add_parameter(QString const & name, QString const & value);
+    bool                    has_parameter(QString const & name) const;
+    QString                 get_parameter(QString const & name);
+    int64_t                 get_integer_parameter(QString const & name);
+    parameters_t const &    get_all_parameters() const;
+
+private:
+    void                    verify_parameter_name(QString const & name) const;
+
+    QString                 f_name;
+    QString                 f_command;
+    parameters_t            f_parameters;
+};
 
 
 
@@ -116,6 +151,8 @@ public:
         int64_t                     get_timeout() const;
         void                        set_timeout(int64_t timeout_us);
 
+        void                        non_blocking();
+
         void                        save_new_connection_info(int s, struct sockaddr * addr, int len);
 
     private:
@@ -176,14 +213,14 @@ public:
     };
 
     // TODO: switch the tcp_server to a bio_server once available
-    class snap_server_connection
+    class snap_tcp_server_connection
         : public tcp_client_server::tcp_server
         , public snap_connection
     {
     public:
-        typedef std::shared_ptr<snap_server_connection>    pointer_t;
+        typedef std::shared_ptr<snap_tcp_server_connection>    pointer_t;
 
-                                    snap_server_connection(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
+                                    snap_tcp_server_connection(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
 
         // snap_connection implementation
         virtual bool                is_listener() const;
@@ -191,15 +228,15 @@ public:
         virtual what_event_t        get_events() const;
     };
 
-    class snap_server_client_connection
+    class snap_tcp_server_client_connection
         //: public tcp_client_server::tcp_client -- this will not work without some serious re-engineering of the tcp_client class
         : public snap_connection
     {
     public:
-        typedef std::shared_ptr<snap_server_client_connection>    pointer_t;
+        typedef std::shared_ptr<snap_tcp_server_client_connection>    pointer_t;
 
-                                    snap_server_client_connection(int socket);
-        virtual                     ~snap_server_client_connection();
+                                    snap_tcp_server_client_connection(int socket);
+        virtual                     ~snap_tcp_server_client_connection();
 
         // snap_connection implementation
         virtual int                 get_socket() const;
@@ -217,13 +254,28 @@ public:
         size_t                      f_length;
     };
 
-                                snap_communicator(priority_t const & priority);
+    class snap_udp_server_connection
+        : public udp_client_server::udp_server
+        , public snap_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_udp_server_connection>    pointer_t;
 
-    void                        reinit(); // after a fork()
+                                    snap_udp_server_connection(std::string const & addr, int port);
 
-    bool                        add_connection(snap_connection::pointer_t connection);
-    bool                        remove_connection(snap_connection::pointer_t connection);
-    virtual bool                run();
+        // snap_connection implementation
+        virtual int                 get_socket() const;
+        virtual what_event_t        get_events() const;
+    };
+
+                                        snap_communicator(priority_t const & priority);
+
+    void                                reinit(); // after a fork()
+
+    snap_connection::vector_t const &   get_connections() const;
+    bool                                add_connection(snap_connection::pointer_t connection);
+    bool                                remove_connection(snap_connection::pointer_t connection);
+    virtual bool                        run();
 
 private:
     struct snap_communicator_impl;

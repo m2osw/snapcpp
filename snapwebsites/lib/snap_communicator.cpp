@@ -47,10 +47,10 @@
 
 #include <sstream>
 
-#include <unistd.h>
-
 #include <event2/event.h>
 #include <event2/listener.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
 
 #include "poison.h"
 
@@ -184,7 +184,7 @@ void snap_accept_callback(struct evconnlistener * listener, evutil_socket_t s, s
         // allocation failed
         throw snap_communicator_initialization_error("snap_accept_callback(): creating of a new client connection from an accept failed.");
     }
-    snap_communicator::snap_server_client_connection * server_client(dynamic_cast<snap_communicator::snap_server_client_connection *>(client.get()));
+    snap_communicator::snap_tcp_server_client_connection * server_client(dynamic_cast<snap_communicator::snap_tcp_server_client_connection *>(client.get()));
     if(server_client == nullptr)
     {
         // invalid type
@@ -225,6 +225,296 @@ void snap_event_callback(evutil_socket_t s, short what, void * arg)
 
 
 
+
+///////////////////////////////
+// Snap Communicator Message //
+///////////////////////////////
+
+
+bool snap_communicator_message::from_message(QString const & message)
+{
+    QString command;
+    QString name;
+    parameters_t parameters;
+
+    QChar const * m(message.constData());
+    bool has_name(false);
+    for(; !m->isNull() && m->unicode() == ' '; ++m)
+    {
+        if(m->unicode() == '/')
+        {
+            if(has_name
+            || command.isEmpty())
+            {
+                // we cannot have more than one '/'
+                // and the name cannot be empty if '/' is used
+                return false;
+            }
+            has_name = true;
+            name = command;
+            command.clear();
+        }
+        else
+        {
+            command += *m;
+        }
+    }
+
+    if(command.isEmpty())
+    {
+        return false;
+    }
+
+    // if we have a space, we expect one or more parameters
+    if(m->unicode() == ' ')
+    {
+        for(++m; !m->isNull();)
+        {
+            // first we have to read the parameter name (up to the '=')
+            QString param_name;
+            for(; !m->isNull() && m->unicode() != '='; ++m)
+            {
+                param_name += *m;
+            }
+            if(param_name.isEmpty())
+            {
+                // parameters must have a name
+                return false;
+            }
+            try
+            {
+                verify_parameter_name(name);
+            }
+            catch(snap_communicator_invalid_message const &)
+            {
+                // name is not empty, but it has invalid characters in it
+                return false;
+            }
+
+            if(m->isNull()
+            || m->unicode() != '=')
+            {
+                // ?!?
+                return false;
+            }
+            ++m;
+
+            // retrieve the parameter name at first
+            QString param_value;
+            if(!m->isNull() && m->unicode() == '"')
+            {
+                // quoted parameter
+                for(++m; !m->isNull() && m->unicode() != '"'; ++m)
+                {
+                    // restored escaped double quotes
+                    if(m->unicode() == '\\' && !m[1].isNull() && m[1].unicode() == '"')
+                    {
+                        ++m;
+                        param_value += *m;
+                    }
+                    else
+                    {
+                        // here the character may be ';'
+                        param_value += *m;
+                    }
+                }
+                if(m->isNull()
+                || m->unicode() != '"')
+                {
+                    // closing quote (") is missing
+                    return false;
+                }
+                ++m;
+
+                // now we have to have the ';' if the string goes on
+                if(!m->isNull()
+                && m->unicode() != ';')
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                // parameter value is found as is
+                for(; !m->isNull() && m->unicode() != ';'; ++m)
+                {
+                    param_value += *m;
+                }
+            }
+
+            if(!m->isNull())
+            {
+                if(m->unicode() == ';')
+                {
+                    // this should neverh append
+                    return false;
+                }
+                // skip the ';'
+                ++m;
+            }
+
+            // also restore new lines if any
+            param_value.replace("\\n", "\n")
+                       .replace("\\r", "\r");
+
+            // we got a valid parameter, add it
+            parameters[param_name] = param_value;
+        }
+    }
+
+    f_name = name;
+    f_command = command;
+    f_parameters.swap(parameters);
+
+    return true;
+}
+
+
+QString snap_communicator_message::to_message() const
+{
+    if(f_command.isEmpty())
+    {
+        throw snap_communicator_invalid_message("snap_communicator_message::to_message(): cannot build a valid message without at least a command.");
+    }
+
+    // <name>/
+    QString result(f_name);
+    if(!result.isEmpty())
+    {
+        result += "/";
+    }
+
+    // [<name>/]command
+    result += f_command;
+
+    // then add parameters
+    bool first(true);
+    for(auto p(f_parameters.begin());
+             p != f_parameters.end();
+             ++p)
+    {
+        result += QString("%1%2=").arg(first ? " " : ";").arg(p.key());
+        QString param(p.value());
+        param.replace("\n", "\\n")   // newline needs to be escaped
+             .replace("\r", "\\r");  // this one is not important, but for completeness
+        if(param.indexOf(";") >= 0
+        || (!param.isEmpty() && param[0] == '\"'))
+        {
+            // escape the double quotes
+            param.replace("\"", "\\\"");
+            // quote the resulting parameter and save in result
+            result += QString("\"%1\"").arg(param);
+        }
+        else
+        {
+            // no special handling necessary
+            result += param;
+        }
+    }
+
+    return result;
+}
+
+
+QString snap_communicator_message::get_name() const
+{
+    return f_name;
+}
+
+
+void snap_communicator_message::set_name(QString const & name)
+{
+    f_name = name;
+}
+
+
+QString snap_communicator_message::get_command() const
+{
+    return f_command;
+}
+
+
+void snap_communicator_message::set_command(QString const & command)
+{
+    f_command = command;
+}
+
+
+void snap_communicator_message::add_parameter(QString const & name, QString const & value)
+{
+    verify_parameter_name(name);
+
+    f_parameters[name] = value;
+}
+
+
+bool snap_communicator_message::has_parameter(QString const & name) const
+{
+    verify_parameter_name(name);
+
+    return f_parameters.contains(name);
+}
+
+
+QString snap_communicator_message::get_parameter(QString const & name)
+{
+    verify_parameter_name(name);
+
+    if(f_parameters.contains(name))
+    {
+        return f_parameters[name];
+    }
+
+    throw snap_communicator_invalid_message("snap_communicator_message::get_parameter(): parameter not defined, try has_parameter() before calling a get_..._parameter() function.");
+}
+
+
+int64_t snap_communicator_message::get_integer_parameter(QString const & name)
+{
+    verify_parameter_name(name);
+
+    if(f_parameters.contains(name))
+    {
+        bool ok;
+        int64_t r(f_parameters[name].toLongLong(&ok, 10));
+        if(!ok)
+        {
+            throw snap_communicator_invalid_message("snap_communicator_message::get_integer_parameter(): message expected integer could not be converted.");
+        }
+        return r;
+    }
+
+    throw snap_communicator_invalid_message("snap_communicator_message::get_integer_parameter(): parameter not defined, try has_parameter() before calling a get_..._parameter() function.");
+}
+
+
+snap_communicator_message::parameters_t const & snap_communicator_message::get_all_parameters() const
+{
+    return f_parameters;
+}
+
+
+void snap_communicator_message::verify_parameter_name(QString const & name) const
+{
+    for(auto c : name)
+    {
+        if((c < 'a' || c > 'z')
+        && (c < 'A' || c > 'Z')
+        && (c < '0' || c > '9')
+        && c != '_')
+        {
+            throw snap_communicator_invalid_message("snap_communicator_message::add_parameter(): parameter name must be composed of ASCII 'a'..'z', 'A'..'Z', '0'..'9', or '_' only.");
+        }
+    }
+}
+
+
+
+
+
+///////////////////////////////////
+// Snap Connection Implementaion //
+///////////////////////////////////
 
 
 struct snap_communicator::snap_connection::snap_connection_impl
@@ -267,7 +557,9 @@ struct snap_communicator::snap_connection::snap_connection_impl
 
         if(connection->is_listener())
         {
-            // it should be created disabled, unforunately that is in 2.1.1+
+            // TODO: it should be created disabled, unforunately that
+            //       is in libevent 2.1.1+ which is in pure dev. now
+            //
             f_listener.reset(evconnlistener_new(
                         event_base,
                         snap_accept_callback,
@@ -889,7 +1181,7 @@ snap_communicator::snap_connection::pointer_t snap_communicator::snap_connection
     // you should never reach this line of code because you should have
     // an implementation of this virtual function in your server class
     //
-    throw snap_communicator_parameter_error("snap_communicator::snap_connection::create_new_connection() called, it has to be implemented in your snap_server_connection class.");
+    throw snap_communicator_parameter_error("snap_communicator::snap_connection::create_new_connection() called, it has to be implemented in your snap_tcp_server_connection class.");
 }
 
 
@@ -964,6 +1256,26 @@ void snap_communicator::snap_connection::set_timeout(int64_t timeout_us)
     if(f_impl->f_created)
     {
         f_impl->attach_event(timeout_us);
+    }
+}
+
+
+/** \brief Make this connection socket a non-blocking socket.
+ *
+ * Many sockets have to be marked as non-blocking in order to work
+ * properly with libevent. This function can be called for the purpose
+ * of changing the socket of a connection non-blocking.
+ *
+ * Remember that non-blocking socket may end up returning EAGAIN
+ * as an "error" message.
+ */
+void snap_communicator::snap_connection::non_blocking()
+{
+    if(get_socket() >= 0)
+    {
+        // libevent does not like blocking sockets...
+        int optval(1);
+        ioctl(get_socket(), FIONBIO, &optval);
     }
 }
 
@@ -1156,10 +1468,6 @@ snap_communicator::snap_client_connection::snap_client_connection(std::string co
  * This function retrieves the socket this client connection. In this case
  * the socket is defined in the bio_client class.
  *
- * \note
- * This class never used the f_socket parameter defined in the
- * snap_connection class.
- *
  * \return The socket of this client connection.
  */
 int snap_communicator::snap_client_connection::get_socket() const
@@ -1191,9 +1499,9 @@ int snap_communicator::snap_client_connection::get_events() const
 
 
 
-////////////////////////////
-// Snap Server Connection //
-////////////////////////////
+////////////////////////////////
+// Snap TCP Server Connection //
+////////////////////////////////
 
 
 /** \brief Initialize a server connection.
@@ -1207,13 +1515,13 @@ int snap_communicator::snap_client_connection::get_events() const
  * \param[in] reuse_addr  Whether to mark the socket with the SO_REUSEADDR flag.
  * \param[in] auto_close  Automatically close the client socket in accept and the destructor.
  */
-snap_communicator::snap_server_connection::snap_server_connection(std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
+snap_communicator::snap_tcp_server_connection::snap_tcp_server_connection(std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
     : tcp_server(addr, port, max_connections, reuse_addr, auto_close)
 {
 }
 
 
-/** \brief Reimplement the is_listener() for the snap_server_connection.
+/** \brief Reimplement the is_listener() for the snap_tcp_server_connection.
  *
  * A server connection is a listener socket. The libevent library makes
  * use of a completely different object (struct evconnlistener) in order
@@ -1222,7 +1530,7 @@ snap_communicator::snap_server_connection::snap_server_connection(std::string co
  *
  * \return This version of the function always returns true.
  */
-bool snap_communicator::snap_server_connection::is_listener() const
+bool snap_communicator::snap_tcp_server_connection::is_listener() const
 {
     return true;
 }
@@ -1233,13 +1541,9 @@ bool snap_communicator::snap_server_connection::is_listener() const
  * This function retrieves the socket this server connection. In this case
  * the socket is defined in the tcp_server class.
  *
- * \note
- * This class never used the f_socket parameter defined in the
- * snap_connection class.
- *
  * \return The socket of this client connection.
  */
-int snap_communicator::snap_server_connection::get_socket() const
+int snap_communicator::snap_tcp_server_connection::get_socket() const
 {
     return tcp_server::get_socket();
 }
@@ -1258,7 +1562,7 @@ int snap_communicator::snap_server_connection::get_socket() const
  *
  * \return The events to listen to for this connection.
  */
-int snap_communicator::snap_server_connection::get_events() const
+int snap_communicator::snap_tcp_server_connection::get_events() const
 {
     return EVENT_READ | EVENT_WRITE;
 }
@@ -1267,9 +1571,9 @@ int snap_communicator::snap_server_connection::get_events() const
 
 
 
-///////////////////////////////////
-// Snap Server Client Connection //
-///////////////////////////////////
+///////////////////////////////////////
+// Snap TCP Server Client Connection //
+///////////////////////////////////////
 
 
 /** \brief Create a client connection created from an accept().
@@ -1281,7 +1585,7 @@ int snap_communicator::snap_server_connection::get_events() const
  *
  * \param[in] socket  The socket that acecpt() returned.
  */
-snap_communicator::snap_server_client_connection::snap_server_client_connection(int socket)
+snap_communicator::snap_tcp_server_client_connection::snap_tcp_server_client_connection(int socket)
     : f_socket(socket < 0 ? -1 : socket)
 {
 }
@@ -1291,7 +1595,7 @@ snap_communicator::snap_server_client_connection::snap_server_client_connection(
  *
  * This destructor makes sure that the socket gets closed.
  */
-snap_communicator::snap_server_client_connection::~snap_server_client_connection()
+snap_communicator::snap_tcp_server_client_connection::~snap_tcp_server_client_connection()
 {
     // at this point, we should never get a socket with -1, but just in
     // case that could happen later
@@ -1307,7 +1611,7 @@ snap_communicator::snap_server_client_connection::~snap_server_client_connection
  *
  * This function returns the socket defined in this connection.
  */
-int snap_communicator::snap_server_client_connection::get_socket() const
+int snap_communicator::snap_tcp_server_client_connection::get_socket() const
 {
     return f_socket;
 }
@@ -1326,7 +1630,7 @@ int snap_communicator::snap_server_client_connection::get_socket() const
  *
  * \return The events to listen to for this connection.
  */
-int snap_communicator::snap_server_client_connection::get_events() const
+int snap_communicator::snap_tcp_server_client_connection::get_events() const
 {
     return EVENT_READ | EVENT_WRITE;
 }
@@ -1341,12 +1645,12 @@ int snap_communicator::snap_server_client_connection::get_events() const
  * \param[in] address  The address of this client connection.
  * \param[in] length  The length of the address defined in addr.
  */
-void snap_communicator::snap_server_client_connection::set_address(struct sockaddr * address, size_t length)
+void snap_communicator::snap_tcp_server_client_connection::set_address(struct sockaddr * address, size_t length)
 {
     if(address == nullptr
     || length > sizeof(f_address))
     {
-        throw snap_communicator_parameter_error("snap_communicator::snap_server_client_connection::save_address(): the address received by evconnlistener is larger than our sockaddr.");
+        throw snap_communicator_parameter_error("snap_communicator::snap_tcp_server_client_connection::save_address(): the address received by evconnlistener is larger than our sockaddr.");
     }
 
     // keep a copy of the address
@@ -1377,7 +1681,7 @@ void snap_communicator::snap_server_client_connection::set_address(struct sockad
  * \return Return the length of the address which may be smaller than
  *         sizeof(struct sockaddr). If zero, then no address is defined.
  */
-size_t snap_communicator::snap_server_client_connection::get_address(struct sockaddr & address) const
+size_t snap_communicator::snap_tcp_server_client_connection::get_address(struct sockaddr & address) const
 {
     address = f_address;
     return f_length;
@@ -1392,7 +1696,7 @@ size_t snap_communicator::snap_server_client_connection::get_address(struct sock
  *
  * \return The client's address in the form of a string.
  */
-std::string snap_communicator::snap_server_client_connection::get_addr() const
+std::string snap_communicator::snap_tcp_server_client_connection::get_addr() const
 {
     char buf[INET_ADDRSTRLEN];
     char const * r;
@@ -1408,7 +1712,7 @@ std::string snap_communicator::snap_server_client_connection::get_addr() const
 
     if(r == nullptr)
     {
-        throw snap_communicator_runtime_error("snap_server_client_connection::get_addr(): inet_ntop() could not convert IP address properly.");
+        throw snap_communicator_runtime_error("snap_tcp_server_client_connection::get_addr(): inet_ntop() could not convert IP address properly.");
     }
 
     return buf;
@@ -1424,7 +1728,7 @@ std::string snap_communicator::snap_server_client_connection::get_addr() const
  * The function returns whether the function works or not. If the function
  * fails, it logs a warning and returns.
  */
-void snap_communicator::snap_server_client_connection::keep_alive() const
+void snap_communicator::snap_tcp_server_client_connection::keep_alive() const
 {
     if(f_socket != -1)
     {
@@ -1432,10 +1736,66 @@ void snap_communicator::snap_server_client_connection::keep_alive() const
         socklen_t const optlen(sizeof(optval));
         if(setsockopt(f_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
         {
-            SNAP_LOG_WARNING("snap_communicator::snap_server_client_connection::keep_alive(): an error occurred trying to mark socket with SO_KEEPALIVE.");
+            SNAP_LOG_WARNING("snap_communicator::snap_tcp_server_client_connection::keep_alive(): an error occurred trying to mark socket with SO_KEEPALIVE.");
         }
     }
 }
+
+
+
+////////////////////////////////
+// Snap UDP Server Connection //
+////////////////////////////////
+
+
+/** \brief Initialize a UDP listener.
+ *
+ * This function is used to initialize a server connection, a UDP/IP
+ * listener which wakes up whenever a send() is sent to this listener
+ * address and port.
+ *
+ * \param[in] addr  The address to listen on. It may be set to "0.0.0.0".
+ * \param[in] port  The port to listen on.
+ */
+snap_communicator::snap_udp_server_connection::snap_udp_server_connection(std::string const & addr, int port)
+    : udp_server(addr, port)
+{
+}
+
+
+/** \brief Retrieve the socket of this server connection.
+ *
+ * This function retrieves the socket this server connection. In this case
+ * the socket is defined in the udp_server class.
+ *
+ * \return The socket of this client connection.
+ */
+int snap_communicator::snap_udp_server_connection::get_socket() const
+{
+    return udp_server::get_socket();
+}
+
+
+/** \brief Retrieve the set of events a client connection listens to.
+ *
+ * This function returns a set of events that a client connection socket
+ * is expected to listen to.
+ *
+ * By default this is set to READ and WRITE only.
+ *
+ * \note
+ * Generally you do not need to override this call unless you want
+ * to specifically listen to only READ or only WRITE events.
+ *
+ * \return The events to listen to for this connection.
+ */
+int snap_communicator::snap_udp_server_connection::get_events() const
+{
+    return EVENT_READ | EVENT_WRITE;
+}
+
+
+
 
 
 
@@ -1483,6 +1843,21 @@ snap_communicator::snap_communicator(priority_t const & priority)
 void snap_communicator::reinit()
 {
     f_impl->reinit();
+}
+
+
+/** \brief Retrieve a reference to the vector of connections.
+ *
+ * This function returns a reference to all the connections that are
+ * currently attached to the snap_communicator system.
+ *
+ * This is useful to search the array.
+ *
+ * \return The vector of connections.
+ */
+snap_communicator::snap_connection::vector_t const & snap_communicator::get_connections() const
+{
+    return f_connections;
 }
 
 
@@ -1603,6 +1978,14 @@ bool snap_communicator::run()
 
     return r == 1;
 }
+
+
+
+
+
+
+
+
 
 
 } // namespace snap

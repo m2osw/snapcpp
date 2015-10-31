@@ -74,7 +74,7 @@ enum class name_t
     SNAP_NAME_CORE_USER_COOKIE_NAME,
     SNAP_NAME_CORE_X_POWERED_BY_HEADER
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 
@@ -225,6 +225,7 @@ public:
 
     static udp_server_t udp_get_server ( QString const & udp_addr_port );
     static void         udp_ping_server( QString const & udp_addr_port, char const *message = "PING" );
+    static void         get_addr_port(QString const & addr_port, QString & addr, int & port, int const default_port = 0);
 
 #ifdef SNAP_NO_FORK
     bool nofork() const;

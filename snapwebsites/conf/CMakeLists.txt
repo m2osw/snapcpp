@@ -34,13 +34,21 @@
 ##
 install(
     FILES 
-        log.properties
+        # log4cplus properties
         loggingserver.properties
+        log.properties
         logserver.properties
-        snapcgilog.properties
-        snapserver.conf
-        snapcgi.conf
+        snapcgi.properties
+        snapcommunicator.properties
+        snapinit.properties
+
+        # snap configuration files
         snap-apache2.conf
+        snapcgi.conf
+        snapcommunicator.conf
+        snapinit.conf
+        snapserver.conf
+
     DESTINATION
         share/snapwebsites/conf
 )
