@@ -15,13 +15,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-//
-// This is in part because there isn't any easy way to run a command
-// from a shell without inheriting all the variables from the parent
-// shell. This test can create an exact environment table and start
-// a process with a very specific environment.
-//
-
 #include "not_reached.h"
 #include "tcp_client_server.h"
 

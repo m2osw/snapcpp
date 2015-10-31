@@ -5375,12 +5375,12 @@ void snap_child::attach_to_session()
  */
 bool snap_child::load_file(post_file_t& file)
 {
-    bool found(false);
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
+    bool found(false);
     server->load_file(file, found);
     return found;
 }

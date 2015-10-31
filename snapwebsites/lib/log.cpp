@@ -947,7 +947,7 @@ logger& operator << ( logger& l, wchar_t const* msg )
 logger fatal(char const *file, char const *func, int line)
 {
     logger l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
-    return l.operator () ("fatal: ");
+    return l.operator () ("fatal error: ");
 }
 
 logger error(char const *file, char const *func, int line)

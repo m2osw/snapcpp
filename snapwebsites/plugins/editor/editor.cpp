@@ -33,6 +33,7 @@
 #include "qdomxpath.h"
 #include "qxmlmessagehandler.h"
 #include "snap_image.h"
+#include "xslt.h"
 
 #include <QtCassandra/QCassandraLock.h>
 #include <libtld/tld.h>
@@ -4263,6 +4264,11 @@ QString editor::verify_html_validity(QString body)
     // replace <hr> with <hr/>
     QRegExp const hr_without_slash("<hr *>");
     body.replace(hr_without_slash, "<hr/>");
+
+    // replace any entity other than &amp;, &lt;, and &gt; to their Unicode
+    // value (very important because QXmlQuery does not like any of the
+    // other entities)
+    body = xslt::filter_entities_out(body);
 
     // return the result
     return body;

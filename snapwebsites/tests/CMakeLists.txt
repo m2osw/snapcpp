@@ -92,6 +92,20 @@ add_executable(test_unix_timestamp
 add_dependencies( test_unix_timestamp test_prereqs )
 
 
+add_executable(test_entity_filter
+    test_entity_filter.cpp
+)
+add_dependencies( test_entity_filter test_prereqs )
+target_link_libraries(test_entity_filter
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    dl
+)
+
+
 add_executable(test_ip_strings
     test_ip_strings.cpp
 )

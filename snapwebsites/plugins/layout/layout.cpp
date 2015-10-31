@@ -32,6 +32,7 @@
 //#include "qdomnodemodel.h" -- at this point the DOM Node Model seems bogus.
 #include "not_reached.h"
 #include "not_used.h"
+#include "xslt.h"
 
 #include <iostream>
 #include <fstream>
@@ -800,71 +801,83 @@ out.write(doc.toString(-1).toUtf8());
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
 //std::cerr << "*** Generate output...\n";
-    QString const doc_str(doc.toString(-1));
-    if(doc_str.isEmpty())
-    {
-        throw snap_logic_exception("somehow the memory XML document for the body XSLT is empty");
-    }
-    QXmlQuery q(QXmlQuery::XSLT20);
-    QMessageHandler msg;
-    msg.set_xsl(xsl);
-    msg.set_doc(doc_str);
-    q.setMessageHandler(&msg);
-#if 0
-    QDomNodeModel m(q.namePool(), doc);
-    QXmlNodeModelIndex x(m.fromDomNode(doc.documentElement()));
-    QXmlItem i(x);
-    q.setFocus(i);
-#else
-    q.setFocus(doc_str);
-#endif
-    q.setQuery(xsl);
-    if(!q.isValid())
-    {
-        throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for BODY \"%1\" detected by Qt").arg(ipath.get_key()));
-    }
-#if 0
-    QXmlResultItems results;
-    q.evaluateTo(&results);
-    
-    QXmlItem item(results.next());
-    while(!item.isNull())
-    {
-        if(item.isNode())
-        {
-            //printf("Got a node!\n");
-            QXmlNodeModelIndex node_index(item.toNodeModelIndex());
-            QDomNode node(m.toDomNode(node_index));
-            printf("Got a node! [%s]\n", node.localName()/*ownerDocument().toString(-1)*/.toUtf8().data());
-        }
-        item = results.next();
-    }
-#elif 1
-    // this should be faster since we keep the data in a DOM
-    QDomDocument doc_output("body");
-    QDomReceiver receiver(q.namePool(), doc_output);
-    q.evaluateTo(&receiver);
+
+    QDomDocument doc_output("output");
+
+    xslt x;
+    x.set_xsl(xsl);
+    x.set_document(doc);
+    x.evaluate_to_document(doc_output);
+
     extract_js_and_css(doc, doc_output);
     body.appendChild(doc.importNode(doc_output.documentElement(), true));
-//std::cout << "Body HTML is [" << doc_output.toString(-1) << "]\n";
-#else
-    //QDomDocument doc_body("body");
-    //doc_body.setContent(get_content_parameter(path, get_name(name_t::SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, nullptr, nullptr, nullptr);
-    //QDomElement content_tag(doc.createElement("content"));
-    //body.appendChild(content_tag);
-    //content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
 
-    // TODO: look into getting XML as output
-    QString out;
-    q.evaluateTo(&out);
-    //QDomElement output(doc.createElement("output"));
-    //body.appendChild(output);
-    //QDomText text(doc.createTextNode(out));
-    //output.appendChild(text);
-    QDomDocument doc_output("body");
-    doc_output.setContent(out, true, nullptr, nullptr, nullptr);
-    body.appendChild(doc.importNode(doc_output.documentElement(), true));
-#endif
+//     QString const doc_str(doc.toString(-1));
+//     if(doc_str.isEmpty())
+//     {
+//         throw snap_logic_exception("somehow the memory XML document for the body XSLT is empty");
+//     }
+//     QXmlQuery q(QXmlQuery::XSLT20);
+//     QMessageHandler msg;
+//     msg.set_xsl(xsl);
+//     msg.set_doc(doc_str);
+//     q.setMessageHandler(&msg);
+// #if 0
+//     QDomNodeModel m(q.namePool(), doc);
+//     QXmlNodeModelIndex x(m.fromDomNode(doc.documentElement()));
+//     QXmlItem i(x);
+//     q.setFocus(i);
+// #else
+//     q.setFocus(doc_str);
+// #endif
+//     q.setQuery(xsl);
+//     if(!q.isValid())
+//     {
+//         throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for BODY \"%1\" detected by Qt").arg(ipath.get_key()));
+//     }
+// #if 0
+//     QXmlResultItems results;
+//     q.evaluateTo(&results);
+//     
+//     QXmlItem item(results.next());
+//     while(!item.isNull())
+//     {
+//         if(item.isNode())
+//         {
+//             //printf("Got a node!\n");
+//             QXmlNodeModelIndex node_index(item.toNodeModelIndex());
+//             QDomNode node(m.toDomNode(node_index));
+//             printf("Got a node! [%s]\n", node.localName()/*ownerDocument().toString(-1)*/.toUtf8().data());
+//         }
+//         item = results.next();
+//     }
+// #elif 1
+//     // this should be faster since we keep the data in a DOM
+//     QDomDocument doc_output("body");
+//     QDomReceiver receiver(q.namePool(), doc_output);
+//     q.evaluateTo(&receiver);
+// 
+//     extract_js_and_css(doc, doc_output);
+//     body.appendChild(doc.importNode(doc_output.documentElement(), true));
+// //std::cout << "Body HTML is [" << doc_output.toString(-1) << "]\n";
+// #else
+//     //QDomDocument doc_body("body");
+//     //doc_body.setContent(get_content_parameter(path, get_name(name_t::SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, nullptr, nullptr, nullptr);
+//     //QDomElement content_tag(doc.createElement("content"));
+//     //body.appendChild(content_tag);
+//     //content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
+// 
+//     // TODO: look into getting XML as output
+//     QString out;
+//     q.evaluateTo(&out);
+//     //QDomElement output(doc.createElement("output"));
+//     //body.appendChild(output);
+//     //QDomText text(doc.createTextNode(out));
+//     //output.appendChild(text);
+//     QDomDocument doc_output("body");
+//     doc_output.setContent(out, true, nullptr, nullptr, nullptr);
+//     body.appendChild(doc.importNode(doc_output.documentElement(), true));
+// #endif
 }
 
 
@@ -1204,32 +1217,37 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
     //    }
     //}
 
+    xslt x;
+    x.set_xsl(xsl);
+    x.set_document(doc);
+    return x.evaluate_to_string();
+
     // finally apply the theme XSLT to the final XML
     // the output is what we want to return
-    QXmlQuery q(QXmlQuery::XSLT20);
-    if(doc_str.isEmpty())
-    {
-        throw snap_logic_exception("somehow the memory XML document for the theme XSLT is empty");
-    }
-    QMessageHandler msg;
-    msg.set_xsl(xsl);
-    msg.set_doc(doc_str);
-    q.setMessageHandler(&msg);
-    q.setFocus(doc_str);
-    q.setQuery(xsl);
-    if(!q.isValid())
-    {
-        throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for THEME \"%1\" detected by Qt").arg(theme_name));
-    }
+    //QXmlQuery q(QXmlQuery::XSLT20);
+    //if(doc_str.isEmpty())
+    //{
+    //    throw snap_logic_exception("somehow the memory XML document for the theme XSLT is empty");
+    //}
+    //QMessageHandler msg;
+    //msg.set_xsl(xsl);
+    //msg.set_doc(doc_str);
+    //q.setMessageHandler(&msg);
+    //q.setFocus(doc_str);
+    //q.setQuery(xsl);
+    //if(!q.isValid())
+    //{
+    //    throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for THEME \"%1\" detected by Qt").arg(theme_name));
+    //}
 
-    QBuffer output;
-    output.open(QBuffer::ReadWrite);
-    QHtmlSerializer html(q.namePool(), &output);
-    q.evaluateTo(&html);
+    //QBuffer output;
+    //output.open(QBuffer::ReadWrite);
+    //QHtmlSerializer html(q.namePool(), &output);
+    //q.evaluateTo(&html);
 
-    QString const out(QString::fromUtf8(output.data()));
+    //QString const out(QString::fromUtf8(output.data()));
 
-    return out;
+    //return out;
 }
 
 

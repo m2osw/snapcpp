@@ -15,10 +15,10 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <qxmlmessagehandler.h>
+#include "qxmlmessagehandler.h"
 
-#include <qstring_stream.h>
-#include <log.h>
+#include "qstring_stream.h"
+#include "log.h"
 
 #include <QDomDocument>
 #include <QFile>
@@ -31,7 +31,7 @@ namespace snap
 
 QMessageHandler::QMessageHandler(QObject *parent_object)
     : QAbstractMessageHandler(parent_object)
-    , f_had_msg(false)
+    //, f_had_msg(false) -- auto-init
 {
 }
 
@@ -44,44 +44,53 @@ void QMessageHandler::handleMessage(QtMsgType type, QString const & description,
     doc.setContent(description, true, nullptr, nullptr, nullptr);
     QDomElement root(doc.documentElement());
     // TODO: note that the description may include <span>, <b>, <i>, ...
-    QString const description_string(root.text());
+    f_error_description = root.text();
+    f_error_type = type;
+
+    if(f_error_type == QtFatalMsg
+    && f_error_description.startsWith("Entity")
+    && f_error_description.endsWith("not declared."))
+    {
+        f_has_entities = true;
+        return;
+    }
 
 //std::cerr << "URI A = [" << identifier.toString() << "]\n";
 //std::cerr << "URI B = [" << sourceLocation.uri().toString() << "]\n";
-//std::cerr << "MESSAGE = [" << description_string << "]\n";
+//std::cerr << "MESSAGE = [" << f_error_description << "]\n";
 
     // avoid "variable unused" warnings
     if(type != QtWarningMsg
-    || !description_string.startsWith("The variable")
-    || !description_string.endsWith("is unused"))
+    || !f_error_description.startsWith("The variable")
+    || !f_error_description.endsWith("is unused"))
     {
         // TODO: determine whether QtDebugMsg should not turn this flag
         //       on; although I'm not too sure how you get debug messages
         //       in the first place...
         f_had_msg = true;
 
-        char const *type_msg(nullptr);
+        char const * type_msg(nullptr);
         logging::log_level_t level(logging::log_level_t::LOG_LEVEL_OFF);
         switch(type)
         {
         case QtDebugMsg:
-            type_msg = "Debug";
+            type_msg = "debug";
             level = logging::log_level_t::LOG_LEVEL_DEBUG;
             break;
 
         case QtWarningMsg:
-            type_msg = "Warning";
+            type_msg = "warning";
             level = logging::log_level_t::LOG_LEVEL_WARNING;
             break;
 
         case QtCriticalMsg:
-            type_msg = "Critical";
+            type_msg = "critical";
             level = logging::log_level_t::LOG_LEVEL_ERROR;
             break;
 
         //case QtFatalMsg:
         default:
-            type_msg = "Fatal";
+            type_msg = "fatal error";
             level = logging::log_level_t::LOG_LEVEL_FATAL;
             break;
 
@@ -103,7 +112,7 @@ void QMessageHandler::handleMessage(QtMsgType type, QString const & description,
             {
                 l.operator () ("column #")(sourceLocation.column())(":");
             }
-            l.operator () (" ")(description_string);
+            l.operator () (" ")(f_error_description);
             if(!f_xsl.isEmpty())
             {
 #ifdef DEBUG

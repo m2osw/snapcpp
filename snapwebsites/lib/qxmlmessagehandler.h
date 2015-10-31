@@ -28,7 +28,10 @@ public:
 
     void                set_xsl(QString const & xsl) { f_xsl = xsl; }
     void                set_doc(QString const & doc) { f_doc = doc; }
+    QtMsgType           get_error_type() const { return f_error_type; }
+    QString const &     get_error_description() const { return f_error_description; }
     bool                had_msg() const { return f_had_msg; }
+    bool                has_entities() const { return f_has_entities; }
 
 protected:
     virtual void        handleMessage(QtMsgType type, QString const & description, QUrl const & identifier, QSourceLocation const & sourceLocation);
@@ -36,7 +39,10 @@ protected:
 private:
     QString             f_xsl;
     QString             f_doc;
-    bool                f_had_msg;
+    QString             f_error_description;
+    QtMsgType           f_error_type = QtDebugMsg;
+    bool                f_had_msg = false;
+    bool                f_has_entities = false;
 };
 
 } // namespace snap

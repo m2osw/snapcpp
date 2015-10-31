@@ -125,6 +125,7 @@ add_library( ${PROJECT_NAME} SHARED
     tcp_client_server.cpp                       # low level TCP/IP that works
     table_model.cpp                             # libQtCassandra table model for use with a QListView object.
     udp_client_server.cpp                       # low level UDP/IP that works
+    xslt.cpp                                    # code to do XSLT transformations
 )
 
 target_link_libraries( ${PROJECT_NAME}
