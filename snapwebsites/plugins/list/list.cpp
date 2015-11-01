@@ -94,14 +94,14 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LIST_PAGE_SIZE:
         return "list::page_size";
 
+    case name_t::SNAP_NAME_LIST_PROCESSALLLISTS: // --action processalllists
+        return "processalllists";
+
     case name_t::SNAP_NAME_LIST_PROCESSLIST: // --action processlist
         return "processlist";
 
     case name_t::SNAP_NAME_LIST_RESETLISTS: // --action resetlists
         return "resetlists";
-
-    case name_t::SNAP_NAME_LIST_RESETSITE: // --action resetsite
-        return "resetsite";
 
     case name_t::SNAP_NAME_LIST_SELECTOR: // all, public, children, hand-picked, type=name, ...
         return "list::selector";
@@ -1902,9 +1902,9 @@ void list::on_register_backend_action(server::backend_action_map_t & actions)
 {
     actions[get_name(name_t::SNAP_NAME_LIST_PAGELIST)] = this;
     actions[get_name(name_t::SNAP_NAME_LIST_PROCESSLIST)] = this;
+    actions[get_name(name_t::SNAP_NAME_LIST_PROCESSALLLISTS)] = this;
     actions[get_name(name_t::SNAP_NAME_LIST_STANDALONELIST)] = this;
     actions[get_name(name_t::SNAP_NAME_LIST_RESETLISTS)] = this;
-    actions[get_name(name_t::SNAP_NAME_LIST_RESETSITE)] = this;
 }
 
 
@@ -2232,11 +2232,11 @@ void list::on_backend_action(QString const & action)
         on_modified_content(ipath);
         f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
     }
-    else if(action == get_name(name_t::SNAP_NAME_LIST_RESETSITE))
+    else if(action == get_name(name_t::SNAP_NAME_LIST_PROCESSALLLISTS))
     {
         // re-add all the pages back to the list table; this is very similar
         // to the "resetlists", only instead of reseting the lists themselves,
-        // we "reset" the pages that may go in those lists
+        // we "process" all the pages that may go in those lists
         //
         add_all_pages_to_list_table(f_snap->get_site_key_with_slash());
         f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));

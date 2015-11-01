@@ -30,13 +30,6 @@
 namespace snap
 {
 
-namespace
-{
-    // TODO: we can at some point put this into the configuration file.
-    //
-    const int STACK_TRACE_DEPTH = 20;
-}
-
 
 /** \brief Initialize this Snap! exception.
  *
@@ -54,19 +47,29 @@ snap_exception_base::snap_exception_base()
  *
  * This static method outputs the current stack as a trace to the log. If
  * compiled with DEBUG turned on, it will also output to the stderr.
+ *
+ * By default, the stack trace shows you a number of backtrace equal
+ * to STACK_TRACE_DEPTH (which is 20 at time of writing). You may
+ * specify another number to get more or less lines. Note that a
+ * really large number will generally show you the entire stack since
+ * a number larger than the number of function pointers on the stack
+ * will return the entire stack.
+ *
+ * \param[in] stack_trace_depth  The number of lines to output in our stack track.
  */
-void snap_exception_base::output_stack_trace()
+void snap_exception_base::output_stack_trace( int stack_trace_depth )
 {
-    void * array[STACK_TRACE_DEPTH];
-    int const size(backtrace( array, STACK_TRACE_DEPTH ));
+    std::vector<void *> array;
+    array.resize( stack_trace_depth );
+    int const size(backtrace( &array[0], stack_trace_depth ));
 
     // Output to log
     //
-    char ** stack_string_list = backtrace_symbols( array, size );
+    char ** stack_string_list(backtrace_symbols( &array[0], size ));
     for( int idx = 0; idx < size; ++idx )
     {
         char const * stack_string( stack_string_list[idx] );
-        SNAP_LOG_ERROR("snap_exception_base(): backtrace=")(stack_string);
+        SNAP_LOG_ERROR("snap_exception_base(): backtrace=")( stack_string );
     }
     free( stack_string_list );
 }

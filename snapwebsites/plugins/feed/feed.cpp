@@ -30,10 +30,10 @@
 #include "qdomxpath.h"
 #include "qhtmlserializer.h"
 #include "qxmlmessagehandler.h"
+#include "xslt.h"
 
 #include <QFile>
 #include <QTextStream>
-#include <QXmlQuery>
 
 #include "poison.h"
 
@@ -650,11 +650,9 @@ void feed::generate_feeds()
                 }
             }
 
+            // do this one instead of giving 'result' to XSLT which
+            // would convert the document to string once per format!
             QString const doc_str(result.toString(-1));
-            if(doc_str.isEmpty())
-            {
-                throw snap::snap_logic_exception("somehow the memory XML document is empty");
-            }
 
             // formats loaded yet?
             if(feed_formats.isEmpty())
@@ -695,29 +693,11 @@ void feed::generate_feeds()
             int const max_feed(feed_formats.size());
             for(int i(0); i < max_feed; ++i)
             {
-                QString const feed_xsl(feed_formats[i]);
-
-                QXmlQuery q(QXmlQuery::XSLT20);
-                QMessageHandler msg;
-                msg.set_xsl(feed_xsl);
-                msg.set_doc(doc_str);
-                q.setMessageHandler(&msg);
-                q.setFocus(doc_str);
-
-                // set variables
-                //q.bindVariable("...", QVariant(...));
-
-                q.setQuery(feed_xsl);
-
-                QBuffer output;
-                output.open(QBuffer::ReadWrite);
-                QHtmlSerializer xml(q.namePool(), &output, false);
-                q.evaluateTo(&xml);
-
-                QString const feed_data(QString::fromUtf8(output.data()));
-
-                QDomDocument feed_result;
-                feed_result.setContent(feed_data);
+                xslt x;
+                x.set_xsl(feed_formats[i]);
+                x.set_document(doc_str); // keep doc_str so we convert the document only once
+                QDomDocument feed_result("feed");
+                x.evaluate_to_document(feed_result);
 
                 QDomXPath feed_dom_xpath;
                 {

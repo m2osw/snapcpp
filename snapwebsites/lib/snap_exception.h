@@ -26,11 +26,13 @@ namespace snap
 class snap_exception_base
 {
 public:
-                snap_exception_base();
-    virtual     ~snap_exception_base() {}
+    static int const            STACK_TRACE_DEPTH = 20;
+
+                                snap_exception_base();
+    virtual                     ~snap_exception_base() {}
 
 
-    static void output_stack_trace();
+    static void                 output_stack_trace(int stack_track_depth = STACK_TRACE_DEPTH);
 };
 
 

@@ -2599,7 +2599,7 @@ QString users::login_user(QString const & key, QString const& password, bool & v
  */
 void users::process_register_form()
 {
-    messages::messages *messages(messages::messages::instance());
+    messages::messages * messages(messages::messages::instance());
 
     // We validated the email already and we just don't need to do it
     // twice, if two users create an account "simultaneously (enough)"
@@ -3416,13 +3416,15 @@ users::status_t users::user_status(QString const & email, QString & status_key)
     {
         return status_t::STATUS_AUTO;
     }
-    if(status_key != site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
+    if(status_key == site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
     {
         return status_t::STATUS_PASSWORD;
     }
 
+    SNAP_LOG_WARNING("Unknown user status \"")(status_key)("\" in user_status(). [")(site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))("]");
+
     // anything else we do not know what the heck it is
-    // (we'll need a signal to allow for extensions by other plugins)
+    // (we will need a signal to allow for extensions by other plugins)
     return status_t::STATUS_UNKNOWN;
 }
 
@@ -3579,7 +3581,7 @@ QString users::get_user_path(QString const & email)
  *         or entire Snap! environment or the user already exists but was
  *         blocked by an administrator;
  */
-users::status_t users::register_user(QString const& email, QString const& password)
+users::status_t users::register_user(QString const & email, QString const & password)
 {
     // make sure that the user email is valid
     f_snap->verify_email(email);
@@ -3669,7 +3671,9 @@ users::status_t users::register_user(QString const& email, QString const& passwo
             {
                 // it exists, just return the current status of that existing user
                 QString ignore_status_key;
-                return user_status(email, ignore_status_key);
+                status = user_status(email, ignore_status_key);
+                SNAP_LOG_INFO("user \"")(email)("\" already exists, just return its current status: ")(static_cast<int>(status))(".");
+                return status;
             }
             // user exists in the Snap! system but not this website
             // so we want to add it to this website, but we will return

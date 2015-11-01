@@ -55,8 +55,9 @@ class xslt
 {
 public:
     void                    set_xsl(QString const & xsl);
+    void                    set_xsl(QDomDocument const & xsl);
     void                    set_xsl_from_file(QString const & filename);
-    void                    set_document(QString & doc);
+    void                    set_document(QString const & doc);
     void                    set_document(QDomDocument & doc);
     void                    add_variable(QString const & name, QVariant const & value);
     void                    clear_variables();

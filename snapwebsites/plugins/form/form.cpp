@@ -28,8 +28,8 @@
 #include "qdomxpath.h"
 #include "qstring_stream.h"
 #include "qxmlmessagehandler.h"
+#include "xslt.h"
 
-#include <QXmlQuery>
 #include <QFile>
 #include <QFileInfo>
 
@@ -293,27 +293,20 @@ QDomDocument form::form_to_html(sessions::sessions::session_info & info, QDomDoc
     // properly save attachments if the form generates an error!)
     auto_fill_form(xml_form);
 
-    QXmlQuery q(QXmlQuery::XSLT20);
-    QMessageHandler msg;
-    q.setMessageHandler(&msg);
-    q.setFocus(xml_form.toString(-1));
-    // somehow the bind works here...
-    q.bindVariable("_form_session", QVariant(sessions::sessions::instance()->create_session(info)));
     ++g_unique_id;
-    q.bindVariable("action", QVariant(info.get_page_path()));
-    q.bindVariable("unique_id", QVariant(QString("%1").arg(g_unique_id)));
-    q.bindVariable("tabindex_base", QVariant(current_tab_id()));
-    //q.bindVariable("can_edit", QVariant(QString(can_edit.allowed() ? "yes" : "")));
-    q.setQuery(f_form_elements_string);
-    if(!q.isValid())
-    {
-        throw form_exception_invalid_xslt_data(QString("invalid XSLT query for FORM \"%1\" detected by Qt").arg(":/xsl/form/core-form.xsl"));
-    }
-    QDomReceiver receiver(q.namePool(), doc_output);
-    q.evaluateTo(&receiver);
+
+    xslt x;
+    x.add_variable("_form_session", QVariant(sessions::sessions::instance()->create_session(info)));
+    x.add_variable("action",        QVariant(info.get_page_path()));
+    x.add_variable("unique_id",     QVariant(QString("%1").arg(g_unique_id)));
+    x.add_variable("tabindex_base", QVariant(current_tab_id()));
+    //x.add_variable("can_edit",      QVariant(QString(can_edit.allowed() ? "yes" : "")));
+    x.set_xsl(f_form_elements_string);
+    x.set_document(xml_form);
+    x.evaluate_to_document(doc_output);
 
     // the count includes all the widgets even those that do not make
-    // use of the tab index so we'll get some gaps, but that's a very
+    // use of the tab index so we will get some gaps, but that is a very
     // small price to pay for this cool feature
     used_tab_id(xml_form.elementsByTagName("widget").size());
 

@@ -23,7 +23,6 @@
 #include "qhtmlserializer.h"
 #include "qxmlmessagehandler.h"
 
-//#include <QDomDocument>
 #include <QXmlQuery>
 
 #include "poison.h"
@@ -34,7 +33,7 @@ namespace snap
 
 /** \brief Save the XSLT parser.
  *
- * This function receives a copy of hte XSLT parser in the form of a string.
+ * This function receives a copy of the XSLT parser in the form of a string.
  * It gets saved in the class and reused by the evaluation functions
  * until changed.
  *
@@ -43,6 +42,25 @@ namespace snap
 void xslt::set_xsl(QString const & xsl)
 {
     f_xsl = xsl;
+}
+
+
+/** \brief Save the XSLT parser.
+ *
+ * This function receives a copy of the XSLT parser in the form of a string.
+ * It gets saved in the class and reused by the evaluation functions
+ * until changed.
+ *
+ * \note
+ * At this the XML document is immediately transformed to a string. At
+ * some point we may be able to use the XML document as such with
+ * QXmlQuery...
+ *
+ * \param[in] xsl  The XSLT parser document.
+ */
+void xslt::set_xsl(QDomDocument const & xsl)
+{
+    f_xsl = xsl.toString(-1);
 }
 
 
@@ -110,7 +128,7 @@ void xslt::set_xsl_from_file(QString const & filename)
  *
  * \sa set_document(QDomDocument & doc);
  */
-void xslt::set_document(QString & input)
+void xslt::set_document(QString const & input)
 {
     f_doc.clear();
     f_input = input;
@@ -215,6 +233,12 @@ void xslt::evaluate_to_document(QDomDocument & output)
  * the function was made internal and two public functions created
  * so the outside world can make easy calls instead.
  *
+ * \todo
+ * Look into getting the XML sitemap version to here? Actually, the
+ * best would be to look into making use of XML data as input since
+ * that would allow us to avoid some (many?) conversions to and from
+ * string.
+ *
  * \param[out] output_string  The output string if evaluate_to_string() was called.
  * \param[in,out] output_document  The output document if evaluate_to_document() was called.
  */
@@ -260,6 +284,8 @@ void xslt::evaluate(QString * output_string, QDomDocument * output_document)
         q.setFocus(doc_str);
 
         // set variables
+        // WARNING: variables MUST be set before you call the setQuery()
+        //          function since it may start making use of them
         //
         // TBD: I think variables can cause problems, although it is used by
         //      the form and editor implementations...

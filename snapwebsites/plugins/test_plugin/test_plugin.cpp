@@ -27,8 +27,7 @@
 #include "not_used.h"
 #include "qhtmlserializer.h"
 #include "qxmlmessagehandler.h"
-
-#include <QXmlQuery>
+#include "xslt.h"
 
 #include "poison.h"
 
@@ -412,38 +411,10 @@ void test_plugin::on_replace_token(content::path_info_t& ipath, QDomDocument& xm
             group_tag.appendChild(new_test_tag);
         }
 
-        QString const doc_str(doc.toString(-1));
-        if(doc_str.isEmpty())
-        {
-            throw snap::snap_logic_exception("somehow the memory XML document for the body XSLT is empty");
-        }
-
-//std::cerr << "***\n*** test list = [" << doc.toString() << "]\n***\n";
-
-        snap::snap_child::post_file_t file;
-        file.set_filename("qrc://xsl/test-plugin/test-plugin-parser.xsl");
-        if(!f_snap->load_file(file))
-        {
-            throw snap::snap_logic_exception("somehow the test-plugin-parser.xsl file could not be loaded from our resources.");
-        }
-        QString const test_plugin_parser_xsl(QString::fromUtf8(file.get_data(), file.get_size()));
-
-        QXmlQuery q(QXmlQuery::XSLT20);
-        QMessageHandler msg;
-        msg.set_xsl(test_plugin_parser_xsl);
-        msg.set_doc(doc_str);
-        q.setMessageHandler(&msg);
-        q.setFocus(doc_str);
-        // set variables
-        //q.bindVariable("...", QVariant(...));
-        q.setQuery(test_plugin_parser_xsl);
-
-        QBuffer output;
-        output.open(QBuffer::ReadWrite);
-        QHtmlSerializer html(q.namePool(), &output);
-        q.evaluateTo(&html);
-
-        token.f_replacement = QString::fromUtf8(output.data());
+        xslt x;
+        x.set_xsl_from_file("qrc://xsl/test-plugin/test-plugin-parser.xsl");
+        x.set_document(doc);
+        token.f_replacement = x.evaluate_to_string();
 
         // the test plugin JavaScript takes over and generates the
         // client functionality

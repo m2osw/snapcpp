@@ -3426,7 +3426,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 {
                     // special case for cookies
                     snap_string_list cookies(f_value.split(';', QString::SkipEmptyParts));
-std::cerr << " HTTP_COOKIE = [\"" << f_value << "\"]\n";
+//std::cerr << " HTTP_COOKIE = [\"" << f_value << "\"]\n";
                     int const max_strings(cookies.size());
                     for(int i(0); i < max_strings; ++i)
                     {

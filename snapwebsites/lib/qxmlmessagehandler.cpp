@@ -19,6 +19,7 @@
 
 #include "qstring_stream.h"
 #include "log.h"
+#include "snap_exception.h"
 
 #include <QDomDocument>
 #include <QFile>
@@ -129,6 +130,9 @@ void QMessageHandler::handleMessage(QtMsgType type, QString const & description,
                 file_xml.write(f_doc.toUtf8());
                 file_xml.close();
                 ++count;
+
+                // to actually know who called the QXmlQuery function
+                snap_exception_base::output_stack_trace(100);
 #else
                 l.operator () (" Beginning of the XSLT script involved:\n")(f_xsl.left(200))
                               ("\nBeginning of the XML script involved:\n")(f_doc.left(200));

@@ -29,11 +29,11 @@
 
 #include <iostream>
 
-#include <QXmlQuery>
-#include <QDomDocument>
-#include <QFile>
 #include <QDateTime>
+#include <QDomDocument>
 #include <QDomProcessingInstruction>
+#include <QFile>
+#include <QXmlQuery>
 
 #include "poison.h"
 
@@ -757,6 +757,12 @@ bool sitemapxml::on_path_execute(content::path_info_t & ipath)
     QString const extension(f_snap->get_uri().option("extension"));
     if(extension == ".txt")
     {
+        // WARNING: This QXmlQuery was not yet replaced because
+        //            (1) it uses a QDomNodeModel, which is cool
+        //            (2) it outputs the results directly in a QString
+        //            (3) the query is directly a QFile
+        //          both of which are not supported by our xslt class
+        //
         f_snap->set_header("Content-type", "text/plain; charset=utf-8");
         QDomDocument d("urlset");
         if(!d.setContent(xml, true))

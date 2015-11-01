@@ -41,7 +41,6 @@
 #include <iostream>
 
 #include <QTextDocument>
-#include <QXmlQuery>
 #include <QFile>
 #include <QFileInfo>
 
@@ -4890,13 +4889,6 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     // now process the XML data with the plugin specialized data for
     // each field through the editor XSLT
     prepare_editor_form(this);
-    QString const editor_xsl(f_editor_form.toString(-1));
-
-    QString const editor_xml(editor_widgets.toString(-1));
-    if(editor_xml.isEmpty())
-    {
-        throw snap_logic_exception(QString("somehow the memory XML document for the editor XSTL parser is empty, ipath key is \"%1\"").arg(ipath.get_key()));
-    }
 
     // check whether the user has edit rights
     content::permission_flag can_edit;
@@ -4908,27 +4900,16 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
             can_edit);
     QString const can_edit_page(can_edit.allowed() ? "yes" : "");
 
-    QXmlQuery q(QXmlQuery::XSLT20);
-    QMessageHandler msg;
-    msg.set_xsl(editor_xsl);
-    msg.set_doc(editor_xml);
-    q.setMessageHandler(&msg);
-    q.setFocus(editor_xml);
-
-    // set action variable to the current action
-    q.bindVariable("editor_session", QVariant(session_identification));
-    q.bindVariable("action", QVariant(action));
-    q.bindVariable("tabindex_base", QVariant(form::form::current_tab_id()));
-    q.bindVariable("can_edit", QVariant(can_edit_page));
-
-    q.setQuery(editor_xsl);
-    if(!q.isValid())
-    {
-        throw editor_exception_invalid_xslt_data(QString("invalid XSLT query for EDITOR \"%1\" detected by Qt").arg(ipath.get_key()));
-    }
+    // transforms the widgets to HTML
+    xslt x;
+    x.set_xsl(f_editor_form);
+    x.set_document(editor_widgets);
+    x.add_variable("editor_session", QVariant(session_identification));
+    x.add_variable("action",         QVariant(action));
+    x.add_variable("tabindex_base",  QVariant(form::form::current_tab_id()));
+    x.add_variable("can_edit",       QVariant(can_edit_page));
     QDomDocument doc_output("widgets");
-    QDomReceiver receiver(q.namePool(), doc_output);
-    q.evaluateTo(&receiver);
+    x.evaluate_to_document(doc_output);
 
 //std::cerr << "Editor Focus [" << editor_widgets.toString(-1) << "]\n";
 //std::cerr << "Editor Output [" << doc_output.toString(-1) << "]\n";
@@ -4959,7 +4940,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     }
 
     // the count includes all the widgets even those that do not make
-    // use of the tab index so we'll get some gaps, but that's a very
+    // use of the tab index so we will get some gaps, but that is a very
     // small price to pay for this cool feature
     form::form::used_tab_id(max_widgets);
 }
