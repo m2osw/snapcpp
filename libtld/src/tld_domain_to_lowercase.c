@@ -286,6 +286,12 @@ static int tld_byte_out(char **s, int *max_length, char byte)
  * This function transforms a UTF-8 encoded character, which may use 1
  * to 4 bytes, to a wide character (31 bit).
  *
+ * \bug
+ * This function transforms letters to lowercase on the fly (one by
+ * one) which may not always be correct in Unicode (some languages
+ * make use of multiple characters to properly calculate various
+ * things such as uppercase and lowercase characters.)
+ *
  * \param[in] s  A pointer to string with possible UTF-8 bytes.
  *
  * \return The corresponding UTF-32 character in lowercase, NUL
@@ -384,8 +390,7 @@ static wint_t tld_mbtowc(const char **s)
  */
 static int tld_wctomb(wint_t wc, char **s, int *max_length)
 {
-    // cast because wint_t is expected to be unsigned (but who knows
-    // if some machines have a boggus definition of that one...)
+    // cast because wint_t is expected to be unsigned
     if((int) wc < 0)
     {
         return -1; // LCOV_EXCL_LINE
@@ -469,6 +474,14 @@ static int tld_wctomb(wint_t wc, char **s, int *max_length)
  *      struct tld_info info;
  *      tld(tld_domain_to_lowercase(domain), &info);
  *      // WRONG: tld_domain_to_lowercase() leaked a heap buffer
+ * \endcode
+ *
+ * In C++ you may use an std::unique_ptr<> with free as the deleter
+ * to not have to both with the call by hand (especially if you
+ * have possible exceptions in your code):
+ *
+ * \code
+        std::unique_ptr<char, void(*)(char *)> lowercase_domain(tld_domain_to_lowercase(domain.c_str()), reinterpret_cast<void(*)(char *)>(&::free));
  * \endcode
  *
  * \param[in] domain  The input domain to convert to lowercase.

@@ -148,8 +148,9 @@ const tld_email list_of_results[] =
       "", "", "", "", "" },
     { "Group with  some sub-comments", "alexis@m2osw.com",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    // TBD: since the colons get canonicalized to %3A we do not need the '[' and ']' in the canonicalized version
     { "", "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>",
-      "Wilke, Alexis", "alexis,wilke", ":special:.m2osw.com", "\"alexis,wilke\"@[:special:.m2osw.com]", "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>" },
+      "Wilke, Alexis", "alexis,wilke", ":special:.m2osw.com", "\"alexis,wilke\"@[:special:.m2osw.com]", "\"Wilke, Alexis\" <\"alexis,wilke\"@%3Aspecial%3A.m2osw.com>" },
 
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 };
@@ -599,6 +600,10 @@ void test_valid_emails()
             tld_email_list list;
             std::string e("alexis@[ m2osw.");
             e += static_cast<char>(i);
+            if(i == '%')
+            {
+                e += "25";
+            }
             e += ".com\t]";
             if(verbose)
             {
@@ -608,7 +613,7 @@ void test_valid_emails()
             tld_result r(list.parse(e, 0));
             if(r != TLD_RESULT_SUCCESS)
             {
-                error("error: unexpected return value while testing a domain with a special character");
+                error("error: unexpected return value while testing a domain with special character \"" + e + "\"");
             }
         }
     }

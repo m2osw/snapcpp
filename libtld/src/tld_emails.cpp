@@ -21,6 +21,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "libtld/tld.h"
+#include <memory>
 #include <stdio.h>
 #include <string.h>
 
@@ -935,6 +936,11 @@ tld_email_field_type tld_email_list::email_field_type(const std::string& name)
  * to make use of this function, you may find it more difficult to
  * use directly.
  *
+ * The canonicalized email address in the list of resulting emails
+ * has the domain canonicalized using the tld_domain_to_lowercase()
+ * function. This means it will be in lowercase and special characters
+ * (including UTF-8 characters) will be transformed to %XX notation.
+ *
  * \note
  * If the email is not valid, then the tld_email_t object remains
  * unchanged.
@@ -1220,7 +1226,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
     {
         if(!value.empty())
         {
-            // nothing can appear after the domain
+            // nothing of substance can appear after the domain
             return TLD_RESULT_INVALID;
         }
     }
@@ -1248,8 +1254,10 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
 
     // finally, verify that the domain is indeed valid
     // (i.e. proper characters, structure, and TLD)
+    // for that step we use the lowercase version
     struct tld_info info;
-    tld_result result(tld(domain.c_str(), &info));
+    std::unique_ptr<char, void(*)(char *)> lowercase_domain(tld_domain_to_lowercase(domain.c_str()), reinterpret_cast<void(*)(char *)>(&::free));
+    tld_result result(tld(lowercase_domain.get(), &info));
     if(result != TLD_RESULT_SUCCESS)
     {
         return result;
@@ -1260,13 +1268,16 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
     f_username = username;
     f_domain = domain;
     f_email_only = quote_string(username, '\'') + "@" + quote_string(domain, '[');  // TODO protect characters...
+
+    // the canonicalized version uses the domain name in lowercase
+    std::string canonicalized_email(quote_string(username, '\'') + "@" + quote_string(lowercase_domain.get(), '['));  // TODO protect characters...
     if(fullname.empty())
     {
-        f_canonicalized_email = f_email_only;
+        f_canonicalized_email = canonicalized_email;
     }
     else
     {
-        f_canonicalized_email = quote_string(fullname, '"') + " <" + f_email_only + ">";  // TODO protect characters...
+        f_canonicalized_email = quote_string(fullname, '"') + " <" + canonicalized_email + ">";  // TODO protect characters...
     }
 
     return TLD_RESULT_SUCCESS;
