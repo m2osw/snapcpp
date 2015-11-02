@@ -669,6 +669,8 @@ const invalid_email list_of_invalid_emails[] =
     { TLD_RESULT_INVALID, "(Test Errors Once Done) \"Wilke, Alexis\" <alexis@m2osw.com> \"Bad\"" },
     { TLD_RESULT_INVALID, "(Comment with CTRL \b) \"Wilke, Alexis\" <alexis@m2osw.com>" },
     { TLD_RESULT_INVALID, "[m2osw.com]" },
+    { TLD_RESULT_INVALID, "good@[bad-slash\\.com]" },
+    { TLD_RESULT_INVALID, "good@[bad[reopen.com]" },
     { TLD_RESULT_INVALID, "(Test Errors Once Done) \"Wilke, Alexis\" <alexis@m2osw.com> [Bad]" },
     { TLD_RESULT_INVALID, "(Test Errors Once Done) alexis@start[Bad]" },
     { TLD_RESULT_INVALID, "(Test Errors Once Done) alexis@[first][Bad]" },

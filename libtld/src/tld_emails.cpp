@@ -987,7 +987,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
             {
                 if(*s == '\0')
                 {
-                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked validity in tld_email_list::parse()");
+                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked validity in tld_email_t::parse()");
                 }
                 if(*s == '\\')
                 {
@@ -995,7 +995,10 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
                     ++s;
                     if(*s == '\0')
                     {
-                        throw std::logic_error("somehow we found a \\0 in a quoted string after a backslash in tld_email_t which should not happen since it was already checked validity in tld_email_list::parse()");
+                        // this cannot actually happen because we are
+                        // expected to capture those at the previous
+                        // level
+                        throw std::logic_error("somehow we found a \\0 in a quoted string after a backslash in tld_email_t which should not happen since it was already checked validity in tld_email_t::parse()"); // LCOV_EXCL_LINE
                     }
                 }
                 if((static_cast<unsigned char>(*s) < ' ' && *s != '\t') || *s == 0x7F)
@@ -1018,7 +1021,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
                 switch(c)
                 {
                 case '\0':
-                    throw std::logic_error("somehow we found a \\0 in a comment in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                    throw std::logic_error("somehow we found a \\0 in a comment in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
 
                 case '(':
                     ++count;
@@ -1038,7 +1041,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
                     ++s;
                     if(!is_quoted_char(*s))
                     {
-                        throw std::logic_error("somehow we found a \\0 in a comment quoted pair in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                        throw std::logic_error("somehow we found a \\0 in a comment quoted pair in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
                     }
                     c = *s;
                     break;
@@ -1072,7 +1075,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
             {
                 if(*s == '\0')
                 {
-                    throw std::logic_error("somehow we found a \\0 in a literal domain in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                    throw std::logic_error("somehow we found a \\0 in a literal domain in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
                 }
                 if(static_cast<unsigned char>(*s) < ' ' || *s == 0x7F)
                 {
@@ -1334,7 +1337,7 @@ tld_result tld_email_list::tld_email_t::parse_group(const std::string& group)
             {
                 if(*s == '\0')
                 {
-                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
                 }
                 switch(*s)
                 {
@@ -1349,7 +1352,7 @@ tld_result tld_email_list::tld_email_t::parse_group(const std::string& group)
                 case '\\':
                     if(!is_quoted_char(s[1]))
                     {
-                        throw std::logic_error("somehow we found a \\0 in a comment in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                        throw std::logic_error("somehow we found a \\0 in a comment in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
                     }
                     ++s;
                     break;
