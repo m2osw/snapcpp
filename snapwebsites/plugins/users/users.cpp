@@ -110,6 +110,12 @@ const char *get_name(name_t name)
     case name_t::SNAP_NAME_USERS_CREATED_TIME:
         return "users::created_time";
 
+    case name_t::SNAP_NAME_USERS_CURRENT_EMAIL:
+        return "users::current_email";
+
+    case name_t::SNAP_NAME_USERS_FORCE_LOWERCASE:
+        return "users::force_lowercase";
+
     case name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL:
         return "users::forgot_password_email";
 
@@ -142,6 +148,9 @@ const char *get_name(name_t name)
 
     case name_t::SNAP_NAME_USERS_LOGIN_ON:
         return "users::login_on";
+
+    case name_t::SNAP_NAME_USERS_LOGIN_REDIRECT:
+        return "users::loging_redirect";
 
     case name_t::SNAP_NAME_USERS_LOGIN_REFERRER:
         return "users::login_referrer";
@@ -543,54 +552,11 @@ void users::on_process_cookies()
     {
         // is that session a valid user session?
         QString const session_cookie(f_snap->cookie(user_cookie_name));
-        snap_string_list const parameters(session_cookie.split("/"));
-        QString const session_key(parameters[0]);
-        QString random_key; // TODO: really support the case of "no random key"???
-        if(parameters.size() > 1)
-        {
-            random_key = parameters[1];
-        }
-        sessions::sessions::instance()->load_session(session_key, *f_info, false);
-        QString const path(f_info->get_object_path());
-        bool authenticated(true);
-        if(f_info->get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
-        {
-            SNAP_LOG_INFO("cookie refused because session is not marked as valid, ")(static_cast<int>(f_info->get_session_type()));
-            authenticated = false;
-        }
-        if(f_info->get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION)
-        {
-            SNAP_LOG_INFO("cookie refused because this is not a user session, ")(f_info->get_session_id());
-            authenticated = false;
-        }
-        if(f_info->get_session_random() != random_key.toInt())
-        {
-            SNAP_LOG_INFO("cookie would be refused because random key ")(random_key)(" does not match ")(f_info->get_session_random());
-            //authenticated = false; -- there should be a flag because
-            //                          in many cases it kicks someone
-            //                          out even when it should not...
-            //
-            // From what I can tell, this mainly happens if someone uses two
-            // tabs accessing the same site. But I've seen it quite a bit
-            // if the system crashes and thus does not send the new random
-            // number to the user. We could also look into a way to allow
-            // the previous random for a while longer.
-        }
-        if(f_info->get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
-        {
-            SNAP_LOG_INFO("cookie refused because user agent \"")(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
-                            ("\" does not match \"")(f_info->get_user_agent())("\"");
-            authenticated = false;
-        }
-        if(path.left(6) != "/user/")
-        {
-            SNAP_LOG_INFO("cookie refused because the path does not start with /user/, ")(path);
-            authenticated = false;
-        }
-        if(authenticated)
+        if(load_login_session(session_cookie, *f_info, false) == LOGIN_STATUS_OK)
         {
             // this session qualifies as a log in session
             // so now verify the user
+            QString const path(f_info->get_object_path());
             authenticated_user(path.mid(6), nullptr);
             create_new_session = false;
         }
@@ -632,7 +598,7 @@ void users::on_process_cookies()
         //       generates a lot of problems when the browser tries to load
         //       many things at the same time)
         //
-        // TBD: this is not working right if the user attempts to open
+        // TBD: random is not working right if the user attempts to open
         //      multiple pages quickly at the same time
         bool const new_random(f_info->get_date() + 60 * 5 * 1000000 < f_snap->get_start_date());
         sessions::sessions::instance()->save_session(*f_info, new_random);
@@ -662,51 +628,202 @@ void users::on_process_cookies()
 }
 
 
-/** \brief Allow other plugins to authenticate a user.
+/** \brief Load a user login session.
  *
- * The user cookie is used to determine whether a user is logged in. If
- * a different plugin is used that does not make use of the cookies,
- * then this function can be called with the email address of the user
- * to see whether the user's session is still active.
+ * This function loads a session used to know whether a user is logged
+ * in or not. The users and OAuth2 plugins make use of it.
  *
- * If the path used to access this function starts with /logout then
- * the user is forcibly logged out instead of logged in.
+ * \p session_cookie is expected to include a session key and
+ * the corresponding random number. At this point the random number
+ * is optional although we do not desperate and will most certainly
+ * reintroduce it at some point. That being said, if specified it
+ * gets checked. If not specified, it is plainly ignored.
  *
  * \note
- * The specified info is saved in the users' plugin f_info variable
- * member only if the user gets authenticated.
+ * The authenticated_user() function verifies that the user is still
+ * logged in in terms of login time limit. If your function is not
+ * going to call the authenticated_user() function, then you will
+ * want to set the check_time_limit variable to true and the time
+ * limit will be checked here instead.
  *
- * \param[in] key  The user email.
- * \param[in] info  A pointer to the user's information to be used.
+ * \todo
+ * Look further into the time check because the way it is does not
+ * make a lot of sense. The load_login_session() may need to be
+ * smarter and be capable of deleting the session as the
+ * authenticated_user() function does now...
  *
- * \return true if the user gets authenticated, false in all other cases
+ * \param[in] session_key  The key of the session to be loaded.
+ * \param[out] info  The session information are loaded in this variable.
+ * \param[in,out] check_time_limit  Set to true if you are NOT going to call
+ *                                  authenticated_user() afterward.
+ *
+ * \return true of the load succeeds and the user is considered to have
+ *         logged in successfully in the past. HOWEVER, that does not
+ *         mean the user is logged in. You still need to call
+ *         authenticated_user() to make sure of that.
  */
-bool users::authenticated_user(QString const & key, sessions::sessions::session_info * info)
+users::login_status_t users::load_login_session(QString const & session_cookie, sessions::sessions::session_info & info, bool const check_time_limit)
+{
+    login_status_t authenticated(LOGIN_STATUS_OK);
+
+    snap_string_list const parameters(session_cookie.split("/"));
+    QString const session_key(parameters[0]);
+    int random_value(-1);
+    if(parameters.size() > 1)
+    {
+        bool ok(false);
+        random_value = parameters[1].toInt(&ok);
+        if(!ok || random_value < 0)
+        {
+            SNAP_LOG_INFO("cookie included an invalid random key, ")(parameters[1])(" is not a valid decimal number or is negative.");
+            authenticated = false;
+            authenticated |= LOGIN_STATUS_INVALID_RANDOM_NUMBER;
+        }
+    }
+
+    // load the session in the specified info object
+    sessions::sessions::instance()->load_session(session_key, info, false);
+
+    // the session must be be valid (duh!)
+    if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
+    {
+        SNAP_LOG_INFO("cookie refused because session is not marked as valid, ")(static_cast<int>(info.get_session_type()));
+        authenticated |= LOGIN_STATUS_INVALID_SESSION;
+    }
+
+    // the session must be of the right type otherwise it was not a log in session...
+    if(info.get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION)
+    {
+        SNAP_LOG_INFO("cookie refused because this is not a user session, ")(info.get_session_id());
+        authenticated |= LOGIN_STATUS_SESSION_TYPE_MISMATCH;
+    }
+
+    // check whether the random number is valid (not a real factor at this point though)
+    if(random_value >= 0
+    && info.get_session_random() != random_value)
+    {
+        SNAP_LOG_INFO("cookie would be refused because random key ")(random_value)(" does not match ")(info.get_session_random());
+        //authenticated |= LOGIN_STATUS_RANDOM_MISMATCH;
+        //                       -- there should be a flag because
+        //                          in many cases it kicks someone
+        //                          out even when it should not...
+        //
+        // From what I can tell, this mainly happens if someone uses two
+        // tabs accessing the same site. But I've seen it quite a bit
+        // if the system crashes and thus does not send the new random
+        // number to the user. We could also look into a way to allow
+        // the previous random for a while longer.
+    }
+
+    // user agent cannot change, frankly! who copies their cookies between
+    // devices or browsers?
+    if(info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
+    {
+        SNAP_LOG_INFO("cookie refused because user agent \"")(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
+                        ("\" does not match \"")(f_info->get_user_agent())("\"");
+        authenticated |= LOGIN_STATUS_USER_AGENT_MISMATCH;
+    }
+
+    // path must start with "/user/"
+    QString const path(info.get_object_path());
+    if(path.left(6) != "/user/")
+    {
+        SNAP_LOG_INFO("cookie refused because the path does not start with \"/user/\", ")(path);
+        authenticated |= LOGIN_STATUS_UNEXPECTED_PATH;
+    }
+
+    // early check on the login time limit because the caller may
+    // not want to call the authenticated_user() function and yet
+    // they may want to know whether the user has a chance to be
+    // logged in for real without actually making this user the
+    // logged in user
+    //
+    // login limit is a time_t value
+    //
+    if(check_time_limit
+    && f_snap->get_start_time() >= info.get_login_limit())
+    {
+        SNAP_LOG_INFO("cookie is acceptable but time limit is passed. Now: ")(f_snap->get_start_time())(" >= Limit: ")(info.get_login_limit());
+        authenticated |= LOGIN_STATUS_PASSED_LOGIN_LIMIT;
+    }
+
+    return authenticated;
+}
+
+
+/** \brief Allow other plugins to authenticate a user.
+ *
+ * We use a cookie to authenticate a returning user. The cookie
+ * holds a session identification. This function checks that
+ * the session is still valid and mark the user as logged in if
+ * so.
+ *
+ * If no session is passed in, the f_info session information is
+ * used to check the time limit of the session. If the time
+ * limit indicates that the user has waited too long, he does
+ * not get logged in.
+ *
+ * If the path of the main URI starts with /logout then the user
+ * is forcibly logged out instead of logged in. You do not have
+ * direct control over this path unless you change the main URI
+ * before the call.
+ *
+ * \note
+ * The specified \p info session data is saved in the users'
+ * plugin f_info variable member only if the user gets authenticated
+ * and the pointer is not nullptr.
+ *
+ * \note
+ * The user email cannot be empty.
+ *
+ * \warning
+ * The user may be marked as known / valid, and even the function may
+ * return true and yet the user is not considered logged in. This is
+ * the side effect of the long sessions scheme. This scheme gives
+ * use the possibility to over a certain number of functionalities to
+ * the user at a reduced level of permissions (i.e. returning registered
+ * user opposed to a fully registered user.) To determine whether
+ * the user is indeed logged in, please make sure to check the
+ * f_user_logged_in flag. From the outside of the users plugin,
+ * this is what the user_is_logged_in() function returns.
+ *
+ * \param[in] email  The user email.
+ * \param[in] info  A pointer to the user's session information to be used.
+ *
+ * \return true if the user gets authenticated, false in all other cases.
+ */
+bool users::authenticated_user(QString const & email, sessions::sessions::session_info * info)
 {
     // called with a seemingly valid key?
-    if(key.isEmpty())
+    if(email.isEmpty())
     {
         SNAP_LOG_INFO("cannot authenticate user without a key (anonymous users get this message).");
         return false;
     }
 
+    QString const user_key(email_to_user_key(email));
+
     // called with the email address of a user who registered before?
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    if(!users_table->exists(key))
+    if(!users_table->exists(user_key))
     {
-        SNAP_LOG_INFO("user key \"")(key)("\" was not found in the users table");
+        SNAP_LOG_INFO("user key \"")(user_key)("\" was not found in the users table");
         return false;
     }
 
     // is the user/application trying to log out
     QString const uri_path(f_snap->get_uri().path());
-    if(uri_path == "logout" || uri_path.left(8) == "logout/")
+    if(uri_path == "logout" || uri_path.startsWith("logout/"))
     {
         // the user is requesting to be logged out, here we avoid
         // dealing with all the session information again this
         // way we right away cancel the log in but we actually
         // keep the session
-        f_user_key = key;
+        //
+        // this may look weird but we cannot call user_logout()
+        // without the f_user_key setup properly...
+        //
+        f_user_key = user_key;
         if(info)
         {
             *f_info = *info;
@@ -735,7 +852,7 @@ bool users::authenticated_user(QString const & key, sessions::sessions::session_
     if(f_user_logged_in
     || (long_sessions.nullValue() || long_sessions.signedCharValue()))
     {
-        f_user_key = key;
+        f_user_key = user_key;
         if(info)
         {
             *f_info = *info;
@@ -761,6 +878,10 @@ bool users::authenticated_user(QString const & key, sessions::sessions::session_
  * likely that the user will be redirect to the log in page if
  * you do not do a redirect yourself.
  *
+ * \note
+ * The function does nothing if no user is currently logged
+ * in.
+ *
  * \warning
  * The function should never be called before the process_cookies()
  * signal gets processed, although this function should work if called
@@ -773,6 +894,13 @@ bool users::authenticated_user(QString const & key, sessions::sessions::session_
  */
 void users::user_logout()
 {
+    if(f_user_key.isEmpty())
+    {
+        // just in case, make sure the flag is false
+        f_user_logged_in = false;
+        return;
+    }
+
     // the software is requesting to log the user out
     //
     // cancel the session
@@ -813,6 +941,112 @@ void users::user_logout()
 }
 
 
+/** \brief Canonicalize the user email to use in the "users" table.
+ *
+ * The "users" table defines each user by email address. The email address
+ * is kept as is in the user account itself, but for us to access the
+ * database, we have to have a canonicalized user email address.
+ *
+ * The domain name part (what appears after the AT (@) character) is
+ * always made to lowercase. The username is also made lowercase by
+ * default. However, a top notch geek website can offer its end
+ * users to have lower and upper case usernames in their email
+ * address. This is generally fine, although it means you may get
+ * entries such as:
+ *
+ * \code
+ *    me@snap.website
+ *    Me@snap.website
+ *    ME@snap.website
+ *    mE@snap.website
+ * \endcode
+ *
+ * and each one will be considered a different account. This can be
+ * really frustrating for users who don't understand emails though.
+ *
+ * The default mode does not require any particular setup.
+ * The "Unix" (or geek) mode requires that you set the
+ * "users::force_lowercase" field in the sites table to 1.
+ * To go back to the default, either set "users::force_lowercase"
+ * to 0 or delete it.
+ *
+ * \param[in] email  The email of the user.
+ *
+ * \return The user_key based on the email all or mostly in lowercase or not.
+ */
+QString users::email_to_user_key(QString const & email)
+{
+    enum force_lowercase_t
+    {
+        FORCE_LOWERCASE_UNDEFINED,
+        FORCE_LOWERCASE_YES,
+        FORCE_LOWERCASE_NO
+    };
+
+    static force_lowercase_t force_lowercase(FORCE_LOWERCASE_UNDEFINED);
+
+    if(force_lowercase == 0)
+    {
+        QtCassandra::QCassandraValue const force_lowercase_parameter(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_FORCE_LOWERCASE)));
+        if(force_lowercase_parameter.nullValue()
+        || force_lowercase_parameter.safeSignedCharValue())
+        {
+            // this is the default if undefined
+            force_lowercase = FORCE_LOWERCASE_YES;
+        }
+        else
+        {
+            force_lowercase = FORCE_LOWERCASE_NO;
+        }
+    }
+
+    if(force_lowercase == FORCE_LOWERCASE_YES)
+    {
+        // in this case, it is easy we can force the entire email to lowercase
+        return email.toLower();
+    }
+    else
+    {
+        // if not forcing the username to lowercase, we still need to force
+        // the domain name to lowercase
+        //
+        return basic_email_canonicalization(email);
+    }
+}
+
+
+/** \brief Do a basic canonicalization on the specified email.
+ *
+ * Any email must have its domain name canonicalized, meaning that it
+ * has to be made lowercase. This function does just that.
+ *
+ * That means the part before the '@' character is untouched. The
+ * part after the '@' is transformed to lowercase.
+ *
+ * It is very important to at least call this function to get a
+ * valid email to check with the libtld functions because those
+ * functions really only accept lowercase characters.
+ *
+ * \note
+ * The user plugin still saves the raw emails of users registering
+ * on a website. In other words, the email saved as the current user
+ * email, the first email used to register, etc. may all include
+ * upper and lower case characters.
+ *
+ * \param[in] email  The email to canonicalize.
+ */
+QString users::basic_email_canonicalization(QString const & email)
+{
+    int const pos(email.indexOf('@'));
+    if(pos <= 0)
+    {
+        throw users_exception_invalid_email(QString("email \"%1\" does not include an AT ('@') character or it is the first character.").arg(email));
+    }
+
+    return email.mid(0, pos) + email.mid(pos).toLower();
+}
+
+
 /** \brief Save a user parameter.
  *
  * This function is used to save a field directly in the "users" table.
@@ -835,8 +1069,10 @@ void users::save_user_parameter(QString const & email, QString const & field_nam
 {
     int64_t const start_date(f_snap->get_start_date());
 
+    QString const user_key(email_to_user_key(email));
+
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
 
     // mark when we created the user if that is not yet defined
     if(!row->exists(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME)))
@@ -890,13 +1126,15 @@ bool users::load_user_parameter(QString const & email, QString const & field_nam
     // reset the input value by default
     value.setNullValue();
 
+    QString const user_key(email_to_user_key(email));
+
     // make sure that row (a.k.a. user) exists before accessing it
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    if(!users_table->exists(email))
+    if(!users_table->exists(user_key))
     {
         return false;
     }
-    QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(email));
+    QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(user_key));
 
     // row exists, make sure the user field exists
     if(!user_row->exists(field_name))
@@ -1198,7 +1436,7 @@ void users::on_generate_boxes_content(content::path_info_t& page_cpath, content:
 }
 
 
-void users::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void users::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
 {
     NOTUSED(ipath);
     NOTUSED(ctemplate);
@@ -1299,7 +1537,7 @@ void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& p
 
 
 
-void users::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
+void users::on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type)
 {
     NOTUSED(owner);
     NOTUSED(type);
@@ -1683,7 +1921,7 @@ void users::prepare_new_password_form()
  *
  * \param[in,out] ipath  The path used to access this page.
  */
-void users::verify_user(content::path_info_t& ipath)
+void users::verify_user(content::path_info_t & ipath)
 {
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
 
@@ -1757,7 +1995,7 @@ void users::verify_user(content::path_info_t& ipath)
     // remove "verify/" to retrieve the session ID
     QString const session_id(ipath.get_cpath().mid(7));
     sessions::sessions::session_info info;
-    sessions::sessions *session(sessions::sessions::instance());
+    sessions::sessions * session(sessions::sessions::instance());
     // TODO: remove the ending characters such as " ", "/", "\" and "|"?
     //       (it happens that people add those by mistake at the end of a URI...)
     session->load_session(session_id, info);
@@ -1773,11 +2011,13 @@ void users::verify_user(content::path_info_t& ipath)
         // TODO change message support to use strings from the database so they can get translated
         messages::messages::instance()->set_error(
             "Invalid User Verification Code",
-            "The specified verification code (" + session_id
-                    + ") is not correct. Please verify that you used the correct link or try to use the form below to enter your verification code."
-                      " If you already followed the link once, then you already were verified and all you need to do is click the log in link below.",
-            "user trying his verification with code \"" + session_id + "\" got error: "
-                    + sessions::sessions::session_info::session_type_to_string(info.get_session_type()) + ".",
+            QString("The specified verification code (%1) is not correct."
+                    " Please verify that you used the correct link or try to use the form below to enter your verification code."
+                    " If you already followed the link once, then you already were verified and all you need to do is click the log in link below.")
+                    .arg(session_id),
+            QString("user trying his verification with code \"%1\" got error: %2.")
+                    .arg(session_id)
+                    .arg(sessions::sessions::session_info::session_type_to_string(info.get_session_type())),
             true
         );
         // redirect the user to the verification form
@@ -1787,14 +2027,14 @@ void users::verify_user(content::path_info_t& ipath)
 
     // it looks like the session is valid, get the user email and verify
     // that the account exists in the database
-    QString const email(path.mid(6));
-    if(!users_table->exists(email))
+    QString const user_key(path.mid(6)); // this is the user_key from the session, it is a canonicalized email
+    if(!users_table->exists(user_key))
     {
         // This should never happen...
         messages::messages::instance()->set_error(
             "Could Not Find Your Account",
             "Somehow we could not find your account on this system.",
-            "user account for " + email + " does not exist at this point",
+            QString("user account for \"%1\" does not exist at this point").arg(user_key),
             true
         );
         // redirect the user to the log in page
@@ -1802,12 +2042,12 @@ void users::verify_user(content::path_info_t& ipath)
         NOTREACHED();
     }
 
-    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
     QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
     if(user_identifier.nullValue())
     {
         SNAP_LOG_FATAL("users::verify_user() could not load the user identifier, the row exists but the cell did not make it (")
-                        (email)("/")
+                        (user_key)("/")
                         (get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))(").");
         // redirect the user to the verification form although it won't work
         // next time either...
@@ -1832,7 +2072,7 @@ void users::verify_user(content::path_info_t& ipath)
         messages::messages::instance()->set_error(
             "Not a New Account",
             "Your account is not marked as a new account. The verification failed.",
-            "user account for " + email + ", which is being verified, is not marked as being a new account",
+            QString("user account for \"%1\", which is being verified, is not marked as being a new account").arg(user_key),
             true
         );
         // redirect the user to the log in page
@@ -1850,7 +2090,7 @@ void users::verify_user(content::path_info_t& ipath)
         messages::messages::instance()->set_error(
             "Not a New Account",
             "Your account is not marked as a new account. The verification failed. You may have been blocked.",
-            "user account for " + email + ", which is being verified, is not marked as being a new account: " + status_info.key(),
+            QString("user account for \"%1\", which is being verified, is not marked as being a new account: %2").arg(user_key).arg(status_info.key()),
             true
         );
         // redirect the user to the log in page? (XXX should this be the registration page instead?)
@@ -1910,11 +2150,17 @@ void users::verify_user(content::path_info_t& ipath)
  *
  * \param[in] ipath  The path used to access this page.
  */
-void users::verify_password(content::path_info_t& ipath)
+void users::verify_password(content::path_info_t & ipath)
 {
     if(!f_user_key.isEmpty())
     {
-        // TODO: delete the "password" tag if present
+        // TBD: delete the "password" tag if present?
+        //      that would seem wrong; if we have a module that forces
+        //      users to enter a new password on their next log in,
+        //      then we should not delete the link! that way will work
+        //      albeit the user could have their session renewed many
+        //      times over before they are really forced to change their
+        //      password (but that is another problem.)
         //
         // user is logged in already, just send him to his profile
         // (if logged in he was verified in some way!)
@@ -1922,14 +2168,14 @@ void users::verify_password(content::path_info_t& ipath)
         NOTREACHED();
     }
 
-    QString session_id(ipath.get_cpath().mid(13));
+    QString const session_id(ipath.get_cpath().mid(13));
 
     sessions::sessions::session_info info;
-    sessions::sessions *session(sessions::sessions::instance());
+    sessions::sessions * session(sessions::sessions::instance());
     // TODO: remove the ending characters such as " ", "/", "\" and "|"?
     //       (it happens that people add those by mistake at the end of a URI...)
     session->load_session(session_id, info);
-    const QString path(info.get_object_path());
+    QString const path(info.get_object_path());
     if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
     || info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
     || path.mid(0, 6) != "/user/")
@@ -1941,11 +2187,13 @@ void users::verify_password(content::path_info_t& ipath)
         // TODO change message support to use strings from the database so they can get translated
         messages::messages::instance()->set_error(
             "Invalid Forgotten Password Verification Code",
-            "The specified verification code (" + session_id
-                    + ") is not correct. Please verify that you used the correct link or try to use the form below to enter your verification code."
-                      " If you already followed the link once, then you already exhausted that verfication code and if you need another you have to click the Resend link below.",
-            "user trying his forgotten password verification with code \"" + session_id + "\" got error: "
-                    + sessions::sessions::session_info::session_type_to_string(info.get_session_type()) + ".",
+            QString("The specified verification code (%1) is not correct."
+                    " Please verify that you used the correct link or try to use the form below to enter your verification code."
+                    " If you already followed the link once, then you already exhausted that verfication code and if you need another you have to click the Resend link below.")
+                    .arg(session_id),
+            QString("user trying his forgotten password verification with code \"%1\" got error: %2.")
+                    .arg(session_id)
+                    .arg(sessions::sessions::session_info::session_type_to_string(info.get_session_type())),
             true
         );
         // we are likely on the verification link for the new password
@@ -1957,15 +2205,15 @@ void users::verify_password(content::path_info_t& ipath)
 
     // it looks like the session is valid, get the user email and verify
     // that the account exists in the database
-    const QString email(path.mid(6));
+    QString const user_key(path.mid(6)); // this is the user_key from the session, it is a canonicalized email
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    if(!users_table->exists(email))
+    if(!users_table->exists(user_key))
     {
         // This should never happen...
         messages::messages::instance()->set_error(
             "Could Not Find Your Account",
             "Somehow we could not find your account on this system.",
-            "user account for " + email + " does not exist at this point",
+            QString("user account for \"%1\" does not exist at this point").arg(user_key),
             true
         );
         // redirect the user to the log in page
@@ -1973,12 +2221,12 @@ void users::verify_password(content::path_info_t& ipath)
         NOTREACHED();
     }
 
-    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
     QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
     if(user_identifier.nullValue())
     {
         SNAP_LOG_FATAL("users::process_new_password_form() could not load the user identifier, the row exists but the cell did not make it (")
-                        (email)("/")
+                        (user_key)("/")
                         (get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))(").");
         // TODO where to send that user?! have an error page for all of those
         //      "your account is dead, sorry dear..."
@@ -2003,7 +2251,7 @@ void users::verify_password(content::path_info_t& ipath)
         messages::messages::instance()->set_error(
             "Forgotten Password?",
             "It does not look like you requested a new password for your account. The form is being canceled.",
-            "user account for " + email + ", which requested a mew password, is not marked as expected a new password",
+            QString("user account for \"%1\", which requested a mew password, is not marked as expected a new password").arg(user_key),
             true
         );
         // redirect the user to the log in page
@@ -2021,7 +2269,9 @@ void users::verify_password(content::path_info_t& ipath)
         messages::messages::instance()->set_error(
             "Forgotten Password?",
             "It does not look like you requested a new password for your account. If you did so multiple times, know that you can only follow one of the links once. Doing so voids the other links.",
-            "user account for " + email + ", which requested a new password, is not marked as expecting a new password: " + status_info.key(),
+            QString("user account for \"%1\", which requested a new password, is not marked as expecting a new password: %2.")
+                    .arg(user_key)
+                    .arg(status_info.key()),
             true
         );
         // redirect the user to the log in page? (XXX should this be the registration page instead?)
@@ -2033,7 +2283,7 @@ void users::verify_password(content::path_info_t& ipath)
     //links::links::instance()->delete_link(user_status_info);
 
     // redirect the user to the "semi-public replace password page"
-    send_to_replace_password_page(email, false);
+    send_to_replace_password_page(user_key, false);
     NOTREACHED();
 }
 
@@ -2060,38 +2310,44 @@ void users::verify_password(content::path_info_t& ipath)
  * \param[in] email  The email of the user to redirect.
  * \param[in] set_status  Whether to setup the user status too.
  */
-void users::send_to_replace_password_page(QString const& email, bool const set_status)
+void users::send_to_replace_password_page(QString const & email, bool const set_status)
 {
+    QString const user_key(email_to_user_key(email));
+
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
 
     if(set_status)
     {
         // mark the user with the types/users/password tag
         // (i.e. user requested a new password)
+        // source
         QString const link_name(get_name(name_t::SNAP_NAME_USERS_STATUS));
         bool const source_unique(true);
         content::path_info_t user_ipath;
         user_ipath.set_path(get_user_path(email));
         links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch());
+        // destination
         QString const link_to(get_name(name_t::SNAP_NAME_USERS_STATUS));
         bool const destination_unique(false);
-        content::path_info_t dpath;
-        dpath.set_path(get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH));
-        links::link_info destination(link_to, destination_unique, dpath.get_key(), dpath.get_branch());
+        content::path_info_t password_path;
+        password_path.set_path(get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH));
+        links::link_info destination(link_to, destination_unique, password_path.get_key(), password_path.get_branch());
+        // create link
         links::links::instance()->create_link(source, destination);
     }
 
-    // Save the date when the user verified
+    // Save the date when the user sent the request
     QtCassandra::QCassandraValue value;
     value.setInt64Value(f_snap->get_start_date());
     row->cell(get_name(name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_ON))->setValue(value);
 
-    // Save the user IP address when verified
+    // Save the user IP address when the user sent the request
     value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
     row->cell(get_name(name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_IP))->setValue(value);
 
-    f_user_changing_password_key = email;
+    // make sure that this variable is set to a canonicalized user key
+    f_user_changing_password_key = user_key;
 
     // send the user to the "public" replace password page since he got verified
     f_snap->page_redirect("user/password/replace", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
@@ -2176,9 +2432,14 @@ void users::process_login_form(login_mode_t login_mode)
 {
     messages::messages * messages_plugin(messages::messages::instance());
 
+    // TODO: add support to log user using a username instead of
+    //       just the email address (having a username or pseudonym makes
+    //       it harder for hackers to find your account!)
+
     // retrieve the row for that user
-    QString const key(f_snap->postenv("email"));
-    if(login_mode == login_mode_t::LOGIN_MODE_VERIFICATION && f_user_key != key)
+    QString const email(f_snap->postenv("email"));
+    QString const user_key(email_to_user_key(email));
+    if(login_mode == login_mode_t::LOGIN_MODE_VERIFICATION && f_user_key != user_key)
     {
         // XXX we could also automatically log the user out and send him
         //     to the log in screen... (we certainly should do so on the
@@ -2186,7 +2447,7 @@ void users::process_login_form(login_mode_t login_mode)
         messages_plugin->set_error(
             "Wrong Credentials",
             "These are wrong credentials. If you are not sure who you were logged as, please <a href=\"/logout\">log out</a> first and then log back in.",
-            QString("users::process_login_form() email mismatched when verifying credentials (got \"%1\", expected \"%2\").").arg(key).arg(f_user_key),
+            QString("users::process_login_form() email mismatched when verifying credentials (got \"%1\", expected \"%2\").").arg(user_key).arg(f_user_key),
             false
         );
         return;
@@ -2195,7 +2456,7 @@ void users::process_login_form(login_mode_t login_mode)
     QString const password(f_snap->postenv("password"));
 
     bool validation_required(false);
-    QString const details(login_user(key, password, validation_required, login_mode));
+    QString const details(login_user(user_key, password, validation_required, login_mode));
 
     if(!details.isEmpty())
     {
@@ -2224,8 +2485,11 @@ void users::process_login_form(login_mode_t login_mode)
             messages_plugin->set_error(
                 "Could Not Log You In",
                 validation_required
-                  ? "Your account was not yet <a href=\"/verify\" title=\"Click here to enter a verification code\">validated</a>. Please make sure to first follow the link we sent in your email. If you did not yet receive that email, we can send you another <a href=\"/verify/resend\">confirmation email</a>."
-                  : "Your email or password were incorrect. If you are not registered, you may want to consider <a href=\"/register\">registering</a> first?",
+                  ? "Your account was not yet <a href=\"/verify\" title=\"Click here to enter a verification code\">validated</a>."
+                        " Please make sure to first follow the link we sent in your email."
+                        " If you did not yet receive that email, we can send you another <a href=\"/verify/resend\">confirmation email</a>."
+                  : "Your email or password were incorrect."
+                        " If you are not registered, you may want to consider <a href=\"/register\">registering</a> first?",
                 details,
                 false // should this one be true?
             );
@@ -2258,7 +2522,7 @@ void users::process_login_form(login_mode_t login_mode)
  * to be changed. If a password change is required for that user, then
  * the login fails.
  *
- * \param[in] key  The key of the user: i.e. his email address
+ * \param[in] email  The user email address.
  * \param[in] password  The password to log the user in.
  * \param[in] validation_required  Whether the user needs to validate his account.
  * \param[in] login_mode  The mode used to log in: full, verification.
@@ -2266,13 +2530,15 @@ void users::process_login_form(login_mode_t login_mode)
  * \return A string representing an error, an empty string if the login worked
  *         and the user is not being redirected.
  */
-QString users::login_user(QString const & key, QString const& password, bool & validation_required, login_mode_t login_mode)
+QString users::login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode)
 {
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
 
-    if(users_table->exists(key))
+    QString const user_key(email_to_user_key(email));
+
+    if(users_table->exists(user_key))
     {
-        QtCassandra::QCassandraRow::pointer_t row(users_table->row(key));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
 
         QtCassandra::QCassandraValue value;
 
@@ -2284,7 +2550,8 @@ QString users::login_user(QString const & key, QString const& password, bool & v
                 "Could Not Log You In",
                 "Somehow your user identifier is not available. Without it we cannot log your in.",
                 QString("users::login_user() could not load the user identifier, the row exists but the cell did not make it (%1/%2).")
-                             .arg(key).arg(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER)),
+                        .arg(user_key)
+                        .arg(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER)),
                 false
             );
             if(login_mode == login_mode_t::LOGIN_MODE_VERIFICATION)
@@ -2349,7 +2616,7 @@ QString users::login_user(QString const & key, QString const& password, bool & v
             {
                 if(password.isEmpty())
                 {
-                    return "user has to update his password, this application cannot currently log in";
+                    return "user has to update his password, this application cannot currently log this user in";
                 }
                 // user requested a new password but it looks like he
                 // remembered the old one in between; for redirect this user
@@ -2404,7 +2671,7 @@ QString users::login_user(QString const & key, QString const& password, bool & v
                 // log the user in by adding the correct object path
                 // the other parameters were already defined in the
                 // on_process_cookies() function
-                f_info->set_object_path("/user/" + key);
+                f_info->set_object_path("/user/" + user_key);
                 f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
                 sessions::sessions::instance()->save_session(*f_info, true); // force new random session number
 
@@ -2420,7 +2687,9 @@ QString users::login_user(QString const & key, QString const& password, bool & v
                     {
                         // close session
                         sessions::sessions::session_info old_session;
-                        sessions::sessions::instance()->load_session(previous_session, old_session, false);
+                        login_status_t const display_warning(load_login_session(previous_session, old_session, true));
+
+                        // whether the user could have been logged in, make sure to close the session
                         old_session.set_object_path("/user/");
 
                         // drop the referrer if there is one, it is a security
@@ -2429,15 +2698,24 @@ QString users::login_user(QString const & key, QString const& password, bool & v
 
                         sessions::sessions::instance()->save_session(old_session, false);
 
-                        messages::messages::instance()->set_warning(
-                            "Two Sessions",
-                            "We detected that you had another session opened. The other session was closed.",
-                            QString("users::login_user() deleted old session \"%1\" for user \"%2\".")
-                                         .arg(old_session.get_session_key())
-                                         .arg(key)
-                        );
+                        // if the user could have been logged in, emit a warning
+                        //
+                        // We ignore the User Agent error since in many cases
+                        // the log fails because you try to log in a different
+                        // browser in which case you always need a new session.
+                        //
+                        if((display_warning & ~LOGIN_STATUS_USER_AGENT_MISMATCH) == LOGIN_STATUS_OK)
+                        {
+                            messages::messages::instance()->set_warning(
+                                "Two Sessions",
+                                "We detected that you had another session opened. The other session was closed.",
+                                QString("users::login_user() deleted old session \"%1\" for user \"%2\".")
+                                             .arg(old_session.get_session_key())
+                                             .arg(user_key)
+                            );
 
-                        // go on, this is not a fatal error
+                            // go on, this is not a fatal error
+                        }
                     }
                 }
 
@@ -2447,7 +2725,7 @@ QString users::login_user(QString const & key, QString const& password, bool & v
                 f_snap->set_cookie(cookie);
 
                 // this is now the current user
-                f_user_key = key;
+                f_user_key = user_key;
                 // we just logged in so we are logged in
                 // (although the user_logged_in() signal could log the
                 // user out if something is awry)
@@ -2479,7 +2757,8 @@ QString users::login_user(QString const & key, QString const& password, bool & v
                 // you may specify a URI to where the user should be sent on
                 // log in, used in the redirect below, although we will go
                 // to user/password whatever the path is specified here
-                logged_info.set_email(key);
+                //logged_info.set_email(email); -- this is not available here! we only have the user key at the moment (the input may not be the exact current email)
+                logged_info.set_user_key(user_key);
                 user_logged_in(logged_info);
 
                 // user got logged out by a plugin and not redirected?!
@@ -2512,11 +2791,22 @@ QString users::login_user(QString const & key, QString const& password, bool & v
                         logged_info.set_uri(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
                         if(logged_info.get_uri().isEmpty())
                         {
-                            // User is now logged in, redirect him to his profile
+                            // User is now logged in, redirect him
                             //
-                            // TODO: the admin needs to be able to change that
-                            //       default redirect
-                            logged_info.set_uri("user/me");
+                            QtCassandra::QCassandraValue login_redirect(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_LOGIN_REDIRECT)));
+                            if(login_redirect.nullValue())
+                            {
+                                // by default redirect to user profile
+                                //
+                                logged_info.set_uri("user/me");
+                            }
+                            else
+                            {
+                                // administrator changed the default redirect
+                                // on log in to the value in login_redirect
+                                //
+                                logged_info.set_uri(login_redirect.stringValue());
+                            }
                         }
                     }
                     f_snap->page_redirect(logged_info.get_uri(), snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
@@ -2532,7 +2822,7 @@ QString users::login_user(QString const & key, QString const& password, bool & v
             else
             {
                 // user mistyped his password?
-                return "invalid credentials (password doesn't match)";
+                return "invalid credentials (password does not match)";
             }
         }
     }
@@ -2606,6 +2896,7 @@ void users::process_register_form()
     // with the same email, that's probably not a normal user (i.e. a
     // normal user would not be able to create two accounts at the
     // same time.) The email is the row key of the user table.
+    //
     QString const email(f_snap->postenv("email"));
     status_t const status(register_user(email, f_snap->postenv("password")));
     switch(status)
@@ -2636,7 +2927,7 @@ void users::process_register_form()
         f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                 "Access Denied",
                 "You are not allowed to create an account on this website.",
-                "User is blocked and doesnot have permission to create an account here.");
+                QString("User \"%1\" is blocked and does not have permission to create an account here.").arg(email));
         NOTREACHED();
         break;
 
@@ -2645,7 +2936,7 @@ void users::process_register_form()
         f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                 "Access Denied",
                 "You are not allowed to create an account on this website.",
-                QString("register_user() returned an unexpected status (%1).").arg(static_cast<int>(status)));
+                QString("register_user() returned an unexpected status (%1) for \"%2\".").arg(static_cast<int>(status)).arg(email));
         NOTREACHED();
         break;
 
@@ -2667,11 +2958,13 @@ void users::process_forgot_password_form()
     QString email(f_snap->postenv("email"));
     QString details;
 
+    QString const user_key(email_to_user_key(email));
+
     // check to make sure that a user with that email address exists
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    if(users_table->exists(email))
+    if(users_table->exists(user_key))
     {
-        QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
 
         // existing users have a unique identifier
         // necessary to create the user key below
@@ -2698,7 +2991,7 @@ void users::process_forgot_password_form()
             if(status == "" || status == site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
             {
                 // Only users considered active can request a new password
-                forgot_password_email(email);
+                forgot_password_email(email, user_key);
 
                 // mark the user with the types/users/password tag
                 QString const link_name(get_name(name_t::SNAP_NAME_USERS_STATUS));
@@ -2890,23 +3183,23 @@ void users::process_replace_password_form()
                     NOTREACHED();
                 }
 
-                details = "user " + f_user_changing_password_key + " is not new (maybe it is active, blocked, auto...), we do not send verification emails to such";
+                details = QString("user \"%1\" is not new (maybe it is active, blocked, auto...), we do not send verification emails to such").arg(f_user_changing_password_key);
             }
             else
             {
                 // This happens for all users already active, users who are
                 // blocked, etc.
-                details = "user " + f_user_changing_password_key + " is currently active, we do not send verification emails to such";
+                details = QString("user \"%1\" is currently active, we do not send verification emails to such").arg(f_user_changing_password_key);
             }
         }
         else
         {
-            details = "somehow we saw that a row existed for " + f_user_changing_password_key + ", but we could not retrieve the user identifier";
+            details = QString("somehow we saw that a row existed for \"%1\", but we could not retrieve the user identifier").arg(f_user_changing_password_key);
         }
     }
     else
     {
-        details = "user " + f_user_changing_password_key + " does not exist in the users table";
+        details = QString("user \"%1\" does not exist in the users table").arg(f_user_changing_password_key);
     }
 
     // we're done with this variable
@@ -3126,16 +3419,18 @@ void users::process_verify_resend_form()
     QString const email(f_snap->postenv("email"));
     QString details;
 
+    QString const user_key(email_to_user_key(email));
+
     // check to make sure that a user with that email address exists
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    if(users_table->exists(email))
+    if(users_table->exists(user_key))
     {
-        QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
 
         // existing users have a unique identifier
         // necessary to create the user key below
         QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
-        if(!user_identifier.nullValue())
+        if(user_identifier.size() == sizeof(int64_t))
         {
             int64_t const identifier(user_identifier.int64Value());
             content::path_info_t user_ipath;
@@ -3163,18 +3458,18 @@ void users::process_verify_resend_form()
                     NOTREACHED();
                 }
 
-                details = "user " + email + " is not new (maybe it is active, blocked, auto...), we do not send verification emails to such";
+                details = QString("user \"%1\" is not new (maybe it is active, blocked, auto...), we do not send verification emails to such").arg(email);
             }
             else
             {
                 // This happens for all users already active, users who are
                 // blocked, etc.
-                details = "user " + email + " is currently active, we do not send verification emails to such";
+                details = QString("user \"%1\" is currently active, we do not send verification emails to such").arg(email);
             }
         }
         else
         {
-            details = "somehow we saw that a row existed for " + email + ", but we could not retrieve it";
+            details = QString("somehow we saw that a row existed for \"%1\", but we could not retrieve it").arg(email);
         }
     }
     else
@@ -3185,7 +3480,7 @@ void users::process_verify_resend_form()
         //     invalid email addresses)
         //
         // probably a stupid spammer robot
-        details = "user asking for verify-resend with an unknown email address: " + email;
+        details = QString("user asking for verify-resend with an unknown email address: %1").arg(email);
     }
 
     // ONE error so whatever the reason the end user cannot really know
@@ -3366,7 +3661,8 @@ int64_t users::get_user_identifier() const
  * Allow the use of the user path and user identifier instead of
  * just the email address.
  *
- * \param[in] email  The email address of the user being checked.
+ * \param[in] email  The email address of the user being checked. It does
+ *                   not need to be canonicalized yet (i.e. a user_key.)
  * \param[out] status_key  Return the status key if available.
  *
  * \return The status of the user.
@@ -3380,6 +3676,7 @@ users::status_t users::user_status(QString const & email, QString & status_key)
         return status_t::STATUS_UNDEFINED;
     }
 
+    // get_user_path() does the necessary email to user_key conversion
     QString const user_path(get_user_path(email));
     if(user_path.isEmpty())
     {
@@ -3481,6 +3778,14 @@ int64_t users::get_user_identifier(QString const & user_path) const
  * The user path may or not include the site key. Both cases function
  * perfectly.
  *
+ * \warning
+ * This function returns the current email exactly as provided by the
+ * end user when registering or changing email. The user key may be
+ * different (i.e. generally all written in lowercase.) You can transform
+ * this email to a valid user key (to query the users table) by calling
+ * the email_to_user_key() function. If you already have the email, just
+ * calling email_to_user_key() is the fastest way to get the user key.
+ *
  * \param[in] user_path  The path to the user data in the content table.
  *
  * \return The email address of the user, if the user is defined in the
@@ -3500,10 +3805,21 @@ QString users::get_user_email(QString const & user_path)
  * Note that an invalid identifier will make this function return an
  * empty string (i.e. not such user.)
  *
+ * \warning
+ * This function returns the current email exactly as provided by the
+ * end user when registering or changing email. The user key may be
+ * different (i.e. generally all written in lowercase.) You can transform
+ * this email to a valid user key (to query the users table) by calling
+ * the email_to_user_key() function. If you already have the email, just
+ * calling email_to_user_key() is the fastest way to get the user key.
+ *
  * \param[in] identifier  The identifier of the user to retrieve the email for.
  *
  * \return The email address of the user, if the user is defined in the
  *         database.
+ *
+ * \sa email_to_user_key()
+ * \sa get_user_identifier()
  */
 QString users::get_user_email(int64_t const identifier)
 {
@@ -3516,8 +3832,11 @@ QString users::get_user_email(int64_t const identifier)
         QtCassandra::appendInt64Value(key, identifier);
         if(row->exists(key))
         {
-            // found the email
-            return row->cell(key)->value().stringValue();
+            // found the user, retrieve the current email
+            QString const user_key(row->cell(key)->value().stringValue());
+            QString const email(users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->value().stringValue());
+            // legacy support for when we were not saving the email as a field
+            return email.isEmpty() ? user_key : email;
         }
     }
 
@@ -3536,11 +3855,13 @@ QString users::get_user_email(int64_t const identifier)
  */
 QString users::get_user_path(QString const & email)
 {
+    QString const user_key(email_to_user_key(email));
+
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    if(users_table->exists(email))
+    if(users_table->exists(user_key))
     {
-        QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
-        QtCassandra::QCassandraValue const value(users_table->row(email)->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
+        QtCassandra::QCassandraValue const value(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!value.nullValue())
         {
             int64_t const identifier(value.int64Value());
@@ -3570,6 +3891,11 @@ QString users::get_user_path(QString const & email)
  * user will be considered fully registered in that case. The password
  * can be generated using the create_password() function.
  *
+ * \important
+ * The \p email parameter is expected to be the email exactly the way
+ * the user typed it. This can be important in the event the user
+ * mail system expects the case of the username to match one to one.
+ *
  * \param[in] email  The email of the user. It must be a valid email address.
  * \param[in] password  The password of the user or "!".
  *
@@ -3585,6 +3911,8 @@ users::status_t users::register_user(QString const & email, QString const & pass
 {
     // make sure that the user email is valid
     f_snap->verify_email(email);
+
+    QString const user_key(email_to_user_key(email));
 
     QByteArray salt;
     QByteArray hash;
@@ -3609,11 +3937,11 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
 
     QtCassandra::QCassandraValue value;
     value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-    value.setStringValue(email);
+    value.setStringValue(email); // this is what we save in the user table, with upper/lowercase as given by the end user
 
     int64_t identifier(0);
     status_t status(status_t::STATUS_NEW);
@@ -3628,7 +3956,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     // we got as much as we could ready before locking
     {
         // first make sure this email is unique
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), email);
+        QtCassandra::QCassandraLock lock(f_snap->get_context(), user_key);
 
         // TODO: we have to look at all the possible email addresses
         QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
@@ -3649,8 +3977,11 @@ users::status_t users::register_user(QString const & email, QString const & pass
                 messages::messages::instance()->set_error(
                     "Failed Creating User Account",
                     "Somehow we could not determine your user identifier. Please try again later.",
-                    "users::register_user() could not load the identifier of an existing user, the user seems to exist but the users::identifier cell seems wrong ("
-                                 + email + "/" + identifier_key + ").",
+                    QString("users::register_user() could not load the identifier of an existing user,"
+                            " the user seems to exist but the users::identifier cell seems wrong (%1/%2/%3).")
+                            .arg(email)
+                            .arg(user_key)
+                            .arg(identifier_key),
                     false
                 );
                 // XXX redirect user to an error page instead?
@@ -3672,7 +4003,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
                 // it exists, just return the current status of that existing user
                 QString ignore_status_key;
                 status = user_status(email, ignore_status_key);
-                SNAP_LOG_INFO("user \"")(email)("\" already exists, just return its current status: ")(static_cast<int>(status))(".");
+                SNAP_LOG_INFO("user \"")(email)("\" (")(user_key)(") already exists, just return its current status: ")(static_cast<int>(status))(".");
                 return status;
             }
             // user exists in the Snap! system but not this website
@@ -3690,7 +4021,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
             // against a black list or verified in other ways; also the password
             // can this way be checked by another plugin (i.e. password database)
             content::permission_flag secure;
-            check_user_security(email, password, secure);
+            check_user_security(user_key, email, password, secure);
             if(!secure.allowed())
             {
                 // well... someone said "do not save that user in there"!
@@ -3720,8 +4051,9 @@ users::status_t users::register_user(QString const & email, QString const & pass
                     messages::messages::instance()->set_error(
                         "Failed Creating User Account",
                         "Somehow we could not generate a user identifier for your account. Please try again later.",
-                        "users::register_user() could not load the *id_row* identifier, the row exists but the cell did not make it ("
-                                     + id_key + "/" + identifier_key + ").",
+                        QString("users::register_user() could not load the *id_row* identifier, the row exists but the cell did not make it (%1/%2)")
+                                .arg(id_key)
+                                .arg(identifier_key),
                         false
                     );
                     // XXX redirect user to an error page instead?
@@ -3744,11 +4076,16 @@ users::status_t users::register_user(QString const & email, QString const & pass
     uint64_t const created_date(f_snap->get_start_date());
     if(new_user)
     {
-        users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))->cell(new_identifier.binaryValue())->setValue(value);
+        users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))->cell(new_identifier.binaryValue())->setValue(user_key);
 
         // Save the user identifier in his user account so we can easily find
         // the content user for that user account/email
         row->cell(identifier_key)->setValue(new_identifier);
+
+        // Save the email address as the current email
+        // This is the original untouch email address
+        value.setStringValue(email);
+        row->cell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->setValue(value);
 
         // Save the hashed password (never the original password!)
         value.setBinaryValue(hash);
@@ -3844,7 +4181,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
 }
 
 
-/** \fn void users::check_user_security(QString const& email, QString const& password, content::permission_flag& secure)
+/** \fn void users::check_user_security(QString const & user_key, QString const & email, QString const & password, content::permission_flag & secure)
  * \brief Signal that a user is about to get a new account.
  *
  * This signal is called before a new user gets created.
@@ -3856,7 +4193,8 @@ users::status_t users::register_user(QString const & email, QString const & pass
  * lock mode forever. This may block the software when it tries to create
  * another user... so be careful.
  *
- * \param[in] email  The email of the user about to be registered
+ * \param[in] user_key  The user_key (the canoniconalized email).
+ * \param[in] email  The email of the user about to be registered.
  * \param[in] password  The user password.
  * \param[in,out] secure  The flag defining whether the flag is secure.
  */
@@ -3881,15 +4219,28 @@ users::status_t users::register_user(QString const & email, QString const & pass
  *
  * \param[in] email  The user email.
  */
-void users::verify_email(QString const& email)
+void users::verify_email(QString const & email)
 {
+    QString const user_key(email_to_user_key(email));
+
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    QString current_email(users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->value().stringValue());
+    if(current_email.isEmpty())
+    {
+        // TODO: the email should always be defined, only we have
+        //       legacy code which may skip on the matter and thus
+        //       we want to have this fallback
+        //
+        current_email = email;
+    }
+
     sendmail::sendmail::email e;
 
     // mark priority as High
     e.set_priority(sendmail::sendmail::email::email_priority_t::EMAIL_PRIORITY_HIGH);
 
     // destination email address
-    e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), email);
+    e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), current_email);
 
     e.add_parameter(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST), "true");
 
@@ -3902,7 +4253,7 @@ void users::verify_email(QString const& email)
     info.set_session_id(USERS_SESSION_ID_VERIFY_EMAIL);
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
-    info.set_object_path("/user/" + email);
+    info.set_object_path("/user/" + user_key);
     info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(86400 * 3);  // 3 days
     QString const session(sessions::sessions::instance()->create_session(info));
@@ -3910,13 +4261,12 @@ void users::verify_email(QString const& email)
 
     // to allow a "resend" without regenerating a new session, we save
     // the session identifier--since those are short lived, it will anyway
-    // not be extremely useful, but some systems may use that once in a while
-    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    //if(!users_table->exists(f_user_key)) ... ?
+    // not be extremely useful, but some plugins may use that once in a while
+    //if(!users_table->exists(user_key)) ... ?
     QtCassandra::QCassandraValue session_value(session);
     int64_t const ttl(86400 * 3 - 86400 / 2); // keep in the database for a little less than the session itself
     session_value.setTtl(ttl);
-    users_table->row(email)->cell(get_name(name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->setValue(session_value);
+    users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->setValue(session_value);
 
     // send the email
     //
@@ -3947,21 +4297,34 @@ void users::verify_email(QString const& email)
  *
  * \return true if the email was sent, false otherwise.
  */
-bool users::resend_verification_email(QString const& email)
+bool users::resend_verification_email(QString const & email)
 {
+    QString const user_key(email_to_user_key(email));
+
     // to allow a "resend" without regenerating a new session, we save
     // the session identifier--since those are short lived, it will anyway
     // not be extremely useful, but some systems may use that once in a while
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    if(!users_table->exists(email))
+    if(!users_table->exists(user_key))
     {
         return false;
     }
-    QString const session(users_table->row(email)->cell(get_name(name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->value().stringValue());
+    QString const session(users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->value().stringValue());
     if(session.isEmpty())
     {
+        // no session, send a brand new verification email
         verify_email(email);
         return true;
+    }
+
+    QString current_email(users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->value().stringValue());
+    if(current_email.isEmpty())
+    {
+        // TODO: the email should always be defined, only we have
+        //       legacy code which may skip on the matter and thus
+        //       we want to have this fallback
+        //
+        current_email = email;
     }
 
     sendmail::sendmail::email e;
@@ -3972,7 +4335,7 @@ bool users::resend_verification_email(QString const& email)
     e.add_parameter(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST), "true");
 
     // destination email address
-    e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), email);
+    e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), current_email);
 
     // add the email subject and body using a page
     e.set_email_path("admin/email/users/verify");
@@ -3996,9 +4359,10 @@ bool users::resend_verification_email(QString const& email)
  * email is used to allow the user to change his password without having
  * to enter an old password.
  *
- * \param[in] email  The user email.
+ * \param[in] email  The non-canonicalized user email.
+ * \param[in] user_key  The canonicalized email address.
  */
-void users::forgot_password_email(QString const& email)
+void users::forgot_password_email(QString const & email, QString const & user_key)
 {
     sendmail::sendmail::email e;
 
@@ -4027,7 +4391,7 @@ void users::forgot_password_email(QString const& email)
     info.set_session_id(USERS_SESSION_ID_FORGOT_PASSWORD_EMAIL);
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
-    info.set_object_path("/user/" + email);
+    info.set_object_path("/user/" + user_key);
     info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(3600 * 8);  // 8 hours
     QString const session(sessions::sessions::instance()->create_session(info));
@@ -4263,7 +4627,7 @@ void users::on_attach_to_session()
 
     // the messages handling is here because the messages plugin cannot have
     // a dependency on the users plugin
-    messages::messages *messages_plugin(messages::messages::instance());
+    messages::messages * messages_plugin(messages::messages::instance());
     if(messages_plugin->get_message_count() > 0)
     {
         // note that if we lose those "website" messages,
@@ -4286,10 +4650,10 @@ void users::on_detach_from_session()
     // TODO:
     // here we probably should do a get_from_session() because we may need
     // the variable between several different forms before it really gets
-    // deleted permanently; (i.e. we are reattaching now, but if a crash
+    // deleted permanently (i.e. we are reattaching now, but if a crash
     // occurs between the detach and attach, we lose the information!)
-    // the concerned function(s) should clear() the variable when
-    // officially done with it
+    // So the concerned function(s) should clear() the variable when
+    // officially done with it.
     f_user_changing_password_key = detach_from_session(get_name(name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
 
     // the message handling is here because the messages plugin cannot have
@@ -4619,12 +4983,16 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
  * \li The terms and conditions
  * \li The files referenced by those items (CSS, JavaScript, images, etc.)
  *
+ * \todo
+ * We probably want to extend this test with a signal so other plugins
+ * have a chance to define a user as a spammer.
+ *
  * \return true if the user is a considered to be a spammer.
  */
 bool users::user_is_a_spammer()
 {
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    char const * const black_list(get_name(name_t::SNAP_NAME_USERS_BLACK_LIST));
+    QString const black_list(get_name(name_t::SNAP_NAME_USERS_BLACK_LIST));
     if(users_table->exists(black_list))
     {
         // the row exists, check the IP

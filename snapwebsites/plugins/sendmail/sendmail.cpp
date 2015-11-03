@@ -2028,11 +2028,11 @@ void sendmail::process_emails()
 {
     {
         // clear some caches so things work better in the long run
-        users::users *users_plugin(users::users::instance());
+        users::users * users_plugin(users::users::instance());
         QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
         users_table->clearCache();
 
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
         content_table->clearCache();
 
@@ -2223,6 +2223,10 @@ void sendmail::attach_user_email(email const & e)
     //      exists? since we are not about to add it ourselves, I
     //      do not think it is necessary
     //
+    // TODO: since the email was posted, the user may have been marked as
+    //       a spammer or blocked
+    //       (blacklists are dealt further further down, maybe checked below too?)
+    //
     QString const to(e.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
     tld_email_list list;
     if(list.parse(to.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
@@ -2236,8 +2240,8 @@ void sendmail::attach_user_email(email const & e)
         throw sendmail_exception_invalid_argument("To: field does not include at least one email");
     }
     // Note: here the list of emails is always 1 item
-    QString const key(m.f_email_only.c_str());
-    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(key));
+    QString const user_key(users_plugin->email_to_user_key(m.f_email_only.c_str()));
+    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_key));
     QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue email_data(cell->value());
@@ -2277,7 +2281,7 @@ void sendmail::attach_user_email(email const & e)
     QtCassandra::QCassandraValue freq_value(row->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value());
     if(freq_value.nullValue())
     {
-        freq_value = users_table->row(key)->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
+        freq_value = users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
         if(freq_value.nullValue())
         {
             // programmer defined a frequency parameter in the email?
@@ -2367,7 +2371,7 @@ void sendmail::attach_user_email(email const & e)
         else
         {
             // TODO: warn about invalid value
-            SNAP_LOG_WARNING("unknown email frequency \"")(frequency)("\" for user \"")(key)("\"");
+            SNAP_LOG_WARNING("Unknown email frequency \"")(frequency)("\" for user \"")(user_key)("\", using daily.");
             ++t.tm_mday; // as DAILY
         }
         t.tm_isdst = 0; // mkgmtime() ignores DST... (i.e. UTC is not affected)
@@ -2406,7 +2410,7 @@ void sendmail::attach_user_email(email const & e)
         unix_date = time_limit;
     }
 
-    QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(key));
+    QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(user_key));
 
     QtCassandra::QCassandraValue index_value;
     char const * index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
@@ -2776,7 +2780,7 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         return;
     }
 
-    // now we're starting to send the email to the system sendmail tool
+    // now we are starting to send the email to the system sendmail tool
     sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_SENDING));
     row->cell(sending_status)->setValue(sending_value);
 

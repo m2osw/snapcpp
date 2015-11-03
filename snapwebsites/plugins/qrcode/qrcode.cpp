@@ -271,7 +271,7 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
         content::path_info_t page_ipath;
         page_ipath.set_path(qrcode_path == "index" || qrcode_path == "index.html" ? "" : qrcode_path);
 
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         content::path_info_t settings_ipath;
         settings_ipath.set_path("admin/settings/qrcode");
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());

@@ -17,7 +17,7 @@
 #pragma once
 
 #include "../path/path.h"
-#include "../form/form.h"
+#include "../editor/editor.h"
 
 namespace snap
 {

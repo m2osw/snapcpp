@@ -139,7 +139,7 @@ public:
         time_t get_login_limit() const;
         int64_t get_date() const;
 
-        static char const *session_type_to_string(session_info_type_t type);
+        static char const * session_type_to_string(session_info_type_t type);
 
     private:
         // default to SESSION_INFO_SECURE

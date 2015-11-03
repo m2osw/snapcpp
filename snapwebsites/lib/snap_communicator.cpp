@@ -1273,9 +1273,7 @@ void snap_communicator::snap_connection::non_blocking()
 {
     if(get_socket() >= 0)
     {
-        // libevent does not like blocking sockets...
-        int optval(1);
-        ioctl(get_socket(), FIONBIO, &optval);
+        evutil_make_socket_nonblocking(get_socket());
     }
 }
 

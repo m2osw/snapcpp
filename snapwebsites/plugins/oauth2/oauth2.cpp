@@ -341,12 +341,21 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
             {
                 // change the email to that user's email
                 email = users_table->row(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS))->cell(identifier_secret[0])->value().stringValue();
-                if(users_table->exists(email))
+                QString const user_key(users_plugin->email_to_user_key(email));
+                if(users_table->exists(user_key))
                 {
-                    identifier = users_table->row(email)->cell(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue();
-                    secret = users_table->row(email)->cell(get_name(name_t::SNAP_NAME_OAUTH2_SECRET))->value().stringValue();
-                    invalid = identifier != identifier_secret[0]
-                           || secret     != identifier_secret[1];
+                    // make sure user is currently valid otherwise it would
+                    // be a way for a user to bypass being blocked!
+                    QString ignore_status_key;
+                    users::users::status_t status(users_plugin->user_status(email, ignore_status_key));
+                    if(status == users::users::status_t::STATUS_VALID
+                    || status == users::users::status_t::STATUS_PASSWORD)
+                    {
+                        identifier = users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue();
+                        secret = users_table->row(user_key)->cell(get_name(name_t::SNAP_NAME_OAUTH2_SECRET))->value().stringValue();
+                        invalid = identifier != identifier_secret[0]
+                               || secret     != identifier_secret[1];
+                    }
                 }
             }
         }
@@ -479,33 +488,31 @@ void oauth2::application_login()
         NOTREACHED();
     }
 
-    // is that session a valid "user" session?
-    snap_string_list const parameters(session_id[1].split("/"));
-    QString const session_key(parameters[0]);
+    users::users * users_plugin(users::users::instance());
 
-    // Ignore the random key for applications
-    //QString random_key; // TODO: really support the case of "no random key"???
-    //if(parameters.size() > 1)
-    //{
-    //    random_key = parameters[1];
-    //}
-
+    // is that session a valid "user" (application) session?
     sessions::sessions::session_info info;
-    sessions::sessions::instance()->load_session(session_key, info, false);
-    QString const path(info.get_object_path());
-    if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
-    && info.get_session_id() == users::users::USERS_SESSION_ID_LOG_IN_SESSION
-    //&& info.get_session_random() == random_key.toInt() -- ignored here
-    && info.get_user_agent() == f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
-    && path.left(6) == "/user/"
-    && users::users::instance()->authenticated_user(path.mid(6), &info))
+    if(users_plugin->load_login_session(session_id[1], info, false) == users::users::LOGIN_STATUS_OK)
     {
-        // this session qualifies as a log in session
-        return;
+        QString const path(info.get_object_path());
+        // Note: this call returns false if the path matches "|/logout(/.*)?|"
+        //
+        if(users_plugin->authenticated_user(path.mid(6), &info))
+        {
+            // this session qualifies as a log in session
+            // accept this session and go on by executing this path
+            //
+            return;
+        }
     }
 
-    // we reach here if the application used the /logout path to delete
-    // its session
+    // did the application use the /logout path to delete its session?
+    //
+    // Note that the authenticated_user() function will return false
+    // so we automatically reach here if the path was "logout".
+    // Also, the authenticated_user() function clears the session so
+    // we do not have to do any of that work here.
+    //
     content::path_info_t main_ipath;
     main_ipath.set_path(f_snap->get_uri().path());
     if(main_ipath.get_cpath() == "logout"

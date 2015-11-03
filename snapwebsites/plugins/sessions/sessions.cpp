@@ -1355,12 +1355,12 @@ void sessions::save_session(session_info & info, bool const new_random)
  * \param[out] info  The variable where the session variables get saved.
  * \param[in] use_once  Whether this session can be used more than once.
  */
-void sessions::load_session(QString const& session_key, session_info& info, bool use_once)
+void sessions::load_session(QString const & session_key, session_info & info, bool use_once)
 {
     // reset this info (although it is likely already brand new...)
     info = session_info();
 
-    QString key(f_snap->get_website_key() + "/" + session_key);
+    QString const key(f_snap->get_website_key() + "/" + session_key);
 
     QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     if(!table->exists(key))

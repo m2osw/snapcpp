@@ -4012,7 +4012,7 @@ void snap_child::set_action(QString const& action)
  * \param[in] email  The email to verify.
  * \param[in] max  The maximum number of emails supported. May be 0, usually 1.
  */
-void snap_child::verify_email(QString const& email, size_t const max)
+void snap_child::verify_email(QString const & email, size_t const max)
 {
     // is there an actual email?
     // (we may want to remove standalone and duplicated commas too)

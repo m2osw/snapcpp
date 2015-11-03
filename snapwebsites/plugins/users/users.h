@@ -35,6 +35,8 @@ enum class name_t
     SNAP_NAME_USERS_BLOCKED_PATH,
     SNAP_NAME_USERS_CHANGING_PASSWORD_KEY,
     SNAP_NAME_USERS_CREATED_TIME,
+    SNAP_NAME_USERS_CURRENT_EMAIL,
+    SNAP_NAME_USERS_FORCE_LOWERCASE,
     SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL,
     SNAP_NAME_USERS_FORGOT_PASSWORD_IP,
     SNAP_NAME_USERS_FORGOT_PASSWORD_ON,
@@ -46,6 +48,7 @@ enum class name_t
     SNAP_NAME_USERS_LOCALES,
     SNAP_NAME_USERS_LOGIN_IP,
     SNAP_NAME_USERS_LOGIN_ON,
+    SNAP_NAME_USERS_LOGIN_REDIRECT,
     SNAP_NAME_USERS_LOGIN_REFERRER,
     SNAP_NAME_USERS_LOGIN_SESSION,
     SNAP_NAME_USERS_LOGOUT_IP,
@@ -88,6 +91,14 @@ public:
     users_exception(char const *        what_msg) : snap_exception("users", what_msg) {}
     users_exception(std::string const & what_msg) : snap_exception("users", what_msg) {}
     users_exception(QString const &     what_msg) : snap_exception("users", what_msg) {}
+};
+
+class users_exception_invalid_email : public users_exception
+{
+public:
+    users_exception_invalid_email(char const *        what_msg) : users_exception(what_msg) {}
+    users_exception_invalid_email(std::string const & what_msg) : users_exception(what_msg) {}
+    users_exception_invalid_email(QString const &     what_msg) : users_exception(what_msg) {}
 };
 
 class users_exception_invalid_path : public users_exception
@@ -141,6 +152,18 @@ public:
         LOGIN_MODE_VERIFICATION
     };
 
+    // the login status, returned by load_login_session(), is a set of flags
+    typedef int         login_status_t;
+
+    static login_status_t const     LOGIN_STATUS_OK                     = 0x0000;
+    static login_status_t const     LOGIN_STATUS_INVALID_RANDOM_NUMBER  = 0x0001;
+    static login_status_t const     LOGIN_STATUS_INVALID_SESSION        = 0x0002;
+    static login_status_t const     LOGIN_STATUS_SESSION_TYPE_MISMATCH  = 0x0004;
+    static login_status_t const     LOGIN_STATUS_RANDOM_MISMATCH        = 0x0008;
+    static login_status_t const     LOGIN_STATUS_USER_AGENT_MISMATCH    = 0x0010;
+    static login_status_t const     LOGIN_STATUS_UNEXPECTED_PATH        = 0x0020;
+    static login_status_t const     LOGIN_STATUS_PASSED_LOGIN_LIMIT     = 0x0040;
+
     static sessions::sessions::session_info::session_id_t const USERS_SESSION_ID_LOG_IN = 1;                    // login-form.xml
     static sessions::sessions::session_info::session_id_t const USERS_SESSION_ID_LOG_IN_BOX = 2;                // login-box-form.xml
     static sessions::sessions::session_info::session_id_t const USERS_SESSION_ID_REGISTER = 3;                  // register-form.xml
@@ -164,7 +187,7 @@ public:
         STATUS_VALID,           // user is registered and verified
         STATUS_NEW,             // user is registered but not yet verified (maked as "NEW")
         STATUS_BLOCKED,         // user got blocked (marked as "BLOCKED")
-        STATUS_AUTO,            // user did not register, account was auto-generated (marked as "AUTO")
+        STATUS_AUTO,            // user did not register, account was auto-generated (marked as "AUTO"); possibly to block emails
         STATUS_PASSWORD         // user has to enter a new password (marked as "PASSWORD")
     };
 
@@ -176,8 +199,12 @@ public:
         void                    set_identifier(int64_t identifier) { f_identifier = identifier; }
         int64_t                 get_identifier() const { return f_identifier; }
 
-        void                    set_email(QString const & email) { f_email = email; }
-        QString                 get_email() const { return f_email; }
+        void                    set_user_key(QString const & user_key) { f_user_key = user_key; }
+        QString                 get_user_key() const { return f_user_key; }
+
+        // at the point of login we do not have the email, only the user key
+        //void                    set_email(QString const & email) { f_email = email; }
+        //QString                 get_email() const { return f_email; }
 
         // f_uri is mutable so we can change it from anywhere
         void                    set_uri(QString const & uri) const { f_uri = uri; }
@@ -185,6 +212,7 @@ public:
 
     private:
         mutable content::path_info_t    f_user_ipath;
+        QString                         f_user_key;
         QString                         f_email;
         controlled_vars::zint64_t       f_identifier;
         mutable QString                 f_uri;
@@ -225,7 +253,7 @@ public:
     virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
     virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
 
-    SNAP_SIGNAL_WITH_MODE(check_user_security, (QString const & email, QString const & password, content::permission_flag & secure), (email, password, secure), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(check_user_security, (QString const & user_key, QString const & email, QString const & password, content::permission_flag & secure), (user_key, email, password, secure), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_registered, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_verified, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_logged_in, (user_logged_info_t & logged_info), (logged_info), NEITHER);
@@ -246,8 +274,9 @@ public:
     QString                 get_from_session(QString const & name) const;
     void                    set_referrer( QString path );
     void                    send_to_replace_password_page(QString const & email, bool const set_status);
-    QString                 login_user(QString const & key, QString const & password, bool & validation_required, login_mode_t login_mode = login_mode_t::LOGIN_MODE_FULL);
-    bool                    authenticated_user(QString const & key, sessions::sessions::session_info * info);
+    QString                 login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode = login_mode_t::LOGIN_MODE_FULL);
+    login_status_t          load_login_session(QString const & session_cookie, sessions::sessions::session_info & info, bool check_time_limit);
+    bool                    authenticated_user(QString const & email, sessions::sessions::session_info * info);
     void                    user_logout();
     void                    save_user_parameter(QString const & email, QString const & field_name, QtCassandra::QCassandraValue const & value);
     void                    save_user_parameter(QString const & email, QString const & field_name, QString const & value);
@@ -260,6 +289,8 @@ public:
     QString                 get_user_email(QString const & user_path);
     QString                 get_user_email(int64_t const identifier);
     QString                 get_user_path(QString const & email);
+    QString                 email_to_user_key(QString const & email);
+    QString                 basic_email_canonicalization(QString const & email);
     bool                    resend_verification_email(QString const & email);
 
 private:
@@ -287,13 +318,14 @@ private:
     void                    prepare_replace_password_form(QDomElement & body);
     void                    verify_email(QString const & email);
     void                    verify_password(content::path_info_t & cpath);
-    void                    forgot_password_email(QString const & email);
+    void                    forgot_password_email(QString const & email, QString const & user_key);
 
     zpsnap_child_t              f_snap;
-    QString                     f_user_key; // logged in user email address
-    controlled_vars::fbool_t    f_user_logged_in;
-    QString                     f_user_changing_password_key; // not quite logged in user
-    std::shared_ptr<sessions::sessions::session_info> f_info; // user, logged in or anonymous, cookie related information
+
+    QString                     f_user_key;                     // logged in user email address
+    controlled_vars::fbool_t    f_user_logged_in;               // user is logged in only if this is true
+    QString                     f_user_changing_password_key;   // not quite logged in user
+    std::shared_ptr<sessions::sessions::session_info> f_info;   // user, logged in or anonymous, cookie related information
 };
 
 } // namespace users

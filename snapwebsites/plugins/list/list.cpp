@@ -1240,7 +1240,7 @@ int64_t list::do_update(int64_t last_updated)
  */
 void list::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_list_table();
     f_list_table.reset();
