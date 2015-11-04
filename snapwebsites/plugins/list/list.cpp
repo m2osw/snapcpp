@@ -3390,7 +3390,20 @@ void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
 
         content::path_info_t list_ipath;
         list_ipath.set_path(path_param.f_value);
-        list_ipath.set_parameter("action", "view"); // we are just viewing this list
+        QString const list_cpath(list_ipath.get_cpath());
+        if(list_cpath == "admin"
+        || list_cpath.startsWith("admin/"))
+        {
+            // although we are just viewing lists, only "administer" is
+            // used when visiting pages under /admin...
+            //
+            list_ipath.set_parameter("action", "administer");
+        }
+        else
+        {
+            // we are just viewing this list
+            list_ipath.set_parameter("action", "view");
+        }
 
         quiet_error_callback list_error_callback(f_snap, true);
         plugin * list_plugin(path::path::instance()->get_plugin(list_ipath, list_error_callback));
@@ -3524,7 +3537,7 @@ void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
                         (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_uri]/data")
 
                         // snap/head/metadata/desc[@type="list_path"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_cpath())
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_cpath)
                         (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_path]/data")
 
                         // snap/head/metadata/desc[@type="box_uri"]/data
@@ -3581,6 +3594,7 @@ void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
             token.f_replacement = layout_plugin->apply_theme(list_doc, list_theme_xsl, theme);
         }
         // else list is not accessible (permission "problem")
+//else SNAP_LOG_FATAL("list::on_replace_token() list \"")(list_ipath.get_key())("\" is not accessible.");
     }
 }
 

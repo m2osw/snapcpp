@@ -71,17 +71,26 @@ public:
     // path_execute implementation
     virtual bool            on_path_execute(content::path_info_t & ipath);
 
+    // path signals
+    void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+
     // layout_content implementation
     virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+
+    // layout signals
+    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
 
     // server signals
     void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature);
 
     // editor signals
     void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
+    void                    on_init_editor_widget(content::path_info_t  & ipath, QString const  & field_id, QString const  & field_type, QDomElement  & widget, QtCassandra::QCassandraRow::pointer_t row);
 
 private:
     void                    content_update(int64_t variables_timestamp);
+    void                    unsubscribe_on_finish_editor_form_processing(content::path_info_t & ipath);
+    bool                    unsubscribe_on_path_execute(content::path_info_t & ipath);
 
     zpsnap_child_t          f_snap;
 };

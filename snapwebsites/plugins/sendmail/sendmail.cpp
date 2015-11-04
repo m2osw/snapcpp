@@ -17,7 +17,6 @@
 
 #include "sendmail.h"
 
-#include "../editor/editor.h"
 #include "../output/output.h"
 #include "../users/users.h"
 #include "../sessions/sessions.h"
@@ -59,7 +58,7 @@ SNAP_PLUGIN_START(sendmail, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -1468,9 +1467,6 @@ void sendmail::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
     SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
-    SNAP_LISTEN(sendmail, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(sendmail, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
-    SNAP_LISTEN(sendmail, "editor", editor::editor, finish_editor_form_processing, _1, _2);
 }
 
 
@@ -1522,7 +1518,7 @@ int64_t sendmail::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 5, 25, 15, 33, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 11, 3, 16, 33, 12, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1716,149 +1712,6 @@ QString sendmail::default_from() const
     return from.stringValue();
 }
 
-
-void sendmail::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
-{
-    QString const cpath(ipath.get_cpath());
-    if(cpath.startsWith(QString("%1/").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH))))
-    {
-        // tell the path plugin that this is ours
-        plugin_info.set_plugin(this);
-        return;
-    }
-}
-
-
-bool sendmail::on_path_execute(content::path_info_t & ipath)
-{
-    QString const cpath(ipath.get_cpath());
-    if(cpath.startsWith(QString("%1/").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH))))
-    {
-        content::path_info_t unsubscribe_ipath;
-        unsubscribe_ipath.set_path("unsubscribe");
-        snap_string_list const segments(cpath.split("/"));
-        unsubscribe_ipath.set_parameter("identifier", segments[1]);
-        f_snap->output(layout::layout::instance()->apply_layout(unsubscribe_ipath, this));
-        return true;
-    }
-
-    // we should not reach this code
-    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Sendmail Page Not Found",
-            "This \"sendmail\" page was not handled by the \"sendmail\" plugin.",
-            "sendmail::on_path_execute(): It looks like the path \"" + ipath.get_cpath() + "\" is said to be a dynamic \"sendmail\" path but it does not get handled.");
-    NOTREACHED();
-}
-
-
-void sendmail::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row)
-{
-    static_cast<void>(field_type);
-    static_cast<void>(row);
-
-    QString const cpath(ipath.get_cpath());
-    if(cpath == "unsubscribe")
-    {
-        if(field_id == "email")
-        {
-            // if we have an identifier parameter in the ipath then we want to
-            // transform that to an email address and put it in this field
-            QString const identifier(ipath.get_parameter("identifier"));
-            if(!identifier.isEmpty())
-            {
-                sessions::sessions::session_info info;
-                sessions::sessions::instance()->load_session(identifier, info, false);
-                if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
-                {
-                    QString const & object_path(info.get_object_path());
-                    int const pos(object_path.lastIndexOf("/"));
-                    if(pos > 0)
-                    {
-                        QString const to(object_path.mid(pos + 1));
-                        if(!to.isEmpty())
-                        {
-                            QDomDocument doc(widget.ownerDocument());
-                            QDomElement value(snap_dom::create_element(widget, "value"));
-                            QDomText text(doc.createTextNode(to));
-                            value.appendChild(text);
-                        }
-                    }
-                }
-				// else -- TBD should we redirect the user to just /unsubscribe ?
-            }
-        }
-    }
-}
-
-
-void sendmail::on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded)
-{
-    // cut short if the saving process was already marked as failed
-    if(!succeeded)
-    {
-        return;
-    }
-
-    QString const cpath(ipath.get_cpath());
-    bool const has_session(cpath.startsWith("unsubscribe/"));
-    if(cpath == "unsubscribe" || has_session)
-    {
-        // user wants to unsubscribe from this Snap! installation
-        //
-        // . black list
-        //
-        //   save the email in the top user definition (in the "users"
-        //   table)
-        //
-        // . orange list
-        //
-        //   if the user has an account in that specific website,
-        //   then black list him on that website only; otherwise do
-        //   like the black list (see above)
-        //
-        // TBD: should we check the email address "validity" when
-        //      found in a session (i.e. unsubscribe/...)
-
-        users::users * users_plugin(users::users::instance());
-
-        int64_t const start_date(f_snap->get_start_date());
-
-        // always save blacklist in the user parameter
-        QString const user_email(f_snap->postenv(get_name(name_t::SNAP_NAME_SENDMAIL_FIELD_EMAIL)));
-        QString level(f_snap->postenv(get_name(name_t::SNAP_NAME_SENDMAIL_FIELD_LEVEL)));
-        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
-        || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST))
-        {
-            users_plugin->save_user_parameter(user_email, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level);
-            users_plugin->save_user_parameter(user_email, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_ON), start_date);
-        }
-        else if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST)
-             || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_PURPLELIST))
-        {
-            // The user may not exist in this website so we cannot hope to
-            // set that up there; so instead we use a "special" key
-            //    sendmail::unsubscribe_selection::<site-key>
-            //
-            if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST))
-            {
-                level = get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST);
-            }
-            else
-            {
-                level = get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST);
-            }
-            users_plugin->save_user_parameter(user_email, QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level);
-            users_plugin->save_user_parameter(user_email, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_ON), start_date);
-        }
-
-        if(has_session)
-        {
-            // used session, "delete it" (mark it used up)
-            QString const session_id(cpath.mid(12));
-            sessions::sessions::session_info info;
-            sessions::sessions::instance()->load_session(session_id, info, true);
-        }
-    }
-}
 
 
 /** \brief Register the sendmail action.
@@ -3181,6 +3034,9 @@ void sendmail::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
     }
     else if(token.is_token("sendmail::unsubscribe_link"))
     {
+        // this code is part of the low level unsubscript link handling
+        // so it stays here instead of going to plugins/info/unsubscribe.cpp
+        //
         QString user_email;
         QDomXPath dom_xpath;
         dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value").arg(get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION)));

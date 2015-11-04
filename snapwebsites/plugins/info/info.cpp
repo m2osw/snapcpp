@@ -19,9 +19,10 @@
 
 #include "../editor/editor.h"
 #include "../messages/messages.h"
-#include "../permissions/permissions.h"
-#include "../users/users.h"
 #include "../output/output.h"
+#include "../permissions/permissions.h"
+#include "../sendmail/sendmail.h"
+#include "../users/users.h"
 
 #include "log.h"
 #include "not_reached.h"
@@ -111,7 +112,10 @@ void info::on_bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(info, "server", server, improve_signature, _1, _2, _3);
+    SNAP_LISTEN(info, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
     SNAP_LISTEN(info, "editor", editor::editor, finish_editor_form_processing, _1, _2);
+    SNAP_LISTEN(info, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
 }
 
 
@@ -163,7 +167,7 @@ int64_t info::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 8, 16, 30, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 11, 3, 15, 57, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -199,9 +203,60 @@ void info::content_update(int64_t variables_timestamp)
  */
 bool info::on_path_execute(content::path_info_t & ipath)
 {
+    // first check whether the unsubscribe implementation understands this path
+    if(unsubscribe_on_path_execute(ipath))
+    {
+        return true;
+    }
+
     f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
+}
+
+
+/** \brief Generate a link to the administration page.
+ *
+ * This function generates a link to the main administration page
+ * (i.e. /admin) so users with advanced browsers such as SeaMonkey
+ * can go to their administration page without having to search
+ * for it.
+ *
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] page  The page being generated.
+ * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  A path used in case ipath is not defined.
+ */
+void info::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+{
+    NOTUSED(ipath);
+    NOTUSED(ctemplate);
+
+    // only check if user is logged in
+    if(users::users::instance()->user_is_logged_in())
+    {
+        // only show the /admin link if the user can go there
+        permissions::permissions * permissions_plugin(permissions::permissions::instance());
+        QString const & login_status(permissions_plugin->get_login_status());
+        content::path_info_t page_ipath;
+        page_ipath.set_path("/admin");
+        content::permission_flag allowed;
+        path::path::instance()->access_allowed(permissions_plugin->get_user_path(), page_ipath, "administer", login_status, allowed);
+        if(allowed.allowed())
+        {
+            QDomDocument doc(page.ownerDocument());
+
+            QDomElement bookmarks;
+            snap_dom::get_tag("bookmarks", body, bookmarks);
+
+            QDomElement link(doc.createElement("link"));
+            link.setAttribute("rel", "bookmark");
+            link.setAttribute("title", "Administer Site"); // TODO: translate
+            link.setAttribute("type", "text/html");
+            link.setAttribute("href", f_snap->get_site_key_with_slash() + "admin");
+            bookmarks.appendChild(link);
+        }
+    }
 }
 
 
@@ -233,9 +288,15 @@ void info::on_generate_main_content(content::path_info_t & ipath, QDomElement & 
 
 void info::on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded)
 {
-    if(!succeeded
-    || ipath.get_cpath() != "admin/settings/info")
+    if(!succeeded)
     {
+        return;
+    }
+
+    if(ipath.get_cpath() != "admin/settings/info")
+    {
+        unsubscribe_on_finish_editor_form_processing(ipath);
+
         return;
     }
 

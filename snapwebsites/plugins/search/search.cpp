@@ -193,10 +193,11 @@ void search::on_improve_signature(QString const & path, QDomDocument doc, QDomEl
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  A path used in case ipath is not defined.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void search::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void search::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
+    NOTUSED(ipath);
+    NOTUSED(ctemplate);
+
     QDomDocument doc(page.ownerDocument());
 
     QDomElement bookmarks;
@@ -209,10 +210,7 @@ void search::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     link.setAttribute("href", f_snap->get_site_key_with_slash() + "search");
     bookmarks.appendChild(link);
 }
-#pragma GCC diagnostic pop
-
 
 
 SNAP_PLUGIN_END()
-
 // vim: ts=4 sw=4 et

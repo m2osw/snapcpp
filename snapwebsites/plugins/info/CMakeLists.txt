@@ -55,17 +55,25 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content/content.dtd )
 
-snap_validate_xml( info-settings-page.xml editor/editor-form.dtd )
-snap_validate_xml( info-settings-parser.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( editor/info-settings-page.xml editor/editor-form.dtd )
+snap_validate_xml( editor/unsubscribe-page.xml editor/editor-form.dtd )
+
+snap_validate_xml( layout/info-settings-parser.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/unsubscribe-parser.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/unsubscribe-theme-parser.xsl layout/simplified-xslt20.dtd )
 
 
 add_library(info SHARED
     info.cpp
+    unsubscribe.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    info-settings-page.xml
-    info-settings-parser.xsl
+    editor/info-settings-page.xml
+    editor/unsubscribe-page.xml
+    layout/info-settings-parser.xsl
+    layout/unsubscribe-parser.xsl
+    layout/unsubscribe-theme-parser.xsl
 )
 
 target_link_libraries( info ${QT_LIBRARIES} )

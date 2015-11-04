@@ -21,11 +21,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/plugins/info">
     <file>content.xml</file>
   </qresource>
-  <qresource prefix="/xml/editor">
-    <file>info-settings-page.xml</file>
+  <qresource prefix="/xml">
+    <file>editor/info-settings-page.xml</file>
+    <file>layout/unsubscribe-content.xml</file>
+    <file>editor/unsubscribe-page.xml</file>
   </qresource>
-  <qresource prefix="/xsl/layout">
-    <file>info-settings-parser.xsl</file>
+  <qresource prefix="/xsl">
+    <file>layout/info-settings-parser.xsl</file>
+    <file>layout/unsubscribe-parser.xsl</file>
+    <file>layout/unsubscribe-theme-parser.xsl</file>
+  </qresource>
+  <qresource prefix="/js">
+    <file>sendmail/unsubscribe.js</file>
   </qresource>
 </RCC>
 <!--
