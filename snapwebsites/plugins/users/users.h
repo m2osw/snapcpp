@@ -138,12 +138,13 @@ public:
 
 
 
-class users : public plugins::plugin
-            , public links::links_cloned
-            , public path::path_execute
-            , public layout::layout_content
-            , public layout::layout_boxes
-            , public form::form_post
+class users
+        : public plugins::plugin
+        , public links::links_cloned
+        , public path::path_execute
+        , public layout::layout_content
+        , public layout::layout_boxes
+        , public form::form_post
 {
 public:
     enum class login_mode_t
@@ -221,37 +222,54 @@ public:
                             users();
     virtual                 ~users();
 
+    // plugins::plugin implementation
     static users *          instance();
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
-    QtCassandra::QCassandraTable::pointer_t get_users_table();
-
     void                    on_bootstrap(::snap::snap_child * snap);
 
-    // server signal implementation
-    void                    on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
+    QtCassandra::QCassandraTable::pointer_t get_users_table();
 
+    // server signals
+    void                    on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
     void                    on_init();
-    void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
-    void                    on_generate_header_content(content::path_info_t & path, QDomElement & hader, QDomElement & metadata, QString const & ctemplate);
-    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    virtual void            on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes, QString const & ctemplate);
-    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    bool                    on_path_execute(content::path_info_t & ipath);
     void                    on_process_cookies();
     void                    on_attach_to_session();
     void                    on_detach_from_session();
     void                    on_define_locales(QString & locales);
-    void                    on_create_content(content::path_info_t & path, QString const & owner, QString const & type);
-    void                    on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);
+
+    // path::path_execute implementation
+    bool                    on_path_execute(content::path_info_t & ipath);
+
+    // path signals
+    void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+
+    // locale signals
     void                    on_set_locale();
     void                    on_set_timezone();
 
-    // server signal implementation
-    void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);
+    // content signals
+    void                    on_create_content(content::path_info_t & path, QString const & owner, QString const & type);
 
-    virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
+    // layout::layout_content implementation
+    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // layout::layout_boxes implementation
+    virtual void            on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes);
+
+    // layout signals
+    void                    on_generate_header_content(content::path_info_t & path, QDomElement & hader, QDomElement & metadata);
+    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // filter signals
+    void                    on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+
+    // links::links_cloned implementation
     virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
+
+    // form stuff
+    virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
 
     SNAP_SIGNAL_WITH_MODE(check_user_security, (QString const & user_key, QString const & email, QString const & password, content::permission_flag & secure), (user_key, email, password, secure), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_registered, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);

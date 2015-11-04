@@ -175,7 +175,7 @@ bool char_chart::on_path_execute(content::path_info_t& ipath)
 }
 
 
-void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void char_chart::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     QDomDocument doc(page.ownerDocument());
 
@@ -185,7 +185,7 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
         // the top page?
         if(ipath.get_cpath() == "char-chart")
         {
-            output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+            output::output::instance()->on_generate_main_content(ipath, page, body);
         }
         return;
     }

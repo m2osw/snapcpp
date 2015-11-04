@@ -73,19 +73,16 @@ public:
                                 cookie_consent_silktide();
                                 ~cookie_consent_silktide();
 
+    // plugins::plugin implementation
     static cookie_consent_silktide * instance();
-
-    // plugins::plugin
     virtual QString             description() const;
     virtual int64_t             do_update(int64_t last_updated);
-
-    // server
     void                        on_bootstrap(snap_child * snap);
 
-    // content
-    void                        on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
+    // content signals
+    void                        on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata);
 
-    // editor
+    // editor signals
     void                        on_save_editor_fields(content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row);
 
 private:

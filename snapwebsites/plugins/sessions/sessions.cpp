@@ -37,6 +37,7 @@
 
 #include "plugins.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <QtCassandra/QCassandraValue.h>
 
@@ -967,11 +968,16 @@ void sessions::content_update(int64_t variables_timestamp)
  * drops the column (i.e. no other columns exist) or it re-write the
  * used_up value with the same TTL as the other fields.
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \important
+ * This was a one time update process. It is not used by newer
+ * implementations.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added
+ *            to the database by this update (in micro-seconds).
  */
 void sessions::clean_session_table(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     QString const used_up(get_name(name_t::SNAP_NAME_SESSIONS_USED_UP));
     QString const id(get_name(name_t::SNAP_NAME_SESSIONS_ID));
@@ -1041,15 +1047,13 @@ QtCassandra::QCassandraTable::pointer_t sessions::get_sessions_table()
  * \param[in,out] ipath  The path to this page.
  * \param[in,out] page  The page element being generated.
  * \param[in,out] body  The body element being generated.
- * \param[in] ctemplate  The default data in case the main data is not yet
- *                       available.
  */
-void sessions::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void sessions::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // generate the statistics in the body then call the content generator
     // (how do we do that at this point? do we assume that the backend takes
     // care of it?)
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 

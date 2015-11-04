@@ -24,6 +24,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <as2js/json.h>
 
@@ -140,7 +141,7 @@ void cookie_consent_silktide::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(cookie_consent_silktide, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(cookie_consent_silktide, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(cookie_consent_silktide, "editor", editor::editor, save_editor_fields, _1, _2, _3);
 }
 
@@ -227,13 +228,11 @@ void cookie_consent_silktide::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template in case path does not exist.
  */
-void cookie_consent_silktide::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
+void cookie_consent_silktide::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(ctemplate);
-    static_cast<void>(metadata);
+    NOTUSED(ipath);
+    NOTUSED(metadata);
 
     snap_uri const & main_uri(f_snap->get_uri());
     if(main_uri.has_query_option("iframe"))

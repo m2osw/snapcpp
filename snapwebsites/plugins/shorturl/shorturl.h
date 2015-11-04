@@ -55,27 +55,26 @@ class shorturl
         , public layout::layout_content
 {
 public:
-    static const sessions::sessions::session_info::session_id_t SHORTURL_SESSION_ID_SETTINGS = 1;      // settings-form.xml
-
                         shorturl();
                         ~shorturl();
 
+    // plugins::plugin implementation
     static shorturl *   instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QtCassandra::QCassandraTable::pointer_t get_shorturl_table();
+    void                on_bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
+    QtCassandra::QCassandraTable::pointer_t get_shorturl_table();
 
     // content plugin signals
     void                on_create_content(content::path_info_t & path, const QString & owner, const QString & type);
     void                on_page_cloned(content::content::cloned_tree_t const & tree);
 
     // layout plugin signals
-    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, const QString & ctemplate);
+    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
 
     // layout::layout_content implementation
-    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, const QString & ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
 
     // path plugin signals
     void                on_check_for_redirect(content::path_info_t & ipath);

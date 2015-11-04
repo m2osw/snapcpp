@@ -99,10 +99,11 @@ public:
 
 
 
-class permissions : public plugins::plugin
-                  , public links::links_cloned
-                  , public layout::layout_content
-                  , public server::backend_action
+class permissions
+        : public plugins::plugin
+        , public links::links_cloned
+        , public layout::layout_content
+        , public server::backend_action
 {
 public:
     static int64_t const        EXPECTED_TIME_ACCURACY_EPSILON = 10000; // 10ms
@@ -162,19 +163,31 @@ public:
                             permissions();
                             ~permissions();
 
+    // plugins::plugin implementation
     static permissions *    instance();
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
-
     void                    on_bootstrap(snap_child * snap);
-    void                    on_generate_header_content(content::path_info_t & path, QDomElement & hader, QDomElement & metadata, QString const & ctemplate);
-    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    void                    on_validate_action(content::path_info_t & path, QString const & action, permission_error_callback & err_callback);
-    void                    on_access_allowed(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result);
-    void                    on_register_backend_action(server::backend_action_map_t & actions);
+
+    // server::backend_action implementation
     virtual void            on_backend_action(QString const & action);
-    void                    on_user_verified(content::path_info_t & ipath, int64_t identifier);
+
+    // server signals
+    void                    on_register_backend_action(server::backend_action_map_t & actions);
     void                    on_add_snap_expr_functions(snap_expr::functions_t & functions);
+
+    // path signals
+    void                    on_access_allowed(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result);
+    void                    on_validate_action(content::path_info_t & path, QString const & action, permission_error_callback & err_callback);
+
+    // layout::layout_content implementation
+    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // layout signals
+    void                    on_generate_header_content(content::path_info_t & path, QDomElement & hader, QDomElement & metadata);
+
+    // users signals
+    void                    on_user_verified(content::path_info_t & ipath, int64_t identifier);
 
     // link signals
     void                    on_modified_link(links::link_info const & link, bool const created);

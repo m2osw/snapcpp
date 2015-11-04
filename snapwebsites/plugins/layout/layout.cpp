@@ -426,9 +426,7 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
 
 /** \brief Apply the layout to the content defined at \p cpath.
  *
- * This function defines a page content using the data as defined by \p cpath
- * and \p ctemplate. \p ctemplate data is used only if data that is generally
- * required is not currently available in \p cpath.
+ * This function defines a page content using the data as defined by \p cpath.
  *
  * First it looks for a JavaScript under the column key "layout::theme".
  * If such doesn't exist at cpath, then the function checks the \p cpath
@@ -446,11 +444,10 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
  *
  * \param[in,out] ipath  The canonicalized path of content to be laid out.
  * \param[in] content_plugin  The plugin that will generate the content of the page.
- * \param[in] ctemplate  The path to the template is used to get default data.
  *
  * \return The result is the output of the layout applied to the data in cpath.
  */
-QString layout::apply_layout(content::path_info_t& ipath, layout_content *content_plugin, QString const& ctemplate)
+QString layout::apply_layout(content::path_info_t & ipath, layout_content * content_plugin)
 {
     // First generate the body content (a large XML document)
     QString layout_name;
@@ -475,7 +472,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
     }
 
     QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
-    create_body(doc, ipath, xsl, content_plugin, ctemplate, true, layout_name);
+    create_body(doc, ipath, xsl, content_plugin, true, layout_name);
 
     // Then apply a theme to it
     xsl = define_layout(ipath, get_name(name_t::SNAP_NAME_LAYOUT_THEME), get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL), ":/xsl/layout/default-theme-parser.xsl", layout_name);
@@ -525,7 +522,6 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
     QString xsl;
 
     // Retrieve the name of the layout for this path
-    // XXX should the ctemplate ever be used to retrieve the layout?
     layout_name = get_layout(ipath, name, true);
 
 //SNAP_LOG_TRACE() << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")";
@@ -713,10 +709,6 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *conten
  * appear in the header, then it should create it in the header of
  * the main page.
  *
- * The system can now make use of a ctemplate to gather data which are
- * not otherwise defined in the cpath cell. By default ctemplate is set
- * to the empty string which means it does not get used.
- *
  * \note
  * You may want to call the replace_includes() function on your XSLT
  * document before calling this function.
@@ -725,13 +717,12 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *conten
  * \param[in,out] ipath  The path being dealt with.
  * \param[in] xsl  The XSL of this body layout.
  * \param[in] content_plugin  The plugin handling the content (body/title in general.)
- * \param[in] ctemplate  The path to the template is used to get default data.
  * \param[in] handle_boxes  Whether the boxes of this theme are to be handled.
  * \param[in] layout_name  The name of the layout (only necessary if handle_boxes is true.)
  *
  * \return The resulting body in an XML document.
  */
-void layout::create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, QString const & ctemplate, bool handle_boxes, QString const & layout_name)
+void layout::create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, bool handle_boxes, QString const & layout_name)
 {
 #ifdef DEBUG
 SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() << "] name = [" << layout_name << "]";
@@ -747,11 +738,11 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
 
     // other plugins generate defaults
 //std::cerr << "*** Generate header...\n" << doc.toString() << "-------------------------\n";
-    generate_header_content(ipath, head, metadata, ctemplate);
+    generate_header_content(ipath, head, metadata);
 
     // concerned (owner) plugin generates content
 //std::cerr << "*** Generate main content...\n";
-    content_plugin->on_generate_main_content(ipath, page, body, ctemplate);
+    content_plugin->on_generate_main_content(ipath, page, body);
 //std::cout << "Header + Main XML is [" << doc.toString(-1) << "]\n";
 
     // add boxes content
@@ -767,7 +758,7 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
 
     // other plugins are allowed to modify the content if so they wish
 //std::cerr << "*** Generate page content...\n";
-    generate_page_content(ipath, page, body, ctemplate);
+    generate_page_content(ipath, page, body);
 //std::cout << "Prepared XML is [" << doc.toString(-1) << "]\n";
 
     // TODO: the filtering needs to be a lot more generic!
@@ -1073,7 +1064,7 @@ SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
                                 //QDomElement metadata(snap_dom::get_element(doc, "metadata"));
                                 //generate_header_content(ipath, head, metadata, "");
 
-                                lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
+                                lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box);
 
                                 // Unfortunately running the full page content
                                 // signal would overwrite the main data... not good!
@@ -1541,11 +1532,10 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template used to generate the page or "".
  *
  * \return true if the signal should go on to all the other plugins.
  */
-bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
+bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
     NOTUSED(header);
 
@@ -1583,10 +1573,6 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
         (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=real_uri]/data")
 
-        // snap/head/metadata/desc[@type="template_uri"]/data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, ctemplate.isEmpty() ? "" : f_snap->get_site_key_with_slash() + ctemplate)
-        (content::field_search::command_t::COMMAND_SAVE, "desc[type=template_uri]/data")
-
         // snap/head/metadata/desc[@type="name"]/data
         (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)))
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/data")
@@ -1617,7 +1603,7 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
 }
 
 
-/** \fn void layout::generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+/** \fn void layout::generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
  * \brief Generate the page main content.
  *
  * This function generates the main content of the page. Other
@@ -1635,12 +1621,10 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
  * \param[in] page_content  The main content of the page.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The template used in case some parameters do not
- *                       exist in the specified path
  */
 
 
-/** \fn void layout::filtered_content(content::path_info_t& ipath, QDomDocument& doc, QString const& xsl)
+/** \fn void layout::filtered_content(content::path_info_t & ipath, QDomDocument & doc, QString const & xsl)
  * \brief Generate the page main content.
  *
  * This function generates the main content of the page. Other
@@ -1676,7 +1660,7 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
  * \param[in,out] file  The file name and content.
  * \param[in,out] found  Whether the file was found.
  */
-void layout::on_load_file(snap_child::post_file_t& file, bool& found)
+void layout::on_load_file(snap_child::post_file_t & file, bool & found)
 {
     if(!found)
     {
@@ -1788,7 +1772,7 @@ void layout::add_layout_from_resources_done(QString const & name)
 }
 
 
-void layout::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void layout::on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     NOTUSED(destination_branch);
 

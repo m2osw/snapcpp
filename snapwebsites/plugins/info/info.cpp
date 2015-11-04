@@ -113,7 +113,7 @@ void info::on_bootstrap(snap_child * snap)
 
     SNAP_LISTEN(info, "server", server, improve_signature, _1, _2, _3);
     SNAP_LISTEN(info, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(info, "editor", editor::editor, finish_editor_form_processing, _1, _2);
     SNAP_LISTEN(info, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
 }
@@ -225,12 +225,10 @@ bool info::on_path_execute(content::path_info_t & ipath)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A path used in case ipath is not defined.
  */
-void info::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void info::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     NOTUSED(ipath);
-    NOTUSED(ctemplate);
 
     // only check if user is logged in
     if(users::users::instance()->user_is_logged_in())
@@ -276,13 +274,11 @@ void info::on_generate_page_content(content::path_info_t & ipath, QDomElement & 
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A template used when the other parameters are
- *                       not available.
  */
-void info::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void info::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // our settings pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 

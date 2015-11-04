@@ -148,7 +148,7 @@ void feed::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN0(feed, "server", server, backend_process);
-    SNAP_LISTEN(feed, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(feed, "layout", layout::layout, generate_page_content, _1, _2, _3);
 }
 
 
@@ -230,12 +230,10 @@ void feed::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
-void feed::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void feed::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     NOTUSED(page);
-    NOTUSED(ctemplate);
 
     // avoid those links on administrative pages, totally useless!
     if(ipath.get_cpath().startsWith("admin/"))
@@ -464,8 +462,7 @@ void feed::generate_feeds()
                 f_snap->set_uri_path(QString("/%1").arg(page_ipath.get_cpath()));
 
                 QDomDocument doc(layout_plugin->create_document(page_ipath, layout_ready));
-                // should we have a ctemplate for this create body?
-                layout_plugin->create_body(doc, page_ipath, feed_parser_layout, layout_ptr, "", false, "feed-parser");
+                layout_plugin->create_body(doc, page_ipath, feed_parser_layout, layout_ptr, false, "feed-parser");
 
                 QDomNodeList long_dates(doc.elementsByTagName("created-long-date"));
                 int const max_long_dates(long_dates.size());

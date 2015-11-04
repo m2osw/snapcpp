@@ -2852,13 +2852,11 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The default template in case the main data is not
- *                       available.
  */
-void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElement& page, QDomElement& body, QString const & ctemplate)
+void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // by default an email is just like a regular page
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 
     // but we also have email specific parameters we want to add
     QDomDocument doc(page.ownerDocument());

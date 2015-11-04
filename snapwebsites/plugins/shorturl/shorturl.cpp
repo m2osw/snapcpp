@@ -105,7 +105,7 @@ void shorturl::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(shorturl, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(shorturl, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(shorturl, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(shorturl, "content", content::content, page_cloned, _1);
     SNAP_LISTEN(shorturl, "path", path::path, check_for_redirect, _1);
@@ -327,11 +327,10 @@ void shorturl::on_check_for_redirect(content::path_info_t & ipath)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The fallback path in case ipath does not have a value.
  */
-void shorturl::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void shorturl::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -402,12 +401,10 @@ QString shorturl::get_shorturl(uint64_t identifier)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The page being generated.
  * \param[in,out] metadata  The body being generated.
- * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
-void shorturl::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
+void shorturl::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
     NOTUSED(header);
-    NOTUSED(ctemplate);
 
     content::field_search::search_result_t result;
 

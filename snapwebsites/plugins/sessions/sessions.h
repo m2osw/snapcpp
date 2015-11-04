@@ -78,7 +78,9 @@ public:
 
 
 
-class sessions : public plugins::plugin, public layout::layout_content
+class sessions
+        : public plugins::plugin
+        , public layout::layout_content
 {
 public:
     class session_info
@@ -166,15 +168,17 @@ public:
                             sessions();
                             ~sessions();
 
+    // plugins::plugin implementation
     static sessions *       instance();
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
-
     void                    on_bootstrap(snap_child * snap);
-    void                    clean_session_table(int64_t variables_timestamp);
 
-    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    // server signals
     void                    on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
+
+    // layout::layout_content implementation
+    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
 
     QString                 create_session(session_info & info);
     void                    save_session(session_info & info, bool const new_random);
@@ -187,6 +191,7 @@ public:
 private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
+    void                    clean_session_table(int64_t variables_timestamp);
 
     QtCassandra::QCassandraTable::pointer_t get_sessions_table();
 

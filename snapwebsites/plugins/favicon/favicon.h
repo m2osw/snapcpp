@@ -32,7 +32,7 @@ enum class name_t
     SNAP_NAME_FAVICON_IMAGE,
     SNAP_NAME_FAVICON_SETTINGS
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class favicon_exception : public snap_exception
@@ -45,10 +45,11 @@ public:
 
 
 
-class favicon : public plugins::plugin
-              , public path::path_execute
-              , public layout::layout_content
-              , public form::form_post
+class favicon
+        : public plugins::plugin
+        , public path::path_execute
+        , public layout::layout_content
+        , public form::form_post
 {
 public:
     static const sessions::sessions::session_info::session_id_t FAVICON_SESSION_ID_SETTINGS = 1;      // settings-form.xml
@@ -56,22 +57,31 @@ public:
                             favicon();
                             ~favicon();
 
+    // plugins::plugin implementation
     static favicon *        instance();
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
-
-    void                    on_bootstrap(snap_child *snap);
-    virtual bool            on_path_execute(content::path_info_t & url);
-    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
-    virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
+    void                    on_bootstrap(snap_child * snap);
 
     // server signal
     void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);
 
+    // path::path_execute implementation
+    virtual bool            on_path_execute(content::path_info_t & url);
+
+    // path signals
+    void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+
+    // layout::layout_content implementation
+    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // layout signals
+    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // form stuff -- to be replaced by editor form instead
+    virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
+
 private:
-    void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
     void                    output(content::path_info_t & ipath);
     void                    get_icon(content::path_info_t & cpath, content::field_search::search_result_t & result);

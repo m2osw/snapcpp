@@ -146,7 +146,7 @@ void favicon::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(favicon, "server", server, improve_signature, _1, _2, _3);
-    SNAP_LISTEN(favicon, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(favicon, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(favicon, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
 
@@ -197,24 +197,10 @@ int64_t favicon::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2013, 12, 23, 14, 21, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
-
-/** \brief First update to run for the favicon plugin.
- *
- * This function is the first update for the favicon plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void favicon::initial_update(int64_t variables_timestamp)
-{
-    (void)variables_timestamp;
-}
-
 
 /** \brief Update the database with our favicon references.
  *
@@ -225,7 +211,8 @@ void favicon::initial_update(int64_t variables_timestamp)
  */
 void favicon::content_update(int64_t variables_timestamp)
 {
-    (void)variables_timestamp;
+    NOTUSED(variables_timestamp);
+
     content::content::instance()->add_xml(get_plugin_name());
 }
 
@@ -402,12 +389,11 @@ void favicon::output(content::path_info_t& ipath)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void favicon::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void favicon::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // our settings pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -419,12 +405,10 @@ void favicon::on_generate_main_content(content::path_info_t & ipath, QDomElement
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template if cpath does not exist.
  */
-void favicon::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void favicon::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     NOTUSED(page);
-    NOTUSED(ctemplate);
 
     content::field_search::search_result_t result;
 

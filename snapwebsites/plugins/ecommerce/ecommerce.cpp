@@ -391,7 +391,7 @@ void ecommerce::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(ecommerce, "server", server, process_post, _1);
-    SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(ecommerce, "epayment", epayment::epayment, generate_invoice, _1, _2, _3);
     SNAP_LISTEN(ecommerce, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(ecommerce, "path", path::path, preprocess_path, _1, _2);
@@ -481,13 +481,11 @@ void ecommerce::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template in case path does not exist.
  */
-void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void ecommerce::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(metadata);
-    static_cast<void>(ctemplate);
+    NOTUSED(ipath);
+    NOTUSED(metadata);
 
     QDomDocument doc(header.ownerDocument());
 
@@ -1097,12 +1095,11 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void ecommerce::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void ecommerce::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // our pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 

@@ -322,10 +322,10 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(content::path_info_t & ipa
 
 
 // no need, output will take over
-//void taxonomy::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+//void taxonomy::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 //{
 //    // a type is just like a regular page
-//    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+//    output::output::instance()->on_generate_main_content(ipath, page, body);
 //}
 
 

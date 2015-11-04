@@ -258,7 +258,7 @@ void epayment_paypal::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN(epayment_paypal, "server", server, process_post, _1);
     SNAP_LISTEN(epayment_paypal, "server", server, table_is_accessible, _1, _2);
-    SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(epayment_paypal, "epayment", epayment::epayment, repeat_payment, _1, _2, _3);
 }
@@ -407,13 +407,11 @@ QtCassandra::QCassandraTable::pointer_t epayment_paypal::get_epayment_paypal_tab
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template in case path does not exist.
  */
-void epayment_paypal::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
+void epayment_paypal::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(metadata);
-    static_cast<void>(ctemplate);
+    NOTUSED(ipath);
+    NOTUSED(metadata);
 
     QDomDocument doc(header.ownerDocument());
 
@@ -513,12 +511,11 @@ void epayment_paypal::on_generate_header_content(content::path_info_t & ipath, Q
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void epayment_paypal::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void epayment_paypal::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // our pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 

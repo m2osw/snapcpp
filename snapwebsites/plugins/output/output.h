@@ -58,11 +58,12 @@ public:
 
 
 
-class output : public plugins::plugin
-             , public path::path_execute
-             , public layout::layout_content
-             , public javascript::javascript_dynamic_plugin
-             , public layout::layout_boxes
+class output
+        : public plugins::plugin
+        , public path::path_execute
+        , public layout::layout_content
+        , public layout::layout_boxes
+        , public javascript::javascript_dynamic_plugin
 {
 public:
     enum class phone_number_type_t
@@ -75,18 +76,26 @@ public:
                         output();
                         ~output();
 
+    // plugins::plugin implementation
     static output *     instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
+    void                on_bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
+    // path::path_execute implementation
     virtual bool        on_path_execute(content::path_info_t & ipath);
-    virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes, QString const & ctemplate);
-    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
     // layout::layout_content implementation
-    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // layout::layout_boxes implementation
+    virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes);
+
+    // layout signals
+    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // filter signals
+    void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
     static QString      phone_to_uri(QString const phone, phone_number_type_t const type);
     void                breadcrumb(content::path_info_t & ipath, QDomElement parent);

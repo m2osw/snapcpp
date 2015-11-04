@@ -43,21 +43,29 @@ public:
 
 
 
-class antivirus : public plugins::plugin, public layout::layout_content
+class antivirus
+        : public plugins::plugin
+        , public layout::layout_content
 {
 public:
-    static const sessions::sessions::session_info::session_id_t ANTIVIRUS_SESSION_ID_SETTINGS = 1;      // settings-form.xml
+    static sessions::sessions::session_info::session_id_t const ANTIVIRUS_SESSION_ID_SETTINGS = 1;      // settings-form.xml
 
                             antivirus();
                             ~antivirus();
 
+    // plugins::plugin implementation
     static antivirus *      instance();
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
-
     void                    on_bootstrap(snap_child * snap);
-    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+
+    // layout::layout_content implementation
+    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
+
+    // content signals
     void                    on_check_attachment_security(content::attachment_file const & file, content::permission_flag & secure, bool const fast);
+
+    // versions signals
     void                    on_versions_tools(filter::filter::token_info_t & token);
 
 private:

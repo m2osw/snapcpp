@@ -1159,7 +1159,6 @@ void list::on_bootstrap(snap_child * snap)
 
     SNAP_LISTEN0(list, "server", server, attach_to_session);
     SNAP_LISTEN(list, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(list, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
     SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(list, "content", content::content, modified_content, _1);
     SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
@@ -1350,30 +1349,10 @@ QtCassandra::QCassandraTable::pointer_t list::get_listref_table()
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A fallback path in case ipath is not satisfactory.
  */
-void list::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void list::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
-}
-
-
-/** \brief Generate the page common content.
- *
- * This function generates some content that is expected in a page
- * by default.
- *
- * \param[in,out] ipath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The body being generated.
- */
-void list::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(page);
-    static_cast<void>(body);
-    static_cast<void>(ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -3599,11 +3578,11 @@ void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
 }
 
 
-void list::on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box, QString const & ctemplate)
+void list::on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box)
 {
     NOTUSED(page_cpath);
 
-    output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, box);
 }
 
 

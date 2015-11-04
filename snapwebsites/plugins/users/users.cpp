@@ -442,8 +442,8 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN0(users, "locale", locale::locale, set_timezone);
     SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3);
 
     f_info.reset(new sessions::sessions::session_info);
@@ -1305,7 +1305,7 @@ bool users::on_path_execute(content::path_info_t& ipath)
 }
 
 
-void users::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void users::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     QString const cpath(ipath.get_cpath());
     if(!cpath.isEmpty())
@@ -1369,7 +1369,7 @@ void users::on_generate_main_content(content::path_info_t & ipath, QDomElement &
                 // TODO: write user listing (similar to the /admin page
                 //       in gathering the info)
                 //list_users(body);
-                output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+                output::output::instance()->on_generate_main_content(ipath, page, body);
                 return;
             }
             else if(cpath == "user/password/replace")
@@ -1400,12 +1400,12 @@ void users::on_generate_main_content(content::path_info_t & ipath, QDomElement &
         }
     }
     // any other user page is just like regular content
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
 
-void users::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+void users::on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box)
 {
     if(!f_user_key.isEmpty())
     {
@@ -1432,14 +1432,13 @@ void users::on_generate_boxes_content(content::path_info_t& page_cpath, content:
         }
     }
 
-    output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, box);
 }
 
 
-void users::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
+void users::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
     NOTUSED(ipath);
-    NOTUSED(ctemplate);
 
     QDomDocument doc(header.ownerDocument());
 
@@ -1491,10 +1490,8 @@ void users::on_generate_header_content(content::path_info_t & ipath, QDomElement
 }
 
 
-void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void users::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    NOTUSED(ctemplate);
-
     // TODO: convert using field_search
     QDomDocument doc(page.ownerDocument());
 
@@ -1668,7 +1665,7 @@ void users::show_user(content::path_info_t & ipath, QDomElement & page, QDomElem
         {
             // user is editing his password
             prepare_password_form();
-            output::output::instance()->on_generate_main_content(ipath, page, body, "");
+            output::output::instance()->on_generate_main_content(ipath, page, body);
             return;
         }
 
@@ -1708,10 +1705,9 @@ void users::show_user(content::path_info_t & ipath, QDomElement & page, QDomElem
 
     // generate the user profile
         // TODO: write user profile viewer (i.e. we need to make use of the identifier here!)
-        // WARNING: using a path such as "admin/.../profile" returns all the content of that profile
     content::path_info_t user_ipath;
     user_ipath.set_path(user_path);
-    output::output::instance()->on_generate_main_content(user_ipath, page, body, "admin/users/page/profile");
+    output::output::instance()->on_generate_main_content(user_ipath, page, body);
 }
 
 
@@ -1815,7 +1811,7 @@ void users::logout_user(content::path_info_t& ipath, QDomElement& page, QDomElem
         }
     }
 
-    output::output::instance()->on_generate_main_content(ipath, page, body, "");
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 

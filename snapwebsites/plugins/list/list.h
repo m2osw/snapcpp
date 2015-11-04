@@ -180,10 +180,11 @@ private:
 
 
 
-class list : public plugins::plugin
-           , public server::backend_action
-           , public layout::layout_content
-           , public layout::layout_boxes
+class list
+        : public plugins::plugin
+        , public server::backend_action
+        , public layout::layout_content
+        , public layout::layout_boxes
 {
 public:
     static int const LIST_PROCESSING_LATENCY = 10 * 1000000; // 10 seconds in micro-seconds
@@ -243,26 +244,38 @@ public:
                         list();
                         ~list();
 
+    // plugins::plugin
     static list *       instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
+    void                on_bootstrap(snap_child * snap);
+
     QtCassandra::QCassandraTable::pointer_t get_list_table();
     QtCassandra::QCassandraTable::pointer_t get_listref_table();
 
-    void                on_bootstrap(snap_child * snap);
-    void                on_register_backend_action(server::backend_action_map_t & actions);
-    virtual char const *get_signal_name(QString const & action) const;
+    // server::backend_action implementation
     virtual void        on_backend_action(QString const & action);
+    virtual char const *get_signal_name(QString const & action) const;
+
+    // server signals
     void                on_backend_process();
-    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                on_register_backend_action(server::backend_action_map_t & actions);
+    void                on_attach_to_session();
+
+    // layout::layout_content implementation
+    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // layout::layout_boxes implementation
+    virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes);
+
+    // content signals
     void                on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
     void                on_modified_content(content::path_info_t & ipath);
-    void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
-    virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes, QString const & ctemplate);
-    void                on_attach_to_session();
     void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
     void                on_modified_link(links::link_info const & link, bool const created);
+
+    // filter signals
+    void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
     void                set_priority(priority_t priority);
     priority_t          get_priority() const;

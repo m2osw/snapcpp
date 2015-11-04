@@ -62,27 +62,30 @@ public:
 
 
 
-class robotstxt : public plugins::plugin
-                , public path::path_execute
-                , public layout::layout_content
+class robotstxt
+        : public plugins::plugin
+        , public path::path_execute
 {
 public:
-    static const char *ROBOT_NAME_ALL;
-    static const char *ROBOT_NAME_GLOBAL;
-    static const char *FIELD_NAME_DISALLOW;
+    static char const * ROBOT_NAME_ALL;
+    static char const * ROBOT_NAME_GLOBAL;
+    static char const * FIELD_NAME_DISALLOW;
 
-    robotstxt();
-    ~robotstxt();
+                        robotstxt();
+                        ~robotstxt();
 
+    // plugins::plugin
     static robotstxt *  instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-
     void                on_bootstrap(snap_child * snap);
+
+    // path::path_execute implementation
     virtual bool        on_path_execute(content::path_info_t & url);
-    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
-    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    void                on_generate_page_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+
+    // layout signals
+    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
+    void                on_generate_page_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
 
     SNAP_SIGNAL(generate_robotstxt, (robotstxt * r), (r));
 

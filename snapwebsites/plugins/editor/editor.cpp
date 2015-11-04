@@ -368,8 +368,8 @@ void editor::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(editor, "server", server, process_post, _1);
-    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(editor, "layout", layout::layout, add_layout_from_resources, _1);
     SNAP_LISTEN(editor, "form", form::form, validate_post_for_widget, _1, _2, _3, _4, _5, _6);
 }
@@ -455,12 +455,11 @@ void editor::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The template in case path does not exist.
  */
-void editor::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void editor::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // a regular page
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -477,12 +476,10 @@ void editor::on_generate_main_content(content::path_info_t & ipath, QDomElement 
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template in case path does not exist.
  */
-void editor::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
+void editor::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
     NOTUSED(ipath);
-    NOTUSED(ctemplate);
 
     QDomDocument doc(header.ownerDocument());
 
@@ -4631,9 +4628,8 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The XML element named "page".
  * \param[in,out] page  The XML element named "body".
- * \param[in] ctemplate  The template in case the default does not work.
  */
-void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     enum class added_form_file_support_t
     {
@@ -4642,8 +4638,6 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
         ADDED_FORM_FILE_YES
     };
     static added_form_file_support_t g_added_editor_form_js_css(added_form_file_support_t::ADDED_FORM_FILE_NONE);
-
-    NOTUSED(ctemplate);
 
     content::content * content_plugin(content::content::instance());
 
@@ -5008,19 +5002,21 @@ bool editor::prepare_editor_form_impl(editor *e)
 }
 
 
-void editor::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+void editor::on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box)
 {
     NOTUSED(page_cpath);
 
     // generate the editor content
-    // TODO: see if there wouldn't be a cleaner way to do this
+    //
+    // TODO: see if there would not be a cleaner way to do this
     //       because this requires the data to be owned by the editor
+    //
     QDomDocument doc(page.ownerDocument());
     QDomElement body(snap_dom::get_element(doc, "body"));
-    on_generate_page_content(ipath, page, body, ctemplate);
+    on_generate_page_content(ipath, page, body);
 
     // use the output generate main content in the end
-    output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, box);
 }
 
 

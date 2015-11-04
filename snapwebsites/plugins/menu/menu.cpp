@@ -181,11 +181,10 @@ void menu::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A fallback path in case ipath is not satisfactory.
  */
-void menu::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void menu::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 

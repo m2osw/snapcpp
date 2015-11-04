@@ -63,7 +63,7 @@ enum class name_t
     SNAP_NAME_EPAYMENT_THANK_YOU_PATH,
     SNAP_NAME_EPAYMENT_THANK_YOU_SUBSCRIPTION_PATH
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class epayment_exception : public snap_exception
@@ -300,18 +300,21 @@ private:
 
 
 
-class epayment : public plugins::plugin
+class epayment
+        : public plugins::plugin
 {
 public:
                                 epayment();
                                 ~epayment();
 
+    // plugins::plugin implementation
     static epayment *           instance();
     virtual QString             description() const;
     virtual int64_t             do_update(int64_t last_updated);
+    void                        on_bootstrap(snap_child * snap);
 
-    void                        on_bootstrap(snap_child *snap);
-    void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
+    // layout signals
+    void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
 
     name_t                      get_invoice_status(content::path_info_t & invoice_ipath);
 

@@ -35,7 +35,7 @@ SNAP_PLUGIN_START(search, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+const char * get_name(name_t name)
 {
     switch(name) {
     case name_t::SNAP_NAME_SEARCH_STATUS:
@@ -73,12 +73,12 @@ search::~search()
  *
  * \param[in] snap  The child handling this request.
  */
-void search::on_bootstrap(::snap::snap_child *snap)
+void search::on_bootstrap(::snap::snap_child * snap)
 {
     f_snap = snap;
 
     SNAP_LISTEN(search, "server", server, improve_signature, _1, _2, _3);
-    SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3);
 }
 
 /** \brief Get a pointer to the search plugin.
@@ -90,7 +90,7 @@ void search::on_bootstrap(::snap::snap_child *snap)
  *
  * \return A pointer to the search plugin.
  */
-search *search::instance()
+search * search::instance()
 {
     return g_plugin_search_factory.instance();
 }
@@ -142,7 +142,7 @@ int64_t search::do_update(int64_t last_updated)
  */
 void search::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml("search");
 }
@@ -191,12 +191,10 @@ void search::on_improve_signature(QString const & path, QDomDocument doc, QDomEl
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A path used in case ipath is not defined.
  */
-void search::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void search::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     NOTUSED(ipath);
-    NOTUSED(ctemplate);
 
     QDomDocument doc(page.ownerDocument());
 

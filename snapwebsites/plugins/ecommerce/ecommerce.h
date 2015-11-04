@@ -44,7 +44,7 @@ enum class name_t
     SNAP_NAME_ECOMMERCE_INVOICE_TABLE,
     SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 //class ecommerce_exception : public snap_exception
@@ -61,27 +61,41 @@ char const *get_name(name_t name) __attribute__ ((const));
 
 
 
-class ecommerce : public plugins::plugin
-                , public path::path_execute
-                , public layout::layout_content
+class ecommerce
+        : public plugins::plugin
+        , public path::path_execute
+        , public layout::layout_content
 {
 public:
                                 ecommerce();
     virtual                     ~ecommerce();
 
+    // plugins::plugin
     static ecommerce *          instance();
     virtual QString             description() const;
     virtual int64_t             do_update(int64_t last_updated);
-
     void                        on_bootstrap(snap_child * snap);
-    void                        on_generate_header_content(content::path_info_t& path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
-    void                        on_process_post(QString const & uri_path);
-    virtual bool                on_path_execute(content::path_info_t & ipath);
-    virtual void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, const QString & ctemplate);
-    void                        on_generate_invoice(content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment::epayment_product_list & plist);
-    void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
-    void                        on_preprocess_path(content::path_info_t & ipath, plugins::plugin *path_plugin);
 
+    // server signals
+    void                        on_process_post(QString const & uri_path);
+
+    // path::path_execute implementation
+    virtual bool                on_path_execute(content::path_info_t & ipath);
+
+    // path signals
+    void                        on_preprocess_path(content::path_info_t & ipath, plugins::plugin * path_plugin);
+
+    // layout::layout_content implementation
+    virtual void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // layout signals
+    void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
+
+    // filter signals
+    void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+
+    // epayment signals
+    void                        on_generate_invoice(content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment::epayment_product_list & plist);
     SNAP_SIGNAL(product_allowed, (QDomElement product, content::path_info_t product_ipath), (product, product_ipath));
 
 private:

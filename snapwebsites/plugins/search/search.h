@@ -31,20 +31,23 @@ char const * get_name(name_t name) __attribute__ ((const));
 
 
 
-class search : public plugins::plugin
+class search
+        : public plugins::plugin
 {
 public:
                             search();
                             ~search();
 
+    // public plugins::plugin
     static search *         instance();
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
+    void                    on_bootstrap(::snap::snap_child * snap);
 
-    void                    on_bootstrap(::snap::snap_child *snap);
-    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    // layout signals
+    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
-    // server signal implementation
+    // server signals
     void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature);
 
 private:

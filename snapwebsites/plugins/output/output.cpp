@@ -95,7 +95,7 @@ void output::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(output, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
@@ -262,9 +262,8 @@ bool output::on_path_execute(content::path_info_t & ipath)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A fallback path in case ipath is not satisfactory.
  */
-void output::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void output::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     NOTUSED(page);
 
@@ -284,29 +283,14 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
             // /snap/page/body/titles/title
             (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
             (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_IF_FOUND, 1)
-                (content::field_search::command_t::COMMAND_PATH, ctemplate)
-                (content::field_search::command_t::COMMAND_SELF)
-                (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-            (content::field_search::command_t::COMMAND_LABEL, 1)
             (content::field_search::command_t::COMMAND_SAVE_XML, "title")
             // /snap/page/body/titles/short-title
             (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_SHORT_TITLE))
             (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_IF_FOUND, 2)
-                (content::field_search::command_t::COMMAND_PATH, ctemplate)
-                (content::field_search::command_t::COMMAND_SELF)
-                (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-            (content::field_search::command_t::COMMAND_LABEL, 2)
             (content::field_search::command_t::COMMAND_SAVE_XML, "short-title")
             // /snap/page/body/titles/long-title
             (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_LONG_TITLE))
             (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_IF_FOUND, 3)
-                (content::field_search::command_t::COMMAND_PATH, ctemplate)
-                (content::field_search::command_t::COMMAND_SELF)
-                (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-            (content::field_search::command_t::COMMAND_LABEL, 3)
             (content::field_search::command_t::COMMAND_SAVE_XML, "long-title")
 
         (content::field_search::command_t::COMMAND_PARENT_ELEMENT)
@@ -314,18 +298,11 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
         // /snap/page/body/content
         (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))
         (content::field_search::command_t::COMMAND_SELF)
-        (content::field_search::command_t::COMMAND_IF_FOUND, 10)
-            (content::field_search::command_t::COMMAND_PATH, ctemplate)
-            (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::command_t::COMMAND_LABEL, 10)
         (content::field_search::command_t::COMMAND_SAVE_XML, "content")
 
         // /snap/page/body/description
         (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_DESCRIPTION))
         (content::field_search::command_t::COMMAND_SELF)
-        // ignore ctemplate because descriptions should either not be there
-        // or be unique to be valid for SEO
         (content::field_search::command_t::COMMAND_SAVE_XML, "description")
 
         // generate!
@@ -339,13 +316,12 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
  * \param[in] ipath  The box being worked on.
  * \param[in] page  The page element.
  * \param[in] box  The box element.
- * \param[in] ctemplate  A template name in case no other layout applies.
  */
-void output::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+void output::on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box)
 {
-    static_cast<void>(page_cpath);
+    NOTUSED(page_cpath);
 
-    on_generate_main_content(ipath, page, box, ctemplate);
+    on_generate_main_content(ipath, page, box);
 }
 
 
@@ -357,12 +333,9 @@ void output::on_generate_boxes_content(content::path_info_t& page_cpath, content
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The body being generated.
  */
-void output::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void output::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    NOTUSED(ctemplate);
-
     // create information mainly used in the HTML <head> tag
     QString up;
     int const p(ipath.get_cpath().lastIndexOf('/'));

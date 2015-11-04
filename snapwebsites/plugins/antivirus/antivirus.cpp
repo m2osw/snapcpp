@@ -180,12 +180,11 @@ void antivirus::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void antivirus::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void antivirus::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body)
 {
     // our settings pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 

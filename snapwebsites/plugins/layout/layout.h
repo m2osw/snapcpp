@@ -61,7 +61,7 @@ class layout_content
 {
 public:
     virtual ~layout_content() {} // ensure proper virtual tables
-    virtual void on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate) = 0;
+    virtual void on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body) = 0;
 };
 
 
@@ -69,42 +69,50 @@ class layout_boxes
 {
 public:
     virtual ~layout_boxes() {} // ensure proper virtual tables
-    virtual void on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes, QString const & ctemplate) = 0;
+    virtual void on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes) = 0;
 };
 
 
-class layout : public plugins::plugin
+
+
+
+
+class layout
+        : public plugins::plugin
 {
 public:
                         layout();
                         ~layout();
 
+    // plugins::plugin implementation
     static layout *     instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
+    void                on_bootstrap(snap_child *snap);
+
     QtCassandra::QCassandraTable::pointer_t get_layout_table();
 
-    void                on_bootstrap(snap_child *snap);
+    // server signals
     void                on_load_file(snap_child::post_file_t & file, bool & found);
-    void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
-
-    // server signal implementation
     bool                on_improve_signature(QString const & path, QDomDocument doc, QDomElement & signature_tag);
 
+    // content signals
+    void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+
     QString             get_layout(content::path_info_t & ipath, const QString & column_name, bool use_qs_theme);
-    QDomDocument        create_document(content::path_info_t & ipath, plugin *content_plugin);
-    QString             apply_layout(content::path_info_t & ipath, layout_content *plugin, const QString & ctemplate = "");
+    QDomDocument        create_document(content::path_info_t & ipath, plugin * content_plugin);
+    QString             apply_layout(content::path_info_t & ipath, layout_content * plugin);
     QString             define_layout(content::path_info_t & ipath, QString const & name, QString const & key, QString const & default_filename, QString & layout_name);
-    void                create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content *content_plugin, const QString & ctemplate = "", bool handle_boxes = false, QString const & layout_name = "");
+    void                create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, bool handle_boxes = false, QString const & layout_name = "");
     QString             apply_theme(QDomDocument doc, QString const & xsl, QString const & theme_name);
     void                replace_includes(QString & xsl);
     int64_t             install_layout(QString const & layout_name, int64_t const last_updated);
     //void                add_layout_from_resources(QString const & name);
     void                extract_js_and_css(QDomDocument & doc, QDomDocument & doc_output);
 
-    SNAP_SIGNAL(generate_header_content, (content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, const QString & ctemplate), (ipath, header, metadata, ctemplate));
+    SNAP_SIGNAL(generate_header_content, (content::path_info_t & ipath, QDomElement & header, QDomElement & metadata), (ipath, header, metadata));
     SNAP_SIGNAL_WITH_MODE(add_layout_from_resources, (QString const & name), (name), START_AND_DONE);
-    SNAP_SIGNAL_WITH_MODE(generate_page_content, (content::path_info_t & ipath, QDomElement & page, QDomElement & body, const QString & ctemplate), (ipath, page, body, ctemplate), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(generate_page_content, (content::path_info_t & ipath, QDomElement & page, QDomElement & body), (ipath, page, body), NEITHER);
     SNAP_SIGNAL_WITH_MODE(filtered_content, (content::path_info_t & ipath, QDomDocument & doc, QString const & xsl), (ipath, doc, xsl), NEITHER);
 
 private:
@@ -117,12 +125,6 @@ private:
     QtCassandra::QCassandraTable::pointer_t    f_content_table;
 };
 
-class layout_box_execute
-{
-public:
-    virtual ~layout_box_execute() {} // ensure proper virtual tables
-    virtual bool on_layout_box_execute(const QString & path, QDomElement & box) = 0;
-};
 
 
 } // namespace layout

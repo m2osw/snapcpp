@@ -31,7 +31,7 @@ enum class name_t
     SNAP_NAME_INFO_NAME,
     SNAP_NAME_INFO_SHORT_NAME
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class info_exception : public snap_exception
@@ -75,10 +75,10 @@ public:
     void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
 
     // layout_content implementation
-    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
     // layout signals
-    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
     // server signals
     void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature);

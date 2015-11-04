@@ -21,6 +21,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -39,7 +40,7 @@ SNAP_PLUGIN_START(epayment, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -159,7 +160,7 @@ epayment_product::value_t::value_t()
  *
  * \param[in] value  The string value of this value_t object.
  */
-epayment_product::value_t::value_t(QString const& value)
+epayment_product::value_t::value_t(QString const & value)
     : f_type(type_t::TYPE_STRING)
     , f_string(value)
 {
@@ -304,7 +305,7 @@ double epayment_product::value_t::get_float_value() const
  * \param[in] product  The path (or GUID) to the product being created.
  * \param[in] quantity  The quantity being purchased.
  */
-epayment_product::epayment_product(QString const& product, double const quantity, QString const& description)
+epayment_product::epayment_product(QString const & product, double const quantity, QString const & description)
     : f_content_plugin(content::content::instance())
     , f_revision_table(f_content_plugin->get_revision_table())
 {
@@ -413,7 +414,7 @@ bool epayment_product::verify_guid() const
  * \param[in] name  The name of the property to set to \p value.
  * \param[in] value  The value of this property as a string.
  */
-void epayment_product::set_property(QString const& name, QString const& value)
+void epayment_product::set_property(QString const & name, QString const & value)
 {
     if(name == get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT))
     {
@@ -440,7 +441,7 @@ void epayment_product::set_property(QString const& name, QString const& value)
  * \param[in] name  The name of the property to set to \p value.
  * \param[in] value  The value of this property as an integer.
  */
-void epayment_product::set_property(QString const& name, int64_t const value)
+void epayment_product::set_property(QString const & name, int64_t const value)
 {
     if(name == get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT))
     {
@@ -466,7 +467,7 @@ void epayment_product::set_property(QString const& name, int64_t const value)
  * \param[in] name  The name of the property to set to \p value.
  * \param[in] value  The value of this property as a floating point.
  */
-void epayment_product::set_property(QString const& name, double const value)
+void epayment_product::set_property(QString const & name, double const value)
 {
     if(name == get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT))
     {
@@ -490,7 +491,7 @@ void epayment_product::set_property(QString const& name, double const value)
  *
  * \param[in] name  The name of the property to be unset.
  */
-void epayment_product::unset_property(QString const& name)
+void epayment_product::unset_property(QString const & name)
 {
     if(name == get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT)
     || name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY)
@@ -580,7 +581,7 @@ bool epayment_product::has_property(QString const & name) const
  *
  * \return The type of the property as one of the type enumerations values.
  */
-epayment_product::type_t epayment_product::get_property_type(QString const& name) const
+epayment_product::type_t epayment_product::get_property_type(QString const & name) const
 {
     auto const pos(f_properties.find(name));
     if(pos == f_properties.end())
@@ -661,7 +662,7 @@ int64_t epayment_product::get_integer_property(QString const& name) const
  *
  * \sa value_t::get_float_value()
  */
-double epayment_product::get_float_property(QString const& name) const
+double epayment_product::get_float_property(QString const & name) const
 {
     auto const pos(f_properties.find(name));
     if(pos == f_properties.end())
@@ -740,7 +741,7 @@ double epayment_product::get_total() const
  *
  * \return A reference to the new item.
  */
-epayment_product& epayment_product_list::add_product(QString const& product, double const quantity, QString const& description)
+epayment_product& epayment_product_list::add_product(QString const & product, double const quantity, QString const & description)
 {
     epayment_product p(product, quantity, description);
     f_products.push_back(p);
@@ -883,7 +884,7 @@ recurring_t::recurring_t()
  *
  * \sa set()
  */
-recurring_t::recurring_t(QString const& field)
+recurring_t::recurring_t(QString const & field)
     : f_repeat(INFINITE_REPEAT)
     , f_interval(1)
     , f_frequency(FREQUENCY_MONTH)
@@ -934,7 +935,7 @@ recurring_t::recurring_t(QString const& field)
  *
  * \param[in] field  The string representing the recurring information.
  */
-void recurring_t::set(QString const& field)
+void recurring_t::set(QString const & field)
 {
     // create defaults
     repeat_t new_repeat(INFINITE_REPEAT);
@@ -1359,7 +1360,7 @@ bool recurring_t::is_infinite() const
  *
  * \return true if both recurring_t objects represent the same frequency.
  */
-bool recurring_t::operator == (recurring_t const& rhs) const
+bool recurring_t::operator == (recurring_t const & rhs) const
 {
     return f_repeat == rhs.f_repeat
         && f_interval == rhs.f_interval
@@ -1378,7 +1379,7 @@ bool recurring_t::operator == (recurring_t const& rhs) const
  *
  * \return true if both recurring_t objects represent different frequencies.
  */
-bool recurring_t::operator != (recurring_t const& rhs) const
+bool recurring_t::operator != (recurring_t const & rhs) const
 {
     return f_repeat != rhs.f_repeat
         || f_interval != rhs.f_interval
@@ -1423,11 +1424,11 @@ epayment::~epayment()
  *
  * \param[in] snap  The child handling this request.
  */
-void epayment::on_bootstrap(snap_child *snap)
+void epayment::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(epayment, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(epayment, "layout", layout::layout, generate_header_content, _1, _2, _3);
 }
 
 
@@ -1440,7 +1441,7 @@ void epayment::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the epayment plugin.
  */
-epayment *epayment::instance()
+epayment * epayment::instance()
 {
     return g_plugin_epayment_factory.instance();
 }
@@ -1514,13 +1515,11 @@ void epayment::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template in case path does not exist.
  */
-void epayment::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void epayment::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(metadata);
-    static_cast<void>(ctemplate);
+    NOTUSED(ipath);
+    NOTUSED(metadata);
 
     QDomDocument doc(header.ownerDocument());
 

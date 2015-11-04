@@ -44,7 +44,8 @@ public:
 
 
 
-class filter : public plugins::plugin
+class filter
+        : public plugins::plugin
 {
 public:
     enum class token_t
@@ -363,11 +364,15 @@ public:
                         filter();
                         ~filter();
 
+    // plugins::plugin implementation
     static filter *     instance();
     virtual QString     description() const;
-
     void                on_bootstrap(::snap::snap_child *snap);
+
+    // server signals
     void                on_xss_filter(QDomNode & node, QString const & accepted_tags, QString const & accepted_attributes);
+
+    // this is currently a filter function, the signal is on_replace_token()
     void                on_token_filter(content::path_info_t & ipath, QDomDocument & xml);
 
     static bool         filter_uri(QString & uri);

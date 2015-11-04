@@ -74,23 +74,27 @@ public:
 
 
 
-class menu : public plugins::plugin, public layout::layout_content
+class menu
+        : public plugins::plugin
+        , public layout::layout_content
 {
 public:
                         menu();
                         ~menu();
 
+    // plugins::plugin implementation
     static menu *       instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-
     void                on_bootstrap(::snap::snap_child * snap);
-    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+
+    // layout::layout_content imlementation
+    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
 private:
     void                content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t                                  f_snap;
+    zpsnap_child_t      f_snap;
 };
 
 } // namespace menu

@@ -45,7 +45,7 @@ enum class name_t
     SNAP_NAME_FEED_TTL,
     SNAP_NAME_FEED_TYPE
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class feed_exception : public snap_exception
@@ -58,22 +58,26 @@ public:
 
 
 
-class feed : public plugins::plugin
+class feed
+        : public plugins::plugin
 {
 public:
                         feed();
                         ~feed();
 
-    // plugin implementation
+    // plugins::plugin implementation
     static feed *       instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-
     void                on_bootstrap(snap_child * snap);
-    void                on_backend_process();
-    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
 
-    // editor signal
+    // server signals
+    void                on_backend_process();
+
+    // layout signals
+    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // editor signals
     void                on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
 
 private:

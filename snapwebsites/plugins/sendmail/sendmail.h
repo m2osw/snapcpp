@@ -126,9 +126,10 @@ public:
 };
 
 
-class sendmail : public plugins::plugin
-               , public server::backend_action
-               , public layout::layout_content
+class sendmail
+        : public plugins::plugin
+        , public server::backend_action
+        , public layout::layout_content
 {
 public:
     static const sessions::sessions::session_info::session_id_t SENDMAIL_SESSION_ID_MESSAGE = 1;
@@ -222,21 +223,27 @@ public:
         parameter_map_t             f_parameter;
     };
 
-    sendmail();
-    ~sendmail();
+                            sendmail();
+                            ~sendmail();
 
-    static sendmail *                       instance();
-    virtual QString                         description() const;
-    virtual int64_t                         do_update(int64_t last_updated);
+    // plugins::plugin implementation
+    static sendmail *       instance();
+    virtual QString         description() const;
+    virtual int64_t         do_update(int64_t last_updated);
+    void                    on_bootstrap(snap_child * snap);
+
     QtCassandra::QCassandraTable::pointer_t get_emails_table();
 
-    void                    on_bootstrap(snap_child * snap);
+    // server signals
     void                    on_register_backend_action(server::backend_action_map_t & actions);
     void                    on_replace_token(content::path_info_t & cpath, QDomDocument & xml, filter::filter::token_info_t & token);
 
-    virtual char const *    get_signal_name(QString const & action) const;
+    // server::backend_action implementation
     virtual void            on_backend_action(QString const & action);
-    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    virtual char const *    get_signal_name(QString const & action) const;
+
+    // layout::layout_content
+    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
 
     void                    post_email(email const & e);
     QString                 default_from() const;

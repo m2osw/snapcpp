@@ -1247,7 +1247,7 @@ void permissions::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
     SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
     SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
-    SNAP_LISTEN(permissions, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(permissions, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(permissions, "links", links::links, modified_link, _1, _2);
 }
 
@@ -1791,12 +1791,11 @@ std::cerr << "page group: ";
  * \param[in,out] ipath  The path to this page.
  * \param[in,out] page  The page element being generated.
  * \param[in,out] body  The body element being generated.
- * \param[in] ctemplate  Template used for parameters that are otherwise missing.
  */
-void permissions::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void permissions::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // show the permission pages as information (many of these are read-only)
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -2943,10 +2942,9 @@ void permissions::on_add_snap_expr_functions(snap_expr::functions_t & functions)
 }
 
 
-void permissions::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
+void permissions::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(header);
-    static_cast<void>(ctemplate);
+    NOTUSED(header);
 
     if(ipath.get_cpath() == "remove-iframe-for-login")
     {

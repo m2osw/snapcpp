@@ -101,8 +101,8 @@ void robotstxt::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3);
 }
 
 
@@ -433,13 +433,11 @@ void robotstxt::define_robots(content::path_info_t& ipath)
  * \param[in,out] ipath  The path concerned by this request.
  * \param[in,out] header  The HTML header element.
  * \param[in,out] metadata  The XML metadata used with the XSLT parser.
- * \param[in] ctemplate  Another path in case ipath is missing parameters.
  */
-void robotstxt::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void robotstxt::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(header);
-    static_cast<void>(metadata);
-    static_cast<void>(ctemplate);
+    NOTUSED(header);
+    NOTUSED(metadata);
 
     define_robots(ipath);
     if(!f_robots_cache.isEmpty())
@@ -447,32 +445,6 @@ void robotstxt::on_generate_header_content(content::path_info_t& ipath, QDomElem
         // Set the HTTP header
         f_snap->set_header("X-Robots", f_robots_cache);
     }
-}
-
-
-/** \brief Implement the main content for this class.
- *
- * If this object becomes the content object, the the layout will call this
- * function to generate the content.
- *
- * In case of the robots.txt file, we use a lower level function.
- *
- * \todo
- * Check whether this function is required (i.e. we may not need to derive
- * from the layout interface? do we?)
- *
- * \param[in,out] ipath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The default template in case the main data
- *                       doesn't exist yet.
- */
-void robotstxt::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(page);
-    static_cast<void>(body);
-    static_cast<void>(ctemplate);
 }
 
 
@@ -484,13 +456,9 @@ void robotstxt::on_generate_main_content(content::path_info_t& ipath, QDomElemen
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A default template in case the default is not
- *                       available.
  */
-void robotstxt::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void robotstxt::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    static_cast<void>(ctemplate);
-
     QDomDocument doc(page.ownerDocument());
 
     define_robots(ipath);
