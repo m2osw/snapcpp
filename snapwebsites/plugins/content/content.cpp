@@ -3485,7 +3485,7 @@ void content::on_save_content()
             f.set_filename(a->f_filename);
             if(!f_snap->load_file(f))
             {
-                throw content_exception_io_error("content::on_save_content(): load_file() failed");
+                throw content_exception_io_error("content::on_save_content(): load_file(\"" + a->f_filename + "\") failed.");
             }
             file.set_file_data(f.get_data());
 

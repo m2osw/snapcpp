@@ -97,6 +97,7 @@ add_subdirectory(test_plugin_suite)
 add_subdirectory(test_plugin)
 add_subdirectory(tracker)
 add_subdirectory(users)
+add_subdirectory(users_ui)
 add_subdirectory(versions)
 
 

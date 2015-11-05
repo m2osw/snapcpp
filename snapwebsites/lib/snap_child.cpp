@@ -106,7 +106,7 @@ char const * g_minimum_plugins[] =
     "content",
     "editor",
     "filter",
-    "form",
+    "form", // this one will be removed completely (phased out)
     "info",
     "javascript",
     "layout",
@@ -122,7 +122,8 @@ char const * g_minimum_plugins[] =
     "server_access",
     "sessions",
     "taxonomy",
-    "users"
+    "users",
+    "users_ui"
 };
 
 char const * g_week_day_name[] =

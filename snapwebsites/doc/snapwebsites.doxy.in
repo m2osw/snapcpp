@@ -691,6 +691,7 @@ INPUT                  = @snapwebsites_project_SOURCE_DIR@/lib \
                          @snapwebsites_project_SOURCE_DIR@/plugins/oauth2 \
                          @snapwebsites_project_SOURCE_DIR@/plugins/output \
                          @snapwebsites_project_SOURCE_DIR@/plugins/path \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/password \
                          @snapwebsites_project_SOURCE_DIR@/plugins/permissions \
                          @snapwebsites_project_SOURCE_DIR@/plugins/qrcode \
                          @snapwebsites_project_SOURCE_DIR@/plugins/robotstxt \
@@ -706,6 +707,7 @@ INPUT                  = @snapwebsites_project_SOURCE_DIR@/lib \
                          @snapwebsites_project_SOURCE_DIR@/plugins/test_plugin_suite \
                          @snapwebsites_project_SOURCE_DIR@/plugins/tracker \
                          @snapwebsites_project_SOURCE_DIR@/plugins/users \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/users_ui \
                          @snapwebsites_project_SOURCE_DIR@/plugins/versions \
                          @snapwebsites_project_SOURCE_DIR@/plugins/zoom
 

@@ -849,7 +849,7 @@ QDomDocument const form::load_form(content::path_info_t & ipath, QString const &
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void form::on_process_post(QString const& uri_path)
+void form::on_process_post(QString const & uri_path)
 {
     QString const form_session(f_snap->postenv("_form_session"));
     if(form_session.isEmpty())
@@ -2330,6 +2330,8 @@ QString form::get_source(QString const & owner, content::path_info_t & ipath)
         // assume the default resource filename
         source = ":/xml/" + owner + "/" + source + ".xml";
     }
+
+    SNAP_LOG_TRACE("Form source filename: \"")(source)("\"");
 
     return source;
 }

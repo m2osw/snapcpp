@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!-- to install: snaplayout content.xml -->
-<snap-tree content-modified="2014-01-08 19:36:39">
+<snap-tree content-modified="2015-11-04 15:43:39">
   <content path="/admin/layouts/default">
     <param name="content::title" revision="revision">Default Layout</param>
     <param name="content::body" revision="revision">
@@ -33,7 +33,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>This box is shown on the left side of the content.</p>]]>
     </param>
   </content>
-  <content path="/admin/layouts/default/left/login" owner="users">
+  <content path="/admin/layouts/default/left/login" owner="users_ui">
     <!--
       this is a default box as a proof of concept
       once we can edit this data it will be much less useful

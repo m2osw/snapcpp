@@ -51,34 +51,12 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 
 snap_validate_xml( content.xml                  content/content.dtd )
-snap_validate_xml( forgot-password-form.xml     form/snap-form.dtd )
-snap_validate_xml( login-box-form.xml           form/snap-form.dtd )
-snap_validate_xml( login-form.xml               form/snap-form.dtd )
-snap_validate_xml( new-password-form.xml        form/snap-form.dtd )
-snap_validate_xml( password-form.xml            form/snap-form.dtd )
-snap_validate_xml( register-box-form.xml        form/snap-form.dtd )
-snap_validate_xml( register-form.xml            form/snap-form.dtd )
-snap_validate_xml( replace-password-form.xml    form/snap-form.dtd )
-snap_validate_xml( resend-email-form.xml        form/snap-form.dtd )
-snap_validate_xml( verify-credentials-form.xml  form/snap-form.dtd )
-snap_validate_xml( verify-form.xml              form/snap-form.dtd )
 
 add_library(users SHARED
     users.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    forgot-password-form.xml
-    login-box-form.xml
-    login-form.xml
-    new-password-form.xml
-    password-form.xml
-    register-box-form.xml
-    register-form.xml
-    replace-password-form.xml
-    resend-email-form.xml
-    verify-credentials-form.xml
-    verify-form.xml
 )
 
 target_link_libraries( users ${QT_LIBRARIES} )

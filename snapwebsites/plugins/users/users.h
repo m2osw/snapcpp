@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../form/form.h"
-#include "../layout/layout.h"
+#include "../filter/filter.h"
+#include "../sessions/sessions.h"
 #include "../path/path.h"
 
 namespace snap
@@ -144,7 +144,6 @@ class users
         , public path::path_execute
         , public layout::layout_content
         , public layout::layout_boxes
-        , public form::form_post
 {
 public:
     enum class login_mode_t
@@ -232,7 +231,6 @@ public:
 
     // server signals
     void                    on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
-    void                    on_init();
     void                    on_process_cookies();
     void                    on_attach_to_session();
     void                    on_detach_from_session();
@@ -241,9 +239,6 @@ public:
 
     // path::path_execute implementation
     bool                    on_path_execute(content::path_info_t & ipath);
-
-    // path signals
-    void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
 
     // locale signals
     void                    on_set_locale();
@@ -255,7 +250,7 @@ public:
     // layout::layout_content implementation
     virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
-    // layout::layout_boxes implementation
+    // layout::layout_boxes implementation (to be removed)
     virtual void            on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes);
 
     // layout signals
@@ -267,9 +262,6 @@ public:
 
     // links::links_cloned implementation
     virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
-
-    // form stuff
-    virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
 
     SNAP_SIGNAL_WITH_MODE(check_user_security, (QString const & user_key, QString const & email, QString const & password, content::permission_flag & secure), (user_key, email, password, secure), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_registered, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
@@ -284,17 +276,20 @@ public:
     bool                    user_is_a_spammer();
     bool                    user_is_logged_in();
     static QString          create_password();
+    void                    create_password_salt(QByteArray & salt);
+    void                    encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash);
     status_t                register_user(QString const & email, QString const & password);
+    void                    verify_user(content::path_info_t & ipath);
     status_t                user_status(QString const & email, QString & status_key);
     sessions::sessions::session_info const & get_session() const;
     void                    attach_to_session(QString const & name, QString const & data);
     QString                 detach_from_session(QString const & name);
     QString                 get_from_session(QString const & name) const;
     void                    set_referrer( QString path );
-    void                    send_to_replace_password_page(QString const & email, bool const set_status);
     QString                 login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode = login_mode_t::LOGIN_MODE_FULL);
     login_status_t          load_login_session(QString const & session_cookie, sessions::sessions::session_info & info, bool check_time_limit);
     bool                    authenticated_user(QString const & email, sessions::sessions::session_info * info);
+    void                    create_logged_in_user_session(QString const & user_key);
     void                    user_logout();
     void                    save_user_parameter(QString const & email, QString const & field_name, QtCassandra::QCassandraValue const & value);
     void                    save_user_parameter(QString const & email, QString const & field_name, QString const & value);
@@ -309,34 +304,10 @@ public:
     QString                 get_user_path(QString const & email);
     QString                 email_to_user_key(QString const & email);
     QString                 basic_email_canonicalization(QString const & email);
-    bool                    resend_verification_email(QString const & email);
 
 private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
-    void                    show_user(content::path_info_t & cpath, QDomElement & page, QDomElement & body);
-    void                    prepare_login_form();
-    void                    logout_user(content::path_info_t & cpath, QDomElement & page, QDomElement & body);
-    void                    prepare_basic_anonymous_form();
-    void                    prepare_forgot_password_form();
-    void                    prepare_password_form();
-    void                    prepare_new_password_form();
-    void                    process_login_form(login_mode_t login_mode);
-    void                    prepare_verify_credentials_form();
-    void                    process_register_form();
-    void                    create_password_salt(QByteArray & salt);
-    void                    encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash);
-    void                    verify_user(content::path_info_t & ipath);
-    void                    process_verify_form();
-    void                    process_verify_resend_form();
-    void                    process_forgot_password_form();
-    void                    process_new_password_form();
-    void                    process_password_form();
-    void                    process_replace_password_form();
-    void                    prepare_replace_password_form(QDomElement & body);
-    void                    verify_email(QString const & email);
-    void                    verify_password(content::path_info_t & cpath);
-    void                    forgot_password_email(QString const & email, QString const & user_key);
 
     zpsnap_child_t              f_snap;
 

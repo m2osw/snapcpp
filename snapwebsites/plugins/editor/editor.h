@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "../form/form.h"
 #include "../users/users.h"
 #include "../server_access/server_access.h"
 #include "../javascript/javascript.h"
@@ -91,13 +92,14 @@ enum class name_t
 char const * get_name(name_t name) __attribute__ ((const));
 
 
-class editor : public plugins::plugin
-             , public links::links_cloned
-             , public path::path_execute
-             , public layout::layout_content
-             , public form::form_post
-             , public layout::layout_boxes
-             , public javascript::javascript_dynamic_plugin
+class editor
+        : public plugins::plugin
+        , public links::links_cloned
+        , public path::path_execute
+        , public layout::layout_content
+        , public form::form_post
+        , public layout::layout_boxes
+        , public javascript::javascript_dynamic_plugin
 {
 public:
     static int const    EDITOR_SESSION_ID_EDIT = 1;
