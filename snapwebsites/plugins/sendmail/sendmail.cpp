@@ -1533,7 +1533,7 @@ int64_t sendmail::do_update(int64_t last_updated)
  */
 void sendmail::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 
@@ -2980,11 +2980,13 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
  * the values were already computed in the XML document, so all we have
  * to do is query the XML and return the corresponding value.
  *
- * The supported tokens are:
+ * The supported tokens are listed below. Parameters written between
+ * double quotes are optional. The name of the parameter is not required
+ * if written in order.
  *
- * \li [sendmail::forgot_password_link(text="anchor text")]
- * \li [sendmail::unsubscribe_link(text="anchor text")]
- * \li [sendmail::verify_link(text="anchor text")]
+ * \li [sendmail::forgot_password_link([text="anchor text"])]
+ * \li [sendmail::unsubscribe_link([text="anchor text"])]
+ * \li [sendmail::verify_link([text="anchor text"])]
  * \li [sendmail::from]
  * \li [sendmail::to]
  * \li [sendmail::path]
