@@ -1,3 +1,33 @@
+log4cplus (1.2.0.180~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 04 Nov 2015 03:01:23 -0800
+
+log4cplus (1.2.0.179~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 03 Nov 2015 03:01:21 -0800
+
+log4cplus (1.2.0.178~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 02 Nov 2015 03:01:27 -0800
+
+log4cplus (1.2.0.177~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 01 Nov 2015 03:01:19 -0800
+
+log4cplus (1.2.0.176~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 31 Oct 2015 19:39:10 -0700
+
 log4cplus (1.2.0.175~trusty) trusty; urgency=high
 
   * Nightly build.

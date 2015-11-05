@@ -1,3 +1,33 @@
+snapcmakemodules (1.0.24.151~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 04 Nov 2015 03:01:15 -0800
+
+snapcmakemodules (1.0.24.150~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 03 Nov 2015 03:01:14 -0800
+
+snapcmakemodules (1.0.24.149~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 02 Nov 2015 03:01:19 -0800
+
+snapcmakemodules (1.0.24.148~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 01 Nov 2015 03:01:11 -0800
+
+snapcmakemodules (1.0.24.147~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 31 Oct 2015 19:39:02 -0700
+
 snapcmakemodules (1.0.24.146~trusty) trusty; urgency=high
 
   * Nightly build.
