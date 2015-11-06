@@ -425,7 +425,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 10, 26, 3, 14, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 11, 6, 0, 32, 56, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1529,11 +1529,13 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
         for(int i(0); i < max_widgets; ++i)
         {
             QDomElement widget(widgets.at(i).toElement());
+
+            bool const is_secret(widget_is_secret(widget));
+
             QString const widget_name(widget.attribute("id"));
             QString const field_name(widget.attribute("field"));
             QString const widget_type(widget.attribute("type"));
             QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
-            bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
 
             // TODO: the following XML validation should be done ONCE with
             //       an external tool at compile time
@@ -1639,11 +1641,13 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
         for(int i(0); i < max_widgets; ++i)
         {
             QDomElement widget(widgets.at(i).toElement());
+
+            bool const is_secret(widget_is_secret(widget));
+
             QString const widget_name(widget.attribute("id"));
             QString const field_name(widget.attribute("field"));
             QString const widget_type(widget.attribute("type"));
             QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
-            bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
 
             // ignore the session identifier in this case
             if(field_name == get_name(name_t::SNAP_NAME_EDITOR_SESSION))
@@ -1788,7 +1792,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
                         false
                     ).set_widget_name(widget_name);
                 }
-                messages::messages::message const& msg(messages->get_last_message());
+                messages::messages::message const & msg(messages->get_last_message());
 
                 // Add the following to the widget so we can display the
                 // widget as having an error and show the error on request
@@ -1889,11 +1893,13 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
         for(int i(0); i < max_widgets; ++i)
         {
             QDomElement widget(widgets.at(i).toElement());
+
+            bool const is_secret(widget_is_secret(widget));
+
             QString const widget_name(widget.attribute("id"));
             QString const field_name(widget.attribute("field"));
             QString const widget_type(widget.attribute("type"));
             QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
-            bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
 
             // if not in the post, totally ignore the value in the save process
             // (TBD: we most certainly need to support the draft values!!!
@@ -2085,12 +2091,12 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
     for(int i(0); i < max_widgets; ++i)
     {
         QDomElement widget(widgets.at(i).toElement());
+        //bool const is_secret(widget_is_secret(widget));
         QString const widget_name(widget.attribute("id"));
         widgets_by_name[widget_name] = widget;
         //QString const field_name(widget.attribute("field"));
         //QString const widget_type(widget.attribute("type"));
         //QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
-        //bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
     }
 
     // by default let the attachment plugin handle attachments
@@ -2284,6 +2290,73 @@ QDomDocument editor::get_editor_widgets(content::path_info_t & ipath)
  * \param[in] name  The name of the editor layout being loaded for this page.
  * \param[in,out] editor_widgets  The DOM with the editor widgets.
  */
+
+
+/** \brief Check a widget to know whether its content is secret.
+ *
+ * This function simplifies checking whether a widget is secret or not.
+ * This is whether the contents of the widget are to be saved in the
+ * "secret" table or not.
+ *
+ * One can explicitly mark a field as secret in the XML declaration
+ * of the widget.
+ *
+ * \code
+ * <widget ... secret="secret" ...>
+ * \endcode
+ *
+ * The function sends the editor_widget_type_is_secret() signal which
+ * is thus given a chance to modify the widget just before it gets
+ * used.
+ *
+ * \param[in,out] widget  The widget to be checked.
+ *
+ * \return true if the widget data is to be saved in the secret table.
+ */
+bool editor::widget_is_secret(QDomElement widget)
+{
+    content::permission_flag is_public;
+    editor_widget_type_is_secret(widget, is_public);
+    return !is_public.allowed();
+}
+
+
+/** \brief Check the widget type to know whether it is secret.
+ *
+ * Some widget types may be secret. This signal allows you to set
+ * the is_public to "not permitted" depending on the type.
+ *
+ * The widget parameter is in/out so you may change it. For example,
+ * widgets of type "password" have there "field_name" attribute
+ * removed. This makes it a lot safer for such fields.
+ *
+ * At some point, we will have a tool to check files before adding
+ * them to the Qt resources or a layout. That way we can check
+ * everything. Until then but even after we want to keep security
+ * checks at the time we check everything.
+ *
+ * \param[in,out] widget  The widget being checked.
+ * \param[in] is_public  Whether the widget type is public or private.
+ */
+bool editor::editor_widget_type_is_secret_impl(QDomElement widget, content::permission_flag & is_public)
+{
+    // true if not "public" which is #IMPLIED
+    if(widget.attribute("secret") == "secret")
+    {
+        is_public.not_permitted();
+    }
+
+    // now check the type
+    QString const widget_type(widget.attribute("type"));
+    if(widget_type == "password")
+    {
+        is_public.not_permitted();
+        widget.removeAttribute("field");
+        widget.setAttribute("auto-save", "no");
+    }
+
+    return true;
+}
 
 
 /** \brief Start a widget validation.
@@ -4769,11 +4842,13 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     for(int i(0); i < max_widgets; ++i)
     {
         QDomElement w(widgets.at(i).toElement());
+
+        bool const is_secret(widget_is_secret(w));
+
         QString const field_name(w.attribute("field"));
         QString const field_id(w.attribute("id"));
         QString const field_type(w.attribute("type"));
         QString const widget_auto_save(w.attribute("auto-save", "string")); // this one is #IMPLIED
-        bool const is_secret(w.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
 
         // note: the auto-save may not be turned on, we can still copy
         //       empty pointers around, it is fast enough

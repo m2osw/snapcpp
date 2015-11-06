@@ -58,6 +58,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </sizes>
     <background-value>line edit</background-value>
   </widget>
+  <widget id="password_widget" type="password" field="editor::password_widget" path="editor/password_widget" no-toolbar="no-toolbar" auto-save="plain">
+    <tooltip>Tooltip</tooltip>
+    <help>Help</help>
+    <sizes>
+      <min>1</min>
+      <max>128</max>
+    </sizes>
+    <background-value>password</background-value>
+  </widget>
   <widget id="text_edit_widget" type="text-edit" field="editor::text_edit_widget" path="editor/text_edit_widget" auto-save="string">
     <tooltip>Tooltip</tooltip>
     <help>Help</help>

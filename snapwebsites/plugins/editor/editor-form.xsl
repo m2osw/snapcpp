@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                               xmlns:fn="http://www.w3.org/2005/xpath-functions"
                               xmlns:snap="http://snapwebsites.info/snap-functions">
   <xsl:variable name="editor-name">editor</xsl:variable>
-  <xsl:variable name="editor-modified">2014-09-14 17:51:48</xsl:variable>
+  <xsl:variable name="editor-modified">2015-11-04 20:45:48</xsl:variable>
 
   <!-- COMMAND PARTS -->
   <xsl:template name="snap:common-parts">
@@ -665,6 +665,57 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <xsl:template match="widget[@type='line-edit']">
     <widget path="{@path}">
       <xsl:call-template name="snap:line-edit">
+        <xsl:with-param name="path" select="@path"/>
+        <xsl:with-param name="name" select="@id"/>
+      </xsl:call-template>
+    </widget>
+  </xsl:template>
+
+  <!-- PASSWORD WIDGET -->
+  <!-- NOTE: we use a sub-template to allow for composite widgets -->
+  <xsl:template name="snap:password">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <div field_type="password">
+      <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
+      <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable line-edit <xsl:value-of
+        select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+        test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
+        select="concat(' ', classes)"/><xsl:if test="state = 'disabled'"> disabled</xsl:if><xsl:if
+        test="state = 'read-only'"> read-only</xsl:if><xsl:if
+        test="@no-paste"> no-paste</xsl:if></xsl:attribute>
+        <!-- always prevent spellcheck on password widgets -->
+        <xsl:attribute name="spellcheck">false</xsl:attribute>
+      <xsl:if test="background-value">
+        <!-- by default "snap-editor-background" has "display: none"
+             a script shows them on load once ready AND if the value is
+             empty also it is a "pointer-event: none;" -->
+        <div class="snap-editor-background zordered">
+          <div class="snap-editor-background-content">
+            <!-- this div is placed OVER the next div -->
+            <xsl:copy-of select="background-value/node()"/>
+          </div>
+        </div>
+      </xsl:if>
+      <div>
+        <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+        <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
+        <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
+          <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+        </xsl:if>
+        <xsl:if test="tooltip">
+          <xsl:attribute name="title"><xsl:copy-of select="tooltip"/></xsl:attribute>
+        </xsl:if>
+        <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
+        <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+        <!-- now the actual value ... which for password is always empty on a load -->
+      </div>
+      <xsl:call-template name="snap:common-parts"/>
+    </div>
+  </xsl:template>
+  <xsl:template match="widget[@type='password']">
+    <widget path="{@path}">
+      <xsl:call-template name="snap:password">
         <xsl:with-param name="path" select="@path"/>
         <xsl:with-param name="name" select="@id"/>
       </xsl:call-template>

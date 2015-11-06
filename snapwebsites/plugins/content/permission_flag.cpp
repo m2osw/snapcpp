@@ -41,7 +41,7 @@ SNAP_PLUGIN_EXTENSION_START(content)
  *
  * \param[in] new_reason  The reason for the refusal, can be set to "".
  */
-void permission_flag::not_permitted(QString const& new_reason)
+void permission_flag::not_permitted(QString const & new_reason)
 {
     f_allowed = false;
 

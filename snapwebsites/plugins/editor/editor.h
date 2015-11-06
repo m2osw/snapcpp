@@ -270,6 +270,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(finish_editor_form_processing, (content::path_info_t & ipath, bool & succeeded), (ipath, succeeded), NEITHER);
     SNAP_SIGNAL(string_to_value, (string_to_value_info_t & value_info), (value_info));
     SNAP_SIGNAL(value_to_string, (value_to_string_info_t & value_info), (value_info));
+    SNAP_SIGNAL(editor_widget_type_is_secret, (QDomElement widget, content::permission_flag & is_public), (widget, is_public));
 
     // dynamic javascript property support
     virtual int         js_property_count() const;
@@ -288,6 +289,7 @@ private:
     void                editor_create_new_branch(content::path_info_t & ipath);
     bool                save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget);
     QString             verify_html_validity(QString body);
+    bool                widget_is_secret(QDomElement widget);
 
     zpsnap_child_t          f_snap;
     QDomDocument            f_editor_form;          // XSL from editor-form.xsl + other plugin extensions

@@ -16,7 +16,8 @@
 // ==ClosureCompiler==
 // @compilation_level ADVANCED_OPTIMIZATIONS
 // @externs $CLOSURE_COMPILER/contrib/externs/jquery-1.9.js
-// @externs plugins/output/output.js
+// @externs plugins/output/externs/jquery-extensions.js
+// @js plugins/output/output.js
 // ==/ClosureCompiler==
 //
 
