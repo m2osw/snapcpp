@@ -1,5 +1,5 @@
-#ifndef CATCH_TESTS_H
-#define CATCH_TESTS_H
+#ifndef CSSPP_TESTS_H
+#define CSSPP_TESTS_H
 // CSS Preprocessor -- Test Suite
 // Copyright (C) 2015  Made to Order Software Corp.
 //
