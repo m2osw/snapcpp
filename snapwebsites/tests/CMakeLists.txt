@@ -1,10 +1,14 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      tests/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites Server. This CMake compiles tests that can be used
-#      against the server.
+#      against the server. All C++ tests should be converted to a catch_*
+#      test instead of its own brew. Now that we have a test bed ready for
+#      such the conversion should be easy enough. We will still have separate
+#      tests that are external processes we need to run against the main test.
+#      (i.e. a test for client/server network connections.)
 #
 # Documentation:
 #      See the CMake documentation.
@@ -49,6 +53,51 @@ if( 3RDPARTY_INCLUDED )
 else()
     add_custom_target( test_prereqs )
 endif()
+
+##
+## The unified unit tests in one large test
+##
+project(test_snap)
+
+
+add_executable(test_snap
+    # Main
+    catch_tests.cpp
+
+    # Test suites
+    catch_snap_communicator.cpp
+)
+add_dependencies( test_snap test_prereqs )
+target_link_libraries(test_snap
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    dl
+)
+
+
+##
+## A client used to test our Snap! Communicator
+##
+project(test_snap_communicator_client)
+
+
+add_executable(test_snap_communicator_client
+    # Main
+    test_snap_client.cpp
+)
+add_dependencies( test_snap_communicator_client test_prereqs )
+target_link_libraries(test_snap_communicator_client
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    dl
+)
+
 
 ##
 ## Send orders to the Snap Server via the snap.cgi tool

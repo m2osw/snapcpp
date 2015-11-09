@@ -214,6 +214,10 @@ tcp_client::tcp_client(std::string const& addr, int port)
 /** \brief Clean up the TCP client object.
  *
  * This function cleans up the TCP client object by closing the attached socket.
+ *
+ * \todo
+ * Should we use the shutdown() call? I think that could prevent the user
+ * on the other side from receiving the last bit of data we sent.
  */
 tcp_client::~tcp_client()
 {
@@ -520,6 +524,10 @@ tcp_server::tcp_server(std::string const & addr, int port, int max_connections, 
  *
  * If the \p auto_close parameter was set to true in the constructor, then
  * the last accepter socket gets closed by this function.
+ *
+ * \todo
+ * Should we use the shutdown() call? I think that could prevent the user
+ * on the other side from receiving the last bit of data we sent.
  */
 tcp_server::~tcp_server()
 {
@@ -660,7 +668,13 @@ void tcp_server::keepalive(bool yes)
  * information immediately, otherwise it is cleaner to always block those
  * signals.)
  *
- * \param[in] max_wait_ms  The maximum number of milliseconds to wait for a message. If set to -1 (the default), accept() will block indefintely.
+ * \todo
+ * Should we use the shutdown() call? I think that could prevent the user
+ * on the other side from receiving the last bit of data we sent.
+ *
+ * \param[in] max_wait_ms  The maximum number of milliseconds to wait for
+ *            a message. If set to -1 (the default), accept() will block
+ *            indefintely.
  *
  * \return A client socket descriptor or -1 if an error occured, -2 if timeout and max_wait is set.
  */
@@ -946,11 +960,24 @@ bio_client::~bio_client()
 }
 
 
+/** \brief Close the connection.
+ *
+ * This function closes the connection by losing the f_bio object.
+ */
+void bio_client::close()
+{
+    f_bio.reset();
+}
+
+
 /** \brief Get the socket descriptor.
  *
  * This function returns the TCP client socket descriptor. This can be
  * used to change the descriptor behavior (i.e. make it non-blocking for
  * example.)
+ *
+ * \note
+ * If the socket was closed, then the function returns -1.
  *
  * \warning
  * This socket is generally managed by the BIO library and thus it may
@@ -961,12 +988,17 @@ bio_client::~bio_client()
  */
 int bio_client::get_socket() const
 {
-    int c;
+    if(f_bio)
+    {
+        int c;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-    BIO_get_fd(f_bio.get(), &c);
+        BIO_get_fd(f_bio.get(), &c);
 #pragma GCC diagnostic pop
-    return c;
+        return c;
+    }
+
+    return -1;
 }
 
 
@@ -976,11 +1008,19 @@ int bio_client::get_socket() const
  * Note that this is the port the server is listening to and not the port
  * the TCP client is currently connected to.
  *
+ * \note
+ * If the connection was closed, return -1.
+ *
  * \return The TCP client port.
  */
 int bio_client::get_port() const
 {
-    return BIO_get_conn_int_port(f_bio.get());
+    if(f_bio)
+    {
+        return BIO_get_conn_int_port(f_bio.get());
+    }
+
+    return -1;
 }
 
 
@@ -993,11 +1033,19 @@ int bio_client::get_port() const
  *
  * Use the get_socket_name() function to retrieve the client's TCP address.
  *
+ * \note
+ * If the connection was closed, this function returns "".
+ *
  * \return The TCP client address.
  */
 std::string bio_client::get_addr() const
 {
-    return BIO_get_conn_hostname(f_bio.get());
+    if(f_bio)
+    {
+        return BIO_get_conn_hostname(f_bio.get());
+    }
+
+    return "";
 }
 
 
@@ -1042,10 +1090,19 @@ int bio_client::get_client_port() const
  * This function retrieve the IP address of the client (your computer).
  * This is retrieved from the socket using the getsockname() function.
  *
+ * \note
+ * The function returns an empty string if the connection was lost
+ * or purposefully closed.
+ *
  * \return The IP address as a string.
  */
 std::string bio_client::get_client_addr() const
 {
+    if(!f_bio)
+    {
+        return "";
+    }
+
     struct sockaddr addr;
     socklen_t len(sizeof(addr));
     int const r(getsockname(get_socket(), &addr, &len));
@@ -1085,6 +1142,9 @@ std::string bio_client::get_client_addr() const
  * The function returns -1 if an error occurs. The error is available in
  * errno as expected in the POSIX interface.
  *
+ * \note
+ * If the connection was closed, this function returns -1.
+ *
  * \warning
  * When the function returns zero, it is likely that the server closed
  * the connection. It may also be that the buffer was empty and that
@@ -1106,6 +1166,11 @@ std::string bio_client::get_client_addr() const
  */
 int bio_client::read(char * buf, size_t size)
 {
+    if(!f_bio)
+    {
+        return -1;
+    }
+
     int const r(static_cast<int>(BIO_read(f_bio.get(), buf, size)));
     if(r <= -2)
     {
@@ -1138,6 +1203,9 @@ int bio_client::read(char * buf, size_t size)
  * The function may return 0 (an empty string) when the server closes
  * the connection.
  *
+ * \note
+ * If the connection was closed then this function returns -1.
+ *
  * \warning
  * A return value of zero can mean "empty line" and not end of file. It
  * is up to you to know whether your protocol allows for empty lines or
@@ -1152,7 +1220,7 @@ int bio_client::read(char * buf, size_t size)
  *
  * \sa read()
  */
-int bio_client::read_line(std::string& line)
+int bio_client::read_line(std::string & line)
 {
     line.clear();
     int len(0);
@@ -1189,6 +1257,9 @@ int bio_client::read_line(std::string& line)
  * The function returns -1 if an error occurs. The error is available in
  * errno as expected in the POSIX interface.
  *
+ * \note
+ * If the connection was closed, return -1.
+ *
  * \todo
  * At this point, I do not know for sure whether errno is properly set
  * or not. It is not unlikely that the BIO library does not keep a clean
@@ -1202,8 +1273,13 @@ int bio_client::read_line(std::string& line)
  *
  * \sa read()
  */
-int bio_client::write(const char *buf, size_t size)
+int bio_client::write(char const * buf, size_t size)
 {
+    if(!f_bio)
+    {
+        return -1;
+    }
+
     int r(static_cast<int>(BIO_write(f_bio.get(), buf, size)));
     if(r <= -2)
     {
@@ -1367,6 +1443,20 @@ bool is_ipv4(char const * ip)
 }
 
 
+/** \brief Check wether a string represents an IPv6 address.
+ *
+ * This function quickly checks whether the specified string defines a
+ * valid IPv6 address. It supports the IPv4 notation at times used
+ * inside an IPv6 notation.
+ *
+ * \note
+ * The function can be called with a null pointer in which case it
+ * immediate returns false.
+ *
+ * \param[in] ip  A pointer to a string holding an address.
+ *
+ * \return true if the \p ip string represents an IPv6 address.
+ */
 bool is_ipv6(char const * ip)
 {
     if(ip == nullptr)

@@ -1495,11 +1495,8 @@ temporary_timer(server * s)
 }
 
 // snap_communicator::snap_timer implementation
-virtual void process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client)
+virtual void process_timeout()
 {
-    NOTUSED(we);
-    NOTUSED(new_client);
-
     f_server->check_listen_runner();
 }
 
@@ -1560,61 +1557,6 @@ void server::check_listen_runner()
 
 
 
-/** \brief Our version of snap_tcp_server_client_connection object.
- *
- * The snap_tcp_server_client_connection class has a pure virtual function
- * and thus it cannot be instantiated. In order to have a way to
- * instantiate such an object, we create our own class
- * and implement the process_signal() function.
- */
-class client_impl : public snap_communicator::snap_tcp_server_client_connection
-{
-public:
-                                client_impl(int socket);
-
-    // snap_communicator::snap_tcp_server_client_connection implementation
-    virtual void                process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
-};
-
-
-/** \brief Initialize a client socket.
- *
- * The client socket gets initialized with the specified 'socket'
- * parameter.
- */
-client_impl::client_impl(int socket)
-    : snap_tcp_server_client_connection(socket)
-{
-}
-
-
-/** \brief Instantiation of process_signal().
- *
- * This function is an instantiation of the process_signal() so we
- * can create a client_impl object and return that in
- * listener_impl::create_new_connection().
- *
- * The function just raises an exception because it is not expected
- * to ever be called.
- *
- * \exception snap_logic_exception
- * This exception is always raised because this instance of this function
- * should never get called.
- *
- * \param[in] we  The event received.
- * \param[in,out] new_client  The new client which was created (for
- *                            listening servers only).
- */
-void client_impl::process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client)
-{
-    NOTUSED(we);
-    NOTUSED(new_client);
-
-    // our client should never be added to a snap_communicator object
-    throw snap_logic_exception("client_impl::process_signal() was called when it should not even be added to a snap_communicator.");
-}
-
-
 
 /** \brief Handle new connections from clients.
  *
@@ -1627,10 +1569,7 @@ public:
                                 listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close);
 
     // snap_communicator::snap_tcp_server_connection implementation
-    virtual void                process_signal(snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
-
-    // snap_communicator::snap_tcp_server_connection implementation
-    virtual snap_connection::pointer_t           create_new_connection(int socket);
+    virtual void                process_accept();
 
 private:
     // this is owned by a server function so no need for a smart pointer
@@ -1677,44 +1616,25 @@ listener_impl::listener_impl(server * s, std::string const & addr, int port, int
  * The function processes the events by calling functions on the server.
  *
  * \param[in] we  The event that just triggered this call.
- * \param[in,out] new_client  The connection pointer when the event
- *                            is EVENT_ACCEPT.
  */
-void listener_impl::process_signal(snap_communicator::what_event_t we, snap_communicator::snap_connection::pointer_t new_client)
+void listener_impl::process_accept()
 {
-    if((we & snap_communicator::EVENT_ACCEPT) != 0)
+    // a new client just connected
+    //
+    int const new_socket(accept());
+
+    int optval(1);
+    socklen_t const optlen(sizeof(optval));
+    if(setsockopt(new_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
     {
-        // a new client just connected
-        //
-        f_server->process_connection(new_client->get_socket());
+        SNAP_LOG_WARNING("listener_impl::process_accept(): an error occurred trying to mark socket with SO_KEEPALIVE.");
     }
-    // else throw because we should not receive anything else?
+
+    f_server->process_connection(new_socket);
 }
 
 
-/** \brief This callback creates a new connection.
- *
- * When the server receives a client request, this function gets called
- * to create a new connection object which is compatible with the
- * snap_comminicator environment.
- *
- * You may create the connection, call various functions to further
- * your setup (although watch out, the address and ports get set when
- * this function returns,) and even add this object to your
- * snap_communicator object.
- *
- * \param[in] socket  The socket just returned by accept().
- *
- * \return A pointer to a snap_connection object.
- */
-snap_communicator::snap_connection::pointer_t listener_impl::create_new_connection(int socket)
-{
-    // use the default provided client connection object
-    snap_communicator::snap_tcp_server_client_connection::pointer_t connection(new client_impl(socket));
-    connection->set_name("child connection");
-    connection->keep_alive();
-    return connection;
-}
+
 
 
 /** \brief Listen to incoming connections.
@@ -1789,20 +1709,13 @@ void server::listen()
         }
     }
 
-    // setup our priority scheme
-    snap_communicator::priority_t priority;
-    priority.set_priorities(10);    // allow priorities 0 to 9 (maybe 10?)
-    //priority.set_timeout(-1); -- never timeout
-    priority.set_max_callbacks(10); // run up to 10 callbacks before checking for new events
-    priority.set_min_priority(3);   // event priority 0, 1, 2 are all run before any others
-
     // create a communicator
     //
     // only we use a bare pointer because otherwise the child processes
     // attempt to destroy these objects and that does not work right
     //
     g_connection = new connection_t;
-    g_connection->f_communicator.reset(new snap_communicator(priority));
+    g_connection->f_communicator = snap_communicator::instance();
 
     // create a listener, for new arriving client connections
     //
@@ -1811,10 +1724,12 @@ void server::listen()
     //
     g_connection->f_listener.reset(new listener_impl(this, addr.toUtf8().data(), port, max_pending_connections, true, false));
     g_connection->f_listener->set_name("server listener");
+    g_connection->f_listener->set_priority(50);
     g_connection->f_communicator->add_connection(g_connection->f_listener);
 
     g_connection->f_temporary_timer.reset(new temporary_timer(this));
     g_connection->f_temporary_timer->set_name("server timer");
+    g_connection->f_temporary_timer->set_priority(100);
     g_connection->f_communicator->add_connection(g_connection->f_temporary_timer);
 
     // Listener thread
@@ -1955,9 +1870,9 @@ void server::process_connection(int socket)
 #pragma GCC diagnostic pop
     }
 
-    // this was done in the tcp_server::accept() and with the new interface,
-    // in snap_communicator::snap_tcp_server_client_connection::~snap_tcp_server_client_connection()
-    //close(socket);
+    // since we do not create any object holding this socket, we have
+    // to close it here...
+    close(socket);
 }
 
 

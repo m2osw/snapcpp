@@ -132,6 +132,8 @@ public:
                         bio_client(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
                         ~bio_client();
 
+    void                close();
+
     int                 get_socket() const;
     int                 get_port() const;
     int                 get_client_port() const;

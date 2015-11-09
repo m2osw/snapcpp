@@ -148,129 +148,6 @@ void snap_communicator_connection::set_service_name(QString const & name)
 
 
 
-class client_writer_impl : public snap::snap_communicator::snap_tcp_server_client_connection
-                         , public std::enable_shared_from_this<client_writer_impl>
-                         , public snap_communicator_connection
-{
-public:
-                                client_writer_impl(connections * c, int socket);
-
-    // snap::snap_communicator::snap_tcp_server_client_connection implementation
-    virtual void                                    process_signal(snap::snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
-    virtual snap::snap_communicator::what_event_t   get_events() const;
-
-    void                        write(char const * data, size_t length);
-
-
-private:
-    connections *               f_connections;
-    std::vector<char>           f_buffer;
-    size_t                      f_position = 0;
-};
-
-
-/** \brief Initialize a client socket.
- *
- * The client socket gets initialized with the specified 'socket'
- * parameter.
- */
-client_writer_impl::client_writer_impl(connections * c, int socket)
-    : snap_tcp_server_client_connection(socket)
-    , f_connections(c)
-    //, f_buffer() -- auto-init
-    //, f_position(0) -- auto-init
-{
-}
-
-
-/** \brief Instantiation of process_signal().
- *
- * This function is an instantiation of the process_signal() so we
- * can create a client_impl object and return that in
- * listener_impl::create_new_connection().
- *
- * The function is what manages our TCP/IP connection protocol.
- *
- * \param[in] we  The event received.
- * \param[in,out] new_client  The new client which was created (for
- *                            listening servers only).
- */
-void client_writer_impl::process_signal(snap::snap_communicator::what_event_t we, snap_connection::pointer_t new_client)
-{
-    NOTUSED(new_client);
-
-    if((we & snap::snap_communicator::EVENT_WRITE) != 0)
-    {
-        ssize_t r(::write(get_socket(), &f_buffer[f_position], f_buffer.size() - f_position));
-        if(r > 0)
-        {
-            // some data was written
-            f_position += r;
-            if(f_position >= f_buffer.size())
-            {
-                f_buffer.clear();
-                f_position = 0;
-
-                // there is no more data to send over this socket;
-                // remove self
-                f_connections->remove_connection(shared_from_this());
-            }
-        }
-        else if(r != 0)
-        {
-            // TODO: deal with error, if we lost the connection
-            //       remove the whole thing and log an event
-        }
-    }
-}
-
-
-/** \brief Write data to the connection.
- *
- * This function can be used to send data to this TCP/IP connection.
- * The data is bufferized and as soon as the connection can WRITE
- * to the socket, it will wake up and send the data. In other words,
- * we cannot just sleep and wait for an answer. The transfer will
- * be asynchroneous.
- *
- * \todo
- * Determine whether we may end up with really large buffers that
- * grow for a long time. This function only inserts and the
- * process_signal() function only reads some of the bytes but it
- * does not reduce the size of the buffer until all the data was
- * sent.
- *
- * \param[in] data  The pointer to the buffer of data to be sent.
- * \param[out] length  The number of bytes to send.
- */
-void client_writer_impl::write(char const * data, size_t length)
-{
-    if(length > 0)
-    {
-        if(f_buffer.empty())
-        {
-            // with an empty buffer we had nothing to send so we were
-            // not connected to the event loop; add self
-            f_connections->add_connection(shared_from_this());
-        }
-        f_buffer.insert(f_buffer.end(), data, data + length);
-    }
-}
-
-
-/** \brief The writer is interested by write events only.
- *
- * This function returns EVENT_WRITE to signal that we are interested
- * by write events in this connection.
- *
- * \return EVENT_WRITE
- */
-snap::snap_communicator::what_event_t client_writer_impl::get_events() const
-{
-    return snap::snap_communicator::EVENT_WRITE;
-}
-
-
 
 
 
@@ -281,104 +158,34 @@ snap::snap_communicator::what_event_t client_writer_impl::get_events() const
  * instantiate such an object, we create our own class
  * and implement the process_signal() function.
  */
-class client_reader_impl : public snap::snap_communicator::snap_tcp_server_client_connection
-                         , public std::enable_shared_from_this<client_reader_impl>
-                         , public snap_communicator_connection
+
+class connection_impl
+        : public snap::snap_communicator::snap_tcp_server_client_message_connection
 {
 public:
-                                client_reader_impl(connections * c, int socket);
+                                connection_impl(int socket);
 
-    // snap::snap_communicator::snap_tcp_server_client_connection implementation
-    virtual void                                    process_signal(snap::snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
-    virtual snap::snap_communicator::what_event_t   get_events() const;
-
-    client_writer_impl::pointer_t                   writer() const;
-
-private:
-    connections *                   f_connections;
-    client_writer_impl::pointer_t   f_writer;
+    virtual void                process_message(snap::snap_communicator_message const & message);
 };
 
 
-/** \brief Initialize a client socket.
- *
- * The client socket gets initialized with the specified 'socket'
- * parameter.
- */
-client_reader_impl::client_reader_impl(connections * c, int socket)
-    : snap_tcp_server_client_connection(socket)
-    , f_connections(c)
-    , f_writer(new client_writer_impl(c, socket))
+
+
+connection_impl::connection_impl(int socket)
+    : snap_tcp_server_client_message_connection(socket)
 {
-    // mark this connection as a keep alive one so it stays open
-    // "forever" (albeit the fact that we may need to reconnect once
-    // in a while, although local network connections pretty much
-    // never die)
-    //
-    keep_alive();
+}
 
-    // also make the socket non-blocking, which works better with
-    // libevent (not so good with HTTP sockets, but we are not dealing
-    // with such here right now)
-    //
-    non_blocking();
 
-    // copy the address information to the writer, just in case
+void connection_impl::process_message(snap::snap_communicator_message const & message)
+{
+    if(message.get_command() == "STOP")
     {
-        struct sockaddr address;
-        size_t const length(get_address(address));
-        f_writer->set_address(&address, length);
+        return;
     }
 }
 
 
-/** \brief Instantiation of process_signal().
- *
- * This function is an instantiation of the process_signal() so we
- * can create a client_impl object and return that in
- * listener_impl::create_new_connection().
- *
- * The function is what manages our TCP/IP connection protocol.
- *
- * \param[in] we  The event received.
- * \param[in,out] new_client  The new client which was created (for
- *                            listening servers only).
- */
-void client_reader_impl::process_signal(snap::snap_communicator::what_event_t we, snap_connection::pointer_t new_client)
-{
-    NOTUSED(new_client);
-
-    if((we & snap::snap_communicator::EVENT_READ) != 0)
-    {
-        f_connections->process_connection(shared_from_this());
-    }
-}
-
-
-/** \brief The reader is interested by read events only.
- *
- * This function returns EVENT_READ to signal that we are interested
- * by read events in this connection.
- *
- * \return EVENT_READ
- */
-snap::snap_communicator::what_event_t client_reader_impl::get_events() const
-{
-    return snap::snap_communicator::EVENT_READ;
-}
-
-
-/** \brief The reader is interested by read events only.
- *
- * This function returns EVENT_READ to signal that we are interested
- * by read events in this connection.
- *
- * \return EVENT_READ
- */
-client_writer_impl::pointer_t client_reader_impl::writer() const
-{
-    return f_writer;
-}
 
 
 
@@ -387,17 +194,15 @@ client_writer_impl::pointer_t client_reader_impl::writer() const
  * This class is an implementation of the snap server connection so we can
  * handle new connections from various clients.
  */
-class listener_impl : public snap::snap_communicator::snap_tcp_server_connection
-                    , public snap_communicator_connection
+class listener_impl
+        : public snap::snap_communicator::snap_tcp_server_connection
+        , public snap_communicator_connection
 {
 public:
                                         listener_impl(connections * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close);
 
     // snap::snap_communicator::snap_server_connection implementation
-    virtual void                        process_signal(snap::snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
-
-    // snap::snap_communicator::snap_server_connection implementation
-    virtual snap_connection::pointer_t  create_new_connection(int socket);
+    virtual void                        process_accept();
 
 private:
     // this is owned by a server function so no need for a smart pointer
@@ -426,7 +231,7 @@ listener_impl::listener_impl(connections * s, std::string const & addr, int port
     : snap_tcp_server_connection(addr, port, max_connections, reuse_addr, auto_close)
     , f_connections(s)
 {
-    non_blocking();
+    //non_blocking();
 }
 
 
@@ -439,53 +244,22 @@ listener_impl::listener_impl(connections * s, std::string const & addr, int port
  * The function processes the events by calling functions on the server.
  *
  * \param[in] we  The event that just triggered this call.
- * \param[in,out] new_client  The connection pointer when the event
- *                            is EVENT_ACCEPT.
  */
-void listener_impl::process_signal(snap::snap_communicator::what_event_t we, snap::snap_communicator::snap_connection::pointer_t new_client)
+void listener_impl::process_accept()
 {
-    if((we & snap::snap_communicator::EVENT_ACCEPT) != 0)
-    {
-        // a new client just connected, save that connection in
-        // our connections handler;
-        //
-        f_connections->add_connection(new_client);
+    // a new client just connected, save that connection in
+    // our connections handler;
+    //
+    int new_socket(accept());
 
-        // the parameter new_client represents the reader,
-        // we also want a writer (because we have to disable
-        // the writer once all write buffers are empty);
-        // the reader stores a pointer to the writer for
-        // easier handling
-        //
-        f_connections->add_connection(std::static_pointer_cast<client_reader_impl>(new_client)->writer());
-    }
-    // else throw because we should not receive anything else?
-}
-
-
-/** \brief This callback creates a new connection.
- *
- * When the server receives a client request, this function gets called
- * to create a new connection object which is compatible with the
- * snap_comminicator environment.
- *
- * You may create the connection, call various functions to further
- * your setup (although watch out, the address and ports get set when
- * this function returns,) and even add this object to your
- * snap_communicator object.
- *
- * \param[in] socket  The socket just returned by accept().
- *
- * \return A pointer to a snap_connection object.
- */
-snap::snap_communicator::snap_connection::pointer_t listener_impl::create_new_connection(int socket)
-{
-    // create a TCP/IP client
-    snap::snap_communicator::snap_tcp_server_client_connection::pointer_t connection(new client_reader_impl(f_connections, socket));
+    snap::snap_communicator::snap_tcp_server_client_connection::pointer_t connection(new connection_impl(new_socket));
     connection->set_name("client connection");
     connection->keep_alive();
-    return connection;
+
+    snap::snap_communicator::instance()->add_connection(connection);
 }
+
+
 
 
 
@@ -495,14 +269,15 @@ snap::snap_communicator::snap_connection::pointer_t listener_impl::create_new_co
  * This class is an implementation of the snap server connection so we can
  * handle new connections from various clients.
  */
-class messager_impl : public snap::snap_communicator::snap_udp_server_connection
-                    , public snap_communicator_connection
+class messager_impl
+        : public snap::snap_communicator::snap_udp_server_connection
+        , public snap_communicator_connection
 {
 public:
                                         messager_impl(connections * c, std::string const & addr, int port);
 
     // snap::snap_communicator::snap_server_connection implementation
-    virtual void                        process_signal(snap::snap_communicator::what_event_t we, snap_connection::pointer_t new_client);
+    virtual void                        process_read();
 
 private:
     // this is owned by a server function so no need for a smart pointer
@@ -542,35 +317,29 @@ messager_impl::messager_impl(connections * c, std::string const & addr, int port
  * a STOP command.)
  *
  * The function processes the events by calling functions on the server.
- *
- * \param[in] we  The event that just triggered this call.
- * \param[in,out] new_client  The connection pointer when the event
- *                            is EVENT_ACCEPT.
  */
-void messager_impl::process_signal(snap::snap_communicator::what_event_t we, snap::snap_communicator::snap_connection::pointer_t new_client)
+void messager_impl::process_read()
 {
-    NOTUSED(new_client);
-
-    if((we & snap::snap_communicator::EVENT_READ) != 0)
+    // retrieve message from UDP socket
+    //
+    // Are these really always packets or can we receive UDP data
+    // pieces by pieces?
+    //
+    char buf[256];
+    ssize_t r(recv(buf, sizeof(buf) / sizeof(buf[0]) - 1));
+    if(r > 0)
     {
-        // retrieve message from UDP socket
-        char buf[256];
-        ssize_t r(recv(buf, sizeof(buf) / sizeof(buf[0]) - 1));
-        if(r > 0)
+        buf[r] = '\0';
+        QString udp_message(QString::fromUtf8(buf));
+        snap::snap_communicator_message message;
+        if(message.from_message(udp_message))
         {
-            buf[r] = '\0';
-            QString udp_message(QString::fromUtf8(buf));
-            snap::snap_communicator_message message;
-            if(message.from_message(udp_message))
-            {
-                // we just received a signal (UDP message)
-                // we have to forward that to the right system
-                //
-                f_connections->process_message(message);
-            }
+            // we just received a signal (UDP message)
+            // we have to forward that to the right system
+            //
+            f_connections->process_message(message);
         }
     }
-    // else throw because we should not receive anything else?
 }
 
 
@@ -621,59 +390,7 @@ void connections::init()
         setpriority(PRIO_PROCESS, 0, nice);
     }
 
-    // setup our priority scheme
-    //
-    snap::snap_communicator::priority_t priority;
-    {
-        priority.set_priorities(10);    // allow priorities 0 to 9 (maybe 10?)
-        //priority.set_timeout(-1); -- never timeout
-
-        // configuration parameter if available
-        QString const max_callbacks_str(f_server->get_parameter("priority_events_to_process_per_loop"));
-        if(!max_callbacks_str.isEmpty())
-        {
-            bool ok(false);
-            int const max_callbacks(max_callbacks_str.toInt(&ok));
-            if(!ok
-            || max_callbacks < 1
-            || max_callbacks > 100)
-            {
-                SNAP_LOG_FATAL("the priority_events_to_process_per_loop parameter from the configuration file must be a valid number between 1 and 100. %1 is not valid.")(max_callbacks_str);
-                f_server->exit(1);
-            }
-            // run up to 10 callbacks before checking for new events
-            priority.set_max_callbacks(max_callbacks);
-        }
-        else
-        {
-            // run up to 10 callbacks before checking for new events
-            priority.set_max_callbacks(10);
-        }
-
-        // configuration parameter if available
-        QString const min_priority_str(f_server->get_parameter("priority_fast_threshold"));
-        if(!min_priority_str.isEmpty())
-        {
-            bool ok(false);
-            int const min_priority(min_priority_str.toInt(&ok));
-            if(!ok
-            || min_priority < 2
-            || min_priority > 10)
-            {
-                SNAP_LOG_FATAL("the priority_fast_threshold parameter from the configuration file must be a valid number between 2 and 10. %1 is not valid.")(min_priority_str);
-                f_server->exit(1);
-            }
-            // priorities below min_priority are considered fast
-            priority.set_min_priority(min_priority);
-        }
-        else
-        {
-            // event priority 0, 1, 2 are all run before any others
-            priority.set_min_priority(3);
-        }
-    }
-
-    f_communicator.reset(new snap::snap_communicator(priority));
+    f_communicator = snap::snap_communicator::instance();
 
     // create a listener, for new arriving TCP/IP connections
     //
@@ -719,7 +436,7 @@ void connections::init()
         }
 
         f_messager.reset(new messager_impl(this, addr.toUtf8().data(), port));
-        f_messager->set_name("snap communicator messager");
+        f_messager->set_name("snap communicator messager (UDP)");
         add_connection(f_messager);
     }
 }
@@ -805,8 +522,8 @@ void connections::process_connection(snap::snap_communicator::snap_connection::p
 void connections::process_message(snap::snap_communicator_message const & message)
 {
     // split the message from 'server name' and 'command word'
-    QString const name(message.get_name());
-    if(name.isEmpty())
+    QString const service(message.get_service());
+    if(service.isEmpty())
     {
         // in this case we want to broadcast the message to all the other
         // sub-systems (i.e. a "massive" QUIT message...)
@@ -818,7 +535,7 @@ void connections::process_message(snap::snap_communicator_message const & messag
         snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
         for(auto c : all_connections)
         {
-            if(std::dynamic_pointer_cast<snap_communicator_connection>(c)->get_service_name() == name)
+            if(c->get_name() == service)
             {
                 // we found it!
                 break;

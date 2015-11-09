@@ -22,6 +22,8 @@
 
 #include <QMap>
 
+#include <signal.h>
+
 
 namespace snap
 {
@@ -66,20 +68,21 @@ public:
     bool                    from_message(QString const & message);
     QString                 to_message() const;
 
-    QString                 get_name() const;
-    void                    set_name(QString const & name);
-    QString                 get_command() const;
+    QString const &         get_service() const;
+    void                    set_service(QString const & service);
+    QString const &         get_command() const;
     void                    set_command(QString const & command);
     void                    add_parameter(QString const & name, QString const & value);
+    void                    add_parameter(QString const & name, int64_t value);
     bool                    has_parameter(QString const & name) const;
-    QString                 get_parameter(QString const & name);
-    int64_t                 get_integer_parameter(QString const & name);
+    QString const           get_parameter(QString const & name) const;
+    int64_t                 get_integer_parameter(QString const & name) const;
     parameters_t const &    get_all_parameters() const;
 
 private:
     void                    verify_parameter_name(QString const & name) const;
 
-    QString                 f_name;
+    QString                 f_service;
     QString                 f_command;
     parameters_t            f_parameters;
 };
@@ -87,44 +90,19 @@ private:
 
 
 
+// WARNING: a snap_communicator object must be allocated and held in a shared pointer (see pointer_t)
 class snap_communicator
+        : public std::enable_shared_from_this<snap_communicator>
 {
 public:
     typedef std::shared_ptr<snap_communicator>      pointer_t;
 
-    typedef int                                     what_event_t;
+    typedef int                                     priority_t;
 
-    static what_event_t const EVENT_TIMEOUT         = 0x01; // receive only
-    static what_event_t const EVENT_READ            = 0x02;
-    static what_event_t const EVENT_WRITE           = 0x04;
-    static what_event_t const EVENT_SIGNAL          = 0x08;
-    //static what_event_t const EVENT_PERSIST         = 0x10; -- internal
-    //static what_event_t const EVENT_EDGE_TRIGGERED  = 0x20; -- not supported
-    static what_event_t const EVENT_ACCEPT          = 0x40;
-
-    class priority_t
-    {
-    public:
-        static int              get_maximum_number_of_priorities();
-        int                     get_priorities() const;
-        void                    set_priorities(int n_priorities);
-        int64_t                 get_timeout() const;
-        void                    set_timeout(int64_t timeout_us);
-        int64_t                 get_max_callbacks() const;
-        void                    set_max_callbacks(int max_callbacks);
-        int64_t                 get_min_priority() const;
-        void                    set_min_priority(int min_priority);
-
-        void                    validate() const;
-
-    private:
-        int                     f_priorities = 1;
-        int64_t                 f_timeout = -1;
-        int                     f_max_callbacks = -1;
-        int                     f_min_priority = 0;
-    };
+    static priority_t const                         EVENT_MAX_PRIORITY = 255;
 
     class snap_connection
+        : public std::enable_shared_from_this<snap_connection>
     {
     public:
         typedef std::shared_ptr<snap_connection>    pointer_t;
@@ -132,41 +110,64 @@ public:
 
                                     snap_connection();
 
+        // prevent copies
+                                    snap_connection(snap_connection const & connection) = delete;
+        snap_connection &           operator = (snap_connection const & connection) = delete;
+
         // virtual classes must have a virtual destructor
         virtual                     ~snap_connection();
 
-        std::string const &         get_name() const;
-        void                        set_name(std::string const & name);
+        void                        remove_from_communicator();
+
+        QString const &             get_name() const;
+        void                        set_name(QString const & name);
 
         virtual bool                is_listener() const;
+        virtual bool                is_signal() const;
+        virtual bool                is_reader() const;
+        virtual bool                is_writer() const;
         virtual int                 get_socket() const = 0;
-        virtual what_event_t        get_events() const = 0;
-        virtual void                process_signal(what_event_t we, pointer_t new_client) = 0;
-        virtual pointer_t           create_new_connection(int socket);
         virtual bool                valid_socket() const;
 
+        bool                        is_enabled() const;
+        void                        set_enable(bool enabled);
+
         int                         get_priority() const;
-        void                        set_priority(int priority);
+        void                        set_priority(priority_t priority);
 
-        int64_t                     get_timeout() const;
-        void                        set_timeout(int64_t timeout_us);
+        int64_t                     get_timeout_delay() const;
+        void                        set_timeout_delay(int64_t timeout_us);
+        void                        calculate_next_tick();
+        int64_t                     get_timeout_date() const;
+        void                        set_timeout_date(int64_t date_us);
+        int64_t                     get_timeout_timestamp() const;
 
-        void                        non_blocking();
+        void                        non_blocking() const;
+        void                        keep_alive() const;
 
-        void                        save_new_connection_info(int s, struct sockaddr * addr, int len);
+        bool                        operator < (snap_connection const & rhs) const;
+
+        // callbacks
+        virtual void                process_timeout();
+        virtual void                process_signal();
+        virtual void                process_read();
+        virtual void                process_write();
+        virtual void                process_accept();
+        virtual void                process_error();
+        virtual void                process_hup();
+        virtual void                process_invalid();
 
     private:
-        struct snap_connection_impl;
-
         friend snap_communicator;
 
-        std::string                 f_name;
-        int                         f_priority = 0;
-        int64_t                     f_timeout = -1; // in microseconds
-        std::unique_ptr<snap_connection_impl>   f_impl;
-        int                         f_new_connection_socket = -1;
-        struct sockaddr             f_new_connection_addr;
-        int                         f_new_connection_len = 0;
+        QString                                 f_name;
+        bool                                    f_enabled = true;
+        bool                                    f_done = false;
+        int                                     f_priority = 100;
+        int64_t                                 f_timeout_delay = -1;       // in microseconds
+        int64_t                                 f_timeout_next_date = -1;   // in microseconds, when we use the f_timeout_delay
+        int64_t                                 f_timeout_date = -1;        // in microseconds
+        int                                     f_fds_position = -1;
     };
 
     class snap_timer
@@ -178,7 +179,6 @@ public:
                                     snap_timer(int64_t timeout_us);
 
         virtual int                 get_socket() const;
-        virtual what_event_t        get_events() const;
         virtual bool                valid_socket() const;
     };
 
@@ -187,35 +187,45 @@ public:
     {
     public:
         typedef std::shared_ptr<snap_signal>    pointer_t;
+        typedef std::weak_ptr<snap_signal>      weak_t;
 
                                     snap_signal(int posix_signal);
+                                    ~snap_signal();
 
         // snap_connection implementation
+        virtual bool                is_signal() const;
         virtual int                 get_socket() const;
-        virtual what_event_t        get_events() const;
+
+        bool                        is_active() const;
+        void                        activate(bool active);
 
     private:
-        int                         f_signal; // i.e. SIGHUP, SIGTERM...
+        static void                 sighandler(int sig);
+        void                        signal_received();
+
+        int                         f_signal = 0; // i.e. SIGHUP, SIGTERM...
+        bool                        f_active = false;
+        sighandler_t                f_sighandler;
     };
 
-    class snap_client_connection
-        : public tcp_client_server::bio_client
-        , public snap_connection
+    class snap_tcp_client_connection
+        : public snap_connection
+        , public tcp_client_server::bio_client
     {
     public:
-        typedef std::shared_ptr<snap_client_connection>    pointer_t;
+        typedef std::shared_ptr<snap_tcp_client_connection>    pointer_t;
 
-                                    snap_client_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+                                    snap_tcp_client_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
 
         // snap_connection implementation
+        virtual bool                is_reader() const;
         virtual int                 get_socket() const;
-        virtual what_event_t        get_events() const;
     };
 
     // TODO: switch the tcp_server to a bio_server once available
     class snap_tcp_server_connection
-        : public tcp_client_server::tcp_server
-        , public snap_connection
+        : public snap_connection
+        , public tcp_client_server::tcp_server
     {
     public:
         typedef std::shared_ptr<snap_tcp_server_connection>    pointer_t;
@@ -225,12 +235,11 @@ public:
         // snap_connection implementation
         virtual bool                is_listener() const;
         virtual int                 get_socket() const;
-        virtual what_event_t        get_events() const;
     };
 
     class snap_tcp_server_client_connection
-        //: public tcp_client_server::tcp_client -- this will not work without some serious re-engineering of the tcp_client class
         : public snap_connection
+        //, public tcp_client_server::tcp_client -- this will not work without some serious re-engineering of the tcp_client class
     {
     public:
         typedef std::shared_ptr<snap_tcp_server_client_connection>    pointer_t;
@@ -238,15 +247,16 @@ public:
                                     snap_tcp_server_client_connection(int socket);
         virtual                     ~snap_tcp_server_client_connection();
 
+        void                        close();
+
         // snap_connection implementation
+        virtual bool                is_reader() const;
         virtual int                 get_socket() const;
-        virtual what_event_t        get_events() const;
 
         void                        set_address(struct sockaddr * address, size_t length);
         size_t                      get_address(struct sockaddr & address) const;
+        void                        set_addr(std::string const & addr);
         std::string                 get_addr() const;
-
-        void                        keep_alive() const;
 
     private:
         int                         f_socket;
@@ -254,9 +264,98 @@ public:
         size_t                      f_length;
     };
 
+    class snap_tcp_server_client_buffer_connection
+        : public snap_tcp_server_client_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_tcp_server_client_buffer_connection>    pointer_t;
+
+                                    snap_tcp_server_client_buffer_connection(int socket);
+
+        void                        write(char const * data, size_t length);
+
+        // snap::snap_communicator::snap_connection
+        virtual bool                is_writer() const;
+
+        // snap::snap_communicator::snap_tcp_server_client_connection implementation
+        virtual void                process_read();
+        virtual void                process_write();
+        virtual void                process_hup();
+
+        // new callback
+        virtual void                process_line(QString const & line) = 0;
+
+    private:
+        std::string                 f_line; // do NOT use QString because UTF-8 would break often... (since we may only receive part of messages)
+        std::vector<char>           f_output;
+        size_t                      f_position = 0;
+    };
+
+    class snap_tcp_server_client_message_connection
+        : public snap_tcp_server_client_buffer_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_tcp_server_client_message_connection>    pointer_t;
+
+                                    snap_tcp_server_client_message_connection(int socket);
+
+        void                        send_message(snap_communicator_message const & message);
+
+        // snap_tcp_server_client_buffer_connection implementation
+        virtual void                process_line(QString const & line);
+
+        // new callback
+        virtual void                process_message(snap_communicator_message const & message) = 0;
+
+    private:
+    };
+
+    class snap_tcp_client_buffer_connection
+        : public snap_tcp_client_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_tcp_client_buffer_connection>    pointer_t;
+
+                                    snap_tcp_client_buffer_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+
+        void                        write(char const * data, size_t length);
+
+        // snap::snap_communicator::snap_tcp_client_connection implementation
+        virtual bool                is_writer() const;
+        virtual void                process_read();
+        virtual void                process_write();
+        virtual void                process_hup();
+
+        virtual void                process_line(QString const & line) = 0;
+
+    private:
+        std::string                 f_line; // do NOT use QString because UTF-8 would break often... (since we may only receive part of messages)
+        std::vector<char>           f_output;
+        size_t                      f_position = 0;
+    };
+
+    class snap_tcp_client_message_connection
+        : public snap_tcp_client_buffer_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_tcp_client_message_connection>    pointer_t;
+
+                                    snap_tcp_client_message_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+
+        void                        send_message(snap_communicator_message const & message);
+
+        // snap_tcp_client_reader_connection implementation
+        virtual void                process_line(QString const & line);
+
+        // new callback
+        virtual void                process_message(snap_communicator_message const & message) = 0;
+
+    private:
+    };
+
     class snap_udp_server_connection
-        : public udp_client_server::udp_server
-        , public snap_connection
+        : public snap_connection
+        , public udp_client_server::udp_server
     {
     public:
         typedef std::shared_ptr<snap_udp_server_connection>    pointer_t;
@@ -264,25 +363,28 @@ public:
                                     snap_udp_server_connection(std::string const & addr, int port);
 
         // snap_connection implementation
+        virtual bool                is_reader() const;
         virtual int                 get_socket() const;
-        virtual what_event_t        get_events() const;
     };
 
-                                        snap_communicator(priority_t const & priority);
+    static pointer_t                    instance();
 
-    void                                reinit(); // after a fork()
+    // prevent copies
+                                        snap_communicator(snap_communicator const & communicator) = delete;
+    snap_communicator &                 operator = (snap_communicator const & communicator) = delete;
 
     snap_connection::vector_t const &   get_connections() const;
     bool                                add_connection(snap_connection::pointer_t connection);
     bool                                remove_connection(snap_connection::pointer_t connection);
     virtual bool                        run();
 
-private:
-    struct snap_communicator_impl;
+    static int64_t                      get_current_date();
 
-    std::shared_ptr<snap_communicator_impl> f_impl;
-    snap_connection::vector_t               f_connections;
-    priority_t                              f_priority;
+private:
+                                        snap_communicator();
+
+    snap_connection::vector_t           f_connections;
+    bool                                f_force_sort = true;
 };
 
 
