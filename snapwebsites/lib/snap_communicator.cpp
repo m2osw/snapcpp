@@ -600,18 +600,18 @@ int snap_communicator::snap_connection::get_priority() const
  *
  * \exception snap_communicator_parameter_error
  * The priority of the event is out of range when this exception is raised.
- * The value must between between 0 and EVENT_MAX_PRIORITIES. Any
+ * The value must between between 0 and EVENT_MAX_PRIORITY. Any
  * other value raises this exception.
  *
  * \param[in] priority  Priority of the event.
  */
 void snap_communicator::snap_connection::set_priority(priority_t priority)
 {
-    if(priority < 0 || priority > EVENT_MAX_PRIORITIES)
+    if(priority < 0 || priority > EVENT_MAX_PRIORITY)
     {
         std::stringstream ss;
         ss << "snap_communicator::set_priority(): priority out of range, this instance of snap_communicator accepts priorities between 0 and "
-           << EVENT_MAX_PRIORITIES
+           << EVENT_MAX_PRIORITY
            << ".";
         throw snap_communicator_parameter_error(ss.str());
     }
