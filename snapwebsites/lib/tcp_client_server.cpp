@@ -1315,6 +1315,8 @@ int bio_client::write(char const * buf, size_t size)
  * \param[in] ip  A pointer to a string holding an address.
  *
  * \return true if the \p ip string represents an IPv4 address.
+ *
+ * \sa snap_inet::inet_pton_v6()
  */
 bool is_ipv4(char const * ip)
 {

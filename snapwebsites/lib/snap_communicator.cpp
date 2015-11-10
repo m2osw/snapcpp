@@ -89,6 +89,36 @@ QMap<int, snap_communicator::snap_signal::weak_t>   g_signal_handlers;
 ///////////////////////////////
 
 
+/** \brief Parse a message from the specified paremeter.
+ *
+ * This function transformed the input string in a set of message
+ * fields.
+ *
+ * The message format supported is:
+ *
+ * \code
+ *      ( service '/' )? command ' ' ( parameter_name '=' value ';' )*
+ * \endcode
+ *
+ * The space after the command cannot be there unless parameters follow.
+ * Parameters must be separated by semi-colons. No space is allowed anywhere
+ * except between the command and first parameter. The value of a parameter
+ * can be quoted if it includes a ';'. Quotes can be escaped inside the
+ * value by adding a backslash in front of it. Newline characters (as well
+ * as return carriage) are also escaped. Only values support any character.
+ * All the other parameters are limited to the latin alphabet, digits,
+ * and underscores ([A-Za-z0-9_]+). At the point, all commands are
+ * always written in uppercase.
+ *
+ * \note
+ * The input message is not saved as a cached version of the message
+ * because we assume it may not be 100% optimized (canonicalized.)
+ *
+ * \param[in] message
+ *
+ * \return true if the message was succesfully parsed; false when an
+ *         error occurs and in that case no parameters get modified.
+ */
 bool snap_communicator_message::from_message(QString const & message)
 {
     QString service;
@@ -224,54 +254,77 @@ bool snap_communicator_message::from_message(QString const & message)
     f_service = service;
     f_command = command;
     f_parameters.swap(parameters);
+    f_cached_message.clear();
 
     return true;
 }
 
 
+/** \brief Transform all the message parameters in a string.
+ *
+ * This function transforms all the message parameters in a string
+ * and returns the result. The string is a message we can send over
+ * TCP/IP (if you make sure to add a "\n", note that the
+ * send_message() does that automatically) or over UDP/IP.
+ *
+ * \note
+ * The function caches the result so calling the function many times
+ * will return the same string and thus the function is very fast
+ * after the first time (assuming you do not modify the message on
+ * each call to to_message().)
+ *
+ * \exception snap_communicator_invalid_message
+ * This function raises an exception if the command was not defined
+ * since a command is always mandatory.
+ *
+ * \return The converted message as a string.
+ */
 QString snap_communicator_message::to_message() const
 {
-    if(f_command.isEmpty())
+    if(f_cached_message.isEmpty())
     {
-        throw snap_communicator_invalid_message("snap_communicator_message::to_message(): cannot build a valid message without at least a command.");
-    }
-
-    // <name>/
-    QString result(f_service);
-    if(!result.isEmpty())
-    {
-        result += "/";
-    }
-
-    // [<name>/]command
-    result += f_command;
-
-    // then add parameters
-    bool first(true);
-    for(auto p(f_parameters.begin());
-             p != f_parameters.end();
-             ++p, first = false)
-    {
-        result += QString("%1%2=").arg(first ? " " : ";").arg(p.key());
-        QString param(p.value());
-        param.replace("\n", "\\n")   // newline needs to be escaped
-             .replace("\r", "\\r");  // this one is not important, but for completeness
-        if(param.indexOf(";") >= 0
-        || (!param.isEmpty() && param[0] == '\"'))
+        if(f_command.isEmpty())
         {
-            // escape the double quotes
-            param.replace("\"", "\\\"");
-            // quote the resulting parameter and save in result
-            result += QString("\"%1\"").arg(param);
+            throw snap_communicator_invalid_message("snap_communicator_message::to_message(): cannot build a valid message without at least a command.");
         }
-        else
+
+        // <name>/
+        f_cached_message = f_service;
+        if(!f_cached_message.isEmpty())
         {
-            // no special handling necessary
-            result += param;
+            f_cached_message += "/";
+        }
+
+        // [<name>/]command
+        f_cached_message += f_command;
+
+        // then add parameters
+        bool first(true);
+        for(auto p(f_parameters.begin());
+                 p != f_parameters.end();
+                 ++p, first = false)
+        {
+            f_cached_message += QString("%1%2=").arg(first ? " " : ";").arg(p.key());
+            QString param(p.value());
+            param.replace("\n", "\\n")   // newline needs to be escaped
+                 .replace("\r", "\\r");  // this one is not important, but for completeness
+            if(param.indexOf(";") >= 0
+            || (!param.isEmpty() && param[0] == '\"'))
+            {
+                // escape the double quotes
+                param.replace("\"", "\\\"");
+                // quote the resulting parameter and save in f_cached_message
+                f_cached_message += QString("\"%1\"").arg(param);
+            }
+            else
+            {
+                // no special handling necessary
+                f_cached_message += param;
+            }
         }
     }
 
-    return result;
+    return f_cached_message;
 }
 
 
@@ -283,7 +336,11 @@ QString const & snap_communicator_message::get_service() const
 
 void snap_communicator_message::set_service(QString const & service)
 {
-    f_service = service;
+    if(f_service != service)
+    {
+        f_service = service;
+        f_cached_message.clear();
+    }
 }
 
 
@@ -295,7 +352,11 @@ QString const & snap_communicator_message::get_command() const
 
 void snap_communicator_message::set_command(QString const & command)
 {
-    f_command = command;
+    if(f_command != command)
+    {
+        f_command = command;
+        f_cached_message.clear();
+    }
 }
 
 
@@ -304,6 +365,7 @@ void snap_communicator_message::add_parameter(QString const & name, QString cons
     verify_parameter_name(name);
 
     f_parameters[name] = value;
+    f_cached_message.clear();
 }
 
 
@@ -312,6 +374,7 @@ void snap_communicator_message::add_parameter(QString const & name, int64_t valu
     verify_parameter_name(name);
 
     f_parameters[name] = QString("%1").arg(value);
+    f_cached_message.clear();
 }
 
 
@@ -804,6 +867,47 @@ int64_t snap_communicator::snap_connection::get_timeout_timestamp() const
     }
 
     return -1;
+}
+
+
+/** \brief Save the timeout stamp just before calling poll().
+ *
+ * This function is called by the run() function before the poll()
+ * gets called. It makes sure to save the timeout timestamp so
+ * when we check the connections again after poll() returns and
+ * any number of callbacks were called, the timeout does or does
+ * not happen as expected.
+ *
+ * \return The timeout timestamp as returned by get_timeout_timestamp().
+ *
+ * \sa get_saved_timeout_timestamp()
+ * \sa run()
+ */
+int64_t snap_communicator::snap_connection::save_timeout_timestamp()
+{
+    f_saved_timeout_stamp = get_timeout_timestamp();
+    return f_saved_timeout_stamp;
+}
+
+
+/** \brief Get the saved timeout timestamp.
+ *
+ * This function returns the timeout as saved by the
+ * save_timeout_timestamp() function. The timestamp returned by
+ * this funtion was frozen so if the user calls various timeout
+ * functions that could completely change the timeout stamp that
+ * the get_timeout_timestamp() would return just at the time we
+ * want to know whether th timeout callback needs to be called
+ * will be ignored by the loop.
+ *
+ * \return The saved timeout stamp as returned by save_timeout_timestamp().
+ *
+ * \sa save_timeout_timestamp()
+ * \sa run()
+ */
+int64_t snap_communicator::snap_connection::get_saved_timeout_timestamp() const
+{
+    return f_saved_timeout_stamp;
 }
 
 
@@ -2455,7 +2559,7 @@ bool snap_communicator::run()
                 continue;
             }
 
-            int64_t const timestamp(c->get_timeout_timestamp());
+            int64_t const timestamp(c->save_timeout_timestamp());
             if(timestamp != -1)
             {
                 // the timeout event gives us a time when to tick
@@ -2625,7 +2729,7 @@ bool snap_communicator::run()
 
                 // now check whether we have a timeout on this connection
                 //
-                int64_t const timestamp(c->get_timeout_timestamp());
+                int64_t const timestamp(c->get_saved_timeout_timestamp());
                 if(timestamp != -1)
                 {
                     int64_t const now(get_current_date());

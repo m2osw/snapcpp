@@ -85,6 +85,7 @@ private:
     QString                 f_service;
     QString                 f_command;
     parameters_t            f_parameters;
+    mutable QString         f_cached_message;
 };
 
 
@@ -164,14 +165,18 @@ public:
     private:
         friend snap_communicator;
 
-        QString                                 f_name;
-        bool                                    f_enabled = true;
-        bool                                    f_done = false;
-        int                                     f_priority = 100;
-        int64_t                                 f_timeout_delay = -1;       // in microseconds
-        int64_t                                 f_timeout_next_date = -1;   // in microseconds, when we use the f_timeout_delay
-        int64_t                                 f_timeout_date = -1;        // in microseconds
-        int                                     f_fds_position = -1;
+        int64_t                     save_timeout_timestamp();
+        int64_t                     get_saved_timeout_timestamp() const;
+
+        QString                     f_name;
+        bool                        f_enabled = true;
+        bool                        f_done = false;
+        int                         f_priority = 100;
+        int64_t                     f_timeout_delay = -1;       // in microseconds
+        int64_t                     f_timeout_next_date = -1;   // in microseconds, when we use the f_timeout_delay
+        int64_t                     f_timeout_date = -1;        // in microseconds
+        int64_t                     f_saved_timeout_stamp = -1; // in microseconds
+        int                         f_fds_position = -1;
     };
 
     class snap_timer

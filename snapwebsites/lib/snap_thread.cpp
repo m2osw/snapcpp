@@ -963,7 +963,7 @@ bool snap_thread::start()
 
     if(!f_runner->is_ready())
     {
-        SNAP_LOG_WARNING("the thread running is ready");
+        SNAP_LOG_WARNING("the thread runner is not ready");
         return false;
     }
 

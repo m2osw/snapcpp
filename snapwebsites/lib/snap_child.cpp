@@ -8449,7 +8449,7 @@ snap_child::country_name_t const *snap_child::get_countries()
  * \param[in] name  The name of the configuration variable used to read the IP and port
  * \param[in] message  The message to send, "PING" by default.
  */
-void snap_child::udp_ping(char const *name, char const *message)
+void snap_child::udp_ping(char const * name, char const * message)
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
