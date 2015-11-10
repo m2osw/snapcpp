@@ -97,6 +97,10 @@ class snap_communicator
 public:
     typedef std::shared_ptr<snap_communicator>      pointer_t;
 
+    // this version defines the protocol version, it should really rarely
+    // change if ever
+    static int const                                VERSION = 1;
+
     typedef int                                     priority_t;
 
     static priority_t const                         EVENT_MAX_PRIORITY = 255;
@@ -365,6 +369,27 @@ public:
         // snap_connection implementation
         virtual bool                is_reader() const;
         virtual int                 get_socket() const;
+    };
+
+    class snap_udp_server_message_connection
+        : public snap_udp_server_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_udp_server_message_connection>    pointer_t;
+
+        static size_t const         DATAGRAM_MAX_SIZE = 1024;
+
+                                    snap_udp_server_message_connection(std::string const & addr, int port);
+
+        static bool                 send_message(std::string const & addr, int port, snap_communicator_message const & message);
+
+        // snap_connection implementation
+        virtual void                process_read();
+
+        // new callback
+        virtual void                process_message(snap_communicator_message const & message) = 0;
+
+    private:
     };
 
     static pointer_t                    instance();

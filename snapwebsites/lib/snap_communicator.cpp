@@ -343,7 +343,7 @@ int64_t snap_communicator_message::get_integer_parameter(QString const & name) c
     if(f_parameters.contains(name))
     {
         bool ok;
-        int64_t r(f_parameters[name].toLongLong(&ok, 10));
+        int64_t const r(f_parameters[name].toLongLong(&ok, 10));
         if(!ok)
         {
             throw snap_communicator_invalid_message("snap_communicator_message::get_integer_parameter(): message expected integer could not be converted.");
@@ -2176,6 +2176,107 @@ bool snap_communicator::snap_udp_server_connection::is_reader() const
 }
 
 
+
+////////////////////////////////
+// Snap UDP Server Connection //
+////////////////////////////////
+
+
+/** \brief Initialize a UDP server to send and receive messages.
+ *
+ * This function initialises a UDP server as a Snap UDP server
+ * connection attached to the specified address and port.
+ *
+ * It is expected to be used to send and receive UDP messages.
+ *
+ * Note that to send messages, you need the address and port
+ * of the destination. In effect, we do not use this server
+ * when sending. Instead we create a client that we immediately
+ * destruct once the message was sent.
+ *
+ * \param[in] addr  The address to listen on.
+ * \param[in] port  The port to listen on.
+ */
+snap_communicator::snap_udp_server_message_connection::snap_udp_server_message_connection(std::string const & addr, int port)
+    : snap_udp_server_connection(addr, port)
+{
+    // allow for looping over all the messages in one go
+    //
+    non_blocking();
+}
+
+
+/** \brief Send a UDP message.
+ *
+ * This function offers you to send a UDP message to the specified
+ * address and port. The message should be small enough to fit in
+ * on UDP packet or the call will fail.
+ *
+ * \note
+ * The function return true when the message was successfully sent.
+ * This does not mean it was received.
+ *
+ * \param[in] addr  The destination address for the message.
+ * \param[in] port  The destination port for the message.
+ * \param[in] message  The message to send to the destination.
+ *
+ * \return true when the message was sent, false otherwise.
+ */
+bool snap_communicator::snap_udp_server_message_connection::send_message(std::string const & addr, int port, snap_communicator_message const & message)
+{
+    // Note: contrary to the TCP version, a UDP message does not
+    //       need to include the '\n' character since it is sent
+    //       in one UDP packet.
+    //
+    udp_client_server::udp_client client(addr, port);
+    QString const msg(message.to_message());
+    QByteArray const utf8(msg.toUtf8());
+    if(static_cast<size_t>(utf8.size()) > DATAGRAM_MAX_SIZE)
+    {
+        // packet too large for our buffers
+        throw snap_communicator_invalid_message("message too large for a UDP server");
+    }
+    if(client.send(utf8.data(), utf8.size()) != utf8.size()) // we do not send the '\0'
+    {
+        SNAP_LOG_ERROR("snap_udp_server_message_connection::send_message(): could not send UDP message.");
+        return false;
+    }
+
+    return true;
+}
+
+
+/** \brief Implementation of the process_read() callback.
+ *
+ * This function reads the datagram we just received using the
+ * recv() function. The size of the datagram cannot be more than
+ * DATAGRAM_MAX_SIZE (1Kb at time of writing.)
+ *
+ * The message is then parsed and further processing is expected
+ * to be accomplished in your implementation of process_message().
+ *
+ * The function actually reads as many pending datagrams as it can.
+ */
+void snap_communicator::snap_udp_server_message_connection::process_read()
+{
+    char buf[DATAGRAM_MAX_SIZE];
+    for(;;)
+    {
+        ssize_t const r(recv(buf, sizeof(buf) / sizeof(buf[0]) - 1));
+        if(r <= 0)
+        {
+            break;
+        }
+        buf[r] = '\0';
+        QString const udp_message(QString::fromUtf8(buf));
+        snap::snap_communicator_message message;
+        if(message.from_message(udp_message))
+        {
+            // we received a valid message, process it
+            process_message(message);
+        }
+    }
+}
 
 
 

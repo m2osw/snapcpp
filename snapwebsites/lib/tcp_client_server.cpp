@@ -215,9 +215,9 @@ tcp_client::tcp_client(std::string const& addr, int port)
  *
  * This function cleans up the TCP client object by closing the attached socket.
  *
- * \todo
- * Should we use the shutdown() call? I think that could prevent the user
- * on the other side from receiving the last bit of data we sent.
+ * \note
+ * DO NOT use the shutdown() call since we may end up forking and using
+ * that connection in the child.
  */
 tcp_client::~tcp_client()
 {
@@ -452,11 +452,11 @@ int tcp_client::write(const char *buf, size_t size)
  */
 tcp_server::tcp_server(std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
     : f_max_connections(max_connections < 1 ? MAX_CONNECTIONS : max_connections)
-    , f_socket(-1)
+    //, f_socket(-1) -- auto-init
     , f_port(port)
     , f_addr(addr)
-    , f_accepted_socket(-1)
-    , f_keepalive(true)
+    //, f_accepted_socket(-1) -- auto-init
+    //, f_keepalive(true) -- auto-init
     , f_auto_close(auto_close)
 {
     if(f_addr.empty())
@@ -525,9 +525,9 @@ tcp_server::tcp_server(std::string const & addr, int port, int max_connections, 
  * If the \p auto_close parameter was set to true in the constructor, then
  * the last accepter socket gets closed by this function.
  *
- * \todo
- * Should we use the shutdown() call? I think that could prevent the user
- * on the other side from receiving the last bit of data we sent.
+ * \note
+ * DO NOT use the shutdown() call since we may end up forking and using
+ * that connection in the child.
  */
 tcp_server::~tcp_server()
 {
@@ -625,7 +625,7 @@ bool tcp_server::get_keepalive() const
  * \param[in] yes  Whether to keep new connections alive even when no traffic
  * goes through.
  */
-void tcp_server::keepalive(bool yes)
+void tcp_server::set_keepalive(bool yes)
 {
     f_keepalive = yes;
 }
@@ -668,9 +668,9 @@ void tcp_server::keepalive(bool yes)
  * information immediately, otherwise it is cleaner to always block those
  * signals.)
  *
- * \todo
- * Should we use the shutdown() call? I think that could prevent the user
- * on the other side from receiving the last bit of data we sent.
+ * \note
+ * DO NOT use the shutdown() call since we may end up forking and using
+ * that connection in the child.
  *
  * \param[in] max_wait_ms  The maximum number of milliseconds to wait for
  *            a message. If set to -1 (the default), accept() will block

@@ -56,8 +56,6 @@ public:
 connection_impl::connection_impl(std::string const & addr, int port, mode_t mode)
     : snap_tcp_client_message_connection(addr, port, mode)
 {
-    // client's requests for the connection to stay up for long period of times without data being transferred
-    keep_alive();
     non_blocking();
 }
 
