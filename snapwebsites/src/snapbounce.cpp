@@ -42,13 +42,6 @@
 #include <sys/wait.h>
 #include <uuid/uuid.h>
 
-#define USE_OPEN_FD
-#ifdef USE_OPEN_FD
-#   include <sys/types.h>
-#   include <sys/stat.h>
-#   include <fcntl.h>
-#endif
-
 #include <exception>
 #include <memory>
 #include <vector>
@@ -76,7 +69,7 @@ namespace
      *
      * This table includes all the options supported by the server.
      */
-    advgetopt::getopt::option const g_snapinit_options[] =
+    advgetopt::getopt::option const g_snapbounce_options[] =
     {
         {
             '\0',
@@ -123,7 +116,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
-            "[optional] show the version of the snapinit executable",
+            "[optional] show the version of the snapbounce executable",
             advgetopt::getopt::no_argument
         },
         {
@@ -185,7 +178,7 @@ snap_bounce::pointer_t snap_bounce::f_instance;
 
 
 snap_bounce::snap_bounce( int argc, char *argv[] )
-    : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPBOUNCE_OPTIONS")
+    : f_opt(argc, argv, g_snapbounce_options, g_configuration_files, "SNAPBOUNCE_OPTIONS")
     , f_cassandra( f_config )
 {
     if(f_opt.is_defined("version"))
@@ -200,7 +193,7 @@ snap_bounce::snap_bounce( int argc, char *argv[] )
         exit(1);
     }
 
-    if( f_opt.is_defined( "nolog" ) || f_opt.is_defined( "help" ) )
+    if( f_opt.is_defined( "nolog" ) )
     {
         snap::logging::configure_console();
     }
@@ -238,7 +231,7 @@ snap_bounce::pointer_t snap_bounce::instance()
 
 void snap_bounce::usage()
 {
-    f_opt.usage( advgetopt::getopt::no_error, "snapinit" );
+    f_opt.usage( advgetopt::getopt::no_error, "snapbounce" );
     //throw std::invalid_argument( "usage" );
 }
 
@@ -247,18 +240,21 @@ void snap_bounce::read_stdin()
 {
     //const std::string final_recipient( "Final-Recipient:" );
     //std::cout << "read_stdin():" << std::endl;
-    f_email_body << QString("Sender:    %1").arg(f_opt.get_string("sender").c_str());
-    f_email_body << QString("Recipient: %1").arg(f_opt.get_string("recipient").c_str());
+    f_email_body << QString("X-Snap-Sender: %1").arg(f_opt.get_string("sender").c_str());
+    f_email_body << QString("X-Snap-Recipient: %1").arg(f_opt.get_string("recipient").c_str());
+    f_email_body << "";
     while( (std::cin.rdstate() & std::ifstream::eofbit) == 0 )
     {
         std::string line;
         std::getline( std::cin, line );
         f_email_body << line.c_str();
 
-        #if 0
+#if 0
+// this will be done in the the backend
+
         // Attempt to extract Final-Recipient.
         // For example "Final-Recipient: rfc822; pleasebounce@dooglio.net"
-        if( line.substr( 0, final_recipient.size() ) == final_recipient )
+        if( line.substr( 0, final_recipient.size() ) == final_recipient ) // this needs to be case insensitive
         {
             auto semicolon_it = std::find_if( line.begin(), line.end(), []( const char ch ) { return ch == ';'; } );
             if( semicolon_it != line.end() )
@@ -267,17 +263,17 @@ void snap_bounce::read_stdin()
                 std::for_each( semicolon_it, line.end(), [this]( const char ch ) { if( ch != ' ' ) f_recipient.push_back(ch); } );
             }
         }
-        #endif
+#endif
     }
 
-    #if 0
+#if 0
     std::cout << "recipient=" << f_recipient << std::endl;
     std::cout << std::endl << "f_email_body:" << std::endl;
     for( const QString line : f_email_body )
     {
         std::cout << "\t" << line << std::endl;
     }
-    #endif
+#endif
 }
 
 
@@ -315,7 +311,15 @@ void snap_bounce::store_email()
     }
 
     auto& bounced( (*table)["bounced"] );
-    bounced[generate_uuid()] = f_email_body.join("\n");
+    QString const uuid(generate_uuid());
+    bounced[uuid] = f_email_body.join("\n");
+
+    // TODO: enable once we have our snapcommunicator
+    //snap_communicator_message message;
+    //message.set_service("sendmail");
+    //message.set_command("PING");
+    //message.add_parameter("bounce", uuid); // we will ignore the uuid, but we may use the fact that this parameter is defined to know that we should check bounces
+    //snap::snap_communicator::snap_udp_server_message_connection::send_message("127.0.0.1", 4040, message);
 }
 
 

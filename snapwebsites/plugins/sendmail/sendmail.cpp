@@ -2832,7 +2832,7 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     {
         sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_FAILED));
         row->cell(sending_status)->setValue(sending_value);
-        SNAP_LOG_FATAL("Pipe to sendmail failed, email ")(key)("/")(unique_key)(" won't get sent.");
+        SNAP_LOG_FATAL("Pipe to sendmail failed, email ")(key)("/")(unique_key)(" will not get sent.");
         return;
     }
 

@@ -20,6 +20,7 @@
 #include "../users/users.h"
 #include "../permissions/permissions.h"
 
+#include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
 
@@ -232,6 +233,7 @@ bool versions::versions_libraries_impl(filter::filter::token_info_t& token)
         // CGI
     token.f_replacement += "<li>Apache interface: ";
     token.f_replacement += f_snap->snapenv("GATEWAY_INTERFACE");
+    token.f_replacement += "</li>";
         // Qt
     token.f_replacement += "<li>Qt v";
     token.f_replacement += qVersion();

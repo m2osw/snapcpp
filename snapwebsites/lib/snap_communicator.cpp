@@ -1231,6 +1231,10 @@ snap_communicator::snap_signal::snap_signal(int posix_signal)
     pointer_t sp(this);
     g_signal_handlers[f_signal] = sp; // TBD: is that assignment really correct?!
 
+    // TODO: redesign that one with signalfd() instead, because that way
+    //       we don't need to have a handler at all! Then we just use
+    //       the read() to get the signal information...
+    //
     f_sighandler = signal(f_signal, sighandler);
 }
 
