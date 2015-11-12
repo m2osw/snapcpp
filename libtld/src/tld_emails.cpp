@@ -564,7 +564,7 @@ void tld_email_list::parse_all_emails()
             {
                 // comments may include other comments
                 int comment_count(1);
-                for(++s; *s != '\0' && comment_count > 0; ++s)
+                for(++s; *s != '\0'; ++s)
                 {
                     if(*s == '\\')
                     {
@@ -583,6 +583,10 @@ void tld_email_list::parse_all_emails()
                     else if(*s == ')')
                     {
                         --comment_count;
+                        if(comment_count <= 0)
+                        {
+                            break;
+                        }
                     }
                 }
                 if(*s == '\0')

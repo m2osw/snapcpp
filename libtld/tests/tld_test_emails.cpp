@@ -151,6 +151,8 @@ const tld_email list_of_results[] =
     // TBD: since the colons get canonicalized to %3A we do not need the '[' and ']' in the canonicalized version
     { "", "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>",
       "Wilke, Alexis", "alexis,wilke", ":special:.m2osw.com", "\"alexis,wilke\"@[:special:.m2osw.com]", "\"Wilke, Alexis\" <\"alexis,wilke\"@%3Aspecial%3A.m2osw.com>" },
+    { "", "alexis@m2osw.com (Simple Comment)",
+      "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
 
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 };
@@ -175,6 +177,7 @@ const valid_email list_of_valid_emails[] =
     { "(Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) alexis@m2osw.com", 1 },
     { "Group with (Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) some sub-comments \t : alexis@m2osw.com;", 2 },
     { "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>", 1 },
+    { "alexis@m2osw.com (Simple Comment)", 1 },
 
     // end of list
     { NULL, 0 }
@@ -262,6 +265,7 @@ void test_valid_emails()
             int max(v->f_count);
             if(r != TLD_RESULT_SUCCESS)
             {
+                fprintf(stderr, "return value is %d instead of %d with \"%s\"\n", r, TLD_RESULT_SUCCESS, v->f_input_email);
                 error("error: unexpected return value.");
             }
             else if(list.count() != max)
@@ -378,9 +382,10 @@ void test_valid_emails()
             tld_email_list *list;
             list = tld_email_alloc();
             tld_result r = tld_email_parse(list, v->f_input_email, 0);
-            int max(v->f_count);
+            const int max(v->f_count);
             if(r != TLD_RESULT_SUCCESS)
             {
+                fprintf(stderr, "return value is %d instead of %d for \"%s\"\n", r, TLD_RESULT_SUCCESS, v->f_input_email);
                 error("error: unexpected return value.");
             }
             else if(tld_email_count(list) != max)
