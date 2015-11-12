@@ -267,11 +267,13 @@ void test_valid_emails()
             {
                 fprintf(stderr, "return value is %d instead of %d with \"%s\"\n", r, TLD_RESULT_SUCCESS, v->f_input_email);
                 error("error: unexpected return value.");
+                results += max;
             }
             else if(list.count() != max)
             {
                 fprintf(stderr, "parse() returned %d as count, expected %d\n", list.count(), max);
                 error("error: unexpected count");
+                results += max;
             }
             else
             {
