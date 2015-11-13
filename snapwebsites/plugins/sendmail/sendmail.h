@@ -20,6 +20,8 @@
 #include "../filter/filter.h"
 #include "../path/path.h"
 
+#include "../test_plugin_suite/test_plugin_suite.h"
+
 #include "snap_backend.h"
 #include "qcaseinsensitivestring.h"
 
@@ -124,6 +126,8 @@ public:
     sendmail_exception_too_many_levels(std::string const & what_msg) : sendmail_exception(what_msg) {}
     sendmail_exception_too_many_levels(QString const &     what_msg) : sendmail_exception(what_msg) {}
 };
+
+
 
 
 class sendmail
@@ -247,8 +251,12 @@ public:
 
     void                    post_email(email const & e);
     QString                 default_from() const;
+    bool                    parse_email(QString const & email_data, email & e, bool bounce_email);
 
     SNAP_SIGNAL_WITH_MODE(filter_email, (email & e), (e), NEITHER);
+
+    // links test suite
+    SNAP_TEST_PLUGIN_SUITE_SIGNALS()
 
 private:
     void                    content_update(int64_t variables_timestamp);
@@ -258,6 +266,11 @@ private:
     void                    run_emails();
     void                    sendemail(QString const & key, QString const & unique_key);
     void                    copy_filename_to_content_type(email::header_map_t & attachment_headers);
+
+    // tests
+    SNAP_TEST_PLUGIN_TEST_DECL(test_parse_email_basic)
+    SNAP_TEST_PLUGIN_TEST_DECL(test_parse_email_mixed)
+    SNAP_TEST_PLUGIN_TEST_DECL(test_parse_email_report)
 
     zpsnap_child_t                  f_snap;
     snap_backend::zpsnap_backend_t  f_backend;

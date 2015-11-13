@@ -61,6 +61,7 @@ snap_validate_xml( layout/sendmail-body-parser.xsl layout/simplified-xslt20.dtd 
 
 add_library(sendmail SHARED
     sendmail.cpp
+    tests.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml

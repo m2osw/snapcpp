@@ -238,42 +238,15 @@ void snap_bounce::usage()
 
 void snap_bounce::read_stdin()
 {
-    //const std::string final_recipient( "Final-Recipient:" );
-    //std::cout << "read_stdin():" << std::endl;
-    f_email_body << QString("X-Snap-Sender: %1").arg(f_opt.get_string("sender").c_str());
-    f_email_body << QString("X-Snap-Recipient: %1").arg(f_opt.get_string("recipient").c_str());
+    f_email_body << QString("sender: %1").arg(f_opt.get_string("sender").c_str());
+    f_email_body << QString("recipient: %1").arg(f_opt.get_string("recipient").c_str());
     f_email_body << "";
     while( (std::cin.rdstate() & std::ifstream::eofbit) == 0 )
     {
         std::string line;
         std::getline( std::cin, line );
         f_email_body << line.c_str();
-
-#if 0
-// this will be done in the the backend
-
-        // Attempt to extract Final-Recipient.
-        // For example "Final-Recipient: rfc822; pleasebounce@dooglio.net"
-        if( line.substr( 0, final_recipient.size() ) == final_recipient ) // this needs to be case insensitive
-        {
-            auto semicolon_it = std::find_if( line.begin(), line.end(), []( const char ch ) { return ch == ';'; } );
-            if( semicolon_it != line.end() )
-            {
-                semicolon_it++;
-                std::for_each( semicolon_it, line.end(), [this]( const char ch ) { if( ch != ' ' ) f_recipient.push_back(ch); } );
-            }
-        }
-#endif
     }
-
-#if 0
-    std::cout << "recipient=" << f_recipient << std::endl;
-    std::cout << std::endl << "f_email_body:" << std::endl;
-    for( const QString line : f_email_body )
-    {
-        std::cout << "\t" << line << std::endl;
-    }
-#endif
 }
 
 

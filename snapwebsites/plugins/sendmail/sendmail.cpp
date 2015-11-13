@@ -515,6 +515,7 @@ sendmail::email::header_map_t & sendmail::email::email_attachment::get_all_heade
  *
  * The possible structure of a resulting email is:
  *
+ * \code
  * - multipart/mixed
  *   - multipart/alternative
  *     - text/plain
@@ -525,15 +526,18 @@ sendmail::email::header_map_t & sendmail::email::email_attachment::get_all_heade
  *       - image/gif
  *       - text/css (the CSS used by the HTML)
  *   - application/pdf (PDF attachment)
+ * \endcode
  *
  * The structure of the sendmail attachment for such an email would be:
  *
+ * \code
  * - HTML attachment
  *   - image/jpg
  *   - image/png
  *   - image/gif
  *   - text/css
  * - application/pdf
+ * \endcode
  *
  * Also, you are much more likely to use the set_email_path() which
  * means you do not have to provide anything more than than the dynamic
@@ -1040,7 +1044,7 @@ void sendmail::email::add_header(QString const & name, QString const & value)
             {
                 // TODO: this can happen if a TLD becomes obsolete and
                 //       a user did not update one's email address.
-                throw sendmail_exception_invalid_argument(QString("Invalid header field of emails in: \"%1: %2\"").arg(name).arg(value));
+                throw sendmail_exception_invalid_argument(QString("Invalid emails in header field: \"%1: %2\"").arg(name).arg(value));
             }
             if(type == TLD_EMAIL_FIELD_TYPE_MAILBOX
             && emails.count() != 1)
@@ -1467,6 +1471,8 @@ void sendmail::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
     SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
+
+    SNAP_TEST_PLUGIN_SUITE_LISTEN(sendmail);
 }
 
 
@@ -3168,6 +3174,698 @@ void sendmail::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
         }
     }
 }
+
+
+
+/** \brief Parse an email from plain text to an email object.
+ *
+ * This function transforms an email from a string to a
+ * snap::snapsendmail::email object.
+ *
+ * The email may include a bounce header that we add in snapbounce.
+ * In that case, make sure to set the \p bounce_email to true.
+ * The bounce fields (appearing before the email) are added as
+ * parameters to the \p e email passed in.
+ *
+ * The parser returns false if it finds something it does not
+ * understand. In most cases an error message will be logged
+ * when that happens.
+ *
+ * At this point we support several types of emails as follow:
+ *
+ * \li Plain text email
+ *
+ * This type of email has one header with Content-Type set to
+ * text/plain or text/html. If Content-Type was not specified,
+ * text/plain is assumed.
+ *
+ * This creates one attachment with the body of the email and
+ * returns.
+ *
+ * \li Multipart email
+ *
+ * This type of email is certainly one of the most used email
+ * now a day. It includes multiple parts describing the data
+ * defined in the email.
+ *
+ * The structure of the input email looks like this:
+ *
+ * \code
+ * - multipart/mixed
+ *   - multipart/alternative
+ *     - text/plain
+ *     - multipart/related
+ *       - text/html
+ *       - image/jpg (Images used in text/html)
+ *       - image/png
+ *       - image/gif
+ *       - text/css (the CSS used by the HTML)
+ *   - application/pdf (PDF attachment)
+ * \endcode
+ *
+ * We save both, the plain text and HTML content as an attachment. You may
+ * want to drop the plain text if there is HTML...
+ *
+ * The resulting structure would be something like this:
+ *
+ * \code
+ * - email
+ *   - text attachment
+ *   - HTML attachment
+ *     - image/jpg related
+ *     - image/png related
+ *     - image/gif related
+ *     - text/css related
+ *   - application/pdf attachment
+ * \endcode
+ *
+ * \li Report email -- from a bounced email
+ *
+ * In this case, the email buffer is a report. This means the Content-Type
+ * of the main header is expected to be "multipart/report". Bounce emails
+ * must be parsed by setting the \p bounce_email parameter to true.
+ *
+ * In this case we expected a very specific set of blocks that get parsed
+ * in a very specific way. The resulting structure is expected to include
+ * exactly three parts:
+ *
+ * 1) the notification, which is expected to be a human readable body of
+ *    plain text.
+ *
+ * 2) the delivery report, which is expected to be an email header with
+ *    information that the computer can analyze (i.e. the Final-Recipient
+ *    field, for example.)
+ *
+ * 3) the original header, which is the header we had in our oringinal
+ *    email, including our Message-ID field which references a Snap
+ *    session linked to the user to whom we sent that email.
+ *
+ * The content of the delivery report and original header are parsed
+ * before the function returned and saved in a related object. This
+ * makes it very easy to retrieve the data later.
+ *
+ * \code
+ * - email
+ *   - notification attachment
+ *   - delivery report attachment
+ *     - Reporting-MTA
+ *     - Final-Recipient
+ *   - original header attachment
+ *     - original header fields
+ * \endcode
+ *
+ * The notification, delivery report, and original header attachment
+ * may appear in any order. However, the Reporting-MTA and
+ * Final-Recipient related parts are always expected to be in that
+ * order. If you are looking for a specific field, you could still
+ * search in both of these sets of header fields.
+ *
+ * \todo
+ * The email is NOT cleared on entry. So if you loop over a set of
+ * emails, make sure you create a new email object each time before
+ * calling this function.
+ *
+ * \param[in] email_data  The string representing a complete email,
+ *                        including attachments
+ * \param[in,out] e  The email where the data is read.
+ * \param[bool] bounce_email  Whether we are parsing a bounced email.
+ *
+ * \return true if the parser succeeded, false otherwise. If false is
+ *         return, problem(s) with the email should have been logged.
+ */
+bool sendmail::parse_email(QString const & email_data, email & e, bool bounce_email)
+{
+    class parse_t
+    {
+    public:
+        parse_t(QString const & email_data, email & e, bool bounce_email)
+            : f_lines(email_data.split('\n'))
+            , f_max_lines(f_lines.size())
+            //, f_line(0) -- auto-init
+            , f_email(e)
+            , f_bounce_email(bounce_email)
+        {
+        }
+
+        bool parse()
+        {
+            if(f_bounce_email)
+            {
+                // read all the fields ahead of the real thing, these
+                // were added by our snapbounce utility
+                //
+                for(; f_line < f_max_lines && !f_lines[f_line].isEmpty(); ++f_line)
+                {
+                    QString name;
+                    QString value;
+                    if(!parse_one_field(name, value))
+                    {
+                        SNAP_LOG_ERROR("field parsing failed on bounced email");
+                        return false;
+                    }
+                    // we save those as parameters to make sure we do not
+                    // get them mixed with the email fields
+                    //
+                    // WARNING: parameters are case sensitive
+                    //
+                    f_email.add_parameter(name, value);
+                }
+                if(f_line < f_max_lines
+                && f_lines[f_line].isEmpty())
+                {
+                    // skip the empty line
+                    ++f_line;
+                }
+            }
+
+            // the very first line of the email must be "From <address> <date>"
+            // TODO: verify the format closer
+            //
+            if(f_line + 1 >= f_max_lines
+            || !f_lines[f_line].startsWith("From "))
+            {
+                SNAP_LOG_ERROR("email does not start with \"From <email@address> <date>\", found \"")
+                                (f_line >= f_max_lines ? "<empty>" : f_lines[f_line])("\" instead.");
+                return false;
+            }
+            ++f_line;
+
+            // read the main header
+            //
+            for(; f_line < f_max_lines && !f_lines[f_line].isEmpty(); ++f_line)
+            {
+                QString name;
+                QString value;
+                if(!parse_one_field(name, value))
+                {
+                    SNAP_LOG_ERROR("field parsing failed on main header");
+                    return false;
+                }
+                f_email.add_header(name, value);
+            }
+
+            // determine the type of message from Content-Type
+            //
+            QString const content_type(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+            f_content_type_parameters = split_parameters(content_type);
+
+            if(f_bounce_email)
+            {
+                return read_bounce_email();
+            }
+            else if(f_content_type_parameters[0] == "multipart/mixed")
+            {
+                // we support mixed emails: text and/or HTML and attachment(s)
+                //
+                return read_mixed_email();
+            }
+            else if(f_content_type_parameters[0] == "text/plain"
+                 || f_content_type_parameters[0] == "text/html"
+                 || f_content_type_parameters[0].isEmpty())
+            {
+                // direct text or HTML is fine too
+                //
+                return read_simple_email();
+            }
+
+            // anything else, we have no clue what to do at this time
+            //
+            SNAP_LOG_ERROR("unknown content type... \"")(f_content_type_parameters[0])("\"");
+            return false;
+        }
+
+        bool parse_one_field(QString & name, QString & value)
+        {
+            if(f_line >= f_max_lines)
+            {
+                SNAP_LOG_ERROR("called parse_one_field() with f_line too large.");
+                return false;
+            }
+
+            int const pos(f_lines[f_line].indexOf(':'));
+            if(pos <= 0)
+            {
+                // we also see the case where the line start with ':'
+                // as an error because in that case the name is empty
+                //
+                SNAP_LOG_ERROR("called parse_one_field() on a line without a ':' character: \"")(f_lines[f_line])("\".");
+                return false;
+            }
+
+            // field names are case insensitive, which is taken
+            // care of in the header map already
+            //
+            name = f_lines[f_line].mid(0, pos).trimmed();
+            value = f_lines[f_line].mid(pos + 1).trimmed();
+
+            // long line?
+            //
+            while(f_line + 1 < f_max_lines && !f_lines[f_line + 1].isEmpty() && f_lines[f_line + 1][0].isSpace())
+            {
+                // it is a long line, merge the data in one single long value
+                //
+                ++f_line;
+                value += " ";
+                value += f_lines[f_line].trimmed();
+            }
+
+            return true;
+        }
+
+        bool read_bounce_email()
+        {
+            // bounce emails must to be a report
+            //
+            if(f_content_type_parameters[0] != "multipart/report")
+            {
+                SNAP_LOG_ERROR("called read_bounce_email() but Content-Type is not \"multipart/report\", it is \"")(f_content_type_parameters[0])("\".");
+                return false;
+            }
+
+            // check the report-type parameter
+            int const max_content_type_parameters(f_content_type_parameters.size());
+            for(int idx(1); idx < max_content_type_parameters; ++idx)
+            {
+                f_content_type_parameters[idx] = f_content_type_parameters[idx].trimmed();
+                QString const report_type(f_content_type_parameters[idx].toLower());
+                if(report_type.startsWith("report-type=delivery-status"))
+                {
+                    // retrieve the boundary
+                    //
+                    QString const boundary(get_boundary(f_content_type_parameters));
+                    if(boundary.isEmpty())
+                    {
+                        SNAP_LOG_ERROR("boundary not found in the delivery-status section");
+                        return false;
+                    }
+
+                    QString const end_boundary(boundary + "--");
+                    do
+                    {
+                        sendmail::email::email_attachment report;
+
+                        // all good, go on with checking the report information
+                        //
+                        // read one part, no sub-part expected although we
+                        // can parse the content
+                        //
+                        get_part_header(boundary, report.get_all_headers());
+                        QString const part_type(report.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+                        QVector<QCaseInsensitiveString> part_type_parameters(split_parameters(part_type));
+                        part_type_parameters[0] = part_type_parameters[0].toLower();
+                        // TBD: should we check Content-Description instead of Content-Type?
+                        if(part_type_parameters[0] == "message/delivery-status"
+                        || part_type_parameters[0] == "text/rfc822-headers")
+                        {
+                            // the data of the message delivery status
+                            // is represented as two blocks of fields
+                            //
+                            // first we skip one line (empty line between header and content)
+                            //
+                            for(++f_line; f_line < f_max_lines && f_lines[f_line] != boundary && f_lines[f_line] != end_boundary;)
+                            {
+                                // the MTA report are just headers pre-parsed
+                                sendmail::email::email_attachment mta_report;
+                                if(!get_part_data(boundary, mta_report.get_all_headers()))
+                                {
+                                    SNAP_LOG_ERROR("reading MTA report data fields failed");
+                                    return false;
+                                }
+                                report.add_related(mta_report);
+                            }
+                        }
+                        else //if(part_type_parameters[0] == "text/plain") -- any other part is read as is
+                        {
+                            // this is the human readable part of the message;
+                            // text that explains why the email was returned;
+                            // we save that data as the main body of the report
+                            //
+                            snap_string_list data;
+                            if(!get_part_data(boundary, data))
+                            {
+                                SNAP_LOG_ERROR("reading MTA report notification failed");
+                                return false;
+                            }
+                            QByteArray const body(data.join("\n").toUtf8());
+                            report.set_data(body, part_type);
+                        }
+
+                        if(f_line >= f_max_lines)
+                        {
+                            SNAP_LOG_ERROR("reach end of report before the end boundary");
+                            return false;
+                        }
+
+                        f_email.add_attachment(report);
+                    }
+                    while(f_lines[f_line] != end_boundary);
+
+                    return true;
+                }
+            }
+
+            SNAP_LOG_ERROR("delivery-status not found in this report");
+            return false;
+        }
+
+        bool read_mixed_email()
+        {
+            // get the mixed boundary
+            //
+            QString const boundary(get_boundary(f_content_type_parameters));
+            if(boundary.isEmpty())
+            {
+                SNAP_LOG_ERROR("no boundary defined in a mixed email");
+                return false;
+            }
+
+            QString const end_boundary(boundary + "--");
+            do
+            {
+                sendmail::email::email_attachment attachment;
+                if(!get_part_header(boundary, attachment.get_all_headers()))
+                {
+                    SNAP_LOG_ERROR("mixed email attachment header failed");
+                    return false;
+                }
+                QString const attachment_type(attachment.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+                QVector<QCaseInsensitiveString> const attachment_type_parameters(split_parameters(attachment_type));
+
+                // mixed is most often coming with alternatives (text and HTML)
+                if(attachment_type_parameters[0].toLower() == "multipart/alternative")
+                {
+                    QString const alternative_boundary(get_boundary(attachment_type_parameters));
+                    if(alternative_boundary.isEmpty())
+                    {
+                        SNAP_LOG_ERROR("alternative boundary count not be determined");
+                        return false;
+                    }
+
+                    // read
+                    QString const end_alternative_boundary(alternative_boundary + "--");
+                    do
+                    {
+                        sendmail::email::email_attachment alternative_attachment;
+                        if(!get_part_header(alternative_boundary, alternative_attachment.get_all_headers()))
+                        {
+                            SNAP_LOG_ERROR("alternative attachment header failed");
+                            return false;
+                        }
+                        QString const alternative_type(alternative_attachment.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+                        QVector<QCaseInsensitiveString> const alternative_type_parameters(split_parameters(alternative_type));
+                        if(alternative_type_parameters[0].toLower() == "multipart/related")
+                        {
+                            // the text or html is the attachment
+                            //
+                            QString const related_boundary(get_boundary(alternative_type_parameters));
+                            if(related_boundary.isEmpty())
+                            {
+                                SNAP_LOG_ERROR("boundary for related multipart failed");
+                                return false;
+                            }
+
+                            QString const end_related_boundary(related_boundary + "--");
+                            do
+                            {
+                                sendmail::email::email_attachment related;
+                                if(!get_part_header(related_boundary, related.get_all_headers()))
+                                {
+                                    SNAP_LOG_ERROR("related header could not be read");
+                                    return false;
+                                }
+                                snap_string_list data;
+                                if(!get_part_data(related_boundary, data))
+                                {
+                                    SNAP_LOG_ERROR("related data could not be read");
+                                    return false;
+                                }
+                                QByteArray const body(data.join("\n").toUtf8());
+                                related.set_data(body, related.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+                                alternative_attachment.add_related(related);
+
+                                if(f_line >= f_max_lines)
+                                {
+                                    // end boundary missing
+                                    SNAP_LOG_ERROR("related alternative not ending with the end boundary");
+                                    return false;
+                                }
+                            }
+                            while(f_lines[f_line] != end_related_boundary);
+                        }
+                        else
+                        {
+                            snap_string_list data;
+                            if(!get_part_data(alternative_boundary, data))
+                            {
+                                SNAP_LOG_ERROR("alternative data not ended properly");
+                                return false;
+                            }
+                            QByteArray const body(data.join("\n").toUtf8());
+                            alternative_attachment.set_data(body, alternative_type);
+                        }
+
+                        if(f_line >= f_max_lines)
+                        {
+                            // end boundary missing
+                            SNAP_LOG_ERROR("end alternative boundary not found");
+                            return false;
+                        }
+
+                        f_email.add_attachment(alternative_attachment);
+                    }
+                    while(f_lines[f_line] != end_alternative_boundary);
+
+                    // skip the end_alternative_boundary and move the
+                    // cursor to the next boundary
+                    //
+                    for(++f_line; f_line < f_max_lines; ++f_line)
+                    {
+                        if(f_lines[f_line] == boundary
+                        || f_lines[f_line] == end_boundary)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    // a regular attachment load it as is
+                    //
+                    snap_string_list data;
+                    if(!get_part_data(boundary, data))
+                    {
+                        SNAP_LOG_ERROR("end boundary not found in attachment");
+                        return false;
+                    }
+                    QByteArray const body(data.join("\n").toUtf8());
+                    attachment.set_data(body, attachment_type);
+                    f_email.add_attachment(attachment);
+                }
+
+                if(f_line >= f_max_lines)
+                {
+                    // end boundary missing
+                    SNAP_LOG_ERROR("end boundary of mixed email not found");
+                    return false;
+                }
+            }
+            while(f_lines[f_line] != end_boundary);
+
+            return true;
+        }
+
+        bool read_simple_email()
+        {
+            QString const content_type(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+            sendmail::email::email_attachment attachment;
+            QByteArray const body(static_cast<QStringList>(f_lines.mid(f_line)).join("\n").toUtf8());
+            attachment.set_data(body, content_type);
+            f_email.add_attachment(attachment);
+            return true;
+        }
+
+        QString get_boundary(QVector<QCaseInsensitiveString> content_type_parameters)
+        {
+            // search the Content-Type field for a parameter named "boundary"
+            //
+            int const max_content_type_parameters(content_type_parameters.size());
+            for(int idx(1); idx < max_content_type_parameters; ++idx)
+            {
+                if(content_type_parameters[idx].toLower().startsWith("boundary="))
+                {
+                    // got it, return that with the additional "--"
+                    //
+                    QString boundary(content_type_parameters[idx].mid(9));
+                    if(boundary.isEmpty())
+                    {
+                        return QString();
+                    }
+                    if(boundary[0] == '"'
+                    && boundary.at(boundary.length() - 1) == '"')
+                    {
+                        boundary = boundary.mid(1, boundary.length() - 2);
+                    }
+                    boundary = "--" + boundary;
+
+                    // move the "cursor" to the first boundary; anything
+                    // between here and the first boundary is ignored
+                    //
+                    for(; f_line < f_max_lines; ++f_line)
+                    {
+                        if(f_lines[f_line] == boundary)
+                        {
+                            return boundary;
+                        }
+                    }
+
+                    // not even one boundary?!
+                    return QString();
+                }
+            }
+
+            // multi-part message without a boundary is considered invalid
+            return QString();
+        }
+
+        bool get_part_header(QString const & boundary, sendmail::email::header_map_t & header)
+        {
+            // make sure we are on a boundary (the get_boundary() moves the
+            // cursor to that location for us)
+            //
+            if(f_line >= f_max_lines
+            || f_lines[f_line] != boundary)
+            {
+                SNAP_LOG_ERROR("trying to read a mixed header without boundary \"")(boundary)("\" on line ")(f_line)(", but \"")(f_lines[f_line])("\".");
+                return false;
+            }
+
+            // retrieve the header
+            //
+            QString const end_boundary(boundary + "--");
+            for(++f_line; f_line < f_max_lines && !f_lines[f_line].isEmpty(); ++f_line)
+            {
+                if(f_lines[f_line] == boundary
+                || f_lines[f_line] == end_boundary)
+                {
+                    // this is incorrect, we need to have at least one empty
+                    // line to end the header
+                    //
+                    SNAP_LOG_ERROR("header ends with a boundary instead of an empty line");
+                    return false;
+                }
+
+                QString name;
+                QString value;
+                parse_one_field(name, value);
+                header[name] = value;
+            }
+
+            return true;
+        }
+
+        bool get_part_data(QString const & boundary, sendmail::email::header_map_t & sub_header)
+        {
+            QString const end_boundary(boundary + "--");
+            for(; f_line < f_max_lines; ++f_line)
+            {
+                if(f_lines[f_line] == boundary
+                || f_lines[f_line] == end_boundary)
+                {
+                    // this is the end of this sub-header!
+                    //
+                    return true;
+                }
+                if(f_lines[f_line].isEmpty())
+                {
+                    // skip all empty lines
+                    //
+                    for(++f_line;; ++f_line)
+                    {
+                        if(f_line >= f_max_lines)
+                        {
+                            // boundary missing
+                            SNAP_LOG_ERROR("reached end of email before boundary or end boundary");
+                            return false;
+                        }
+                        if(!f_lines[f_line].isEmpty())
+                        {
+                            break;
+                        }
+                    }
+                    return true;
+                }
+                QString name;
+                QString value;
+                parse_one_field(name, value);
+                sub_header[name] = value;
+            }
+
+            // the data block was not ended by boundaries or an empty line...
+            //
+            SNAP_LOG_ERROR("sub-header did not end with a boundary limit");
+            return false;
+        }
+
+        bool get_part_data(QString const & boundary, snap_string_list & data)
+        {
+            QString const end_boundary(boundary + "--");
+            for(++f_line; f_line < f_max_lines; ++f_line)
+            {
+                if(f_lines[f_line] == boundary
+                || f_lines[f_line] == end_boundary)
+                {
+                    // this is the end of this message!
+                    //
+                    if(data.last().isEmpty())
+                    {
+                        // remove the last line, it is there to make sure
+                        // all systems can properly process a message
+                        //
+                        data.removeLast();
+                    }
+                    return true;
+                }
+                data << f_lines[f_line];
+            }
+
+            // the data block was not ended by boundaries...
+            //
+            SNAP_LOG_ERROR("end of file reached before data block end boundary");
+            return false;
+        }
+
+        QVector<QCaseInsensitiveString> split_parameters(QString const & s)
+        {
+            QVector<QCaseInsensitiveString> result;
+            int pos(0);
+            for(;;)
+            {
+                int const next(s.indexOf(';', pos));
+                if(next < 0)
+                {
+                    result << s.mid(pos).trimmed();
+                    return result;
+                }
+
+                result << s.mid(pos, next - pos).trimmed();
+                pos = next + 1;
+            }
+        }
+
+    private:
+        snap_string_list                f_lines;
+        int                             f_max_lines = 0;
+        int                             f_line = 0;
+        email &                         f_email;
+        bool                            f_bounce_email = false;
+        QVector<QCaseInsensitiveString> f_content_type_parameters;
+    };
+
+    parse_t p(email_data, e, bounce_email);
+
+    return p.parse();
+}
+
 
 
 SNAP_PLUGIN_END()

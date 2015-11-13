@@ -451,10 +451,10 @@ bool test_plugin::on_path_execute(content::path_info_t& ipath)
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void test_plugin::on_process_post(QString const& uri_path)
+void test_plugin::on_process_post(QString const & uri_path)
 {
     // make sure this is a cart post
-    char const *clicked_test_name_field(get_name(name_t::SNAP_NAME_TEST_PLUGIN_TEST_NAME_FIELD));
+    char const * clicked_test_name_field(get_name(name_t::SNAP_NAME_TEST_PLUGIN_TEST_NAME_FIELD));
     if(!f_snap->postenv_exists(clicked_test_name_field))
     {
         return;
@@ -486,6 +486,7 @@ void test_plugin::on_process_post(QString const& uri_path)
         }
         catch(test_plugin_suite::test_plugin_suite_assert_failed const& e)
         {
+            success = false;
             end_date = f_snap->get_current_date();
             messages::messages::instance()->set_error(
                 "Test Assertion Failed",
@@ -496,6 +497,7 @@ void test_plugin::on_process_post(QString const& uri_path)
         }
         catch(std::exception const& e)
         {
+            success = false;
             end_date = f_snap->get_current_date();
             messages::messages::instance()->set_error(
                 "Test Failed",
@@ -526,7 +528,7 @@ void test_plugin::on_process_post(QString const& uri_path)
     test_results_row->cell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_SUCCESS))->setValue(success_char);
 
     // create the AJAX response
-    server_access::server_access *server_access_plugin(server_access::server_access::instance());
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
     server_access_plugin->create_ajax_result(ipath, success);
     server_access_plugin->ajax_append_data(get_name(name_t::SNAP_NAME_TEST_PLUGIN_RESULT_FIELD), result.toUtf8());
     QString const start_date_str(dbutils::microseconds_to_string(start_date, false));
