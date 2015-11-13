@@ -366,11 +366,6 @@ add_executable(${PROJECT_NAME}
     snapbounce.cpp
 )
 
-find_library( UUID uuid )
-if( ${UUID} STREQUAL "UUID-NOTFOUND" )
-    message( FATAL_ERROR "Cannot find uuid library!" )
-endif()
-
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${UUID}

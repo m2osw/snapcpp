@@ -92,11 +92,15 @@ QVariant row_model::data( QModelIndex const & idx, int role ) const
         if( context->contextName() == "snap_websites" )
         {
             snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
-            du.set_display_len( 24 );
             switch( idx.column() )
             {
-                case 0: return du.get_column_name ( cell );
-                case 1: return du.get_column_value( cell, role == Qt::DisplayRole /*display_only*/ );
+                case 0:
+                    du.set_display_len( 24 );
+                    return du.get_column_name( cell );
+
+                case 1:
+                    du.set_display_len( 64 );
+                    return du.get_column_value( cell, role == Qt::DisplayRole /*display_only*/ );
             }
 
             Q_ASSERT(false);

@@ -138,6 +138,7 @@ target_link_libraries( ${PROJECT_NAME}
     ${LIBPROCPS_LIBRARIES}
     ${OPENSSL_LIBRARIES}
     ${THRIFT_LIBRARIES}
+    ${UUID}
     pthread
     dl
 )

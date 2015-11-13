@@ -193,13 +193,15 @@ snap_bounce::snap_bounce( int argc, char *argv[] )
         exit(1);
     }
 
+    snap::logging::set_progname(f_opt.get_program_name());
+
     if( f_opt.is_defined( "nolog" ) )
     {
         snap::logging::configure_console();
     }
     else
     {
-        snap::logging::configure_sysLog();
+        snap::logging::configure_syslog();
     }
 
     f_config.read_config_file( f_opt.get_string("config").c_str() );
@@ -250,17 +252,19 @@ void snap_bounce::read_stdin()
 }
 
 
-namespace
-{
-    QString generate_uuid()
-    {
-        uuid_t uuid;
-        uuid_generate_random( uuid );
-        char unique_key[37];
-        uuid_unparse( uuid, unique_key );
-        return unique_key;
-    }
-}
+// I now create a key with `date + uuid` so the columns get sorted
+// by date (i.e. we will always handle the oldest bounces first.)
+//namespace
+//{
+//    QString generate_uuid()
+//    {
+//        uuid_t uuid;
+//        uuid_generate_random( uuid );
+//        char unique_key[37];
+//        uuid_unparse( uuid, unique_key );
+//        return unique_key;
+//    }
+//}
 
 
 void snap_bounce::store_email()
@@ -283,15 +287,22 @@ void snap_bounce::store_email()
         return;
     }
 
-    auto& bounced( (*table)["bounced"] );
-    QString const uuid(generate_uuid());
-    bounced[uuid] = f_email_body.join("\n");
+    QByteArray key;
+    // get current time first so rows get sorted by date
+    int64_t now(snap::snap_child::get_current_date());
+    appendInt64Value(key, now); // warning: use our append function so the int is inserted in big endian
+    // make sure it is unique
+    uuid_t uuid;
+    uuid_generate_random( uuid );
+    key.append(reinterpret_cast<char const *>(uuid), sizeof(uuid));
+
+    (*table)["bounced"][key] = f_email_body.join("\n");
 
     // TODO: enable once we have our snapcommunicator
     //snap_communicator_message message;
     //message.set_service("sendmail");
     //message.set_command("PING");
-    //message.add_parameter("bounce", uuid); // we will ignore the uuid, but we may use the fact that this parameter is defined to know that we should check bounces
+    //message.add_parameter("bounce", "0"); // at this point the existance of the parameter is the important part in this message
     //snap::snap_communicator::snap_udp_server_message_connection::send_message("127.0.0.1", 4040, message);
 }
 

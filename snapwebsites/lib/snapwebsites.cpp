@@ -838,7 +838,7 @@ void server::config(int argc, char * argv[])
     f_debug = f_opt->is_defined( "debug" );
 
     // initialize the syslog() interface
-    openlog("snapserver", LOG_NDELAY | LOG_PID, LOG_DAEMON);
+    openlog(f_servername.c_str(), LOG_NDELAY | LOG_PID, LOG_DAEMON);
 
     bool help(false);
 

@@ -18,6 +18,7 @@
 #include "log.h"
 
 #include "not_reached.h"
+#include "not_used.h"
 #include "snap_exception.h"
 #include "snapwebsites.h"
 
@@ -30,6 +31,7 @@
 #include <log4cplus/fileappender.h>
 #include <log4cplus/consoleappender.h>
 #include <log4cplus/syslogappender.h>
+#include <log4cplus/socketappender.h>
 
 #include <QFileInfo>
 
@@ -133,22 +135,111 @@ namespace logging
 
 namespace
 {
-    QString             g_log_config_filename;
-    QString             g_log_output_filename;
-    log4cplus::Logger   g_logger;
-    log4cplus::Logger   g_secure_logger;
 
-    enum class logging_type_t
-        { UNCONFIGURED_LOGGER
-        , CONSOLE_LOGGER
-        , FILE_LOGGER
-        , CONFFILE_LOGGER
-        , SYSLOG_LOGGER
-        };
-    logging_type_t      g_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
-    logging_type_t      g_last_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
+std::string         g_progname;
+QString             g_log_config_filename;
+QString             g_log_output_filename;
+log4cplus::Logger   g_logger;
+log4cplus::Logger   g_secure_logger;
+
+enum class logging_type_t
+    { UNCONFIGURED_LOGGER
+    , CONSOLE_LOGGER
+    , FILE_LOGGER
+    , CONFFILE_LOGGER
+    , SYSLOG_LOGGER
+    , SERVER_LOGGER
+    };
+logging_type_t      g_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
+logging_type_t      g_last_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
+
+
+
+class logger_stub : public logger
+{
+public:
+                    logger_stub(log_level_t const log_level, char const * file, char const * func, int const line)
+                        : logger(log_level, file, func, line)
+                    {
+                        f_ignore = true;
+                    }
+
+                    logger_stub(logger const & l)
+                        : logger(l)
+                    {
+                    }
+
+    logger &        operator () ()                              { return *this; }
+    logger &        operator () (log_security_t const v)        { NOTUSED(v); return *this; }
+    logger &        operator () (char const * s)                { NOTUSED(s); return *this; }
+    logger &        operator () (wchar_t const * s)             { NOTUSED(s); return *this; }
+    logger &        operator () (std::string const & s)         { NOTUSED(s); return *this; }
+    logger &        operator () (std::wstring const & s)        { NOTUSED(s); return *this; }
+    logger &        operator () (QString const & s)             { NOTUSED(s); return *this; }
+    logger &        operator () (char const v)                  { NOTUSED(v); return *this; }
+    logger &        operator () (signed char const v)           { NOTUSED(v); return *this; }
+    logger &        operator () (unsigned char const v)         { NOTUSED(v); return *this; }
+    logger &        operator () (signed short const v)          { NOTUSED(v); return *this; }
+    logger &        operator () (unsigned short const v)        { NOTUSED(v); return *this; }
+    logger &        operator () (signed int const v)            { NOTUSED(v); return *this; }
+    logger &        operator () (unsigned int const v)          { NOTUSED(v); return *this; }
+    logger &        operator () (signed long const v)           { NOTUSED(v); return *this; }
+    logger &        operator () (unsigned long const v)         { NOTUSED(v); return *this; }
+    logger &        operator () (signed long long const v)      { NOTUSED(v); return *this; }
+    logger &        operator () (unsigned long long const v)    { NOTUSED(v); return *this; }
+    logger &        operator () (float const v)                 { NOTUSED(v); return *this; }
+    logger &        operator () (double const v)                { NOTUSED(v); return *this; }
+    logger &        operator () (bool const v)                  { NOTUSED(v); return *this; }
+};
+
+
+
+
 }
 // no name namespace
+
+
+/** \brief Set the name of the program.
+ *
+ * This function is used to setup the logger progname parameter.
+ * Although we had a server::instance()->servername() call, that
+ * would not work with tools that do not start the server code,
+ * so better have a function to do that setup.
+ *
+ * \param[in] progname  The name of the program initializing the logger.
+ *
+ * \sa get_progname()
+ */
+void set_progname( std::string const & progname )
+{
+    g_progname = progname;
+}
+
+
+/** \brief Retrieve the program name.
+ *
+ * This function returns the program name as set with set_progname().
+ * If the program name was not set, then this function attempts to
+ * define it from the server::instance()->servername() function. If
+ * still empty, then the function throws so we (should) know right
+ * away that something is wrong.
+ *
+ * \exception snap_exception
+ * This exception is raised if the set_progname() is never called.
+ *
+ * \return The name of the program.
+ *
+ * \sa set_progname()
+ */
+std::string get_progname()
+{
+    if(g_progname.empty())
+    {
+        throw snap_exception( "g_progname undefined, please make sure to call set_progname() before calling any logger functions (even if with a fixed name at first)" );
+    }
+
+    return g_progname;
+}
 
 
 
@@ -200,11 +291,10 @@ void configure_console()
 {
     unconfigure();
 
-    log4cplus::SharedAppenderPtr
-            appender(new log4cplus::ConsoleAppender());
+    log4cplus::SharedAppenderPtr appender(new log4cplus::ConsoleAppender());
     appender->setName(LOG4CPLUS_TEXT("console"));
     const log4cplus::tstring pattern
-                ( boost::replace_all_copy(server::instance()->servername(), "%", "%%").c_str()
+                ( boost::replace_all_copy(get_progname(), "%", "%%").c_str()
                 + log4cplus::tstring("[%i]:%b:%L:%h: %m%n")
                 );
     //const log4cplus::tstring pattern( "%b:%L:%h: %m%n" );
@@ -212,7 +302,7 @@ void configure_console()
 // of g++ so we have to make sure the deprecation definition gets ignored
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
 #pragma GCC diagnostic pop
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
@@ -225,7 +315,7 @@ void configure_console()
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
-    set_log_output_level( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+    set_log_output_level( log_level_t::LOG_LEVEL_INFO );
 }
 
 
@@ -257,19 +347,19 @@ void configure_logfile( QString const & logfile )
         throw snap_exception( "No output logfile specified!" );
     }
 
-    log4cplus::SharedAppenderPtr
-            appender(new log4cplus::RollingFileAppender( logfile.toUtf8().data() ));
+    QByteArray utf8_name(logfile.toUtf8());
+    log4cplus::SharedAppenderPtr appender(new log4cplus::RollingFileAppender( utf8_name.data() ));
     appender->setName(LOG4CPLUS_TEXT("log_file"));
     log4cplus::tstring const pattern
                 ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
-                + boost::replace_all_copy(server::instance()->servername(), "%", "%%").c_str()
+                + boost::replace_all_copy(get_progname(), "%", "%%").c_str()
                 + log4cplus::tstring("[%i]: %m (%b:%L)%n")
                 );
 // log4cplus only accepts std::auto_ptr<> which is deprecated in newer versions
 // of g++ so we have to make sure the deprecation definition gets ignored
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
 #pragma GCC diagnostic pop
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
@@ -277,12 +367,12 @@ void configure_logfile( QString const & logfile )
     g_log_output_filename = logfile;
     g_logging_type        = logging_type_t::FILE_LOGGER;
     g_last_logging_type   = logging_type_t::FILE_LOGGER;
-    g_logger              = log4cplus::Logger::getInstance("snap");
-    g_secure_logger       = log4cplus::Logger::getInstance("security");
+    g_logger              = log4cplus::Logger::getInstance( "snap" );
+    g_secure_logger       = log4cplus::Logger::getInstance( "security" );
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
-    set_log_output_level( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+    set_log_output_level( log_level_t::LOG_LEVEL_INFO );
 }
 
 
@@ -292,9 +382,9 @@ void configure_logfile( QString const & logfile )
  *
  * \note
  * This function marks that the logger was configured. The other functions
- * do not work (do nothing) until this happens. In case of the server,
- * configure() is called from the server::config() function. If no configuration
- * file is defined then the other functions will do nothing.
+ * do not work (do nothing) until this happens. In case of the snap server,
+ * configure() is called from the server::config() function. If no
+ * configuration file is defined then the other functions will do nothing.
  *
  * Format documentation:
  * http://log4cplus.sourceforge.net/docs/html/classlog4cplus_1_1PatternLayout.html
@@ -306,21 +396,20 @@ void configure_logfile( QString const & logfile )
  * \sa server::config()
  * \sa unconfigure()
  */
-void configure_sysLog()
+void configure_syslog()
 {
     unconfigure();
 
-    const std::string servername( server::instance()->servername() );
-    log4cplus::SharedAppenderPtr appender( new log4cplus::SysLogAppender( servername ) );
-    const log4cplus::tstring pattern
-                ( boost::replace_all_copy(servername, "%", "%%").c_str()
-                + log4cplus::tstring("[%i]:%b:%L:%h: %m%n")
+    log4cplus::SharedAppenderPtr appender( new log4cplus::SysLogAppender( get_progname() ) );
+    log4cplus::tstring const pattern
+                ( //boost::replace_all_copy(get_progname(), "%", "%%").c_str() -- this is added by syslog() already
+                  log4cplus::tstring("[%i] %m (%b:%L)%n")
                 );
 // log4cplus only accepts std::auto_ptr<> which is deprecated in newer versions
-// of g++ so we have to make sure the deprecation definition gets ignored
+// of g++ so we have to make sure the deprecated definition gets ignored
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
 #pragma GCC diagnostic pop
     appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
 
@@ -330,6 +419,60 @@ void configure_sysLog()
     g_last_logging_type   = logging_type_t::SYSLOG_LOGGER;
     g_logger              = log4cplus::Logger::getInstance("snap");
     g_secure_logger       = log4cplus::Logger::getInstance("security");
+
+    g_logger.addAppender( appender );
+    g_secure_logger.addAppender( appender );
+    set_log_output_level( log_level_t::LOG_LEVEL_INFO );
+}
+
+
+/** \brief Configure log4cplus system to the log4cplus server.
+ *
+ * Set up the logging to be routed to the log4cplus server, assuming that
+ * the server is running.
+ *
+ * \note
+ * This function marks that the logger was configured. The other functions
+ * do not work (do nothing) until this happens. In case of the snap server,
+ * configure() is called from the server::config() function. If no
+ * configuration file is defined then the other functions will do nothing.
+ *
+ * Format documentation:
+ * http://log4cplus.sourceforge.net/docs/html/classlog4cplus_1_1PatternLayout.html
+ *
+ * \sa fatal()
+ * \sa error()
+ * \sa warning()
+ * \sa info()
+ * \sa server::config()
+ * \sa unconfigure()
+ */
+void configure_server()
+{
+    unconfigure();
+
+    // TODO: add the host and IP to parameters?
+    log4cplus::SharedAppenderPtr appender( new log4cplus::SocketAppender( "127.0.0.1", 9998, get_progname() ) );
+    log4cplus::tstring const pattern
+                ( log4cplus::tstring("%d{%Y/%m/%d %H:%M:%S} %h ")
+                + boost::replace_all_copy(get_progname(), "%", "%%").c_str()
+                + log4cplus::tstring("[%i]: %m (%b:%L)%n")
+                );
+// log4cplus only accepts std::auto_ptr<> which is deprecated in newer versions
+// of g++ so we have to make sure the deprecated definition gets ignored
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern) ) );
+#pragma GCC diagnostic pop
+    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
+
+    g_log_config_filename.clear();
+    g_log_output_filename.clear();
+    g_logging_type        = logging_type_t::SERVER_LOGGER;
+    g_last_logging_type   = logging_type_t::SERVER_LOGGER;
+    // we only have one appender, so use g_logger in g_secure_logger
+    g_logger              = log4cplus::Logger::getInstance( get_progname() );
+    g_secure_logger       = g_logger;
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
@@ -351,6 +494,11 @@ void configure_sysLog()
  * do not work (do nothing) until this happens. In case of the server,
  * configure() is called from the server::config() function. If no configuration
  * file is defined then the other functions will do nothing.
+ *
+ * \todo
+ * We may also want to get the progname so we can setup the system with that
+ * name, although at this time we offer different configuration files for
+ * each process.
  *
  * \param[in] filename  The name of the configuration file.
  *
@@ -410,7 +558,11 @@ void reconfigure()
         break;
 
     case logging_type_t::SYSLOG_LOGGER:
-        configure_sysLog();
+        configure_syslog();
+        break;
+
+    case logging_type_t::SERVER_LOGGER:
+        configure_server();
         break;
 
     default:
@@ -599,7 +751,7 @@ bool is_loggingserver_available ( QString const & logserver )
  * \param[in] func  The name of the function that log was generated from.
  * \param[in] line  The line number that log was generated from.
  */
-logger::logger(log_level_t log_level, char const *file, char const *func, int line)
+logger::logger(log_level_t const log_level, char const *file, char const *func, int const line)
     : f_log_level(log_level)
     , f_file(file)
     , f_func(func)
@@ -625,7 +777,7 @@ logger::logger(log_level_t log_level, char const *file, char const *func, int li
  *
  * \param[in] l  The logger to duplicate.
  */
-logger::logger(logger const& l)
+logger::logger(logger const & l)
     : f_log_level(l.f_log_level)
     , f_file(l.f_file)
     , f_func(l.f_func)
@@ -944,45 +1096,153 @@ logger& operator << ( logger& l, wchar_t const* msg )
 }
 
 
+
+/** \brief This function checks whether the log level allows output.
+ *
+ * This function checks the user specified log level against
+ * the current log level of the logger. If the log is to be
+ * output, then the function returns true (i.e. user log level
+ * is larger or equal to the logger's log level.)
+ *
+ * \todo
+ * Unfortunately we cannot be sure, at this point, whether the
+ * log will be secure or not. So we have to check with both
+ * loggers and return true if either would log the data. Since
+ * the secure logger is likely to have a higher log level and
+ * we log way less secure data, we should be just fine.
+ *
+ * \return true if the log should be computed.
+ */
+bool logger::is_enabled_for(log_level_t const log_level)
+{
+    log4cplus::LogLevel ll(log4cplus::FATAL_LOG_LEVEL);
+
+    switch(log_level)
+    {
+    case log_level_t::LOG_LEVEL_OFF:
+        // off means we don't emit anything so always return false
+        return false;
+
+    case log_level_t::LOG_LEVEL_FATAL:
+        ll = log4cplus::FATAL_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_ERROR:
+        ll = log4cplus::ERROR_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_WARNING:
+        ll = log4cplus::WARN_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_INFO:
+        ll = log4cplus::INFO_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_DEBUG:
+        ll = log4cplus::DEBUG_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_TRACE:
+        ll = log4cplus::TRACE_LOG_LEVEL;
+        break;
+
+    }
+
+    // TODO: see whether we could have a better way to only
+    //       return the one concerned (i.e. 2x the macros
+    //       and specify secure right there?)
+    //
+    return g_logger.isEnabledFor(ll) || g_secure_logger.isEnabledFor(ll);
+}
+
+
+
 logger fatal(char const *file, char const *func, int line)
 {
-    logger l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
-    return l.operator () ("fatal error: ");
+    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_FATAL))
+    {
+        logger l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        return l.operator () ("fatal error: ");
+    }
+    else
+    {
+        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        return l;
+    }
 }
 
 logger error(char const *file, char const *func, int line)
 {
-    logger l(log_level_t::LOG_LEVEL_ERROR, file, func, line);
-    return l.operator () ("error: ");
+    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_ERROR))
+    {
+        logger l(log_level_t::LOG_LEVEL_ERROR, file, func, line);
+        return l.operator () ("error: ");
+    }
+    else
+    {
+        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        return l;
+    }
 }
 
 logger warning(char const *file, char const *func, int line)
 {
-    logger l(log_level_t::LOG_LEVEL_WARNING, file, func, line);
-    return l.operator () ("warning: ");
+    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_WARNING))
+    {
+        logger l(log_level_t::LOG_LEVEL_WARNING, file, func, line);
+        return l.operator () ("warning: ");
+    }
+    else
+    {
+        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        return l;
+    }
 }
 
 logger info(char const *file, char const *func, int line)
 {
-    logger l(log_level_t::LOG_LEVEL_INFO, file, func, line);
-    return l.operator () ("info: ");
+    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_INFO))
+    {
+        logger l(log_level_t::LOG_LEVEL_INFO, file, func, line);
+        return l.operator () ("info: ");
+    }
+    else
+    {
+        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        return l;
+    }
 }
 
 logger debug(char const *file, char const *func, int line)
 {
-    logger l(log_level_t::LOG_LEVEL_DEBUG, file, func, line);
-    return l.operator () ("debug: ");
+    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_DEBUG))
+    {
+        logger l(log_level_t::LOG_LEVEL_DEBUG, file, func, line);
+        return l.operator () ("debug: ");
+    }
+    else
+    {
+        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        return l;
+    }
 }
 
 logger trace(char const *file, char const *func, int line)
 {
-    logger l(log_level_t::LOG_LEVEL_INFO, file, func, line);
-    return l.operator () ("trace: ");
+    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_TRACE))
+    {
+        logger l(log_level_t::LOG_LEVEL_TRACE, file, func, line);
+        return l.operator () ("trace: ");
+    }
+    else
+    {
+        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        return l;
+    }
 }
 
 
 } // namespace logging
-
 } // namespace snap
-
 // vim: ts=4 sw=4 et

@@ -87,6 +87,11 @@ find_package( Thrift           REQUIRED )
 find_package( ZLIB             REQUIRED )
 find_package( ZipIos++         REQUIRED 0.1.5.9 )
 
+find_library( UUID uuid )
+if( ${UUID} STREQUAL "UUID-NOTFOUND" )
+    message( FATAL_ERROR "Cannot find uuid library!" )
+endif()
+
 find_program( ZIP zip               REQUIRED )
 find_program( CLOSURELINTER gjslint REQUIRED DOC "verify that Google JavaScript linter is installed: sudo apt-get install closure-linter" )
 

@@ -27,6 +27,8 @@
 
 #include <iostream>
 
+#include <uuid/uuid.h>
+
 #include "poison.h"
 
 
@@ -374,7 +376,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
             {
                 name += ".";
             }
-            name += QString("%1").arg(QtCassandra::uint32Value(key, i));
+            name += QString("%1").arg(QtCassandra::safeUInt32Value(key, i));
         }
     }
     else if((f_tableName == "users"    && f_rowName == "*index_row*")
@@ -383,12 +385,31 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         // special case where the column key is a 64 bit integer
         //const QByteArray& name(c->columnKey());
         QtCassandra::QCassandraValue const identifier(c->columnKey());
-        name = QString("%1").arg(identifier.int64Value());
+        name = QString("%1").arg(identifier.safeInt64Value());
     }
     else if(f_tableName == "tracker")
     {
         QtCassandra::QCassandraValue const start_date(c->columnKey());
-        name = microseconds_to_string(start_date.int64Value(), true);
+        name = microseconds_to_string(start_date.safeInt64Value(), true);
+    }
+    else if(f_tableName == "emails" && f_rowName == "bounced")
+    {
+        QtCassandra::QCassandraValue const start_date(c->columnKey());
+
+        // 64 bit value (microseconds)
+        name = microseconds_to_string(start_date.safeInt64Value(), true);
+
+        // 128 bit UUID
+        if( static_cast<size_t>(start_date.size()) >= sizeof(int64_t) + sizeof(uuid_t) )
+        {
+            QByteArray const bytes(QtCassandra::binaryValue( start_date.binaryValue(), sizeof(int64_t), sizeof(uuid_t) ));
+            uuid_t uuid;
+            memcpy( uuid, bytes.data(), sizeof(uuid) );
+            char unique_key[37];
+            uuid_unparse( uuid, unique_key );
+            name += " ";
+            name += unique_key;
+        }
     }
     else
     {
@@ -973,39 +994,6 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v )
         }
         break;
 
-        case column_type_t::CT_time_seconds:
-        {
-            // String will be of the form: "%Y-%m-%d %H:%M:%S"
-            //
-            snap_string_list const datetime_split ( v.split(' ') );
-            if(datetime_split.size() < 2)
-            {
-                return;
-            }
-            snap_string_list const date_split     ( datetime_split[0].split('-') );
-            snap_string_list const time_split     ( datetime_split[1].split(':') );
-            if(date_split.size() != 3)
-            {
-                return;
-            }
-            if(time_split.size() != 3)
-            {
-                return;
-            }
-            //
-            tm to;
-            to.tm_sec  = time_split[2].toInt();
-            to.tm_min  = time_split[1].toInt();
-            to.tm_hour = time_split[0].toInt();
-            to.tm_mday = date_split[2].toInt();
-            to.tm_mon  = date_split[1].toInt() - 1;
-            to.tm_year = date_split[0].toInt() - 1900;
-            //
-            time_t const tt( mkgmtime( &to ) );
-            cvalue.setUInt64Value( tt );
-        }
-        break;
-
         case column_type_t::CT_time_microseconds_and_string:
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S.%N string"
@@ -1100,6 +1088,39 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v )
             appendInt64Value( tms, tt * 1000000 + ns );
             appendStringValue( tms, str );
             cvalue.setBinaryValue(tms);
+        }
+        break;
+
+        case column_type_t::CT_time_seconds:
+        {
+            // String will be of the form: "%Y-%m-%d %H:%M:%S"
+            //
+            snap_string_list const datetime_split ( v.split(' ') );
+            if(datetime_split.size() < 2)
+            {
+                return;
+            }
+            snap_string_list const date_split     ( datetime_split[0].split('-') );
+            snap_string_list const time_split     ( datetime_split[1].split(':') );
+            if(date_split.size() != 3)
+            {
+                return;
+            }
+            if(time_split.size() != 3)
+            {
+                return;
+            }
+            //
+            tm to;
+            to.tm_sec  = time_split[2].toInt();
+            to.tm_min  = time_split[1].toInt();
+            to.tm_hour = time_split[0].toInt();
+            to.tm_mday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt() - 1;
+            to.tm_year = date_split[0].toInt() - 1900;
+            //
+            time_t const tt( mkgmtime( &to ) );
+            cvalue.setUInt64Value( tt );
         }
         break;
 

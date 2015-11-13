@@ -23,6 +23,25 @@
 
 int main(int argc, char *argv[])
 {
+    // Initialize the logger as soon as possible so we get information
+    // if we log anything before we fully setup the logger in the server
+    // configuration (see server::config())
+    //
+    // This is important if the server crashes before it reaches the
+    // right place in the config() function.
+    //
+    char const * progname = strrchr(argv[0], '/');
+    if(progname == nullptr)
+    {
+        progname = argv[0];
+    }
+    else
+    {
+        ++progname;
+    }
+    snap::logging::set_progname(progname);
+    snap::logging::configure_syslog();
+
     int exitval = 1;
     try
     {
