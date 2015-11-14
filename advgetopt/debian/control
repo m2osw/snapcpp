@@ -3,8 +3,8 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake,
     doxygen, graphviz,
-    snapcmakemodules (>= 1.0.24.163~trusty),
-    libcontrolledvars-dev (>= 1.4.16.163~trusty)
+    snapcmakemodules (>= 1.0.24.164~trusty),
+    libcontrolledvars-dev (>= 1.4.16.164~trusty)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/
