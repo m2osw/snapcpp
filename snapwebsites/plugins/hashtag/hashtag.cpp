@@ -37,7 +37,7 @@ SNAP_PLUGIN_START(hashtag, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -85,7 +85,7 @@ hashtag::~hashtag()
  *
  * \param[in] snap  The child handling this request.
  */
-void hashtag::on_bootstrap(snap_child *snap)
+void hashtag::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -102,7 +102,7 @@ void hashtag::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the hashtag plugin.
  */
-hashtag *hashtag::instance()
+hashtag * hashtag::instance()
 {
     return g_plugin_hashtag_factory.instance();
 }
@@ -159,7 +159,7 @@ int64_t hashtag::do_update(int64_t last_updated)
  */
 void hashtag::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }

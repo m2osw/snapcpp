@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="editor::layout" revision="global" overwrite="yes">"hashtag-settings-page";</param>
     <param name="layout::layout" revision="global" overwrite="yes">"hashtag-settings-parser";</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/private</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/types/taxonomy/system/content-types/hashtag" owner="output">
     <!-- this is only the default, you can always change the root tag for

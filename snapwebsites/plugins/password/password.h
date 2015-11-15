@@ -74,7 +74,7 @@ public:
     void                on_bootstrap(snap_child * snap);
 
     // users signals
-    void                on_check_user_security(QString const & user_key, QString const & email, QString const & user_password, content::permission_flag & secure);
+    void                on_check_user_security(QString const & user_key, QString const & email, QString const & user_password, bool const bypass_blacklist, content::permission_flag & secure);
 
     QtCassandra::QCassandraTable::pointer_t get_password_table();
 

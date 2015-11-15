@@ -296,7 +296,7 @@ void snap_bounce::store_email()
     uuid_generate_random( uuid );
     key.append(reinterpret_cast<char const *>(uuid), sizeof(uuid));
 
-    (*table)["bounced"][key] = f_email_body.join("\n");
+    (*table)["bounced_raw"][key] = f_email_body.join("\n");
 
     // TODO: enable once we have our snapcommunicator
     //snap_communicator_message message;

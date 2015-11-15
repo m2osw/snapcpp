@@ -1021,6 +1021,8 @@ QString users::email_to_user_key(QString const & email)
  * upper and lower case characters.
  *
  * \param[in] email  The email to canonicalize.
+ *
+ * \return The email with the domain name part canonicalized.
  */
 QString users::basic_email_canonicalization(QString const & email)
 {
@@ -1047,8 +1049,6 @@ QString users::basic_email_canonicalization(QString const & email)
  * \param[in] email  The user's email.
  * \param[in] field_name  The name of the field where value gets saved.
  * \param[in] value  The value of the field to save.
- *
- * \return true if the value was read from the database.
  *
  * \sa load_user_parameter()
  */
@@ -2357,9 +2357,6 @@ QString users::get_user_path(QString const & email)
  */
 users::status_t users::register_user(QString const & email, QString const & password)
 {
-    // make sure that the user email is valid
-    f_snap->verify_email(email);
-
     QString const user_key(email_to_user_key(email));
 
     QByteArray salt;
@@ -2400,6 +2397,19 @@ users::status_t users::register_user(QString const & email, QString const & pass
     QString const user_path(get_name(name_t::SNAP_NAME_USERS_PATH));
     QtCassandra::QCassandraValue new_identifier;
     new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+
+    // Note that the email was already checked when coming from the Register
+    // form, however, it was checked for validity as an email, not checked
+    // against a black list or verified in other ways; also the password
+    // can this way be checked by another plugin (i.e. password database)
+    //
+    content::permission_flag secure;
+    check_user_security(user_key, email, password, true, secure);
+    if(!secure.allowed())
+    {
+        // well... someone said "do not save that user in there"!
+        return status_t::STATUS_BLOCKED;
+    }
 
     // we got as much as we could ready before locking
     {
@@ -2444,6 +2454,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
             //
             // TBD: should we also check the cell with the website reference
             //      in the user table? (users::website_reference::<site_key>)
+            //
             content::path_info_t existing_ipath;
             existing_ipath.set_path(QString("%1/%2").arg(user_path).arg(identifier));
             if(content_table->exists(existing_ipath.get_key()))
@@ -2464,18 +2475,6 @@ users::status_t users::register_user(QString const & email, QString const & pass
         }
         else
         {
-            // Note that the email was already checked when coming from the Register
-            // form, however, it was checked for validity as an email, not checked
-            // against a black list or verified in other ways; also the password
-            // can this way be checked by another plugin (i.e. password database)
-            content::permission_flag secure;
-            check_user_security(user_key, email, password, secure);
-            if(!secure.allowed())
-            {
-                // well... someone said "do not save that user in there"!
-                return status_t::STATUS_BLOCKED;
-            }
-
             // we are the first to lock this row, the user is therefore unique
             // so go on and register him
 
@@ -2629,23 +2628,124 @@ users::status_t users::register_user(QString const & email, QString const & pass
 }
 
 
-/** \fn void users::check_user_security(QString const & user_key, QString const & email, QString const & password, content::permission_flag & secure)
- * \brief Signal that a user is about to get a new account.
+/** \brief Signal that a user is about to get a new account.
  *
- * This signal is called before a new user gets created.
+ * This signal is called before a new user gets created or when a
+ * user gets re-registered.
  *
- * \warning
- * At this point this signal is sent when the user account is still locked.
- * This means you MUST return (i.e. avoid calling die() because it does
- * not return...) and the SEGV, BUS, ILL signals will block that user in
- * lock mode forever. This may block the software when it tries to create
- * another user... so be careful.
+ * The function is given the user key, original user email, the
+ * password, and a secure flag to set to "not permitted" if there
+ * is a reason for which that user should be barred from the system.
+ *
+ * The implementations are expected to check for various things in
+ * regard to that user:
+ *
+ * \li check whether the email address is valid
+ * \li check the password against the password policy of the website
+ * \li check whether the user was blocked
+ * \li check whether the user is a spammer, hacker, impolite user, etc.
+ *
+ * \note
+ * In your implementation, you should quit early if the secure flag
+ * is already marked as not secure; something like this:
+ *
+ * \code
+ * void my_plugin::on_check_user_security(QString const & user_key, QString const & email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure)
+ * {
+ *     if(!secure.allowed())
+ *     {
+ *         return;
+ *     }
+ * }
+ * \endcode
+ *
+ * \param[in] user_key  The user_key (the canoniconalized email).
+ * \param[in] email  The email of the user about to be registered.
+ * \param[in] password  The user password.
+ * \param[in,out] secure  The flag defining whether the flag is secure.
+ *
+ * \return true if this very function thinks that the user is still
+ *         considered valid; false if it already knows otherwise
+ */
+bool users::check_user_security_impl(QString const & user_key, QString const & email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure)
+{
+    NOTUSED(user_key);
+    NOTUSED(password);
+    NOTUSED(bypass_blacklist);
+
+    // make sure that the user email is valid
+    // this snap_child function throws if the email is not acceptable
+    // (i.e. the validate_email() signal expects the function to only
+    // be called with a valid email)
+    //
+    try
+    {
+        f_snap->verify_email(email);
+    }
+    catch(snap_child_exception_invalid_email const &)
+    {
+        secure.not_permitted(QString("\"%1\" does not look like a valid email address.").arg(email));
+        return false;
+    }
+
+    // a user may be marked as a spammer whenever his IP
+    // address was blocked or some other anti-spam measure
+    // returns true...
+    //
+    if(user_is_a_spammer())
+    {
+        // this is considered a spammer, just tell the user that the email is
+        // considered blocked.
+        //
+        secure.not_permitted(QString("\"%1\" is blocked.").arg(email));
+        return false;
+    }
+
+    // let other plugins take over for a while
+    //
+    return true;
+}
+
+
+/** \brief Final check on the emails.
+ *
+ * The validation does a final check here. If the statis is still
+ * set to STATUS_NOT_FOUND, then the function checks the user
+ * status. If not considered valid (i.e. new, password, valid...)
+ * then STATUS_SPAMMER is returned.
  *
  * \param[in] user_key  The user_key (the canoniconalized email).
  * \param[in] email  The email of the user about to be registered.
  * \param[in] password  The user password.
  * \param[in,out] secure  The flag defining whether the flag is secure.
  */
+void users::check_user_security_done(QString const & user_key, QString const & email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure)
+{
+    NOTUSED(user_key);
+    NOTUSED(password);
+    NOTUSED(bypass_blacklist);
+
+    // if the user is not yet blocked, do a final test with the user
+    // current status
+    //
+    if(secure.allowed())
+    {
+        QString status_key;
+        status_t const status(user_status(email, status_key));
+        if(status != status_t::STATUS_NOT_FOUND
+        && status != status_t::STATUS_VALID
+        && status != status_t::STATUS_NEW
+        && status != status_t::STATUS_AUTO
+        && status != status_t::STATUS_PASSWORD
+        && status != status_t::STATUS_UNKNOWN) // a status from another plugin than the "users" plugin
+        {
+            // This may be a spammer, hacker, impolite person, etc.
+            //
+            secure.not_permitted(QString("\"%1\" is blocked.").arg(email));
+            return;
+        }
+    }
+}
 
 
 /** \fn void users::user_registered(content::path_info_t& ipath, int64_t identifier)
@@ -3201,7 +3301,7 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
  * We probably want to extend this test with a signal so other plugins
  * have a chance to define a user as a spammer.
  *
- * \return true if the user is a considered to be a spammer.
+ * \return true if the user is considered to be a spammer.
  */
 bool users::user_is_a_spammer()
 {

@@ -34,6 +34,13 @@ namespace sendmail
 enum class name_t
 {
     SNAP_NAME_SENDMAIL,
+    SNAP_NAME_SENDMAIL_BOUNCED,
+    SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE,
+    SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE,
+    SNAP_NAME_SENDMAIL_BOUNCED_EMAIL,
+    SNAP_NAME_SENDMAIL_BOUNCED_FAILED,
+    SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION,
+    SNAP_NAME_SENDMAIL_BOUNCED_RAW,
     SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST,
     SNAP_NAME_SENDMAIL_CONTENT_DISPOSITION,
     SNAP_NAME_SENDMAIL_CONTENT_LANGUAGE,
@@ -75,6 +82,7 @@ enum class name_t
     SNAP_NAME_SENDMAIL_STATUS,
     SNAP_NAME_SENDMAIL_STATUS_DELETED,
     SNAP_NAME_SENDMAIL_STATUS_FAILED,
+    SNAP_NAME_SENDMAIL_STATUS_INVALID,
     SNAP_NAME_SENDMAIL_STATUS_LOADING,
     SNAP_NAME_SENDMAIL_STATUS_NEW,
     SNAP_NAME_SENDMAIL_STATUS_READ,
@@ -249,6 +257,10 @@ public:
     // layout::layout_content
     virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
 
+    // users signals
+    void                    on_check_user_security(QString const & user_key, QString const & user_email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure);
+
+    bool                    validate_email(QString const & user_email, email const * e);
     void                    post_email(email const & e);
     QString                 default_from() const;
     bool                    parse_email(QString const & email_data, email & e, bool bounce_email);
@@ -260,6 +272,10 @@ public:
 
 private:
     void                    content_update(int64_t variables_timestamp);
+    void                    clear_caches();
+    void                    check_bounced_emails();
+    void                    reorganize_bounce_email(QByteArray const & column_key, QString const & bounce_report);
+    void                    process_bounce_email(QByteArray const & column_key, QString const & bounce_report, email const * e);
     void                    process_emails();
     void                    attach_email(email const & e);
     void                    attach_user_email(email const & e);

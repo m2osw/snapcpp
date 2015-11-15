@@ -15,6 +15,49 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ *
+ * The shorturl plugin is used to generate URIs that are as short as
+ * possible for any one page you create on your website. These short
+ * URIs are first created on the site itself using a counter. The counter
+ * number is used in base 36 and appended after the /s path. So in
+ * effect you get shorten paths such as /s/123.
+ *
+ * The shorturl is then presented to clients in the HTML header and the
+ * HTTP header. Because we can only present one such short URL per page,
+ * the website administrator has to choose one single shortener and stick
+ * to it. (After installation shorturl is disabled, the user can enable
+ * it only after he selected which type of shortener he wants to use.)
+ *
+ * The plugin is expected to also create a set of short URIs using
+ * external systems such as TinyURL and goo.gl.
+ *
+ * \li http://TinyURL.com/
+ *
+ * API for TinyURL.com is as follow (shortening http://linux.m2osw.com/zmeu-attack)
+ * wget -S 'http://tinyurl.com/api-create.php?url=http%3A%2F%2Flinux.m2osw.com%2Fzmeu-attack'
+ *
+ * (this may not be available anymore? it may have been abused...)
+ *
+ * \li https://developers.google.com/url-shortener/?hl=en
+ *
+ * API for goo.gl uses a secure log in (OAuth2) and so will require us
+ * to offer an interface to enter that information.
+ *
+ * \li facebook?
+ *
+ * I'm not sure whether facebook shortener can be used for 3rd party websites.
+ *
+ * \li twitter
+ *
+ * The twitter shortener should also be implemented at some point.
+ *
+ * \li others?
+ *
+ * Others? (many are appearing and dying so it is somewhat dangerous
+ * to just choose one or another.)
+ */
+
 #include "shorturl.h"
 
 #include "../output/output.h"
@@ -285,7 +328,7 @@ void shorturl::on_check_for_redirect(content::path_info_t & ipath)
             //       because we may have many links and they should all
             //       appear in one "Link: ..." line
             //
-            QString const http_link("<" + ipath.get_key() + ">; rel=shorturl");
+            QString const http_link("<" + ipath.get_key() + ">; rel=shortlink");
             f_snap->set_header(get_name(name_t::SNAP_NAME_SHORTURL_HTTP_LINK), http_link, snap_child::HEADER_MODE_REDIRECT);
 
             // SEO wise, using HTTP_CODE_FOUND (and probably HTTP_CODE_SEE_OTHER)
@@ -673,9 +716,6 @@ void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
     }
 }
 
-
-// API for TinyURL.com is as follow (shortening http://linux.m2osw.com/zmeu-attack)
-// wget -S 'http://tinyurl.com/api-create.php?url=http%3A%2F%2Flinux.m2osw.com%2Fzmeu-attack'
 
 SNAP_PLUGIN_END()
 

@@ -65,6 +65,27 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_SENDMAIL:
         return "sendmail";
 
+    case name_t::SNAP_NAME_SENDMAIL_BOUNCED:
+        return "bounced";
+
+    case name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE:
+        return "sendmail::bounce_arrival_date";
+
+    case name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE:
+        return "sendmail::bounce_diagnostic_code";
+
+    case name_t::SNAP_NAME_SENDMAIL_BOUNCED_EMAIL:
+        return "sendmail::bounce_email";
+
+    case name_t::SNAP_NAME_SENDMAIL_BOUNCED_FAILED:
+        return "bounced_failed";
+
+    case name_t::SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION:
+        return "sendmail::bounce_notification";
+
+    case name_t::SNAP_NAME_SENDMAIL_BOUNCED_RAW:
+        return "bounced_raw";
+
     case name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST:
         return "Bypass-Blacklist";
 
@@ -187,6 +208,9 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_SENDMAIL_STATUS_FAILED:
         return "failed";
+
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_INVALID:
+        return "invalid";
 
     case name_t::SNAP_NAME_SENDMAIL_STATUS_LOADING:
         return "loading";
@@ -1471,6 +1495,7 @@ void sendmail::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
     SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(sendmail, "users", users::users, check_user_security, _1, _2, _3, _4, _5);
 
     SNAP_TEST_PLUGIN_SUITE_LISTEN(sendmail);
 }
@@ -1632,6 +1657,152 @@ QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
  */
 
 
+/** \brief Check whether an email is considered valid.
+ *
+ * This function calls the users plugin check_user_security() function to
+ * verify the specified user email address.
+ *
+ * This is mainly a helper function that will make sure the call uses
+ * the blacklist flag (name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST)
+ * parameter as expected.
+ *
+ * \param[in] user_email  The email address to check.
+ * \param[in] e  The email that you want to use to that email address.
+ *
+ * \return true if the email validates; false if you should not call the
+ *         post_email() function.
+ */
+bool sendmail::validate_email(QString const & user_email, email const * e)
+{
+    users::users * users_plugin(users::users::instance());
+
+    bool bypass_blacklist(false);
+    if(e != nullptr)
+    {
+        QString const bypass(e->get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST)));
+        bypass_blacklist = bypass == "true";
+    }
+
+    QString const user_key(users_plugin->email_to_user_key(user_email));
+
+    // we use "!" for the password because we do not want to have
+    // any password checked.
+    //
+    content::permission_flag secure;
+    users_plugin->check_user_security(user_key, user_email, "!", bypass_blacklist, secure);
+
+    return secure.allowed();
+}
+
+
+/** \brief Check whether an email is considered valid.
+ *
+ * When sending an email to a specific individual, you may call this function
+ * to know whether the individual email address is considered valid. An
+ * invalid email is one of a user that decided to block this Snap! Websites
+ * instance from sending him emails or a previous email was rejected with
+ * a 5XX code.
+ *
+ * The function may return any one of these statuses:
+ *
+ * \li EMAIL_STATUS_VALID -- the email is considered valid and can be emailed
+ *     to;
+ * \li EMAIL_STATUS_INVALID -- the email was used previously and the remote
+ *     MTA said it is not valid;
+ * \li EMAIL_STATUS_BLOCKED -- the email is valid, but the owner asked us
+ *     not to send him/her any emails
+ *
+ * \note
+ * The function will return EMAIL_STATUS_VALID when the user blocks our
+ * email, but the email to be sent represents an important email that
+ * needs to be sent for the process to be accomplished (i.e. the user
+ * blacklisted a certain site and later asks to register at that same
+ * site.)
+ *
+ * \note
+ * The validate_email() function can be used instead of directly calling
+ * the signal since that way you do not have to guess how to call the
+ * signal. The validate_email() accepts the email you are about to
+ * post_email() so it can check the bypass flag of that email.
+ *
+ * \param[in] user_key  The user_key (the canoniconalized email).
+ * \param[in] email  The email of the user about to be registered.
+ * \param[in] password  The user password.
+ * \param[in,out] secure  The flag defining whether the flag is secure.
+ *
+ * \return EMAIL_STATUS_VALID if the email is considered valid, another status
+ *         in all other cases.
+ */
+void sendmail::on_check_user_security(QString const & user_key, QString const & user_email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure)
+{
+    NOTUSED(user_key);
+    NOTUSED(password);
+
+    if(!secure.allowed())
+    {
+        return;
+    }
+
+    users::users * users_plugin(users::users::instance());
+
+    // should we allow 2 or 3 attempts? it seems to me that with just
+    // one attempt, if it returns a 5XX the email is plainly not valid.
+    //
+    {
+        QString diagnostic;
+        QString const bounce_diagnostic_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE)).arg(0));
+        if(users_plugin->load_user_parameter(user_email, bounce_diagnostic_name, diagnostic))
+        {
+            if(diagnostic.startsWith("5."))
+            {
+                // a diagnostic that matches with 5.x.y is considered
+                // totally invalid and it cannot be retried... (really
+                // no need to)
+                //
+                // there is one problem with this one: a host that does
+                // not exist will generate a 5.x.y error; if later that
+                // very domain name is registered, we will still ignore
+                // it for that very user... (which is probably just fine
+                // because someone should not try to register with us
+                // until they know that their mail server works as
+                // expected.)
+                //
+                secure.not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_email));
+                return;
+            }
+        }
+    }
+
+    QString level;
+    if(users_plugin->load_user_parameter(user_email, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level)
+    || users_plugin->load_user_parameter(user_email, QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level))
+    {
+        // If the user was put in the Angry List then we have no way
+        // to send any emails... so the user cannot register or change
+        // their password if they have an existing account!
+        //
+        // However, if in the blacklist, the bypass_blacklist allows
+        // one to ignore the fact (i.e. the user will be sent the
+        // email.)
+        //
+        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
+        && bypass_blacklist)
+        {
+            // allow these emails
+            level = get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_WHITELIST);
+        }
+        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
+        || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST))
+        {
+            secure.not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_email));
+            return;
+        }
+    }
+
+    // nothing prevented this email from being used, say it is valid
+    //
+}
+
 
 /** \brief Post an email.
  *
@@ -1643,12 +1814,20 @@ QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
  *
  * Note that the message is not processed here at all. The backend
  * is fully responsible. The processing determines all the users
- * being emailed, when to send the email, whether the user wants
+ * being emailed, when to send each email, whether the user wants
  * HTML or not, etc.
  *
  * This function sets the From parameter to the default if you did
  * not defined it. The default is the website wide email address,
  * which in most cases is the website owner's email address.
+ *
+ * If you know you are sending the email to one specific user (i.e.
+ * the destination email is specific to one user instead of being
+ * a list), then you may first want to call valid_email() to know
+ * whether the email of that user is considered valid. If the
+ * Snap! Websites already tried to send that user an email and it
+ * failed, then the valid_email() function will return false. When
+ * that happens, you should display an error message to the user.
  *
  * \note
  * We save the original data to the Cassandra database so it can be
@@ -1812,6 +1991,8 @@ void sendmail::on_backend_action(QString const & action)
         {
             // immediately process emails that are in the database and
             // are ready to go (i.e. their time is in the past or now)
+            clear_caches();
+            check_bounced_emails();
             process_emails();
             run_emails();
 
@@ -1864,6 +2045,511 @@ void sendmail::on_backend_action(QString const & action)
 }
 
 
+/** \brief Clear various table caches.
+ *
+ * This should disappear once we have the proper implementation with
+ * snapcommunicator since caches will not survice exiting the child
+ * process and re-instantiating it.
+ */
+void sendmail::clear_caches()
+{
+    // clear some caches so things work better in the long run
+    users::users * users_plugin(users::users::instance());
+    QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+    users_table->clearCache();
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    content_table->clearCache();
+
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    branch_table->clearCache();
+
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    revision_table->clearCache();
+}
+
+
+/** \brief Check the "bounced" row in the "emails" table.
+ *
+ * This function goes through the list of emails that were sent back to
+ * use (bounced) and copy the data (notification, headers) in the
+ * user's account so next time we want to email that user we have
+ * information about his mailbox status.
+ */
+void sendmail::check_bounced_emails()
+{
+    SNAP_LOG_TRACE("process raw bounced emails");
+
+    QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
+    QtCassandra::QCassandraRow::pointer_t raw_row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_RAW)));
+    QtCassandra::QCassandraColumnRangePredicate all_column_predicate;
+    all_column_predicate.setCount(100); // should this be a parameter?
+    all_column_predicate.setIndex(); // behave like an index
+    for(;;)
+    {
+        raw_row->clearCache();
+        raw_row->readCells(all_column_predicate);
+        QtCassandra::QCassandraCells const cells(raw_row->cells());
+        if(cells.isEmpty())
+        {
+            break;
+        }
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                c != cells.end();
+                ++c)
+        {
+            // get the email from the database
+            // we expect empty values once in a while because a dropCell() is
+            // not exactly instantaneous in Cassandra
+            QtCassandra::QCassandraCell::pointer_t cell(*c);
+            QString const bounce_report(cell->value().stringValue());
+            reorganize_bounce_email(cell->columnKey(), bounce_report);
+            raw_row->dropCell(cell->columnKey());
+
+            // quickly end this process if the user requested a stop
+            if(f_backend->stop_received())
+            {
+                // clean STOP
+                return;
+            }
+        }
+    }
+
+    QString const website_key(f_snap->get_website_key());
+
+    SNAP_LOG_TRACE("process \"")(website_key)("\" bounced emails");
+
+    QtCassandra::QCassandraRow::pointer_t row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED)));
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setStartColumnName(website_key + "/");
+    column_predicate.setEndColumnName(website_key + "0");
+    column_predicate.setCount(100); // should this be a parameter?
+    column_predicate.setIndex(); // behave like an index
+    for(;;)
+    {
+        row->clearCache();
+        row->readCells(column_predicate);
+        QtCassandra::QCassandraCells const cells(row->cells());
+        if(cells.isEmpty())
+        {
+            break;
+        }
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                c != cells.end();
+                ++c)
+        {
+            // get the email from the database
+            // we expect empty values once in a while because a dropCell() is
+            // not exactly instantaneous in Cassandra
+            QtCassandra::QCassandraCell::pointer_t cell(*c);
+            QString const bounce_report(cell->value().stringValue());
+            process_bounce_email(cell->columnKey(), bounce_report, nullptr);
+            row->dropCell(cell->columnKey());
+
+            // quickly end this process if the user requested a stop
+            if(f_backend->stop_received())
+            {
+                // clean STOP
+                return;
+            }
+        }
+    }
+}
+
+
+/** \brief Reorganize a bounce email report by website.
+ *
+ * The emails are saved in the database by snapbounce. Unfortunately,
+ * snapbounce does not have access to the parse_email() function
+ * (the main reason being that the definition of the email class
+ * is in sendmail; we could move it out to a class in the library
+ * but at this point on snapbounce would need it and I do not think
+ * it is worth the trouble. Also we do not want to slow down that
+ * process.)
+ *
+ * This function takes a bounced email, searches for the original
+ * header in which we expect to find the Message-ID field. That
+ * field gives us the name of the website and the session identifier.
+ * Since we may be running in any other website at this point, the
+ * make use of that information to save that data in another table
+ * where it will specifically be managed by a process running in
+ * that very website. (TBD: we certainly could immediately manage
+ * those emails that are in the website currently running?)
+ *
+ * So process is:
+ *
+ * 1) read the emails from "bounced_raw"
+ *
+ * 2) parse the header to find Message-ID
+ *
+ * 3) save the email in "bounced" as \<website>/\<date>/\<session-id>
+ *
+ * Note that we drop the uuid and use the session identifier instead.
+ * Since the session is unique, we get a similar safe unique identifier
+ * for that row.
+ *
+ * \param[in] column_key  The key of the column being worked on.
+ * \param[in] bounce_report  The email being checked.
+ */
+void sendmail::reorganize_bounce_email(QByteArray const & column_key, QString const & bounce_report)
+{
+    email e;
+    if(!parse_email(bounce_report, e, true))
+    {
+        return;
+    }
+
+    int const max_attachment_count(e.get_attachment_count());
+    for(int idx(0); idx < max_attachment_count; ++idx)
+    {
+        email::email_attachment & attachment(e.get_attachment(idx));
+        QCaseInsensitiveString const content_description(attachment.get_header("Content-Description"));
+        if(content_description == "Undelivered Message Headers")
+        {
+            // the headers of the undelivered message should include
+            // the Message-ID that we are interested in
+            //
+            if(attachment.get_related_count() >= 1)
+            {
+                // get the message, the encoding is as follow:
+                //
+                //     '<' <session-id> '.' "snapwebsites" '@' <website> '>'
+                //
+                email::email_attachment const & message_headers(attachment.get_related(0));
+                QString const message_id(message_headers.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_MESSAGE_ID)));
+                int const period(message_id.indexOf('.'));
+                int const at(message_id.indexOf('@'));
+                if(period > 1
+                && at > period
+                && message_id.at(0) == '<'
+                && message_id.at(message_id.length() - 1) == '>')
+                {
+                    // extract the website URI, the date, and
+                    // session identifier
+                    //
+                    QString const website(message_id.mid(at + 1, message_id.length() - at - 2));
+                    int64_t const date(QtCassandra::safeInt64Value(column_key, 0, 0));
+                    QString const session_id(message_id.mid(1, period - 1));
+
+                    // the website needs to have a session with that identifier
+                    // otherwise we may end up with entries that stick to the
+                    // "bounced" table for 3 months which would be a big waste
+                    // of time...
+                    //
+                    if(!sessions::sessions::instance()->session_exists(website, session_id))
+                    {
+                        // save a copy in the bounced_failed table so
+                        // someone can still check those out to see whether
+                        // there is a problem with it
+                        //
+                        QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
+                        QtCassandra::QCassandraValue report;
+                        report.setStringValue(bounce_report);
+                        report.setTtl(86400 * 93); // keep for about 3 months
+                        emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_FAILED))->cell(column_key)->setValue(report);
+                        SNAP_LOG_INFO("ignoring bounce email with website \"")(website)("\" since no sessions use it.");
+                        return;
+                    }
+
+                    // build the new column key
+                    //
+                    QString const key(QString("%1/%2/%3").arg(website).arg(date, 19, 10, QChar('0')).arg(session_id));
+                    if(website == f_snap->get_website_key())
+                    {
+                        // since we are working on this website, no need to
+                        // waste time by saving the data back in the database
+                        // to delete it right after! so we directly process
+                        // that email
+                        //
+                        process_bounce_email(key.toUtf8(), bounce_report, &e);
+                    }
+                    else
+                    {
+                        // set a TTL because it can happen that the session
+                        // gets deleted or is somehow invalid and the message
+                        // would stick around forever...
+                        //
+                        QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
+                        QtCassandra::QCassandraValue report;
+                        report.setStringValue(bounce_report);
+                        report.setTtl(86400 * 93); // keep for about 3 months
+                        emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED))->cell(key)->setValue(report);
+                    }
+                    return;
+                    NOTREACHED();
+                }
+            }
+        }
+    }
+}
+
+
+/** \brief Process a bounce email report.
+ *
+ * This function searches for a few parts of interest and save
+ * that information in the Cassandra cluster under the corresponding
+ * user.
+ *
+ * The data of interest are:
+ *
+ * 1. Message-ID
+ *
+ * The section with the original email headers includes our Message-ID.
+ * This gives us a way to find the session this email was linked to.
+ * That session includes a reference back to the user we sent the email
+ * to. That is the place were we will save the data from the bounce.
+ *
+ * Since the Message-ID is extracted in the previous process, here
+ * it is actually ignored. We already have the session identifier from
+ * the column key.
+ *
+ * 2. Notification
+ *
+ * The notification section includes the text from the server that bounced
+ * the email. This is considered a human readable message so we save that
+ * message and display it to the administrator who checks on such statuses.
+ *
+ * 3. Delivery Report, Diagnostic-Code
+ *
+ * The delivery report is a machine readable set of fields which we have
+ * transformed as a set of header fields in the bounce email. If the
+ * Diagnostic-Code is defined, it should always be, then we can use
+ * that code to save along the other data. This gives us an idea of
+ * whether we could try again (4XX) or not (5XX). Especially, if we
+ * get a 554, it is probably never useful to retry.
+ *
+ * 4. Delivery Report, Action/Status
+ *
+ * Similar to Diagnostic-Code, the Action and Status could help us with
+ * determining whether to ever try again to send an email to that user.
+ *
+ * 5. Deliver Report, Final-Recipient
+ *
+ * The postfix system canonicalize the email address before forwarding
+ * the email. This canonicalization result is saved in the Final-Recipient.
+ * I do not think we can do much with this because the email is likely
+ * to represent something else than what we want.
+ *
+ * \param[in] column_key  The key of the column being worked on.
+ * \param[in] bounce_report  The raw bounce report as saved by snapbounce.
+ * \param[in] e  The input email if available.
+ */
+void sendmail::process_bounce_email(QByteArray const & column_key, QString const & bounce_report, email const * e)
+{
+    // before parsing the email, we can actually check the session
+    // since we have the identifier in the column key
+    //
+    QString const key(QString::fromUtf8(column_key.data()));
+    snap_string_list const key_parts(key.split('/')); // TODO: could the domain include '/' too?
+    QString const session_id(key_parts.last());
+    sessions::sessions::session_info info;
+    sessions::sessions::instance()->load_session(session_id, info, false);
+    if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
+    {
+        // this session is not valid, ignore the request altogether
+        //
+        return;
+    }
+
+    // retrieve the user email address and verify the status
+    // if the status is not satisfactory, ignore the information
+    // (we do not really need it if the user is blocked)
+    //
+    QString const page_path(info.get_page_path());
+    QString const object_path(info.get_object_path());
+    if(!page_path.startsWith("/users/")
+    || !object_path.startsWith("/email/"))
+    {
+        return;
+    }
+    users::users * users_plugin(users::users::instance());
+    QString const user_email(page_path.mid(7));
+    QString status_key;
+    users::users::status_t const user_status(users_plugin->user_status(user_email, status_key));
+    if(user_status != users::users::status_t::STATUS_VALID
+    && user_status != users::users::status_t::STATUS_NEW
+    && user_status != users::users::status_t::STATUS_AUTO
+    && user_status != users::users::status_t::STATUS_PASSWORD
+    && user_status != users::users::status_t::STATUS_UNKNOWN) // a status from another plugin than the "users" plugin
+    {
+        // user is blocked, not found, undefined...
+        //
+        return;
+    }
+
+    // the session is valid, retrieve the info from the email
+    // (if we were called from reorganize_bounce_email() then we already have
+    // the email in the e pointer, avoid re-parsing)
+    //
+    email em;
+    if(e == nullptr)
+    {
+        if(!parse_email(bounce_report, em, true))
+        {
+            QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
+            emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_FAILED))->cell(column_key)->setValue(bounce_report);
+            return;
+        }
+        e = &em;
+    }
+
+    QString notification;
+    QString computer_diagnostic;
+    QString arrival_date;
+    QString diagnostic_code;
+
+    int const max_attachment_count(e->get_attachment_count());
+    for(int idx(0); idx < max_attachment_count; ++idx)
+    {
+        email::email_attachment & attachment(e->get_attachment(idx));
+        QCaseInsensitiveString const content_description(attachment.get_header("Content-Description"));
+        if(content_description == "Notification")
+        {
+            // this is the human message we want to display to the end user
+            //
+            // the email parser will take care of checking the charset and
+            // do the necessary conversions and save the result in the
+            // string... right now we are good with a QString::fromUtf8()
+            //QString const content_type(attachment.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+            //snap_string_list content_type_parts(content_type.split(';'));
+            //for(int j(1); j < content_type_parts.size(); ++j)
+            //{
+            //    content_type_parts[j] = content_type_parts[j].trimmed();
+            //    if(content_type_parts[j].startsWith("charset="))
+            //    {
+            //    }
+            //}
+            QByteArray const data(attachment.get_data());
+            notification = QString::fromUtf8(data.data());
+        }
+        else if(content_description == "Delivery report")
+        {
+            if(attachment.get_related_count() >= 2)
+            {
+                // I would imagine that it will not ever be swapped, although
+                // we could test both related too for certain fields to know
+                // what the order really is...
+                //
+                {
+                    email::email_attachment const & reporting_mta(attachment.get_related(0));
+                    arrival_date = reporting_mta.get_header("Arrival-Date");
+                }
+
+                {
+                    email::email_attachment const & remote_mta(attachment.get_related(1));
+                    diagnostic_code = remote_mta.get_header("Diagnostic-Code");
+                    if(diagnostic_code.startsWith("smtp;"))
+                    {
+                        // we can get this code
+                        //
+                        computer_diagnostic = diagnostic_code.mid(5).trimmed();
+                    }
+
+                    // the status tells us whether the email was a total failure
+                    // (5.x.y) or could have a chance later to work as expected
+                    // (4.x.y). The code also appears in the Diagnostic-Code
+                    // field but this one is already parsed out.
+                    //
+                    diagnostic_code = remote_mta.get_header("Status");
+                }
+            }
+        }
+    }
+
+    // make sure we have at least a notification and a session identifier
+    //
+    if(notification.isEmpty())
+    {
+        notification = computer_diagnostic;
+    }
+    if(notification.isEmpty())
+    {
+        QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
+        QtCassandra::QCassandraValue report;
+        report.setStringValue(bounce_report);
+        report.setTtl(86400 * 93); // keep for about 3 months
+        emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_FAILED))->cell(column_key)->setValue(report);
+        SNAP_LOG_ERROR("could not parse message, it is missing a notification and/or a message identifier.");
+        return;
+    }
+
+    // to keep the last 5 notifications, we copy the first four to the
+    // next four and then save the new one as first
+    //
+    QtCassandra::QCassandraValue value;
+    for(int i(4); i >= 0; --i)
+    {
+        // notification
+        {
+            QString const previous_bounce_notification_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION)).arg(i));
+            if(users_plugin->load_user_parameter(user_email, previous_bounce_notification_name, value))
+            {
+                QString const next_bounce_notification_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION)).arg(i + 1));
+                users_plugin->save_user_parameter(user_email, next_bounce_notification_name, value);
+            }
+        }
+
+        // diagnostic code
+        {
+            QString const previous_bounce_diagnostic_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE)).arg(i));
+            if(users_plugin->load_user_parameter(user_email, previous_bounce_diagnostic_name, value))
+            {
+                QString const next_bounce_diagnostic_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE)).arg(i + 1));
+                users_plugin->save_user_parameter(user_email, next_bounce_diagnostic_name, value);
+            }
+        }
+
+        // arrival date
+        {
+            QString const previous_bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(i));
+            if(users_plugin->load_user_parameter(user_email, previous_bounce_arrival_date_name, value))
+            {
+                QString const next_bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(i + 1));
+                users_plugin->save_user_parameter(user_email, next_bounce_arrival_date_name, value);
+            }
+        }
+
+        // email
+        {
+            QString const previous_bounce_email_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_EMAIL)).arg(i));
+            if(users_plugin->load_user_parameter(user_email, previous_bounce_email_name, value))
+            {
+                QString const next_bounce_email_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_EMAIL)).arg(i + 1));
+                users_plugin->save_user_parameter(user_email, next_bounce_email_name, value);
+            }
+        }
+    }
+
+    // save the new status
+    {
+        QString const bounce_notification_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION)).arg(0));
+        users_plugin->save_user_parameter(user_email, bounce_notification_name, notification);
+    }
+
+    {
+        QString const bounce_diagnostic_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE)).arg(0));
+        users_plugin->save_user_parameter(user_email, bounce_diagnostic_name, diagnostic_code);
+    }
+
+    {
+        QString const bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(0));
+        users_plugin->save_user_parameter(user_email, bounce_arrival_date_name, arrival_date);
+    }
+
+    {
+        // This is a reference to the email; we can find the email in the
+        // "emails" table as: emails/<user email>/<object path>
+        //
+        QString const bounce_email_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_EMAIL)).arg(0));
+        // mid(7) to skip the "/email/" introducer, no need here
+        users_plugin->save_user_parameter(user_email, bounce_email_name, object_path.mid(7));
+    }
+}
+
+
 /** \brief Process all the emails received in Cassandra.
  *
  * This function goes through the list of "new" emails received
@@ -1885,23 +2571,6 @@ void sendmail::on_backend_action(QString const & action)
  */
 void sendmail::process_emails()
 {
-    {
-        // clear some caches so things work better in the long run
-        users::users * users_plugin(users::users::instance());
-        QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-        users_table->clearCache();
-
-        content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-        content_table->clearCache();
-
-        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        branch_table->clearCache();
-
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        revision_table->clearCache();
-    }
-
     // the site key defined in the email data does not include the slash
     // (see post_email() for proof)
     QString const site_key(f_snap->get_site_key());
@@ -2081,10 +2750,6 @@ void sendmail::attach_user_email(email const & e)
     // TBD: would we need to have a lock to test whether the user
     //      exists? since we are not about to add it ourselves, I
     //      do not think it is necessary
-    //
-    // TODO: since the email was posted, the user may have been marked as
-    //       a spammer or blocked
-    //       (blacklists are dealt further further down, maybe checked below too?)
     //
     QString const to(e.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
     tld_email_list list;
@@ -2481,33 +3146,15 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     // die after about 1 year
     QString const to(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
 
-    QString level;
-    if(users::users::instance()->load_user_parameter(to, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level)
-    || users::users::instance()->load_user_parameter(to, QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level))
     {
-        // if the user was put in the Angry List then we have no way
-        // to send any emails... so the user cannot register or change
-        // their password if they have an existing account!
-        //
-        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST))
+        if(!validate_email(to, &f_email))
         {
-            // plugins can bypass the blacklist for important maintenance
-            // emails (i.e. user registration, password change.)
-            QString const bypass(f_email.get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST)));
-            if(bypass == "true")
-            {
-                // allow these emails
-                level = get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_WHITELIST);
-            }
-        }
-        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
-        || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST))
-        {
-            // marked as "unsubscribed" from all websites
-            // so we never send email to that user...
-            sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_UNSUBSCRIBED));
+            // marked as "invalid" from this or all websites
+            // so we absolutely never send email to that user...
+            //
+            sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_INVALID));
             row->cell(sending_status)->setValue(sending_value);
-            SNAP_LOG_INFO("User \"")(to)("\" unsubscribed. Email with key \"")(unique_key)("\" will not be sent.");
+            SNAP_LOG_INFO("User \"")(to)("\" has an email address, which returned an unrecoverable 5XX error code. Email with key \"")(unique_key)("\" will not be sent.");
             return;
         }
     }
@@ -2715,13 +3362,13 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_SECURE);
         info.set_session_id(SENDMAIL_SESSION_ID_MESSAGE);
         info.set_plugin_owner(get_plugin_name()); // ourselves
-        //info.set_page_path(); -- no path for emails
+        info.set_page_path("/users/" + to); // save the user email address for bounces and to know whether the user opened his email or clicked on a link...
         info.set_object_path("/email/" + f_email.get_email_key()); // save the email key; this is not a real path though
         info.set_user_agent(get_name(name_t::SNAP_NAME_SENDMAIL_USER_AGENT));
         info.set_time_to_live(86400 * 30);  // 30 days
         QString const message_id(sessions::sessions::instance()->create_session(info));
 
-        headers[get_name(name_t::SNAP_NAME_SENDMAIL_MESSAGE_ID)] = "<" + message_id + "@snapwebsites>";
+        headers[get_name(name_t::SNAP_NAME_SENDMAIL_MESSAGE_ID)] = QString("<%1.snapwebsites@%2>").arg(message_id).arg(f_snap->get_website_key());
     }
     if(!headers.contains(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_LANGUAGE)))
     {

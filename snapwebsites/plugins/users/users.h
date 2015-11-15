@@ -263,7 +263,7 @@ public:
     // links::links_cloned implementation
     virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
 
-    SNAP_SIGNAL_WITH_MODE(check_user_security, (QString const & user_key, QString const & email, QString const & password, content::permission_flag & secure), (user_key, email, password, secure), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(check_user_security, (QString const & user_key, QString const & email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure), (user_key, email, password, bypass_blacklist, secure), START_AND_DONE);
     SNAP_SIGNAL_WITH_MODE(user_registered, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_verified, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_logged_in, (user_logged_info_t & logged_info), (logged_info), NEITHER);

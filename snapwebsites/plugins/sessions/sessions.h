@@ -183,6 +183,7 @@ public:
     QString                 create_session(session_info & info);
     void                    save_session(session_info & info, bool const new_random);
     void                    load_session(QString const & session_id, session_info & info, bool use_once = true);
+    bool                    session_exists(QString const & website_key, QString const & session_key);
 
     void                    attach_to_session(session_info const & info, QString const & name, QString const & data);
     QString                 detach_from_session(session_info const & info, QString const & name);

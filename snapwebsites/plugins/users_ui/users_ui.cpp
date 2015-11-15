@@ -36,7 +36,6 @@
 #include "users_ui.h"
 
 #include "../output/output.h"
-//#include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 #include "../sendmail/sendmail.h"
 #include "../users/users.h"
@@ -44,13 +43,6 @@
 #include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
-//#include "qdomhelpers.h"
-//#include "qstring_stream.h"
-//
-//#include <iostream>
-//
-//#include <QtCassandra/QCassandraLock.h>
-//#include <QFile>
 
 #include "poison.h"
 
@@ -1374,6 +1366,7 @@ void users_ui::process_register_form()
 {
     users::users * users_plugin(users::users::instance());
     messages::messages * messages(messages::messages::instance());
+    sendmail::sendmail * sendmail_plugin(sendmail::sendmail::instance());
 
     // We validated the email already and we just don't need to do it
     // twice, if two users create an account "simultaneously (enough)"
@@ -1382,6 +1375,25 @@ void users_ui::process_register_form()
     // same time.) The email is the row key of the user table.
     //
     QString const email(f_snap->postenv("email"));
+
+    // before we attempt a registration we check with sendmail whether
+    // the email address is alright...
+    //
+    if(!sendmail_plugin->validate_email(email, nullptr))
+    {
+        messages::messages::instance()->set_error(
+            // TODO: ameliorate the error message, here we use the message
+            //       given to us by a throw and it includes some technical
+            //       data and is not translated... at the same time, it
+            //       should rarely happen
+            "Invalid Email Address",
+            QString("The specified email (%1) address was marked as invalid. Please check the email to make sure it is correct.").arg(email),
+            QString("email address \"%1\" not considered valid by the system.").arg(email),
+            true // the message includes an email which may be blacklisted (and thus a valid/legitimate email) so it should be hidden
+        );
+        return;
+    }
+
     users::users::status_t const status(users_plugin->register_user(email, f_snap->postenv("password")));
     switch(status)
     {

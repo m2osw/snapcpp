@@ -113,7 +113,7 @@ void password::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(password, "users", users::users, check_user_security, _1, _2, _3, _4);
+    SNAP_LISTEN(password, "users", users::users, check_user_security, _1, _2, _3, _4, _5);
 }
 
 
@@ -242,12 +242,14 @@ QtCassandra::QCassandraTable::pointer_t password::get_password_table()
  * \param[in] user_key  The key to a user (i.e. canonicalized email).
  * \param[in] email  The original user email address.
  * \param[in] password  The password we want to check.
+ * \param[in] bypass_blacklist  Whether the email blacklist should be bypassed.
  * \param[in,out] secure  Whether the password / user is considered secure.
  */
-void password::on_check_user_security(QString const & user_key, QString const & email, QString const & user_password, content::permission_flag & secure)
+void password::on_check_user_security(QString const & user_key, QString const & email, QString const & user_password, bool const bypass_blacklist, content::permission_flag & secure)
 {
     NOTUSED(user_key);
     NOTUSED(email);
+    NOTUSED(bypass_blacklist);
 
     if(!secure.allowed())
     {

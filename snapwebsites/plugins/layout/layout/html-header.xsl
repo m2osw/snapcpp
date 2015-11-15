@@ -128,10 +128,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<meta property="og:url" content="{$page_uri}"/>
 		</xsl:if>
 
-		<!-- shorturl == this is where we could test having or not having a plugin could dynamically change the XSL templates -->
+		<!-- shortlink == this is where we could test having or not having a plugin could dynamically change the XSL templates -->
 		<xsl:variable name="shorturl" select="head/metadata/desc[@type='shorturl']/data"/>
 		<xsl:if test="$shorturl != ''">
-			<link rel="shorturl" type="text/html" title="Short URL" href="{$shorturl}"/>
+			<link rel="shortlink" type="text/html" title="Short Link" href="{$shorturl}"/>
 		</xsl:if>
 
 		<!-- include dcterms? -->

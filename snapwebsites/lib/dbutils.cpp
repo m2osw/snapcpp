@@ -392,7 +392,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         QtCassandra::QCassandraValue const start_date(c->columnKey());
         name = microseconds_to_string(start_date.safeInt64Value(), true);
     }
-    else if(f_tableName == "emails" && f_rowName == "bounced")
+    else if(f_tableName == "emails" && f_rowName == "bounced_raw")
     {
         QtCassandra::QCassandraValue const start_date(c->columnKey());
 

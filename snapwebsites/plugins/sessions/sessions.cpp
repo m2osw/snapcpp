@@ -355,7 +355,7 @@ void sessions::session_info::set_page_path(content::path_info_t & page_ipath)
  * \sa get_object_path()
  * \sa set_page_path()
  */
-void sessions::session_info::set_object_path(QString const& object_path)
+void sessions::session_info::set_object_path(QString const & object_path)
 {
     f_object_path = object_path;
 }
@@ -386,7 +386,7 @@ void sessions::session_info::set_object_path(QString const& object_path)
  *
  * \sa get_user_agent()
  */
-void sessions::session_info::set_user_agent(QString const& user_agent)
+void sessions::session_info::set_user_agent(QString const & user_agent)
 {
     f_user_agent = user_agent;
 }
@@ -681,7 +681,7 @@ QString const& sessions::session_info::get_plugin_owner() const
  * \sa set_page_path()
  * \sa get_object_path()
  */
-QString const& sessions::session_info::get_page_path() const
+QString const & sessions::session_info::get_page_path() const
 {
     return f_page_path;
 }
@@ -698,7 +698,7 @@ QString const& sessions::session_info::get_page_path() const
  * \sa set_object_path()
  * \sa get_page_path()
  */
-QString const& sessions::session_info::get_object_path() const
+QString const & sessions::session_info::get_object_path() const
 {
     return f_object_path;
 }
@@ -1021,15 +1021,15 @@ void sessions::clean_session_table(int64_t variables_timestamp)
 
 /** \brief Initialize the sessions table.
  *
- * This function creates the sessions table if it doesn't exist yet. Otherwise
- * it simple returns the existing Cassandra table.
+ * This function creates the sessions table if it does not exist yet.
+ * Otherwise it simple returns the existing Cassandra table.
  *
  * If the function is not able to create the table an exception is raised.
  *
  * \note
- * At this point this function is private because we don't think it should
+ * At this point this function is private because we do not think it should
  * directly be accessible from the outside. Note that this table includes
- * all the sessions for all the websites running on a system.
+ * all the sessions for all the websites running on a system!
  *
  * \return The pointer to the sessions table.
  */
@@ -1501,6 +1501,39 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
 
     // only case when it is valid
     info.set_session_type(session_info::session_info_type_t::SESSION_INFO_VALID);
+}
+
+
+/** \brief Check whether a session exists.
+ *
+ * There are a few situations where it can be practical to know ahead
+ * of time whether a certain session exists. This function offers the
+ * called to specify the website key as well as the session identifier.
+ *
+ * The current website key is used if \p website_key is set to the empty
+ * string.
+ *
+ * \note
+ * We do not offer a load_session() from any website for security reasons.
+ * However, knowing whether such a session exists is not much of security
+ * risk. This generally happens in backend implementations where a table
+ * may include data which is handled in such a way that it cannot
+ * immediately and properly be segregated by website and once that process
+ * happens, the website may or may not exist.
+ *
+ * \param[in] website_key  The key to the website whose session is being checekd.
+ * \param[in] session_key  The identifier of the session to check the existance of.
+ *
+ * \return true if the session does exist.
+ */
+bool sessions::session_exists(QString const & website_key, QString const & session_key)
+{
+    QString const key((website_key.isEmpty() ? f_snap->get_website_key() : website_key)
+                     + "/"
+                     + session_key);
+
+    QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
+    return table->exists(key);
 }
 
 
