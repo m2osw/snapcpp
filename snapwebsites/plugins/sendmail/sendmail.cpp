@@ -1765,10 +1765,25 @@ void sendmail::on_check_user_security(QString const & user_key, QString const & 
                 // it for that very user... (which is probably just fine
                 // because someone should not try to register with us
                 // until they know that their mail server works as
-                // expected.)
+                // expected.) For now, our "fix" is to block such email
+                // addresses for 4 months "only".
                 //
-                secure.not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_email));
-                return;
+                int64_t arrival_date_us(0);
+                QString const bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(0));
+                if(users_plugin->load_user_parameter(user_email, bounce_arrival_date_name, arrival_date_us))
+                {
+                    // if we tried more than 4 months ago, we can try again
+                    //
+                    if(f_snap->get_start_date() < arrival_date_us + 86400 * 124)
+                    {
+                        arrival_date_us = 0;
+                    }
+                }
+                if(arrival_date_us == 0)
+                {
+                    secure.not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_email));
+                    return;
+                }
             }
         }
     }
@@ -2523,6 +2538,25 @@ void sendmail::process_bounce_email(QByteArray const & column_key, QString const
         }
     }
 
+    int64_t arrival_date_us(0);
+    if(!arrival_date.isEmpty())
+    {
+        QDateTime dt(QDateTime::fromString(arrival_date));
+        if(dt.isValid())
+        {
+            // we want microseconds in our date, so save date x 1000
+            //
+            arrival_date_us = dt.toMSecsSinceEpoch() * 1000;
+        }
+    }
+    if(arrival_date_us == 0)
+    {
+        // Arrival-Date was not defined or had an unsupported format then
+        // use now
+        //
+        arrival_date_us = f_snap->get_start_date();
+    }
+
     // save the new status
     {
         QString const bounce_notification_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION)).arg(0));
@@ -2536,7 +2570,7 @@ void sendmail::process_bounce_email(QByteArray const & column_key, QString const
 
     {
         QString const bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(0));
-        users_plugin->save_user_parameter(user_email, bounce_arrival_date_name, arrival_date);
+        users_plugin->save_user_parameter(user_email, bounce_arrival_date_name, arrival_date_us);
     }
 
     {

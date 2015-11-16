@@ -554,6 +554,11 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "images::modified"
          || n == "list::last_updated"
          || n == "permissions::last_updated"
+         || n == "sendmail::bounce_arrival_date0"
+         || n == "sendmail::bounce_arrival_date1"
+         || n == "sendmail::bounce_arrival_date2"
+         || n == "sendmail::bounce_arrival_date3"
+         || n == "sendmail::bounce_arrival_date4"
          || n.endsWith("::sendmail::created")
          || n == "sendmail::unsubscribe_on"
          || n == "sessions::date"
