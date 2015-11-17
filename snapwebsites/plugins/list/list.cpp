@@ -1258,7 +1258,7 @@ void list::initial_update(int64_t variables_timestamp)
  */
 void list::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -2269,6 +2269,8 @@ void list::add_all_pages_to_list_table(QString const & site_key)
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     safe_priority_t safe_priority(LIST_PRIORITY_REVIEW);
 
+    // TODO: use the '*index*' row which is sorted
+
     QtCassandra::QCassandraRowPredicate row_predicate;
     row_predicate.setCount(1000);
     for(;;)
@@ -2525,14 +2527,14 @@ int list::generate_new_list_for_all_pages(QString const & site_key, content::pat
 
 int list::generate_new_list_for_descendants(QString const & site_key, content::path_info_t & list_ipath)
 {
-    static_cast<void>(site_key);
+    NOTUSED(site_key);
     return generate_new_list_for_all_descendants(list_ipath, list_ipath, true);
 }
 
 
 int list::generate_new_list_for_children(QString const & site_key, content::path_info_t & list_ipath)
 {
-    static_cast<void>(site_key);
+    NOTUSED(site_key);
     return generate_new_list_for_all_descendants(list_ipath, list_ipath, false);
 }
 
@@ -2599,7 +2601,7 @@ int list::generate_new_list_for_type(QString const & site_key, content::path_inf
 
 int list::generate_new_list_for_hand_picked_pages(QString const & site_key, content::path_info_t & list_ipath, QString const & hand_picked_pages)
 {
-    static_cast<void>(site_key);
+    NOTUSED(site_key);
 
     int did_work(0);
 
@@ -2882,7 +2884,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     // maybe we can debug this later
     //
     //int64_t const last_updated(list_row->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value().safeInt64Value());
-    static_cast<void>(update_request_time);
+    NOTUSED(update_request_time);
     //if(last_updated - 60 * 1000000 > update_request_time)
     //{
     //    return did_work;

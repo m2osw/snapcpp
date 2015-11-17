@@ -435,6 +435,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     || n == "permissions::dynamic"
     || n == "users::multiuser"
     || n == "users::long_sessions"
+    || (f_tableName == "content" && f_rowName == "*index*")
     || (f_tableName == "list" && f_rowName != "*standalone*")
     || n == "finball::data_status" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::number_of_cashiers" // TODO -- remove at some point since that is a cutomer's field
@@ -455,6 +456,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || (f_tableName == "files" && f_rowName == "new")
          || (f_tableName == "files" && f_rowName == "images")
          || (f_tableName == "test_results" && n == "test_plugin::success")
+         || (f_tableName == "processing" && n == "content::status_changed")
          )
     {
         // unsigned 8 bit value
@@ -544,7 +546,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "content::files::updated"
          || n == "content::modified"
          || n == "content::updated"
-         || n == "content::status_changed"
+         || (f_tableName == "content" && n == "content::status_changed")
          || n.startsWith("core::last_dynamic_update")
          || n.startsWith("core::last_updated")
          || n == "core::plugin_threshold"

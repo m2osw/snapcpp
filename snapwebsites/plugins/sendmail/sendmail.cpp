@@ -1774,7 +1774,7 @@ void sendmail::on_check_user_security(QString const & user_key, QString const & 
                 {
                     // if we tried more than 4 months ago, we can try again
                     //
-                    if(f_snap->get_start_date() < arrival_date_us + 86400 * 124)
+                    if(f_snap->get_start_date() > arrival_date_us + 86400 * 124)
                     {
                         arrival_date_us = 0;
                     }

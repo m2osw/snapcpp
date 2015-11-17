@@ -42,14 +42,14 @@
 SNAP_PLUGIN_EXTENSION_START(content)
 
 
-/** \brief Register the resetstatus action.
+/** \brief Register the various content actions.
  *
- * This function registers this plugin as supporting the "resetstatus"
- * actions.
+ * This function registers this plugin as supporting various content
+ * actions as listed below.
  *
  * This can be used by an administrator to force a reset of all the statuses
- * of all the nodes (usually only necessary for developers although once in
- * a while it could happen that a page never gets reset properly.)
+ * of all the nodes, see the list of available resources to a website,
+ * destroy a page (as in do not even trash it,) etc.
  *
  * \li resetstatus -- go through all the pages of a website and reset their
  *                    status to Normal. This should be used by programmers
@@ -75,6 +75,8 @@ SNAP_PLUGIN_EXTENSION_START(content)
  *                so that way that file will get rescanned and reprocessed
  *                in case it were necessary to do so (because you changed
  *                the code, for example.)
+ * \li rebuildindex -- this action requests the system to rebuild the entire
+ *                     '*index*' row of the content table.
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
@@ -85,6 +87,7 @@ void content::on_register_backend_action(server::backend_action_map_t & actions)
     actions[get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES)] = this;
     actions[get_name(name_t::SNAP_NAME_CONTENT_DESTROYPAGE)] = this;
     actions[get_name(name_t::SNAP_NAME_CONTENT_NEWFILE)] = this;
+    actions[get_name(name_t::SNAP_NAME_CONTENT_REBUILDINDEX)] = this;
 }
 
 
@@ -119,6 +122,10 @@ void content::on_backend_action(QString const & action)
     {
         backend_action_new_file();
     }
+    else if(action == get_name(name_t::SNAP_NAME_CONTENT_REBUILDINDEX))
+    {
+        backend_action_rebuild_index();
+    }
     else
     {
         // unknown action (we should not have been called with that name!)
@@ -141,6 +148,8 @@ void content::on_backend_action(QString const & action)
 void content::backend_action_reset_status(bool const force)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+
+    // TODO: use the '*index*' row instead of the entire content table
 
     QtCassandra::QCassandraRowPredicate row_predicate;
     QString const site_key(f_snap->get_site_key_with_slash());
@@ -303,6 +312,129 @@ void content::backend_action_new_file()
 }
 
 
+/** \brief Go through all the pages and rebuild the '*index*'.
+ *
+ * This function goes through all the pages defined in the content table
+ * and rebuilds the '*index*' row.
+ *
+ * It also goes through the '*index*' row and makes sure all the pages
+ * still exist in the content table.
+ *
+ * \warning
+ * This code is website agnostic. Meaning that it runs against all the
+ * websites of your Cassandra cluster.
+ *
+ * \warning
+ * This action should be run against one specific and currently valid
+ * website. Otherwise, it will run over the entire database once per
+ * website instead of just once.
+ *
+ * \todo
+ * Make sure to remember to add some code to run this process once in a
+ * while, like once a month, in our backend process.
+ */
+void content::backend_action_rebuild_index()
+{
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+
+    // first loop: check whether some entries in the content table were
+    //             not properly defined in the index
+    //
+    // TODO: note that in the current implementation, it could very
+    //       well mean that a function of the create_content() signal
+    //       threw and thus that the page is not all proper... we will
+    //       want to check on that and fix the signal behavior at
+    //       some (i.e. create_content() is a function, it calls another
+    //       signal with a try/catch and if that signal fails, make sure
+    //       to destroy the intermediate/invalid page.)
+    //
+    {
+        QtCassandra::QCassandraValue ready;
+        ready.setSignedCharValue(1);
+
+        QtCassandra::QCassandraRowPredicate row_predicate;
+        // process 100 in a row
+        row_predicate.setCount(100);
+        for(;;)
+        {
+            content_table->clearCache();
+            uint32_t const count(content_table->readRows(row_predicate));
+            if(count == 0)
+            {
+                // no more lists to process
+                break;
+            }
+            QtCassandra::QCassandraRows const rows(content_table->rows());
+            for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                    o != rows.end(); ++o)
+            {
+                QString const key(QString::fromUtf8(o.key().data()));
+                if(key.isEmpty()
+                || key[0] == '*')
+                {
+                    // skip the '*index*' row and any other similar row
+                    // we add later
+                    continue;
+                }
+
+                // TBD: do we need to check that the "content::created" field
+                //      exists? I think it is a good safety net here... but
+                //      then we probably need a process to remove pages without
+                //      that field.
+                //
+                path_info_t ipath;
+                ipath.set_path(key);
+                if(content_table->row(ipath.get_key())->exists(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))
+                {
+                    content_table->row(get_name(name_t::SNAP_NAME_CONTENT_INDEX))->cell(ipath.get_key())->setValue(ready);
+                }
+                //else -- should we put those pages in a '*broken*' row
+                //        so we can run another process to clean up the
+                //        database of those broken pages
+            }
+        }
+    }
+
+    // second loop: check whether some entries in the index were
+    //              removed from the content table by now (i.e. see the
+    //              destroy_page() signal)
+    //
+    {
+        QtCassandra::QCassandraRow::pointer_t row(content_table->row(get_name(name_t::SNAP_NAME_CONTENT_INDEX)));
+
+        QtCassandra::QCassandraColumnRangePredicate column_predicate;
+        column_predicate.setCount(100);
+        column_predicate.setIndex(); // behave like an index
+        for(;;)
+        {
+            row->clearCache();
+            row->readCells(column_predicate);
+            QtCassandra::QCassandraCells const cells(row->cells());
+            if(cells.isEmpty())
+            {
+                break;
+            }
+            for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                    c != cells.end();
+                    ++c)
+            {
+                QString const key(QString::fromUtf8(c.key().data()));
+
+                path_info_t ipath;
+                ipath.set_path(key);
+                if(!content_table->row(ipath.get_key())->exists(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))
+                {
+                    row->dropCell(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
 /** \brief Process various backend tasks.
  *
  * Content backend processes:
@@ -351,6 +483,8 @@ void content::backend_process_status()
     // a site parameter so the administrator can tweak it...
     int64_t start_date(f_snap->get_start_date() - 10 * 60 * 1000000);
 
+    // TODO: use the '*index*' row instead of the entire content table
+
     // only process files for the website currently being processed
     QtCassandra::QCassandraRowPredicate row_predicate;
     QString const site_key(f_snap->get_site_key_with_slash());
@@ -384,7 +518,7 @@ void content::backend_process_status()
                 if(content_table->exists(ipath.get_key())
                 && content_table->row(ipath.get_key())->exists(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED)))
                 {
-                    int64_t const last_changed(content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->value().int64Value());
+                    int64_t const last_changed(content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->value().safeInt64Value());
                     if(last_changed < start_date)
                     {
                         // we are done with that page since we just reset the

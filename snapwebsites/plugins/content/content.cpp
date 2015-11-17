@@ -246,6 +246,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CONTENT_FORCERESETSTATUS:
         return "forceresetstatus";
 
+    case name_t::SNAP_NAME_CONTENT_INDEX:
+        return "*index*";
+
     case name_t::SNAP_NAME_CONTENT_ISSUED:
         return "content::issued";
 
@@ -284,6 +287,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_CONTENT_PROCESSING_TABLE:
         return "processing";
+
+    case name_t::SNAP_NAME_CONTENT_REBUILDINDEX:
+        return "rebuildindex";
 
     case name_t::SNAP_NAME_CONTENT_RESETSTATUS:
         return "resetstatus";
@@ -973,15 +979,21 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
     QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
     if(row->exists(primary_owner))
     {
-        // it already exists, but it could have been deleted before
-        // in which case we need to resurect the page back to NORMAL
+        // it already exists, but it could have been deleted or moved before
+        // in which case we need to resurrect the page back to NORMAL
+        //
+        // the editor allowing creating such a page should have asked the
+        // end user first to know whether the page should indeed be
+        // "undeleted".
         //
         path_info_t::status_t status(ipath.get_status());
-        if(status.get_state() == path_info_t::status_t::state_t::DELETED)
+        if(status.get_state() == path_info_t::status_t::state_t::DELETED
+        || status.get_state() == path_info_t::status_t::state_t::MOVED)
         {
-            // restore to a NORMAL page (here we probably need to
-            // force a new branch so the user would not see the old
-            // revisions...)
+            // restore to a NORMAL page
+            //
+            // TODO: here we probably need to force a new branch so the
+            //       user would not see the old revisions by default...
             //
             SNAP_LOG_WARNING("Re-instating (i.e. \"Undeleting\") page \"")(ipath.get_key())("\" as we received a create_page() request on a deleted page.");
             status.reset_state(path_info_t::status_t::state_t::NORMAL, path_info_t::status_t::working_t::NOT_WORKING);
@@ -1027,6 +1039,7 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
     // save the owner
     row->cell(primary_owner)->setValue(owner);
 
+    // setup first branch
     snap_version::version_number_t const branch_number(ipath.get_branch());
 
     set_branch(key, branch_number, false);
@@ -1080,7 +1093,7 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
     // first we need to remove the site key from the path
     snap_version::version_number_t child_branch(branch_number);
     snap_version::version_number_t parent_branch;
-    snap_string_list parts(ipath.get_cpath().split('/', QString::SkipEmptyParts));
+    snap_string_list parts(ipath.get_segments());
     while(parts.count() > 0)
     {
         QString const src(QString("%1%2").arg(site_key).arg(parts.join("/")));
@@ -1116,8 +1129,8 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
  */
 void content::create_content_done(path_info_t & ipath, QString const & owner, QString const & type)
 {
-    static_cast<void>(owner);
-    static_cast<void>(type);
+    NOTUSED(owner);
+    NOTUSED(type);
 
     // now the page was created and is ready to be used
     // (although the revision data is not yet available...
@@ -1130,6 +1143,14 @@ void content::create_content_done(path_info_t & ipath, QString const & owner, QS
     }
     status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
     ipath.set_status(status);
+
+    // the page now exists and is considered valid so add it to the content
+    // index for all the have access to
+    //
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+    QtCassandra::QCassandraValue ready;
+    ready.setSignedCharValue(1);
+    content_table->row(get_name(name_t::SNAP_NAME_CONTENT_INDEX))->cell(ipath.get_key())->setValue(ready);
 }
 
 
@@ -3830,7 +3851,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             QtCassandra::QCassandraColumnRangePredicate dependencies_column_predicate;
             dependencies_column_predicate.setCount(100);
             dependencies_column_predicate.setIndex(); // behave like an index
-            QString start_dep(QString("%1:").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
+            QString const start_dep(QString("%1:").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
             dependencies_column_predicate.setStartColumnName(start_dep + ":");
             dependencies_column_predicate.setEndColumnName(start_dep + ";");
             for(;;)
@@ -4066,7 +4087,7 @@ void content::add_css(QDomDocument doc, QString const& name)
             QtCassandra::QCassandraColumnRangePredicate dependencies_column_predicate;
             dependencies_column_predicate.setCount(100);
             dependencies_column_predicate.setIndex(); // behave like an index
-            QString start_dep(QString("%1::").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
+            QString const start_dep(QString("%1::").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
             dependencies_column_predicate.setStartColumnName(start_dep);
             dependencies_column_predicate.setEndColumnName(start_dep + QtCassandra::QCassandraColumnPredicate::last_char);
             for(;;)

@@ -932,7 +932,7 @@ int64_t sessions::do_update(int64_t last_updated)
  */
 void sessions::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_sessions_table();
 }
@@ -947,7 +947,7 @@ void sessions::initial_update(int64_t variables_timestamp)
  */
 void sessions::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }

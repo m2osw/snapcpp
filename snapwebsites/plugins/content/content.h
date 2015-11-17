@@ -87,6 +87,7 @@ enum class name_t
     SNAP_NAME_CONTENT_FILES_UPDATED,
     SNAP_NAME_CONTENT_FINAL,
     SNAP_NAME_CONTENT_FORCERESETSTATUS,
+    SNAP_NAME_CONTENT_INDEX,
     SNAP_NAME_CONTENT_ISSUED,
     SNAP_NAME_CONTENT_LONG_TITLE,
     SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME,
@@ -100,6 +101,7 @@ enum class name_t
     SNAP_NAME_CONTENT_PREVENT_DELETE,
     SNAP_NAME_CONTENT_PRIMARY_OWNER,
     SNAP_NAME_CONTENT_PROCESSING_TABLE,
+    SNAP_NAME_CONTENT_REBUILDINDEX,
     SNAP_NAME_CONTENT_RESETSTATUS,
     SNAP_NAME_CONTENT_REVISION_CONTROL,
     SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH,
@@ -834,6 +836,7 @@ private:
     void        backend_action_new_file();
     void        backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
     void        backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
+    void        backend_action_rebuild_index();
 
     zpsnap_child_t                                  f_snap;
     QtCassandra::QCassandraTable::pointer_t         f_content_table;
