@@ -115,6 +115,21 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  .
  This package contains the CGI binary for use with Apache 2. It talks to the snapserver itself.
 
+Package: snaputils
+Section: web
+Architecture: any
+Depends: libsnapwebsites (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: Fast Websites: powerful CMS for Apache written in C++.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ The basic concept is taken from a large set of Drupal 6.x
+ modules from Drupal Core and necessary 3rd party modules (we've been using
+ over 220 modules on top of the Core modules.) The result is quite
+ extensible as it offers a plug-in mechanism that everyone is welcome to use to
+ create their own extensions.
+ .
+ This package contains various snap utilities that can be nice to have for
+ an administrator, but are not required for the snap server to run.
+
 Package: snapbounce
 Section: web
 Architecture: any
@@ -130,6 +145,6 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  create their own extensions.
  .
  This package contains a utility that works with any mail agent that can forward bounced messages to a filter.
- snapbounce adds the bounced message to the "emails" table, under "bounced".
+ snapbounce adds the bounced message to the "emails" table, under "bounced_raw".
 
 # vim: ts=4 sw=4 et
