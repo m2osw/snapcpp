@@ -1042,8 +1042,6 @@ size_t server::thread_count()
  *     the server queue, there is Snap default (i.e. the Qt TCP server default
  *     is used if undefined, which in most cases means the system of 5.)
  * \li server_name -- the name of the server, defaults to gethostname()
- * \li services -- the list of services to start on this platform (handled
- *     by the snap_init tool)
  * \li timeout_wait_children -- the amount of time to wait before checking on
  *     the existing children; cannot be less than 100ms; defaults to 5,000ms
  *
