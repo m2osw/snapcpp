@@ -327,6 +327,7 @@ void images::on_bootstrap(snap_child * snap)
 
     SNAP_LISTEN0(images, "server", server, attach_to_session);
     SNAP_LISTEN(images, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(images, "links", links::links, modified_link, _1);
     SNAP_LISTEN(images, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(images, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(images, "content", content::content, modified_content, _1);
@@ -830,6 +831,25 @@ void images::on_modified_content(content::path_info_t & ipath)
 
         f_ping_backend = true;
     }
+}
+
+
+/** \brief When a link is created, we get this message!
+ *
+ * We now listen to the modified_link signal so we know any time the
+ * link is created.
+ *
+ * \todo
+ * Look into whether the modified_link signal is enough and the
+ * modified_content one could be removed (most certainly.)
+ *
+ * \param[in] info  The link that was just modified.
+ */
+void images::on_modified_link(links::link_info const & info)
+{
+    content::path_info_t ipath;
+    ipath.set_path(info.key());
+    on_modified_content(ipath);
 }
 
 

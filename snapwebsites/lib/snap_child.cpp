@@ -2644,7 +2644,10 @@ pid_t snap_child::fork_child()
     {
         // auto-kill child if parent dies
         //
-        // TODO: ameliorate by using a SIGUSR1 or SIGUSR2 and implement
+        // TODO: ameliorate by using a "catch SIGHUP" in children via
+        //       the signal class of snapcommunicator
+        //
+        //       ameliorate by using a SIGUSR1 or SIGUSR2 and implement
         //       a way for a possible clean exit (i.e. if child is still
         //       working, give it a chance, then after X seconds, still
         //       force a kill)

@@ -67,7 +67,10 @@ public:
 
 
 
-class images : public plugins::plugin, public server::backend_action, public path::path_execute
+class images
+        : public plugins::plugin
+        , public server::backend_action
+        , public path::path_execute
 {
 public:
     enum class virtual_path_t
@@ -80,21 +83,37 @@ public:
                         images();
                         ~images();
 
+    // plugins implementation
     static images *     instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-
     void                on_bootstrap(snap_child * snap);
-    void                on_register_backend_action(server::backend_action_map_t& actions);
-    void                on_versions_libraries(filter::filter::token_info_t & token);
+
+    // server::backend_action implementation
     virtual char const *get_signal_name(QString const & action) const;
     virtual void        on_backend_action(QString const & action);
+
+    // server signals
+    void                on_attach_to_session();
+    void                on_register_backend_action(server::backend_action_map_t& actions);
+
+    // links signals
+    void                on_modified_link(links::link_info const & src);
+
+    // path::path_execute implementation
     virtual bool        on_path_execute(content::path_info_t & ipath);
 
+    // path signals
     void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+
+    // versions signals
+    void                on_versions_libraries(filter::filter::token_info_t & token);
+
+    // content signals
     void                on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
     void                on_modified_content(content::path_info_t & ipath);
-    void                on_attach_to_session();
+
+    // listener signals
     void                on_listener_check(snap_uri const & uri, content::path_info_t & page_ipath, QDomDocument doc, QDomElement result);
 
     Magick::Image       apply_image_script(QString const & script, content::path_info_t::map_path_info_t image_ipaths);

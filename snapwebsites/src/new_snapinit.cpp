@@ -113,13 +113,13 @@
 #include <QFile>
 #include <QTime>
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
+#include <sys/prctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <exception>
 #include <map>
@@ -535,11 +535,31 @@ bool process::run()
 {
     f_timer.start();
     f_startcount++;
+    pid_t const parent_pid(getpid());
     f_pid = fork();
     if( f_pid == 0 )
     {
         // child
         //
+
+        // make sure that the SIGHUP is sent to us if our parent dies
+        //
+        prctl(PR_SET_PDEATHSIG, SIGHUP);
+
+        // always reconfigure the logger in the child
+        //
+        snap::logging::reconfigure();
+
+        // the parent may have died just before the prctl() had time to set
+        // up our child death wish...
+        //
+        if(parent_pid != getppid())
+        {
+            SNAP_LOG_FATAL("process::run() lost parent too soon and did not receive SIGHUP; quit immediately.");
+            exit(1);
+            snap::NOTREACHED();
+        }
+
         QString const & full_path( get_full_path() );
         QStringList qargs;
         qargs << full_path;

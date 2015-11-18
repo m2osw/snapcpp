@@ -927,7 +927,7 @@ void links::init_tables()
  *
  * \sa snap_child::get_unique_number()
  */
-void links::create_link(const link_info& src, const link_info& dst)
+void links::create_link(link_info const & src, link_info const & dst)
 {
     // define the column names
     QString src_col, dst_col;
