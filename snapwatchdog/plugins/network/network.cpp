@@ -19,6 +19,7 @@
 
 #include "snapwatchdog.h"
 
+#include <snapwebsites/not_used.h>
 #include <snapwebsites/qdomhelpers.h>
 
 #include "poison.h"
@@ -40,7 +41,7 @@ SNAP_PLUGIN_START(network, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -77,6 +78,67 @@ network::~network()
 }
 
 
+/** \brief Get a pointer to the network plugin.
+ *
+ * This function returns an instance pointer to the network plugin.
+ *
+ * Note that you cannot assume that the pointer will be valid until the
+ * bootstrap event is called.
+ *
+ * \return A pointer to the network plugin.
+ */
+network * network::instance()
+{
+    return g_plugin_network_factory.instance();
+}
+
+
+/** \brief Return the description of this plugin.
+ *
+ * This function returns the English description of this plugin.
+ * The system presents that description when the user is offered to
+ * install or uninstall a plugin on his website. Translation may be
+ * available in the database.
+ *
+ * \return The description in a QString.
+ */
+QString network::description() const
+{
+    return "Check that the network is up and running.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString network::dependencies() const
+{
+    return "|server|";
+}
+
+
+/** \brief Check whether updates are necessary.
+ *
+ * This function is ignored in the watchdog.
+ *
+ * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
+ *
+ * \return The UTC Unix date of the last update of this plugin.
+ */
+int64_t network::do_update(int64_t last_updated)
+{
+    NOTUSED(last_updated);
+
+    SNAP_PLUGIN_UPDATE_INIT();
+    // no updating in watchdog
+    SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
 /** \brief Initialize network.
  *
  * This function terminates the initialization of the network plugin
@@ -84,7 +146,7 @@ network::~network()
  *
  * \param[in] snap  The child handling this request.
  */
-void network::on_bootstrap(snap_child *snap)
+void network::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -106,53 +168,6 @@ void network::on_init()
 }
 
 
-/** \brief Get a pointer to the network plugin.
- *
- * This function returns an instance pointer to the network plugin.
- *
- * Note that you cannot assume that the pointer will be valid until the
- * bootstrap event is called.
- *
- * \return A pointer to the network plugin.
- */
-network *network::instance()
-{
-    return g_plugin_network_factory.instance();
-}
-
-
-/** \brief Return the description of this plugin.
- *
- * This function returns the English description of this plugin.
- * The system presents that description when the user is offered to
- * install or uninstall a plugin on his website. Translation may be
- * available in the database.
- *
- * \return The description in a QString.
- */
-QString network::description() const
-{
-    return "Check that the network is up and running.";
-}
-
-
-/** \brief Check whether updates are necessary.
- *
- * This function is ignored in the watchdog.
- *
- * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
- *
- * \return The UTC Unix date of the last update of this plugin.
- */
-int64_t network::do_update(int64_t last_updated)
-{
-    static_cast<void>(last_updated);
-    SNAP_PLUGIN_UPDATE_INIT();
-    // no updating in watchdog
-    SNAP_PLUGIN_UPDATE_EXIT();
-}
-
-
 /** \brief Process this watchdog data.
  *
  * This function runs this watchdog.
@@ -164,8 +179,9 @@ void network::on_process_watch(QDomDocument doc)
     QDomElement parent(snap_dom::create_element(doc, "watchdog"));
     QDomElement e(snap_dom::create_element(parent, "network"));
 
-    // check all the network connections defined in our setup file
-    // and auto-detect additional servers
+    // request status information from snapcommunicator which has all of
+    // the data we can dream of in regard to the network status
+    //
 
 }
 

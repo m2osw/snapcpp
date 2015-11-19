@@ -29,17 +29,17 @@ namespace processes
 //class apache_exception : public snap_exception
 //{
 //public:
-//    apache_exception(char const *       what_msg) : snap_exception("apache", what_msg) {}
-//    apache_exception(std::string const& what_msg) : snap_exception("apache", what_msg) {}
-//    apache_exception(QString const&     what_msg) : snap_exception("apache", what_msg) {}
+//    apache_exception(char const *        what_msg) : snap_exception("apache", what_msg) {}
+//    apache_exception(std::string const & what_msg) : snap_exception("apache", what_msg) {}
+//    apache_exception(QString const &     what_msg) : snap_exception("apache", what_msg) {}
 //};
 //
 //class apache_exception_invalid_argument : public apache_exception
 //{
 //public:
-//    apache_exception_invalid_argument(char const *       what_msg) : apache_exception(what_msg) {}
-//    apache_exception_invalid_argument(std::string const& what_msg) : apache_exception(what_msg) {}
-//    apache_exception_invalid_argument(QString const&     what_msg) : apache_exception(what_msg) {}
+//    apache_exception_invalid_argument(char const *        what_msg) : apache_exception(what_msg) {}
+//    apache_exception_invalid_argument(std::string const & what_msg) : apache_exception(what_msg) {}
+//    apache_exception_invalid_argument(QString const &     what_msg) : apache_exception(what_msg) {}
 //};
 
 
@@ -50,7 +50,7 @@ enum name_t
 {
     SNAP_NAME_WATCHDOG_PROCESSES
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class processes : public plugins::plugin
@@ -59,11 +59,14 @@ public:
                         processes();
                         ~processes();
 
+    // plugins::plugin implementation
     static processes *  instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
+    // server signals
     void                on_process_watch(QDomDocument doc);
 
 private:

@@ -17,6 +17,7 @@
 
 #include "disk.h"
 
+#include "not_used.h"
 #include "snapwatchdog.h"
 
 #include <snapwebsites/mounts.h>
@@ -39,7 +40,7 @@ SNAP_PLUGIN_START(disk, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -62,7 +63,7 @@ char const *get_name(name_t name)
  * This function is used to initialize the disk plugin object.
  */
 disk::disk()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -76,21 +77,6 @@ disk::~disk()
 }
 
 
-/** \brief Initialize disk.
- *
- * This function terminates the initialization of the disk plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void disk::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(disk, "server", watchdog_server, process_watch, _1);
-}
-
-
 /** \brief Get a pointer to the disk plugin.
  *
  * This function returns an instance pointer to the disk plugin.
@@ -100,7 +86,7 @@ void disk::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the disk plugin.
  */
-disk *disk::instance()
+disk * disk::instance()
 {
     return g_plugin_disk_factory.instance();
 }
@@ -121,6 +107,19 @@ QString disk::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString disk::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function is ignored in the watchdog.
@@ -131,10 +130,25 @@ QString disk::description() const
  */
 int64_t disk::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
     SNAP_PLUGIN_UPDATE_INIT();
     // no updating in watchdog
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize disk.
+ *
+ * This function terminates the initialization of the disk plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void disk::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(disk, "server", watchdog_server, process_watch, _1);
 }
 
 

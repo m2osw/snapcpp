@@ -29,17 +29,17 @@ namespace cpu
 class cpu_exception : public snap_exception
 {
 public:
-    cpu_exception(char const *       what_msg) : snap_exception("cpu", what_msg) {}
-    cpu_exception(std::string const& what_msg) : snap_exception("cpu", what_msg) {}
-    cpu_exception(QString const&     what_msg) : snap_exception("cpu", what_msg) {}
+    cpu_exception(char const *        what_msg) : snap_exception("cpu", what_msg) {}
+    cpu_exception(std::string const & what_msg) : snap_exception("cpu", what_msg) {}
+    cpu_exception(QString const &     what_msg) : snap_exception("cpu", what_msg) {}
 };
 
 class cpu_exception_invalid_argument : public cpu_exception
 {
 public:
-    cpu_exception_invalid_argument(char const *       what_msg) : cpu_exception(what_msg) {}
-    cpu_exception_invalid_argument(std::string const& what_msg) : cpu_exception(what_msg) {}
-    cpu_exception_invalid_argument(QString const&     what_msg) : cpu_exception(what_msg) {}
+    cpu_exception_invalid_argument(char const *        what_msg) : cpu_exception(what_msg) {}
+    cpu_exception_invalid_argument(std::string const & what_msg) : cpu_exception(what_msg) {}
+    cpu_exception_invalid_argument(QString const &     what_msg) : cpu_exception(what_msg) {}
 };
 
 
@@ -50,20 +50,24 @@ enum name_t
 {
     SNAP_NAME_WATCHDOG_CPU_NAME
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
-class cpu : public plugins::plugin
+class cpu
+        : public plugins::plugin
 {
 public:
                         cpu();
                         ~cpu();
 
+    // plugins::plugin implementation
     static cpu *        instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
+    // server signal
     void                on_process_watch(QDomDocument doc);
 
 private:

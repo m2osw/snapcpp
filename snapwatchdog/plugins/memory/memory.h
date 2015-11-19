@@ -29,17 +29,17 @@ namespace memory
 class memory_exception : public snap_exception
 {
 public:
-    memory_exception(char const *       what_msg) : snap_exception("memory", what_msg) {}
-    memory_exception(std::string const& what_msg) : snap_exception("memory", what_msg) {}
-    memory_exception(QString const&     what_msg) : snap_exception("memory", what_msg) {}
+    memory_exception(char const *        what_msg) : snap_exception("memory", what_msg) {}
+    memory_exception(std::string const & what_msg) : snap_exception("memory", what_msg) {}
+    memory_exception(QString const &     what_msg) : snap_exception("memory", what_msg) {}
 };
 
 class memory_exception_invalid_argument : public memory_exception
 {
 public:
-    memory_exception_invalid_argument(char const *       what_msg) : memory_exception(what_msg) {}
-    memory_exception_invalid_argument(std::string const& what_msg) : memory_exception(what_msg) {}
-    memory_exception_invalid_argument(QString const&     what_msg) : memory_exception(what_msg) {}
+    memory_exception_invalid_argument(char const *        what_msg) : memory_exception(what_msg) {}
+    memory_exception_invalid_argument(std::string const & what_msg) : memory_exception(what_msg) {}
+    memory_exception_invalid_argument(QString const &     what_msg) : memory_exception(what_msg) {}
 };
 
 
@@ -50,7 +50,7 @@ enum name_t
 {
     SNAP_NAME_WATCHDOG_MEMORY_NAME
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class memory : public plugins::plugin
@@ -59,11 +59,14 @@ public:
                         memory();
                         ~memory();
 
+    // plugins::plugin implementation
     static memory *     instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
+    // server signal
     void                on_process_watch(QDomDocument doc);
 
 private:

@@ -41,8 +41,8 @@ enum name_t
     SNAP_NAME_WATCHDOG_STATISTICS_TTL,
     SNAP_NAME_WATCHDOG_STOP
 };
-char const *get_name(name_t name) __attribute__ ((const));
-}
+char const * get_name(name_t name) __attribute__ ((const));
+} // watchdog namespace
 
 
 

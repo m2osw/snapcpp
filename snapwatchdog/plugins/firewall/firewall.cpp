@@ -1,4 +1,4 @@
-// Snap Websites Server -- watchdog apache
+// Snap Websites Server -- watchdog firewall
 // Copyright (C) 2013-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -15,30 +15,14 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "apache.h"
+#include "firewall.h"
 
-//#include "dbutils.h"
-//#include "mkgmtime.h"
-//#include "qdomreceiver.h"
-//#include "qdomxpath.h"
-//#include "qdomhelpers.h"
-//#include "qxmlmessagehandler.h"
-//#include "snap_image.h"
-//#include "not_reached.h"
-//#include "log.h"
-//
-//#include <QtCassandra/QCassandraLock.h>
-//
-//#include <iostream>
-//
-//#include <QXmlQuery>
-//#include <QFile>
-//#include <QFileInfo>
+#include "not_used.h"
 
 #include "poison.h"
 
 
-SNAP_PLUGIN_START(apache, 1, 0)
+SNAP_PLUGIN_START(firewall, 1, 0)
 
 
 namespace
@@ -70,7 +54,7 @@ struct apache_data_t
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -92,8 +76,8 @@ char const *get_name(name_t name)
  *
  * This function is used to initialize the apache plugin object.
  */
-apache::apache()
-    //: f_snap(NULL) -- auto-init
+firewall::firewall()
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -102,23 +86,8 @@ apache::apache()
  *
  * Ensure the apache object is clean before it is gone.
  */
-apache::~apache()
+firewall::~firewall()
 {
-}
-
-
-/** \brief Initialize apache.
- *
- * This function terminates the initialization of the apache plugin
- * by registering for various events.
- *
- * \param[in] snap  The child handling this request.
- */
-void apache::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(apache, "server", server, process_watch, _1);
 }
 
 
@@ -146,7 +115,7 @@ apache *apache::instance()
  *
  * \return The description in a QString.
  */
-QString apache::description() const
+QString firewall::description() const
 {
     return "Check whether the Apache server is running.";
 }
@@ -160,11 +129,28 @@ QString apache::description() const
  *
  * \return The UTC Unix date of the last update of this plugin.
  */
-int64_t apache::do_update(int64_t last_updated)
+int64_t firewall::do_update(int64_t last_updated)
 {
+    NOTUSED(last_updated);
+
     SNAP_PLUGIN_UPDATE_INIT();
     // no updating in watchdog
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize apache.
+ *
+ * This function terminates the initialization of the apache plugin
+ * by registering for various events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void firewall::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(apache, "server", server, process_watch, _1);
 }
 
 
@@ -175,7 +161,7 @@ int64_t apache::do_update(int64_t last_updated)
  * \param[in] doc  The document.
  * \param[in] e  This element to record this watchdog information.
  */
-void apache::on_process_watch(QDomDocument doc, QDomElement e)
+void firewall::on_process_watch(QDomDocument doc, QDomElement e)
 {
     process_list list;
 

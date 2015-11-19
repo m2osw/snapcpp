@@ -29,17 +29,17 @@ namespace disk
 class disk_exception : public snap_exception
 {
 public:
-    disk_exception(char const *       what_msg) : snap_exception("disk", what_msg) {}
-    disk_exception(std::string const& what_msg) : snap_exception("disk", what_msg) {}
-    disk_exception(QString const&     what_msg) : snap_exception("disk", what_msg) {}
+    disk_exception(char const *        what_msg) : snap_exception("disk", what_msg) {}
+    disk_exception(std::string const & what_msg) : snap_exception("disk", what_msg) {}
+    disk_exception(QString const &     what_msg) : snap_exception("disk", what_msg) {}
 };
 
 class disk_exception_invalid_io : public disk_exception
 {
 public:
-    disk_exception_invalid_io(char const *       what_msg) : disk_exception(what_msg) {}
-    disk_exception_invalid_io(std::string const& what_msg) : disk_exception(what_msg) {}
-    disk_exception_invalid_io(QString const&     what_msg) : disk_exception(what_msg) {}
+    disk_exception_invalid_io(char const *        what_msg) : disk_exception(what_msg) {}
+    disk_exception_invalid_io(std::string const & what_msg) : disk_exception(what_msg) {}
+    disk_exception_invalid_io(QString const &     what_msg) : disk_exception(what_msg) {}
 };
 
 
@@ -50,7 +50,7 @@ enum name_t
 {
     SNAP_NAME_WATCHDOG_DISK_NAME
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class disk : public plugins::plugin
@@ -59,11 +59,14 @@ public:
                         disk();
                         ~disk();
 
+    // plugins::plugin implementation
     static disk *       instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
+    // server signal
     void                on_process_watch(QDomDocument doc);
 
 private:
