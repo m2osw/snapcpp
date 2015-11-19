@@ -19,6 +19,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldString.h>
@@ -296,19 +297,6 @@ messages::~messages()
 }
 
 
-/** \brief Initialize the messages.
- *
- * This function terminates the initialization of the messages plugin
- * by registering for different events it supports.
- *
- * \param[in] snap  The child handling this request.
- */
-void messages::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-}
-
-
 /** \brief Get a pointer to the messages plugin.
  *
  * This function returns an instance pointer to the messages plugin.
@@ -318,7 +306,7 @@ void messages::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the messages plugin.
  */
-messages *messages::instance()
+messages * messages::instance()
 {
     return g_plugin_messages_factory.instance();
 }
@@ -340,6 +328,19 @@ QString messages::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString messages::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -354,11 +355,24 @@ QString messages::description() const
  */
 int64_t messages::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
 
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize the messages.
+ *
+ * This function terminates the initialization of the messages plugin
+ * by registering for different events it supports.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void messages::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
 }
 
 

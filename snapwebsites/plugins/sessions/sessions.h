@@ -171,8 +171,9 @@ public:
     // plugins::plugin implementation
     static sessions *       instance();
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
-    void                    on_bootstrap(snap_child * snap);
+    virtual void            bootstrap(snap_child * snap);
 
     // server signals
     void                    on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);

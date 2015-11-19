@@ -83,23 +83,6 @@ server_access::~server_access()
 }
 
 
-/** \brief Initialize the server_access.
- *
- * This function terminates the initialization of the server_access plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void server_access::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(server_access, "server", server, output_result, _1, _2);
-
-    SNAP_TEST_PLUGIN_SUITE_LISTEN(server_access);
-}
-
-
 /** \brief Get a pointer to the server_access plugin.
  *
  * This function returns an instance pointer to the server_access plugin.
@@ -128,6 +111,19 @@ QString server_access::description() const
 {
     return "Intercept default output and transform it for AJAX responses."
         " Handle AJAX responses for functions that do it right.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString server_access::dependencies() const
+{
+    return "|content|test_plugin_suite|";
 }
 
 
@@ -167,6 +163,23 @@ void server_access::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the server_access.
+ *
+ * This function terminates the initialization of the server_access plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void server_access::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(server_access, "server", server, output_result, _1, _2);
+
+    SNAP_TEST_PLUGIN_SUITE_LISTEN(server_access);
 }
 
 

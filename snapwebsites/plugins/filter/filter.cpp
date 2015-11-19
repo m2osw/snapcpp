@@ -203,6 +203,19 @@ QString filter::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString filter::dependencies() const
+{
+    return "|content|locale|messages|";
+}
+
+
 /** \brief Initialize the filter plugin.
  *
  * This function terminates the initialization of the filter plugin
@@ -210,7 +223,7 @@ QString filter::description() const
  *
  * \param[in] snap  The child handling this request.
  */
-void filter::on_bootstrap(::snap::snap_child * snap)
+void filter::bootstrap(::snap::snap_child * snap)
 {
     f_snap = snap;
 

@@ -435,26 +435,6 @@ content::~content()
 }
 
 
-/** \brief Initialize the content.
- *
- * This function terminates the initialization of the content plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void content::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN0(content, "server", server, save_content);
-    SNAP_LISTEN(content, "server", server, add_snap_expr_functions, _1);
-    SNAP_LISTEN(content, "server", server, register_backend_action, _1);
-    SNAP_LISTEN0(content, "server", server, backend_process);
-    SNAP_LISTEN(content, "server", server, load_file, _1, _2);
-    SNAP_LISTEN(content, "server", server, table_is_accessible, _1, _2);
-}
-
-
 /** \brief Get a pointer to the content plugin.
  *
  * This function returns an instance pointer to the content plugin.
@@ -484,6 +464,19 @@ QString content::description() const
     return "Manage nearly all the content of your website. This plugin handles"
         " your pages, the website taxonomy (tags, categories, permissions...)"
         " and much much more.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString content::dependencies() const
+{
+    return "|server|";
 }
 
 
@@ -628,6 +621,26 @@ void content::remove_files_compressor(int64_t variables_timestamp)
 void content::content_update(int64_t variables_timestamp)
 {
     NOTUSED(variables_timestamp);
+}
+
+
+/** \brief Initialize the content.
+ *
+ * This function terminates the initialization of the content plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void content::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN0(content, "server", server, save_content);
+    SNAP_LISTEN(content, "server", server, add_snap_expr_functions, _1);
+    SNAP_LISTEN(content, "server", server, register_backend_action, _1);
+    SNAP_LISTEN0(content, "server", server, backend_process);
+    SNAP_LISTEN(content, "server", server, load_file, _1, _2);
+    SNAP_LISTEN(content, "server", server, table_is_accessible, _1, _2);
 }
 
 

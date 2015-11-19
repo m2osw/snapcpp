@@ -52,21 +52,6 @@ listener::~listener()
 }
 
 
-/** \brief Initialize the listener.
- *
- * This function terminates the initialization of the listener plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void listener::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(listener, "server", server, process_post, _1);
-}
-
-
 /** \brief Get a pointer to the listener plugin.
  *
  * This function returns an instance pointer to the listener plugin.
@@ -76,7 +61,7 @@ void listener::on_bootstrap(snap_child * snap)
  *
  * \return A pointer to the listener plugin.
  */
-listener *listener::instance()
+listener * listener::instance()
 {
     return g_plugin_listener_factory.instance();
 }
@@ -95,6 +80,19 @@ QString listener::description() const
 {
     return "Intercept default output and transform it for AJAX responses."
         " Handle AJAX responses for functions that do it right.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString listener::dependencies() const
+{
+    return "|messages|path|permissions|server_access|users|";
 }
 
 
@@ -134,6 +132,21 @@ void listener::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the listener.
+ *
+ * This function terminates the initialization of the listener plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void listener::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(listener, "server", server, process_post, _1);
 }
 
 

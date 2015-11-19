@@ -59,14 +59,21 @@ public:
                             oauth2();
     virtual                 ~oauth2();
 
+    // plugins::plugin implementation
     static oauth2 *         instance();
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
+    virtual void            bootstrap(snap_child * snap);
 
-    void                    on_bootstrap(::snap::snap_child *snap);
-    virtual bool            on_path_execute(content::path_info_t & ipath);
-    void                    on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
+    // server signals
     void                    on_process_cookies();
+
+    // content signals
+    void                    on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
+
+    // path::path_execute implementation
+    virtual bool            on_path_execute(content::path_info_t & ipath);
 
     SNAP_SIGNAL_WITH_MODE(oauth2_authorized, (QString const & application), (application), NEITHER);
     SNAP_SIGNAL_WITH_MODE(oauth2_authenticated, (QString const & application), (application), NEITHER);

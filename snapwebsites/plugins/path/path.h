@@ -61,24 +61,23 @@ public:
 };
 
 
-class path : public plugins::plugin
+class path
+        : public plugins::plugin
 {
 public:
-                                    path();
-    virtual                         ~path();
+                        path();
+    virtual             ~path();
 
-    static path *                   instance();
-    virtual QString                 description() const;
+    // plugins::plugin implementation
+    static path *       instance();
+    virtual QString     description() const;
+    virtual QString     dependencies() const;
+    virtual void        bootstrap(snap_child * snap);
 
-    void                            on_bootstrap(::snap::snap_child * snap);
-    void                            on_init();
-    void                            on_execute(QString const & uri_path);
-    plugin *                        get_plugin(content::path_info_t & uri_path, permission_error_callback & err_callback);
-    void                            verify_permissions(content::path_info_t & ipath, permission_error_callback & err_callback);
-    QString                         define_action(content::path_info_t & ipath);
-    void                            on_improve_signature(QString const & url_path, QDomDocument doc, QDomElement signature);
-
-    void                            add_restore_link_to_signature_for(QString const page_path);
+    // server signals
+    void                on_init();
+    void                on_execute(QString const & uri_path);
+    void                on_improve_signature(QString const & url_path, QDomDocument doc, QDomElement signature);
 
     SNAP_SIGNAL(access_allowed, (QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result), (user_path, ipath, action, login_status, result));
     SNAP_SIGNAL_WITH_MODE(can_handle_dynamic_path, (content::path_info_t & ipath, dynamic_plugin_t & plugin_info), (ipath, plugin_info), NEITHER);
@@ -87,7 +86,11 @@ public:
     SNAP_SIGNAL(check_for_redirect, (content::path_info_t & ipath), (ipath));
     SNAP_SIGNAL_WITH_MODE(preprocess_path, (content::path_info_t & ipath, plugins::plugin *owner_plugin), (ipath, owner_plugin), NEITHER);
 
-    void                            handle_dynamic_path(plugins::plugin *p);
+    plugin *            get_plugin(content::path_info_t & uri_path, permission_error_callback & err_callback);
+    void                verify_permissions(content::path_info_t & ipath, permission_error_callback & err_callback);
+    QString             define_action(content::path_info_t & ipath);
+    void                handle_dynamic_path(plugins::plugin *p);
+    void                add_restore_link_to_signature_for(QString const page_path);
 
 private:
     zpsnap_child_t                  f_snap;

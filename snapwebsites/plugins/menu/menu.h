@@ -85,8 +85,9 @@ public:
     // plugins::plugin implementation
     static menu *       instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
-    void                on_bootstrap(::snap::snap_child * snap);
+    virtual void        bootstrap(snap_child * snap);
 
     // layout::layout_content imlementation
     virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);

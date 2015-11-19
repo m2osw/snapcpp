@@ -134,24 +134,8 @@ favicon::~favicon()
 {
 }
 
-/** \brief Initialize the favicon.
- *
- * This function terminates the initialization of the favicon plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void favicon::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(favicon, "server", server, improve_signature, _1, _2, _3);
-    SNAP_LISTEN(favicon, "layout", layout::layout, generate_page_content, _1, _2, _3);
-    SNAP_LISTEN(favicon, "path", path::path, can_handle_dynamic_path, _1, _2);
-}
-
-
 /** \brief Get a pointer to the favicon plugin.
+ *
  *
  * This function returns an instance pointer to the favicon plugin.
  *
@@ -160,7 +144,7 @@ void favicon::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the favicon plugin.
  */
-favicon *favicon::instance()
+favicon * favicon::instance()
 {
     return g_plugin_favicon_factory.instance();
 }
@@ -178,6 +162,19 @@ favicon *favicon::instance()
 QString favicon::description() const
 {
     return "Handling of the favicon.ico file(s).";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString favicon::dependencies() const
+{
+    return "|form|messages|output|permissions|";
 }
 
 
@@ -214,6 +211,23 @@ void favicon::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the favicon.
+ *
+ * This function terminates the initialization of the favicon plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void favicon::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(favicon, "server", server, improve_signature, _1, _2, _3);
+    SNAP_LISTEN(favicon, "layout", layout::layout, generate_page_content, _1, _2, _3);
+    SNAP_LISTEN(favicon, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
 
 

@@ -115,7 +115,7 @@ oauth2::~oauth2()
  *
  * \return A pointer to the oauth2 plugin.
  */
-oauth2 *oauth2::instance()
+oauth2 * oauth2::instance()
 {
     return g_plugin_oauth2_factory.instance();
 }
@@ -136,6 +136,19 @@ QString oauth2::description() const
           " be used by all the other plugins that support a REST API."
           " The administrator of a website can decide whether to authorize"
           " such access or not.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString oauth2::dependencies() const
+{
+    return "|form|layout|path|users|";
 }
 
 
@@ -185,7 +198,7 @@ void oauth2::content_update(int64_t variables_timestamp)
  *
  * \param[in] snap  The child handling this request.
  */
-void oauth2::on_bootstrap(::snap::snap_child *snap)
+void oauth2::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 

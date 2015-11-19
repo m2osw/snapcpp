@@ -62,8 +62,9 @@ public:
     // plugins::plugin implementation
     static users_ui *       instance();
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
-    void                    on_bootstrap(::snap::snap_child * snap);
+    virtual void            bootstrap(::snap::snap_child * snap);
 
     // server signals
     void                    on_attach_to_session();

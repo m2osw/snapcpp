@@ -36,9 +36,10 @@ namespace snap
 namespace plugins
 {
 
-plugin_list_t g_plugins;
-QString g_next_register_name;
-QString g_next_register_filename;
+plugin_map_t        g_plugins;
+plugin_vector_t     g_ordered_plugins;
+QString             g_next_register_name;
+QString             g_next_register_filename;
 
 
 /** \brief Load a complete list of available plugins.
@@ -66,11 +67,15 @@ snap_string_list list_all(const QString& plugin_path)
  * softlink at least.
  *
  * \warning
- * This function CANNOT use a glob to read all the plugins in a directory.
+ * This function CANNOT use glob() to read all the plugins in a directory.
  * At this point we assume that each website will use more or less of
  * the installed plugins and thus loading them all is not the right way of
  * handling the loading. Thus we now get a \p list_of_plugins parameter
  * with the name of the plugins we want to dlopen().
+ *
+ * \todo
+ * Look into the shared pointers and unloading plugins, if that ever
+ * happens (I don't think it does.)
  *
  * \param[in] plugin_paths  The colon (:) separated list of paths to
  *                          directories with plugins.
@@ -79,115 +84,117 @@ snap_string_list list_all(const QString& plugin_path)
  *
  * \return true if all the modules were loaded.
  */
-bool load(QString const& plugin_paths, plugin_ptr_t server, snap_string_list const& list_of_plugins)
+bool load(QString const & plugin_paths, snap_child * snap, plugin_ptr_t server, snap_string_list const & list_of_plugins)
 {
-// Doug;
-// "This defeats the purpose of a shared_ptr, but this is because all plugins are treated as barepointers. This needs to be fixed in another iteration..."
-//
-// Alexis:
-// "I do not think we want to have shared pointer of plugins for several reasons:
-//    1. plugins are allocated in a way that makes it complicated to handle
-//       as a shared pointer (although we could make it more complicated just
-//       for the fun of using shared pointers...)
-//    2. but the most important reason: this is a server which means:
-//       (a) we load, (b) we run in under 1 second, (c) we quit; the need
-//       of shared pointer is very important in a process that never dies
-//       for very long period of time; here it's plugins, clearly loaded once
-//       for a very short amount of time (there is an exception with backends
-//       though, but it still very safe without the shared pointer.)
-//    3. when loading the .so file, the plugins are not automatically
-//       complete which allows us to not have to load all plugins and yet
-//       have plugin A make use of plugin B but only if available; shared
-//       pointers prevent that scheme (and actually the load may fail)
-//    4. I have no clue what would happen when unloading plugins, it is likely
-//       to crash, especially if the plugins are not unloaded "in the right
-//       order" (whatever that might be)
-// I would strongly argue that your addition should be removed."
-//
-// Doug replies:
-// "I would counter that a shared pointer is telling the developer that the main
-// manager owns the pointer and manages its lifetime. That it gets handed out
-// to plugins shouldn't matter. The weak_ptr is availble to deal with the
-// scenario that the manager destroyed the pointer (the plugin can and should
-// check the lock). And the act of handing it out is indeed sharing it.
-//
-// "However, thinking on it, perhaps instead of a shared_ptr, we really need an
-// unique_ptr, or at least some way of making sure the object really does get
-// destroyed properly (destructor of a main class). Presently destruction is
-// ignored, which isn't a problem for now, but possibly could be if the server,
-// on exit, must restore a shared resource that is used by another process
-// (like releasing a semaphore, for example). What I dislike is that
-// destruction of the server object is literally ignored. That could come back
-// to bite us on the rear in the future."
-// 
-// "I want to leave this here for now until we address this issue. Hope you
-// understand..."
-//
-//#pragma message("Please restore the plugin pointer to a non-shared pointer. (see detailed reason above this message)")
     g_plugins.insert("server", server.get());
 
     snap_string_list const paths(plugin_paths.split(':'));
 
-    bool good = true;
+    bool good(true);
     for(snap_string_list::const_iterator it(list_of_plugins.begin());
                                     it != list_of_plugins.end();
                                     ++it)
     {
         QString const name(*it);
+
+        // the Snap server is already added to the list under that name!
+        //
         if(name == "server")
         {
-
-            // the Snap server is already added to the list under that name!
-            SNAP_LOG_ERROR() << "error: a plugin cannot be called \"server\".";
+            SNAP_LOG_ERROR("error: a plugin cannot be called \"server\".");
             good = false;
             continue;
         }
+
         // in case we get multiple calls to this function we must make sure that
         // all plugins have a distinct name (i.e. a plugin factory could call
         // this function to load sub-plugins!)
+        //
         if(exists(name))
         {
-            SNAP_LOG_ERROR() << "error: two plugins cannot be named the same, found \""
-                            << name.toUtf8().data() << "\" twice.";
+            SNAP_LOG_ERROR("error: two plugins cannot be named the same, found \"")(name)("\" twice.");
             good = false;
             continue;
         }
+
+        // make sure the name is one we consider valid; we may end up
+        // using plugin names in scripts and thus want to only support
+        // a small set of characters; any other name is refused by
+        // the verify_plugin_name() function (which prints an error
+        // message already so no need to another one here)
+        //
         if(!verify_plugin_name(name))
         {
             good = false;
             continue;
         }
-        // check that the file exists, if not we simply skip the
-        // load step and generate an error
-        //
-        // First, check the proper installation place:
+
+        // check that the file exists, if not we generate an error
         //
         QString const filename(find_plugin_filename(paths, name));
         if(filename.isEmpty())
         {
-            SNAP_LOG_ERROR("plugin named \"")(name)("\" (")
-                (filename)(") not found in the plugin directory.")
-               ;
+            SNAP_LOG_ERROR("plugin named \"")(name)("\" not found in the plugin directory. (paths: ")(plugin_paths)(")");
             good = false;
             continue;
         }
 
+        // TBD: Use RTLD_NOW instead of RTLD_LAZY in DEBUG mode
+        //      so we discover missing symbols would be nice, only
+        //      that would require loading in the correct order...
+        //      (see dlopen() call below)
+        //
+
         // load the plugin; the plugin will register itself
+        //
+        // use some really ugly globals because dlopen() does not give us
+        // a way to pass parameters to the plugin factory constructor
+        //
         g_next_register_name = name;
         g_next_register_filename = filename;
-        // TODO: Use RTLD_NOW instead of RTLD_LAZY in DEBUG mode
-        //         so we discover missing symbols
         void const * const h(dlopen(filename.toUtf8().data(), RTLD_LAZY | RTLD_GLOBAL));
         if(h == nullptr)
         {
             int const e(errno);
-            SNAP_LOG_ERROR() << "error: cannot load plugin file \"" << filename << "\" (errno: " << e << ", " << dlerror() << ")";
+            SNAP_LOG_ERROR("error: cannot load plugin file \"")(filename)("\" (errno: ")(e)(", ")(dlerror())(")");
             good = false;
             continue;
         }
         g_next_register_name.clear();
         g_next_register_filename.clear();
-//SNAP_LOG_ERROR() << "note: registering plugin: \"" << name << "\"";
+//SNAP_LOG_ERROR("note: registering plugin: \"")(name)("\"");
+    }
+
+    // set the g_ordered_plugins with the default order as alphabetical,
+    // although we check dependencies to properly reorder as expected
+    // by what each plugin tells us what its dependencies are
+    //
+    for(auto p : g_plugins)
+    {
+        QString const column_name(QString("|%1|").arg(p->get_plugin_name()));
+        for(plugin_vector_t::iterator sp(g_ordered_plugins.begin());
+                                      sp != g_ordered_plugins.end();
+                                      ++sp)
+        {
+            if((*sp)->dependencies().indexOf(column_name) >= 0)
+            {
+                g_ordered_plugins.insert(sp, p);
+                goto inserted;
+            }
+        }
+        // if not before another plugin, insert at the end by default
+        g_ordered_plugins.push_back(p);
+inserted:;
+    }
+
+    // bootstrap() functions have to be called in order to get all the
+    // signals registered in order! (YES!!! This one for() loop makes
+    // all the signals work as expected by making sure they are in a
+    // very specific order)
+    //
+    for(auto p : g_ordered_plugins)
+    {
+        p->bootstrap(snap);
     }
 
     return good;
@@ -220,7 +227,7 @@ bool load(QString const& plugin_paths, plugin_ptr_t server, snap_string_list con
  *
  * \return The full path and filename of the plugin or empty if not found.
  */
-QString find_plugin_filename(snap_string_list const& plugin_paths, QString const& name)
+QString find_plugin_filename(snap_string_list const & plugin_paths, QString const & name)
 {
     int const max_paths(plugin_paths.size());
     for(int i(0); i < max_paths; ++i)
@@ -282,7 +289,7 @@ QString find_plugin_filename(snap_string_list const& plugin_paths, QString const
  *
  * \return true if the name is considered valid.
  */
-bool verify_plugin_name(QString const& name)
+bool verify_plugin_name(QString const & name)
 {
     if(name.isEmpty())
     {
@@ -296,27 +303,24 @@ bool verify_plugin_name(QString const& name)
         && (*p < '0' || *p > '9')
         && *p != '_' && *p != '-' && *p != '.')
         {
-            SNAP_LOG_ERROR() << "error: plugin name \"" << name
-                    << "\" includes forbidden characters.";
+            SNAP_LOG_ERROR("error: plugin name \"")(name)("\" includes forbidden characters.");
             return false;
         }
     }
     // Note: we know that name is not empty
-    QChar first(name[0]);
-    if(first == '.' || first == '-')
+    QChar const first(name[0]);
+    if(first == '.'
+    || first == '-'
+    || (first >= '0' && first <= '9'))
     {
-        SNAP_LOG_ERROR() << "error: plugin name \"" << name
-                << "\" cannot start with a period (.) or dash (-)."
-               ;
+        SNAP_LOG_ERROR("error: plugin name \"")(name)("\" cannot start with a digit (0-9), a period (.), or dash (-).");
         return false;
     }
     // Note: we know that name is not empty
-    QChar last(name[name.length() - 1]);
+    QChar const last(name[name.length() - 1]);
     if(last == '.' || last == '-')
     {
-        SNAP_LOG_ERROR("error: plugin name \"")(name)
-                ("\" cannot end with a period (.) or dash (-).")
-               ;
+        SNAP_LOG_ERROR("error: plugin name \"")(name)("\" cannot end with a period (.) or dash (-).");
         return false;
     }
 
@@ -333,7 +337,7 @@ bool verify_plugin_name(QString const& name)
  *
  * \return true if the plugin is loaded, false otherwise.
  */
-bool exists(QString const& name)
+bool exists(QString const & name)
 {
     return g_plugins.contains(name);
 }
@@ -353,7 +357,7 @@ bool exists(QString const& name)
  * \param[in] name  The name of the plugin being added.
  * \param[in] p  A pointer to the plugin being added.
  */
-void register_plugin(QString const& name, plugin *p)
+void register_plugin(QString const & name, plugin * p)
 {
     if(name.isEmpty())
     {
@@ -363,6 +367,15 @@ void register_plugin(QString const& name, plugin *p)
     {
         throw plugin_exception("it is not possible to register a plugin (" + name + ") other than the one being loaded (" + g_next_register_name + ").");
     }
+#ifdef DEBUG
+    // this is not possible if you use the macro, but in case you create
+    // your own factory instance by hand, it is a requirement too
+    //
+    if(name != p->get_plugin_name())
+    {
+        throw plugin_exception("somehow your plugin factory name is \"" + p->get_plugin_name() + "\" when we were expecting \"" + name + "\".");
+    }
+#endif
     if(exists(name))
     {
         // this should not happen except if the plugin factory was attempting
@@ -489,6 +502,49 @@ int64_t plugin::last_modification() const
 }
 
 
+/** \fn QString plugin::dependencies() const;
+ * \brief Return a list of required dependencies.
+ *
+ * This function returns a list of dependencies, plugin names written
+ * between pipes (|). All plugins have at least one dependency since
+ * most plugins will not work without the base plugin (i.e. "|server|"
+ * is the bottom most base you can use in your plugin).
+ *
+ * At this time, the "content" and "test_plugin_suite" plugins have no
+ * dependencies.
+ *
+ * \note
+ * Until "links" is merged with "content", it will depend on "content"
+ * so that way "links" signals are registered after "content" signals.
+ *
+ * \return A list of plugin names representing all dependencies.
+ */
+
+
+/** \fn void plugin::bootstrap(snap_child * snap)
+ * \brief Bootstrap this plugin.
+ *
+ * The bootstrap virtual function is used to initialize the plugins. At
+ * this point all the plugins are loaded, however, they are not yet
+ * ready to receive signals because all plugins are not yet connected.
+ * The bootstrap() function is actually used to get all the listeners
+ * registered.
+ *
+ * Note that the plugin implementation loads all the plugins, sorts them,
+ * then calls their bootstrap() function. Afterward, the init() function
+ * is likely called. The bootstrap() registers signals and the server
+ * init() signal can be used to send signals since at that point all the
+ * plugins are properly installed and have all of their signals registered.
+ *
+ * \note
+ * This is a pure virtual which is not implemented here so that way your
+ * plugin will crash the server if you did not implement this function
+ * which is considered mandatory.
+ *
+ * \param[in,out] snap  The snap child process.
+ */
+
+
 /** \brief Run an update.
  *
  * This function is a stub that does nothing. It is here so any plug in that
@@ -507,7 +563,7 @@ int64_t plugin::do_update(int64_t last_updated)
 
     SNAP_PLUGIN_UPDATE_INIT();
 
-    // in a complete implementation you'd have entries like this one:
+    // in a complete implementation you have entries like this one:
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
@@ -535,7 +591,7 @@ int64_t plugin::do_dynamic_update(int64_t last_updated)
 
     SNAP_PLUGIN_UPDATE_INIT();
 
-    // in a complete implementation you'd have entries like this one:
+    // in a complete implementation you have entries like this one:
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, dynamic_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
@@ -561,7 +617,7 @@ int64_t plugin::do_dynamic_update(int64_t last_updated)
  * \sa load()
  * \sa exists()
  */
-plugin *get_plugin(const QString& name)
+plugin * get_plugin(QString const & name)
 {
     return g_plugins.value(name, nullptr);
 }
@@ -578,11 +634,30 @@ plugin *get_plugin(const QString& name)
  * this means the list is not complete in the constructor. It is complete
  * anywhere else.
  *
- * \return List of plugins in a map indexed by plugin name.
+ * \return List of plugins in a map indexed by plugin name
+ *         (i.e. alphabetical order).
  */
-plugin_list_t const& get_plugin_list()
+plugin_map_t const & get_plugin_list()
 {
     return g_plugins;
+}
+
+
+/** \brief Retrieve the list of plugins.
+ *
+ * This function returns the list of plugins that were sorted, once
+ * loaded, using their dependencies. This is a vector since we need
+ * to keep a very specific order of the plugins.
+ *
+ * This list is empty until all the plugins were loaded.
+ *
+ * This list should be empty when your plugins constructors are called.
+ *
+ * \return The sorted list of plugins in a vector.
+ */
+plugin_vector_t const & get_plugin_vector()
+{
+    return g_ordered_plugins;
 }
 
 

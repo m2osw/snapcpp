@@ -19,7 +19,7 @@
 #include "snapwebsites.h"
 #include "plugins.h"
 #include "snap_child.h"
-#include <QtSerialization/QSerializationReader.h>
+
 #include <QMap>
 #include <QVector>
 #include <QByteArray>
@@ -66,23 +66,21 @@ public:
         controlled_vars::fbool_t                        f_done;
     };
 
-    mailinglist();
-    ~mailinglist();
+                        mailinglist();
+                        ~mailinglist();
 
+    // plugins::plugin implementation
     static mailinglist *instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
+
     QtCassandra::QCassandraTable::pointer_t get_mailinglist_table();
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_name_to_list(QString const & name, QSharedPointer<list> & emails);
-
-    SNAP_SIGNAL_WITH_MODE(name_to_list, (QString const & name, QSharedPointer<list> & emails), (name, emails), NEITHER);
+    SNAP_SIGNAL(name_to_list, (QString const & name, QSharedPointer<list> & emails), (name, emails));
 
 private:
-    void initial_update(int64_t variables_timestamp);
-    void content_update(int64_t variables_timestamp);
-
     zpsnap_child_t      f_snap;
 };
 

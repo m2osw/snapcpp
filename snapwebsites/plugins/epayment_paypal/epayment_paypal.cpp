@@ -245,25 +245,6 @@ epayment_paypal::~epayment_paypal()
 }
 
 
-/** \brief Initialize the epayment_paypal.
- *
- * This function terminates the initialization of the epayment_paypal plugin
- * by registering for various events.
- *
- * \param[in] snap  The child handling this request.
- */
-void epayment_paypal::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(epayment_paypal, "server", server, process_post, _1);
-    SNAP_LISTEN(epayment_paypal, "server", server, table_is_accessible, _1, _2);
-    SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3);
-    SNAP_LISTEN(epayment_paypal, "epayment", epayment::epayment, repeat_payment, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the epayment_paypal plugin.
  *
  * This function returns an instance pointer to the epayment_paypal plugin.
@@ -273,7 +254,7 @@ void epayment_paypal::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the epayment_paypal plugin.
  */
-epayment_paypal *epayment_paypal::instance()
+epayment_paypal * epayment_paypal::instance()
 {
     return g_plugin_epayment_paypal_factory.instance();
 }
@@ -292,6 +273,19 @@ QString epayment_paypal::description() const
 {
     return "The PayPal e-Payment Facility plugin offers payment from the"
           " client's PayPal account.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString epayment_paypal::dependencies() const
+{
+    return "|editor|epayment|filter|messages|output|path|";
 }
 
 
@@ -353,6 +347,25 @@ void epayment_paypal::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the epayment_paypal.
+ *
+ * This function terminates the initialization of the epayment_paypal plugin
+ * by registering for various events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void epayment_paypal::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(epayment_paypal, "server", server, process_post, _1);
+    SNAP_LISTEN(epayment_paypal, "server", server, table_is_accessible, _1, _2);
+    SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(epayment_paypal, "epayment", epayment::epayment, repeat_payment, _1, _2, _3);
 }
 
 

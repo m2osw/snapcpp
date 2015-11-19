@@ -6734,7 +6734,7 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
             site_plugins = server->get_parameter("default_plugins");
         }
     }
-    snap_string_list list_of_plugins(site_plugins.split(","));
+    snap_string_list list_of_plugins(site_plugins.split(',', QString::SkipEmptyParts));
 
     // clean up the list
     for(int i(0); i < list_of_plugins.length(); ++i)
@@ -6742,6 +6742,7 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
         list_of_plugins[i] = list_of_plugins[i].trimmed();
         if(list_of_plugins.at(i).isEmpty())
         {
+            // remove parts that the trimmed() rendered empty
             list_of_plugins.removeAt(i);
             --i;
         }
@@ -6768,17 +6769,17 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
         die( http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE
            , "Plugin path not configured"
            , "Server cannot find any plugins because the path is not properly configured."
-           , "An error occured loading the server plugins."
+           , "An error occured loading the server plugins (plugins_path parameter in the snapserver.conf)."
            );
         NOTREACHED();
     }
 
-    if(!snap::plugins::load(plugins_path, std::static_pointer_cast<snap::plugins::plugin>(server), list_of_plugins))
+    if(!snap::plugins::load(plugins_path, this, std::static_pointer_cast<snap::plugins::plugin>(server), list_of_plugins))
     {
         die( http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE
            , "Plugin Unavailable"
            , "Server encountered problems with its plugins."
-           , "An error occured loading the server plugins."
+           , "An error occurred while loading the server plugins. See other errors from the plugin implementation for details."
            );
         NOTREACHED();
     }
@@ -6786,7 +6787,6 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
     // but they are not really usable yet because we did not initialize them
 
     // now boot the plugin system (send signals)
-    server->bootstrap(this);
     server->init();
 
     return list_of_plugins;

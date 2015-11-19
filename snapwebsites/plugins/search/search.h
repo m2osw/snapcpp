@@ -41,14 +41,15 @@ public:
     // public plugins::plugin
     static search *         instance();
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
-    void                    on_bootstrap(::snap::snap_child * snap);
-
-    // layout signals
-    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+    virtual void            bootstrap(snap_child * snap);
 
     // server signals
     void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature);
+
+    // layout signals
+    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
 private:
     void                    content_update(int64_t variables_timestamp);

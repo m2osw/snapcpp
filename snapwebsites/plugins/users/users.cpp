@@ -303,6 +303,7 @@ users::users()
 {
 }
 
+
 /** \brief Destroy the users plugin.
  *
  * This function cleans up the users plugin.
@@ -321,7 +322,7 @@ users::~users()
  *
  * \return A pointer to the users plugin.
  */
-users *users::instance()
+users * users::instance()
 {
     return g_plugin_users_factory.instance();
 }
@@ -340,6 +341,19 @@ QString users::description() const
 {
     return "The users plugin manages all the users on a website. It is also"
            " capable to create new users which is a Snap! wide feature.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString users::dependencies() const
+{
+    return "|filter|locale|output|path|server_access|sessions|";
 }
 
 
@@ -401,31 +415,13 @@ void users::content_update(int64_t variables_timestamp)
 }
 
 
-/** \brief Initialize the users table.
- *
- * This function creates the users table if it doesn't exist yet. Otherwise
- * it simple returns the existing Cassandra table.
- *
- * If the function is not able to create the table an exception is raised.
- *
- * The table is a list of emails (row keys) and passwords. Additional user
- * data is generally added by other plugins (i.e. address, phone number,
- * what the user bought before, etc.)
- *
- * \return The pointer to the users table.
- */
-QtCassandra::QCassandraTable::pointer_t users::get_users_table()
-{
-    return f_snap->create_table(get_name(name_t::SNAP_NAME_USERS_TABLE), "Global users table.");
-}
-
 /** \brief Bootstrap the users.
  *
  * This function adds the events the users plugin is listening for.
  *
  * \param[in] snap  The child handling this request.
  */
-void users::on_bootstrap(::snap::snap_child *snap)
+void users::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -443,6 +439,25 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3);
 
     f_info.reset(new sessions::sessions::session_info);
+}
+
+
+/** \brief Initialize the users table.
+ *
+ * This function creates the users table if it doesn't exist yet. Otherwise
+ * it simple returns the existing Cassandra table.
+ *
+ * If the function is not able to create the table an exception is raised.
+ *
+ * The table is a list of emails (row keys) and passwords. Additional user
+ * data is generally added by other plugins (i.e. address, phone number,
+ * what the user bought before, etc.)
+ *
+ * \return The pointer to the users table.
+ */
+QtCassandra::QCassandraTable::pointer_t users::get_users_table()
+{
+    return f_snap->create_table(get_name(name_t::SNAP_NAME_USERS_TABLE), "Global users table.");
 }
 
 

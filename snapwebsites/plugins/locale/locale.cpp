@@ -17,6 +17,7 @@
 
 #include "snap_locale.h"
 
+#include "not_used.h"
 #include "qunicodestring.h"
 
 #include <unicode/datefmt.h>
@@ -82,19 +83,6 @@ locale::~locale()
 }
 
 
-/** \brief Initialize the locale.
- *
- * This function terminates the initialization of the locale plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void locale::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-}
-
-
 /** \brief Get a pointer to the locale plugin.
  *
  * This function returns an instance pointer to the locale plugin.
@@ -104,7 +92,7 @@ void locale::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the locale plugin.
  */
-locale *locale::instance()
+locale * locale::instance()
 {
     return g_plugin_locale_factory.instance();
 }
@@ -127,6 +115,19 @@ QString locale::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString locale::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -141,11 +142,24 @@ QString locale::description() const
  */
 int64_t locale::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
 
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize the locale.
+ *
+ * This function terminates the initialization of the locale plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void locale::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
 }
 
 

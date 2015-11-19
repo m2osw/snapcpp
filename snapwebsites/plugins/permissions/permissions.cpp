@@ -1231,27 +1231,6 @@ permissions::~permissions()
 }
 
 
-/** \brief Initialize the permissions.
- *
- * This function terminates the initialization of the permissions plugin
- * by registering for different events it supports.
- *
- * \param[in] snap  The child handling this request.
- */
-void permissions::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(permissions, "server", server, add_snap_expr_functions, _1);
-    SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
-    SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
-    SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
-    SNAP_LISTEN(permissions, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(permissions, "links", links::links, modified_link, _1, _2);
-}
-
-
 /** \brief Get a pointer to the permissions plugin.
  *
  * This function returns an instance pointer to the permissions plugin.
@@ -1281,6 +1260,19 @@ QString permissions::description() const
     return "The permissions plugin is one of the most important plugins of the"
           " Snap! system. It allows us to determine whether the current user"
           " has enough rights to act on a specific page.";
+}
+
+
+/** \brief Return our dependencies
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString permissions::dependencies() const
+{
+    return "|layout|messages|output|users|";
 }
 
 
@@ -1318,6 +1310,27 @@ void permissions::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the permissions.
+ *
+ * This function terminates the initialization of the permissions plugin
+ * by registering for different events it supports.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void permissions::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(permissions, "server", server, add_snap_expr_functions, _1);
+    SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
+    SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
+    SNAP_LISTEN(permissions, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(permissions, "links", links::links, modified_link, _1, _2);
 }
 
 

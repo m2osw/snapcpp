@@ -70,19 +70,6 @@ header::~header()
 {
 }
 
-/** \brief Initialize the header.
- *
- * This function terminates the initialization of the header plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void header::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(header, "layout", layout::layout, generate_header_content, _1, _2, _3);
-}
 
 /** \brief Get a pointer to the header plugin.
  *
@@ -93,7 +80,7 @@ void header::on_bootstrap(snap_child * snap)
  *
  * \return A pointer to the header plugin.
  */
-header *header::instance()
+header * header::instance()
 {
     return g_plugin_header_factory.instance();
 }
@@ -113,6 +100,19 @@ QString header::description() const
     return "Allows you to add/remove HTML and HTTP headers to your content."
           " Note that this module can, but should not be used to manage meta"
           " data for your page.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString header::dependencies() const
+{
+    return "|layout|output|path|";
 }
 
 
@@ -149,6 +149,21 @@ void header::content_update(int64_t variables_timestamp)
 {
     static_cast<void>(variables_timestamp);
     content::content::instance()->add_xml("header");
+}
+
+
+/** \brief Initialize the header.
+ *
+ * This function terminates the initialization of the header plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void header::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(header, "layout", layout::layout, generate_header_content, _1, _2, _3);
 }
 
 

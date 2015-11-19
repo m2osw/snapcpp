@@ -49,22 +49,6 @@ char_chart::~char_chart()
 }
 
 
-/** \brief Initialize the char_chart plugin.
- *
- * This function terminates the initialization of the char_chart plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void char_chart::on_bootstrap(::snap::snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(char_chart, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(char_chart, "sitemapxml", sitemapxml::sitemapxml, generate_sitemapxml, _1);
-}
-
-
 /** \brief Get a pointer to the char_chart plugin.
  *
  * This function returns an instance pointer to the char_chart plugin.
@@ -92,6 +76,19 @@ char_chart *char_chart::instance()
 QString char_chart::description() const
 {
     return "This dynamically generates tables of characters.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString char_chart::dependencies() const
+{
+    return "|output|sitemapxml|";
 }
 
 
@@ -133,6 +130,22 @@ void char_chart::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml("char_chart");
+}
+
+
+/** \brief Initialize the char_chart plugin.
+ *
+ * This function terminates the initialization of the char_chart plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void char_chart::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(char_chart, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(char_chart, "sitemapxml", sitemapxml::sitemapxml, generate_sitemapxml, _1);
 }
 
 

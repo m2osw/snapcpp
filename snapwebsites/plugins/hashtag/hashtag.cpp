@@ -17,8 +17,6 @@
 
 #include "hashtag.h"
 
-#include "../filter/filter.h"
-
 #include "not_used.h"
 #include "qdomhelpers.h"
 
@@ -78,21 +76,6 @@ hashtag::~hashtag()
 }
 
 
-/** \brief Initialize the hashtag.
- *
- * This function terminates the initialization of the hashtag plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void hashtag::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(hashtag, "filter", filter::filter, filter_text, _1);
-}
-
-
 /** \brief Get a pointer to the hashtag plugin.
  *
  * This function returns an instance pointer to the hashtag plugin.
@@ -123,6 +106,19 @@ QString hashtag::description() const
           " Because all the pages linked to a particular hashtags appear"
           " in the same list, in effect, you get all the pages grouped as"
           " with Twitter and other similar systems.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString hashtag::dependencies() const
+{
+    return "|filter|messages|output|users|";
 }
 
 
@@ -162,6 +158,21 @@ void hashtag::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the hashtag.
+ *
+ * This function terminates the initialization of the hashtag plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void hashtag::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(hashtag, "filter", filter::filter, filter_text, _1);
 }
 
 

@@ -71,21 +71,6 @@ avatar::~avatar()
 }
 
 
-/** \brief Initialize the avatar.
- *
- * This function terminates the initialization of the avatar plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void avatar::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(avatar, "filter", filter::filter, replace_token, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the avatar plugin.
  *
  * This function returns an instance pointer to the avatar plugin.
@@ -95,7 +80,7 @@ void avatar::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the avatar plugin.
  */
-avatar *avatar::instance()
+avatar * avatar::instance()
 {
     return g_plugin_avatar_factory.instance();
 }
@@ -114,6 +99,19 @@ QString avatar::description() const
 {
     return "Transform user emails in comments, pages, profiles"
           " to Avatar images.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString avatar::dependencies() const
+{
+    return "|filter|";
 }
 
 
@@ -156,6 +154,27 @@ void avatar::content_update(int64_t variables_timestamp)
 }
 
 
+/** \brief Initialize the avatar.
+ *
+ * This function terminates the initialization of the avatar plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void avatar::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(avatar, "filter", filter::filter, replace_token, _1, _2, _3);
+}
+
+
+/** \brief Replace the [avatar::...] tokens.
+ *
+ * This function transforms avatar tokens to HTML.
+ *
+ * \li [avatar::avatar(email)] -- transforms the email address in an image.
+ */
 void avatar::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
     NOTUSED(ipath);
@@ -176,6 +195,7 @@ void avatar::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, 
             // TODO: verify everything (i.e. that the email is from one of
             //       our users, whether the user is from this website, whether
             //       to use the "local" (snap) image or external image, etc.)
+            //
             unsigned char md[MD5_DIGEST_LENGTH];
             std::string const utf8_email(email.f_value.toUtf8().data());
             MD5(reinterpret_cast<unsigned char const *>(utf8_email.c_str()), utf8_email.length(), md);

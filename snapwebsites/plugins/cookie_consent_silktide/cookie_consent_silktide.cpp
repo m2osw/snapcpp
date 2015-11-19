@@ -46,7 +46,7 @@ SNAP_PLUGIN_START(cookie_consent_silktide, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -130,22 +130,6 @@ cookie_consent_silktide::~cookie_consent_silktide()
 }
 
 
-/** \brief Initialize the locale.
- *
- * This function terminates the initialization of the locale plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void cookie_consent_silktide::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(cookie_consent_silktide, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(cookie_consent_silktide, "editor", editor::editor, save_editor_fields, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the locale plugin.
  *
  * This function returns an instance pointer to the locale plugin.
@@ -174,6 +158,19 @@ QString cookie_consent_silktide::description() const
 {
     return "Show an in-page popup allowing users to agree on use of cookies."
         " This plugin makes use the third party silktide cookie-consent tool.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString cookie_consent_silktide::dependencies() const
+{
+    return "|attachment|editor|layout|";
 }
 
 
@@ -212,6 +209,22 @@ void cookie_consent_silktide::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the locale.
+ *
+ * This function terminates the initialization of the locale plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void cookie_consent_silktide::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(cookie_consent_silktide, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(cookie_consent_silktide, "editor", editor::editor, save_editor_fields, _1, _2, _3);
 }
 
 
@@ -404,9 +417,9 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
         file.set_attachment_type(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_TYPE));
         file.set_creation_time(f_snap->get_start_date());
         file.set_update_time(f_snap->get_start_date());
-        content::dependency_list_t dependencies;
-        dependencies << get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_OPTIONS_DEPENDENCY);
-        file.set_dependencies(dependencies);
+        content::dependency_list_t js_dependencies;
+        js_dependencies << get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_OPTIONS_DEPENDENCY);
+        file.set_dependencies(js_dependencies);
 
         // post file fields
         file.set_file_name(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_FILENAME));

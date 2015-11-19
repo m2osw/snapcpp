@@ -17,8 +17,6 @@
 
 #include "robotstxt.h"
 
-//#include "../content/content.h"
-
 #include "not_used.h"
 
 #include <iostream>
@@ -90,22 +88,6 @@ robotstxt::~robotstxt()
 }
 
 
-/** \brief Initialize the robotstxt.
- *
- * This function terminates the initialization of the robotstxt plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void robotstxt::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the robotstxt plugin.
  *
  * This function returns an instance pointer to the robotstxt plugin.
@@ -115,7 +97,7 @@ void robotstxt::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the robotstxt plugin.
  */
-robotstxt *robotstxt::instance()
+robotstxt * robotstxt::instance()
 {
     return g_plugin_robotstxt_factory.instance();
 }
@@ -135,6 +117,19 @@ QString robotstxt::description() const
     return "Generates the robots.txt file which is used by search engines to"
         " discover your website pages. You can change the settings to hide"
         " different pages or all your pages.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString robotstxt::dependencies() const
+{
+    return "|layout|path|";
 }
 
 
@@ -172,6 +167,22 @@ void robotstxt::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml("robotstxt");
+}
+
+
+/** \brief Initialize the robotstxt.
+ *
+ * This function terminates the initialization of the robotstxt plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void robotstxt::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3);
 }
 
 

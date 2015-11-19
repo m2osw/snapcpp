@@ -17,7 +17,6 @@
 
 #include "info.h"
 
-#include "../editor/editor.h"
 #include "../messages/messages.h"
 #include "../output/output.h"
 #include "../permissions/permissions.h"
@@ -100,25 +99,6 @@ info::~info()
 {
 }
 
-/** \brief Initialize the info.
- *
- * This function terminates the initialization of the info plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void info::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(info, "server", server, improve_signature, _1, _2, _3);
-    SNAP_LISTEN(info, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3);
-    SNAP_LISTEN(info, "editor", editor::editor, finish_editor_form_processing, _1, _2);
-    SNAP_LISTEN(info, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
-}
-
-
 /** \brief Get a pointer to the info plugin.
  *
  * This function returns an instance pointer to the info plugin.
@@ -148,6 +128,19 @@ QString info::description() const
     return "The info plugin offers handling of the core information of your"
            "system. It is opens a settings page where all that information"
            "can directly be edited online.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString info::dependencies() const
+{
+    return "|editor|messages|output|path|permissions|sendmail|users|";
 }
 
 
@@ -185,6 +178,25 @@ void info::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the info.
+ *
+ * This function terminates the initialization of the info plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void info::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(info, "server", server, improve_signature, _1, _2, _3);
+    SNAP_LISTEN(info, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3);
+    SNAP_LISTEN(info, "editor", editor::editor, finish_editor_form_processing, _1, _2);
+    SNAP_LISTEN(info, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
 }
 
 

@@ -241,17 +241,19 @@ private:
     if(!(test)) throw ::snap::test_plugin_suite::test_plugin_suite_assert_failed(QString("%1:%2:%3: %4").arg(__FILE__).arg(__func__).arg(__LINE__).arg(#test));
 
 
-class test_plugin_suite : public plugins::plugin
+class test_plugin_suite
+        : public plugins::plugin
 {
 public:
                                 test_plugin_suite();
                                 ~test_plugin_suite();
 
+    // plugins::plugin implementation
     static test_plugin_suite *  instance();
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
-
-    void                        on_bootstrap(snap_child *snap);
+    virtual void                bootstrap(snap_child * snap);
 
     test_list_t const &         get_test_list() const;
 

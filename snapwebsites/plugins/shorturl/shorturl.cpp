@@ -129,6 +129,7 @@ shorturl::shorturl()
 {
 }
 
+
 /** \brief Clean up the shorturl plugin.
  *
  * Ensure the shorturl object is clean before it is gone.
@@ -137,22 +138,6 @@ shorturl::~shorturl()
 {
 }
 
-/** \brief Initialize the shorturl.
- *
- * This function terminates the initialization of the shorturl plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void shorturl::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(shorturl, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(shorturl, "content", content::content, create_content, _1, _2, _3);
-    SNAP_LISTEN(shorturl, "content", content::content, page_cloned, _1);
-    SNAP_LISTEN(shorturl, "path", path::path, check_for_redirect, _1);
-}
 
 /** \brief Get a pointer to the shorturl plugin.
  *
@@ -181,6 +166,19 @@ shorturl * shorturl::instance()
 QString shorturl::description() const
 {
     return "Fully automated management of short URLs for this website.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString shorturl::dependencies() const
+{
+    return "|messages|path|output|sessions|";
 }
 
 
@@ -241,6 +239,24 @@ void shorturl::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the shorturl.
+ *
+ * This function terminates the initialization of the shorturl plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void shorturl::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(shorturl, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(shorturl, "content", content::content, create_content, _1, _2, _3);
+    SNAP_LISTEN(shorturl, "content", content::content, page_cloned, _1);
+    SNAP_LISTEN(shorturl, "path", path::path, check_for_redirect, _1);
 }
 
 

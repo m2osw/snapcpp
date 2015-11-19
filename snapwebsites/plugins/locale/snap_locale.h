@@ -108,9 +108,9 @@ public:
     // plugin implementation
     static locale *             instance();
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
-
-    void                        on_bootstrap(snap_child *snap);
+    virtual void                bootstrap(snap_child * snap);
 
     locale_list_t const &       get_locale_list();
     timezone_list_t const &     get_timezone_list();

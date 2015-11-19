@@ -582,6 +582,33 @@ QString server::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * The server has no dependencies so this function returns an empty string.
+ *
+ * \return An empty string.
+ */
+QString server::dependencies() const
+{
+    return QString();
+}
+
+
+/** \brief Required bootstrap definition.
+ *
+ * This function does nothing as the server object is already properly
+ * initialized by the time this function gets called.
+ *
+ * However, since it is a pure virtual function, we suppose that it
+ * is required.
+ */
+void server::bootstrap(snap_child * snap)
+{
+    // virtual function stub
+    NOTUSED(snap);
+}
+
+
 /** \brief Update the server, the function is mandatory.
  *
  * This function is here because it is a pure virtual in the plug in. At this
@@ -1948,17 +1975,6 @@ std::string server::servername() const
     return f_servername;
 }
 
-/** \fn void server::bootstrap(snap_child *snap)
- * \brief Handle of the bootstrap signal.
- *
- * The bootstrap signal is used to initialize the plugins. At this point all the plugins
- * are loaded, however, they are not yet ready to receive signals because all plugins are
- * not yet connected. The bootstrap() function is actually used to get all the listeners
- * registered.
- *
- * \param[in,out] snap  The snap child process.
- */
-
 
 /** \fn void server::init()
  * \brief Initialize the Snap Websites server.
@@ -2179,7 +2195,7 @@ std::string server::servername() const
  *
  * \return true if the signal is to be propagated to all the plugins.
  */
-bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
+bool server::load_file_impl(snap_child::post_file_t & file, bool & found)
 {
     QString filename(file.get_filename());
 

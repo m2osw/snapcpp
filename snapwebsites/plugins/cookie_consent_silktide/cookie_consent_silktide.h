@@ -76,8 +76,9 @@ public:
     // plugins::plugin implementation
     static cookie_consent_silktide * instance();
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
-    void                        on_bootstrap(snap_child * snap);
+    virtual void                bootstrap(snap_child * snap);
 
     // content signals
     void                        on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata);

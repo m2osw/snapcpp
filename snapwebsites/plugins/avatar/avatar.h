@@ -37,7 +37,7 @@ enum class name_t
     SNAP_NAME_AVATAR_TTL,
     SNAP_NAME_AVATAR_TYPE
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class avatar_exception : public snap_exception
@@ -50,17 +50,21 @@ public:
 
 
 
-class avatar : public plugins::plugin
+class avatar
+        : public plugins::plugin
 {
 public:
                         avatar();
                         ~avatar();
 
+    // plugins::plugin implementation
     static avatar *     instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
+    // filter signals
     void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
 private:

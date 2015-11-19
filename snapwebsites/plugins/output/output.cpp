@@ -84,22 +84,6 @@ output::~output()
 }
 
 
-/** \brief Initialize the output.
- *
- * This function terminates the initialization of the output plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void output::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3);
-    SNAP_LISTEN(output, "filter", filter::filter, replace_token, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the output plugin.
  *
  * This function returns an instance pointer to the output plugin.
@@ -128,6 +112,19 @@ QString output::description() const
 {
     return "Output nearly all the content of your website. This plugin handles"
         " the transformation of you pages to HTML, PDF, text, etc.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString output::dependencies() const
+{
+    return "|content|filter|javascript|layout|locale|path|server_access|";
 }
 
 
@@ -163,11 +160,27 @@ int64_t output::do_update(int64_t last_updated)
  */
 void output::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 
     layout::layout::instance()->add_layout_from_resources(content::get_name(content::name_t::SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME));
+}
+
+
+/** \brief Initialize the output.
+ *
+ * This function terminates the initialization of the output plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void output::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3);
+    SNAP_LISTEN(output, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 

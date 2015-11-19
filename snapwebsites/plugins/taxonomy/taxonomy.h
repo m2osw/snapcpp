@@ -38,12 +38,13 @@ public:
                         taxonomy();
                         ~taxonomy();
 
-    // plugin implementation
+    // plugins::plugin implementation
     static taxonomy *   instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
     virtual int64_t     do_dynamic_update(int64_t last_updated);
-    void                on_bootstrap(::snap::snap_child *snap);
+    virtual void        bootstrap(snap_child * snap);
 
     // content signals implementation
     void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);

@@ -88,25 +88,6 @@ attachment::~attachment()
 }
 
 
-/** \brief Initialize the attachment.
- *
- * This function terminates the initialization of the attachment plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void attachment::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(attachment, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(attachment, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(attachment, "content", content::content, page_cloned, _1);
-    SNAP_LISTEN(attachment, "content", content::content, copy_branch_cells, _1, _2, _3);
-    SNAP_LISTEN(attachment, "permissions", permissions::permissions, permit_redirect_to_login_on_not_allowed, _1, _2);
-}
-
-
 /** \brief Get a pointer to the attachment plugin.
  *
  * This function returns an instance pointer to the attachment plugin.
@@ -137,6 +118,19 @@ QString attachment::description() const
         " proper compressed file and in some cases transforming the file"
         " on the fly before sending it to the user (i.e. resizing an image"
         " to \"better\" sizes for the page being presented.)";
+}
+
+
+/** \brief Return our dependencies
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString attachment::dependencies() const
+{
+    return "|content|message|path|permissions|";
 }
 
 
@@ -174,6 +168,25 @@ void attachment::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the attachment.
+ *
+ * This function terminates the initialization of the attachment plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void attachment::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(attachment, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(attachment, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(attachment, "content", content::content, page_cloned, _1);
+    SNAP_LISTEN(attachment, "content", content::content, copy_branch_cells, _1, _2, _3);
+    SNAP_LISTEN(attachment, "permissions", permissions::permissions, permit_redirect_to_login_on_not_allowed, _1, _2);
 }
 
 

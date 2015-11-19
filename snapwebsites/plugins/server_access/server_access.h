@@ -78,11 +78,14 @@ public:
                                 server_access();
                                 ~server_access();
 
+    // plugins::plugin implementation
     static server_access *      instance();
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
+    virtual void                bootstrap(snap_child * snap);
 
-    void                        on_bootstrap(snap_child * snap);
+    // server signals
     void                        on_output_result(QString const & uri_path, QByteArray & result);
 
     bool                        is_ajax_request() const;

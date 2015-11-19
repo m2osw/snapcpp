@@ -310,18 +310,19 @@ public:
     // plugins::plugin implementation
     static epayment *           instance();
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
-    void                        on_bootstrap(snap_child * snap);
+    virtual void                bootstrap(snap_child * snap);
 
     // layout signals
     void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
-
-    name_t                      get_invoice_status(content::path_info_t & invoice_ipath);
 
     SNAP_SIGNAL_WITH_MODE(generate_invoice, (content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment_product_list & plist), (invoice_ipath, invoice_number, plist), NEITHER);
     SNAP_SIGNAL_WITH_MODE(retrieve_invoice, (content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment_product_list & plist), (invoice_ipath, invoice_number, plist), NEITHER);
     SNAP_SIGNAL(set_invoice_status, (content::path_info_t & invoice_ipath, name_t const status), (invoice_ipath, status));
     SNAP_SIGNAL(repeat_payment, (content::path_info_t & first_invoice_url, content::path_info_t & previous_invoice_url, content::path_info_t & new_invoice_url), (first_invoice_url, previous_invoice_url, new_invoice_url));
+
+    name_t                      get_invoice_status(content::path_info_t & invoice_ipath);
 
     static recurring_t          parser_recurring_field(QString const & info);
 

@@ -47,19 +47,23 @@ public:
 
 
 
-class snap_software_description : public plugins::plugin
-                                , public path::path_execute
+class snap_software_description
+        : public plugins::plugin
+        , public path::path_execute
 {
 public:
-                            snap_software_description();
-    virtual                 ~snap_software_description();
+                                        snap_software_description();
+    virtual                             ~snap_software_description();
 
-    static snap_software_description * instance();
-    virtual QString         description() const;
-    virtual int64_t         do_update(int64_t last_updated);
+    // plugins::plugin implementation
+    static snap_software_description *  instance();
+    virtual QString                     description() const;
+    virtual QString                     dependencies() const;
+    virtual int64_t                     do_update(int64_t last_updated);
+    virtual void                        bootstrap(::snap::snap_child * snap);
 
-    void                    on_bootstrap(::snap::snap_child * snap);
-    virtual bool            on_path_execute(content::path_info_t & ipath);
+    // path::path_execute implementation
+    virtual bool                        on_path_execute(content::path_info_t & ipath);
 
 private:
     void                    content_update(int64_t variables_timestamp);

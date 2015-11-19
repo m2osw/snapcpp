@@ -59,6 +59,7 @@ search::search()
 {
 }
 
+
 /** \brief Destroy the search plugin.
  *
  * This function cleans up the search plugin.
@@ -67,19 +68,6 @@ search::~search()
 {
 }
 
-/** \brief Bootstrap the search.
- *
- * This function adds the events the search plugin is listening for.
- *
- * \param[in] snap  The child handling this request.
- */
-void search::on_bootstrap(::snap::snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(search, "server", server, improve_signature, _1, _2, _3);
-    SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3);
-}
 
 /** \brief Get a pointer to the search plugin.
  *
@@ -109,6 +97,19 @@ QString search::description() const
 {
     return "The search plugin index your website public pages in order to"
           " allow your users to search its content.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString search::dependencies() const
+{
+    return "|layout|";
 }
 
 
@@ -145,6 +146,21 @@ void search::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml("search");
+}
+
+
+/** \brief Bootstrap the search.
+ *
+ * This function adds the events the search plugin is listening for.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void search::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(search, "server", server, improve_signature, _1, _2, _3);
+    SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3);
 }
 
 

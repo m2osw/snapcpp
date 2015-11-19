@@ -125,7 +125,8 @@ public:
 // a simple specialization of the permission_error_callback that quiet
 // the errors so they don't get in the way (quiet as in: the end users don't
 // see them; it's going to be logged anyway)
-class quiet_error_callback : public permission_error_callback
+class quiet_error_callback
+        : public permission_error_callback
 {
 public:
                     quiet_error_callback(snap_child * snap, bool log);
@@ -147,7 +148,8 @@ private:
 class listener_impl;
 
 
-class server : public plugins::plugin
+class server
+        : public plugins::plugin
 {
 public:
     class backend_action
@@ -194,7 +196,11 @@ public:
     static int          version_minor();
     static int          version_patch();
     virtual void        show_version();
+
+    // plugins::plugin implementation
     virtual QString     description() const;
+    virtual QString     dependencies() const;
+    virtual void        bootstrap(snap_child * snap);
     virtual int64_t     do_update(int64_t last_updated);
 
     void                usage();
@@ -231,7 +237,6 @@ public:
     bool nofork() const;
 #endif
 
-    SNAP_SIGNAL_WITH_MODE(bootstrap, (snap_child * snap), (snap), NEITHER);
     SNAP_SIGNAL_WITH_MODE(init, (), (), NEITHER);
     SNAP_SIGNAL_WITH_MODE(update, (int64_t last_updated), (last_updated), NEITHER);
     SNAP_SIGNAL_WITH_MODE(process_cookies, (), (), NEITHER);

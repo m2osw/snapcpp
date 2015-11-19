@@ -367,7 +367,8 @@ public:
     // plugins::plugin implementation
     static filter *     instance();
     virtual QString     description() const;
-    void                on_bootstrap(::snap::snap_child *snap);
+    virtual QString     dependencies() const;
+    virtual void        bootstrap(::snap::snap_child * snap);
 
     // server signals
     void                on_xss_filter(QDomNode & node, QString const & accepted_tags, QString const & accepted_attributes);

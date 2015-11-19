@@ -60,8 +60,9 @@ public:
     // plugins::plugin implementation
     static favicon *        instance();
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
-    void                    on_bootstrap(snap_child * snap);
+    virtual void            bootstrap(snap_child * snap);
 
     // server signal
     void                    on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);

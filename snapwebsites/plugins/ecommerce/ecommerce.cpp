@@ -379,25 +379,6 @@ ecommerce::~ecommerce()
 }
 
 
-/** \brief Initialize the ecommerce.
- *
- * This function terminates the initialization of the ecommerce plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void ecommerce::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(ecommerce, "server", server, process_post, _1);
-    SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(ecommerce, "epayment", epayment::epayment, generate_invoice, _1, _2, _3);
-    SNAP_LISTEN(ecommerce, "filter", filter::filter, replace_token, _1, _2, _3);
-    SNAP_LISTEN(ecommerce, "path", path::path, preprocess_path, _1, _2);
-}
-
-
 /** \brief Get a pointer to the ecommerce plugin.
  *
  * This function returns an instance pointer to the ecommerce plugin.
@@ -431,6 +412,19 @@ QString ecommerce::description() const
         " need for other plugins. However, you want to install the"
         " ecommerce-payment plugin and at least one of the payments"
         " gateway in order to allow for the actual payments.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString ecommerce::dependencies() const
+{
+    return "|filter|layout|output|permissions|shorturl|";
 }
 
 
@@ -469,6 +463,25 @@ void ecommerce::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the ecommerce.
+ *
+ * This function terminates the initialization of the ecommerce plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void ecommerce::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(ecommerce, "server", server, process_post, _1);
+    SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(ecommerce, "epayment", epayment::epayment, generate_invoice, _1, _2, _3);
+    SNAP_LISTEN(ecommerce, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(ecommerce, "path", path::path, preprocess_path, _1, _2);
 }
 
 

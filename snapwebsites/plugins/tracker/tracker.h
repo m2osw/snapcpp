@@ -18,13 +18,6 @@
 
 #include "snapwebsites.h"
 
-//#include "../layout/layout.h"
-//#include "../filter/filter.h"
-//
-//#include "../test_plugin_suite/test_plugin_suite.h"
-//
-//#include "snap_expr.h"
-
 
 namespace snap
 {
@@ -37,7 +30,7 @@ enum class name_t
     SNAP_NAME_TRACKER_TABLE,
     SNAP_NAME_TRACKER_TRACKINGDATA
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class tracker_exception : public snap_exception
@@ -70,20 +63,21 @@ public:
 
 
 
-class tracker : public plugins::plugin
-              , public server::backend_action
+class tracker
+        : public plugins::plugin
+        , public server::backend_action
 {
 public:
                         tracker();
                         ~tracker();
 
-    // plugin implementation
+    // plugins::plugin implementation
     static tracker *    instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
-    void                on_bootstrap(snap_child * snap);
+    virtual void        bootstrap(snap_child * snap);
 
-    // tracker plugin functions
     QtCassandra::QCassandraTable::pointer_t get_tracker_table();
 
     // server signals

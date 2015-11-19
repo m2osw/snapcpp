@@ -101,23 +101,6 @@ tracker::~tracker()
 }
 
 
-/** \brief Initialize the tracker.
- *
- * This function terminates the initialization of the tracker plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void tracker::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN0(tracker, "server", server, attach_to_session);
-    SNAP_LISTEN0(tracker, "server", server, detach_from_session);
-    SNAP_LISTEN(tracker, "server", server, register_backend_action, _1);
-}
-
-
 /** \brief Get a pointer to the tracker plugin.
  *
  * This function returns an instance pointer to the tracker plugin.
@@ -145,6 +128,19 @@ tracker * tracker::instance()
 QString tracker::description() const
 {
     return "Log all movements of all the users accessing your website.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString tracker::dependencies() const
+{
+    return "|users|";
 }
 
 
@@ -206,6 +202,23 @@ void tracker::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the tracker.
+ *
+ * This function terminates the initialization of the tracker plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void tracker::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN0(tracker, "server", server, attach_to_session);
+    SNAP_LISTEN0(tracker, "server", server, detach_from_session);
+    SNAP_LISTEN(tracker, "server", server, register_backend_action, _1);
 }
 
 

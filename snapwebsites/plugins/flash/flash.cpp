@@ -17,8 +17,6 @@
 
 #include "flash.h"
 
-//#include "../filter/filter.h"
-
 #include "not_used.h"
 #include "qdomhelpers.h"
 
@@ -72,19 +70,6 @@ flash::~flash()
 }
 
 
-/** \brief Initialize the flash.
- *
- * This function terminates the initialization of the flash plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void flash::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-}
-
-
 /** \brief Get a pointer to the flash plugin.
  *
  * This function returns an instance pointer to the flash plugin.
@@ -114,6 +99,19 @@ QString flash::description() const
     return "Plugin used to support Flash animations on a website."
           " This includes technical support and also the necessary"
           " code to handle adding flash animations in your pages.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString flash::dependencies() const
+{
+    return "|filter|";
 }
 
 
@@ -153,6 +151,19 @@ void flash::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the flash.
+ *
+ * This function terminates the initialization of the flash plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void flash::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
 }
 
 

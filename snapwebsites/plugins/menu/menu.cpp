@@ -22,6 +22,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -41,7 +42,7 @@ SNAP_PLUGIN_START(menu, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -81,19 +82,6 @@ menu::~menu()
 }
 
 
-/** \brief Initialize the menu plugin.
- *
- * This function terminates the initialization of the menu plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void menu::on_bootstrap(::snap::snap_child *snap)
-{
-    f_snap = snap;
-}
-
-
 /** \brief Get a pointer to the menu plugin.
  *
  * This function returns an instance pointer to the menu plugin.
@@ -103,7 +91,7 @@ void menu::on_bootstrap(::snap::snap_child *snap)
  *
  * \return A pointer to the menu plugin.
  */
-menu *menu::instance()
+menu * menu::instance()
 {
     return g_plugin_menu_factory.instance();
 }
@@ -124,6 +112,19 @@ QString menu::description() const
           " It manages two different types of lists: automated lists,"
           " using the list plugin, and manually created lists where"
           " a user enters each item in the list.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString menu::dependencies() const
+{
+    return "|content|layout|output|";
 }
 
 
@@ -159,9 +160,22 @@ int64_t menu::do_update(int64_t last_updated)
  */
 void menu::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the menu plugin.
+ *
+ * This function terminates the initialization of the menu plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void menu::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
 }
 
 

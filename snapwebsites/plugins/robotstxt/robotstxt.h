@@ -77,8 +77,9 @@ public:
     // plugins::plugin
     static robotstxt *  instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
-    void                on_bootstrap(snap_child * snap);
+    virtual void        bootstrap(snap_child * snap);
 
     // path::path_execute implementation
     virtual bool        on_path_execute(content::path_info_t & url);

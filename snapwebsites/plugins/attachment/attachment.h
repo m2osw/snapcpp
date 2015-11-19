@@ -73,25 +73,33 @@ public:
 
     static attachment * instance();
 
-    // plugins::plugin
+    // plugins::plugin implementation
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child * snap);
-    void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
-    void                on_page_cloned(content::content::cloned_tree_t const & tree);
-    void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
-    void                on_permit_redirect_to_login_on_not_allowed(content::path_info_t & ipath, bool & redirect_to_login);
+    // server signals
     void                on_register_backend_action(server::backend_action_map_t & actions);
+
+    // server::backend_action implementation
+    virtual void        on_backend_action(QString const & action);
+
+    // path signals
+    void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
 
     // path::path_execute
     virtual bool        on_path_execute(content::path_info_t & ipath);
 
+    // content signal
+    void                on_page_cloned(content::content::cloned_tree_t const & tree);
+    void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+
+    // permissions signal
+    void                on_permit_redirect_to_login_on_not_allowed(content::path_info_t & ipath, bool & redirect_to_login);
+
     // permission_error_callback::error_by_mime_type
     virtual void        on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path);
-
-    // server::backend_action
-    virtual void        on_backend_action(QString const & action);
 
     int                 delete_all_attachments(content::path_info_t & ipath);
 

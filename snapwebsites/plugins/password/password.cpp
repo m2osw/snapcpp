@@ -102,21 +102,6 @@ password::~password()
 }
 
 
-/** \brief Initialize the password.
- *
- * This function terminates the initialization of the password plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void password::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(password, "users", users::users, check_user_security, _1, _2, _3, _4, _5);
-}
-
-
 /** \brief Get a pointer to the password plugin.
  *
  * This function returns an instance pointer to the password plugin.
@@ -146,6 +131,19 @@ QString password::description() const
     return "Check passwords of newly created users for strength."
           " The plugin verifies various settings to ensure the strength of passwords."
           " It can also check a database of black listed passwords.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString password::dependencies() const
+{
+    return "|permissions|users|";
 }
 
 
@@ -207,6 +205,21 @@ void password::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the password.
+ *
+ * This function terminates the initialization of the password plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void password::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(password, "users", users::users, check_user_security, _1, _2, _3, _4, _5);
 }
 
 

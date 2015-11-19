@@ -126,7 +126,7 @@ layout::~layout()
  *
  * \param[in] snap  The child handling this request.
  */
-void layout::on_bootstrap(snap_child * snap)
+void layout::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -164,6 +164,19 @@ QString layout::description() const
 {
     return "Determine the layout for a given content and generate the output"
           " for that layout.";
+}
+
+
+/** \brief Return our dependencies
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString layout::dependencies() const
+{
+    return "|content|filter|javascript|links|path|server_access|taxonomy|";
 }
 
 

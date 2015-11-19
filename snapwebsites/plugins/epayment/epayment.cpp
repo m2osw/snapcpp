@@ -1417,21 +1417,6 @@ epayment::~epayment()
 }
 
 
-/** \brief Initialize the epayment.
- *
- * This function terminates the initialization of the epayment plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void epayment::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(epayment, "layout", layout::layout, generate_header_content, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the epayment plugin.
  *
  * This function returns an instance pointer to the epayment plugin.
@@ -1461,6 +1446,19 @@ QString epayment::description() const
     return "The e-Payment plugin offers one common way to process an"
           " electronic or not so electronic payment online (i.e. you"
           " may accept checks, for example...)";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString epayment::dependencies() const
+{
+    return "|content|editor|";
 }
 
 
@@ -1499,6 +1497,21 @@ void epayment::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the epayment.
+ *
+ * This function terminates the initialization of the epayment plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void epayment::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(epayment, "layout", layout::layout, generate_header_content, _1, _2, _3);
 }
 
 

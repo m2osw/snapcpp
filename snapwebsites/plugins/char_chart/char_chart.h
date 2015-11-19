@@ -35,8 +35,9 @@ public:
     // plugins::plugin implementation
     static char_chart * instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
-    void                on_bootstrap(::snap::snap_child * snap);
+    virtual void        bootstrap(snap_child * snap);
 
     // path::path_execute implementation
     bool                on_path_execute(content::path_info_t & cpath);

@@ -262,30 +262,33 @@ public:
                         links();
                         ~links();
 
-    static links *      instance();
-    virtual QString     description() const;
-    virtual int64_t     do_update(int64_t last_updated);
+    // plugins::plugin implementation
+    static links *              instance();
+    virtual QString             description() const;
+    virtual QString             dependencies() const;
+    virtual int64_t             do_update(int64_t last_updated);
+    virtual void                bootstrap(snap_child * snap);
+
     QtCassandra::QCassandraTable::pointer_t get_links_table();
 
-    void                on_bootstrap(::snap::snap_child *snap);
+    // server signals
     void                on_add_snap_expr_functions(snap_expr::functions_t & functions);
     void                on_register_backend_action(server::backend_action_map_t & actions);
-    void                adjust_links_after_cloning(QString const & source_key, QString const & destination_key);
-    void                fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_cell, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch_number);
 
     // server::backend_action implementation
     virtual void        on_backend_action(QString const & action);
 
-    link_info_pair::vector_t list_of_links(QString const & path);
+    SNAP_SIGNAL_WITH_MODE(modified_link, (link_info const & link, bool const created), (link, created), NEITHER);
 
     // TBD should those be events? (they do trigger the modified_link() event already...)
     void                create_link(link_info const & src, link_info const & dst);
     void                delete_link(link_info const & info, int const delete_record_count = DELETE_RECORD_COUNT);
     void                delete_this_link(link_info const & source, link_info const & destination);
 
-    QSharedPointer<link_context> new_link_context(link_info const & info, int const count = DELETE_RECORD_COUNT);
-
-    SNAP_SIGNAL_WITH_MODE(modified_link, (link_info const & link, bool const created), (link, created), NEITHER);
+    QSharedPointer<link_context>    new_link_context(link_info const & info, int const count = DELETE_RECORD_COUNT);
+    link_info_pair::vector_t        list_of_links(QString const & path);
+    void                            adjust_links_after_cloning(QString const & source_key, QString const & destination_key);
+    void                            fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_cell, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch_number);
 
     // links test suite
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()

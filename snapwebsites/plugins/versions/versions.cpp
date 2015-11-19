@@ -87,21 +87,6 @@ versions::~versions()
 }
 
 
-/** \brief Initialize the versions.
- *
- * This function terminates the initialization of the versions plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void versions::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(versions, "filter", filter::filter, replace_token, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the versions plugin.
  *
  * This function returns an instance pointer to the versions plugin.
@@ -111,7 +96,7 @@ void versions::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the versions plugin.
  */
-versions *versions::instance()
+versions * versions::instance()
 {
     return g_plugin_versions_factory.instance();
 }
@@ -129,6 +114,19 @@ versions *versions::instance()
 QString versions::description() const
 {
     return "Offers a filter of all the Snap parts Versions";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString versions::dependencies() const
+{
+    return "|content|filter|permissions|users|";
 }
 
 
@@ -170,6 +168,21 @@ void versions::content_update(int64_t variables_timestamp)
 }
 
 
+/** \brief Initialize the versions.
+ *
+ * This function terminates the initialization of the versions plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void versions::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(versions, "filter", filter::filter, replace_token, _1, _2, _3);
+}
+
+
 
 void versions::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
@@ -203,8 +216,8 @@ void versions::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
 
             // Plugin Versions
             token.f_replacement += "<h3>Plugins</h3><ul>";
-            plugins::plugin_list_t const& list_of_plugins(plugins::get_plugin_list());
-            for(plugins::plugin_list_t::const_iterator it(list_of_plugins.begin());
+            plugins::plugin_map_t const & list_of_plugins(plugins::get_plugin_list());
+            for(plugins::plugin_map_t::const_iterator it(list_of_plugins.begin());
                                               it != list_of_plugins.end();
                                               ++it)
             {

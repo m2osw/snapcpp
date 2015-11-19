@@ -67,11 +67,12 @@ public:
                         password();
                         ~password();
 
+    // plugins::plugin implementation
     static password *   instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
-
-    void                on_bootstrap(snap_child * snap);
+    virtual void        bootstrap(snap_child * snap);
 
     // users signals
     void                on_check_user_security(QString const & user_key, QString const & email, QString const & user_password, bool const bypass_blacklist, content::permission_flag & secure);

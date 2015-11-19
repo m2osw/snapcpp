@@ -1146,29 +1146,6 @@ list::~list()
 }
 
 
-/** \brief Initialize the list.
- *
- * This function terminates the initialization of the list plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void list::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN0(list, "server", server, attach_to_session);
-    SNAP_LISTEN(list, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
-    SNAP_LISTEN(list, "content", content::content, modified_content, _1);
-    SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
-    SNAP_LISTEN(list, "links", links::links, modified_link, _1, _2);
-    SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3);
-
-    SNAP_TEST_PLUGIN_SUITE_LISTEN(list);
-}
-
-
 /** \brief Get a pointer to the list plugin.
  *
  * This function returns an instance pointer to the list plugin.
@@ -1198,6 +1175,19 @@ QString list::description() const
     return "Generate lists of pages using a set of parameters as defined"
           " by the system (some lists are defined internally) and the end"
           " users.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString list::dependencies() const
+{
+    return "|filter|layout|links|messages|output|";
 }
 
 
@@ -1261,6 +1251,29 @@ void list::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the list.
+ *
+ * This function terminates the initialization of the list plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void list::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN0(list, "server", server, attach_to_session);
+    SNAP_LISTEN(list, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
+    SNAP_LISTEN(list, "content", content::content, modified_content, _1);
+    SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
+    SNAP_LISTEN(list, "links", links::links, modified_link, _1, _2);
+    SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3);
+
+    SNAP_TEST_PLUGIN_SUITE_LISTEN(list);
 }
 
 

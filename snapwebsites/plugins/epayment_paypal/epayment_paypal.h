@@ -132,8 +132,9 @@ public:
     // plugins::plugin implementation
     static epayment_paypal *    instance();
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
-    void                        on_bootstrap(snap_child * snap);
+    virtual void                bootstrap(snap_child * snap);
 
     QtCassandra::QCassandraTable::pointer_t     get_epayment_paypal_table();
 

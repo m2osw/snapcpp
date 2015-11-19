@@ -1482,25 +1482,6 @@ sendmail::~sendmail()
 }
 
 
-/** \brief Initialize sendmail.
- *
- * This function terminates the initialization of the sendmail plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void sendmail::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
-    SNAP_LISTEN(sendmail, "users", users::users, check_user_security, _1, _2, _3, _4, _5);
-
-    SNAP_TEST_PLUGIN_SUITE_LISTEN(sendmail);
-}
-
-
 /** \brief Get a pointer to the sendmail plugin.
  *
  * This function returns an instance pointer to the sendmail plugin.
@@ -1510,7 +1491,7 @@ void sendmail::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the sendmail plugin.
  */
-sendmail *sendmail::instance()
+sendmail * sendmail::instance()
 {
     return g_plugin_sendmail_factory.instance();
 }
@@ -1530,6 +1511,19 @@ QString sendmail::description() const
     return "Handle sending emails from your website environment."
         " This version of sendmail requires a backend process to"
         " actually process the emails and send them out.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString sendmail::dependencies() const
+{
+    return "|filter|layout|output|path|sessions|users|";
 }
 
 
@@ -1569,6 +1563,25 @@ void sendmail::content_update(int64_t variables_timestamp)
     content::content::instance()->add_xml(get_plugin_name());
 
     layout::layout::instance()->add_layout_from_resources(get_name(name_t::SNAP_NAME_SENDMAIL_LAYOUT_NAME));
+}
+
+
+/** \brief Initialize sendmail.
+ *
+ * This function terminates the initialization of the sendmail plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void sendmail::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(sendmail, "users", users::users, check_user_security, _1, _2, _3, _4, _5);
+
+    SNAP_TEST_PLUGIN_SUITE_LISTEN(sendmail);
 }
 
 

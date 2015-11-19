@@ -323,7 +323,7 @@ path::~path()
  *
  * \return A pointer to the path plugin.
  */
-path *path::instance()
+path * path::instance()
 {
     return g_plugin_path_factory.instance();
 }
@@ -346,13 +346,26 @@ QString path::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString path::dependencies() const
+{
+    return "|content|links|messages|server_access|";
+}
+
+
 /** \brief Bootstrap the path.
  *
  * This function adds the events the path plugin is listening for.
  *
  * \param[in] snap  The child handling this request.
  */
-void path::on_bootstrap(::snap::snap_child * snap)
+void path::bootstrap(::snap::snap_child * snap)
 {
     f_snap = snap;
 

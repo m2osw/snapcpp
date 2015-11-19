@@ -18,6 +18,7 @@
 
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
+
 #include <QtCassandra/QCassandraTable.h>
 #include <QDomDocument>
 
@@ -82,10 +83,12 @@ public:
 
     static form *               instance();
     virtual QString             description() const;
-    QSharedPointer<QtCassandra::QCassandraTable> get_form_table();
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
+    virtual void                bootstrap(::snap::snap_child * snap);
 
-    void                        on_bootstrap(::snap::snap_child *snap);
+    QSharedPointer<QtCassandra::QCassandraTable> get_form_table();
+
     void                        on_process_post(QString const & uri_path);
     void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
     void                        on_filtered_content(content::path_info_t & path, QDomDocument & doc, QString const & xsl);

@@ -70,11 +70,12 @@ public:
                                 ecommerce();
     virtual                     ~ecommerce();
 
-    // plugins::plugin
+    // plugins::plugin implementation
     static ecommerce *          instance();
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
-    void                        on_bootstrap(snap_child * snap);
+    virtual void                bootstrap(snap_child * snap);
 
     // server signals
     void                        on_process_post(QString const & uri_path);
@@ -96,6 +97,7 @@ public:
 
     // epayment signals
     void                        on_generate_invoice(content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment::epayment_product_list & plist);
+
     SNAP_SIGNAL(product_allowed, (QDomElement product, content::path_info_t product_ipath), (product, product_ipath));
 
 private:

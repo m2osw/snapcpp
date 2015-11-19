@@ -89,23 +89,6 @@ locale_settings::~locale_settings()
 }
 
 
-/** \brief Initialize the locale.
- *
- * This function terminates the initialization of the locale plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void locale_settings::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN0(locale_settings, "locale", locale::locale, set_locale);
-    SNAP_LISTEN0(locale_settings, "locale", locale::locale, set_timezone);
-    SNAP_LISTEN(locale_settings, "filter", filter::filter, replace_token, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the locale plugin.
  *
  * This function returns an instance pointer to the locale plugin.
@@ -115,7 +98,7 @@ void locale_settings::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the locale plugin.
  */
-locale_settings *locale_settings::instance()
+locale_settings * locale_settings::instance()
 {
     return g_plugin_locale_settings_factory.instance();
 }
@@ -134,6 +117,19 @@ QString locale_settings::description() const
 {
     return "Define locale functions to be used throughout all the plugins."
         " It handles time and date, timezone, numbers, currency, etc.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString locale_settings::dependencies() const
+{
+    return "|editor|locale|";
 }
 
 
@@ -172,6 +168,23 @@ void locale_settings::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the locale.
+ *
+ * This function terminates the initialization of the locale plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void locale_settings::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN0(locale_settings, "locale", locale::locale, set_locale);
+    SNAP_LISTEN0(locale_settings, "locale", locale::locale, set_timezone);
+    SNAP_LISTEN(locale_settings, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 

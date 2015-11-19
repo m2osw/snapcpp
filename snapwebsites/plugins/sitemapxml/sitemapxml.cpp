@@ -512,7 +512,7 @@ sitemapxml::~sitemapxml()
  *
  * \return A pointer to the sitemapxml plugin.
  */
-sitemapxml *sitemapxml::instance()
+sitemapxml * sitemapxml::instance()
 {
     return g_plugin_sitemapxml_factory.instance();
 }
@@ -535,19 +535,16 @@ QString sitemapxml::description() const
 }
 
 
-/** \brief Initialize the sitemapxml.
+/** \brief Return our dependencies.
  *
- * This function terminates the initialization of the sitemapxml plugin
- * by registering for different events.
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
  */
-void sitemapxml::on_bootstrap(::snap::snap_child *snap)
+QString sitemapxml::dependencies() const
 {
-    f_snap = snap;
-
-    SNAP_LISTEN0(sitemapxml, "server", server, backend_process);
-    SNAP_LISTEN(sitemapxml, "content", content::content, copy_branch_cells, _1, _2, _3);
-    SNAP_LISTEN(sitemapxml, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
-    SNAP_LISTEN(sitemapxml, "shorturl", shorturl::shorturl, allow_shorturl, _1, _2, _3, _4);
+    return "|permissions|robotstxt|shorturl|";
 }
 
 
@@ -588,6 +585,22 @@ void sitemapxml::content_update(int64_t variables_timestamp)
     // processes find out that additional pages are required.
     //
     content::content::instance()->add_xml("sitemapxml");
+}
+
+
+/** \brief Initialize the sitemapxml.
+ *
+ * This function terminates the initialization of the sitemapxml plugin
+ * by registering for different events.
+ */
+void sitemapxml::bootstrap(::snap::snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN0(sitemapxml, "server", server, backend_process);
+    SNAP_LISTEN(sitemapxml, "content", content::content, copy_branch_cells, _1, _2, _3);
+    SNAP_LISTEN(sitemapxml, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
+    SNAP_LISTEN(sitemapxml, "shorturl", shorturl::shorturl, allow_shorturl, _1, _2, _3, _4);
 }
 
 

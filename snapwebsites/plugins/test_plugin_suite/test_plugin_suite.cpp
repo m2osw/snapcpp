@@ -18,6 +18,7 @@
 #include "test_plugin_suite.h"
 
 #include "log.h"
+#include "not_used.h"
 
 #include "poison.h"
 
@@ -144,24 +145,13 @@ test_plugin_suite::test_plugin_suite()
 {
 }
 
+
 /** \brief Clean up the test_plugin_suite plugin.
  *
  * Ensure the test_plugin_suite object is clean before it is gone.
  */
 test_plugin_suite::~test_plugin_suite()
 {
-}
-
-/** \brief Initialize the test_plugin_suite.
- *
- * This function terminates the initialization of the test_plugin_suite plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void test_plugin_suite::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
 }
 
 
@@ -174,7 +164,7 @@ void test_plugin_suite::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the test_plugin_suite plugin.
  */
-test_plugin_suite *test_plugin_suite::instance()
+test_plugin_suite * test_plugin_suite::instance()
 {
     return g_plugin_test_plugin_suite_factory.instance();
 }
@@ -197,6 +187,19 @@ QString test_plugin_suite::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString test_plugin_suite::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -213,10 +216,23 @@ int64_t test_plugin_suite::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
     //SNAP_PLUGIN_UPDATE(2014, 4, 10, 22, 47, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize the test_plugin_suite.
+ *
+ * This function terminates the initialization of the test_plugin_suite plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void test_plugin_suite::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
 }
 
 

@@ -38,7 +38,6 @@
 #include "../output/output.h"
 #include "../messages/messages.h"
 #include "../sendmail/sendmail.h"
-#include "../users/users.h"
 
 #include "log.h"
 #include "not_reached.h"
@@ -129,6 +128,19 @@ QString users_ui::description() const
 {
     return "The users_ui plugin manages all the user interface (forms)"
            " on a website.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString users_ui::dependencies() const
+{
+    return "|form|layout|messages|output|path|sendmail|users|";
 }
 
 
@@ -227,7 +239,7 @@ void users_ui::fix_owner_update(int64_t variables_timestamp)
  *
  * \param[in] snap  The child handling this request.
  */
-void users_ui::on_bootstrap(::snap::snap_child * snap)
+void users_ui::bootstrap(::snap::snap_child * snap)
 {
     f_snap = snap;
 

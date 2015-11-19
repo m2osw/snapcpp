@@ -113,22 +113,6 @@ javascript::~javascript()
 }
 
 
-/** \brief Initialize the javascript.
- *
- * This function terminates the initialization of the javascript plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void javascript::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(javascript, "content", content::content, check_attachment_security, _1, _2, _3);
-    SNAP_LISTEN(javascript, "content", content::content, process_attachment, _1, _2);
-}
-
-
 /** \brief Get a pointer to the javascript plugin.
  *
  * This function returns an instance pointer to the javascript plugin.
@@ -160,6 +144,19 @@ QString javascript::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString javascript::dependencies() const
+{
+    return "|content|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -181,6 +178,22 @@ int64_t javascript::do_update(int64_t last_updated)
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- content depends on JavaScript so we cannot do a content update here
 
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize the javascript.
+ *
+ * This function terminates the initialization of the javascript plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void javascript::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(javascript, "content", content::content, check_attachment_security, _1, _2, _3);
+    SNAP_LISTEN(javascript, "content", content::content, process_attachment, _1, _2);
 }
 
 

@@ -136,22 +136,6 @@ feed::~feed()
 }
 
 
-/** \brief Initialize the feed.
- *
- * This function terminates the initialization of the feed plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void feed::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN0(feed, "server", server, backend_process);
-    SNAP_LISTEN(feed, "layout", layout::layout, generate_page_content, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the feed plugin.
  *
  * This function returns an instance pointer to the feed plugin.
@@ -181,6 +165,19 @@ QString feed::description() const
     return "System used to generate RSS, Atom and other feeds. It also"
           " handles subscriptions for subscription based feed systems"
           " such as RSS Cloud and PubSubHubbub.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString feed::dependencies() const
+{
+    return "|layout|messages|output|users|";
 }
 
 
@@ -220,6 +217,22 @@ void feed::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the feed.
+ *
+ * This function terminates the initialization of the feed plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void feed::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN0(feed, "server", server, backend_process);
+    SNAP_LISTEN(feed, "layout", layout::layout, generate_page_content, _1, _2, _3);
 }
 
 

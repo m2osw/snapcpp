@@ -52,21 +52,29 @@ public:
 
 
 
-class test_plugin : public plugins::plugin
-                  , public path::path_execute
+class test_plugin
+        : public plugins::plugin
+        , public path::path_execute
 {
 public:
                             test_plugin();
                             ~test_plugin();
 
+    // plugins::plugin implementation
     static test_plugin *    instance();
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
+    virtual void            bootstrap(snap_child * snap);
 
-    void                    on_bootstrap(snap_child * snap);
-    void                    on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+    // server signals
     void                    on_process_post(QString const & uri_path);
+
+    // path::path_execute implementation
     virtual bool            on_path_execute(content::path_info_t & ipath);
+
+    // filter signals
+    void                    on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
     QtCassandra::QCassandraTable::pointer_t get_test_results_table();
 

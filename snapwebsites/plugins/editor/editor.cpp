@@ -356,25 +356,6 @@ editor::~editor()
 }
 
 
-/** \brief Initialize editor.
- *
- * This function terminates the initialization of the editor plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void editor::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(editor, "server", server, process_post, _1);
-    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3);
-    SNAP_LISTEN(editor, "layout", layout::layout, add_layout_from_resources, _1);
-    SNAP_LISTEN(editor, "form", form::form, validate_post_for_widget, _1, _2, _3, _4, _5, _6);
-}
-
-
 /** \brief Get a pointer to the editor plugin.
  *
  * This function returns an instance pointer to the editor plugin.
@@ -384,7 +365,7 @@ void editor::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the editor plugin.
  */
-editor *editor::instance()
+editor * editor::instance()
 {
     return g_plugin_editor_factory.instance();
 }
@@ -405,6 +386,19 @@ QString editor::description() const
         " The editor appears wherever a plugin creates a div tag with"
         " the contenteditable attribute set to true."
         "\n(*) WYSIWYG: What You See Is What You Get.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString editor::dependencies() const
+{
+    return "|attachment|form|locale|messages|output|server_access|sessions|";
 }
 
 
@@ -444,6 +438,25 @@ void editor::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize editor.
+ *
+ * This function terminates the initialization of the editor plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void editor::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(editor, "server", server, process_post, _1);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3);
+    SNAP_LISTEN(editor, "layout", layout::layout, add_layout_from_resources, _1);
+    SNAP_LISTEN(editor, "form", form::form, validate_post_for_widget, _1, _2, _3, _4, _5, _6);
 }
 
 

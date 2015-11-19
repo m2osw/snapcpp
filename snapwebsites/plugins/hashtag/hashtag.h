@@ -43,17 +43,21 @@ public:
 
 
 
-class hashtag : public plugins::plugin
+class hashtag
+        : public plugins::plugin
 {
 public:
                         hashtag();
                         ~hashtag();
 
+    // plugins::plugin implementation
     static hashtag *    instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
+    // filter signals
     void                on_filter_text(filter::filter::filter_text_t & txt_filt);
 
 private:

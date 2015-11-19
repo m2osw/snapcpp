@@ -56,8 +56,9 @@ public:
     // plugins::plugin implementation
     static listener *           instance();
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
-    void                        on_bootstrap(snap_child * snap);
+    virtual void                bootstrap(snap_child * snap);
 
     // server signals
     void                        on_process_post(QString const & uri_path);

@@ -81,24 +81,6 @@ locale_widgets::~locale_widgets()
 }
 
 
-/** \brief Initialize the locale_widgets.
- *
- * This function terminates the initialization of the locale_widgets plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void locale_widgets::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(locale_widgets, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
-    SNAP_LISTEN(locale_widgets, "editor", editor::editor, prepare_editor_form, _1);
-    SNAP_LISTEN(locale_widgets, "editor", editor::editor, string_to_value, _1);
-    SNAP_LISTEN(locale_widgets, "editor", editor::editor, value_to_string, _1);
-}
-
-
 /** \brief Get a pointer to the locale plugin.
  *
  * This function returns an instance pointer to the locale plugin.
@@ -127,6 +109,19 @@ QString locale_widgets::description() const
 {
     return "Define locale functions to be used throughout all the plugins."
         " It handles time and date, timezone, numbers, currency, etc.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString locale_widgets::dependencies() const
+{
+    return "|editor|locale|";
 }
 
 
@@ -165,6 +160,24 @@ void locale_widgets::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the locale_widgets.
+ *
+ * This function terminates the initialization of the locale_widgets plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void locale_widgets::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(locale_widgets, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(locale_widgets, "editor", editor::editor, prepare_editor_form, _1);
+    SNAP_LISTEN(locale_widgets, "editor", editor::editor, string_to_value, _1);
+    SNAP_LISTEN(locale_widgets, "editor", editor::editor, value_to_string, _1);
 }
 
 

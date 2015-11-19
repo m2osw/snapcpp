@@ -112,22 +112,6 @@ test_plugin::~test_plugin()
 {
 }
 
-/** \brief Initialize the test_plugin.
- *
- * This function terminates the initialization of the test_plugin plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void test_plugin::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(test_plugin, "server", server, process_post, _1);
-    SNAP_LISTEN(test_plugin, "filter", filter::filter, replace_token, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the test_plugin plugin.
  *
  * This function returns an instance pointer to the test_plugin plugin.
@@ -157,6 +141,19 @@ QString test_plugin::description() const
     return "The test_plugin plugin is capable of finding tests throughout"
           " all the plugins and run them one by one, per group,"
           " or all at once.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString test_plugin::dependencies() const
+{
+    return "|filter|layout|messages|output|path|server_access|";
 }
 
 
@@ -215,9 +212,25 @@ void test_plugin::initial_update(int64_t variables_timestamp)
  */
 void test_plugin::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the test_plugin.
+ *
+ * This function terminates the initialization of the test_plugin plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void test_plugin::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(test_plugin, "server", server, process_post, _1);
+    SNAP_LISTEN(test_plugin, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 

@@ -72,6 +72,7 @@ antivirus::antivirus()
 {
 }
 
+
 /** \brief Clean up the antivirus plugin.
  *
  * Ensure the antivirus object is clean before it is gone.
@@ -80,20 +81,6 @@ antivirus::~antivirus()
 {
 }
 
-/** \brief Initialize the antivirus.
- *
- * This function terminates the initialization of the antivirus plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void antivirus::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(antivirus, "content", content::content, check_attachment_security, _1, _2, _3);
-    SNAP_LISTEN(antivirus, "versions", versions::versions, versions_tools, _1);
-}
 
 /** \brief Get a pointer to the antivirus plugin.
  *
@@ -104,7 +91,7 @@ void antivirus::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the antivirus plugin.
  */
-antivirus *antivirus::instance()
+antivirus * antivirus::instance()
 {
     return g_plugin_antivirus_factory.instance();
 }
@@ -125,6 +112,20 @@ QString antivirus::description() const
         " virus. When a file that a user uploaded is found to be a virus"
         " this plugin marks that file as unsecure and the file cannot be"
         " downloaded by end users.";
+}
+
+
+/** \brief Return our dependencies
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString antivirus::dependencies() const
+{
+    // |form| -- to be switch to "editor"
+    return "|content|form|output|versions|";
 }
 
 
@@ -163,6 +164,21 @@ void antivirus::content_update(int64_t variables_timestamp)
     content::content::instance()->add_xml(get_plugin_name());
 }
 
+
+/** \brief Initialize the antivirus.
+ *
+ * This function terminates the initialization of the antivirus plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void antivirus::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(antivirus, "content", content::content, check_attachment_security, _1, _2, _3);
+    SNAP_LISTEN(antivirus, "versions", versions::versions, versions_tools, _1);
+}
 
 /** \brief Generate the page main content.
  *

@@ -65,8 +65,9 @@ public:
     // plugin implementation
     static info *           instance();
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
-    void                    on_bootstrap(snap_child * snap);
+    virtual void            bootstrap(snap_child * snap);
 
     // path_execute implementation
     virtual bool            on_path_execute(content::path_info_t & ipath);

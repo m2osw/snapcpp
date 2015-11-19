@@ -695,9 +695,28 @@ public:
                         content();
     virtual             ~content();
 
+    // plugins::plugin implementation
     static content *    instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
+
+    // links::links_cloned implementation
+    virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
+
+    // signal handling
+    void                on_execute(QString const & uri_path);
+    void                on_save_content();
+    void                on_register_backend_action(server::backend_action_map_t& actions);
+    virtual void        on_backend_action(QString const & action);
+    void                on_backend_process();
+    void                on_load_file(snap_child::post_file_t & file, bool & found);
+    void                on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
+
+    // server signal implementation
+    void                on_add_snap_expr_functions(snap_expr::functions_t & functions);
+
     QtCassandra::QCassandraTable::pointer_t get_content_table();
     QtCassandra::QCassandraTable::pointer_t get_secret_table();
     QtCassandra::QCassandraTable::pointer_t get_files_table();
@@ -731,23 +750,9 @@ public:
     QString             set_revision_key(QString const & key, snap_version::version_number_t branch, QString const & revision, QString const & locale, bool working_branch);
 
     // cloning
-    virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
     bool                clone_page(clone_info_t & source, clone_info_t & destination);
     bool                move_page(path_info_t & ipath_source, path_info_t & ipath_destination);
     bool                trash_page(path_info_t & ipath);
-
-    // signal handling
-    void                on_bootstrap(snap_child * snap);
-    void                on_execute(QString const & uri_path);
-    void                on_save_content();
-    void                on_register_backend_action(server::backend_action_map_t& actions);
-    virtual void        on_backend_action(QString const & action);
-    void                on_backend_process();
-    void                on_load_file(snap_child::post_file_t & file, bool & found);
-    void                on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
-
-    // server signal implementation
-    void                on_add_snap_expr_functions(snap_expr::functions_t & functions);
 
     // cache control
     void                set_cache_control_page(path_info_t ipath);

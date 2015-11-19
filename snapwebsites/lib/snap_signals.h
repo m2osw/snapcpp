@@ -131,7 +131,7 @@
  */
 #define    SNAP_SIGNAL_WITH_MODE(name, parameters, variables, mode) \
     typedef boost::signals2::signal<void parameters> signal_##name##_t; \
-    boost::signals2::connection signal_listen_##name(signal_##name##_t::slot_type const& slot) \
+    boost::signals2::connection signal_listen_##name(signal_##name##_t::slot_type const & slot) \
         { \
             return f_signal_##name.connect(slot); \
         } \

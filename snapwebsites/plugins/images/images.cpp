@@ -321,7 +321,7 @@ images::~images()
  *
  * \param[in] snap  The child handling this request.
  */
-void images::on_bootstrap(snap_child * snap)
+void images::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -364,6 +364,19 @@ QString images::description() const
 {
     return "Transform images in one way or another. Also used to generate"
           " previews of attachments such as the first page of a PDF file.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString images::dependencies() const
+{
+    return "|listener|messages|path|versions|";
 }
 
 

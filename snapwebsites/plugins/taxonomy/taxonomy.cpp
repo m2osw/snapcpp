@@ -17,12 +17,8 @@
 
 #include "taxonomy.h"
 
-//#include "../output/output.h"
-
 #include "not_reached.h"
 #include "not_used.h"
-
-//#include <iostream>
 
 #include "poison.h"
 
@@ -78,21 +74,6 @@ taxonomy::~taxonomy()
 }
 
 
-/** \brief Initialize the taxonomy plugin.
- *
- * This function terminates the initialization of the taxonomy plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void taxonomy::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(taxonomy, "content", content::content, copy_branch_cells, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the taxonomy plugin.
  *
  * This function returns an instance pointer to the taxonomy plugin.
@@ -123,6 +104,19 @@ QString taxonomy::description() const
         " Types include categories, tags, permissions, etc."
         " Some of these types are locked so the system continues to"
         " work, however, all can be edited by the user in some way.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString taxonomy::dependencies() const
+{
+    return "|content|";
 }
 
 
@@ -232,6 +226,21 @@ void taxonomy::owner_update(int64_t variables_timestamp)
             content_table->row(taxonomy_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->setValue(new_owner);
         }
     }
+}
+
+
+/** \brief Initialize the taxonomy plugin.
+ *
+ * This function terminates the initialization of the taxonomy plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void taxonomy::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(taxonomy, "content", content::content, copy_branch_cells, _1, _2, _3);
 }
 
 

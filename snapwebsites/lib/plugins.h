@@ -25,9 +25,15 @@
 
 #include <memory>
 
+#include <QVector>
+
 
 namespace snap
 {
+
+// bootstrap() references snap_child as a pointer
+class snap_child;
+
 namespace plugins
 {
 
@@ -68,6 +74,8 @@ public:
     QString                             get_plugin_name() const;
     int64_t                             last_modification() const;
     virtual QString                     description() const = 0;
+    virtual QString                     dependencies() const = 0;
+    virtual void                        bootstrap(snap_child * snap) = 0;
     virtual int64_t                     do_update(int64_t last_updated);
     virtual int64_t                     do_dynamic_update(int64_t last_updated);
 
@@ -80,31 +88,29 @@ private:
 };
 
 typedef std::shared_ptr<plugin>                 plugin_ptr_t;
-typedef QMap<QString, plugin *>                 plugin_list_t;
+typedef QMap<QString, plugin *>                 plugin_map_t;
+typedef QVector<plugin *>                       plugin_vector_t;
 typedef controlled_vars::ptr_auto_init<plugin>  plugin_zptr_t;
 
 snap_string_list        list_all(QString const & plugin_path);
-bool                    load(QString const & plugin_path, plugin_ptr_t server, snap_string_list const & list_of_plugins);
+bool                    load(QString const & plugin_path, snap_child * snap, plugin_ptr_t server, snap_string_list const & list_of_plugins);
 QString                 find_plugin_filename(snap_string_list const & plugin_paths, QString const & name);
 bool                    exists(QString const & name);
 void                    register_plugin(QString const & name, plugin * p);
 plugin *                get_plugin(QString const & name);
-plugin_list_t const &   get_plugin_list();
+plugin_map_t const &    get_plugin_list();
+plugin_vector_t const & get_plugin_vector();
 bool                    verify_plugin_name(QString const & name);
 
 /** \brief Initialize a plugin by creating a mini-factory.
  *
- * The factory is used to create a new instance of the plugin and
- * register the new plugin bootstrap signal to the server.
- * All plugins must have an on_bootstrap() function to capture the
- * signal. It may be empty if nothing needs to be initialized at
- * the start.
+ * The factory is used to create a new instance of the plugin.
  *
  * Remember that we cannot have a plugin register all of its signals
  * in its constructor. This is because many of the other plugins
  * will otherwise not already be loaded and if missing at the time
  * we try to connect, the software breaks. This is why we have the
- * on_bootstrap() function (very much like an init() function!)
+ * bootstrap() virtual function (very much like an init() function!)
  * and this macro automatically ensures that it gets called.
  *
  * The use of the macro is very simple, it is expected to appear
@@ -174,9 +180,7 @@ bool                    verify_plugin_name(QString const & name);
     public: plugin_##name##_factory() : f_plugin(new name()) { \
         qInitResources_##name(); \
         f_plugin->set_version(major, minor); \
-        ::snap::plugins::register_plugin(#name, f_plugin); \
-        ::snap::server::instance()->signal_listen_bootstrap( \
-            boost::bind(&name::on_bootstrap, f_plugin, _1)); } \
+        ::snap::plugins::register_plugin(#name, f_plugin); } \
     virtual ~plugin_##name##_factory() { delete f_plugin; } \
     name * instance() { return f_plugin; } \
     virtual int version_major() const { return major; } \

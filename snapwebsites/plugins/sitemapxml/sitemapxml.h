@@ -72,7 +72,9 @@ public:
 
 
 
-class sitemapxml : public plugins::plugin, public path::path_execute
+class sitemapxml
+        : public plugins::plugin
+        , public path::path_execute
 {
 public:
     class url_image
@@ -140,18 +142,27 @@ public:
                             sitemapxml();
                             ~sitemapxml();
 
+    // plugins::plugin implementation
     static sitemapxml *     instance();
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
+    virtual void            bootstrap(snap_child * snap);
 
-    void                    on_bootstrap(::snap::snap_child *snap);
-    void                    on_generate_robotstxt(robotstxt::robotstxt *r);
+    // server signals
     void                    on_backend_process();
-    void                    on_allow_shorturl(content::path_info_t & ipath, QString const & owner, QString const & type, bool & allow);
+
+    // content signals
     void                    on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
-    // class path_execute
+    // path::path_execute implementation
     virtual bool            on_path_execute(content::path_info_t & ipath);
+
+    // robotstxt signals
+    void                    on_generate_robotstxt(robotstxt::robotstxt * r);
+
+    // shorturl signals
+    void                    on_allow_shorturl(content::path_info_t & ipath, QString const & owner, QString const & type, bool & allow);
 
     SNAP_SIGNAL(generate_sitemapxml, (sitemapxml * sitemap), (sitemap));
 

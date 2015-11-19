@@ -63,7 +63,7 @@ int64_t g_tabindex_base = 0;
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t const name)
+char const * get_name(name_t const name)
 {
     switch(name)
     {
@@ -122,7 +122,7 @@ form::~form()
  *
  * \return A pointer to the form plugin.
  */
-form *form::instance()
+form * form::instance()
 {
     return g_plugin_form_factory.instance();
 }
@@ -145,20 +145,16 @@ QString form::description() const
 }
 
 
-/** \brief Bootstrap the form.
+/** \brief Return our dependencies.
  *
- * This function adds the events the form plugin is listening for.
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
  *
- * \param[in] snap  The child handling this request.
+ * \return Our list of dependencies.
  */
-void form::on_bootstrap(::snap::snap_child *snap)
+QString form::dependencies() const
 {
-    f_snap = snap;
-
-    SNAP_LISTEN(form, "server", server, process_post, _1);
-    SNAP_LISTEN(form, "content", content::content, copy_branch_cells, _1, _2, _3);
-    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3);
-    SNAP_LISTEN(form, "layout", layout::layout, filtered_content, _1, _2, _3);
+    return "|content|filter|messages|sessions|";
 }
 
 
@@ -199,6 +195,23 @@ void form::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Bootstrap the form.
+ *
+ * This function adds the events the form plugin is listening for.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void form::bootstrap(::snap::snap_child *snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(form, "server", server, process_post, _1);
+    SNAP_LISTEN(form, "content", content::content, copy_branch_cells, _1, _2, _3);
+    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(form, "layout", layout::layout, filtered_content, _1, _2, _3);
 }
 
 

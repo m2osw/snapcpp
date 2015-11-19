@@ -724,7 +724,7 @@ links::~links()
  *
  * \param[in] snap  The child handling this request.
  */
-void links::on_bootstrap(snap_child *snap)
+void links::bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
@@ -765,6 +765,19 @@ QString links::description() const
         " For example, it allows you to attach a tag to the page of content."
         " This plugin is part of core since it links everything that core"
         " needs to make the system function as expected.";
+}
+
+
+/** \brief Say "content" is a dependency.
+ *
+ * Until we properly merge links and content together, we make links
+ * depend on content.
+ *
+ * \return Our list of dependencies.
+ */
+QString links::dependencies() const
+{
+    return "|content|test_plugin_suite|";
 }
 
 

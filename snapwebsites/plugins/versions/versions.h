@@ -59,11 +59,14 @@ public:
                         versions();
                         ~versions();
 
+    // plugins::plugin implementation
     static versions *   instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child * snap);
+    // filter signals
     void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
     SNAP_SIGNAL_WITH_MODE(versions_libraries, (filter::filter::token_info_t & token), (token), START_AND_DONE);

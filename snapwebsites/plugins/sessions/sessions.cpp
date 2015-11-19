@@ -832,7 +832,7 @@ char const * sessions::session_info::session_type_to_string(session_info_type_t 
  * This function is used to initialize the sessions plugin object.
  */
 sessions::sessions()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -846,21 +846,6 @@ sessions::~sessions()
 }
 
 
-/** \brief Initialize the sessions.
- *
- * This function terminates the initialization of the sessions plugin
- * by registering for different events it supports.
- *
- * \param[in] snap  The child handling this request.
- */
-void sessions::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(sessions, "server", server, table_is_accessible, _1, _2);
-}
-
-
 /** \brief Get a pointer to the sessions plugin.
  *
  * This function returns an instance pointer to the sessions plugin.
@@ -870,7 +855,7 @@ void sessions::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the sessions plugin.
  */
-sessions *sessions::instance()
+sessions * sessions::instance()
 {
     return g_plugin_sessions_factory.instance();
 }
@@ -893,6 +878,19 @@ QString sessions::description() const
           " session is used to make sure that the same user comes back to the"
           " website. It is also used by forms to make sure that a for submission"
           " is valid.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString sessions::dependencies() const
+{
+    return "|layout|output|";
 }
 
 
@@ -950,6 +948,21 @@ void sessions::content_update(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the sessions.
+ *
+ * This function terminates the initialization of the sessions plugin
+ * by registering for different events it supports.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void sessions::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(sessions, "server", server, table_is_accessible, _1, _2);
 }
 
 

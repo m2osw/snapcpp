@@ -61,22 +61,23 @@ public:
     // plugins::plugin implementation
     static shorturl *   instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
-    void                on_bootstrap(snap_child * snap);
+    virtual void        bootstrap(snap_child * snap);
 
     QtCassandra::QCassandraTable::pointer_t get_shorturl_table();
 
-    // content plugin signals
+    // content signals
     void                on_create_content(content::path_info_t & path, const QString & owner, const QString & type);
     void                on_page_cloned(content::content::cloned_tree_t const & tree);
 
-    // layout plugin signals
+    // layout signals
     void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
 
     // layout::layout_content implementation
     virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
 
-    // path plugin signals
+    // path signals
     void                on_check_for_redirect(content::path_info_t & ipath);
     //void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
 

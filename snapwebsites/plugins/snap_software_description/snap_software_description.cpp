@@ -122,6 +122,19 @@ QString snap_software_description::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString snap_software_description::dependencies() const
+{
+    return "|form|layout|output|path|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -168,7 +181,7 @@ void snap_software_description::content_update(int64_t variables_timestamp)
  *
  * \param[in] snap  The child handling this request.
  */
-void snap_software_description::on_bootstrap(::snap::snap_child *snap)
+void snap_software_description::bootstrap(::snap::snap_child * snap)
 {
     f_snap = snap;
 }
