@@ -594,7 +594,6 @@ public:
         {
             // we can call the same function for UDP and TCP messages
             f_snap_init->process_message(message, false);
-std::cerr << "-- snapinit return from TCP process_message()\n";
         }
 
     private:
@@ -826,6 +825,7 @@ private:
     void                        start();
     void                        restart();
     void                        stop();
+    void                        get_addr_port_for_snap_communicator(QString & udp_addr, int & udp_port, bool default_to_snap_init);
     void                        remove_lock(bool force = false) const;
 
     static pointer_t            f_instance;
@@ -1775,7 +1775,6 @@ bool service::run()
         // We do not change it if f_coredump_limit is set to zero, that way
         // the shell `ulimit -c <size>`
         //
-std::cerr << "=== setup core size to " << f_coredump_limit << ", page size = " << getpagesize() << "\n";
         if(f_coredump_limit != 0)
         {
 #pragma GCC diagnostic push
@@ -1997,7 +1996,8 @@ bool service::is_running() const
 
             if( exit_code == 0 )
             {
-                SNAP_LOG_INFO("Service \"")(f_service_name)("\" terminated normally.");
+                // when this happens there is not really anything to tell about
+                SNAP_LOG_DEBUG("Service \"")(f_service_name)("\" terminated normally.");
             }
             else
             {
@@ -2083,16 +2083,14 @@ void service::set_stopping()
         // is there because set_stopping() could be called multiple times.
         //
         int64_t const SNAPINIT_STOP_DELAY = 2LL * 1000000LL;
-        if(!is_enabled()
-        || get_timeout_delay() == -1
-        || get_timeout_delay() > SNAPINIT_STOP_DELAY)
-        {
-            set_enable(true);
-            set_timeout_delay(SNAPINIT_STOP_DELAY);
-        }
+        set_enable(true);
+        set_timeout_delay(SNAPINIT_STOP_DELAY);
+        set_timeout_date(-1); // ignore any date timeout
     }
     else
     {
+        // stop process complete, mark so with SIGCHLD
+        //
         f_stopping = SIGCHLD;
 
         // no need to timeout anymore, this service will not be restarted
@@ -2702,7 +2700,8 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
  */
 void snap_init::wakeup_services()
 {
-std::cerr << "Wake Up Services called?! (# of services: " << f_service_list.size() << ")\n";
+    SNAP_LOG_TRACE("Wake Up Services called. (# of services: ")(f_service_list.size())(")");
+
     int64_t timeout_date(snap::snap_child::get_current_date());
     for(auto s : f_service_list)
     {
@@ -2740,6 +2739,20 @@ std::cerr << "Wake Up Services called?! (# of services: " << f_service_list.size
 }
 
 
+/** \brief Start a process depending on the command line command.
+ *
+ * This function is called once the snap_init object was initialized.
+ * The function calls the corresponding function.
+ *
+ * At this time only three commands are supported:
+ *
+ * \li start
+ * \li stop
+ * \li restart
+ *
+ * The restart first calls stop() if snapinit is still running.
+ * Then it calls start().
+ */
 void snap_init::run_processes()
 {
     if( f_command == command_t::COMMAND_START )
@@ -2841,8 +2854,9 @@ bool snap_init::connect_listener(QString const & service_name, QString const & h
  */
 void snap_init::process_message(snap::snap_communicator_message const & message, bool udp)
 {
+    SNAP_LOG_TRACE("SNAP INIT: received a message [")(message.to_message())("]");
+
     QString const command(message.get_command());
-std::cerr << "SNAP INIT: received a message [" << message.to_message() << "]\n";
 
 // ******************* TCP and UDP messages
 
@@ -2907,6 +2921,13 @@ std::cerr << "SNAP INIT: received a message [" << message.to_message() << "]\n";
         return;
     }
 
+    if(command == "LOG")
+    {
+        SNAP_LOG_INFO("Logging reconfiguration.");
+        snap::logging::reconfigure();
+        return;
+    }
+
     // all have to implement the HELP command
     //
     if(command == "HELP")
@@ -2916,10 +2937,15 @@ std::cerr << "SNAP INIT: received a message [" << message.to_message() << "]\n";
 
         // list of commands understood by snapinit
         //
-        reply.add_parameter("list", "HELP,QUITTING,READY,STOP");
+        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
 
         f_listener_connection->send_message(reply);
-std::cerr << "replied to the HELP command with: [" << reply.to_message() << "]\n";
+        return;
+    }
+
+    if(command == "UNKNOWN")
+    {
+        SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
         return;
     }
 
@@ -2959,7 +2985,6 @@ void snap_init::service_died()
     // check whether a service failed and is marked as required
     // although if recovery is not zero we ignore the situation...
     //
-std::cerr << "a service died... SIGCHLD -- " << f_service_list.size() << "\n";
     {
         auto required_and_failed = [](service::pointer_t s)
         {
@@ -2971,7 +2996,6 @@ std::cerr << "a service died... SIGCHLD -- " << f_service_list.size() << "\n";
         service::vector_t::const_iterator required_failed(std::find_if(f_service_list.begin(), f_service_list.end(), required_and_failed));
         if(required_failed != f_service_list.end())
         {
-std::cerr << "we lost a required service... SIGCHLD -- " << f_service_list.size() << "\n";
             SNAP_LOG_FATAL("service \"")((*required_failed)->get_service_name())("\" failed and since it is required, we are stopping snapinit now.");
 
             // terminate snapinit
@@ -2990,11 +3014,9 @@ std::cerr << "we lost a required service... SIGCHLD -- " << f_service_list.size(
             return s->failed() && s->get_recovery() == 0;
         };
         f_service_list.erase(std::remove_if(f_service_list.begin(), f_service_list.end(), if_failed), f_service_list.end());
-std::cerr << "lost any services after failures? ... SIGCHLD -- " << f_service_list.size() << "\n";
     }
 
     remove_terminated_services();
-std::cerr << "removed terminated services now... lost any services? ... SIGCHLD -- " << f_service_list.size() << "\n";
 }
 
 
@@ -3223,19 +3245,24 @@ void snap_init::terminate_services()
     //
     if(!f_service_list.empty())
     {
-        // by sending a STOP to snapcommunicator itself, DISCONNECT is
-        // propagated to all services, which are expected to then stop.
-        //
         if(f_listener_connection)
         {
-            snap::snap_communicator_message unregister_services;
-            unregister_services.set_command("UNREGISTER");
-            unregister_services.add_parameter("service", "snapinit");
-            f_listener_connection->send_message(unregister_services);
-
-            snap::snap_communicator_message stop_services;
-            stop_services.set_command("STOP");
-            f_listener_connection->send_message(stop_services);
+            // by sending UNREGISTER to snapcommunicator, it will also
+            // assume that a STOP message was sent and thus it will
+            // propagate STOP all services, and a DISCONNECT is sent
+            // to all neighbors.
+            //
+            // The reason we do not send an UNREGISTER and a STOP from
+            // here is that once we sent an UNREGISTER, the line is
+            // cut and thus we cannot 100% guarantee that the STOP
+            // will make it. Also, we do not use the STOP because it
+            // is used by all services and overloading that command
+            // could be problematic in the future.
+            //
+            snap::snap_communicator_message unregister_self;
+            unregister_self.set_command("UNREGISTER");
+            unregister_self.add_parameter("service", "snapinit");
+            f_listener_connection->send_message(unregister_self);
         }
         else
         {
@@ -3465,44 +3492,9 @@ void snap_init::stop()
 
     SNAP_LOG_INFO("Stop Snap! Websites services.");
 
-    // defaults UDP for direct snapinit STOP signal
-    //
-    QString udp_addr(f_udp_addr);
-    int udp_port(f_udp_port);
-
-    // if we have snapcommunicator in our services, then we can send
-    // a signal to that process, in which case we want to gather the
-    // IP and port from that configuration file
-    //
-    service::vector_t::const_iterator snapcommunicator(std::find_if(
-            f_service_list.begin()
-          , f_service_list.end()
-          , [](service::pointer_t const & s)
-            {
-                return s->get_service_name() == "snapcommunicator";
-            }));
-    if(snapcommunicator != f_service_list.end())
-    {
-        // we can send a UDP message to snapcommunicator, only we need
-        // the address and port and those are defined in the
-        // snapcommunicator settings
-        //
-        QString snapcommunicator_config_filename((*snapcommunicator)->get_config_filename());
-        if(snapcommunicator_config_filename.isEmpty())
-        {
-            // in case it was not defined, use the default
-            snapcommunicator_config_filename = "/etc/snapwebsites/snapcommunicator.conf";
-        }
-        snap::snap_config snapcommunicator_config;
-        snapcommunicator_config.read_config_file( snapcommunicator_config_filename.toUtf8().data() );
-        QString snapcommunicator_signal("127.0.0.1:4041"); // defaults for snapcommunicator
-        if(f_config.contains("snapcommunicator_signal"))
-        {
-            snapcommunicator_signal = f_config["snapcommunicator_signal"];
-        }
-        tcp_client_server::get_addr_port(snapcommunicator_signal, udp_addr, udp_port, 4039);
-    }
-    // else -- use the direct snapinit address and port
+    QString udp_addr;
+    int udp_port;
+    get_addr_port_for_snap_communicator(udp_addr, udp_port, true);
 
     // send the UDP message now
     //
@@ -3533,9 +3525,63 @@ void snap_init::stop()
     }
 
     // it failed...
-    SNAP_LOG_FATAL("snapinit waited for 1 minute and the running version did not return.");
+    SNAP_LOG_FATAL("snapinit waited for ")(f_stop_max_wait)(" seconds and the running version did not return.");
     exit(1);
     snap::NOTREACHED();
+}
+
+
+void snap_init::get_addr_port_for_snap_communicator(QString & udp_addr, int & udp_port, bool default_to_snap_init)
+{
+    // defaults UDP for direct snapinit STOP signal
+    //
+    if(default_to_snap_init)
+    {
+        // get default from the snapinit.conf file
+        //
+        udp_addr = f_udp_addr;
+        udp_port = f_udp_port;
+    }
+    else
+    {
+        // default for snapcommunicator
+        //
+        udp_addr = "127.0.0.1";
+        udp_port = 4041;
+    }
+
+    // if we have snapcommunicator in our services, then we can send
+    // a signal to that process, in which case we want to gather the
+    // IP and port from that configuration file
+    //
+    service::vector_t::const_iterator snapcommunicator(std::find_if(
+            f_service_list.begin()
+          , f_service_list.end()
+          , [](service::pointer_t const & s)
+            {
+                return s->get_service_name() == "snapcommunicator";
+            }));
+    if(snapcommunicator != f_service_list.end())
+    {
+        // we can send a UDP message to snapcommunicator, only we need
+        // the address and port and those are defined in the
+        // snapcommunicator settings
+        //
+        QString snapcommunicator_config_filename((*snapcommunicator)->get_config_filename());
+        if(snapcommunicator_config_filename.isEmpty())
+        {
+            // in case it was not defined, use the default
+            snapcommunicator_config_filename = "/etc/snapwebsites/snapcommunicator.conf";
+        }
+        snap::snap_config snapcommunicator_config;
+        snapcommunicator_config.read_config_file( snapcommunicator_config_filename.toUtf8().data() );
+        QString snapcommunicator_signal("127.0.0.1:4041"); // defaults for snapcommunicator
+        if(snapcommunicator_config.contains("signal"))
+        {
+            snapcommunicator_signal = snapcommunicator_config["signal"];
+        }
+        tcp_client_server::get_addr_port(snapcommunicator_signal, udp_addr, udp_port, 4041);
+    }
 }
 
 

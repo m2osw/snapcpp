@@ -188,7 +188,7 @@ bool snap_communicator_message::from_message(QString const & message)
             }
             try
             {
-                verify_parameter_name(param_name);
+                verify_name(param_name);
             }
             catch(snap_communicator_invalid_message const &)
             {
@@ -354,6 +354,16 @@ void snap_communicator_message::set_service(QString const & service)
 {
     if(f_service != service)
     {
+        // broadcast is a special case that the verify_name() does not
+        // support
+        //
+        if(service != "*")
+        {
+            // this name can be empty and it supports lowercase
+            //
+            verify_name(service, true);
+        }
+
         f_service = service;
         f_cached_message.clear();
     }
@@ -368,6 +378,11 @@ QString const & snap_communicator_message::get_command() const
 
 void snap_communicator_message::set_command(QString const & command)
 {
+    // this name cannot be empty and it does not support lowercase
+    // characters either
+    //
+    verify_name(command, false, false);
+
     if(f_command != command)
     {
         f_command = command;
@@ -378,7 +393,7 @@ void snap_communicator_message::set_command(QString const & command)
 
 void snap_communicator_message::add_parameter(QString const & name, QString const & value)
 {
-    verify_parameter_name(name);
+    verify_name(name);
 
     f_parameters[name] = value;
     f_cached_message.clear();
@@ -387,7 +402,7 @@ void snap_communicator_message::add_parameter(QString const & name, QString cons
 
 void snap_communicator_message::add_parameter(QString const & name, int64_t value)
 {
-    verify_parameter_name(name);
+    verify_name(name);
 
     f_parameters[name] = QString("%1").arg(value);
     f_cached_message.clear();
@@ -396,7 +411,7 @@ void snap_communicator_message::add_parameter(QString const & name, int64_t valu
 
 bool snap_communicator_message::has_parameter(QString const & name) const
 {
-    verify_parameter_name(name);
+    verify_name(name);
 
     return f_parameters.contains(name);
 }
@@ -404,7 +419,7 @@ bool snap_communicator_message::has_parameter(QString const & name) const
 
 QString const snap_communicator_message::get_parameter(QString const & name) const
 {
-    verify_parameter_name(name);
+    verify_name(name);
 
     if(f_parameters.contains(name))
     {
@@ -417,7 +432,7 @@ QString const snap_communicator_message::get_parameter(QString const & name) con
 
 int64_t snap_communicator_message::get_integer_parameter(QString const & name) const
 {
-    verify_parameter_name(name);
+    verify_name(name);
 
     if(f_parameters.contains(name))
     {
@@ -440,17 +455,29 @@ snap_communicator_message::parameters_t const & snap_communicator_message::get_a
 }
 
 
-void snap_communicator_message::verify_parameter_name(QString const & name) const
+void snap_communicator_message::verify_name(QString const & name, bool can_be_empty, bool can_be_lowercase) const
 {
+    if(!can_be_empty
+    && name.isEmpty())
+    {
+        throw snap_communicator_invalid_message("a name cannot be empty.");
+    }
+
     for(auto c : name)
     {
-        if((c < 'a' || c > 'z')
+        if((c < 'a' || c > 'z' || !can_be_lowercase)
         && (c < 'A' || c > 'Z')
         && (c < '0' || c > '9')
         && c != '_')
         {
-            throw snap_communicator_invalid_message("snap_communicator_message::add_parameter(): parameter name must be composed of ASCII 'a'..'z', 'A'..'Z', '0'..'9', or '_' only.");
+            throw snap_communicator_invalid_message("parameter name must be composed of ASCII 'a'..'z', 'A'..'Z', '0'..'9', or '_' only.");
         }
+    }
+
+    ushort const fc(name[0].unicode());
+    if(fc >= '0' && fc <= '9')
+    {
+        throw snap_communicator_invalid_message("parameter name cannot start with a digit.");
     }
 }
 
@@ -1090,6 +1117,10 @@ void snap_communicator::snap_connection::process_accept()
  */
 void snap_communicator::snap_connection::process_error()
 {
+    // TBD: should we offer a virtual close() function to handle this
+    //      case? because the get_socket() function will not return
+    //      -1 after such errors...
+
     SNAP_LOG_ERROR("socket of connection \"")(f_name)("\" was marked as erroneous by the kernel.");
 
     remove_from_communicator();
@@ -1112,6 +1143,10 @@ void snap_communicator::snap_connection::process_error()
  */
 void snap_communicator::snap_connection::process_hup()
 {
+    // TBD: should we offer a virtual close() function to handle this
+    //      case? because the get_socket() function will not return
+    //      -1 after such errors...
+
     remove_from_communicator();
 }
 
@@ -1130,6 +1165,10 @@ void snap_communicator::snap_connection::process_hup()
  */
 void snap_communicator::snap_connection::process_invalid()
 {
+    // TBD: should we offer a virtual close() function to handle this
+    //      case? because the get_socket() function will not return
+    //      -1 after such errors...
+
     SNAP_LOG_ERROR("socket of connection \"")(f_name)("\" was marked as invalid by the kernel.");
 
     remove_from_communicator();
@@ -2693,6 +2732,7 @@ bool snap_communicator::run()
     // the loop promises to exit once the even_base object has no
     // more connections attached to it
     //
+    std::vector<bool> enabled;
     std::vector<struct pollfd> fds;
     f_force_sort = true;
     for(;;)
@@ -2722,14 +2762,18 @@ bool snap_communicator::run()
         //
         int64_t next_timeout_timestamp(std::numeric_limits<int64_t>::max());
 
-        fds.clear(); // this is not supposed to delete the buffer
+        // clear() is not supposed to delete the buffer of vectors
+        enabled.clear();
+        fds.clear();
         fds.reserve(max_connections); // avoid more than 1 allocation
-        for(auto c : connections)
+        for(size_t idx(0); idx < max_connections; ++idx)
         {
+            snap_connection::pointer_t c(connections[idx]);
             c->f_fds_position = -1;
 
             // is the connection enabled?
-            if(!c->is_enabled())
+            enabled.push_back(c->is_enabled());
+            if(!enabled[idx])
             {
                 continue;
             }
@@ -2763,6 +2807,8 @@ bool snap_communicator::run()
             }
             if(e == 0)
             {
+                // this should only happend on snap_timer objects
+                //
                 continue;
             }
 
@@ -2818,7 +2864,8 @@ bool snap_communicator::run()
         }
         else if(fds.empty())
         {
-            SNAP_LOG_FATAL("snap_communicator::run(): nothing to poll() on. All file connections are disabled or you only have timer and signal \"connections\" which is not yet supported.");
+            SNAP_LOG_FATAL("snap_communicator::run(): nothing to poll() on. All connections are disabled? (Ignoring ")
+                          (max_connections)(" and exiting the run() loop anyway.)");
             return false;
         }
 //std::cerr << QString("%1: timeout %2 (next was: %3, current ~ %4)\n").arg(getpid()).arg(timeout).arg(next_timeout_timestamp).arg(get_current_date());
@@ -2856,7 +2903,7 @@ bool snap_communicator::run()
                 //       that we otherwise would expect to run at least
                 //       once...)
                 //
-                if(!c->is_enabled())
+                if(!enabled[idx])
                 {
                     continue;
                 }
@@ -2952,11 +2999,9 @@ bool snap_communicator::run()
             //
             if(errno == EINTR)
             {
-                // TODO: interrupt happened, check for a signal connection
-                //       this probably require us to use ppoll() instead of
-                //       just poll()... right now we do not support but we
-                //       probably want to use SIGHUP and a few other signals
-                //       in various servers (i.e. SIGUSR1, SIGUSR2...)
+                // Note: if the user wants to prevent this error, he should
+                //       use the snap_signal with the Unix signals that may
+                //       happen while calling poll().
                 //
                 throw snap_communicator_runtime_error("EINTR occurred while in poll() -- interrupts are not supported yet though");
             }

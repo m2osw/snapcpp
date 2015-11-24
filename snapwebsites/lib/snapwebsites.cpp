@@ -296,7 +296,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "debug",
             nullptr,
-            "Outputs debug logs to the logfile/stdout.",
+            "Outputs debug logs. Perform additional checks in various places.",
             advgetopt::getopt::no_argument
         },
         {
@@ -1011,9 +1011,9 @@ void server::config(int argc, char * argv[])
 
     if( f_debug )
     {
-        // Override output level and force it to be debug
+        // Force the logger level to DEBUG or TRACE
         //
-        logging::set_log_output_level( logging::log_level_t::LOG_LEVEL_DEBUG );
+        logging::reduce_log_output_level( logging::log_level_t::LOG_LEVEL_DEBUG );
     }
 }
 

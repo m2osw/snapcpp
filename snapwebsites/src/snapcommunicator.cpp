@@ -270,6 +270,7 @@ public:
     QString                     get_services_heard_of() const;
     void                        add_neighbors(QString const & new_neighbors);
     void                        connection_lost(QString const & addr);
+    inline void                 verify_command(connection_impl_pointer_t connection, snap::snap_communicator_message const & message);
 
 private:
     void                        refresh_heard_of();
@@ -462,7 +463,13 @@ public:
         // want to send the info about this connection in that STATUS
         // message
         //
-        f_communicator_server->send_status(shared_from_this());
+        // TODO: we cannot use shared_from_this() in the destructor,
+        //       it's too late since when we reach here the pointer
+        //       was already destroyed so we get a bad_weak_ptr
+        //       exception; we need to find a different way if we
+        //       want this event to be noticed and a STATUS sent...
+        //
+        //f_communicator_server->send_status(shared_from_this());
     }
 
     // snap::snap_communicator::snap_tcp_server_client_message_connection implementation
@@ -668,7 +675,11 @@ public:
         snap::snap_string_list cmds(commands.split(','));
         for(auto c : cmds)
         {
-            f_understood_commands[c] = true;
+            QString const name(c.trimmed());
+            if(!name.isEmpty())
+            {
+                f_understood_commands[name] = true;
+            }
         }
     }
 
@@ -965,6 +976,43 @@ void snap_communicator_server::run()
 }
 
 
+/** \brief Make sure that the connection understands a command.
+ *
+ * This function checks whether the specified connection (\p connection)
+ * understands the command about to be sent to it (\p reply).
+ *
+ * \note
+ * The test is done only when snapcommunicator is run in debug
+ * mode to not waste time.
+ *
+ * \param[in,out] connection  The concerned connection that has to understand the command.
+ * \param[in] message  The message about to be sent to \p connection.
+ */
+void snap_communicator_server::verify_command(connection_impl::pointer_t connection, snap::snap_communicator_message const & message)
+{
+    // debug turned on?
+    if(!f_server->is_debug())
+    {
+        // nope, do not waste any more time
+        return;
+    }
+
+    if(connection->understand_command(message.get_command()))
+    {
+        // all good, the command is implemented
+        //
+        return;
+    }
+
+    // if you get this message, it could be that you do implement
+    // the command, but do not advertise it in your COMMANDS
+    // reply to the HELP message sent by snapcommunicator
+    //
+    SNAP_LOG_FATAL("connection \"")(connection->get_name())("\" does not understand ")(message.get_command())(".");
+    throw std::runtime_error(QString("Connection %1 does not implement the command %2.").arg(connection->get_name()).arg(message.get_command()).toUtf8().data());
+}
+
+
 /** \brief Process a message we just received.
  *
  * This function is called whenever a TCP or UDP message is received.
@@ -985,6 +1033,8 @@ void snap_communicator_server::run()
  */
 void snap_communicator_server::process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message, bool udp)
 {
+    SNAP_LOG_TRACE("SNAP COMMUNICATOR: received a message [")(message.to_message())("]");
+
     QString const command(message.get_command());
 
     connection_impl::pointer_t c(std::dynamic_pointer_cast<connection_impl>(connection));
@@ -993,7 +1043,6 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
 
     // check who this message is for
     QString const service(message.get_service());
-//std::cerr << "SNAP COMMUNICATOR: received a message [" << message.to_message() << "]\n";
     if(service.isEmpty()
     || service == "snapcommunicator")
     {
@@ -1006,6 +1055,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                 //
                 snap::snap_communicator_message reply;
                 reply.set_command("QUITTING");
+
+                verify_command(c, reply);
                 c->send_message(reply);
             }
             //else -- UDP message arriving after f_shutdown are ignored
@@ -1076,6 +1127,50 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     if(message.has_parameter("list"))
                     {
                         c->set_commands(message.get_parameter("list"));
+
+                        // here we verify that a few commands are properly
+                        // defined, for some becausesince we already sent
+                        // them to that connection and thus it should
+                        // understand them; and a few more that are very
+                        // possibly going to be sent
+                        //
+                        if(f_server->is_debug())
+                        {
+                            bool ok(true);
+                            if(!c->understand_command("HELP"))
+                            {
+                                SNAP_LOG_FATAL("connection \"")(c->get_name())("\" does not understand HELP.");
+                                ok = false;
+                            }
+                            if(!c->understand_command("QUITTING"))
+                            {
+                                SNAP_LOG_FATAL("connection \"")(c->get_name())("\" does not understand QUITTING.");
+                                ok = false;
+                            }
+                            if(!c->understand_command("READY"))
+                            {
+                                SNAP_LOG_FATAL("connection \"")(c->get_name())("\" does not understand READY.");
+                                ok = false;
+                            }
+                            if(!c->understand_command("STOP"))
+                            {
+                                SNAP_LOG_FATAL("connection \"")(c->get_name())("\" does not understand STOP.");
+                                ok = false;
+                            }
+                            if(!c->understand_command("UNKNOWN"))
+                            {
+                                SNAP_LOG_FATAL("connection \"")(c->get_name())("\" does not understand STOP.");
+                                ok = false;
+                            }
+                            if(!ok)
+                            {
+                                // end the process so developers can fix their
+                                // problems (this is only if --debug was
+                                // specified)
+                                //
+                                throw std::runtime_error("Connection %1 does not implement some required commands.");
+                            }
+                        }
                     }
                     else
                     {
@@ -1192,6 +1287,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         }
                     }
 
+                    verify_command(c, reply);
                     c->send_message(reply);
                     return;
                 }
@@ -1246,6 +1342,20 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
             }
             break;
 
+        case 'G':
+            if(command == "GOSSIP")
+            {
+                if(c)
+                {
+                    // we should not be sending or receiving this one for
+                    // a while...
+                    //
+                    SNAP_LOG_ERROR("GOSSIP is not yet implemented.");
+                    return;
+                }
+            }
+            break;
+
         case 'H':
             if(command == "HELP")
             {
@@ -1263,11 +1373,32 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     reply.set_command("COMMANDS");
 
                     // list of commands understood by snapcommunicator
-                    reply.add_parameter("list", "ACCEPT,CONNECT,COMMANDS,DISCONNECT,HELP,REFUSE,REGISTER,SHUTDOWN,STOP,UNREGISTER");
+                    reply.add_parameter("list", "ACCEPT,CONNECT,COMMANDS,DISCONNECT,HELP,LOG,QUITTING,REFUSE,REGISTER,SERVICES,SHUTDOWN,STOP,UNREGISTER");
 
+                    verify_command(c, reply);
                     c->send_message(reply);
                     return;
                 }
+            }
+            break;
+
+        case 'L':
+            if(command == "LOG")
+            {
+                SNAP_LOG_INFO("Logging reconfiguration.");
+                snap::logging::reconfigure();
+                return;
+            }
+            break;
+
+        case 'Q':
+            if(command == "QUITTING")
+            {
+                // if this becomes problematic, we may need to serialize
+                // our messages to know which was ignored...
+                //
+                SNAP_LOG_INFO("Received a QUITTING as a reply to a message.");
+                return;
             }
             break;
 
@@ -1335,12 +1466,14 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     //
                     snap::snap_communicator_message reply;
                     reply.set_command("READY");
+                    //verify_command(c, reply); -- we cannot do that here since we did not yet get the COMMANDS reply
                     c->send_message(reply);
 
                     // request the COMMANDS of this connection
                     //
                     snap::snap_communicator_message help;
                     help.set_command("HELP");
+                    //verify_command(c, help); -- we cannot do that here since we did not yet get the COMMANDS reply
                     c->send_message(help);
 
                     // status changed for this connection
@@ -1359,6 +1492,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                                 // TBD: should we remove the service name before forwarding?
                                 //      (we have to instances)
                                 //
+                                //verify_command(c, m); -- we cannot do that here since we did not yet get the COMMANDS reply
                                 c->send_message(m);
                             }
                         }
@@ -1391,7 +1525,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
 
                     // Since snapinit started us, this list cannot ever be empty!
                     //
-                    if(!f_local_services_list.isEmpty())
+                    if(f_local_services_list.isEmpty())
                     {
                         SNAP_LOG_ERROR("SERVICES was called with an empty \"list\", there should at least be snapcommunicator (and snapwatchdog).");
                         return;
@@ -1429,7 +1563,16 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
             break;
 
         case 'U':
-            if(command == "UNREGISTER")
+            if(command == "UNKNOWN")
+            {
+                SNAP_LOG_ERROR("we sent command \"")
+                              (message.get_parameter("command"))
+                              ("\" to \"")
+                              (c ? c->get_name() : "(unknown connection)")
+                              ("\" which told us it does not know that command so we probably did not get the expected result.");
+                return;
+            }
+            else if(command == "UNREGISTER")
             {
                 if(udp)
                 {
@@ -1446,6 +1589,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     }
                     // remove the service name immediately
                     //
+                    QString const save_name(c->get_name());
                     c->set_name("");
 
                     // also remove the connection type, an empty type
@@ -1466,6 +1610,42 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // list of connections on the next loop.)
                     //
                     f_communicator->remove_connection(c);
+
+                    // if the unregistering service is snapinit, also
+                    // proceed with a shutdown as if we received a STOP
+                    // we have to do that because we cannot at the same
+                    // time send an UNREGISTER and a STOP message from
+                    // snapinit one after the other knowing that:
+                    //
+                    // 1) we have to send UNREGISTER first
+                    // 2) if we UNREGISTER then we cannot safely use the
+                    //    TCP connection anymore
+                    // 3) so we could send the STOP using the UDP channel,
+                    //    only there is no synchronization so we cannot
+                    //    guarantee that UNREGISTER arrives before the
+                    //    UNREGISTER...
+                    // 4) when snapinit receives STOP, it initiates a
+                    //    shutdown of all services on that computer;
+                    //    it cannot distinguish from different types
+                    //    of STOP signals (i.e. if we were to send a
+                    //    STOP from snapinit to snapcommunicator without
+                    //    first unregistering, we could not know what
+                    //    STOP signal we are getting... the one to shutdown
+                    //    evertything or to just send a STOP to the
+                    //    snapcommunicator service.)
+                    //
+                    // So to break the loop we have to either UNREGISTER
+                    // with a special case, or change the STOP and include
+                    // a special case there. I choose the UNREGISTER because
+                    // it is only understood by snapcommunicator whereas
+                    // STOP is understood by all services so not having
+                    // some special case is safer.
+                    //
+                    if(save_name == "snapinit")
+                    {
+                        // "false" like a STOP
+                        shutdown(false);
+                    }
                     return;
                 }
             }
@@ -1481,6 +1661,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
             snap::snap_communicator_message reply;
             reply.set_command("UNKNOWN");
             reply.add_parameter("command", command);
+            verify_command(c, reply);
             c->send_message(reply);
         }
 
@@ -1512,7 +1693,9 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
     //    to a remote snapcommunicator and not to a service on this system)
     //
 
-    if(f_local_services_list.contains(service))
+    bool const broadcast(service == "*");
+    if(f_local_services_list.contains(service)
+    || broadcast)
     {
         // service is local, check whether the service is registered,
         // if registered, forward the message immediately
@@ -1520,25 +1703,60 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
         snap::snap_communicator::snap_connection::vector_t const & connections(f_communicator->get_connections());
         for(auto nc : connections)
         {
-            if(nc->get_name() == service)
+            connection_impl::pointer_t conn(std::dynamic_pointer_cast<connection_impl>(nc));
+            if(!conn)
+            {
+                // not a connection of a type we care around here
+                continue;
+            }
+
+            if(broadcast)
+            {
+                if(conn->understand_command(command))
+                {
+                    //verify_command(conn, message); -- we reach this line only if the command is understood
+                    conn->send_message(message);
+                }
+            }
+            else if(conn->get_name() == service)
             {
                 // we have such a service, just forward to it now
                 //
                 // TBD: should we remove the service name before forwarding?
                 //
-                std::dynamic_pointer_cast<connection_impl>(nc)->send_message(message);
+                try
+                {
+                    verify_command(conn, message);
+                    conn->send_message(message);
+                }
+                catch(std::runtime_error const &)
+                {
+                    // ignore the error because this can come from an
+                    // external source (i.e. snapsignal) where an end
+                    // user may break the whole system!
+                }
                 return;
             }
         }
 
-        // its a service that is expected on this computer, but it is not
-        // running right now...
-        //
-        f_local_message_cache.push_back(message);
+        if(!broadcast)
+        {
+            // its a service that is expected on this computer, but it is not
+            // running right now... so cache the message
+            //
+            // TODO: we want to look into several things:
+            //
+            //   (1) limiting the cache size
+            //   (2) not cache more than one signal message (i.e. PING, STOP, LOG...)
+            //   (3) save the date when the message arrived and keep it in
+            //       the cache only for a limited time (i.e. 5h)
+            //
+            f_local_message_cache.push_back(message);
+        }
         return;
     }
 
-std::cerr<< "received event for remote service *** not yet implemented! ***\n";
+SNAP_LOG_TRACE("received event for remote service *** not yet implemented! ***\n");
 
 }
 
@@ -1596,6 +1814,7 @@ void snap_communicator_server::send_status(snap::snap_communicator::snap_connect
         if(sc->understand_command("STATUS"))
         {
             // send that STATUS message
+            //verify_command(sc, reply); -- we reach this line only if the command is understood
             sc->send_message(reply);
         }
     }
@@ -1796,7 +2015,11 @@ void snap_communicator_server::shutdown(bool full)
     //
     f_shutdown = true;
 
-    snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
+    // DO NOT USE THE REFERENCE -- we need a copy of the vector
+    // because the loop below uses remove_connection() on the
+    // original!
+    //
+    snap::snap_communicator::snap_connection::vector_t const all_connections(f_communicator->get_connections());
     for(auto connection : all_connections)
     {
         // a remote communicator timer?
@@ -1848,6 +2071,7 @@ void snap_communicator_server::shutdown(bool full)
                         reply.set_command("STOP");
                     }
 
+                    verify_command(c, reply);
                     c->send_message(reply);
 
                     // we cannot yet remove the connection from the communicator
@@ -1855,12 +2079,12 @@ void snap_communicator_server::shutdown(bool full)
                     // setup a timeout which will be processed immediately if
                     // we put a very small delay
                     //
-                    c->set_timeout_delay(1);
+                    // TBD: why did I think that?!? Was it late?
+                    //c->set_timeout_delay(10);
                 }
             }
-            // else ignore the main TCP and UDP servers which we
-            // handle below (i.e. we avoid possibly hundred of dynamic_cast
-            // that way.)
+            // else -- ignore the main TCP and UDP servers which we
+            //         handle below
         }
     }
 
@@ -1965,6 +2189,11 @@ void remote_snap_communicator::thread_done()
 {
     f_state = thread_state_t::IDLE;
 
+    // we expect the done to happen once then we do not need that
+    // connection anymore unless another connection is attemped
+    //
+    snap::snap_communicator::instance()->remove_connection(f_thread_done);
+
     // The f_socket parameter is marked atomic so it can be used
     // between the secondary and main threads without mutexes
     //
@@ -2020,6 +2249,7 @@ void remote_snap_communicator::thread_done()
         reply.add_parameter("heard_of", services_heard_of);
     }
 
+    f_communicator_server->verify_command(connection, reply);
     connection->send_message(reply);
 }
 

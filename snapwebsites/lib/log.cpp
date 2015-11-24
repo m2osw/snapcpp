@@ -592,14 +592,21 @@ bool is_configured()
 }
 
 
-/* \brief Set the current logging threshold
+/* \brief Set the current logging threshold.
  *
  * Tells log4cplus to limit the logging output to the specified threshold.
  *
- * \todo This is broken! For some reason log4cplus won't change the threshold level using this method.
+ * \todo
+ * The log level should be cached if this function gets called before
+ * the logger is setup. Right now, we lose the information.
  */
 void set_log_output_level( log_level_t level )
 {
+    if(!is_configured())
+    {
+        return;
+    }
+
     log4cplus::LogLevel new_level = log4cplus::OFF_LOG_LEVEL;
 
     switch(level)
@@ -637,6 +644,73 @@ void set_log_output_level( log_level_t level )
     log4cplus::Logger::getRoot().setLogLevel( new_level );
     g_logger.setLogLevel( new_level );
     g_secure_logger.setLogLevel( new_level );
+}
+
+
+/* \brief Set the maximum logging threshold.
+ *
+ * Tells log4cplus to reduce the logging output to the specified threshold.
+ * If the threshold is already that low or lower, nothing happens.
+ *
+ * \note
+ * Our threshold levels are increasing when the log4cplus levels decrease...
+ * Here we use "reduce" in the sense that we show more data and thus it
+ * matches the log4cplus order.
+ *
+ * \todo
+ * The conversion of our log level to the log4cplus level needs to be
+ * in a separate function.
+ */
+void reduce_log_output_level( log_level_t level )
+{
+    if(!is_configured())
+    {
+        return;
+    }
+
+    log4cplus::LogLevel new_level = log4cplus::OFF_LOG_LEVEL;
+
+    switch(level)
+    {
+    case log_level_t::LOG_LEVEL_OFF:
+        new_level = log4cplus::OFF_LOG_LEVEL;
+        return;
+
+    case log_level_t::LOG_LEVEL_FATAL:
+        new_level = log4cplus::FATAL_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_ERROR:
+        new_level = log4cplus::ERROR_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_WARNING:
+        new_level = log4cplus::WARN_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_INFO:
+        new_level = log4cplus::INFO_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_DEBUG:
+        new_level = log4cplus::DEBUG_LOG_LEVEL;
+        break;
+
+    case log_level_t::LOG_LEVEL_TRACE:
+        new_level = log4cplus::TRACE_LOG_LEVEL;
+        break;
+
+    }
+
+    log4cplus::Logger::getRoot().setLogLevel( new_level );
+    if( new_level < g_logger.getLogLevel() )
+    {
+        g_logger.setLogLevel( new_level );
+    }
+    if( new_level < g_secure_logger.getLogLevel() )
+    {
+        g_secure_logger.setLogLevel( new_level );
+    }
 }
 
 
@@ -1133,7 +1207,7 @@ bool logger::is_enabled_for(log_level_t const log_level)
     switch(log_level)
     {
     case log_level_t::LOG_LEVEL_OFF:
-        // off means we don't emit anything so always return false
+        // off means we do not emit anything so always return false
         return false;
 
     case log_level_t::LOG_LEVEL_FATAL:
@@ -1164,7 +1238,11 @@ bool logger::is_enabled_for(log_level_t const log_level)
 
     // TODO: see whether we could have a better way to only
     //       return the one concerned (i.e. 2x the macros
-    //       and specify secure right there?)
+    //       and specify secure right there?) -- although
+    //       the likelihood is that g_logger is going to
+    //       be used and the log level of that one is
+    //       likely lower than g_secure_logger; but such
+    //       a statement can always be all wrong...
     //
     return g_logger.isEnabledFor(ll) || g_secure_logger.isEnabledFor(ll);
 }
@@ -1194,7 +1272,7 @@ logger error(char const *file, char const *func, int line)
     }
     else
     {
-        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        logger_stub l(log_level_t::LOG_LEVEL_ERROR, file, func, line);
         return l;
     }
 }
@@ -1208,7 +1286,7 @@ logger warning(char const *file, char const *func, int line)
     }
     else
     {
-        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        logger_stub l(log_level_t::LOG_LEVEL_WARNING, file, func, line);
         return l;
     }
 }
@@ -1222,7 +1300,7 @@ logger info(char const *file, char const *func, int line)
     }
     else
     {
-        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        logger_stub l(log_level_t::LOG_LEVEL_INFO, file, func, line);
         return l;
     }
 }
@@ -1236,7 +1314,7 @@ logger debug(char const *file, char const *func, int line)
     }
     else
     {
-        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        logger_stub l(log_level_t::LOG_LEVEL_DEBUG, file, func, line);
         return l;
     }
 }
@@ -1250,7 +1328,7 @@ logger trace(char const *file, char const *func, int line)
     }
     else
     {
-        logger_stub l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
+        logger_stub l(log_level_t::LOG_LEVEL_TRACE, file, func, line);
         return l;
     }
 }

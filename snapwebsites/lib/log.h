@@ -107,6 +107,7 @@ void unconfigure                ();
 void reconfigure                ();
 bool is_configured              ();
 void set_log_output_level       ( log_level_t level );
+void reduce_log_output_level    ( log_level_t level );
 bool is_loggingserver_available ( QString const & logserver );
 
 logger & operator << ( logger & l, QString const &                    msg );

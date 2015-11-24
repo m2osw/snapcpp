@@ -82,7 +82,7 @@ public:
     parameters_t const &    get_all_parameters() const;
 
 private:
-    void                    verify_parameter_name(QString const & name) const;
+    void                    verify_name(QString const & name, bool can_be_empty = false, bool can_be_lowercase = true) const;
 
     QString                 f_service;
     QString                 f_command;
@@ -197,7 +197,6 @@ public:
     {
     public:
         typedef std::shared_ptr<snap_signal>    pointer_t;
-        typedef std::weak_ptr<snap_signal>      weak_t;
 
                                     snap_signal(int posix_signal);
                                     ~snap_signal();
@@ -221,7 +220,6 @@ public:
     {
     public:
         typedef std::shared_ptr<snap_thread_done_signal>    pointer_t;
-        typedef std::weak_ptr<snap_thread_done_signal>      weak_t;
 
                                     snap_thread_done_signal();
                                     ~snap_thread_done_signal();
