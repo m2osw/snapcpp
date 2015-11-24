@@ -167,7 +167,7 @@ void memory::on_process_watch(QDomDocument doc)
     //
     // WARNING: many of the entries in /proc/meminfo do not get read
     //          by procps meminfo(); it changes quickly so many of
-    //          the entries just don't always make it in the library
+    //          the entries just do not always make it in the library
     meminfo();
 
     // simple memory data should always be available
