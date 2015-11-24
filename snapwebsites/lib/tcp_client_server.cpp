@@ -195,17 +195,23 @@ tcp_client::tcp_client(std::string const& addr, int port)
     int r(getaddrinfo(addr.c_str(), port_str.c_str(), &hints, &addr_info.f_addrinfo));
     if(r != 0 || addr_info.f_addrinfo == nullptr)
     {
+        int const e(errno);
+        SNAP_LOG_FATAL("getaddrinfo() failed to parse the address and port strings (errno: ")(e)(" -- ")(strerror(e))(")");
         throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + port_str + "\"");
     }
 
     f_socket = socket(addr_info.f_addrinfo->ai_family, SOCK_STREAM, IPPROTO_TCP);
     if(f_socket < 0)
     {
+        int const e(errno);
+        SNAP_LOG_FATAL("socket() failed to create a socket descriptor (errno: ")(e)(" -- ")(strerror(e))(")");
         throw tcp_client_server_runtime_error("could not create socket for client");
     }
 
     if(connect(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)
     {
+        int const e(errno);
+        SNAP_LOG_FATAL("connect() failed to connect a socket (errno: ")(e)(" -- ")(strerror(e))(")");
         close(f_socket);
         throw tcp_client_server_runtime_error("could not connect client socket to \"" + f_addr + "\"");
     }
@@ -1614,6 +1620,99 @@ bool is_ipv6(char const * ip)
     }
 
     return count == 8 || (count >= 1 && found_colon_colon);
+}
+
+
+/** \brief Retrieve an address and a port from a string.
+ *
+ * This function breaks up an address and a port number from a string.
+ *
+ * The address can either be an IPv4 address followed by a colon and
+ * the port number, or an IPv6 address written between square brackets
+ * ([::1]) followed by a colon and the port number.
+ *
+ * Port numbers are limited to a number between 1 and 65535 inclusive.
+ * They can only be specified in base 10.
+ *
+ * The port is optional only if a \p default_port is provided (by
+ * default the \p default_port parameter is set to zero meaning that
+ * it is not specified.)
+ *
+ * \exception snapwebsites_exception_invalid_parameters
+ * If any parameter is considered invalid (albeit the validity of the
+ * address is not checked since it could be a fully qualified domain
+ * name) then this exception is raised.
+ *
+ * \todo
+ * Add support for named ports? (i.e. as defined in /etc/services)
+ *
+ * \param[in] addr_port  The address and port pair.
+ * \param[out] addr  The address part, without the square brackets for IPv6
+ *             addresses.
+ * \param[out] port  The port number (1 to 65535 inclusive.)
+ * \param[in] default_port  To render the port specification optional, a
+ *            port number.
+ */
+void get_addr_port(QString const & addr_port, QString & addr, int & port, int const default_port)
+{
+    //addr.clear() -- not necessary, we do not return until the address gets defined
+    //port = 0 -- not necessary, we do not return until the port gets defined
+
+    QString port_str;
+    int const bracket(addr_port.lastIndexOf("]"));
+    int const p(addr_port.lastIndexOf(":"));
+    if(p != -1)
+    {
+        if(bracket != -1)
+        {
+            if(p > bracket)
+            {
+                // IPv6 port specification
+                addr = addr_port.mid(1, bracket - 1); // exclude the '[' and ']'
+                port_str = addr_port.mid(p + 1); // ignore the ':'
+            }
+            else
+            {
+                SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
+                throw tcp_client_server_parameter_error("server::get_addr_port(): invalid [IPv6]:port specification, port missing.");
+            }
+        }
+        else
+        {
+            // IPv4 port specification
+            addr = addr_port.mid(0, p); // ignore the ':'
+            port_str = addr_port.mid(p + 1); // ignore the ':'
+        }
+
+        // TODO: add support for named ports (i.e. read from /etc/services)
+        //
+
+        bool ok(false);
+        port = port_str.toInt(&ok, 10); // force base 10
+        if(!ok)
+        {
+            SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
+            throw tcp_client_server_parameter_error("server::get_addr_port(): invalid addr:port specification, port number is not valid.");
+        }
+    }
+    else if(default_port > 0)
+    {
+        addr = addr_port;
+        port = default_port;
+    }
+    else
+    {
+        SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
+        throw tcp_client_server_parameter_error("server::get_addr_port(): invalid addr:port specification, port missing and no default provided.");
+    }
+
+    // finally verify that the port is in range
+    if(port <= 0
+    || port > 65535)
+    {
+        SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
+        throw tcp_client_server_parameter_error("server::get_addr_port(): invalid addr:port specification, port number is out of bounds (1 .. 65535).");
+    }
 }
 
 

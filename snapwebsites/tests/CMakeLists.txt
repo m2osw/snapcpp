@@ -86,7 +86,7 @@ project(test_snap_communicator_client)
 
 add_executable(test_snap_communicator_client
     # Main
-    test_snap_client.cpp
+    test_snap_communicator_client.cpp
 )
 add_dependencies( test_snap_communicator_client test_prereqs )
 target_link_libraries(test_snap_communicator_client

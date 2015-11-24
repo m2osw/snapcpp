@@ -84,16 +84,16 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "Usage: %p [-<opt>]",
             advgetopt::getopt::help_argument
         },
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "where -<opt> is one or more of:",
             advgetopt::getopt::help_argument
         },
@@ -101,7 +101,7 @@ namespace
             '\0',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "snapserver",
-            NULL,
+            nullptr,
             "IP address on which the snapserver is running, it may include a port (i.e. 192.168.0.1:4004)",
             advgetopt::getopt::optional_argument
         },
@@ -132,9 +132,9 @@ namespace
         {
             '\0',
             0,
-            NULL,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
+            nullptr,
             advgetopt::getopt::end_of_options
         }
     };
@@ -264,10 +264,10 @@ bool snap_cgi::verify()
     //
     // later we want to add support for PUT, PATCH and DELETE though
     {
-        // WARNING: do not use std::string because NULL will crash
+        // WARNING: do not use std::string because nullptr will crash
         //
         char const * request_method(getenv("REQUEST_METHOD"));
-        if(request_method == NULL)
+        if(request_method == nullptr)
         {
             SNAP_LOG_FATAL("Request method is not defined.");
             std::string body("<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>");
@@ -311,10 +311,10 @@ bool snap_cgi::verify()
     }
 
     {
-        // WARNING: do not use std::string because NULL will crash
+        // WARNING: do not use std::string because nullptr will crash
         //
         char const * http_host(getenv("HTTP_HOST"));
-        if(http_host == NULL)
+        if(http_host == nullptr)
         {
             error("400 Bad Request", "The host you want to connect to must be specified.");
             return false;
@@ -347,10 +347,10 @@ bool snap_cgi::verify()
     }
 
     {
-        // WARNING: do not use std::string because NULL will crash
+        // WARNING: do not use std::string because nullptr will crash
         //
         char const * request_uri(getenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_URI)));
-        if(request_uri == NULL)
+        if(request_uri == nullptr)
         {
             // this should NEVER happen because without a path after the method
             // we probably do not have our snap.cgi run anyway...
@@ -385,10 +385,10 @@ bool snap_cgi::verify()
     }
 
     {
-        // WARNING: do not use std::string because NULL will crash
+        // WARNING: do not use std::string because nullptr will crash
         //
         char const * user_agent(getenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
-        if(user_agent == NULL)
+        if(user_agent == nullptr)
         {
             // this should NEVER happen because without a path after the method
             // we probably do not have our snap.cgi run anyway...
@@ -400,13 +400,19 @@ bool snap_cgi::verify()
         //SNAP_LOG_DEBUG("HTTP_USER_AGENT=")(request_uri);
 #endif
 
+        // left trim
+        while(isspace(*user_agent))
+        {
+            ++user_agent;
+        }
+
         // if we receive this, someone tried to directly access our snap.cgi
         // which will not work right so better err immediately
         //
         if(*user_agent == 0)
         {
             error("400 Bad Request", "The HTTP_USER_AGENT cannot be empty.");
-            // TODO: send IP to firewall?
+            // TODO: send IP to firewall service?
             return false;
         }
     }
@@ -418,9 +424,9 @@ bool snap_cgi::verify()
 
 int snap_cgi::process()
 {
-    // WARNING: do not use std::string because NULL will crash
+    // WARNING: do not use std::string because nullptr will crash
     char const * request_method( getenv("REQUEST_METHOD") );
-    if(request_method == NULL)
+    if(request_method == nullptr)
     {
         // the method was already checked in the validate, before this
         // call so it should always be defined...
@@ -561,7 +567,7 @@ int snap_cgi::process()
 #if 0
             {
                 FILE *f = fopen("/tmp/snap.output", "a");
-                if(f != NULL)
+                if(f != nullptr)
                 {
                     fwrite(buf, r, 1, f);
                     fclose(f);

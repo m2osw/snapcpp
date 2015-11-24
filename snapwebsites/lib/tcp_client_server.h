@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include <QString>
+
 #include <stdexcept>
 #include <memory>
 
@@ -156,6 +158,7 @@ private:
 
 bool is_ipv4(char const * ip);
 bool is_ipv6(char const * ip);
+void get_addr_port(QString const & addr_port, QString & addr, int & port, int const default_port = 0);
 
 
 } // namespace tcp_client_server

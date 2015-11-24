@@ -25,6 +25,7 @@
 #include <sstream>
 
 #include <syslog.h>
+#include <unistd.h>
 
 #include "poison.h"
 
@@ -137,7 +138,7 @@ void snap_config::read_config_file( QString const & filename )
         {
             std::stringstream ss;
             ss << "invalid variable on line " << line << " in \"" << filename.toUtf8().data() << "\", no equal sign found";
-            SNAP_LOG_ERROR() << ss.str() << ".";
+            SNAP_LOG_ERROR(ss.str())(".");
             syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
             exit(1);
         }

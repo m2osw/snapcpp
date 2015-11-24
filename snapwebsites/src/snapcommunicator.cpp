@@ -18,13 +18,15 @@
 #include "snap_communicator.h"
 
 #include "log.h"
-#include "not_reached.h"
+#include "mkdir_p.h"
 #include "not_used.h"
-#include "snap_config.h"
 #include "snapwebsites.h"
 
-#include <sys/time.h>
+#include <QFile>
+
 #include <sys/resource.h>
+
+#include <atomic>
 
 /** \file
  * \brief Implementation of the snap inter-process communication.
@@ -98,6 +100,73 @@ namespace
 typedef QMap<QString, bool>                 sorted_list_of_strings_t;
 
 
+sorted_list_of_strings_t canonicalize_services(QString const & services)
+{
+    snap::snap_string_list list(services.split(',', QString::SkipEmptyParts));
+
+    // use a map to remove duplicates
+    //
+    sorted_list_of_strings_t result;
+
+    int const max_services(list.size());
+    for(int idx(0); idx < max_services; ++idx)
+    {
+        QString const service(list[idx].trimmed());
+        if(service.isEmpty())
+        {
+            // this can happen because of the trimmed() call
+            continue;
+        }
+
+        // TBD: add a check on the name? (i.e. "[A-Za-z_][A-Za-z0-9_]*")
+        //
+
+        result[service] = true;
+    }
+
+    return result;
+}
+
+
+QString canonicalize_server_types(QString const & server_types)
+{
+    snap::snap_string_list list(server_types.split(',', QString::SkipEmptyParts));
+
+    // use a map to remove duplicates
+    //
+    QMap<QString, bool> result;
+
+    int const max_types(list.size());
+    for(int idx(0); idx < max_types; ++idx)
+    {
+        QString const type(list[idx].trimmed());
+        if(type.isEmpty())
+        {
+            // this can happen, especially because of the trimmed() call
+            //
+            continue;
+        }
+        if(type != "apache"
+        && type != "frontend"
+        && type != "backend"
+        && type != "cassandra")
+        {
+            // ignore unknown/unwanted types
+            // (i.e. we cannot have "client" here since that is reserved
+            // for processes that use REGISTER)
+            //
+            SNAP_LOG_WARNING("received an invalid server type \"")(type)("\", ignoring.");
+        }
+        else
+        {
+            result[type] = true;
+        }
+    }
+
+    return static_cast<snap::snap_string_list const>(result.keys()).join(",");
+}
+
+
 QString canonicalize_neighbors(QString const & neighbors)
 {
     snap::snap_string_list list(neighbors.split(','));
@@ -105,35 +174,27 @@ QString canonicalize_neighbors(QString const & neighbors)
     int const max_addr_port(list.size());
     for(int idx(0); idx < max_addr_port; ++idx)
     {
-        snap::snap_string_list addr_port(list[idx].trimmed().split(':')); // this does not work with IPv6...
-        if(addr_port.size() > 2)
+        QString const neighbor(list[idx].trimmed());
+        if(neighbor.isEmpty())
         {
-            SNAP_LOG_ERROR("invalid neighbor specification \"")(list[idx])("\", found more than one ':' character.");
+            // this can happen, especially because of the trimmed() call
+            //
             continue;
         }
-        if(addr_port.size() == 2)
-        {
-            // fix the port
-            bool ok(false);
-            int64_t const port(addr_port[1].toLongLong(&ok, 10));
-            if(!ok
-            || port < 0
-            || port > 65535)
-            {
-                SNAP_LOG_ERROR("invalid neighbor specification \"")(list[idx])("\", found an invalid port or a port number out of range.");
-                continue;
-            }
-            // removing any leading zeroes
-            addr_port[1] = QString("%1").arg(port);
-        }
-        QByteArray addr_utf8(addr_port[0].toUtf8());
-        if(tcp_client_server::is_ipv4(addr_utf8.data()))
+        // TODO: move canonicalization to tcp_client_server so other software
+        //       can make use of it
+        //
+        QString address;
+        int port;
+        tcp_client_server::get_addr_port(neighbor, address, port, 4040);
+
+        if(tcp_client_server::is_ipv4(address.toUtf8().data()))
         {
             // TODO: the inet_pton() does not support all possible IPv4
             //       notations that is_ipv4() "accepts".
             //
             struct in_addr addr;
-            if(inet_pton(AF_INET, addr_utf8.data(), &addr) != 1)
+            if(inet_pton(AF_INET, address.toUtf8().data(), &addr) != 1)
             {
                 SNAP_LOG_ERROR("invalid neighbor address \"")(list[idx])("\", we could not convert it to a valid IPv4 address.");
                 continue;
@@ -141,12 +202,12 @@ QString canonicalize_neighbors(QString const & neighbors)
             char buf[64];
             inet_ntop(AF_INET, &addr, buf, sizeof(buf));
             // removing leading zero, making sure we have the dotted notation
-            addr_port[0] = buf;
+            list[idx] = QString("%1:%2").arg(buf).arg(port);
         }
-        else if(tcp_client_server::is_ipv6(addr_utf8.data()))
+        else if(tcp_client_server::is_ipv6(address.toUtf8().data()))
         {
             struct in6_addr addr;
-            if(inet_pton(AF_INET6, addr_utf8.data(), &addr) != 1)
+            if(inet_pton(AF_INET6, address.toUtf8().data(), &addr) != 1)
             {
                 SNAP_LOG_ERROR("invalid neighbor address \"")(list[idx])("\", we could not convert it to a valid IPv6 address.");
                 continue;
@@ -155,17 +216,13 @@ QString canonicalize_neighbors(QString const & neighbors)
             inet_ntop(AF_INET6, &addr, buf, sizeof(buf));
             // removing leading zero, making sure the '::' is used at the
             // right place, etc.
-            addr_port[0] = buf;
+            list[idx] = QString("[%1]:%2").arg(buf).arg(port);
         }
         else
         {
             SNAP_LOG_ERROR("invalid neighbor address \"")(list[idx])("\", it was not recognized as an IPv4 or an IPv6 address.");
             continue;
         }
-
-        // recompose
-        // (again this won't work well with IPv6 if we want to support [<addr>]:<port>)
-        list[idx] = addr_port.join(":");
     }
 
     return list.join(",");
@@ -195,6 +252,8 @@ class snap_communicator_server
 public:
     typedef std::shared_ptr<snap_communicator_server>     pointer_t;
 
+    static size_t const         SNAP_COMMUNICATOR_MAX_CONNECTIONS = 100;
+
                                 snap_communicator_server(snap::server::pointer_t s);
                                 snap_communicator_server(snap_communicator_server const & src) = delete;
     snap_communicator_server &  operator = (snap_communicator_server const & rhs) = delete;
@@ -203,10 +262,10 @@ public:
     void                        run();
 
     // one place where all messages get processed
-    void                        process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message);
+    void                        process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message, bool udp);
 
     void                        send_status(snap::snap_communicator::snap_connection::pointer_t connection);
-    QString                     get_server_type() const;
+    QString                     get_server_types() const;
     QString                     get_local_services() const;
     QString                     get_services_heard_of() const;
     void                        add_neighbors(QString const & new_neighbors);
@@ -221,7 +280,7 @@ private:
     snap::snap_communicator::pointer_t                  f_communicator;
     snap::snap_communicator::snap_connection::pointer_t f_listener;     // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_messager;     // UDP/IP
-    QString                                             f_server_type;
+    QString                                             f_server_types;
     QString                                             f_local_services;
     sorted_list_of_strings_t                            f_local_services_list;
     QString                                             f_services_heard_of;
@@ -229,7 +288,9 @@ private:
     QString                                             f_explicit_neighbors;
     sorted_list_of_strings_t                            f_all_neighbors;
     remote_snap_communicator_list_t                     f_remote_snapcommunicators;
-    size_t                                              f_max_connections = 100;
+    size_t                                              f_max_connections = SNAP_COMMUNICATOR_MAX_CONNECTIONS;
+    bool                                                f_shutdown = false;
+    snap::snap_communicator_message::vector_t           f_local_message_cache;
 };
 
 
@@ -254,14 +315,36 @@ class remote_snap_communicator
     : public snap::snap_communicator::snap_timer
 {
 public:
+    class thread_done_impl
+        : public snap::snap_communicator::snap_thread_done_signal
+    {
+    public:
+        typedef std::shared_ptr<thread_done_impl>   pointer_t;
+
+                            thread_done_impl(remote_snap_communicator * sc)
+                                : f_remote_snap_communicator(sc)
+                            {
+                            }
+
+    virtual void            process_read()
+                            {
+                                f_remote_snap_communicator->thread_done();
+                            }
+
+    private:
+        remote_snap_communicator *  f_remote_snap_communicator;
+    };
+
     class remote_connect
         : public snap::snap_thread::snap_runner
     {
     public:
-                            remote_connect(QString const & addr, int port)
+                            remote_connect(thread_done_impl::pointer_t thread_done, QString const & addr, int port)
                                 : snap::snap_thread::snap_runner("background remote snapconnector")
+                                , f_thread_done(thread_done)
                                 , f_address(addr)
                                 , f_port(port)
+                                , f_socket(-1)
                             {
                             }
 
@@ -273,9 +356,10 @@ public:
                             }
 
     private:
-        QString             f_address;
-        int                 f_port = -1;
-        int                 f_socket = -1;
+        thread_done_impl::pointer_t f_thread_done;
+        QString                     f_address;
+        int                         f_port = -1;
+        std::atomic<int>            f_socket;
     };
 
     /** \brief Setup a remote_snap_communicator object.
@@ -291,9 +375,14 @@ public:
         , f_communicator_server(cs)
         //, f_next_attempt(0) -- auto-init
         //, f_connection(nullptr) -- auto-init
-        , f_remote_connect(addr, port)
+        , f_thread_done(new thread_done_impl(this))
+        , f_remote_connect(f_thread_done, addr, port)
         , f_thread("remote snapconnector thread", &f_remote_connect)
     {
+        // prevent the timer from going until we get our list of
+        // services from snapinit
+        //
+        set_enable(false);
     }
 
     // snap::snap_communicator::snap_connection implementation
@@ -301,6 +390,7 @@ public:
 
     void                        too_busy();
     void                        connection_lost();
+    void                        thread_done();
 
 private:
     enum class thread_state_t
@@ -313,6 +403,7 @@ private:
     int64_t                                     f_next_attempt = 0;
     std::weak_ptr<connection_impl>              f_connection;
     thread_state_t                              f_state = thread_state_t::IDLE;
+    thread_done_impl::pointer_t                 f_thread_done;
     remote_connect                              f_remote_connect;
     snap::snap_thread                           f_thread;
 };
@@ -359,7 +450,7 @@ public:
 
         // clearly mark this connection as "invalid"
         //
-        set_connection_type("");
+        set_connection_types("");
 
         // make sure that if we were a connection understanding STATUS
         // we do not send that status
@@ -377,7 +468,7 @@ public:
     // snap::snap_communicator::snap_tcp_server_client_message_connection implementation
     virtual void process_message(snap::snap_communicator_message const & message)
     {
-        f_communicator_server->process_message(shared_from_this(), message);
+        f_communicator_server->process_message(shared_from_this(), message, false);
     }
 
     /** \brief Remove ourselves when we receive a timeout.
@@ -460,16 +551,18 @@ public:
 
     /** \brief Define the type of snapcommunicator server.
      *
-     * This function is called whenever an ACCEPT is received. It saves
-     * the type=... parameter. By default the type is empty meaning that
-     * the connection was not yet fully initialised.
+     * This function is called whenever a CONNECT or an ACCEPT is received.
+     * It saves the type=... parameter. By default the type is empty meaning
+     * that the connection was not yet fully initialized.
      *
-     * When a REGISTER is received instead of an ACCEPT, then the type
-     * is set to "client".
+     * When a REGISTER is received instead of a CONNECT or an ACCEPT, then
+     * the type is set to "client".
+     *
+     * \param[in] types  List of connection types of this snapcommunicator.
      */
-    void set_connection_type(QString const & type)
+    void set_connection_types(QString const & types)
     {
-        f_type = type;
+        f_types = types;
     }
 
     /** \brief Retrieve the current type of this connection.
@@ -477,17 +570,17 @@ public:
      * By default a connection is given the special type "" which means
      * that it is not currently properly initialized yet. To properly
      * initialize a connection one has to either CONNECT (between
-     * snapcommunicator servers) or REGISTER (a backend, snapserver,
-     * snapmonitor, etc.)
+     * snapcommunicator servers) or REGISTER (a snapbackend, snapserver,
+     * snapwatchdog, and other local services.)
      *
      * The type is set to "client" for local services and another
      * word, such as "frontend", when representing another snapserver.
      *
      * \return The type of server this connection represents.
      */
-    QString const & get_connection_type() const
+    QString const & get_connection_types() const
     {
-        return f_type;
+        return f_types;
     }
 
     /** \brief Define the list of services supported by the snapcommunicator.
@@ -597,7 +690,7 @@ private:
     sorted_list_of_strings_t                f_understood_commands;
     int64_t                                 f_started_on = -1;
     int64_t                                 f_ended_on = -1;
-    QString                                 f_type;
+    QString                                 f_types;
     sorted_list_of_strings_t                f_services;
     sorted_list_of_strings_t                f_services_heard_of;
 };
@@ -702,7 +795,7 @@ public:
     // snap::snap_communicator::snap_server_connection implementation
     virtual void process_message(snap::snap_communicator_message const & message)
     {
-        f_communicator_server->process_message(shared_from_this(), message);
+        f_communicator_server->process_message(shared_from_this(), message, true);
     }
 
 private:
@@ -762,33 +855,17 @@ void snap_communicator_server::init()
     }
 
     {
-        f_server_type = f_server->get_parameter("server_type");
-        if(f_server_type != "apache"
-        && f_server_type != "frontend"
-        && f_server_type != "backend"
-        && f_server_type != "cassandra")
-        {
-            f_server_type = "frontend";
-        }
-
-        // TODO: apply some verification to that list?
-        //       (i.e. at this point we send it as it to the other
-        //       snapservers as the "services=..." parameter)
-        //
-        f_local_services = f_server->get_parameter("local_services");
-        {
-            snap::snap_string_list list(f_local_services.split(','));
-            for(auto s : list)
-            {
-                f_all_neighbors[s] = true;
-            }
-        }
+        f_server_types = canonicalize_server_types(f_server->get_parameter("server_types"));
 
         f_explicit_neighbors = canonicalize_neighbors(f_server->get_parameter("neighbors"));
         add_neighbors(f_explicit_neighbors);
 
+        // check a user defined maximum number of connections
+        // by default this is set to SNAP_COMMUNICATOR_MAX_CONNECTIONS,
+        // which at this time is 100
+        //
         QString const max_connections(f_server->get_parameter("max_connections"));
-        if(max_connections.isEmpty())
+        if(!max_connections.isEmpty())
         {
             bool ok(false);
             f_max_connections = max_connections.toLongLong(&ok, 10);
@@ -814,7 +891,7 @@ void snap_communicator_server::init()
         QString const listen_info(f_server->get_parameter("listen"));
         if(!listen_info.isEmpty())
         {
-            f_server->get_addr_port(listen_info, addr, port, 4040);
+            tcp_client_server::get_addr_port(listen_info, addr, port, 4040);
         }
 
         int max_pending_connections(10);
@@ -843,7 +920,7 @@ void snap_communicator_server::init()
         QString const signal_info(f_server->get_parameter("signal"));
         if(!signal_info.isEmpty())
         {
-            f_server->get_addr_port(signal_info, addr, port, 4041);
+            tcp_client_server::get_addr_port(signal_info, addr, port, 4041);
         }
 
         f_messager.reset(new messager_impl(shared_from_this(), addr.toUtf8().data(), port));
@@ -864,7 +941,7 @@ void snap_communicator_server::init()
         QString addr;
         int port(4040);
         QString const ip(it.key());
-        f_server->get_addr_port(ip, addr, port, 4040);
+        tcp_client_server::get_addr_port(ip, addr, port, 4040);
         // TODO: we should never have two entries with the same IP address
         //       (even if the port is different, because you can only have
         //       one snapcommunicator per computer)
@@ -890,14 +967,23 @@ void snap_communicator_server::run()
 
 /** \brief Process a message we just received.
  *
- * This function is called whenever a TCP or UDP message is recieved.
- * (whether it is received through TCP or UDP we view all messages
- * exactly the same way.)
+ * This function is called whenever a TCP or UDP message is received.
+ * The function accepts all TCP messages, however, UDP messages are
+ * limited to a very few such as STOP and SHUTDOWN. You will want to
+ * check the documentation of each message to know whether it can
+ * be sent over UDP or not.
  *
- * \param[in] client  The connection that just sent us that message.
+ * Note that the main reason why the UDP port is not allowed for most
+ * messages is to send a reply you have to have TCP. This means responses
+ * to those messages also need to be sent over TCP (because we could
+ * not have sent an ACCEPT as a response to a CONNECT over a UDP
+ * connection.)
+ *
+ * \param[in] connection  The connection that just sent us that message.
  * \param[in] message  The message were were just sent.
+ * \param[in] udp  If true, this was a UDP message.
  */
-void snap_communicator_server::process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message)
+void snap_communicator_server::process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message, bool udp)
 {
     QString const command(message.get_command());
 
@@ -907,26 +993,53 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
 
     // check who this message is for
     QString const service(message.get_service());
+//std::cerr << "SNAP COMMUNICATOR: received a message [" << message.to_message() << "]\n";
     if(service.isEmpty()
     || service == "snapcommunicator")
     {
+        if(f_shutdown)
+        {
+            if(!udp)
+            {
+                // we are shutting down so just send a quick QUTTING reply
+                // letting the other process know about it
+                //
+                snap::snap_communicator_message reply;
+                reply.set_command("QUITTING");
+                c->send_message(reply);
+            }
+            //else -- UDP message arriving after f_shutdown are ignored
+            return;
+        }
+
         // this one is for us!
         switch(command[0].unicode())
         {
         case 'A':
             if(command == "ACCEPT")
             {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("ACCEPT is only accepted over a TCP connection.");
+                    return;
+                }
+
                 if(c)
                 {
+                    // the type is mandatory in an ACCEPT message
+                    //
+                    if(!message.has_parameter("types"))
+                    {
+                        SNAP_LOG_ERROR("ACCEPT was received without a \"type\" parameter, which is mandatory.");
+                        return;
+                    }
+                    c->set_connection_types(canonicalize_server_types(message.get_parameter("types")));
+
                     // reply to a CONNECT, this was to connect to another
                     // snapcommunicator on another computer
                     //
                     c->connection_started();
 
-                    if(message.has_parameter("type"))
-                    {
-                        c->set_connection_type(message.get_parameter("type"));
-                    }
                     if(message.has_parameter("services"))
                     {
                         c->set_services(message.get_parameter("services"));
@@ -952,6 +1065,12 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
         case 'C':
             if(command == "COMMANDS")
             {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("COMMANDS is only accepted over a TCP connection.");
+                    return;
+                }
+
                 if(c)
                 {
                     if(message.has_parameter("list"))
@@ -967,10 +1086,45 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
             }
             else if(command == "CONNECT")
             {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("CONNECT is only accepted over a TCP connection.");
+                    return;
+                }
+
                 if(c)
                 {
+                    // first we verify that we have a valid version to
+                    // communicate between two snapcommunicators
+                    //
+                    if(!message.has_parameter("type")
+                    && !message.has_parameter("version"))
+                    {
+                        SNAP_LOG_ERROR("CONNECT was sent without a \"type\" and/or a \"version\" parameter, both are mandatory.");
+                        return;
+                    }
+                    if(message.get_integer_parameter("version") != snap::snap_communicator::VERSION)
+                    {
+                        SNAP_LOG_ERROR("CONNECT was sent with an incompatible version. Expected ")(snap::snap_communicator::VERSION)(", received ")(message.get_integer_parameter("version"));
+                        return;
+                    }
+
+                    // TODO: add necessary test to know whether we are
+                    //       interconnecting simultaneously (i.e. A
+                    //       sent a CONNECT to B at the same time as
+                    //       B sent a CONNECT to A.)
+                    //
+                    //       I think we can just compare both IP addresses
+                    //       and decide that the smaller one is the server
+                    //       and the larger one the client and adjust our
+                    //       behavior accordingly. Both IP addresses have
+                    //       to be different and on the same network.
+
+                    // always retrieve the connection type
+                    //
+                    c->set_connection_types(canonicalize_server_types(message.get_parameter("types")));
+
                     snap::snap_communicator_message reply;
-                    //reply.set_service("" or "snapcommunicator") -- "" is the default
 
                     // add neighbors with which the guys asking to
                     // connect can attempt to connect with...
@@ -983,7 +1137,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // always send the server type, whether we accept or
                     // refuse this connection
                     //
-                    reply.add_parameter("type", f_server_type);
+                    reply.add_parameter("types", f_server_types);
 
                     // cool, a remote snapcommunicator wants to connect
                     // with us, make sure we did not reach the maximum
@@ -994,7 +1148,6 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         // too many connections already, refuse this new
                         // one from a remove system
                         //
-                        //reply.set_service("" or "snapcommunicator") -- "" is the default
                         reply.set_command("REFUSE");
                     }
                     else
@@ -1004,10 +1157,6 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         //
                         c->connection_started();
 
-                        if(message.has_parameter("type"))
-                        {
-                            c->set_connection_type(message.get_parameter("type"));
-                        }
                         if(message.has_parameter("services"))
                         {
                             c->set_services(message.get_parameter("services"));
@@ -1052,6 +1201,12 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
         case 'D':
             if(command == "DISCONNECT")
             {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("DISCONNECT is only accepted over a TCP connection.");
+                    return;
+                }
+
                 if(c)
                 {
                     c->connection_ended();
@@ -1059,14 +1214,15 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // this has to be another snapcommunicator
                     // (i.e. an object that sent ACCEPT or CONNECT)
                     //
-                    QString const type(c->get_connection_type());
-                    if(!type.isEmpty()
-                    && type != "client")
+                    QString const types(c->get_connection_types());
+                    if(!types.isEmpty()
+                    && types != "client")
                     {
-                        // we must ignore, and we ignore connections with a
-                        // type of "" as they are expected to be "uninitialized"
+                        // we must ignore and we do ignore connections with a
+                        // type of "" since they represent an uninitialized
+                        // connection item (unconnected)
                         //
-                        c->set_connection_type("");
+                        c->set_connection_types("");
 
                         // disconnecting means it is gone so we can remove
                         // it from the communicator; note that won't remove
@@ -1083,7 +1239,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     }
                     else
                     {
-                        SNAP_LOG_ERROR("DISCONNECT was sent from a connection which is not of the right type (")(type)(").");
+                        SNAP_LOG_ERROR("DISCONNECT was sent from a connection which is not of the right type (")(types)(").");
                     }
                     return;
                 }
@@ -1093,6 +1249,12 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
         case 'H':
             if(command == "HELP")
             {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("HELP is only accepted over a TCP connection.");
+                    break;
+                }
+
                 if(c)
                 {
                     // reply with COMMANDS
@@ -1112,6 +1274,12 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
         case 'R':
             if(command == "REFUSE")
             {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("REFUSE is only accepted over a TCP connection.");
+                    break;
+                }
+
                 if(c)
                 {
                     // we were not connected so we do not have to
@@ -1131,38 +1299,124 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
             }
             else if(command == "REGISTER")
             {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("REGISTER is only accepted over a TCP connection.");
+                    break;
+                }
+
                 if(c)
                 {
                     if(!message.has_parameter("service")
                     || !message.has_parameter("version"))
                     {
                         SNAP_LOG_ERROR("REGISTER was called without a \"service\" and/or a \"version\" parameter, both are mandatory.");
-                        break;
+                        return;
                     }
                     if(message.get_integer_parameter("version") != snap::snap_communicator::VERSION)
                     {
                         SNAP_LOG_ERROR("REGISTER was called with an incompatible version. Expected ")(snap::snap_communicator::VERSION)(", received ")(message.get_integer_parameter("version"));
-                        break;
+                        return;
                     }
                     // the "service" parameter is the name of the service,
                     // now we can process messages for this service
                     //
-                    c->set_name(message.get_parameter("service"));
+                    QString const service_name(message.get_parameter("service"));
+                    c->set_name(service_name);
+
+                    c->set_connection_types("client");
 
                     // connection is up now
                     //
                     c->connection_started();
 
+                    // tell the connect we are ready
+                    // (the connection uses that as a trigger to start work)
+                    //
+                    snap::snap_communicator_message reply;
+                    reply.set_command("READY");
+                    c->send_message(reply);
+
+                    // request the COMMANDS of this connection
+                    //
+                    snap::snap_communicator_message help;
+                    help.set_command("HELP");
+                    c->send_message(help);
+
                     // status changed for this connection
                     //
                     send_status(c);
+
+                    // if we have local messages that were cached, then
+                    // forward them now
+                    //
+                    if(!f_local_message_cache.empty())
+                    {
+                        for(auto m : f_local_message_cache)
+                        {
+                            if(m.get_service() == service_name)
+                            {
+                                // TBD: should we remove the service name before forwarding?
+                                //      (we have to instances)
+                                //
+                                c->send_message(m);
+                            }
+                        }
+                    }
                     return;
                 }
             }
             break;
 
         case 'S':
-            if(command == "SHUTDOWN")
+            if(command == "SERVICES")
+            {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("SERVICES is only accepted over a TCP connection.");
+                    return;
+                }
+
+                if(c)
+                {
+                    if(!message.has_parameter("list"))
+                    {
+                        SNAP_LOG_ERROR("SERVICES was called without a \"list\" parameter, it is mandatory.");
+                        return;
+                    }
+                    // the "service" parameter is the name of the service,
+                    // now we can process messages for this service
+                    //
+                    f_local_services_list = canonicalize_services(message.get_parameter("list"));
+
+                    // Since snapinit started us, this list cannot ever be empty!
+                    //
+                    if(!f_local_services_list.isEmpty())
+                    {
+                        SNAP_LOG_ERROR("SERVICES was called with an empty \"list\", there should at least be snapcommunicator (and snapwatchdog).");
+                        return;
+                    }
+
+                    // create a string so we can send the list of services
+                    // at once instead of recreating the string each time
+                    //
+                    f_local_services = static_cast<snap::snap_string_list>(f_local_services_list.keys()).join(",");
+
+                    // now we can get the connections to other communicators
+                    // started
+                    //
+                    int64_t start_time(snap::snap_child::get_current_date());
+                    for(auto communicator : f_remote_snapcommunicators)
+                    {
+                        communicator->set_timeout_date(start_time);
+                        communicator->set_enable(true);
+
+                        start_time += 1000000;
+                    }
+                    return;
+                }
+            }
+            else if(command == "SHUTDOWN")
             {
                 shutdown(true);
                 return;
@@ -1177,16 +1431,27 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
         case 'U':
             if(command == "UNREGISTER")
             {
+                if(udp)
+                {
+                    SNAP_LOG_ERROR("UNREGISTER is only accepted over a TCP connection.");
+                    return;
+                }
+
                 if(c)
                 {
                     if(!message.has_parameter("service"))
                     {
                         SNAP_LOG_ERROR("UNREGISTER was called without a \"service\" parameter, which is mandatory.");
-                        break;
+                        return;
                     }
                     // remove the service name immediately
                     //
                     c->set_name("");
+
+                    // also remove the connection type, an empty type
+                    // represents an unconnected item
+                    //
+                    c->set_connection_types("");
 
                     // connection is down now
                     //
@@ -1206,6 +1471,17 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
             }
             break;
 
+        }
+
+        // if they used a TCP connection to send this message, let the caller
+        // know that we do not understand his message
+        //
+        if(!udp)
+        {
+            snap::snap_communicator_message reply;
+            reply.set_command("UNKNOWN");
+            reply.add_parameter("command", command);
+            c->send_message(reply);
         }
 
         // done
@@ -1236,27 +1512,40 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
     //    to a remote snapcommunicator and not to a service on this system)
     //
 
+    if(f_local_services_list.contains(service))
+    {
+        // service is local, check whether the service is registered,
+        // if registered, forward the message immediately
+        //
+        snap::snap_communicator::snap_connection::vector_t const & connections(f_communicator->get_connections());
+        for(auto nc : connections)
+        {
+            if(nc->get_name() == service)
+            {
+                // we have such a service, just forward to it now
+                //
+                // TBD: should we remove the service name before forwarding?
+                //
+                std::dynamic_pointer_cast<connection_impl>(nc)->send_message(message);
+                return;
+            }
+        }
 
+        // its a service that is expected on this computer, but it is not
+        // running right now...
+        //
+        f_local_message_cache.push_back(message);
+        return;
+    }
 
-    //{
-    //    // the user specified a name so we want to send the message to
-    //    // that specific service only
-    //    snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
-    //    for(auto c : all_connections)
-    //    {
-    //        if(c->get_name() == service)
-    //        {
-    //            // we found it!
-    //            break;
-    //        }
-    //    }
-    //}
+std::cerr<< "received event for remote service *** not yet implemented! ***\n";
+
 }
 
 
 /** \brief Send the current status of a client to connections.
  *
- * Some connections (at this time only the snapmonitor) may be interested
+ * Some connections (at this time only the snapwatchdog) may be interested
  * by the STATUS event. Any connection that understands the STATUS
  * event will be sent that event whenever the status of a connection
  * changes (specifically, on a REGISTER and on an UNREGISTER or equivalent.)
@@ -1273,21 +1562,21 @@ void snap_communicator_server::send_status(snap::snap_communicator::snap_connect
 
     // check whether the connection is now up or down
     connection_impl::pointer_t c(std::dynamic_pointer_cast<connection_impl>(connection));
-    QString const type(c->get_connection_type());
-    reply.add_parameter("status", type.isEmpty() ? "down" : "up");
+    QString const types(c->get_connection_types());
+    reply.add_parameter("status", types.isEmpty() ? "down" : "up");
 
     // get the time when it was considered up
     int64_t const up_since(c->get_connection_started());
     if(up_since != -1)
     {
-        reply.add_parameter("up-since", up_since / 1000000); // send up time in seconds
+        reply.add_parameter("up_since", up_since / 1000000); // send up time in seconds
     }
 
     // get the time when it was considered down (if not up yet, this will be skipped)
     int64_t const down_since(c->get_connection_ended());
     if(down_since != -1)
     {
-        reply.add_parameter("down-since", down_since / 1000000); // send up time in seconds
+        reply.add_parameter("down_since", down_since / 1000000); // send up time in seconds
     }
 
     // we have the message, now we need to find the list of connections
@@ -1315,9 +1604,9 @@ void snap_communicator_server::send_status(snap::snap_communicator::snap_connect
 
 /** \brief Return the server type of this snap communicator server.
  */
-QString snap_communicator_server::get_server_type() const
+QString snap_communicator_server::get_server_types() const
 {
-    return f_server_type;
+    return f_server_types;
 }
 
 
@@ -1351,10 +1640,73 @@ QString snap_communicator_server::get_services_heard_of() const
  */
 void snap_communicator_server::add_neighbors(QString const & new_neighbors)
 {
-    snap::snap_string_list list(new_neighbors.split(','));
-    for(auto s : list)
+    if(!new_neighbors.isEmpty())
     {
-        f_all_neighbors[s] = true;
+        static QString cache_filename;
+
+        // first time initialize and read the cache file
+        //
+        if(cache_filename.isEmpty())
+        {
+            // get the path to the cache, create if necessary
+            //
+            cache_filename = f_server->get_parameter("cache_path");
+            if(cache_filename.isEmpty())
+            {
+                cache_filename = "/var/cache/snapwebsites";
+            }
+            snap::mkdir_p(cache_filename);
+            cache_filename += "/neighbors.txt";
+
+            QFile cache(cache_filename);
+            if(cache.open(QIODevice::ReadOnly))
+            {
+                QByteArray buffer(cache.readLine(1024));
+                QString line(QString::fromUtf8(buffer).trimmed());
+                if(!line.isEmpty()
+                && line[0] != '#')
+                {
+                    f_all_neighbors[line] = true;
+                }
+            }
+        }
+
+        bool changed(false);
+        snap::snap_string_list list(new_neighbors.split(',', QString::SkipEmptyParts));
+        for(auto s : list)
+        {
+            if(!f_all_neighbors.contains(s))
+            {
+                changed = true;
+                f_all_neighbors[s] = true;
+            }
+        }
+
+        // if the map changed, then save the change in the cache
+        //
+        // TODO: we may be able to optimize this by not saving on each and
+        //       every call; although since it should remain relatively
+        //       small, we should be fine (yes, 8,000 computers is still
+        //       a small file in this cache.)
+        //
+        if(changed)
+        {
+            QFile cache(cache_filename);
+            if(cache.open(QIODevice::WriteOnly))
+            {
+                for(sorted_list_of_strings_t::const_iterator n(f_all_neighbors.begin());
+                                                             n != f_all_neighbors.end();
+                                                             ++n)
+                {
+                    cache.write(n.key().toUtf8());
+                    cache.putChar('\n');
+                }
+            }
+            else
+            {
+                SNAP_LOG_ERROR("could not open cache file \"")(cache_filename)("\" for writing.");
+            }
+        }
     }
 }
 
@@ -1438,6 +1790,12 @@ void snap_communicator_server::refresh_heard_of()
  */
 void snap_communicator_server::shutdown(bool full)
 {
+    // from now on, we are shutting down; use this flag to make sure we
+    // do not accept any more REGISTER, CONNECT and other similar
+    // messages
+    //
+    f_shutdown = true;
+
     snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
     for(auto connection : all_connections)
     {
@@ -1458,8 +1816,8 @@ void snap_communicator_server::shutdown(bool full)
             connection_impl::pointer_t c(std::dynamic_pointer_cast<connection_impl>(connection));
             if(c)
             {
-                QString const type(c->get_connection_type());
-                if(type.isEmpty())
+                QString const types(c->get_connection_types());
+                if(types.isEmpty())
                 {
                     // not initialized, just get rid of that one
                     f_communicator->remove_connection(c);
@@ -1467,7 +1825,7 @@ void snap_communicator_server::shutdown(bool full)
                 else
                 {
                     snap::snap_communicator_message reply;
-                    if(type != "client")
+                    if(types != "client")
                     {
                         // a remote snapcommunicator server needs to also
                         // shutdown so duplicate that message there
@@ -1478,7 +1836,7 @@ void snap_communicator_server::shutdown(bool full)
                         }
                         else
                         {
-                            // STOP means we don't shutdown the entire cluster
+                            // STOP means we do not shutdown the entire cluster
                             reply.set_command("DISCONNECT");
                         }
                     }
@@ -1489,6 +1847,8 @@ void snap_communicator_server::shutdown(bool full)
                         //
                         reply.set_command("STOP");
                     }
+
+                    c->send_message(reply);
 
                     // we cannot yet remove the connection from the communicator
                     // or these messages will never be sent... instead we can
@@ -1530,11 +1890,19 @@ void remote_snap_communicator::remote_connect::run()
     try
     {
         // connect to the specified address and port using a TCP socket
-        QByteArray utf8(f_address.toUtf8());
+        //
+        QByteArray const utf8(f_address.toUtf8());
         tcp_client_server::tcp_client::pointer_t tcp_connection(new tcp_client_server::tcp_client(std::string(utf8.data(), utf8.size()), f_port));
 
-        // save the new socket
+        // save the new socket (we have to use a duplicate since the
+        // tcp_connection object is going to close its copy.)
+        //
         f_socket = dup(tcp_connection->get_socket());
+
+        // Tell the main thread that this thread is done, this call
+        // immediately wakes up the poll() command
+        //
+        f_thread_done->thread_done();
 
         // close the new tcp_connection object immediately
     }
@@ -1574,78 +1942,85 @@ void remote_snap_communicator::process_timeout()
             return;
         }
 
+        if(!f_thread_done)
+        {
+            f_thread_done.reset(new thread_done_impl(this));
+        }
+        snap::snap_communicator::instance()->add_connection(f_thread_done);
+
         f_state = thread_state_t::RUNNING;
         f_thread.start();
 
-        // wait for 1/4th of a second before check on the thread to
-        // know whether the connection happened or not
+        // stop the timer and wait for the thread signal
         //
-        // TBD: find a way to get a signal from the thread when it
-        //      dies? (poll() can wait on other types of file descriptor
-        //      so we could have a pipe or mq_open() or Unix socket, ...)
-        //
-        set_timeout_delay(250000);
+        set_enable(false);
     }
-    else if(!f_thread.is_running())
+}
+
+
+/** \brief Callback once the thread done signal gets called.
+ *
+ */
+void remote_snap_communicator::thread_done()
+{
+    f_state = thread_state_t::IDLE;
+
+    // The f_socket parameter is marked atomic so it can be used
+    // between the secondary and main threads without mutexes
+    //
+    int const socket(f_remote_connect.get_socket());
+    if(socket == -1)
     {
-        f_state = thread_state_t::IDLE;
-
-        // It is safe to check the new socket here because when
-        // calling the is_running() function of the thread we have
-        // a barrier so the memory is reset as expected at this point.
+        // wait for 5 minutes before we attempt this connection again
         //
-        if(f_remote_connect.get_socket() != -1)
-        {
-            // we make a copy of the socket fd so that way we can drop
-            // the f_tcp_connection object and the socket is not lost
-            //
-            connection_impl::pointer_t connection(new connection_impl(f_communicator_server, f_remote_connect.get_socket()));
-
-            // keep a copy here, but we only keep a weak pointer to
-            // avoid locking the object when we somehow lose connection
-            //
-            f_connection = connection;
-
-            // set the name for this type of connections; this name does
-            // not change later
-            //
-            connection->set_name("snapcommunicator connection");
-
-            snap::snap_communicator::instance()->add_connection(connection);
-
-            // we initiated the connection so we have to send a CONNECT
-            //
-            snap::snap_communicator_message reply;
-            //reply.set_service("" or "snapcommunicator") -- "" is the default
-            reply.set_command("CONNECT");
-
-            // server type
-            reply.add_parameter("type", f_communicator_server->get_server_type());
-
-            // services
-            QString const services(f_communicator_server->get_local_services());
-            if(!services.isEmpty())
-            {
-                reply.add_parameter("services", f_communicator_server->get_local_services());
-            }
-
-            // heard of
-            QString const services_heard_of(f_communicator_server->get_services_heard_of());
-            if(!services_heard_of.isEmpty())
-            {
-                reply.add_parameter("heard_of", services_heard_of);
-            }
-
-            connection->send_message(reply);
-
-            set_enable(false);
-        }
-        else
-        {
-            // wait for 5 minutes before we attempt this connection again
-            set_timeout_delay(5LL * 60LL * 1000000LL);
-        }
+        set_timeout_delay(5LL * 60LL * 1000000LL);
+        set_enable(true);
+        return;
     }
+
+    // create the TCP connection to communicate with that neighbor
+    //
+    connection_impl::pointer_t connection(new connection_impl(f_communicator_server, socket));
+
+    // keep a copy here, but we only keep a weak pointer to
+    // avoid locking the object when we somehow lose connection
+    //
+    f_connection = connection;
+
+    // set the name for this type of connections; this name does
+    // not change later
+    //
+    connection->set_name("snapcommunicator connection");
+
+    snap::snap_communicator::instance()->add_connection(connection);
+
+    // we initiated the connection so we have to send a CONNECT
+    //
+    snap::snap_communicator_message reply;
+    //reply.set_service("" or "snapcommunicator") -- "" is the default
+    reply.set_command("CONNECT");
+
+    // server version
+    reply.add_parameter("version", snap::snap_communicator::VERSION);
+
+    // server type
+    reply.add_parameter("types", f_communicator_server->get_server_types());
+
+    // services
+    QString const services(f_communicator_server->get_local_services());
+    if(!services.isEmpty())
+    {
+        reply.add_parameter("services", f_communicator_server->get_local_services());
+    }
+
+    // heard of
+    QString const services_heard_of(f_communicator_server->get_services_heard_of());
+    if(!services_heard_of.isEmpty())
+    {
+        reply.add_parameter("heard_of", services_heard_of);
+    }
+
+    connection->send_message(reply);
 }
 
 
@@ -1725,12 +2100,17 @@ int main(int argc, char * argv[])
         //
         s->prepare_qtapp( argc, argv );
 
+        // show when we started in the log
+        SNAP_LOG_INFO("--------------------------------- snapcommunicator started.");
+
         // Run the snap communicator server; note that the snapcommunicator
         // server is snap_communicator and not snap::server
         //
-        snap_communicator_server communicator( s );
-        communicator.init();
-        communicator.run();
+        {
+            snap_communicator_server::pointer_t communicator( new snap_communicator_server( s ) );
+            communicator->init();
+            communicator->run();
+        }
 
         exitval = 0;
     }

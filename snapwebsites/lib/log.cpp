@@ -260,6 +260,10 @@ void unconfigure()
         g_logging_type = logging_type_t::UNCONFIGURED_LOGGER;
         //g_last_logging_type = ... -- keep the last valid configuration
         //  type so we can call reconfigure() and get it back "as expected"
+
+        // TBD: should we clear the logger and secure logger instances?
+        //g_logger = log4cplus::Logger();
+        //g_secure_logger = log4cplus::Logger();
     }
 }
 
@@ -520,6 +524,7 @@ void configure_conffile(QString const & filename)
     }
 
     g_log_config_filename   = filename;
+    g_log_output_filename.clear();
     g_logging_type          = logging_type_t::CONFFILE_LOGGER;
     g_last_logging_type     = logging_type_t::CONFFILE_LOGGER;
 
@@ -751,7 +756,7 @@ bool is_loggingserver_available ( QString const & logserver )
  * \param[in] func  The name of the function that log was generated from.
  * \param[in] line  The line number that log was generated from.
  */
-logger::logger(log_level_t const log_level, char const *file, char const *func, int const line)
+logger::logger(log_level_t const log_level, char const * file, char const * func, int const line)
     : f_log_level(log_level)
     , f_file(file)
     , f_func(func)
@@ -811,13 +816,13 @@ logger::~logger()
     }
 
     log4cplus::LogLevel ll(log4cplus::FATAL_LOG_LEVEL);
-    int sll(-1);  // syslog level if log4cplus not available (if -1 don't syslog() anything)
+    int sll(-1);  // syslog level if log4cplus not available (if -1 do not syslog() anything)
     bool console(false);
-    char const *level_str(nullptr);
+    char const * level_str(nullptr);
     switch(f_log_level)
     {
     case log_level_t::LOG_LEVEL_OFF:
-        // off means we don't emit anything
+        // off means we do not emit anything
         return;
 
     case log_level_t::LOG_LEVEL_FATAL:
@@ -904,7 +909,7 @@ logger::~logger()
         }
     }
 
-    if(console && isatty(fileno(stdout)))
+    if(console && isatty(STDERR_FILENO))
     {
         std::cerr << level_str << ":" << f_file.get() << ":" << f_line << ": " << f_message.toUtf8().data() << std::endl;
     }
@@ -1115,6 +1120,14 @@ logger& operator << ( logger& l, wchar_t const* msg )
  */
 bool logger::is_enabled_for(log_level_t const log_level)
 {
+    // if still unconfigured, we just pretend the level is ON because
+    // we do not really know for sure what the level is at this point
+    //
+    if( g_logging_type == logging_type_t::UNCONFIGURED_LOGGER )
+    {
+        return true;
+    }
+
     log4cplus::LogLevel ll(log4cplus::FATAL_LOG_LEVEL);
 
     switch(log_level)

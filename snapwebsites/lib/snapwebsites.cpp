@@ -1345,7 +1345,7 @@ server::udp_server_t server::udp_get_server( QString const & udp_addr_port )
     // the default port for our Snap! server UDP listener is 4007
     QString addr;
     int port;
-    get_addr_port(udp_addr_port, addr, port, 4007);
+    tcp_client_server::get_addr_port(udp_addr_port, addr, port, 4007);
 
     udp_server_t server( new udp_client_server::udp_server(addr.toUtf8().data(), port) );
     if(server.isNull())
@@ -1389,106 +1389,13 @@ void server::udp_ping_server( QString const & udp_addr_port, char const * messag
 {
     QString addr;
     int port;
-    get_addr_port(udp_addr_port, addr, port);
+    tcp_client_server::get_addr_port(udp_addr_port, addr, port);
     udp_client_server::udp_client client(addr.toUtf8().data(), port);
     size_t const len(strlen(message));
     if(static_cast<size_t>(client.send(message, len)) != len) // we do not send the '\0'
     {
         // XXX: we need to determine whether we want to throw here
         throw snapwebsites_exception_io_error("send failed sending all the data");
-    }
-}
-
-
-/** \brief Retrieve an address and a port from a string.
- *
- * This function breaks up an address and a port number from a string.
- *
- * The address can either be an IPv4 address followed by a colon and
- * the port number, or an IPv6 address written between square brackets
- * ([::1]) followed by a colon and the port number.
- *
- * Port numbers are limited to a number between 1 and 65535 inclusive.
- * They can only be specified in base 10.
- *
- * The port is optional only if a \p default_port is provided (by
- * default the \p default_port parameter is set to zero meaning that
- * it is not specified.)
- *
- * \exception snapwebsites_exception_invalid_parameters
- * If any parameter is considered invalid (albeit the validity of the
- * address is not checked since it could be a fully qualified domain
- * name) then this exception is raised.
- *
- * \todo
- * Add support for named ports? (i.e. as defined in /etc/services)
- *
- * \param[in] addr_port  The address and port pair.
- * \param[out] addr  The address part, without the square brackets for IPv6
- *             addresses.
- * \param[out] port  The port number (1 to 65535 inclusive.)
- * \param[in] default_port  To render the port specification optional, a
- *            port number.
- */
-void server::get_addr_port(QString const & addr_port, QString & addr, int & port, int const default_port)
-{
-    //addr.clear() -- not necessary, we do not return until the address gets defined
-    //port = 0 -- not necessary, we do not return until the port gets defined
-
-    QString port_str;
-    int const bracket(addr_port.lastIndexOf("]"));
-    int const p(addr_port.lastIndexOf(":"));
-    if(p != -1)
-    {
-        if(bracket != -1)
-        {
-            if(p > bracket)
-            {
-                // IPv6 port specification
-                addr = addr_port.mid(1, bracket - 1); // exclude the '[' and ']'
-                port_str = addr_port.mid(p + 1); // ignore the ':'
-            }
-            else
-            {
-                SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
-                throw snapwebsites_exception_invalid_parameters("server::get_addr_port(): invalid [IPv6]:port specification, port missing.");
-            }
-        }
-        else
-        {
-            // IPv4 port specification
-            addr = addr_port.mid(0, p); // ignore the ':'
-            port_str = addr_port.mid(p + 1); // ignore the ':'
-        }
-
-        // TODO: add support for named ports (i.e. read from /etc/services)
-        //
-
-        bool ok(false);
-        port = port_str.toInt(&ok, 10); // force base 10
-        if(!ok)
-        {
-            SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
-            throw snapwebsites_exception_invalid_parameters("server::get_addr_port(): invalid addr:port specification, port number is not valid.");
-        }
-    }
-    else if(default_port > 0)
-    {
-        addr = addr_port;
-        port = default_port;
-    }
-    else
-    {
-        SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
-        throw snapwebsites_exception_invalid_parameters("server::get_addr_port(): invalid addr:port specification, port missing and no default provided.");
-    }
-
-    // finally verify that the port is in range
-    if(port <= 0
-    || port > 65535)
-    {
-        SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
-        throw snapwebsites_exception_invalid_parameters("server::get_addr_port(): invalid addr:port specification, port number is out of bounds (1 .. 65535).");
     }
 }
 
@@ -1512,18 +1419,17 @@ bool server::nofork() const
 class temporary_timer : public snap_communicator::snap_timer
 {
 public:
+    temporary_timer(server * s)
+        : snap_timer(1000000) // wake up once per second
+        , f_server(s)
+    {
+    }
 
-temporary_timer(server * s)
-    : snap_timer(1000000) // wake up once per second
-    , f_server(s)
-{
-}
-
-// snap_communicator::snap_timer implementation
-virtual void process_timeout()
-{
-    f_server->check_listen_runner();
-}
+    // snap_communicator::snap_timer implementation
+    virtual void process_timeout()
+    {
+        f_server->check_listen_runner();
+    }
 
 private:
     server *            f_server;
@@ -1706,7 +1612,7 @@ void server::listen()
     }
     QString addr;
     int port;
-    get_addr_port(listen_info, addr, port, 4004);
+    tcp_client_server::get_addr_port(listen_info, addr, port, 4004);
 
     // convert the address information
     QHostAddress const a(addr);

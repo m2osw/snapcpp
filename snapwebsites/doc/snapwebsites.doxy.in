@@ -690,8 +690,8 @@ INPUT                  = @snapwebsites_project_SOURCE_DIR@/lib \
                          @snapwebsites_project_SOURCE_DIR@/plugins/mimetype \
                          @snapwebsites_project_SOURCE_DIR@/plugins/oauth2 \
                          @snapwebsites_project_SOURCE_DIR@/plugins/output \
-                         @snapwebsites_project_SOURCE_DIR@/plugins/path \
                          @snapwebsites_project_SOURCE_DIR@/plugins/password \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/path \
                          @snapwebsites_project_SOURCE_DIR@/plugins/permissions \
                          @snapwebsites_project_SOURCE_DIR@/plugins/qrcode \
                          @snapwebsites_project_SOURCE_DIR@/plugins/robotstxt \

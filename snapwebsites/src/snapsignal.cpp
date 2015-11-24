@@ -72,6 +72,18 @@ int main(int argc, char *argv[])
             }
             s->udp_ping("snapwatchdog_udp_signal", msg.toUtf8().data());
         }
+        else if(s->get_parameter("__BACKEND_ACTION") == "snapinit")
+        {
+            // here is why we probably want to have one file with all the UDP info
+            s->set_parameter("snapinit_udp_signal", "127.0.0.1:4039");
+            s->udp_ping("snapinit_udp_signal", msg.toUtf8().data());
+        }
+        else if(s->get_parameter("__BACKEND_ACTION") == "snapcommunicator")
+        {
+            // here is why we probably want to have one file with all the UDP info
+            s->set_parameter("snapcommunicator_udp_signal", "127.0.0.1:4041");
+            s->udp_ping("snapcommunicator_udp_signal", msg.toUtf8().data());
+        }
         else
         {
             std::cerr << "error: unknown/unsupported action \"" << s->get_parameter("__BACKEND_ACTION") << "\"." << std::endl;

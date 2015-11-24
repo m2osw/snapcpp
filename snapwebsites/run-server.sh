@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-SNAPFLAGS="--detach --binary_path ./bin --logfile snapinit.log -c my_server.conf --all"
+SNAPFLAGS="--detach --binary-path ./bin --logfile snapinit.log -c my_server.conf --all"
 
 if [ -z "$1" ]
 then

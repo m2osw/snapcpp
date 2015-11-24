@@ -23,6 +23,7 @@
 #include <QMap>
 
 #include <signal.h>
+#include <sys/signalfd.h>
 
 
 namespace snap
@@ -63,7 +64,8 @@ public:
 class snap_communicator_message
 {
 public:
-    typedef QMap<QString, QString>  parameters_t;
+    typedef QMap<QString, QString>                  parameters_t;
+    typedef std::vector<snap_communicator_message>  vector_t;
 
     bool                    from_message(QString const & message);
     QString                 to_message() const;
@@ -139,6 +141,7 @@ public:
 
         int                         get_priority() const;
         void                        set_priority(priority_t priority);
+        static bool                 compare(pointer_t const & lhs, pointer_t const & rhs);
 
         int64_t                     get_timeout_delay() const;
         void                        set_timeout_delay(int64_t timeout_us);
@@ -149,8 +152,6 @@ public:
 
         void                        non_blocking() const;
         void                        keep_alive() const;
-
-        bool                        operator < (snap_connection const & rhs) const;
 
         // callbacks
         virtual void                process_timeout();
@@ -205,16 +206,35 @@ public:
         virtual bool                is_signal() const;
         virtual int                 get_socket() const;
 
-        bool                        is_active() const;
-        void                        activate(bool active);
+    private:
+        friend snap_communicator;
+
+        void                        process();
+
+        int                         f_signal = 0;   // i.e. SIGHUP, SIGTERM...
+        int                         f_socket = -1;  // output of signalfd()
+        struct signalfd_siginfo     f_signal_info = signalfd_siginfo();
+    };
+
+    class snap_thread_done_signal
+        : public snap_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_thread_done_signal>    pointer_t;
+        typedef std::weak_ptr<snap_thread_done_signal>      weak_t;
+
+                                    snap_thread_done_signal();
+                                    ~snap_thread_done_signal();
+
+        // snap_connection implementation
+        virtual bool                is_reader() const;
+        virtual int                 get_socket() const;
+        virtual void                process_read();
+
+        void                        thread_done();
 
     private:
-        static void                 sighandler(int sig);
-        void                        signal_received();
-
-        int                         f_signal = 0; // i.e. SIGHUP, SIGTERM...
-        bool                        f_active = false;
-        sighandler_t                f_sighandler;
+        int                         f_pipe[2];      // pipes
     };
 
     class snap_tcp_client_connection

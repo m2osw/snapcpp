@@ -87,6 +87,7 @@ add_library( ${PROJECT_NAME} SHARED
     http_strings.cpp                            # parse HTTP strings (Accept strings in particular)
     inet_helpers.cpp                            # helper functions in link with the network
     log.cpp                                     # log4cplus support
+    mkdir_p.cpp                                 # make directories so path is valid
     mkgmtime.c                                  # mktime() with a UTC time
     mounts.cpp                                  # read /proc/mounts or some other mount point file
     plugins.cpp                                 # plugins loader and list

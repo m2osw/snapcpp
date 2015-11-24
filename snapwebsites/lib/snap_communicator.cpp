@@ -15,6 +15,30 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// to get the POLLRDHUP definition
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#include "snap_communicator.h"
+
+#include "log.h"
+#include "not_reached.h"
+#include "not_used.h"
+#include "qstring_stream.h"
+
+#include <sstream>
+#include <limits>
+
+#include <fcntl.h>
+#include <poll.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+
+#include "poison.h"
+
 /** \file
  * \brief Implementation of the Snap Communicator class.
  *
@@ -37,46 +61,38 @@
  * real slowness issues on small VPN servers.)
  */
 
-// to get the POLLRDHUP definition
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#include "snap_communicator.h"
-
-#include "log.h"
-#include "not_reached.h"
-#include "not_used.h"
-#include "qstring_stream.h"
-
-#include <sstream>
-#include <limits>
-
-#include <poll.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <sys/resource.h>
-#include <sys/time.h>
-
-#include "poison.h"
-
 namespace snap
 {
 namespace
 {
 
 
-snap_communicator::pointer_t                        g_instance;
+/** \brief The instance of the snap_communicator singleton.
+ *
+ * This pointer is the one instance of the snap_communicator
+ * we create to run an event loop.
+ */
+snap_communicator::pointer_t        g_instance;
+
 
 /** \brief The array of signals handled by snap_signal objects.
  *
- * This function holds a list of signal handlers. Whenever a
- * signal is received a snap_signal object has to be marked
- * as active. Then the signal handler returns and the run()
- * loop wakes up, detects that the signal was received and
- * runs the process_signal() callback.
+ * This map holds a list of signal handlers. You cannot register
+ * the same signal more than once so this map is used to make
+ * sure that each signal is unique.
+ *
+ * \todo
+ * We may actually want to use a sigset_t object and just set
+ * bits and remove 
+ *
+ * \note
+ * The pointer to the snap_signal object is a bare pointer
+ * for in part because we cannot use a smart pointer in
+ * a constructor where we add the signal to this map. Also
+ * at this time that pointer does not get used so it could
+ * as well have been a boolean.
  */
-QMap<int, snap_communicator::snap_signal::weak_t>   g_signal_handlers;
+sigset_t                            g_signal_handlers = sigset_t();
 
 
 } // no name namespace
@@ -604,7 +620,7 @@ bool snap_communicator::snap_connection::valid_socket() const
 
 /** \brief Check whether this connection is enabled.
  *
- * It is possible to turn a connection ON or OFF using the set_enabled()
+ * It is possible to turn a connection ON or OFF using the set_enable()
  * function. This function returns the current value. If true, which
  * is the default, the connection is considered enabled and will get
  * its callbacks called.
@@ -688,6 +704,28 @@ void snap_communicator::snap_connection::set_priority(priority_t priority)
 }
 
 
+/** \brief Less than operator to sort connections by priority.
+ *
+ * This function is used to know whether a connection has a higher or lower
+ * priority. This is used when one adds, removes, or change the priority
+ * of a connection. The sorting itself happens in the
+ * snap_communicator::run() which knows that something changed whenever
+ * it checks the data.
+ *
+ * The result of the priority mechanism is that callbacks of items with
+ * a smaller priorirty will be executed first.
+ *
+ * \param[in] rhs  The right hand side snap_connection.
+ *
+ * \return true if this snap_connection has a smaller priority than the
+ *         right hand side snap_connection.
+ */
+bool snap_communicator::snap_connection::compare(pointer_t const & lhs, pointer_t const & rhs)
+{
+    return lhs->get_priority() < rhs->get_priority();
+}
+
+
 /** \brief Return the delay between ticks when this connection times out.
  *
  * All connections can include a timeout delay in microseconds which is
@@ -730,13 +768,19 @@ int64_t snap_communicator::snap_connection::get_timeout_delay() const
  * function calls calculate_next_tick() to calculate the time when
  * the next tick will occur which will always be in the function.
  *
+ * \exception snap_communicator_parameter_error
+ * This exception is raised if the timeout_us parameter is not considered
+ * valid. The minimum value is 10 and microseconds. You may use -1 to turn
+ * off the timeout delay feature.
+ *
  * \param[in] timeout_us  The new time out in microseconds.
  */
 void snap_communicator::snap_connection::set_timeout_delay(int64_t timeout_us)
 {
-    if(timeout_us < -1)
+    if(timeout_us != -1
+    && timeout_us < 10)
     {
-        throw snap_communicator_parameter_error("snap_communicator::snap_connection::set_timeout_delay(): timeout_us parameter cannot be less than -1.");
+        throw snap_communicator_parameter_error("snap_communicator::snap_connection::set_timeout_delay(): timeout_us parameter cannot be less than 10 unless it is exactly -1.");
     }
 
     f_timeout_delay = timeout_us;
@@ -813,6 +857,10 @@ int64_t snap_communicator::snap_connection::get_timeout_date() const
  * timeout is executed last, after all other events, and also
  * priority is used to know which other connections are parsed
  * first.)
+ *
+ * \exception snap_communicator_parameter_error
+ * If the date_us is too small (less than -1) then this exception
+ * is raised.
  *
  * \param[in] date_us  The new time out in micro seconds.
  */
@@ -951,28 +999,6 @@ void snap_communicator::snap_connection::keep_alive() const
             SNAP_LOG_WARNING("snap_communicator::snap_tcp_server_client_connection::keep_alive(): an error occurred trying to mark socket with SO_KEEPALIVE.");
         }
     }
-}
-
-
-/** \brief Less than operator to sort connections by priority.
- *
- * This function is used to know whether a connection has a higher or lower
- * priority. This is used when one adds, removes, or change the priority
- * of a connection. The sorting itself happens in the
- * snap_communicator::run() which knows that something changed whenever
- * it checks the data.
- *
- * The result of the priority mechanism is that callbacks of items with
- * a smaller priorirty will be executed first.
- *
- * \param[in] rhs  The right hand side snap_connection.
- *
- * \return true if this snap_connection has a smaller priority than the
- *         right hand side snap_connection.
- */
-bool snap_communicator::snap_connection::operator < (snap_connection const & rhs) const
-{
-    return f_priority < rhs.f_priority;
 }
 
 
@@ -1185,10 +1211,13 @@ bool snap_communicator::snap_timer::valid_socket() const
  * \p posix_signal which represents a POSIX signal such as SIGHUP,
  * SIGTERM, SIGUSR1, SIGUSR2, etc.
  *
- * The poll() function can unblock a set of POSIX signals that
- * end up calling the process_signal() callback function.
- * We have not written any specialized code for this type of
- * connection at this point.
+ * The signal automatically gets masked out. This allows us to
+ * unmask the signal only when we are ready to call ppoll() and
+ * thus not have the signal break any of our normal user code.
+ *
+ * The ppoll() function unblocks all the signals that you listen
+ * to (i.e. for each snap_signal object you created.) The run()
+ * loop ends up calling your process_signal() callback function.
  *
  * Note that the snap_signal callback is called from the normal user
  * environment and not directly from the POSIX signal handler.
@@ -1216,26 +1245,68 @@ bool snap_communicator::snap_timer::valid_socket() const
  * The best way in our processes will be to block all signals except
  * while poll() is called (using ppoll() for the feat.)
  *
- * \param[in] communicator  The snap communicator controlling this connection.
- * \param[in] timeout  The timeout in microseconds.
+ * \warning
+ * The the signal gets masked by this constructor. If you want to make
+ * sure that most of your code does not get affected by said signal,
+ * make sure to create your snap_signal object early on or mask those
+ * signals beforehand. Otherwise the signal could happen before it
+ * gets masked. Initialization of your process may not require
+ * protection anyway.
+ *
+ * \bug
+ * You should not use signal() and setup a handler for the same signal.
+ * It will not play nice to have both types of signal handlers.
+ *
+ * \exception snap_communicator_initialization_error
+ * Create multiple snap_signal() with the same posix_signal parameter
+ * is not supported and this exception is raised whenever you attempt
+ * to do that. Remember that you can have at most one snap_communicator
+ * object (hence the singleton.)
+ *
+ * \exception snap_communicator_runtime_error
+ * The signalfd() function is expected to create a "socket" (file
+ * descriptor) listening for incoming signals. If it fails, this
+ * exception is raised (which is very similar to other socket
+ * based connections which throw whenever a connection cannot
+ * be achieved.)
+ *
+ * \param[in] posix_signal  The signal to be managed by this snap_signal.
  */
 snap_communicator::snap_signal::snap_signal(int posix_signal)
     : f_signal(posix_signal)
+    //, f_socket(-1) -- auto-init
+    //, f_signal_info() -- auto-init
 {
-    // TODO: implement the grabbing of that signal
-    if(g_signal_handlers.contains(f_signal))
+    if(sigismember(&g_signal_handlers, f_signal))
     {
         // this could be fixed, but probably not worth the trouble...
         throw snap_communicator_initialization_error("the same signal cannot be created more than once in your entire process.");
     }
-    pointer_t sp(this);
-    g_signal_handlers[f_signal] = sp; // TBD: is that assignment really correct?!
 
-    // TODO: redesign that one with signalfd() instead, because that way
-    //       we don't need to have a handler at all! Then we just use
-    //       the read() to get the signal information...
+    // create a mask for that signal
     //
-    f_sighandler = signal(f_signal, sighandler);
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, f_signal);
+
+    // first we block the signal
+    //
+    sigprocmask(SIG_BLOCK, &set, nullptr);
+
+    // second we create a "socket" for the signal (really it is a file
+    // descriptor manager by the kernel)
+    //
+    f_socket = signalfd(-1, &set, SFD_NONBLOCK | SFD_CLOEXEC);
+    if(f_socket == -1)
+    {
+        int const e(errno);
+        SNAP_LOG_ERROR("signalfd() failed to create a signal listener for signal ")(f_signal)(" (errno: ")(e)(" -- ")(strerror(e))(")");
+        throw snap_communicator_runtime_error("signalfd() failed to create a signal listener.");
+    }
+
+    // mark this signal as in use
+    //
+    sigaddset(&g_signal_handlers, f_signal);
 }
 
 
@@ -1252,9 +1323,8 @@ snap_communicator::snap_signal::snap_signal(int posix_signal)
  */
 snap_communicator::snap_signal::~snap_signal()
 {
-    // restore signal() handler as it was before
-    signal(f_signal, f_sighandler);
-    g_signal_handlers.remove(f_signal); // the weak pointer is already nullptr but it still exists in this map
+    close(f_socket);
+    sigdelset(&g_signal_handlers, f_signal);
 }
 
 
@@ -1275,99 +1345,197 @@ bool snap_communicator::snap_signal::is_signal() const
 
 /** \brief Retrieve the "socket" of the signal object.
  *
- * Signal objects have a socket number that represents the POSIX
- * signal number.
+ * Signal objects have a socket (file descriptor) assigned to them
+ * using the signalfd() function.
  *
  * \note
- * You should not override this function since there is not other
+ * You should not override this function since there is no other
  * value it can return.
  *
- * \return The POSIX signal number of this snap_signal object.
+ * \return The signal socket to listen on with poll().
  */
 int snap_communicator::snap_signal::get_socket() const
 {
-    return f_signal;
+    return f_socket;
 }
 
 
-/** \brief Whether this signal is active or not.
+/** \brief Processes this signal.
  *
- * This function returns true if this signal is active, which means
- * that the signal handler was called.
+ * This function reads the signal "socket" for all the signal received
+ * so far.
  *
- * The flag gets set to true whenever the signal handler gets called,
- * and reset by the run() function once the process_signal() gets
+ * For each instance found in the signal queue, the process_signal() gets
  * called.
  */
-bool snap_communicator::snap_signal::is_active() const
+void snap_communicator::snap_signal::process()
 {
-    return f_active;
-}
-
-
-/** \brief Mark the signal as active or not.
- *
- * This function is used to activate (\p active = true) or
- * deactivate (\p active = false) this signal. An active
- * signal is one for which the process_signal() callback
- * will be called.
- */
-void snap_communicator::snap_signal::activate(bool active)
-{
-    f_active = active;
-}
-
-
-/** \brief Capture the signal.
- *
- * This signal handler is called by the kernel whenever a signal is
- * received with the identifier as the user defined when constructing
- * the corresponding snap_signal object.
- *
- * \todo
- * Add a flag to know whether the previous handler should be called
- * once we are done with our own work.
- */
-void snap_communicator::snap_signal::sighandler(int sig)
-{
-    // make sure that signal was still valid
-    if(g_signal_handlers.contains(sig))
+    // loop any number of times as required
+    // (or can we receive a maximum of 1 such signal at a time?)
+    //
+    for(;;)
     {
-        pointer_t s(g_signal_handlers[sig].lock());
-        if(s)
+        int const r(read(f_socket, &f_signal_info, sizeof(f_signal_info)));
+        if(r == sizeof(f_signal_info))
         {
-            s->signal_received();
+            process_signal();
+        }
+        else
+        {
+            if(r == -1)
+            {
+                // if EAGAIN then we are done as expected, any other error
+                // is logged
+                //
+                if(errno != EAGAIN)
+                {
+                    int const e(errno);
+                    SNAP_LOG_ERROR("an error occurred while reading from the signalfd() file descriptor. (errno: ")(e)(" -- ")(strerror(e));
+                }
+            }
+            else
+            {
+                // what to do? what to do?
+                SNAP_LOG_ERROR("reading from the signalfd() file descriptor did not return the expected size. (got ")(r)(", expected ")(sizeof(f_signal_info))(")");
+            }
+            break;
         }
     }
 }
 
 
-/** \brief Called when receiving the signal.
- *
- * This function is called from the signal handler because the
- * signal handled is a static function (so it cannot access
- * internal variables without first calling a function like
- * this one.)
- *
- * The function marks the signal as active.
- *
- * \todo
- * TBD: determine whether the previous signal should be called.
- */
-void snap_communicator::snap_signal::signal_received()
-{
-    activate(true);
 
-    // call the previous handler implementation?
-    // (we may want to include a flag to know whether this should
-    // be done... at this point we do not do that.)
-    //
-    if(f_sighandler != SIG_IGN
-    && f_sighandler != SIG_DFL)
+
+
+
+
+/////////////////////////////
+// Snap Thread Done Signal //
+/////////////////////////////
+
+
+/** \brief Initializes the "thread done signal" object.
+ *
+ * To know that a thread is done, we need some form of signal that the
+ * poll() can wake up on. For the purpose we currently use a pipe because
+ * a full socket is rather slow to setup compare to a simple pipe.
+ *
+ * To use this signal, one creates a Thread Done Signal and adds the
+ * new connection to the Snap Communicator object. Then when the thread
+ * is done, the thread calls the thread_done() function. That will wake
+ * up the main process.
+ *
+ * The same snap_thread_done_signal class can be used multiple times,
+ * but only by one thread at a time. Otherwise you cannot know which
+ * thread sent the message and by the time you attempt a join, you may
+ * be testing the wrong thread (either that or you need another type
+ * of synchronization mechanism.)
+ *
+ * \code
+ *      class thread_done_impl
+ *              : snap::snap_communicator::snap_thread_done_signal::snap_thread_done_signal
+ *      {
+ *          ...
+ *          void process_read()
+ *          {
+ *              // this function gets called when the thread is about
+ *              // to exit or has exited; since the write to the pipe
+ *              // happens before the thread really exited, but should
+ *              // near the very end, you should be fine.
+ *              ...
+ *          }
+ *          ...
+ *      };
+ *
+ *      // in the main thread
+ *      snap::snap_communicator::snap_thread_done_signal::pointer_t s(new thread_done_impl);
+ *      snap::snap_communicator::instance()->add_connection(s);
+ *
+ *      // create thread... and make sure the thread has access to 's'
+ *      ...
+ *
+ *      // in the thread, before exiting we do:
+ *      s->thread_done();
+ *
+ *      // around here, in the timeline, the process_read() function
+ *      // gets called
+ * \endcode
+ */
+snap_communicator::snap_thread_done_signal::snap_thread_done_signal()
+{
+    if(pipe2(f_pipe, O_NONBLOCK | O_CLOEXEC) != 0)
     {
-        //f_sighandler(sig);
+        // pipe could not be created
+        throw snap_communicator_initialization_error("somehow the pipe used to detect the death of a thread could not be created.");
     }
 }
+
+
+/** \brief Close the pipe used to detect the thread death.
+ *
+ * The destructor is expected to close the pipe opned in the constructor.
+ */
+snap_communicator::snap_thread_done_signal::~snap_thread_done_signal()
+{
+    close(f_pipe[0]);
+    close(f_pipe[1]);
+}
+
+
+/** \brief Tell that this connection expects incoming data.
+ *
+ * The snap_thread_done_signal implements a signal that a secondary
+ * thread can trigger before it quits, hence waking up the main
+ * thread immediately instead of polling.
+ *
+ * \return The function returns true.
+ */
+bool snap_communicator::snap_thread_done_signal::is_reader() const
+{
+    return true;
+}
+
+
+/** \brief Retrieve the "socket" of the thread done signal object.
+ *
+ * The Thread Done Signal is implemented using a pair of pipes.
+ * One of the pipes is returned as the "socket" and the other is
+ * used to "write the signal".
+ *
+ * \return The signal "socket" to listen on with poll().
+ */
+int snap_communicator::snap_thread_done_signal::get_socket() const
+{
+    return f_pipe[0];
+}
+
+
+/** \brief Read the byte that was written in the thread_done().
+ *
+ * This function implementation reads one byte that was written by
+ * thread_done() so the pipes can be reused multiple times.
+ */
+void snap_communicator::snap_thread_done_signal::process_read()
+{
+    char c(0);
+    read(f_pipe[0], &c, sizeof(char));
+}
+
+
+/** \brief Send the signal from the secondary thread.
+ *
+ * This function writes one byte in the pipe, which has the effect of
+ * waking up the poll() of the main thread. This way we avoid having
+ * to lock the file.
+ *
+ * The thread is expected to call this function just before it returns.
+ */
+void snap_communicator::snap_thread_done_signal::thread_done()
+{
+    char c(1);
+    write(f_pipe[1], &c, sizeof(char));
+}
+
 
 
 
@@ -1456,6 +1624,7 @@ bool snap_communicator::snap_tcp_client_connection::is_reader() const
 snap_communicator::snap_tcp_client_buffer_connection::snap_tcp_client_buffer_connection(std::string const & addr, int port, mode_t mode)
     : snap_tcp_client_connection(addr, port, mode)
 {
+    non_blocking();
 }
 
 
@@ -2538,7 +2707,7 @@ bool snap_communicator::run()
         {
             // sort the connections by priority
             //
-            sort(f_connections.begin(), f_connections.end());
+            std::stable_sort(f_connections.begin(), f_connections.end(), snap_connection::compare);
             f_force_sort = false;
         }
 
@@ -2557,12 +2726,16 @@ bool snap_communicator::run()
         fds.reserve(max_connections); // avoid more than 1 allocation
         for(auto c : connections)
         {
+            c->f_fds_position = -1;
+
             // is the connection enabled?
             if(!c->is_enabled())
             {
                 continue;
             }
 
+            // check whether a timeout is defined in this connection
+            //
             int64_t const timestamp(c->save_timeout_timestamp());
             if(timestamp != -1)
             {
@@ -2576,7 +2749,7 @@ bool snap_communicator::run()
 
             // is there any events to listen on?
             int e(0);
-            if(c->is_listener())
+            if(c->is_listener() || c->is_signal())
             {
                 e |= POLLIN;
             }
@@ -2618,14 +2791,6 @@ bool snap_communicator::run()
             fds.push_back(fd);
         }
 
-        if(fds.size() == 0)
-        {
-            // TODO: add support for timeout and signal only situations...
-            //
-            SNAP_LOG_FATAL("snap_communicator::run(): nothing to poll() on. All file connections are disabled or you only have timer and signal \"connections\" which is not yet supported.");
-            return false;
-        }
-
         // compute the right timeout
         int64_t timeout(-1);
         if(next_timeout_timestamp != std::numeric_limits<int64_t>::max())
@@ -2651,6 +2816,11 @@ bool snap_communicator::run()
                 }
             }
         }
+        else if(fds.empty())
+        {
+            SNAP_LOG_FATAL("snap_communicator::run(): nothing to poll() on. All file connections are disabled or you only have timer and signal \"connections\" which is not yet supported.");
+            return false;
+        }
 //std::cerr << QString("%1: timeout %2 (next was: %3, current ~ %4)\n").arg(getpid()).arg(timeout).arg(next_timeout_timestamp).arg(get_current_date());
 
         // TODO: add support for ppoll() so we can support signals cleanly
@@ -2666,68 +2836,85 @@ bool snap_communicator::run()
             {
                 throw snap_communicator_runtime_error("poll() returned a number larger than the input");
             }
+//std::cerr << getpid() << ": ------------------- new set of " << r << " events to handle\n";
 
             // check each connection one by one for:
             //
-            // 1) signals
-            // 2) fds events
-            // 3) timeouts
+            // 1) fds events, including signals
+            // 2) timeouts
             //
             // and execute the corresponding callbacks
             //
             for(size_t idx(0); idx < connections.size(); ++idx)
             {
                 snap_connection::pointer_t c(connections[idx]);
-                struct pollfd * fd(&fds[c->f_fds_position]);
 
-                // we consider that signals have the greater priority
-                // and thus handle them first
+                // is the connection enabled?
+                // TODO: check on whether we should save the enable
+                //       flag from before and not use the current
+                //       one (i.e. a callback could disable something
+                //       that we otherwise would expect to run at least
+                //       once...)
                 //
-                if(c->is_signal())
+                if(!c->is_enabled())
                 {
-                    snap_signal *ss(dynamic_cast<snap_signal *>(c.get()));
-                    if(ss && ss->is_active())
-                    {
-                        ss->activate(false);
-                        c->process_signal();
-                    }
+                    continue;
                 }
 
-                // if any events were found by poll(), process them now
+                // if we have a valid fds position then an event other
+                // than a timeout occurred on that connection
                 //
-                if(fd->revents != 0)
+                if(c->f_fds_position >= 0)
                 {
-                    // an event happened on this one
+                    struct pollfd * fd(&fds[c->f_fds_position]);
+
+                    // if any events were found by poll(), process them now
                     //
-                    if((fd->revents & (POLLIN | POLLPRI)) != 0)
+                    if(fd->revents != 0)
                     {
-                        if(c->is_listener())
+                        // an event happened on this one
+                        //
+                        if((fd->revents & (POLLIN | POLLPRI)) != 0)
                         {
-                            // a listener is a special case and we want
-                            // to call process_accept() instead
+                            // we consider that Unix signals have the greater priority
+                            // and thus handle them first
                             //
-                            c->process_accept();
+                            if(c->is_signal())
+                            {
+                                snap_signal * ss(dynamic_cast<snap_signal *>(c.get()));
+                                if(ss)
+                                {
+                                    ss->process();
+                                }
+                            }
+                            else if(c->is_listener())
+                            {
+                                // a listener is a special case and we want
+                                // to call process_accept() instead
+                                //
+                                c->process_accept();
+                            }
+                            else
+                            {
+                                c->process_read();
+                            }
                         }
-                        else
+                        if((fd->revents & POLLOUT) != 0)
                         {
-                            c->process_read();
+                            c->process_write();
                         }
-                    }
-                    if((fd->revents & POLLOUT) != 0)
-                    {
-                        c->process_write();
-                    }
-                    if((fd->revents & POLLERR) != 0)
-                    {
-                        c->process_error();
-                    }
-                    if((fd->revents & (POLLHUP | POLLRDHUP)) != 0)
-                    {
-                        c->process_hup();
-                    }
-                    if((fd->revents & POLLNVAL) != 0)
-                    {
-                        c->process_invalid();
+                        if((fd->revents & POLLERR) != 0)
+                        {
+                            c->process_error();
+                        }
+                        if((fd->revents & (POLLHUP | POLLRDHUP)) != 0)
+                        {
+                            c->process_hup();
+                        }
+                        if((fd->revents & POLLNVAL) != 0)
+                        {
+                            c->process_invalid();
+                        }
                     }
                 }
 
@@ -2740,10 +2927,20 @@ bool snap_communicator::run()
                     if(now >= timestamp)
                     {
                         // move the timeout as required first
+                        // (because the callback may move it again)
+                        //
                         c->calculate_next_tick();
-                        c->set_timeout_date(-1);
+
+                        // the timeout date needs to be reset if the tick
+                        // happened for that date
+                        //
+                        if(now >= c->get_timeout_date())
+                        {
+                            c->set_timeout_date(-1);
+                        }
 
                         // then run the callback
+                        //
                         c->process_timeout();
                     }
                 }
