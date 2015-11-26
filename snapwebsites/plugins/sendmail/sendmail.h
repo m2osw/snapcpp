@@ -248,7 +248,7 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_emails_table();
 
     // server signals
-    void                    on_register_backend_action(server::backend_action_map_t & actions);
+    void                    on_register_backend_action(server::backend_action::map_t & actions);
     void                    on_replace_token(content::path_info_t & cpath, QDomDocument & xml, filter::filter::token_info_t & token);
 
     // server::backend_action implementation

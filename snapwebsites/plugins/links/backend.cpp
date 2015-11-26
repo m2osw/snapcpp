@@ -102,7 +102,7 @@ SNAP_PLUGIN_EXTENSION_START(links)
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void links::on_register_backend_action(server::backend_action_map_t & actions)
+void links::on_register_backend_action(server::backend_action::map_t & actions)
 {
     actions[get_name(name_t::SNAP_NAME_LINKS_CLEANUPLINKS)] = this;
     actions[get_name(name_t::SNAP_NAME_LINKS_CREATELINK)] = this;

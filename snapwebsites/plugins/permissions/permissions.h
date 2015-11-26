@@ -174,7 +174,7 @@ public:
     virtual void            on_backend_action(QString const & action);
 
     // server signals
-    void                    on_register_backend_action(server::backend_action_map_t & actions);
+    void                    on_register_backend_action(server::backend_action::map_t & actions);
     void                    on_add_snap_expr_functions(snap_expr::functions_t & functions);
 
     // path signals

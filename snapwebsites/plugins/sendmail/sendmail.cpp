@@ -1938,7 +1938,7 @@ QString sendmail::default_from() const
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void sendmail::on_register_backend_action(server::backend_action_map_t & actions)
+void sendmail::on_register_backend_action(server::backend_action::map_t & actions)
 {
     actions[get_name(name_t::SNAP_NAME_SENDMAIL)] = this;
 }

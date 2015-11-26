@@ -92,6 +92,10 @@ private:
 
 
 
+// forward class declaration
+class snap_tcp_client_permanent_message_connection_impl;
+
+
 
 // WARNING: a snap_communicator object must be allocated and held in a shared pointer (see pointer_t)
 class snap_communicator
@@ -204,6 +208,8 @@ public:
         // snap_connection implementation
         virtual bool                is_signal() const;
         virtual int                 get_socket() const;
+
+        pid_t                       get_child_pid() const;
 
     private:
         friend snap_communicator;
@@ -376,8 +382,39 @@ public:
 
         // new callback
         virtual void                process_message(snap_communicator_message const & message) = 0;
+    };
+
+    class snap_tcp_client_permanent_message_connection
+        : public snap_timer
+    {
+    public:
+        typedef std::shared_ptr<snap_tcp_client_permanent_message_connection>    pointer_t;
+
+        static int64_t const        DEFAULT_PAUSE_BEFORE_RECONNECTING = 60 * 1000000LL;  // 1 minute
+
+                                    snap_tcp_client_permanent_message_connection(std::string const & address, int port, tcp_client_server::bio_client::mode_t mode = tcp_client_server::bio_client::mode_t::MODE_PLAIN, int64_t const pause = DEFAULT_PAUSE_BEFORE_RECONNECTING, bool const use_thread = true);
+
+        bool                        send_message(snap_communicator_message const & message, bool cache = false);
+
+        // snap_connection implementation
+        virtual void                process_error();
+        virtual void                process_hup();
+        virtual void                process_invalid();
+
+        // new callbacks
+        virtual void                process_message(snap_communicator_message const & message) = 0;
+        virtual void                process_connection_failed(std::string const & error_message);
+        virtual void                process_connected();
 
     private:
+        // snap_connection implementation
+        virtual void                process_timeout();
+
+        std::shared_ptr<snap_tcp_client_permanent_message_connection_impl>
+                                                        f_impl;
+        int64_t                                         f_pause;
+        bool const                                      f_use_thread;
+        snap_tcp_client_message_connection::pointer_t   f_message_connection;
     };
 
     class snap_udp_server_connection

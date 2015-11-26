@@ -903,7 +903,7 @@ void images::on_attach_to_session()
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void images::on_register_backend_action(server::backend_action_map_t & actions)
+void images::on_register_backend_action(server::backend_action::map_t & actions)
 {
     actions[get_name(name_t::SNAP_NAME_IMAGES_ACTION)] = this;
     actions[get_name(name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE)] = this;

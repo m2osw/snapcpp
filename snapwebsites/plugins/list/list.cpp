@@ -1890,7 +1890,7 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void list::on_register_backend_action(server::backend_action_map_t & actions)
+void list::on_register_backend_action(server::backend_action::map_t & actions)
 {
     actions[get_name(name_t::SNAP_NAME_LIST_PAGELIST)] = this;
     actions[get_name(name_t::SNAP_NAME_LIST_PROCESSLIST)] = this;

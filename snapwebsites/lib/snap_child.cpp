@@ -2810,6 +2810,20 @@ bool snap_child::process(int socket)
 }
 
 
+/** \brief Retrieve the child process identifier.
+ *
+ * Once a child process started, it gets assigned a pid_t value. In
+ * the parent process, this value can be retrieved using this function.
+ * In the child process, just use getpid().
+ *
+ * \return This snap_child process identifier.
+ */
+pid_t snap_child::get_child_pid() const
+{
+    return f_child_pid;
+}
+
+
 /** \brief Kill running process.
  *
  * Use this method to stop a child process. It first sends the SIGTERM
@@ -2867,11 +2881,11 @@ snap_child::status_t snap_child::check_status()
     if(f_child_pid != 0)
     {
         int status;
-        pid_t r = waitpid(f_child_pid, &status, WNOHANG);
+        pid_t const r = waitpid(f_child_pid, &status, WNOHANG);
         if(r == static_cast<pid_t>(-1))
         {
-            int e(errno);
-            SNAP_LOG_FATAL("a waitpid() returned an error (")(e)(")");
+            int const e(errno);
+            SNAP_LOG_FATAL("a waitpid() returned an error (")(e)(" -- ")(strerror(e))(")");
         }
         else if(r == f_child_pid)
         {
@@ -2881,16 +2895,16 @@ snap_child::status_t snap_child::check_status()
             if(WIFEXITED(status))
             {
                 // stopped with exit() or return in main()
-                f_child_pid = 0;
+                // TODO: log info if exit() != 0?
             }
             else if(WIFSIGNALED(status))
             {
                 // stopped because of a signal
                 SNAP_LOG_FATAL("child process ")(f_child_pid)(" exited after it received signal #")(WTERMSIG(status));
-                f_child_pid = 0;
             }
 #pragma GCC diagnostic pop
-            // other statuses are ignored
+            // other statuses are ignored for now
+            f_child_pid = 0;
         }
     }
 

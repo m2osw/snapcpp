@@ -533,7 +533,7 @@ std::string snap_backend::get_signal_name_from_action(QString const & action)
         throw snap_logic_exception("snap_backend::get_signal_name_from_action(): server pointer is NULL");
     }
 
-    server::backend_action_map_t actions;
+    server::backend_action::map_t actions;
     p_server->register_backend_action(actions);
     if(actions.contains(action))
     {
@@ -698,7 +698,7 @@ void snap_backend::process_backend_uri(QString const & uri)
 
     if(!action.isEmpty())
     {
-        server::backend_action_map_t actions;
+        server::backend_action::map_t actions;
         p_server->register_backend_action(actions);
 #ifdef DEBUG
         if(actions.contains("list"))
@@ -732,7 +732,7 @@ void snap_backend::process_backend_uri(QString const & uri)
             fake foo;
             actions["list"] = &foo;
             std::cerr << "Actions available for " << uri << std::endl;
-            for(server::backend_action_map_t::const_iterator it(actions.begin()); it != actions.end(); ++it)
+            for(server::backend_action::map_t::const_iterator it(actions.begin()); it != actions.end(); ++it)
             {
                 std::cout << "  " << it.key() << std::endl;
             }

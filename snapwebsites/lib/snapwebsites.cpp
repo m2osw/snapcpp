@@ -22,7 +22,6 @@
 #include "signal.h"
 #include "snap_backend.h"
 #include "snap_cassandra.h"
-#include "snap_communicator.h"
 #include "tcp_client_server.h"
 
 #include <sstream>
@@ -379,6 +378,8 @@ namespace
     {
         snap_communicator::pointer_t                    f_communicator;
         snap_communicator::snap_connection::pointer_t   f_listener;
+        snap_communicator::snap_connection::pointer_t   f_child_death_listener;
+        snap_communicator::snap_connection::pointer_t   f_messager;
         snap_communicator::snap_connection::pointer_t   f_temporary_timer;
     };
 
@@ -1352,7 +1353,7 @@ server::udp_server_t server::udp_get_server( QString const & udp_addr_port )
     {
         // this should not happen since std::badalloc is raised when allocation fails
         // and the new operator will rethrow any exception that the constructor throws
-        throw snap_exception("server for the UDP  could not be allocated");
+        throw snap_logic_exception("server for the UDP  could not be allocated");
     }
     return server;
 }
@@ -1415,7 +1416,271 @@ bool server::nofork() const
 
 
 
-// TODO: once we have the snapcommunicator tool remove this ugly thing!
+/** \brief Check which child died.
+ *
+ * This function is used to find children that died and remove them
+ * from the list of zombies.
+ *
+ * \param[in] child_pid  The process identification of the child that died.
+ */
+void server::capture_zombies(pid_t child_pid)
+{
+    // capture zombies first
+    snap_child_vector_t::size_type max_children(f_children_running.size());
+    for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
+    {
+        if(f_children_running[idx]->get_child_pid() == child_pid)
+        {
+            if(f_children_running[idx]->check_status() != snap_child::status_t::SNAP_CHILD_STATUS_READY)
+            {
+                throw snapwebsites_exception_invalid_parameters("somehow capture_zombies() was called with a pid_t that did not represent a dead child.");
+            }
+
+            // it is ready, so it can be reused now
+            f_children_waiting.push_back(f_children_running[idx]);
+            f_children_running.erase(f_children_running.begin() + idx);
+            return;
+        }
+        //if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
+        //{
+        //    // it is ready, so it can be reused now
+        //    f_children_waiting.push_back(f_children_running[idx]);
+        //    f_children_running.erase(f_children_running.begin() + idx);
+
+        //    // removed one child so decrement index:
+        //    --idx;
+        //    --max_children;
+        //}
+    }
+}
+
+
+/** \brief Capture children death.
+ *
+ * This class used used to create a connection on started that allows
+ * us to know when a child dies. Whenever that happens, we get a call
+ * to the process_signal() callback.
+ */
+class signal_child_death
+        : public snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<signal_child_death>     pointer_t;
+
+                            signal_child_death(server * s);
+
+    // snap_communicator::snap_signal implementation
+    virtual void            process_signal();
+
+private:
+    // TBD: should this be a weak pointer?
+    server *                f_server;
+};
+
+
+/** \brief Initialize the child death signal.
+ *
+ * The function initializes the snap_signal to listen on the SIGCHLD
+ * Unix signal. It also saves the pointer \p s to the server so
+ * it can be used to call various functions in the server whenever
+ * the signal occurs.
+ *
+ * \param[in] s  The server pointer.
+ */
+signal_child_death::signal_child_death(server * s)
+    : snap_signal(SIGCHLD)
+    , f_server(s)
+{
+}
+
+
+/** \brief Callback called each time the SIGCHLD signal occurs.
+ *
+ * This function gets called each time a child dies.
+ *
+ * The function checks all the children and removes zombies.
+ */
+void signal_child_death::process_signal()
+{
+    // check all our children and remove zombies
+    //
+    f_server->capture_zombies(get_child_pid());
+}
+
+
+
+
+/** \brief Listen and send messages with other services.
+ *
+ * This class is used to listen for incoming messages from
+ * snapcommunicator and also to send messages
+ *
+ * \note
+ * At this time we do not really send anything to anyone... but we may
+ * start doing so to snapwatchdog to have an overall count of the child
+ * processes that we create and other similar statistics. (i.e. we have
+ * to think about the time when we create listening children and in
+ * that case we do not want to count those children until they get
+ * a new connection; before that they do not count.)
+ */
+class messager
+        : public snap_communicator::snap_tcp_client_permanent_message_connection
+{
+public:
+    typedef std::shared_ptr<messager>    pointer_t;
+
+                        messager(server * s, std::string const & addr, int port);
+
+    // snap_communicator::snap_tcp_client_permanent_message_connection implementation
+    virtual void        process_message(snap_communicator_message const & message);
+    virtual void        process_connected();
+
+private:
+    server *            f_server;
+};
+
+
+/** \brief Initialize the messager connection.
+ *
+ * This function initializes the messager connection. It saves
+ * a pointer to the main Snap! server so it can react appropriately
+ * whenever a message is received.
+ *
+ * \param[in] s  A pointer to the server so we can send messages there.
+ * \param[in] addr  The address of the snapcommunicator server.
+ * \param[in] port  The port of the snapcommunicator server.
+ */
+messager::messager(server * s, std::string const & addr, int port)
+    : snap_tcp_client_permanent_message_connection(addr, port, tcp_client_server::bio_client::mode_t::MODE_PLAIN, snap_communicator::snap_tcp_client_permanent_message_connection::DEFAULT_PAUSE_BEFORE_RECONNECTING, false)
+    , f_server(s)
+{
+}
+
+
+/** \brief Process a message we just received.
+ *
+ * This function is called whenever the snapcommunicator received and
+ * decided to forward a message to us.
+ *
+ * \param[in] message  The message we just recieved.
+ */
+void messager::process_message(snap_communicator_message const & message)
+{
+    f_server->process_message(message);
+}
+
+
+/** \brief Process was just connected.
+ *
+ * This callback happens whenever a new connection is established.
+ * It sends a REGISTER command to the snapcommunicator. The READY
+ * reply will be received when process_message() gets called. At
+ * that point we are fully registered.
+ *
+ * This callback happens first so if we lose our connection to
+ * the snapcommunicator server, it will re-register the snapserver
+ * again as expected.
+ */
+void messager::process_connected()
+{
+    snap::snap_communicator_message register_snapinit;
+    register_snapinit.set_command("REGISTER");
+    register_snapinit.add_parameter("service", "snapserver");
+    register_snapinit.add_parameter("version", snap::snap_communicator::VERSION);
+    send_message(register_snapinit);
+}
+
+
+/** \brief Process a message received from Snap! Communicator.
+ *
+ * This function gets called whenever a message from snapcommunicator
+ * is received.
+ *
+ * The function reacts according to the message command:
+ *
+ * \li STOP -- stop the server
+ * \li LOG -- reset the log
+ *
+ * \param[in] message  The message to process.
+ */
+void server::process_message(snap_communicator_message const & message)
+{
+    if(g_connection && g_connection->f_communicator)
+    {
+        SNAP_LOG_WARNING("SNAP SERVER: received message after the g_connection or g_connection->f_communicator variables were erased.");
+        return;
+    }
+
+    SNAP_LOG_TRACE("SNAP SERVER: received message [")(message.to_message())("]");
+
+    QString const command(message.get_command());
+
+    if(command == "STOP"
+    || command == "QUITTING")  // QUITTING happens when we send a message to snapcommunicator after it received a STOP
+    {
+        SNAP_LOG_INFO("Stopping server.");
+        {
+            g_connection->f_communicator->remove_connection(g_connection->f_listener);
+            g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
+            g_connection->f_communicator->remove_connection(g_connection->f_messager);
+            g_connection->f_communicator->remove_connection(g_connection->f_temporary_timer);
+        }
+        return;
+    }
+
+    if(command == "LOG")
+    {
+        SNAP_LOG_INFO("Logging reconfiguration.");
+        logging::reconfigure();
+        return;
+    }
+
+    if(command == "READY")
+    {
+        // TBD: should we start the listener here instead?
+        //
+        //      the fact is... if we lose the connection to
+        //      snapcommunicator we would start the listener
+        //      at another time anyway
+        //
+        return;
+    }
+
+    if(command == "HELP")
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("COMMANDS");
+
+        // list of commands understood by server
+        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+
+        std::dynamic_pointer_cast<messager>(g_connection->f_messager)->send_message(reply);
+        return;
+    }
+
+    if(command == "UNKNOWN")
+    {
+        SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+        return;
+    }
+
+    // unknown command is reported and process goes on
+    //
+    SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received on the TCP connection.");
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("UNKNOWN");
+        reply.add_parameter("command", command);
+        std::dynamic_pointer_cast<messager>(g_connection->f_messager)->send_message(reply);
+    }
+    return;
+}
+
+
+
+
+
+// TODO: once we have the snapcommunicator tool full implemented and running as expected remove this ugly thing!
 class temporary_timer : public snap_communicator::snap_timer
 {
 public:
@@ -1445,6 +1710,8 @@ void server::check_listen_runner()
         if(g_connection && g_connection->f_communicator)
         {
             g_connection->f_communicator->remove_connection(g_connection->f_listener);
+            g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
+            g_connection->f_communicator->remove_connection(g_connection->f_messager);
             g_connection->f_communicator->remove_connection(g_connection->f_temporary_timer);
         }
         break;
@@ -1458,31 +1725,6 @@ void server::check_listen_runner()
         // go back and listen some more
         break;
 
-    }
-
-// TODO:
-// We MUST check for zombies, only here is not a good location (since we
-// want to remove this timer...)
-//
-// We want to look into using the SIGCHLD which will require us to have
-// protections (i.e. a temporary masking of the signal while doing any
-// kind of work) so it will be a bit more work than just adding one
-// connection declaration.
-
-    // capture zombies first
-    snap_child_vector_t::size_type max_children(f_children_running.size());
-    for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
-    {
-        if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
-        {
-            // it is ready, so it can be reused now
-            f_children_waiting.push_back(f_children_running[idx]);
-            f_children_running.erase(f_children_running.begin() + idx);
-
-            // removed one child so decrement index:
-            --idx;
-            --max_children;
-        }
     }
 }
 
@@ -1658,6 +1900,16 @@ void server::listen()
     g_connection->f_listener->set_priority(50);
     g_connection->f_communicator->add_connection(g_connection->f_listener);
 
+    g_connection->f_child_death_listener.reset(new signal_child_death(this));
+    g_connection->f_child_death_listener->set_name("child death listener");
+    g_connection->f_child_death_listener->set_priority(75);
+    g_connection->f_communicator->add_connection(g_connection->f_child_death_listener);
+
+    //g_connection->f_messager.reset(new messager(this, ..., ...));
+    //g_connection->f_messager->set_name("messager");
+    //g_connection->f_messager->set_priority(75);
+    //g_connection->f_communicator->add_connection(g_connection->f_messager);
+
     g_connection->f_temporary_timer.reset(new temporary_timer(this));
     g_connection->f_temporary_timer->set_name("server timer");
     g_connection->f_temporary_timer->set_priority(100);
@@ -1700,22 +1952,6 @@ void server::listen()
 
 //    for(;;)
 //    {
-//        // capture zombies first
-//        snap_child_vector_t::size_type max_children(f_children_running.size());
-//        for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
-//        {
-//            if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
-//            {
-//                // it's ready, so it can be reused now
-//                f_children_waiting.push_back(f_children_running[idx]);
-//                f_children_running.erase(f_children_running.begin() + idx);
-//
-//                // removed one child so decrement index:
-//                --idx;
-//                --max_children;
-//            }
-//        }
-//
 //        // retrieve all the connections and process them
 //        // timeout so we can check the listen thread runner
 //        //
@@ -1926,7 +2162,7 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::define_locales(QString& locales)
+/** \fn void server::define_locales(QString & locales)
  * \brief Give plugins a chance to define the acceptable page locales.
  *
  * This signal is used whenever the user tries to access a page and
@@ -1941,7 +2177,7 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::process_post(QString const& url)
+/** \fn void server::process_post(QString const & url)
  * \brief Process a POST request at the specified URL.
  *
  * This signal is sent when the server is called with a POST instead of a GET.
@@ -1950,7 +2186,7 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::execute(QString const& url)
+/** \fn void server::execute(QString const & url)
  * \brief Execute the URL.
  *
  * This signal is called once the plugins were fully initialized. At this point
@@ -1960,7 +2196,7 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::register_backend_action(backend_action_map_t& actions)
+/** \fn void server::register_backend_action(backend_action::map_t & actions)
  * \brief Execute the specified backend action.
  *
  * This signal is called when the server is run as a backend service.
@@ -1992,7 +2228,7 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::xss_filter(QDomNode& node, QString const& acceptable_tags, QString const& acceptable_attributes)
+/** \fn void server::xss_filter(QDomNode & node, QString const & acceptable_tags, QString const & acceptable_attributes)
  * \brief Implementation of the XSS filter signal.
  *
  * This signal is used to clean any possible XSS potential problems in the specified

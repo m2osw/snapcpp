@@ -302,6 +302,7 @@ public:
                                 virtual ~snap_child();
 
     bool                        process(int socket);
+    pid_t                       get_child_pid() const;
     void                        kill();
     status_t                    check_status();
 

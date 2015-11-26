@@ -2854,7 +2854,7 @@ bool snap_init::connect_listener(QString const & service_name, QString const & h
  */
 void snap_init::process_message(snap::snap_communicator_message const & message, bool udp)
 {
-    SNAP_LOG_TRACE("SNAP INIT: received a message [")(message.to_message())("]");
+    SNAP_LOG_TRACE("SNAP INIT: received message [")(message.to_message())("]");
 
     QString const command(message.get_command());
 
@@ -2952,6 +2952,12 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
     // unknown command is reported and process goes on
     //
     SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received on the TCP connection.");
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("UNKNOWN");
+        reply.add_parameter("command", command);
+        f_listener_connection->send_message(reply);
+    }
     return;
 }
 

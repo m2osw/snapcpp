@@ -78,8 +78,6 @@ public:
     logger &        operator () (double const v);
     logger &        operator () (bool const v);
 
-    static bool     is_enabled_for(log_level_t const log_level);
-
 protected:
     mutable controlled_vars::flbool_t   f_ignore;
 
@@ -109,6 +107,7 @@ bool is_configured              ();
 void set_log_output_level       ( log_level_t level );
 void reduce_log_output_level    ( log_level_t level );
 bool is_loggingserver_available ( QString const & logserver );
+bool is_enabled_for             ( log_level_t const log_level );
 
 logger & operator << ( logger & l, QString const &                    msg );
 logger & operator << ( logger & l, std::basic_string<char> const &    msg );

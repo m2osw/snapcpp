@@ -96,7 +96,7 @@ public:
 
     // server signals
     void                on_attach_to_session();
-    void                on_register_backend_action(server::backend_action_map_t& actions);
+    void                on_register_backend_action(server::backend_action::map_t& actions);
 
     // links signals
     void                on_modified_link(links::link_info const & src);

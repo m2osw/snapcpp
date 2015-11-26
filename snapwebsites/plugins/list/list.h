@@ -260,7 +260,7 @@ public:
 
     // server signals
     void                on_backend_process();
-    void                on_register_backend_action(server::backend_action_map_t & actions);
+    void                on_register_backend_action(server::backend_action::map_t & actions);
     void                on_attach_to_session();
 
     // layout::layout_content implementation

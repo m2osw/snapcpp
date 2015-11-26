@@ -990,21 +990,21 @@ logger::~logger()
 }
 
 
-logger& logger::operator () ()
+logger & logger::operator () ()
 {
     // does nothing
     return *this;
 }
 
 
-logger& logger::operator () (log_security_t const v)
+logger & logger::operator () (log_security_t const v)
 {
     f_security = v;
     return *this;
 }
 
 
-logger& logger::operator () (char const *s)
+logger & logger::operator () (char const * s)
 {
     // we assume UTF-8 because in our Snap environment most everything is
     // TODO: change control characters to \xXX
@@ -1013,7 +1013,7 @@ logger& logger::operator () (char const *s)
 }
 
 
-logger& logger::operator () (wchar_t const *s)
+logger & logger::operator () (wchar_t const * s)
 {
     // TODO: change control characters to \xXX
     f_message += QString::fromWCharArray(s);
@@ -1021,7 +1021,7 @@ logger& logger::operator () (wchar_t const *s)
 }
 
 
-logger& logger::operator () (std::string const& s)
+logger & logger::operator () (std::string const & s)
 {
     // we assume UTF-8 because in our Snap environment most everything is
     // TODO: change control characters to \xXX
@@ -1030,7 +1030,7 @@ logger& logger::operator () (std::string const& s)
 }
 
 
-logger& logger::operator () (std::wstring const& s)
+logger & logger::operator () (std::wstring const & s)
 {
     // we assume UTF-8 because in our Snap environment most everything is
     // TODO: change control characters to \xXX
@@ -1039,7 +1039,7 @@ logger& logger::operator () (std::wstring const& s)
 }
 
 
-logger& logger::operator () (QString const& s)
+logger & logger::operator () (QString const & s)
 {
     // TODO: change control characters to \xXX
     f_message += s;
@@ -1047,129 +1047,129 @@ logger& logger::operator () (QString const& s)
 }
 
 
-logger& logger::operator () (char const v)
+logger & logger::operator () (char const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
 
-logger& logger::operator () (signed char const v)
+logger & logger::operator () (signed char const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
 
-logger& logger::operator () (unsigned char const v)
+logger & logger::operator () (unsigned char const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
 
-logger& logger::operator () (signed short const v)
+logger & logger::operator () (signed short const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
 
-logger& logger::operator () (unsigned short const v)
+logger & logger::operator () (unsigned short const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
 
-logger& logger::operator () (signed int const v)
+logger & logger::operator () (signed int const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
 
-logger& logger::operator () (unsigned int const v)
+logger & logger::operator () (unsigned int const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
 
-logger& logger::operator () (signed long const v)
+logger & logger::operator () (signed long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
 
-logger& logger::operator () (unsigned long const v)
+logger & logger::operator () (unsigned long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
 
-logger& logger::operator () (signed long long const v)
+logger & logger::operator () (signed long long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
 
-logger& logger::operator () (unsigned long long const v)
+logger & logger::operator () (unsigned long long const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
 
-logger& logger::operator () (float const v)
+logger & logger::operator () (float const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
 
-logger& logger::operator () (double const v)
+logger & logger::operator () (double const v)
 {
     f_message += QString("%1").arg(v);
     return *this;
 }
 
 
-logger& logger::operator () (bool const v)
+logger & logger::operator () (bool const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
 }
 
 
-logger& operator << ( logger& l, QString const& msg )
+logger & operator << ( logger & l, QString const & msg )
 {
     return l( msg );
 }
 
 
-logger& operator << ( logger& l, std::basic_string<char> const& msg )
+logger & operator << ( logger & l, std::basic_string<char> const & msg )
 {
     return l( msg );
 }
 
 
-logger& operator << ( logger& l, std::basic_string<wchar_t> const& msg )
+logger & operator << ( logger & l, std::basic_string<wchar_t> const & msg )
 {
     return l( msg );
 }
 
 
-logger& operator << ( logger& l, char const* msg )
+logger & operator << ( logger & l, char const * msg )
 {
     return l( msg );
 }
 
 
-logger& operator << ( logger& l, wchar_t const* msg )
+logger & operator << ( logger & l, wchar_t const * msg )
 {
     return l( msg );
 }
@@ -1192,7 +1192,7 @@ logger& operator << ( logger& l, wchar_t const* msg )
  *
  * \return true if the log should be computed.
  */
-bool logger::is_enabled_for(log_level_t const log_level)
+bool is_enabled_for( log_level_t const log_level )
 {
     // if still unconfigured, we just pretend the level is ON because
     // we do not really know for sure what the level is at this point
@@ -1249,9 +1249,9 @@ bool logger::is_enabled_for(log_level_t const log_level)
 
 
 
-logger fatal(char const *file, char const *func, int line)
+logger fatal(char const * file, char const * func, int line)
 {
-    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_FATAL))
+    if(is_enabled_for(log_level_t::LOG_LEVEL_FATAL))
     {
         logger l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
         return l.operator () ("fatal error: ");
@@ -1263,9 +1263,9 @@ logger fatal(char const *file, char const *func, int line)
     }
 }
 
-logger error(char const *file, char const *func, int line)
+logger error(char const * file, char const * func, int line)
 {
-    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_ERROR))
+    if(is_enabled_for(log_level_t::LOG_LEVEL_ERROR))
     {
         logger l(log_level_t::LOG_LEVEL_ERROR, file, func, line);
         return l.operator () ("error: ");
@@ -1277,9 +1277,9 @@ logger error(char const *file, char const *func, int line)
     }
 }
 
-logger warning(char const *file, char const *func, int line)
+logger warning(char const * file, char const * func, int line)
 {
-    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_WARNING))
+    if(is_enabled_for(log_level_t::LOG_LEVEL_WARNING))
     {
         logger l(log_level_t::LOG_LEVEL_WARNING, file, func, line);
         return l.operator () ("warning: ");
@@ -1291,9 +1291,9 @@ logger warning(char const *file, char const *func, int line)
     }
 }
 
-logger info(char const *file, char const *func, int line)
+logger info(char const * file, char const * func, int line)
 {
-    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_INFO))
+    if(is_enabled_for(log_level_t::LOG_LEVEL_INFO))
     {
         logger l(log_level_t::LOG_LEVEL_INFO, file, func, line);
         return l.operator () ("info: ");
@@ -1305,9 +1305,9 @@ logger info(char const *file, char const *func, int line)
     }
 }
 
-logger debug(char const *file, char const *func, int line)
+logger debug(char const * file, char const * func, int line)
 {
-    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_DEBUG))
+    if(is_enabled_for(log_level_t::LOG_LEVEL_DEBUG))
     {
         logger l(log_level_t::LOG_LEVEL_DEBUG, file, func, line);
         return l.operator () ("debug: ");
@@ -1319,9 +1319,9 @@ logger debug(char const *file, char const *func, int line)
     }
 }
 
-logger trace(char const *file, char const *func, int line)
+logger trace(char const * file, char const * func, int line)
 {
-    if(logger::is_enabled_for(log_level_t::LOG_LEVEL_TRACE))
+    if(is_enabled_for(log_level_t::LOG_LEVEL_TRACE))
     {
         logger l(log_level_t::LOG_LEVEL_TRACE, file, func, line);
         return l.operator () ("trace: ");

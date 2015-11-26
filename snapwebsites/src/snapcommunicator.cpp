@@ -394,16 +394,9 @@ public:
     void                        thread_done();
 
 private:
-    enum class thread_state_t
-    {
-        IDLE,
-        RUNNING
-    };
-
     snap_communicator_server::pointer_t         f_communicator_server;
     int64_t                                     f_next_attempt = 0;
     std::weak_ptr<connection_impl>              f_connection;
-    thread_state_t                              f_state = thread_state_t::IDLE;
     thread_done_impl::pointer_t                 f_thread_done;
     remote_connect                              f_remote_connect;
     snap::snap_thread                           f_thread;
@@ -2123,11 +2116,6 @@ void remote_snap_communicator::remote_connect::run()
         //
         f_socket = dup(tcp_connection->get_socket());
 
-        // Tell the main thread that this thread is done, this call
-        // immediately wakes up the poll() command
-        //
-        f_thread_done->thread_done();
-
         // close the new tcp_connection object immediately
     }
     catch(tcp_client_server::tcp_client_server_runtime_error const & e)
@@ -2135,6 +2123,11 @@ void remote_snap_communicator::remote_connect::run()
         // connection failed... we will have to try again later
         SNAP_LOG_ERROR("connection to snapcommunicator at ")(f_address)(":")(f_port)(" failed with: ")(e.what());
     }
+
+    // Tell the main thread that this thread is done, this call
+    // immediately wakes up the poll() command
+    //
+    f_thread_done->thread_done();
 }
 
 
@@ -2150,7 +2143,7 @@ void remote_snap_communicator::remote_connect::run()
  */
 void remote_snap_communicator::process_timeout()
 {
-    if(f_state == thread_state_t::IDLE)
+    if(!f_thread.is_running())
     {
         // the pointer should always be a nullptr when we reach this
         // line, but in case we did not properly disable the connect
@@ -2172,7 +2165,6 @@ void remote_snap_communicator::process_timeout()
         }
         snap::snap_communicator::instance()->add_connection(f_thread_done);
 
-        f_state = thread_state_t::RUNNING;
         f_thread.start();
 
         // stop the timer and wait for the thread signal
@@ -2187,8 +2179,6 @@ void remote_snap_communicator::process_timeout()
  */
 void remote_snap_communicator::thread_done()
 {
-    f_state = thread_state_t::IDLE;
-
     // we expect the done to happen once then we do not need that
     // connection anymore unless another connection is attemped
     //
