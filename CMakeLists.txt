@@ -148,7 +148,7 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/x86_64-linux-gnu/liblog4cplus.so
+        -DLOG4CPLUS_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/liblog4cplus.so
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
         -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         -DCSSPP_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
