@@ -21,6 +21,7 @@
 #include "../permissions/permissions.h"
 #include "../output/output.h"
 
+#include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
 #include "qdomhelpers.h"
@@ -42,7 +43,7 @@ SNAP_PLUGIN_START(favicon, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -122,9 +123,10 @@ char const *get_name(name_t name)
  * This function is used to initialize the favicon plugin object.
  */
 favicon::favicon()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
+
 
 /** \brief Clean up the favicon plugin.
  *
@@ -133,6 +135,7 @@ favicon::favicon()
 favicon::~favicon()
 {
 }
+
 
 /** \brief Get a pointer to the favicon plugin.
  *
@@ -194,10 +197,11 @@ int64_t favicon::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2013, 12, 23, 14, 21, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 11, 26, 6, 4, 1, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
+
 
 /** \brief Update the database with our favicon references.
  *
@@ -226,6 +230,7 @@ void favicon::bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(favicon, "server", server, improve_signature, _1, _2, _3);
+    SNAP_LISTEN(favicon, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(favicon, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(favicon, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
@@ -258,52 +263,42 @@ bool favicon::on_path_execute(content::path_info_t & ipath)
         return true;
     }
 
-    // check whether there is a current attachment in this ipath with a
-    // favicon.ico file; this works because we are the owner of the
-    // attachment (opposed to some other plugin)
-    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QString const revision_key(ipath.get_revision_key());
-    if(!revision_key.isEmpty()
-    && revision_table->row(revision_key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME)))
-    {
-        output(ipath);
-        return true;
-    }
-
-    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
-
-    // not too sure right now whether we'd have a true here (most
-    // certainly though)
-    return true;
+    return false;
 }
 
 
-void favicon::on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info)
+/** \brief Add a CSS file for the settings.
+ *
+ * When the path is to the favicon settings, add the favicon.css file
+ * so we can tweak the display of the editor form. The CSS file is
+ * added only on the favicon settings since it is useless anywhere else.
+ *
+ * \param[in] ipath  The path of the page being displayed.
+ * \param[in] header  The header element.
+ * \param[in] metadata  The metadata element.
+ */
+void favicon::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    (void) session_info;
+    NOTUSED(metadata);
 
-    if(ipath.get_cpath() == "admin/settings/favicon"
-    && f_snap->postfile_exists(get_name(name_t::SNAP_NAME_FAVICON_ICON)))
+    if(ipath.get_cpath() == "admin/settings/favicon")
     {
-        snap_child::post_file_t const& file(f_snap->postfile(get_name(name_t::SNAP_NAME_FAVICON_ICON)));
-        QString const site_key(f_snap->get_site_key_with_slash());
-        content::path_info_t spath;
-        spath.set_path(ipath.get_cpath() + "/" + file.get_basename());
-        content::path_info_t dpath;
-        dpath.set_path("types/permissions/rights/administer/website/info");
-        // TODO: this "...::direct::action::..." is probably not correct
-        QString const source_link_name(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER));
-        bool const source_unique(false);
-        QString const destination_link_name(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
-        bool const destination_unique(false);
-        links::link_info source(source_link_name, source_unique, spath.get_key(), spath.get_branch());
-        links::link_info destination(destination_link_name, destination_unique, dpath.get_key(), dpath.get_branch());
-        links::links::instance()->create_link(source, destination);
+        QDomDocument doc(header.ownerDocument());
+
+        content::content::instance()->add_css(doc, "favicon");
     }
 }
 
 
-void favicon::output(content::path_info_t& ipath)
+/** \brief Retrieve the favicon.ico image and return it to the client.
+ *
+ * This function is the one retrieving the favicon file and sending it
+ * to the client. The function uses various tests to know which file
+ * is to be returned.
+ *
+ * \param[in] ipath  The ipath used by the client to retrieve the favicon.
+ */
+void favicon::output(content::path_info_t & ipath)
 {
     QByteArray image;
     content::field_search::search_result_t result;
@@ -368,7 +363,7 @@ void favicon::output(content::path_info_t& ipath)
     else
     {
         content::attachment_file file(f_snap);
-        content::content::instance()->load_attachment(ipath.get_key(), file);//result[0].stringValue(), file);
+        content::content::instance()->load_attachment(ipath.get_key(), file);
         image = file.get_file().get_data();
     }
 
@@ -384,30 +379,6 @@ void favicon::output(content::path_info_t& ipath)
     f_snap->set_header("Content-Transfer-Encoding", "binary");
 
     f_snap->output(image);
-}
-
-
-/** \brief Generate the page main content.
- *
- * This function generates the main content of the page. Other
- * plugins will also have the event called if they subscribed and
- * thus will be given a chance to add their own content to the
- * main page. This part is the one that (in most cases) appears
- * as the main content on the page although the content of some
- * columns may be interleaved with this content.
- *
- * Note that this is NOT the HTML output. It is the \<page\> tag of
- * the snap XML file format. The theme layout XSLT will be used
- * to generate the final output.
- *
- * \param[in,out] ipath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- */
-void favicon::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
-{
-    // our settings pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -499,7 +470,7 @@ void favicon::get_icon(content::path_info_t & ipath, content::field_search::sear
  * \param[in,out] ipath  The path being handled dynamically.
  * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
-void favicon::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+void favicon::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     // for favicon.ico we already know since it is defined in the content.xml
     if(ipath.get_cpath().endsWith("/favicon.ico")

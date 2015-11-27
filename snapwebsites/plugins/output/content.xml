@@ -239,7 +239,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Right give to pages that can be edited.</p>]]>
     </param>
   </content>
-  <!-- system defined images; user's images will generally appear as attachment of the page where they are added -->
+  <!--
+    system defined images; user defined images will generally appear
+    as attachments of the page where they are added
+  -->
   <content path="/images">
     <param name="content::title" revision="revision">Images</param>
     <param name="content::body" revision="revision">

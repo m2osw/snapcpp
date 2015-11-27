@@ -398,7 +398,7 @@ QString editor::description() const
  */
 QString editor::dependencies() const
 {
-    return "|attachment|form|locale|messages|output|server_access|sessions|";
+    return "|attachment|editor|locale|messages|output|server_access|sessions|";
 }
 
 
@@ -4279,7 +4279,7 @@ bool editor::replace_uri_token_impl(editor_uri_token& token_info)
  * \param[in,out] revision_row  The row where all the fields are to be saved.
  * \param[in,out] secret_row  The row where all the fields are to be saved.
  */
-bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row)
+bool editor::save_editor_fields_impl(content::path_info_t & ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row)
 {
     NOTUSED(ipath);
     NOTUSED(secret_row);

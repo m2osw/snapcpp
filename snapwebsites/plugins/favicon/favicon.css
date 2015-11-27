@@ -1,0 +1,17 @@
+/*
+ * Name: favicon
+ * Version: 0.0.1.1
+ * Browsers: all
+ * Copyright: Copyright 2015 (c) Made to Order Software Corporation  All rights reverved.
+ * License: GPL 2.0
+ */
+
+/** PICTURE **/
+.editor-form .picture
+{
+	width: 192px;
+	height: 192px;
+	min-width: 192px;
+	min-height: 192px;
+}
+

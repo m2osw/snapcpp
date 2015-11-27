@@ -293,7 +293,7 @@
 .editable.dropped-file-with-preview-box .browse-block
 {
 	position: absolute;
-	z-index: 2;
+	z-index: 3;
 }
 
 .editable.image-box .browse-block a.browse-button,

@@ -31,8 +31,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Public attachment can be downloaded by your users.</p>]]>
     </param>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/types/taxonomy/system/content-types/attachment/private">
     <param name="content::title" revision="revision">Private Attachment Type</param>
@@ -40,8 +40,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Private attachment can be downloaded by logged in users.</p>]]>
     </param>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/private</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/types/permissions/rights/view/attachment">
     <param name="content::title" revision="revision">View Page Right</param>

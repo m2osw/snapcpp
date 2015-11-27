@@ -150,14 +150,83 @@ void links::on_backend_action_create_link()
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
 
-        // create a link
-        QString const mode(f_snap->get_server_parameter("LINK_MODE"));
-        snap_string_list unique(mode.split(","));
-        if(unique.size() != 2)
+    // create a link
+    QString const mode(f_snap->get_server_parameter("LINK_MODE"));
+    snap_string_list unique(mode.split(","));
+    if(unique.size() != 2)
+    {
+        SNAP_LOG_FATAL("invalid mode \"")(mode)("\", missing comma or more than one comma.");
+        exit(1);
+    }
+    if((unique[0] != "*" && unique[0] != "1")
+    || (unique[1] != "*" && unique[1] != "1"))
+    {
+        SNAP_LOG_FATAL("invalid mode \"")(mode)("\", one of the repeat is not \"*\" or \"1\".");
+        exit(1);
+    }
+
+    content::path_info_t source_ipath;
+    source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
+    if(!content_table->exists(source_ipath.get_key()))
+    {
+        SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
+        exit(1);
+    }
+
+    QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
+    bool const source_unique(unique[0] == "1");
+    link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
+
+    content::path_info_t destination_ipath;
+    destination_ipath.set_path(f_snap->get_server_parameter("DESTINATION_LINK"));
+    if(!content_table->exists(destination_ipath.get_key()))
+    {
+        SNAP_LOG_FATAL("invalid destination URI \"")(destination_ipath.get_key())("\", page does not exist.");
+        exit(1);
+    }
+
+    QString const link_to(f_snap->get_server_parameter("DESTINATION_LINK_NAME"));
+    bool const destination_unique(unique[1] == "1");
+    link_info destination(link_to, destination_unique, destination_ipath.get_key(), destination_ipath.get_branch());
+
+    // everything looked good, attempt the feat
+    create_link(source, destination);
+}
+
+
+void links::on_backend_action_delete_link()
+{
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+
+    // delete a link
+    QString const mode(f_snap->get_server_parameter("LINK_MODE"));
+    snap_string_list unique(mode.split(","));
+    if(unique.size() == 1)
+    {
+        if(unique[0] != "*" && unique[0] != "1")
         {
-            SNAP_LOG_FATAL("invalid mode \"")(mode)("\", missing comma or more than one comma.");
+            SNAP_LOG_FATAL("invalid mode \"")(mode)("\", the repeat is not \"*\" or \"1\".");
             exit(1);
         }
+
+        content::path_info_t source_ipath;
+        source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
+        if(!content_table->exists(source_ipath.get_key()))
+        {
+            SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
+            exit(1);
+        }
+
+        QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
+        bool const source_unique(unique[0] == "1");
+        link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
+
+        // everything looked good, attempt the feat
+        delete_link(source);
+    }
+    else if(unique.size() == 2)
+    {
         if((unique[0] != "*" && unique[0] != "1")
         || (unique[1] != "*" && unique[1] != "1"))
         {
@@ -190,82 +259,13 @@ void links::on_backend_action_create_link()
         link_info destination(link_to, destination_unique, destination_ipath.get_key(), destination_ipath.get_branch());
 
         // everything looked good, attempt the feat
-        create_link(source, destination);
-}
-
-
-void links::on_backend_action_delete_link()
-{
-    content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-
-        // delete a link
-        QString const mode(f_snap->get_server_parameter("LINK_MODE"));
-        snap_string_list unique(mode.split(","));
-        if(unique.size() == 1)
-        {
-            if(unique[0] != "*" && unique[0] != "1")
-            {
-                SNAP_LOG_FATAL("invalid mode \"")(mode)("\", the repeat is not \"*\" or \"1\".");
-                exit(1);
-            }
-
-            content::path_info_t source_ipath;
-            source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
-            if(!content_table->exists(source_ipath.get_key()))
-            {
-                SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
-                exit(1);
-            }
-
-            QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
-            bool const source_unique(unique[0] == "1");
-            link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
-
-            // everything looked good, attempt the feat
-            delete_link(source);
-        }
-        else if(unique.size() == 2)
-        {
-            if((unique[0] != "*" && unique[0] != "1")
-            || (unique[1] != "*" && unique[1] != "1"))
-            {
-                SNAP_LOG_FATAL("invalid mode \"")(mode)("\", one of the repeat is not \"*\" or \"1\".");
-                exit(1);
-            }
-
-            content::path_info_t source_ipath;
-            source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
-            if(!content_table->exists(source_ipath.get_key()))
-            {
-                SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
-                exit(1);
-            }
-
-            QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
-            bool const source_unique(unique[0] == "1");
-            link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
-
-            content::path_info_t destination_ipath;
-            destination_ipath.set_path(f_snap->get_server_parameter("DESTINATION_LINK"));
-            if(!content_table->exists(destination_ipath.get_key()))
-            {
-                SNAP_LOG_FATAL("invalid destination URI \"")(destination_ipath.get_key())("\", page does not exist.");
-                exit(1);
-            }
-
-            QString const link_to(f_snap->get_server_parameter("DESTINATION_LINK_NAME"));
-            bool const destination_unique(unique[1] == "1");
-            link_info destination(link_to, destination_unique, destination_ipath.get_key(), destination_ipath.get_branch());
-
-            // everything looked good, attempt the feat
-            delete_this_link(source, destination);
-        }
-        else
-        {
-            SNAP_LOG_FATAL("invalid mode \"")(mode)("\", two or more commas.");
-            exit(1);
-        }
+        delete_this_link(source, destination);
+    }
+    else
+    {
+        SNAP_LOG_FATAL("invalid mode \"")(mode)("\", two or more commas.");
+        exit(1);
+    }
 }
 
 

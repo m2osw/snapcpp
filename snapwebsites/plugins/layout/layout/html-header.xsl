@@ -25,81 +25,94 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<!-- *** INTERNAL TEMPLATES *** -->
 
 	<!-- handle the shortcut icon link -->
-  <xsl:template name="shortcut-link">
-    <xsl:param name="type"/>
-    <xsl:param name="href"/>
-    <xsl:param name="width"/>
-    <xsl:param name="height"/>
-    <xsl:if test="$width &lt;= 16 and $height &lt;= 16">
-      <!--
-          the proper (per spec.) rel token is rel="icon", and the type
-          is "image/vnd.microsoft.icon"; however, these are only supported
-          in IE 11+ and since that's still the majority of people who use
-          that broken system better support its quirks...
-      -->
-      <!-- link rel="icon" type="image/vnd.microsoft.icon" href="{$href}"/ -->
-      <link rel="shortcut icon" type="{$type}" href="{$href}"/>
-    </xsl:if>
-    <xsl:if test="$width &gt; 16 and $height &gt; 16">
-      <link rel="apple-touch-icon" type="{$type}" sizes="{concat($width, 'x', $height)}" href="{$href}"/>
-    </xsl:if>
-  </xsl:template>
+	<xsl:template name="shortcut-link">
+		<xsl:param name="type"/>
+		<xsl:param name="href"/>
+		<xsl:param name="width"/>
+		<xsl:param name="height"/>
+		<xsl:if test="$width &lt;= 16 and $height &lt;= 16">
+			<!--
+					the proper (per spec.) rel token is rel="icon", and the type
+					is "image/vnd.microsoft.icon"; however, these are only supported
+					in IE 11+ and since that's still the majority of people who use
+					that broken system better support its quirks...
+			-->
+			<!-- link rel="icon" type="image/vnd.microsoft.icon" href="{$href}"/ -->
+			<link rel="shortcut icon" type="{$type}" href="{$href}"/>
+		</xsl:if>
+		<xsl:if test="$width &gt; 16 and $height &gt; 16">
+			<link rel="apple-touch-icon" type="{$type}" sizes="{concat($width, 'x', $height)}" href="{$href}"/>
+			<!--
+					according to this bug report
+						https://bugzilla.mozilla.org/show_bug.cgi?id=751712
+					firefox "icon" supports sizes up to 196x196
+
+					only we would have to make sure that the last entry is the correct
+					one as it seems that firefox uses the last and not the closest
+					available size
+
+					see also:
+						http://stackoverflow.com/questions/2268204/favicon-dimensions
+			-->
+			<link rel="icon" type="{$type}" sizes="{concat($width, 'x', $height)}" href="{$href}"/>
+	 </xsl:if>
+	</xsl:template>
 
 	<!-- handle one bookmark link -->
-  <xsl:template name="bookmark-link">
-    <xsl:param name="rel"/>
-    <xsl:param name="href"/>
-    <xsl:param name="title"/>
-    <xsl:choose>
-      <xsl:when test="$title">
-        <link rel="{$rel}" type="text/html" title="{$title}" href="{$href}"/>
-      </xsl:when>
-      <xsl:otherwise>
-        <link rel="{$rel}" type="text/html" href="{$href}"/>
-      </xsl:otherwise>
-    </xsl:choose>
-  </xsl:template>
+	<xsl:template name="bookmark-link">
+		<xsl:param name="rel"/>
+		<xsl:param name="href"/>
+		<xsl:param name="title"/>
+		<xsl:choose>
+			<xsl:when test="$title">
+				<link rel="{$rel}" type="text/html" title="{$title}" href="{$href}"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<link rel="{$rel}" type="text/html" href="{$href}"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:template>
 
 	<!-- handle one table of content link -->
-  <xsl:template name="toc-link">
-    <xsl:param name="rel"/>
-    <xsl:param name="href"/>
-    <xsl:param name="title"/>
-    <link rel="{$rel}" type="text/html" title="{$title}" href="{$href}"/>
-  </xsl:template>
+	<xsl:template name="toc-link">
+		<xsl:param name="rel"/>
+		<xsl:param name="href"/>
+		<xsl:param name="title"/>
+		<link rel="{$rel}" type="text/html" title="{$title}" href="{$href}"/>
+	</xsl:template>
 
 	<!-- handle one alternate language -->
-  <xsl:template name="alternate-language">
-    <xsl:param name="mode"/>
-    <xsl:param name="lang"/>
-    <xsl:param name="title"/>
-    <xsl:choose>
-      <xsl:when test="$mode = 'sub-domain'">
-        <link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($protocol, '://', $lang, '.', $domain, '/', $full_path)}"/>
-      </xsl:when>
-      <xsl:when test="$mode = 'extension'">
-        <link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($page_uri, '.', $lang)}"/>
-      </xsl:when>
-      <xsl:otherwise><!-- mode = 'path' -->
-        <link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($website_uri, $lang, '/', $path, $page)}"/>
-      </xsl:otherwise>
-    </xsl:choose>
-    <meta property="og:locale:alternate" content="{$lang}"/>
-  </xsl:template>
+	<xsl:template name="alternate-language">
+		<xsl:param name="mode"/>
+		<xsl:param name="lang"/>
+		<xsl:param name="title"/>
+		<xsl:choose>
+			<xsl:when test="$mode = 'sub-domain'">
+				<link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($protocol, '://', $lang, '.', $domain, '/', $full_path)}"/>
+			</xsl:when>
+			<xsl:when test="$mode = 'extension'">
+				<link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($page_uri, '.', $lang)}"/>
+			</xsl:when>
+			<xsl:otherwise><!-- mode = 'path' -->
+				<link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($website_uri, $lang, '/', $path, $page)}"/>
+			</xsl:otherwise>
+		</xsl:choose>
+		<meta property="og:locale:alternate" content="{$lang}"/>
+	</xsl:template>
 
 	<!-- handle one alternate format -->
-  <xsl:template name="alternate-format">
-    <xsl:param name="href"/>
-    <xsl:param name="type"/>
-    <xsl:param name="title"/>
-    <xsl:variable name="sub-title">
-      <xsl:choose>
-        <xsl:when test="$type = 'application/atom+xml'"> (Atom)</xsl:when>
-        <xsl:when test="$type = 'application/rss+xml'"> (RSS)</xsl:when>
-      </xsl:choose>
-    </xsl:variable>
-    <link rel="alternate" type="{$type}" title="{$title}{$sub-title}" href="{$href}"/>
-  </xsl:template>
+	<xsl:template name="alternate-format">
+		<xsl:param name="href"/>
+		<xsl:param name="type"/>
+		<xsl:param name="title"/>
+		<xsl:variable name="sub-title">
+			<xsl:choose>
+				<xsl:when test="$type = 'application/atom+xml'"> (Atom)</xsl:when>
+				<xsl:when test="$type = 'application/rss+xml'"> (RSS)</xsl:when>
+			</xsl:choose>
+		</xsl:variable>
+		<link rel="alternate" type="{$type}" title="{$title}{$sub-title}" href="{$href}"/>
+	</xsl:template>
 
 
 	<!-- *** PUBLIC HEADER TEMPLATE *** -->

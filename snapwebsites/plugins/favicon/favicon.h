@@ -48,8 +48,6 @@ public:
 class favicon
         : public plugins::plugin
         , public path::path_execute
-        , public layout::layout_content
-        , public form::form_post
 {
 public:
     static const sessions::sessions::session_info::session_id_t FAVICON_SESSION_ID_SETTINGS = 1;      // settings-form.xml
@@ -73,14 +71,9 @@ public:
     // path signals
     void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
 
-    // layout::layout_content implementation
-    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
-
     // layout signals
+    void                    on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata);
     void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
-
-    // form stuff -- to be replaced by editor form instead
-    virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
 
 private:
     void                    content_update(int64_t variables_timestamp);

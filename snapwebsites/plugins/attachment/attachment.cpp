@@ -150,7 +150,7 @@ int64_t attachment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 10, 26, 2, 58, 12, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 11, 26, 15, 15, 12, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
