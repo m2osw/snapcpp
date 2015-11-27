@@ -23,6 +23,13 @@
  *
  * This plugin does not offer any REST API by itself. Only an authentication
  * process.
+ *
+ * At this point we do not support OAuth2 as described in RFC 6749. We may
+ * want to get closer to the reference with time. The fact is that the
+ * current version works pretty well as it is.
+ *
+ * Not yet official OAuth2 reference:
+ * https://tools.ietf.org/html/rfc6749
  */
 
 #include "oauth2.h"
@@ -31,12 +38,30 @@
 
 #include "http_strings.h"
 #include "log.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 
 #include "poison.h"
 
 
 SNAP_PLUGIN_START(oauth2, 1, 0)
 
+
+
+namespace
+{
+
+char const * g_oauth2_error_names[] =
+{
+    "invalid_request",
+    "invalid_client",
+    "invalid_grant",
+    "unauthorized_client",
+    "unauthorized_grant_type",
+    "invalid_scope"
+};
+
+} // no name namespace
 
 
 /** \brief Get a fixed oauth2 plugin name.
@@ -48,7 +73,7 @@ SNAP_PLUGIN_START(oauth2, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+const char * get_name(name_t name)
 {
     switch(name)
     {
@@ -148,7 +173,7 @@ QString oauth2::description() const
  */
 QString oauth2::dependencies() const
 {
-    return "|form|layout|path|users|";
+    return "|editor|layout|path|users|";
 }
 
 
@@ -186,7 +211,7 @@ int64_t oauth2::do_update(int64_t last_updated)
  */
 void oauth2::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -273,6 +298,8 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
         return false;
     }
 
+    SNAP_LOG_INFO("OAuth2 authorization request");
+
     f_snap->set_ignore_cookies();
 
     content::content * content_plugin(content::content::instance());
@@ -283,19 +310,26 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
     int8_t const enable(revision_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_ENABLE))->value().safeSignedCharValue());
     if(!enable)
     {
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
+        die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
+                    oauth2_error_t::OAUTH2_INVALID_REQUEST,
                     "Unauthorized Authentication",
                     "This website does not authorize OAuth2 authentications at the moment.",
-                    "The OAuth2 system is currently disabled.");
+                    "The OAuth2 system is currently disabled.",
+                    "http://snapwebsites.org/implementation/feature-requirements/oauth2-core");
         NOTREACHED();
     }
-    QString email(revision_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_EMAIL))->value().stringValue());
+
+    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
+    QString email(secret_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_EMAIL))->value().stringValue());
     if(email.isEmpty())
     {
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
+        die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
+                    oauth2_error_t::OAUTH2_INVALID_REQUEST,
                     "Invalid Settings",
                     "Your OAuth2 settings do not include a user email for us to log your application in.",
-                    "The OAuth2 system is currently \"disabled\" because no user email was specified.");
+                    "The OAuth2 system is currently \"disabled\" because no user email was specified.",
+                    "http://snapwebsites.org/implementation/feature-requirements/oauth2-core");
         NOTREACHED();
     }
 
@@ -311,11 +345,13 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
     || snap_base64[0].toUpper() != "SNAP")
     {
         require_oauth2_login();
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
+        die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
+                    oauth2_error_t::OAUTH2_INVALID_REQUEST,
                     "Unauthorized Method of Authentication",
                     "We only support the Snap authentication method.",
                     QString("The authorization did not have 2 parts (Snap and Secret) or the first is not \"Snap\" (\"%1\")")
-                            .arg(snap_base64.size() == 2 ? snap_base64[0] : "undefined"));
+                            .arg(snap_base64.size() == 2 ? snap_base64[0] : "undefined"),
+                    "http://snapwebsites.org/implementation/feature-requirements/oauth2-core");
         NOTREACHED();
     }
 
@@ -325,19 +361,21 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
     if(identifier_secret.size() != 2)
     {
         require_oauth2_login();
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_BAD_REQUEST,
+        die(snap_child::http_code_t::HTTP_CODE_BAD_REQUEST,
+                    oauth2_error_t::OAUTH2_INVALID_REQUEST,
                     "Invalid Authentication",
                     "The authentication identifier and secret codes are expected to include only one colon character.",
-                    "The expected authorization \"id:secret\" not available.");
+                    "The expected authorization \"id:secret\" not available.",
+                    "http://snapwebsites.org/implementation/feature-requirements/oauth2-core");
         NOTREACHED();
     }
 
     users::users * users_plugin(users::users::instance());
 
     // Check validity (i.e. is the application logged in?)
-    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-    QString identifier(secret_table->row(settings_ipath.get_key())->cell(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue());
-    QString secret(secret_table->row(settings_ipath.get_key())->cell(get_name(name_t::SNAP_NAME_OAUTH2_SECRET))->value().stringValue());
+    QString identifier(secret_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue());
+    QString secret(secret_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_SECRET))->value().stringValue());
+
     if(identifier != identifier_secret[0]
     || secret     != identifier_secret[1])
     {
@@ -377,12 +415,14 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
         if(invalid)
         {
             require_oauth2_login();
-            f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
+            die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
+                        oauth2_error_t::OAUTH2_INVALID_REQUEST,
                         "Forbidden Authentication",
                         "Your OAuth2 identifier and secret do not match this website OAuth2 information.",
                         QString("Invalid%1%2.")
                                 .arg(identifier != identifier_secret[0] ? " identifier" : "")
-                                .arg(secret     != identifier_secret[1] ? " secret"     : ""));
+                                .arg(secret     != identifier_secret[1] ? " secret"     : ""),
+                        "http://snapwebsites.org/implementation/feature-requirements/oauth2-core");
             NOTREACHED();
         }
     }
@@ -476,10 +516,12 @@ void oauth2::application_login()
     || method == "TRACE")
     {
         require_oauth2_login();
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_METHOD_NOT_ALLOWED,
+        die(snap_child::http_code_t::HTTP_CODE_METHOD_NOT_ALLOWED,
+                    oauth2_error_t::OAUTH2_INVALID_REQUEST,
                     "Method Not Allowed",
                     "Applications do not accept method HEAD or TRACE.",
-                    "Invalid method to access an application page.");
+                    "Invalid method to access an application page.",
+                    "http://snapwebsites.org/implementation/feature-requirements/oauth2-core");
         NOTREACHED();
     }
 
@@ -494,10 +536,12 @@ void oauth2::application_login()
     || session_id[0].toUpper() != "BEARER")
     {
         require_oauth2_login();
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
+        die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
+                oauth2_error_t::OAUTH2_INVALID_REQUEST,
                 "Permission Denied",
                 "This page requires a Snap-Authorization.",
-                QString("An API page was accessed with any invalid Snap-Authorization field (%1).").arg(authorization));
+                QString("An API page was accessed with any invalid Snap-Authorization field (%1).").arg(authorization),
+                "http://snapwebsites.org/implementation/feature-requirements/oauth2-core");
         NOTREACHED();
     }
 
@@ -574,11 +618,121 @@ void oauth2::application_login()
     }
 
     require_oauth2_login();
-    f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
+    die(snap_child::http_code_t::HTTP_CODE_BAD_REQUEST,
+            oauth2_error_t::OAUTH2_INVALID_REQUEST,
             "Unauthorized",
             "This page requires a valid Snap-Authorization. If you had such, it may have timed out.",
-            "The application session information was not valid and the user could not be authenticated properly.");
+            "The application session information was not valid and the user could not be authenticated properly.",
+            "http://snapwebsites.org/implementation/feature-requirements/oauth2-core");
     NOTREACHED();
+}
+
+
+/** \brief Simulate the snap_child::die() for oauth2.
+ *
+ * The OAuth2 specification clearly says that we have to return a buffer
+ * equivalent to what the user requested. For example, the user may have
+ * requested JSON, in which case we cannot return HTML.
+ *
+ * This function returns JSON or XML as the reply.
+ *
+ * \warning
+ * The error_Code can be set to either 401 when the authentication itself
+ * fails or 400 in all other cases. You are responsible to use the correct
+ * code whenever you call this function.
+ *
+ * \param[in] err_code  The HTTP error code being returned.
+ * \param[in] err_oauth2  The OAuth2 error code.
+ * \param[in] err_name  The textual name of the error (instead of just
+ *            "Bad Request")
+ * \param[in] err_description  The error description, sent back to client.
+ * \param[in] err_details  Details not for the preying eyes, used in our
+ *            private logs only.
+ * \param[in] err_help_uri  A URI to a page explaining this specific error.
+ */
+void oauth2::die(snap_child::http_code_t err_code, oauth2_error_t err_oauth2, QString err_name, QString const & err_description, QString const & err_details, QString const & err_help_uri)
+{
+    // see snap_child::die() for comments and details about this code
+    //
+
+    if(static_cast<size_t>(err_oauth2) >= sizeof(g_oauth2_error_names) / sizeof(g_oauth2_error_names[0]))
+    {
+        throw snap_logic_exception(QString("OAuth2 die() called with an invalid err_oauth2 (%1)")
+                    .arg(static_cast<int>(err_oauth2)));
+    }
+
+    QRegExp const regex_with_space("[ !#-[\\]-~]+");
+    QRegExp const regex_no_spaces("[!#-[\\]-~]+");
+
+    if(!regex_with_space.exactMatch(err_description))
+    {
+        throw snap_logic_exception(QString("OAuth2 error description \"%1\" includes characters that are not acceptable in the error_description tag (accepted characters are x20-x21 | x23-x5B | x5D-x7E)")
+                    .arg(err_description));
+    }
+
+    if(!regex_no_spaces.exactMatch(err_help_uri))
+    {
+        throw snap_logic_exception(QString("OAuth2 error help URI \"%1\" includes characters that are not acceptable in the error_description tag (accepted characters are x21 | x23-x5B | x5D-x7E)")
+                    .arg(err_help_uri));
+    }
+
+    snap_child::define_http_name(err_code, err_name);
+
+    SNAP_LOG_FATAL("snap child process: ")(err_details)(" (")(static_cast<int>(err_code))(": ")(err_description)(")");
+
+    f_snap->set_header(snap::get_name(snap::name_t::SNAP_NAME_CORE_STATUS_HEADER),
+                       QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name),
+                       snap_child::HEADER_MODE_ERROR);
+
+    // attach_to_session() -- missing because we do not have access to the
+    //                        server; but I do not think it is required for
+    //                        an API?
+
+    QString buffer;
+
+    http_strings::WeightedHttpString encodings(f_snap->snapenv("HTTP_ACCEPT"));
+    float const xml_level(encodings.get_level("application/xml"));
+    float const json_level(encodings.get_level("application/json"));
+    if(json_level > xml_level)
+    {
+        f_snap->set_header(snap::get_name(snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+                           "text/json; charset=utf8",
+                           snap_child::HEADER_MODE_EVERYWHERE);
+
+        buffer = QString(
+            "{"
+            "\"error\":\"%1\","
+            "\"error_description\":\"%2\","
+            "\"error_uri\":\"%3\""
+            "}")
+                .arg(g_oauth2_error_names[static_cast<int>(err_oauth2)])
+                .arg(err_description)
+                .arg(err_help_uri)
+            ;
+    }
+    else
+    {
+        f_snap->set_header(snap::get_name(snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+                           "text/xml; charset=utf8",
+                           snap_child::HEADER_MODE_EVERYWHERE);
+
+        buffer = QString(
+            "<?xml version=\"1.0\"?>"
+            "<snap version=\"" SNAPWEBSITES_VERSION_STRING "\" oauth2=\"%1.%2\">"
+                "<error>%3</error>"
+                "<error_description>%4</error_description>"
+                "<error_uri>%5</error_uri>"
+            "</snap>")
+                .arg(get_major_version()).arg(get_minor_version())
+                .arg(g_oauth2_error_names[static_cast<int>(err_oauth2)])
+                .arg(snap_dom::escape(err_description))
+                .arg(snap_dom::escape(err_help_uri))
+            ;
+    }
+
+    f_snap->output_result(snap_child::HEADER_MODE_ERROR, buffer.toUtf8());
+
+    exit(1);
 }
 
 
@@ -627,7 +781,7 @@ GET /user/oauth2 HTTP 1.1
 Host: csnap.m2osw.com
 User-Agent: telnet 0.17-36build2
 Accept: application/json;q=0.7,application/xml;q=0.9
-Snap-Authorization: Snap ...
+Snap-Authorization: ...Snap <application identifier ':' application secret> in base64, one line, see snap_uuencode_basic_auth...
 
 telnet csnap.m2osw.com 80
 GET /admin/settings/oauth2 HTTP 1.1

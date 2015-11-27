@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <auto-reset minutes="30"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
-  <focus refid="site_name"/>
+  <focus refid="default_logo"/>
   <on-save allow-edit="yes"/>
   <taborder>
     <tabindex refid="default_logo"/>
@@ -84,12 +84,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   <!-- /rss.xml and /atom.xml -->
   <widget id="allow_main_rss_xml" type="checkmark" field="feed::allow_main_rss_xml" path="feed/allow_main_rss_xml" auto-save="int8">
-    <label>Allow the main feed RSS file format to appear under <code>/rss.xml</code>.</label>
+    <label><![CDATA[Allow the main feed RSS file format to appear under <code>/rss.xml</code>.]]></label>
     <tooltip>Check this checkmark to allow /rss.xml to point to /feed/main/main.rss (with an internal redirect meaning that we won't generate a 301 Redirect.)</tooltip>
     <help>By clicking this checkmark, you allow the main feed RSS file to be duplicated in /rss.xml. Make sure to turn this checkmark off if you delete the main feed.</help>
   </widget>
   <widget id="allow_main_atom_xml" type="checkmark" field="feed::allow_main_atom_xml" path="feed/allow_main_atom_xml" auto-save="int8">
-    <label>Allow the main feed Atom file format to appear under <code>/atom.xml</code>.</label>
+    <label><![CDATA[Allow the main feed Atom file format to appear under <code>/atom.xml</code>.]]></label>
     <tooltip>Check this checkmark to allow /atom.xml to point to /feed/main/main.atom (with an internal redirect meaning that we won't generate a 301 Redirect.)</tooltip>
     <help>By clicking this checkmark, you allow the main feed Atom file to be duplicated in /atom.xml. Make sure to turn this checkmark off if you delete the main feed.</help>
   </widget>

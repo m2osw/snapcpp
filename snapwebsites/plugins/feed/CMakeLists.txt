@@ -53,10 +53,15 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 
-snap_validate_xml( content.xml content/content.dtd )
+snap_validate_xml( content.xml              content/content.dtd )
 
-snap_validate_xml( feed-parser.xsl  layout/simplified-xslt20.dtd )
-snap_validate_xml( rss.xsl          feed/feed-xslt20.dtd )
+snap_validate_xml( feed-settings-page.xml   editor/editor-form.dtd )
+
+snap_validate_xml( feed-parser.xsl          layout/simplified-xslt20.dtd )
+snap_validate_xml( feed-settings-parser.xsl layout/simplified-xslt20.dtd )
+
+snap_validate_xml( atom.xsl                 feed/atom-xslt20.dtd )
+snap_validate_xml( rss.xsl                  feed/rss-xslt20.dtd )
 
 
 add_library(feed SHARED
@@ -64,10 +69,13 @@ add_library(feed SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    atom.xsl
+    atom-xslt20.dtd
     feed-parser.xsl
-    feed-xslt20.dtd
+    feed-settings-page.xml
+    feed-settings-parser.xsl
     rss.xsl
-    settings-form.xml
+    rss-xslt20.dtd
 )
 
 target_link_libraries( feed ${QT_LIBRARIES} )
@@ -91,7 +99,8 @@ install(
 #
 install(
 	FILES
-		feed-xslt20.dtd
+		atom-xslt20.dtd
+		rss-xslt20.dtd
 	DESTINATION
 		share/snapwebsites/dtd
 )

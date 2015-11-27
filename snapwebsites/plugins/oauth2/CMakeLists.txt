@@ -52,8 +52,11 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 
 snap_validate_xml( content.xml                  content/content.dtd )
+
 snap_validate_xml( oauth2-settings-page.xml     editor/editor-form.dtd )
+
 snap_validate_xml( oauth2-settings-parser.xsl   layout/simplified-xslt20.dtd )
+
 
 add_library(oauth2 SHARED
     oauth2.cpp

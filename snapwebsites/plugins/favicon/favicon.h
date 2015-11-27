@@ -17,7 +17,6 @@
 #pragma once
 
 #include "../path/path.h"
-#include "../form/form.h"
 
 namespace snap
 {
@@ -50,8 +49,6 @@ class favicon
         , public path::path_execute
 {
 public:
-    static const sessions::sessions::session_info::session_id_t FAVICON_SESSION_ID_SETTINGS = 1;      // settings-form.xml
-
                             favicon();
                             ~favicon();
 

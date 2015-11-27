@@ -49,14 +49,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<uri>.../user/...</uri>
 				<email>abc@example.com</email>
 			</author-->
-			<id><xsl:copy-of select="url/node()"/></id>
-			<published><xsl:copy-of select="created/node()"/></published>
+			<id><xsl:value-of select="url/node()"/></id>
+			<published><xsl:value-of select="created/node()"/></published>
 			<xsl:choose>
 				<xsl:when test="modified/node()">
-					<updated><xsl:copy-of select="modified/node()"/></updated>
+					<updated><xsl:value-of select="modified/node()"/></updated>
 				</xsl:when>
 				<xsl:otherwise>
-					<updated><xsl:copy-of select="created/node()"/></updated>
+					<updated><xsl:value-of select="created/node()"/></updated>
 				</xsl:otherwise>
 			</xsl:choose>
 			<!--source url="{/snap/head/metadata/desc[@type='website_uri']/data/node()}"><xsl:copy-of select="/snap/head/metadata/desc[@type='name']/data/node()"/></source-->

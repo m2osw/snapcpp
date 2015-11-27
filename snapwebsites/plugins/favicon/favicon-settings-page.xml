@@ -21,15 +21,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <auto-reset minutes="30"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
-  <focus refid="site_name"/>
+  <focus refid="picture"/>
   <on-save allow-edit="yes"/>
   <taborder>
-    <tabindex refid="site_name"/>
-    <tabindex refid="site_long_name"/>
-    <tabindex refid="site_short_name"/>
-    <tabindex refid="breadcrumbs_home_label"/>
-    <tabindex refid="show_home"/>
-    <tabindex refid="show_current_page"/>
+    <tabindex refid="picture"/>
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>

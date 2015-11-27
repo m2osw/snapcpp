@@ -177,7 +177,7 @@ QString feed::description() const
  */
 QString feed::dependencies() const
 {
-    return "|layout|messages|output|users|";
+    return "|editor|layout|messages|output|users|";
 }
 
 

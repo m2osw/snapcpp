@@ -32,16 +32,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<div id="content" class="editor-form" form_name="oauth2_settings">
 				<xsl:attribute name="session"><xsl:copy-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 
-				<!-- xsl:if test="$action != 'edit' and $can_edit = 'yes'">
-					<a class="settings-edit-button" href="?a=edit">Edit</a>
-				</xsl:if>
-				<xsl:if test="$action = 'edit'">
-					<a class="settings-save-button" href="#">Save Changes</a>
-					<a class="settings-cancel-button right-aligned" href="{/snap/head/metadata/desc[@type='page_uri']/data}">Cancel</a>
-				</xsl:if-->
-				<!--h2>OAuth2 Settings</h2-->
 				<div>
-					<xsl:attribute name="class">test<!--xsl:if test="$action = 'edit'"> editing</xsl:if--></xsl:attribute>
+					<xsl:attribute name="class">test</xsl:attribute>
 
 					<fieldset>
 						<legend>Global OAuth2 Settings</legend>
