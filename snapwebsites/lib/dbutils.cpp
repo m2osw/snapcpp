@@ -424,7 +424,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 {
     QString const n( get_column_name( c ) );
 
-    if(n == "content::breadcrumbs_show_current_page"
+    if(n == "antivirus::enable"
+    || n == "content::breadcrumbs_show_current_page"
     || n == "content::breadcrumbs_show_home"
     || n == "content::prevent_delete"
     || n == "epayment_paypal::debug"

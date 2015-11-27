@@ -18,9 +18,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <content path="/admin/settings/antivirus">
+  <content path="/admin/settings/antivirus" owner="output">
     <param name="content::title" revision="revision">Anti-Virus Settings</param>
-    <param name="content::body" revision="revision">[form::source]</param>
+    <param name="content::body" revision="revision">
+      <p>Anti-virus settings.</p>
+    </param>
+    <param name="editor::layout" revision="global" overwrite="yes">"antivirus-settings-page";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"antivirus-settings-parser";</param>
     <param name="form::source">settings</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>

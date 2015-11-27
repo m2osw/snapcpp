@@ -16,8 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../content/content.h"
-#include "../form/form.h"
+#include "../layout/layout.h"
 #include "../versions/versions.h"
 
 namespace snap
@@ -28,9 +27,10 @@ namespace antivirus
 
 enum class name_t
 {
-    SNAP_NAME_ANTIVIRUS_SCAN_ARCHIVE
+    SNAP_NAME_ANTIVIRUS_ENABLE,
+    SNAP_NAME_ANTIVIRUS_SETTINGS_PATH
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class antivirus_exception : public snap_exception
@@ -48,8 +48,6 @@ class antivirus
         , public layout::layout_content
 {
 public:
-    static sessions::sessions::session_info::session_id_t const ANTIVIRUS_SESSION_ID_SETTINGS = 1;      // settings-form.xml
-
                             antivirus();
                             ~antivirus();
 

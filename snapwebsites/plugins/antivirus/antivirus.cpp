@@ -46,8 +46,11 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case name_t::SNAP_NAME_ANTIVIRUS_SCAN_ARCHIVE:
-        return "antivirus::scan_archive";
+    case name_t::SNAP_NAME_ANTIVIRUS_ENABLE:
+        return "antivirus::enable";
+
+    case name_t::SNAP_NAME_ANTIVIRUS_SETTINGS_PATH:
+        return "admin/settings/antivirus";
 
     default:
         // invalid index
@@ -72,7 +75,7 @@ char const * get_name(name_t name)
  * This function is used to initialize the antivirus plugin object.
  */
 antivirus::antivirus()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -128,8 +131,7 @@ QString antivirus::description() const
  */
 QString antivirus::dependencies() const
 {
-    // |form| -- to be switch to "editor"
-    return "|content|form|output|versions|";
+    return "|content|editor|output|versions|";
 }
 
 
@@ -149,7 +151,7 @@ int64_t antivirus::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 11, 27, 3, 43, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -232,6 +234,18 @@ void antivirus::on_check_attachment_security(content::attachment_file const & fi
         // TODO: add support to check some extensions / MIME types that we
         //       do not want (for example we could easily forbid .exe files
         //       from being uploaded)
+        return;
+    }
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    content::path_info_t settings_ipath;
+    settings_ipath.set_path(get_name(name_t::SNAP_NAME_ANTIVIRUS_SETTINGS_PATH));
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+    QtCassandra::QCassandraValue const enable_value(revision_row->cell(get_name(name_t::SNAP_NAME_ANTIVIRUS_ENABLE))->value());
+    int8_t const enable(enable_value.nullValue() || enable_value.safeSignedCharValue());
+    if(!enable)
+    {
         return;
     }
 
