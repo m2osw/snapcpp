@@ -62,6 +62,9 @@ class feed
         : public plugins::plugin
 {
 public:
+    static int const    DEFAULT_TEASER_WORDS = 200;
+    static int const    DEFAULT_TEASER_TAGS  = 100;
+
                         feed();
                         ~feed();
 

@@ -374,13 +374,14 @@ void feed::generate_feeds()
     feed_settings_ipath.set_path(get_name(name_t::SNAP_NAME_FEED_SETTINGS_PATH));
     QtCassandra::QCassandraRow::pointer_t feed_settings_row(revision_table->row(feed_settings_ipath.get_revision_key()));
 
-    // TODO: make use of the feed definitions instead of hard coded values
-    //       forthe number of words, max tags, end marker (And below the
-    //       end marker URI and title--and whether to use that anchor.)
+    // TODO: if a feed has its own definitions for the Teaser Words, Tags,
+    //       End Marker, then use the per feed definitions...
+    //       (And below the end marker URI and title--and whether to use
+    //       that anchor.)
     //
     filter::filter::filter_teaser_info_t teaser_info;
-    teaser_info.set_max_words (feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_WORDS     ))->value().safeInt64Value(0, 200));
-    teaser_info.set_max_tags  (feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_TAGS      ))->value().safeInt64Value(0, 100));
+    teaser_info.set_max_words (feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_WORDS     ))->value().safeInt64Value(0, DEFAULT_TEASER_WORDS));
+    teaser_info.set_max_tags  (feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_TAGS      ))->value().safeInt64Value(0, DEFAULT_TEASER_TAGS));
     teaser_info.set_end_marker(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_END_MARKER))->value().stringValue());
 
     QString const default_logo(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_DEFAULT_LOGO))->value().stringValue());
@@ -417,28 +418,22 @@ void feed::generate_feeds()
                 QFile file(":/xsl/layout/feed-parser.xsl");
                 if(!file.open(QIODevice::ReadOnly))
                 {
-                    f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                        "Default Feed Layout Unavailable",
-                        "Somehow the default feed layout was accessible.",
-                        "feed::generate_feeds() could not open the feed-parser.xsl resource file.");
-                    NOTREACHED();
+                    SNAP_LOG_FATAL("feed::generate_feeds() could not open the feed-parser.xsl resource file.");
+                    return;
                 }
                 QByteArray data(file.readAll());
                 f_feed_parser_xsl = QString::fromUtf8(data.data(), data.size());
                 if(f_feed_parser_xsl.isEmpty())
                 {
-                    f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                        "Default Feed Layout Empty",
-                        "Somehow the default feed layout is empty.",
-                        "feed::generate_feeds() could not read the feed-parser.xsl resource file.");
-                    NOTREACHED();
+                    SNAP_LOG_FATAL("feed::generate_feeds() could not read the feed-parser.xsl resource file.");
+                    return;
                 }
             }
             feed_parser_layout = f_feed_parser_xsl;
         }
         // else -- so? load from an attachment? (TBD)
 
-        // replace <xsl:include ...> with other XSTL files (should be done
+        // replace <xsl:include ...> with other XSLT files (should be done
         // by the parser, but Qt's parser does not support it yet)
         layout_plugin->replace_includes(feed_parser_layout);
 

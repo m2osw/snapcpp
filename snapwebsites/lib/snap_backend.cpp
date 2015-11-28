@@ -19,6 +19,7 @@
 
 #include "snapwebsites.h"
 #include "log.h"
+#include "not_used.h"
 
 #include <wait.h>
 #include <fcntl.h>
@@ -726,7 +727,7 @@ void snap_backend::process_backend_uri(QString const & uri)
             {
                 virtual void on_backend_action(QString const & action)
                 {
-                    static_cast<void>(action);
+                    NOTUSED(action);
                 }
             };
             fake foo;

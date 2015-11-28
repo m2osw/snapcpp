@@ -344,9 +344,9 @@ bool robotstxt::generate_robotstxt_impl(robotstxt *r)
  * \param[in] robot  The name of the robot (default "*")
  * \param[in] unique  The field is unique, if already defined throw an error
  */
-void robotstxt::add_robots_txt_field(QString const& value,
-                                     QString const& field,
-                                     QString const& robot,
+void robotstxt::add_robots_txt_field(QString const & value,
+                                     QString const & field,
+                                     QString const & robot,
                                      bool unique)
 {
     if(field.isEmpty())

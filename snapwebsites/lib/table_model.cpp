@@ -19,6 +19,7 @@
 #include "table_model.h"
 #include "dbutils.h"
 #include "log.h"
+#include "not_used.h"
 
 #include <QtCassandra/QCassandraContext.h>
 #include <QVariant>
@@ -71,7 +72,7 @@ void table_model::setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp c
 
 bool table_model::canFetchMore(QModelIndex const & model_index) const
 {
-    static_cast<void>(model_index);
+    NOTUSED(model_index);
 
     return f_rowsRemaining >= f_rowCount;
 }
@@ -79,7 +80,7 @@ bool table_model::canFetchMore(QModelIndex const & model_index) const
 
 void table_model::fetchMore(QModelIndex const & model_index)
 {
-    static_cast<void>(model_index);
+    NOTUSED(model_index);
 
     if( !f_table )
     {
@@ -107,7 +108,7 @@ void table_model::fetchMore(QModelIndex const & model_index)
 
 Qt::ItemFlags table_model::flags( QModelIndex const & idx ) const
 {
-    static_cast<void>(idx);
+    NOTUSED(idx);
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 

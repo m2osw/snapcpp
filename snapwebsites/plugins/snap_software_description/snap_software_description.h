@@ -16,9 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../form/form.h"
-#include "../layout/layout.h"
-#include "../path/path.h"
+#include "../robotstxt/robotstxt.h"
 
 namespace snap
 {
@@ -27,7 +25,12 @@ namespace snap_software_description
 
 enum class name_t
 {
-    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_ENABLE
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_ENABLE,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_MAX_FILES,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_PATH,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_END_MARKER,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_TAGS,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_WORDS
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
@@ -49,26 +52,34 @@ public:
 
 class snap_software_description
         : public plugins::plugin
-        , public path::path_execute
 {
 public:
-                                        snap_software_description();
-    virtual                             ~snap_software_description();
+                                            snap_software_description();
+    virtual                                 ~snap_software_description();
 
     // plugins::plugin implementation
-    static snap_software_description *  instance();
-    virtual QString                     description() const;
-    virtual QString                     dependencies() const;
-    virtual int64_t                     do_update(int64_t last_updated);
-    virtual void                        bootstrap(::snap::snap_child * snap);
+    static snap_software_description *      instance();
+    virtual QString                         description() const;
+    virtual QString                         dependencies() const;
+    virtual int64_t                         do_update(int64_t last_updated);
+    virtual void                            bootstrap(::snap::snap_child * snap);
 
-    // path::path_execute implementation
-    virtual bool                        on_path_execute(content::path_info_t & ipath);
+    // server signal
+    void                                    on_backend_process();
+
+    // robotstxt signal
+    void                                    on_generate_robotstxt(robotstxt::robotstxt * r);
+
+    // shorturl signal
+    void                                    on_allow_shorturl(content::path_info_t & ipath, QString const & owner, QString const & type, bool & allow);
 
 private:
-    void                    content_update(int64_t variables_timestamp);
+    void                                    content_update(int64_t variables_timestamp);
+    void                                    create_catalog(content::path_info_t & ipath, int const depth);
 
-    zpsnap_child_t          f_snap;
+    zpsnap_child_t                          f_snap;
+    QtCassandra::QCassandraRow::pointer_t   f_snap_software_description_settings_row;
+    QString                                 f_snap_software_description_parser_xsl;
 };
 
 } // namespace snap_software_description

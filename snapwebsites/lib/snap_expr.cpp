@@ -21,6 +21,7 @@
 
 #include "snapwebsites.h"
 #include "not_reached.h"
+#include "not_used.h"
 #include "log.h"
 
 #include <controlled_vars/controlled_vars_limited_need_init.h>
@@ -3503,7 +3504,7 @@ private:
                     .arg(static_cast<int>(static_cast<node_type_t>(f_type))).arg(sub_results.size()));
         }
 #else
-        static_cast<void>(sub_results);
+        NOTUSED(sub_results);
 #endif
     }
 
@@ -3516,7 +3517,7 @@ private:
                     .arg(static_cast<int>(static_cast<node_type_t>(f_type))).arg(sub_results.size()));
         }
 #else
-        static_cast<void>(sub_results);
+        NOTUSED(sub_results);
 #endif
     }
 
@@ -3693,7 +3694,7 @@ char const *expr_node::type_names[static_cast<size_t>(node_type_t::NODE_TYPE_VAR
  */
 void list_qualified_name(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<parser::token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     (*t)[0]->set_value((*n)[0]->get_value().toString() + "::" + (*t)[2]->get_value().toString());
@@ -3717,7 +3718,7 @@ void list_expr_binary_operation(QSharedPointer<token_node>& t, expr_node::node_t
 #define LIST_EXPR_BINARY_OPERATION(a, b) \
     void list_expr_##a(rule const& r, QSharedPointer<token_node>& t) \
     { \
-        static_cast<void>(r); \
+        NOTUSED(r); \
         list_expr_binary_operation(t, expr_node::node_type_t::NODE_TYPE_OPERATION_##b); \
     }
 
@@ -3758,7 +3759,7 @@ void list_expr_unary_operation(QSharedPointer<token_node>& t, expr_node::node_ty
 #define LIST_EXPR_UNARY_OPERATION(a, b) \
     void list_expr_##a(rule const& r, QSharedPointer<token_node>& t) \
     { \
-        static_cast<void>(r); \
+        NOTUSED(r); \
         list_expr_unary_operation(t, expr_node::node_type_t::NODE_TYPE_OPERATION_##b); \
     }
 
@@ -3769,7 +3770,7 @@ LIST_EXPR_UNARY_OPERATION(negate, NEGATE)
 
 void list_expr_conditional(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     expr_node::expr_node_pointer_t c(qSharedPointerDynamicCast<expr_node, parser_user_data>(n0->get_user_data()));
@@ -3816,7 +3817,7 @@ void list_expr_level_child(expr_node::expr_node_pointer_t n)
 
 void list_expr_list(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     expr_node::expr_node_pointer_t l(qSharedPointerDynamicCast<expr_node, parser_user_data>(n0->get_user_data()));
@@ -3847,7 +3848,7 @@ void list_expr_list(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_identity(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     expr_node::expr_node_pointer_t i(qSharedPointerDynamicCast<expr_node, parser_user_data>(n->get_user_data()));
@@ -3859,7 +3860,7 @@ void list_expr_identity(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_function(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     // the function name is a string
     QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
@@ -3894,7 +3895,7 @@ void list_expr_function(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_true(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_LITERAL_BOOLEAN));
     QtCassandra::QCassandraValue value;
@@ -3908,7 +3909,7 @@ void list_expr_true(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_false(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_LITERAL_BOOLEAN));
     QtCassandra::QCassandraValue value;
@@ -3922,7 +3923,7 @@ void list_expr_false(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_string(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QString const str((*t)[0]->get_value().toString());
 
@@ -3938,7 +3939,7 @@ void list_expr_string(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_integer(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     int64_t const integer((*t)[0]->get_value().toLongLong());
 
@@ -3954,7 +3955,7 @@ void list_expr_integer(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_float(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     double const floating_point((*t)[0]->get_value().toDouble());
 
@@ -3970,7 +3971,7 @@ void list_expr_float(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_level_list(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     expr_node::expr_node_pointer_t n(qSharedPointerDynamicCast<expr_node, parser_user_data>(n0->get_user_data()));
@@ -3984,7 +3985,7 @@ void list_expr_level_list(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_variable(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QString const name((*t)[0]->get_value().toString());
 
@@ -3996,7 +3997,7 @@ void list_expr_variable(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_assignment(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QString const name((*t)[0]->get_value().toString());
 
@@ -4012,7 +4013,7 @@ void list_expr_assignment(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_copy_result(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     // we don't need the dynamic cast since we don't need to access the data

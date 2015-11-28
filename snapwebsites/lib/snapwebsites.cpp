@@ -621,7 +621,7 @@ void server::bootstrap(snap_child * snap)
  */
 int64_t server::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
 
     SNAP_PLUGIN_UPDATE_INIT();
     SNAP_PLUGIN_UPDATE_EXIT();
@@ -2533,7 +2533,7 @@ quiet_error_callback::quiet_error_callback(snap_child * snap, bool log)
 void quiet_error_callback::on_error(snap_child::http_code_t const err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
 {
     // since we ignore the error here anyway we can ignore this flag...
-    static_cast<void>(err_by_mime_type);
+    NOTUSED(err_by_mime_type);
 
     f_error = true;
 

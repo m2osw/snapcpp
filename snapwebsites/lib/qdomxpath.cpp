@@ -18,6 +18,7 @@
 #include "qdomxpath.h"
 
 #include "floats.h"
+#include "not_used.h"
 #include "qstring_stream.h"
 
 #include <controlled_vars/controlled_vars_auto_init.h>
@@ -1389,7 +1390,7 @@ public:
             case type_t::ATOMIC_TYPE_DOUBLE:
             case type_t::ATOMIC_TYPE_STRING:
                 // ignore the result, we return *this below
-                static_cast<void>(atomic_value_t::operator = (rhs));
+                snap::NOTUSED(atomic_value_t::operator = (rhs));
                 break;
 
             case type_t::ATOMIC_TYPE_SET:

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == oauth2 database setup
+Snap Websites Server == snap software description database setup
 Copyright (C) 2012-2015  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -18,22 +18,148 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <content path="/user/oauth2">
-    <param name="content::title" revision="revision">OAuth2</param>
+  <!--content path="/snsd"> == these are created as attachment as the SNSD plugin has nothing to do about the download, it's just a file at the time it gets accessed, just like feeds.
+    <param name="content::title" revision="revision">Snap! Software Description</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>The path of this page is used to enable OAuth2. It cannot be changed.</p>]]>
+      <![CDATA[<p>Snap! Software Description Catalog.</p>]]>
     </param>
     <link name="permissions::direct::action::administrer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
-  </content>
-  <content path="/admin/settings/oauth2" owner="output">
-    <param name="content::title" revision="revision">OAuth2 Settings</param>
+  </content-->
+  <content path="/types/snap-software-description" owner="output">
+    <param name="content::title" revision="revision">Snap! Software Description</param>
     <param name="content::body" revision="revision">
-        <![CDATA[<p>Setup the OAuth2 feature for this website.</p>]]>
+      <![CDATA[<p>The types defined under this entry represent categories to sort software in various ways. The categories are managed in a tree. You are free to grow the tree to match your needs.</p>]]>
     </param>
-    <param name="editor::layout" revision="global" overwrite="yes">"oauth2-settings-page";</param>
-    <param name="layout::layout" revision="global" overwrite="yes">"oauth2-settings-parser";</param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+  </content>
+  <content path="/types/snap-software-description/communications" owner="output">
+    <param name="content::title" revision="revision">Communications</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Software handling communications.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/database" owner="output">
+    <param name="content::title" revision="revision">Database</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A Database Software such as MySQL or PostgreSQL.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/desktop-environment" owner="output">
+    <param name="content::title" revision="revision">Desktop Environment</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software offering a Desktop Environment or an extension thereof.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/education" owner="output">
+    <param name="content::title" revision="revision">Education</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software used to educate or at least help to educate.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/formats-and-protocols" owner="output">
+    <param name="content::title" revision="revision">Formats and Protocols</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software to handle data defined using specific formats or protocols.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/games-and-entertainment" owner="output">
+    <param name="content::title" revision="revision">Games and Entertainment</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software implementing a game or something in link with entertainment.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/internet" owner="output">
+    <param name="content::title" revision="revision">Internet</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software strongly linked to the Internet such as a browser.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/mobile" owner="output">
+    <param name="content::title" revision="revision">Mobile</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software running and specifically created for Mobile devices.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/multimedia" owner="output">
+    <param name="content::title" revision="revision">Multimedia</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software used to help with multimedia items.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/office-and-business" owner="output">
+    <param name="content::title" revision="revision">Multimedia</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software to help business men and employees working in an office.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/printing" owner="output">
+    <param name="content::title" revision="revision">Printing</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software used with various types of printers.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/religion" owner="output">
+    <param name="content::title" revision="revision">Religion</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software in link with religion.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/philosophy-social-science" owner="output">
+    <param name="content::title" revision="revision">Philosophy and Social Science</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software in link with philosophy and social science.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/scientific-engineering" owner="output">
+    <param name="content::title" revision="revision">Scientific/Engineering</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software used in the scientific world or helping with engineering.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/security" owner="output">
+    <param name="content::title" revision="revision">Security</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software that helps you secure servers, a place, a vehicul, etc.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/sociology" owner="output">
+    <param name="content::title" revision="revision">Sociology</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software helping sociologs do their work.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/software-development" owner="output">
+    <param name="content::title" revision="revision">Tools for Software Development</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software used in software development such as a compiler, a linker, a static code analyzer, etc.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/system" owner="output">
+    <param name="content::title" revision="revision">System Software</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>An operating software, such a Linux, or a tool to work with the system (boot loader, OS benchmark, embedded software...)</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/terminal" owner="output">
+    <param name="content::title" revision="revision">Terminal</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software used to allow user input and system output.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/text-editor" owner="output">
+    <param name="content::title" revision="revision">Text Editor</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A software to allow users to edit text files such as source code.</p>]]>
+    </param>
+  </content>
+  <content path="/admin/settings/snap-software-description" owner="output">
+    <param name="content::title" revision="revision">Snap Software Description Settings</param>
+    <param name="content::body" revision="revision">
+        <![CDATA[<p>Setup the Snap Software Description feature for this website.</p>]]>
+    </param>
+    <param name="editor::layout" revision="global" overwrite="yes">"snap_software_description-settings-page";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"snap_software_description-settings-parser";</param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml

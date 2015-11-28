@@ -21,6 +21,7 @@
 #include "http_strings.h"
 #include "log.h"
 #include "mkgmtime.h"
+#include "not_used.h"
 #include "qdomhelpers.h"
 #include "qlockfile.h"
 #include "snap_image.h"
@@ -2544,7 +2545,7 @@ void snap_child::set_timezone(QString const& timezone)
  */
 void snap_child::set_locale(QString const & locale)
 {
-    static_cast<void>(locale);
+    NOTUSED(locale);
     // force new locale
     // Note: empty ("") is like using $LANG to setup the locale
 //std::cerr << "***\n*** set_locale(" << locale << ")\n***\n";

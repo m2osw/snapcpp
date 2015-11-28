@@ -505,7 +505,7 @@ tcp_server::tcp_server(std::string const & addr, int port, int max_connections, 
         // if this fails, we ignore the error (TODO log an INFO message)
         int optval(1);
         socklen_t const optlen(sizeof(optval));
-        static_cast<void>(setsockopt(f_socket, SOL_SOCKET, SO_REUSEADDR, &optval, optlen));
+        snap::NOTUSED(setsockopt(f_socket, SOL_SOCKET, SO_REUSEADDR, &optval, optlen));
     }
 
     if(bind(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)

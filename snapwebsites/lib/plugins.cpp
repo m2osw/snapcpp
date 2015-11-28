@@ -16,7 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "plugins.h"
+
 #include "log.h"
+#include "not_used.h"
 
 #include <qstring_stream.h>
 
@@ -559,7 +561,7 @@ int64_t plugin::last_modification() const
  */
 int64_t plugin::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
 
     SNAP_PLUGIN_UPDATE_INIT();
 
@@ -587,7 +589,7 @@ int64_t plugin::do_update(int64_t last_updated)
  */
 int64_t plugin::do_dynamic_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
 
     SNAP_PLUGIN_UPDATE_INIT();
 

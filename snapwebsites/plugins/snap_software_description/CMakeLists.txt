@@ -52,9 +52,11 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 
-snap_validate_xml( content.xml                  content/content.dtd )
-snap_validate_xml( snap_software_description-settings-page.xml     editor/editor-form.dtd )
-snap_validate_xml( snap_software_description-settings-parser.xsl   layout/simplified-xslt20.dtd )
+snap_validate_xml( content.xml                                      content/content.dtd )
+
+snap_validate_xml( snap_software_description-settings-page.xml      editor/editor-form.dtd )
+
+snap_validate_xml( snap_software_description-settings-parser.xsl    layout/simplified-xslt20.dtd )
 
 add_library(snap_software_description SHARED
     snap_software_description.cpp
