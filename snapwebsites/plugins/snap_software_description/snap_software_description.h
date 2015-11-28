@@ -26,6 +26,7 @@ namespace snap_software_description
 enum class name_t
 {
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_ENABLE,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_HTTP_HEADER,
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_MAX_FILES,
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_PATH,
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_END_MARKER,
@@ -67,6 +68,10 @@ public:
     // server signal
     void                                    on_backend_process();
 
+    // layout signals
+    void                                    on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
+    void                                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
     // robotstxt signal
     void                                    on_generate_robotstxt(robotstxt::robotstxt * r);
 
@@ -75,7 +80,12 @@ public:
 
 private:
     void                                    content_update(int64_t variables_timestamp);
+
+    QString                                 get_root_path();
+    void                                    create_publisher();
+    void                                    create_support();
     void                                    create_catalog(content::path_info_t & ipath, int const depth);
+    void                                    create_file(content::path_info_t & ipath);
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraRow::pointer_t   f_snap_software_description_settings_row;

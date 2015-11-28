@@ -20,6 +20,7 @@
 #include "../output/output.h"
 
 #include "not_reached.h"
+#include "not_used.h"
 
 #include "poison.h"
 

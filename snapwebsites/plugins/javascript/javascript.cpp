@@ -32,6 +32,7 @@
 #include "plugins.h"
 #include "snap_version.h"
 #include "not_reached.h"
+#include "not_used.h"
 #include "log.h"
 
 #include <QScriptEngine>

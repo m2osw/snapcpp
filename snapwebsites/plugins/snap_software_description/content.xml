@@ -32,121 +32,139 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>The types defined under this entry represent categories to sort software in various ways. The categories are managed in a tree. You are free to grow the tree to match your needs.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/communications" owner="output">
+  <content path="/types/snap-software-description/table-of-contents" owner="output">
+    <param name="content::title" revision="revision">Snap! Software Description Table of Contents</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The types pages the page representing the table of content.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/publisher" owner="output">
+    <param name="content::title" revision="revision">Snap! Software Description Publisher</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The types marks publishers.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/support" owner="output">
+    <param name="content::title" revision="revision">Snap! Software Description Support</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The types marks support pages.</p>]]>
+    </param>
+  </content>
+  <content path="/types/snap-software-description/category/communications" owner="output">
     <param name="content::title" revision="revision">Communications</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Software handling communications.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/database" owner="output">
+  <content path="/types/snap-software-description/category/database" owner="output">
     <param name="content::title" revision="revision">Database</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A Database Software such as MySQL or PostgreSQL.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/desktop-environment" owner="output">
+  <content path="/types/snap-software-description/category/desktop-environment" owner="output">
     <param name="content::title" revision="revision">Desktop Environment</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software offering a Desktop Environment or an extension thereof.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/education" owner="output">
+  <content path="/types/snap-software-description/category/education" owner="output">
     <param name="content::title" revision="revision">Education</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software used to educate or at least help to educate.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/formats-and-protocols" owner="output">
+  <content path="/types/snap-software-description/category/formats-and-protocols" owner="output">
     <param name="content::title" revision="revision">Formats and Protocols</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software to handle data defined using specific formats or protocols.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/games-and-entertainment" owner="output">
+  <content path="/types/snap-software-description/category/games-and-entertainment" owner="output">
     <param name="content::title" revision="revision">Games and Entertainment</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software implementing a game or something in link with entertainment.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/internet" owner="output">
+  <content path="/types/snap-software-description/category/internet" owner="output">
     <param name="content::title" revision="revision">Internet</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software strongly linked to the Internet such as a browser.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/mobile" owner="output">
+  <content path="/types/snap-software-description/category/mobile" owner="output">
     <param name="content::title" revision="revision">Mobile</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software running and specifically created for Mobile devices.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/multimedia" owner="output">
+  <content path="/types/snap-software-description/category/multimedia" owner="output">
     <param name="content::title" revision="revision">Multimedia</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software used to help with multimedia items.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/office-and-business" owner="output">
+  <content path="/types/snap-software-description/category/office-and-business" owner="output">
     <param name="content::title" revision="revision">Multimedia</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software to help business men and employees working in an office.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/printing" owner="output">
+  <content path="/types/snap-software-description/category/printing" owner="output">
     <param name="content::title" revision="revision">Printing</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software used with various types of printers.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/religion" owner="output">
+  <content path="/types/snap-software-description/category/religion" owner="output">
     <param name="content::title" revision="revision">Religion</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software in link with religion.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/philosophy-social-science" owner="output">
+  <content path="/types/snap-software-description/category/philosophy-social-science" owner="output">
     <param name="content::title" revision="revision">Philosophy and Social Science</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software in link with philosophy and social science.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/scientific-engineering" owner="output">
+  <content path="/types/snap-software-description/category/scientific-engineering" owner="output">
     <param name="content::title" revision="revision">Scientific/Engineering</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software used in the scientific world or helping with engineering.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/security" owner="output">
+  <content path="/types/snap-software-description/category/security" owner="output">
     <param name="content::title" revision="revision">Security</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software that helps you secure servers, a place, a vehicul, etc.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/sociology" owner="output">
+  <content path="/types/snap-software-description/category/sociology" owner="output">
     <param name="content::title" revision="revision">Sociology</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software helping sociologs do their work.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/software-development" owner="output">
+  <content path="/types/snap-software-description/category/software-development" owner="output">
     <param name="content::title" revision="revision">Tools for Software Development</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software used in software development such as a compiler, a linker, a static code analyzer, etc.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/system" owner="output">
+  <content path="/types/snap-software-description/category/system" owner="output">
     <param name="content::title" revision="revision">System Software</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>An operating software, such a Linux, or a tool to work with the system (boot loader, OS benchmark, embedded software...)</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/terminal" owner="output">
+  <content path="/types/snap-software-description/category/terminal" owner="output">
     <param name="content::title" revision="revision">Terminal</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software used to allow user input and system output.</p>]]>
     </param>
   </content>
-  <content path="/types/snap-software-description/text-editor" owner="output">
+  <content path="/types/snap-software-description/category/text-editor" owner="output">
     <param name="content::title" revision="revision">Text Editor</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>A software to allow users to edit text files such as source code.</p>]]>

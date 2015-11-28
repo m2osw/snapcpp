@@ -69,6 +69,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_ENABLE:
         return "snap_software_description::enable";
 
+    case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_HTTP_HEADER:
+        return "X-Snap-Software-Description";
+
     case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_MAX_FILES:
         return "snap_software_description::max_files";
 
@@ -217,8 +220,90 @@ void snap_software_description::bootstrap(::snap::snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN0(snap_software_description, "server", server, backend_process);
+    SNAP_LISTEN(snap_software_description, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(snap_software_description, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
     SNAP_LISTEN(snap_software_description, "shorturl", shorturl::shorturl, allow_shorturl, _1, _2, _3, _4);
+}
+
+
+/** \brief Get the path to the root description.
+ *
+ * The Snap Software Description system works from a root and leaves.
+ * The leaves are other catalogs or files. Files are terminal (they
+ * cannot have children.)
+ *
+ * The location of the root is currently hard coded as:
+ *
+ * \code
+ * http://example.com/types/snap-websites-description.xml
+ * \endcode
+ *
+ * This function returns that path with the correct URL as the domain
+ * name.
+ *
+ * The path is directly to where the Snap Software Description backend
+ * process will save that root XML file.
+ *
+ * Later we may allow end users to change this default to another path.
+ */
+QString snap_software_description::get_root_path()
+{
+    return QString("%1types/snap-websites-description.xml").arg(f_snap->get_site_key_with_slash());
+}
+
+
+/** \brief Generate the header common content.
+ *
+ * This function adds an HTTP header with a URL to the Snap Software
+ * Description root file.
+ *
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] header  The page being generated.
+ * \param[in,out] metadata  The body being generated.
+ */
+void snap_software_description::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
+{
+    NOTUSED(header);
+    NOTUSED(metadata);
+
+    // only put that info on the home page ("/")
+    // and all the types specific to snap-software-description
+    // that way we save some time on other pages
+    //
+    QString const cpath(ipath.get_cpath());
+    if(cpath.startsWith("types/snap-software-description"))
+    {
+        f_snap->set_header(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_HTTP_HEADER), get_root_path());
+    }
+}
+
+
+/** \brief Generate links in the header.
+ *
+ * This function generates one alternate link per feed made available.
+ *
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] page  The page being generated.
+ * \param[in,out] body  The body being generated.
+ */
+void snap_software_description::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
+{
+    NOTUSED(page);
+
+    // only on the home page; no need to replicate that info on all pages
+    //
+    if(ipath.get_cpath() == "")
+    {
+        FIELD_SEARCH
+            (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+            (content::field_search::command_t::COMMAND_ELEMENT, body)
+
+            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, "Snap Software Description")
+            (content::field_search::command_t::COMMAND_SAVE, QString("formats[href=\"%1\"][type=\"text/xml\"]").arg(get_root_path()))
+
+            // generate
+            ;
+    }
 }
 
 
@@ -232,7 +317,7 @@ void snap_software_description::bootstrap(::snap::snap_child * snap)
  */
 void snap_software_description::on_generate_robotstxt(robotstxt::robotstxt * r)
 {
-    r->add_robots_txt_field(f_snap->get_site_key_with_slash() + "types/snap-websites-description.xml", "Snap-Websites-Description", "", true);
+    r->add_robots_txt_field(get_root_path(), "Snap-Websites-Description", "", true);
 }
 
 
@@ -306,6 +391,9 @@ void snap_software_description::on_backend_process()
     snap_software_description_settings_ipath.set_path(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_PATH));
     f_snap_software_description_settings_row = revision_table->row(snap_software_description_settings_ipath.get_revision_key());
 
+    create_publisher();
+    create_support();
+
     content::path_info_t ipath;
     ipath.set_path("/types/snap-software-description");
 
@@ -314,6 +402,26 @@ void snap_software_description::on_backend_process()
 
     // reset the main URI
     f_snap->set_uri_path("/");
+}
+
+
+void snap_software_description::create_publisher()
+{
+    // publishers are linked to a specific system type
+    //
+    //links::link_info info(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_PUBLISHER_TYPE), false, ipath.get_key(), ipath.get_branch());
+    //QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+    //links::link_info child_info;
+    //while(link_ctxt->next_link(child_info))
+    //{
+    //    content::path_info_t publisher_ipath;
+    //    publisher_ipath.set_path(child_info.key());
+    //}
+}
+
+
+void snap_software_description::create_support()
+{
 }
 
 
@@ -470,6 +578,12 @@ void snap_software_description::create_catalog(content::path_info_t & ipath, int
     {
         return;
     }
+}
+
+
+void snap_software_description::create_file(content::path_info_t & ipath)
+{
+    NOTUSED(ipath);
 }
 
 

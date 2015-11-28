@@ -819,7 +819,7 @@ void field_search::run()
             }
         }
 
-        void cmd_self(QString const& self)
+        void cmd_self(QString const & self)
         {
             // verify that a field name is defined
             if(f_field_name.isEmpty())
@@ -846,7 +846,7 @@ void field_search::run()
             }
         }
 
-        void cmd_path(QString const& path)
+        void cmd_path(QString const & path)
         {
             f_found_self = false;
 

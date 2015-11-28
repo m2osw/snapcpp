@@ -21,6 +21,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 

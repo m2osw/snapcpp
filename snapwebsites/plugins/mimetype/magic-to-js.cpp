@@ -2312,231 +2312,231 @@ void parser::output_entry(size_t start, size_t end)
 
         void output_unknown(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: found an unknown entry while outputing data.\n";
             exit(1);
         }
 
         void output_byte(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ubyte(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_short(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_leshort(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_beshort(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ushort(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_uleshort(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ubeshort(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_long(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_lelong(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_belong(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_melong(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ulong(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ulelong(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ubelong(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_umelong(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_beid3(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_leid3(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ubeid3(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_uleid3(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_quad(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_bequad(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_lequad(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_uquad(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ubequad(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ulequad(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_float(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_befloat(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_lefloat(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_double(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_bedouble(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ledouble(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
@@ -2559,147 +2559,147 @@ void parser::output_entry(size_t start, size_t end)
 
         void output_pstring(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_besearch16(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_lesearch16(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_search(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_regex(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_date(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_qdate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ldate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_qldate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_bedate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_beqdate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_beldate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_beqldate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_ledate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_leqdate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_leldate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_leqldate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_medate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_meldate(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_indirect(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
 
         void output_default(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cerr << "error: type not implemented yet.\n";
             exit(1);
         }
@@ -2715,7 +2715,7 @@ void parser::output_entry(size_t start, size_t end)
 
         void output_endif(size_t pos)
         {
-            NOTUSED(pos);
+            snap::NOTUSED(pos);
             std::cout << "}\n";
         }
 
