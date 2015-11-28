@@ -85,7 +85,7 @@ find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( Thrift           REQUIRED )
 find_package( ZLIB             REQUIRED )
-find_package( ZipIos++         REQUIRED 0.1.5.9 )
+find_package( ZipIos           REQUIRED 2.1 )
 
 find_library( UUID uuid )
 if( ${UUID} STREQUAL "UUID-NOTFOUND" )

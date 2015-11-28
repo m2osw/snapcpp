@@ -42,17 +42,14 @@
 #include <controlled_vars/controlled_vars_need_init.h>
 #include <QtCassandra/QCassandra.h>
 
+#include <zipios/zipfile.hpp>
+
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 
 #include <sys/stat.h>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wshadow"
-#include <zipios++/zipfile.h>
-#pragma GCC diagnostic pop
 
 #include <QDomDocument>
 #include <QDomElement>
@@ -64,135 +61,156 @@
 
 namespace
 {
-    const std::vector<std::string> g_configuration_files; // Empty
 
-    const advgetopt::getopt::option g_snaplayout_options[] =
+/** \brief A vector of string is required for f_opt
+ *
+ * The vector is kept empty. It is required to parse the command line
+ * options but snaplayout does not make use of configuration files.
+ */
+const std::vector<std::string> g_configuration_files; // Empty
+
+
+/** \brief The options of the snaplayout command line tool.
+ *
+ * This table represents all the options available on the snaplayout
+ * command line.
+ */
+advgetopt::getopt::option const g_snaplayout_options[] =
+{
     {
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
-            "Usage: %p [-<opt>] <layout filename> ...",
-            advgetopt::getopt::help_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
-            "where -<opt> is one or more of:",
-            advgetopt::getopt::help_argument
-        },
-        {
-            '?',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "help",
-            nullptr,
-            "show this help output",
-            advgetopt::getopt::no_argument
-        },
-        {
-            'c',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "config",
-            "/etc/snapwebsites/snapserver.conf",
-            "Specify the configuration file to load at startup.",
-            advgetopt::getopt::optional_argument
-        },
-        {
-            'x',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "extract",
-            nullptr,
-            "extract a file from the specified layout and filename",
-            advgetopt::getopt::no_argument
-        },
-        {
-            'h',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "host",
-            "localhost",
-            "host IP address or name [default=localhost]",
-            advgetopt::getopt::optional_argument
-        },
-        {
-            'p',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "port",
-            "9160",
-            "port on the host to which to connect [default=9160]",
-            advgetopt::getopt::optional_argument
-        },
-        {
-            '\0',
-            0,
-            "remove-theme",
-            nullptr,
-            "remove the specified theme; this remove the entire row and can allow you to reinstall a theme that \"lost\" files",
-            advgetopt::getopt::no_argument
-        },
-        { // at least until we have a way to edit the theme from the website
-            't',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "set-theme",
-            nullptr,
-            "usage: --set-theme URL [theme|layout] ['\"layout name\";']'",
-            advgetopt::getopt::no_argument // expect 3 params as filenames
-        },
-        {
-            'v',
-            0,
-            "verbose",
-            nullptr,
-            "show what snaplayout is doing",
-            advgetopt::getopt::no_argument // expect 3 params as filenames
-        },
-        {
-            '\0',
-            0,
-            "version",
-            nullptr,
-            "show the version of the server and exit",
-            advgetopt::getopt::no_argument
-        },
-        {
-            '\0',
-            0,
-            nullptr,
-            nullptr,
-            "layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl or layout.zip",
-            advgetopt::getopt::default_multiple_argument
-        },
-        {
-            '\0',
-            0,
-            nullptr,
-            nullptr,
-            nullptr,
-            advgetopt::getopt::end_of_options
-        }
-    };
-
-
-    void stream_to_bytearray( std::istream* is, QByteArray& arr )
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        NULL,
+        NULL,
+        "Usage: %p [-<opt>] <layout filename> ...",
+        advgetopt::getopt::help_argument
+    },
     {
-        arr.clear();
-        while( !is->eof() )
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        NULL,
+        NULL,
+        "where -<opt> is one or more of:",
+        advgetopt::getopt::help_argument
+    },
+    {
+        '?',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "help",
+        nullptr,
+        "show this help output",
+        advgetopt::getopt::no_argument
+    },
+    {
+        'c',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "config",
+        "/etc/snapwebsites/snapserver.conf",
+        "Specify the configuration file to load at startup.",
+        advgetopt::getopt::optional_argument
+    },
+    {
+        'x',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "extract",
+        nullptr,
+        "extract a file from the specified layout and filename",
+        advgetopt::getopt::no_argument
+    },
+    {
+        'h',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "host",
+        "localhost",
+        "host IP address or name [default=localhost]",
+        advgetopt::getopt::optional_argument
+    },
+    {
+        'p',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "port",
+        "9160",
+        "port on the host to which to connect [default=9160]",
+        advgetopt::getopt::optional_argument
+    },
+    {
+        '\0',
+        0,
+        "remove-theme",
+        nullptr,
+        "remove the specified theme; this remove the entire row and can allow you to reinstall a theme that \"lost\" files",
+        advgetopt::getopt::no_argument
+    },
+    { // at least until we have a way to edit the theme from the website
+        't',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "set-theme",
+        nullptr,
+        "usage: --set-theme URL [theme|layout] ['\"layout name\";']'",
+        advgetopt::getopt::no_argument // expect 3 params as filenames
+    },
+    {
+        'v',
+        0,
+        "verbose",
+        nullptr,
+        "show what snaplayout is doing",
+        advgetopt::getopt::no_argument // expect 3 params as filenames
+    },
+    {
+        '\0',
+        0,
+        "version",
+        nullptr,
+        "show the version of the server and exit",
+        advgetopt::getopt::no_argument
+    },
+    {
+        '\0',
+        0,
+        nullptr,
+        nullptr,
+        "layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl or layout.zip",
+        advgetopt::getopt::default_multiple_argument
+    },
+    {
+        '\0',
+        0,
+        nullptr,
+        nullptr,
+        nullptr,
+        advgetopt::getopt::end_of_options
+    }
+};
+
+
+/** \brief Load the data of a stream in a QByteArray.
+ *
+ * This function reads all the input data available in the input
+ * stream \p is and saves it in the specified QByteArray \p arr
+ * parameter.
+ *
+ * \param[in,out] is  A pointer to an input stream.
+ * \param[out] arr  The array where the data read from the input stream is saved.
+ */
+void stream_to_bytearray( std::istream & is, QByteArray & arr )
+{
+    arr.clear();
+    char ch('\0');
+    for(;;)
+    {
+        is.get( ch );
+        if( is.eof() )
         {
-            char ch = '\0';
-            is->get( ch );
-            if( !is->eof() )
-            {
-                arr.push_back( ch );
-            }
+            break;
         }
+        arr.push_back( ch );
     }
 }
-//namespace
 
-using namespace QtCassandra;
-using namespace snap;
+
+}
+//namespace
 
 
 /** \brief A class for easy access to all resources.
@@ -245,24 +263,24 @@ private:
 
     // Private methods
     //
-    QCassandraContext::pointer_t    get_snap_context();
+    QtCassandra::QCassandraContext::pointer_t    get_snap_context();
 
     // Common attributes
     //
-    snap_config                     f_parameters;
-    snap_cassandra                  f_cassandra;
+    snap::snap_config               f_parameters;
+    snap::snap_cassandra            f_cassandra;
     fileinfo_list_t                 f_fileinfo_list;
     getopt_ptr_t                    f_opt;
-    controlled_vars::fbool_t        f_verbose;
+    bool                            f_verbose = false;
 };
 
 
-snap_layout::snap_layout(int argc, char *argv[])
+snap_layout::snap_layout(int argc, char * argv[])
     //: f_parameters() -- auto-init
     : f_cassandra( f_parameters )
     //, f_fileinfo_list -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, "SNAPSERVER_OPTIONS" ) )
-    //, f_verbose(false) -- auto-init
+    , f_verbose(f_opt->is_defined("verbose"))
 {
     if( f_opt->is_defined( "help" ) )
     {
@@ -314,39 +332,38 @@ snap_layout::snap_layout(int argc, char *argv[])
             {
                 std::cout << "Unpacking zipfile '" << filename << "':" << std::endl;
 
+                // zipios2 throws if it cannot open the input file
                 zipios::ZipFile zf( filename.toUtf8().data() );
-                if( zf.size() < 0 )
-                {
-                    std::cerr << "error: could not open zipfile \"" << filename << "\"" << std::endl;
-                    exit(1);
-                }
                 //
                 for( auto ent : zf.entries() )
                 {
                     if( ent && ent->isValid() && !ent->isDirectory() )
                     {
-                        std::cout << "\t" << *ent << std::endl;
+                        if(f_verbose)
+                        {
+                            std::cout << "\t" << *ent << std::endl;
+                        }
 
                         std::string const fn( ent->getName() );
                         try
                         {
-                            std::auto_ptr< std::istream > is( zf.getInputStream( fn ) ) ;
+                            zipios::FileCollection::stream_pointer_t is( zf.getInputStream( fn ) ) ;
 
                             QByteArray byte_arr;
-                            stream_to_bytearray( is.get(), byte_arr );
+                            stream_to_bytearray( *is.get(), byte_arr );
 
                             f_fileinfo_list.push_back( fileinfo_t( fn.c_str(), byte_arr, ent->getUnixTime() ) );
                         }
-                        catch( const std::ios_base::failure& except )
+                        catch( std::ios_base::failure const & except )
                         {
-                            std::cerr << "Caught an ios_base::failure when trying to extract file '"
+                            std::cerr << "Caught an ios_base::failure while extracting file '"
                                 << fn << "'." << std::endl
                                 << "Explanatory string: " << except.what() << std::endl
                                 //<< "Error code: " << except.code() << std::endl
                                 ;
                             exit(1);
                         }
-                        catch( const std::exception& except )
+                        catch( std::exception const & except )
                         {
                             std::cerr << "Error extracting '" << fn << "': Exception caught: " << except.what() << std::endl;
                             exit(1);
@@ -381,7 +398,7 @@ snap_layout::snap_layout(int argc, char *argv[])
                 }
 
                 QByteArray byte_arr;
-                stream_to_bytearray( &ifs, byte_arr );
+                stream_to_bytearray( ifs, byte_arr );
                 f_fileinfo_list.push_back( fileinfo_t( filename, byte_arr, filetime ) );
             }
         }
@@ -397,7 +414,7 @@ void snap_layout::usage()
 }
 
 
-bool snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QString& content_name, time_t& content_modified)
+bool snap_layout::load_xml_info(QDomDocument & doc, QString const & filename, QString & content_name, time_t & content_modified)
 {
     content_name.clear();
     content_modified = 0;
@@ -490,7 +507,7 @@ bool snap_layout::load_xml_info(QDomDocument& doc, QString const& filename, QStr
 }
 
 
-void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QString& layout_name, QString& layout_area, time_t& layout_modified)
+void snap_layout::load_xsl_info(QDomDocument & doc, QString const & filename, QString & layout_name, QString & layout_area, time_t & layout_modified)
 {
     layout_name.clear();
     layout_area.clear();
@@ -570,7 +587,7 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
 }
 
 
-void snap_layout::load_css(QString const& filename, QByteArray const& content, QString& row_name)
+void snap_layout::load_css(QString const & filename, QByteArray const & content, QString & row_name)
 {
     snap::snap_version::quick_find_version_in_source fv;
     if(!fv.find_version(content.data(), content.size()))
@@ -595,7 +612,7 @@ void snap_layout::load_css(QString const& filename, QByteArray const& content, Q
 }
 
 
-void snap_layout::load_js(QString const& filename, QByteArray const& content, QString& row_name)
+void snap_layout::load_js(QString const & filename, QByteArray const & content, QString & row_name)
 {
     snap::snap_version::quick_find_version_in_source fv;
     if(!fv.find_version(content.data(), content.size()))
@@ -620,7 +637,7 @@ void snap_layout::load_js(QString const& filename, QByteArray const& content, QS
 }
 
 
-void snap_layout::load_image( QString const& filename, QByteArray const& content, QString& row_name)
+void snap_layout::load_image( QString const & filename, QByteArray const & content, QString & row_name)
 {
     row_name = filename;
     int pos(row_name.lastIndexOf('/'));
@@ -645,7 +662,7 @@ void snap_layout::load_image( QString const& filename, QByteArray const& content
 }
 
 
-QCassandraContext::pointer_t snap_layout::get_snap_context()
+QtCassandra::QCassandraContext::pointer_t snap_layout::get_snap_context()
 {
     // Use command line options if they are set...
     //
@@ -676,9 +693,9 @@ QCassandraContext::pointer_t snap_layout::get_snap_context()
 
 void snap_layout::add_files()
 {
-    QCassandraContext::pointer_t context( get_snap_context() );
+    QtCassandra::QCassandraContext::pointer_t context( get_snap_context() );
 
-    QCassandraTable::pointer_t table(context->findTable("layout"));
+    QtCassandra::QCassandraTable::pointer_t table(context->findTable("layout"));
     if(!table)
     {
         // TODO: look into whether we could make use of the
@@ -804,7 +821,7 @@ void snap_layout::add_files()
             if(table->exists(row_name))
             {
                 // the row already exists, try getting the area
-                QCassandraValue existing(table->row(row_name)->cell(cell_name)->value());
+                QtCassandra::QCassandraValue existing(table->row(row_name)->cell(cell_name)->value());
                 if(!existing.nullValue())
                 {
                     QDomDocument existing_doc("stylesheet");
@@ -881,9 +898,9 @@ void snap_layout::set_theme()
         exit(1);
     }
 
-    QCassandraContext::pointer_t context( get_snap_context() );
+    QtCassandra::QCassandraContext::pointer_t context( get_snap_context() );
 
-    QCassandraTable::pointer_t table(context->findTable("content"));
+    QtCassandra::QCassandraTable::pointer_t table(context->findTable("content"));
     if(!table)
     {
         std::cerr << "Content table not found. You must run the server once before we can setup the theme." << std::endl;
@@ -946,9 +963,9 @@ void snap_layout::remove_theme()
         exit(1);
     }
 
-    QCassandraContext::pointer_t context( get_snap_context() );
+    QtCassandra::QCassandraContext::pointer_t context( get_snap_context() );
 
-    QCassandraTable::pointer_t table(context->findTable("layout"));
+    QtCassandra::QCassandraTable::pointer_t table(context->findTable("layout"));
     if(!table)
     {
         std::cerr << "warning: \"layout\" table not found. If you do not yet have a layout table then no theme can be deleted." << std::endl;
@@ -987,9 +1004,9 @@ void snap_layout::extract_file()
         exit(1);
     }
 
-    QCassandraContext::pointer_t context( get_snap_context() );
+    QtCassandra::QCassandraContext::pointer_t context( get_snap_context() );
 
-    QCassandraTable::pointer_t table(context->findTable("layout"));
+    QtCassandra::QCassandraTable::pointer_t table(context->findTable("layout"));
     if(!table)
     {
         std::cerr << "warning: \"layout\" table not found. If you do not yet have a layout table then no theme files can be extracted." << std::endl;
@@ -1058,8 +1075,6 @@ void snap_layout::extract_file()
 
 void snap_layout::run()
 {
-    f_verbose = f_opt->is_defined("verbose");
-
     if( f_opt->is_defined( "set-theme" ) )
     {
         set_theme();
@@ -1081,7 +1096,7 @@ void snap_layout::run()
 
 
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
     try
     {
@@ -1089,7 +1104,7 @@ int main(int argc, char *argv[])
         s.run();
         return 0;
     }
-    catch(std::exception const& e)
+    catch(std::exception const & e)
     {
         std::cerr << "snaplayout: exception: " << e.what() << std::endl;
         return 1;

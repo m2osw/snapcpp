@@ -8,11 +8,11 @@
 # LOG4CPLUS_DEFINITIONS  - Compiler switches required for using log4cplus (none)
 
 find_path( LOG4CPLUS_INCLUDE_DIR log4cplus/logger.h
-                           PATHS $ENV{LOG4CPLUS_INCLUDE_DIR}
+                           HINTS $ENV{LOG4CPLUS_INCLUDE_DIR}
                    PATH_SUFFIXES log4cplus
 )
 find_library( LOG4CPLUS_LIBRARY log4cplus
-                          PATHS $ENV{LOG4CPLUS_LIBRARY}
+                          HINTS $ENV{LOG4CPLUS_LIBRARY}
 )
 mark_as_advanced( LOG4CPLUS_INCLUDE_DIR LOG4CPLUS_LIBRARY )
 

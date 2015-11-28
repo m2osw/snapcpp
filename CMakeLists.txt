@@ -72,7 +72,7 @@ ConfigureMakeProject( PROJECT_NAME thrift NOINC_DEBVERS )
 #
 ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
 
-ConfigureMakeProject( PROJECT_NAME zipios
+ConfigureMakeProject( PROJECT_NAME zipios2
     DEPENDS snapCMakeModules
 )
 
@@ -148,13 +148,10 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/liblog4cplus.so
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
-        -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         -DCSSPP_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DCSSPP_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libcsspp.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS zipios libQtCassandra libQtSerialization libtld as2js log4cplus csspp
+    DEPENDS zipios2 libQtCassandra libQtSerialization libtld as2js log4cplus csspp
 )
 
 ConfigureMakeProject( PROJECT_NAME snapwatchdog
@@ -162,9 +159,7 @@ ConfigureMakeProject( PROJECT_NAME snapwatchdog
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/liblog4cplus.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapwebsites
 )
@@ -174,11 +169,8 @@ ConfigureMakeProject( PROJECT_NAME snapmanager
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/liblog4cplus.so
         -DQTCASSANDRA_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtCassandra
-        -DQTCASSANDRA_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libQtCassandra.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapwebsites
 )
@@ -188,11 +180,8 @@ ConfigureMakeProject( PROJECT_NAME cassview
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/liblog4cplus.so
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
-        -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DSNAPWEBSITES_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libsnapwebsites.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapwebsites
 )
