@@ -129,7 +129,7 @@ int64_t listener::do_update(int64_t last_updated)
  */
 void listener::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -281,10 +281,10 @@ void listener::on_process_post(QString const& uri_path)
 
 bool listener::listener_check_impl(snap_uri const& uri, content::path_info_t& page_ipath, QDomDocument doc, QDomElement result)
 {
-    static_cast<void>(uri);
-    static_cast<void>(page_ipath);
-    static_cast<void>(doc);
-    static_cast<void>(result);
+    NOTUSED(uri);
+    NOTUSED(page_ipath);
+    NOTUSED(doc);
+    NOTUSED(result);
 
     // TODO: add handling of all the plugins that cannot include the listener
     //       if any requires it (users? to test when we get logged out?)

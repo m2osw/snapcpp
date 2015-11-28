@@ -460,7 +460,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
  */
 void ecommerce::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -729,8 +729,8 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
  */
 void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin *path_plugin)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(path_plugin);
+    NOTUSED(ipath);
+    NOTUSED(path_plugin);
 
     snap_uri const main_uri(f_snap->get_uri());
     if(main_uri.has_query_option("cart"))
@@ -1392,7 +1392,7 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
     // was just saved in the invoice; in its place we put an invoice
     // URL so for users without an account we still have access
     users_plugin->attach_to_session(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_PATH), invoice_ipath.get_key());
-    static_cast<void>(users_plugin->detach_from_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
+    NOTUSED(users_plugin->detach_from_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
 
     // The "actual" generation of the invoice should be using an XSLT
     // file and not C++ code; that way we can easily extend the display.

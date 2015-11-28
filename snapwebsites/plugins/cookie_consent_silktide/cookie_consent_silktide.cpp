@@ -206,7 +206,7 @@ int64_t cookie_consent_silktide::do_update(int64_t last_updated)
  */
 void cookie_consent_silktide::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -292,8 +292,8 @@ void cookie_consent_silktide::on_generate_header_content(content::path_info_t & 
  */
 void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row)
 {
-    static_cast<void>(revision_row);
-    static_cast<void>(secret_row);
+    NOTUSED(revision_row);
+    NOTUSED(secret_row);
 
     if(ipath.get_cpath() != "admin/settings/cookie-consent-silktide")
     {

@@ -192,7 +192,7 @@ int64_t form::do_update(int64_t last_updated)
  */
 void form::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -2362,8 +2362,8 @@ QString form::get_source(QString const & owner, content::path_info_t & ipath)
  */
 void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc, QString const& xsl)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(xsl);
+    NOTUSED(ipath);
+    NOTUSED(xsl);
 
     if(f_form_initialized)
     {
@@ -2374,7 +2374,7 @@ void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc, Q
 
 void form::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
-    static_cast<void>(destination_branch);
+    NOTUSED(destination_branch);
 
     content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(name_t::SNAP_NAME_FORM_NAMESPACE));
 }

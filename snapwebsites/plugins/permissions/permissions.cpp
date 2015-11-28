@@ -1307,7 +1307,7 @@ int64_t permissions::do_update(int64_t last_updated)
  */
 void permissions::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -3060,7 +3060,7 @@ void permissions::reset_permissions_cache()
  */
 void permissions::repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning)
 {
-    static_cast<void>(cloning);
+    NOTUSED(cloning);
 
     // permission links are never unique
     links::link_info src(source.name(), false, clone, branch_number);

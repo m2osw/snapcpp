@@ -162,7 +162,7 @@ int64_t versions::do_update(int64_t last_updated)
  */
 void versions::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }

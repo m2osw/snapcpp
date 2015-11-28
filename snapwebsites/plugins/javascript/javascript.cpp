@@ -171,7 +171,7 @@ QString javascript::dependencies() const
  */
 int64_t javascript::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
 
     SNAP_PLUGIN_UPDATE_INIT();
 
@@ -622,8 +622,8 @@ QVariant javascript::evaluate_script(QString const & script)
 void javascript::on_process_attachment(QtCassandra::QCassandraRow::pointer_t file_row, content::attachment_file const& file)
 {
     // TODO: got to finish the as2js compiler...
-    static_cast<void>(file_row);
-    static_cast<void>(file);
+    NOTUSED(file_row);
+    NOTUSED(file);
 }
 
 

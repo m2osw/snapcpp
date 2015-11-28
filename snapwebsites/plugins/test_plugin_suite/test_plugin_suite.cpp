@@ -236,21 +236,6 @@ void test_plugin_suite::bootstrap(snap_child * snap)
 }
 
 
-// /** \brief Update the database with our info references.
-//  *
-//  * Send our info to the database so the system can find us when a
-//  * user references our pages.
-//  *
-//  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
-//  */
-// void test_plugin_suite::content_update(int64_t variables_timestamp)
-// {
-//     static_cast<void>(variables_timestamp);
-// 
-//     content::content::instance()->add_xml(get_plugin_name());
-// }
-
-
 /** \brief Initialize the test_results table.
  *
  * This function creates the test_results table if it does not already

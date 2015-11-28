@@ -239,7 +239,7 @@ void oauth2::bootstrap(snap_child * snap)
  */
 void oauth2::on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type)
 {
-    static_cast<void>(type);
+    NOTUSED(type);
 
     if(owner != "output"
     || ipath.get_cpath() != "admin/settings/oauth2")

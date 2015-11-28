@@ -147,7 +147,7 @@ int64_t header::do_update(int64_t last_updated)
  */
 void header::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
     content::content::instance()->add_xml("header");
 }
 

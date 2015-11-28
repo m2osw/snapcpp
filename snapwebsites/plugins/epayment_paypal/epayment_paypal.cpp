@@ -327,7 +327,7 @@ int64_t epayment_paypal::do_update(int64_t last_updated)
  */
 void epayment_paypal::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_epayment_paypal_table();
     f_epayment_paypal_table.reset();
@@ -344,7 +344,7 @@ void epayment_paypal::initial_update(int64_t variables_timestamp)
  */
 void epayment_paypal::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -3281,7 +3281,7 @@ void epayment_paypal::on_replace_token(content::path_info_t & ipath, QDomDocumen
  */
 void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipath, content::path_info_t& previous_invoice_ipath, content::path_info_t& new_invoice_ipath)
 {
-    static_cast<void>(previous_invoice_ipath);
+    NOTUSED(previous_invoice_ipath);
 
     epayment::epayment *epayment_plugin(epayment::epayment::instance());
     epayment::name_t status(epayment_plugin->get_invoice_status(new_invoice_ipath));

@@ -1494,7 +1494,7 @@ int64_t epayment::do_update(int64_t last_updated)
  */
 void epayment::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }

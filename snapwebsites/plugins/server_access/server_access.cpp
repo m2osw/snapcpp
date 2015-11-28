@@ -20,6 +20,7 @@
 #include "../messages/messages.h"
 
 #include "not_reached.h"
+#include "not_used.h"
 #include "qdomhelpers.h"
 #include "snap_utf8.h"
 
@@ -160,7 +161,7 @@ int64_t server_access::do_update(int64_t last_updated)
  */
 void server_access::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }

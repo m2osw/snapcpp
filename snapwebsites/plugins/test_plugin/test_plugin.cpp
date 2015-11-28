@@ -196,7 +196,7 @@ int64_t test_plugin::do_update(int64_t last_updated)
  */
 void test_plugin::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_test_results_table();
     f_test_results_table.reset();
@@ -450,7 +450,7 @@ void test_plugin::on_replace_token(content::path_info_t& ipath, QDomDocument& xm
  */
 bool test_plugin::on_path_execute(content::path_info_t& ipath)
 {
-    static_cast<void>(ipath);
+    NOTUSED(ipath);
     //f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return false;

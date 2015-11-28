@@ -19,6 +19,8 @@
 
 #include "../output/output.h"
 
+#include "not_used.h"
+
 #include <iostream>
 
 #include <QDebug>
@@ -35,7 +37,7 @@ SNAP_PLUGIN_START(char_chart, 1, 0)
  * This function is used to initialize the char_chart plugin object.
  */
 char_chart::char_chart()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -127,7 +129,7 @@ int64_t char_chart::do_update(int64_t last_updated)
  */
 void char_chart::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml("char_chart");
 }
