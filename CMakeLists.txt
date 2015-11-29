@@ -73,7 +73,8 @@ ConfigureMakeProject( PROJECT_NAME thrift NOINC_DEBVERS )
 ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
 
 ConfigureMakeProject( PROJECT_NAME zipios2
-    DEPENDS snapCMakeModules
+    CONFIG_ARGS
+        -DBUILD_ZIPIOS_TESTS:BOOL=OFF
 )
 
 ConfigureMakeProject( PROJECT_NAME log4cplus
