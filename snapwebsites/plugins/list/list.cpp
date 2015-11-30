@@ -1406,7 +1406,7 @@ void list::on_create_content(content::path_info_t & ipath, QString const & owner
         // zero marks the list as brand new so we use a different
         // algorithm to check the data in that case (i.e. the list of
         // rows in the list table is NOT complete!)
-        QString const key(ipath.get_key());
+        QString const key(ipath.get_branch_key());
         int64_t const zero(0);
         branch_table->row(key)->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->setValue(zero);
     }

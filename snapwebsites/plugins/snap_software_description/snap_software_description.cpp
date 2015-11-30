@@ -34,6 +34,7 @@
 
 #include "snap_software_description.h"
 
+#include "../attachment/attachment.h"
 #include "../filter/filter.h"
 #include "../list/list.h"
 #include "../shorturl/shorturl.h"
@@ -42,6 +43,8 @@
 #include "log.h"
 #include "not_used.h"
 #include "qdomhelpers.h"
+#include "qdomxpath.h"
+#include "xslt.h"
 
 #include <QFile>
 
@@ -66,11 +69,23 @@ const char * get_name(name_t name)
 {
     switch(name)
     {
+    case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_CATEGORY:
+        return "snap_software_description::category";
+
     case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_ENABLE:
         return "snap_software_description::enable";
 
     case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_HTTP_HEADER:
         return "X-Snap-Software-Description";
+
+    case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE:
+        return "snap_software_description::last_update";
+
+    case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_PUBLISHER_FIELD:
+        return "snap_software_description::publisher";
+
+    case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_PUBLISHER_TYPE_PATH:
+        return "types/snap-software-description/publisher";
 
     case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_MAX_FILES:
         return "snap_software_description::max_files";
@@ -86,6 +101,15 @@ const char * get_name(name_t name)
 
     case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_WORDS:
         return "snap_software_description::teaser_words";
+
+    case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SUPPORT_FIELD:
+        return "snap_software_description::support";
+
+    case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SUPPORT_TYPE_PATH:
+        return "types/snap-software-description/support";
+
+    case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_TABLE_OF_CONTENT:
+        return "snap_software_description::table_of_content";
 
     default:
         // invalid index
@@ -165,7 +189,7 @@ QString snap_software_description::description() const
  */
 QString snap_software_description::dependencies() const
 {
-    return "|editor|layout|output|path|";
+    return "|attachment|content|editor|layout|list|output|path|";
 }
 
 
@@ -186,7 +210,7 @@ int64_t snap_software_description::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 23, 13, 39, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 11, 29, 4, 39, 7, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -221,6 +245,7 @@ void snap_software_description::bootstrap(::snap::snap_child * snap)
 
     SNAP_LISTEN0(snap_software_description, "server", server, backend_process);
     SNAP_LISTEN(snap_software_description, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(snap_software_description, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(snap_software_description, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
     SNAP_LISTEN(snap_software_description, "shorturl", shorturl::shorturl, allow_shorturl, _1, _2, _3, _4);
 }
@@ -248,7 +273,7 @@ void snap_software_description::bootstrap(::snap::snap_child * snap)
  */
 QString snap_software_description::get_root_path()
 {
-    return QString("%1types/snap-websites-description.xml").arg(f_snap->get_site_key_with_slash());
+    return QString("%1types/snap-software-description/category/snap-software-description.xml").arg(f_snap->get_site_key_with_slash());
 }
 
 
@@ -383,6 +408,27 @@ void snap_software_description::on_backend_process()
 {
     SNAP_LOG_TRACE("snap_software_description::on_backend_process(): process snap-software-description.xml content.");
 
+    // RAII to restore the main path
+    class restore_path_t
+    {
+    public:
+        restore_path_t(snap_child * snap)
+            : f_snap(snap)
+        {
+        }
+
+        ~restore_path_t()
+        {
+            // reset the main URI
+            f_snap->set_uri_path("/");
+        }
+
+    private:
+        zpsnap_child_t                          f_snap;
+    };
+
+    restore_path_t rp(f_snap);
+
     content::content * content_plugin(content::content::instance());
     //QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
@@ -391,37 +437,378 @@ void snap_software_description::on_backend_process()
     snap_software_description_settings_ipath.set_path(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_PATH));
     f_snap_software_description_settings_row = revision_table->row(snap_software_description_settings_ipath.get_revision_key());
 
-    create_publisher();
-    create_support();
+    if(!create_publisher())
+    {
+        return;
+    }
+    if(!create_support())
+    {
+        return;
+    }
+
+    // load catalog parser once
+    if(!load_xsl_file(":/xsl/layout/snap-software-description-catalog-parser.xsl", f_snap_software_description_parser_catalog_xsl))
+    {
+        return;
+    }
+
+    // load file parser once
+    if(!load_xsl_file(":/xsl/layout/snap-software-description-file-parser.xsl", f_snap_software_description_parser_file_xsl))
+    {
+        return;
+    }
+
+    // load padfile parser once
+    if(!load_xsl_file(":/xsl/layout/padfile-parser.xsl", f_padfile_xsl))
+    {
+        return;
+    }
 
     content::path_info_t ipath;
-    ipath.set_path("/types/snap-software-description");
+    ipath.set_path("/types/snap-software-description/category");
 
-    int depth(0);
-    create_catalog(ipath, depth);
+    {
+        content::path_info_t table_of_content_link_ipath;
+        table_of_content_link_ipath.set_path("/types/snap-software-description/table-of-contents");
+        links::link_info info(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_TABLE_OF_CONTENT), true,
+                                        table_of_content_link_ipath.get_key(), table_of_content_link_ipath.get_branch());
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info child_info;
+        if(link_ctxt->next_link(child_info))
+        {
+            f_table_of_content_ipath.reset(new content::path_info_t);
+            f_table_of_content_ipath->set_path(child_info.key());
+        }
+    }
 
-    // reset the main URI
-    f_snap->set_uri_path("/");
-}
-
-
-void snap_software_description::create_publisher()
-{
-    // publishers are linked to a specific system type
+    // reset the document on each access
     //
-    //links::link_info info(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_PUBLISHER_TYPE), false, ipath.get_key(), ipath.get_branch());
-    //QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-    //links::link_info child_info;
-    //while(link_ctxt->next_link(child_info))
-    //{
-    //    content::path_info_t publisher_ipath;
-    //    publisher_ipath.set_path(child_info.key());
-    //}
+    f_padlist_xml = QDomDocument();
+    QDomElement root(f_padlist_xml.createElement("snap"));
+    f_padlist_xml.appendChild(root);
+
+    create_catalog(ipath, 0);
+
+    save_pad_file_data();
 }
 
 
-void snap_software_description::create_support()
+/** \brief Save the list of files as PAD file maps.
+ *
+ * While in create_catalog() we collect the path to all the files and
+ * here we save a set of files that include these lists.
+ *
+ * The funtion creates two files: padmap.txt which is a simple text file
+ * with one URL to each PAD file in plain text format; it also creates
+ * a list.xml file which is similar, only in XML with a small header as
+ * defined in the padlist-parser.xsl file.
+ */
+void snap_software_description::save_pad_file_data()
 {
+    content::content * content_plugin(content::content::instance());
+    attachment::attachment * attachment_plugin(attachment::attachment::instance());
+
+    // save the padmap.txt
+    // TODO: avoid the save if the file did not change
+    //
+    {
+        QString const filename("padmap.txt");
+        int64_t const start_date(f_snap->get_start_date());
+
+        snap::content::attachment_file attachment(f_snap);
+
+        attachment.set_multiple(false);
+        attachment.set_parent_cpath("");    // available as an attachment to the home page
+        attachment.set_field_name("snap_software_description::padmap_txt");
+        attachment.set_attachment_owner(attachment_plugin->get_plugin_name());
+        attachment.set_attachment_type("attachment/public");
+        attachment.set_creation_time(start_date);
+        attachment.set_update_time(start_date);
+        //attachment.set_dependencies(...);
+        attachment.set_file_name(filename);
+        attachment.set_file_filename(filename);
+        attachment.set_file_creation_time(start_date);
+        attachment.set_file_modification_time(start_date);
+        attachment.set_file_index(1);
+        attachment.set_file_data(f_padmap_txt.toUtf8());
+        attachment.set_file_mime_type("text/plain");
+
+        content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+    }
+
+    // the PAD list.xml file is created now that we have a complete
+    // list of all the files offered
+    //
+    QString padlist_xsl;
+    if(load_xsl_file(":/xsl/layout/padlist-parser.xsl", padlist_xsl))
+    {
+        f_padlist_xml.documentElement().setAttribute("version", SNAPWEBSITES_VERSION_STRING);
+
+        xslt x;
+        x.set_xsl(padlist_xsl);
+        x.set_document(f_padlist_xml);
+        QString const output(QString("<?xml version=\"1.0\"?>%1").arg(x.evaluate_to_string()));
+
+        {
+            // the root file is named "snap-software-description.xml"
+            // and the files further down are named "catalog.xml"
+            //
+            QString const filename("list.xml");
+            int64_t const start_date(f_snap->get_start_date());
+
+            snap::content::attachment_file attachment(f_snap);
+
+            attachment.set_multiple(false);
+            attachment.set_parent_cpath("");    // available as an attachment to the home page
+            attachment.set_field_name("snap_software_description::padlist_xml");
+            attachment.set_attachment_owner(attachment_plugin->get_plugin_name());
+            attachment.set_attachment_type("attachment/public");
+            attachment.set_creation_time(start_date);
+            attachment.set_update_time(start_date);
+            //attachment.set_dependencies(...);
+            attachment.set_file_name(filename);
+            attachment.set_file_filename(filename);
+            attachment.set_file_creation_time(start_date);
+            attachment.set_file_modification_time(start_date);
+            attachment.set_file_index(1);
+            attachment.set_file_data(output.toUtf8());
+            attachment.set_file_mime_type("text/xml");
+
+            content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+        }
+    }
+}
+
+
+/** \brief Create the list of publishers.
+ *
+ * This function is used to create the list of publishers.
+ *
+ * Publishers are attached (linked) to files. You may have any number
+ * of them. In many cases you have just one publisher on a website.
+ *
+ * \return true if the publisher was generated as expected, false otherwise.
+ */
+bool snap_software_description::create_publisher()
+{
+    // load file parser
+    if(!load_xsl_file(":/xsl/layout/snap-software-description-publisher-parser.xsl", f_snap_software_description_parser_publisher_xsl))
+    {
+        return false;
+    }
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    list::list * list_plugin(list::list::instance());
+    path::path * path_plugin(path::path::instance());
+    attachment::attachment * attachment_plugin(attachment::attachment::instance());
+    layout::layout * layout_plugin(layout::layout::instance());
+    int64_t const start_date(f_snap->get_start_date());
+
+    // publishers are linked to a specific system type which is a list.
+    // we use the list because that way we automatically avoid publishers
+    // that got deleted, hidden, moved, etc. which the list of types may
+    // not always catch directly
+    //
+
+    content::path_info_t ipath;
+    ipath.set_path(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_PUBLISHER_TYPE_PATH));
+    list::list_item_vector_t list(list_plugin->read_list(ipath, 0, -1));
+    int const max_items(list.size());
+    for(int idx(0); idx < max_items; ++idx)
+    {
+        content::path_info_t publisher_ipath;
+        publisher_ipath.set_path(list[idx].get_uri());
+
+        // only pages that can be handled by layouts are added
+        // others are silently ignored (note that only broken
+        // pages should fail the following test)
+        //
+        quiet_error_callback snap_software_description_error_callback(f_snap, true);
+        plugins::plugin * layout_ready(path_plugin->get_plugin(publisher_ipath, snap_software_description_error_callback));
+        layout::layout_content * layout_ptr(dynamic_cast<layout::layout_content *>(layout_ready));
+        if(!layout_ptr)
+        {
+            // log the error?
+            // this is probably not the role of the snap-software-description
+            // implementation...
+            //
+            continue;
+        }
+
+        // modified since we last generated that file?
+        //
+        QtCassandra::QCassandraRow::pointer_t row(content_table->row(publisher_ipath.get_key()));
+        int64_t const modified(row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))->value().safeInt64Value(0, 0));
+        int64_t const last_snsd_update(row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE))->value().safeInt64Value(0, 0));
+        if(last_snsd_update > 0
+        && (modified == 0 || modified < last_snsd_update))
+        {
+            continue;
+        }
+
+        // since we are a backend, the main ipath remains equal
+        // to the home page and that is what gets used to generate
+        // the path to each page in the feed data so we have to
+        // change it before we apply the layout
+        f_snap->set_uri_path(QString("/%1").arg(publisher_ipath.get_cpath()));
+
+        QDomDocument doc(layout_plugin->create_document(publisher_ipath, layout_ready));
+        layout_plugin->create_body(doc, publisher_ipath, f_snap_software_description_parser_publisher_xsl, layout_ptr, false, "snap-software-description-publisher");
+
+        QDomXPath dom_xpath;
+        dom_xpath.setXPath("/snap/page/body/output/snsd-publisher");
+        QDomXPath::node_vector_t publisher_tag(dom_xpath.apply(doc));
+        if(publisher_tag.isEmpty())
+        {
+            SNAP_LOG_FATAL("skipping publisher as the output of create_body() did not give us the expected tags.");
+            continue;
+        }
+
+        QString const output(QString("<?xml version=\"1.0\"?>%1").arg(snap_dom::xml_to_string(publisher_tag[0])));
+
+        {
+            snap::content::attachment_file attachment(f_snap);
+
+            attachment.set_multiple(false);
+            attachment.set_parent_cpath(publisher_ipath.get_cpath());
+            attachment.set_field_name("snap_software_description::publisher_xml");
+            attachment.set_attachment_owner(attachment_plugin->get_plugin_name());
+            attachment.set_attachment_type("attachment/public");
+            attachment.set_creation_time(start_date);
+            attachment.set_update_time(start_date);
+            //attachment.set_dependencies(...);
+            attachment.set_file_name("publisher.xml");
+            attachment.set_file_filename("publisher.xml");
+            attachment.set_file_creation_time(start_date);
+            attachment.set_file_modification_time(start_date);
+            attachment.set_file_index(1);
+            attachment.set_file_data(output.toUtf8());
+            attachment.set_file_mime_type("text/xml");
+
+            content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+        }
+
+        row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE))->setValue(start_date);
+    }
+
+    return true;
+}
+
+
+/** \brief Create the list of support pages.
+ *
+ * This function is used to create the list of support pages.
+ *
+ * Support pages are attached (linked) to files. You may have any number
+ * of them. In many cases you have just one support page on a website.
+ *
+ * \return true if the support page was generated as expected, false otherwise.
+ */
+bool snap_software_description::create_support()
+{
+    // load file parser
+    if(!load_xsl_file(":/xsl/layout/snap-software-description-support-parser.xsl", f_snap_software_description_parser_support_xsl))
+    {
+        return false;
+    }
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    list::list * list_plugin(list::list::instance());
+    path::path * path_plugin(path::path::instance());
+    attachment::attachment * attachment_plugin(attachment::attachment::instance());
+    layout::layout * layout_plugin(layout::layout::instance());
+    int64_t const start_date(f_snap->get_start_date());
+
+    // support pages are linked to a specific system type which is a list.
+    // we use the list because that way we automatically avoid support pages
+    // that got deleted, hidden, moved, etc. which the list of types may
+    // not always catch directly
+    //
+
+    content::path_info_t ipath;
+    ipath.set_path(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SUPPORT_TYPE_PATH));
+    list::list_item_vector_t list(list_plugin->read_list(ipath, 0, -1));
+    int const max_items(list.size());
+    for(int idx(0); idx < max_items; ++idx)
+    {
+        content::path_info_t support_ipath;
+        support_ipath.set_path(list[idx].get_uri());
+
+        // only pages that can be handled by layouts are added
+        // others are silently ignored (note that only broken
+        // pages should fail the following test)
+        //
+        quiet_error_callback snap_software_description_error_callback(f_snap, true);
+        plugins::plugin * layout_ready(path_plugin->get_plugin(support_ipath, snap_software_description_error_callback));
+        layout::layout_content * layout_ptr(dynamic_cast<layout::layout_content *>(layout_ready));
+        if(!layout_ptr)
+        {
+            // log the error?
+            // this is probably not the role of the snap-software-description
+            // implementation...
+            //
+            continue;
+        }
+
+        // modified since we last generated that file?
+        //
+        QtCassandra::QCassandraRow::pointer_t row(content_table->row(support_ipath.get_key()));
+        int64_t const modified(row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))->value().safeInt64Value(0, 0));
+        int64_t const last_snsd_update(row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE))->value().safeInt64Value(0, 0));
+        if(last_snsd_update > 0
+        && (modified == 0 || modified < last_snsd_update))
+        {
+            continue;
+        }
+
+        // since we are a backend, the main ipath remains equal
+        // to the home page and that is what gets used to generate
+        // the path to each page in the feed data so we have to
+        // change it before we apply the layout
+        f_snap->set_uri_path(QString("/%1").arg(support_ipath.get_cpath()));
+
+        QDomDocument doc(layout_plugin->create_document(support_ipath, layout_ready));
+        layout_plugin->create_body(doc, support_ipath, f_snap_software_description_parser_support_xsl, layout_ptr, false, "snap-software-description-support");
+
+        QDomXPath dom_xpath;
+        dom_xpath.setXPath("/snap/page/body/output/snsd-support");
+        QDomXPath::node_vector_t publisher_tag(dom_xpath.apply(doc));
+        if(publisher_tag.isEmpty())
+        {
+            SNAP_LOG_FATAL("skipping support as the output of create_body() did not give us the expected tags.");
+            continue;
+        }
+
+        QString const output(QString("<?xml version=\"1.0\"?>%1").arg(snap_dom::xml_to_string(publisher_tag[0])));
+
+        {
+            snap::content::attachment_file attachment(f_snap);
+
+            attachment.set_multiple(false);
+            attachment.set_parent_cpath(support_ipath.get_cpath());
+            attachment.set_field_name("snap_software_description::support_xml");
+            attachment.set_attachment_owner(attachment_plugin->get_plugin_name());
+            attachment.set_attachment_type("attachment/public");
+            attachment.set_creation_time(start_date);
+            attachment.set_update_time(start_date);
+            //attachment.set_dependencies(...);
+            attachment.set_file_name("support.xml");
+            attachment.set_file_filename("support.xml");
+            attachment.set_file_creation_time(start_date);
+            attachment.set_file_modification_time(start_date);
+            attachment.set_file_index(1);
+            attachment.set_file_data(output.toUtf8());
+            attachment.set_file_mime_type("text/xml");
+
+            content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+        }
+
+        row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE))->setValue(start_date);
+    }
+
+    return true;
 }
 
 
@@ -469,123 +856,407 @@ void snap_software_description::create_support()
  * \param[in] ipath  The path of the category to work on.
  * \param[in] depth  The depth at which we currently are working.
  */
-void snap_software_description::create_catalog(content::path_info_t & ipath, int const depth)
+bool snap_software_description::create_catalog(content::path_info_t & catalog_ipath, int const depth)
 {
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     list::list * list_plugin(list::list::instance());
-    path::path * path_plugin(path::path::instance());
-    layout::layout * layout_plugin(layout::layout::instance());
+    attachment::attachment * attachment_plugin(attachment::attachment::instance());
+    int64_t const start_date(f_snap->get_start_date());
 
-    // The PAD file format offered several descriptions, I'm not so
-    // sure we want to have 4 like them... for now, we'd have two:
-    // the teaser and the main description
-    //
-    filter::filter::filter_teaser_info_t teaser_info;
-    teaser_info.set_max_words (f_snap_software_description_settings_row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_WORDS     ))->value().safeInt64Value(0, 200));
-    teaser_info.set_max_tags  (f_snap_software_description_settings_row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_TAGS      ))->value().safeInt64Value(0, 100));
-    teaser_info.set_end_marker(f_snap_software_description_settings_row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_END_MARKER))->value().stringValue());
+    QDomDocument doc;
+    QDomElement root(doc.createElement("snap"));
+    doc.appendChild(root);
 
-    // already loaded?
-    if(f_snap_software_description_parser_xsl.isEmpty())
-    {
-        QFile file(":/xsl/layout/snap-software-description-parser.xsl");
-        if(!file.open(QIODevice::ReadOnly))
-        {
-            SNAP_LOG_FATAL("snap_software_description::create_catalog() could not open the snap-software-description-parser.xsl resource file.");
-            return;
-        }
-        QByteArray data(file.readAll());
-        f_snap_software_description_parser_xsl = QString::fromUtf8(data.data(), data.size());
-        if(f_snap_software_description_parser_xsl.isEmpty())
-        {
-            SNAP_LOG_FATAL("snap_software_description::create_catalog() could not read the snap-software-description-parser.xsl resource file.");
-            return;
-        }
-
-        // replace <xsl:include ...> with other XSLT files (should be done
-        // by the parser, but Qt's parser does not support it yet)
-        layout_plugin->replace_includes(f_snap_software_description_parser_xsl);
-    }
-
-    QDomDocument result;
-
-    // TODO: this is not correct for this implementation
-    bool first(false);
+    bool has_data(false);
 
     int const max_files(f_snap_software_description_settings_row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_MAX_FILES))->value().safeInt64Value(0, 1000));
-    list::list_item_vector_t list(list_plugin->read_list(ipath, 0, max_files));
+    list::list_item_vector_t list(list_plugin->read_list(catalog_ipath, 0, max_files));
     int const max_items(list.size());
     for(int idx(0); idx < max_items; ++idx)
     {
-        content::path_info_t page_ipath;
-        page_ipath.set_path(list[idx].get_uri());
+        content::path_info_t file_ipath;
+        file_ipath.set_path(list[idx].get_uri());
 
-        // only pages that can be handled by layouts are added
-        // others are silently ignored (note that only broken
-        // pages should fail the following test)
-        //
-        quiet_error_callback snap_software_description_error_callback(f_snap, true);
-        plugins::plugin * layout_ready(path_plugin->get_plugin(page_ipath, snap_software_description_error_callback));
-        layout::layout_content * layout_ptr(dynamic_cast<layout::layout_content *>(layout_ready));
-        if(!layout_ptr)
+        if(!create_file(file_ipath))
         {
-            // log the error?
-            // this is probably not the role of the snap-software-description
-            // implementation...
-            //
             continue;
         }
 
-        // since we are a backend, the main ipath remains equal
-        // to the home page and that is what gets used to generate
-        // the path to each page in the feed data so we have to
-        // change it before we apply the layout
-        f_snap->set_uri_path(QString("/%1").arg(page_ipath.get_cpath()));
+        has_data = true;
 
-        QDomDocument doc(layout_plugin->create_document(page_ipath, layout_ready));
-        layout_plugin->create_body(doc, page_ipath, f_snap_software_description_parser_xsl, layout_ptr, false, "feed-parser");
-
-        // generate the teaser
-        if(teaser_info.get_max_words() > 0)
+        // add the file to our catalog
+        //
         {
-            QDomElement output_description(snap_dom::get_child_element(doc, "snap/page/body/output/description"));
-            // do not create a link, often those are removed in some
-            // weird way; readers will make the title a link anyway
-            //teaser_info.set_end_marker_uri(page_ipath.get_key(), "Click to read the full article.");
-            filter::filter::body_to_teaser(output_description, teaser_info);
+            QDomElement file(doc.createElement("file"));
+            root.appendChild(file);
+            QDomText file_uri(doc.createTextNode(file_ipath.get_key()));
+            file.appendChild(file_uri);
         }
 
-        if(first)
+        // also get the PADFile files ready
+        //
         {
-            first = false;
-            result = doc;
-        }
-        else
-        {
-            // only keep the output of further pages
-            // (the header should be the same, except for a few things
-            // such as the path and data extracted from the main page,
-            // which should not be used in the feed...)
-            QDomElement output(snap_dom::get_child_element(doc, "snap/page/body/output"));
-            QDomElement body(snap_dom::get_child_element(result, "snap/page/body"));
-            body.appendChild(output);
+            // plain text list
+            f_padmap_txt += QString("%1/padfile.xml\n").arg(file_ipath.get_key());
+
+            // XML list
+            QDomElement file(f_padlist_xml.createElement("file"));
+            QDomText text(f_padlist_xml.createTextNode(file_ipath.get_key()));
+            file.appendChild(text);
+            f_padlist_xml.documentElement().appendChild(file);
         }
     }
 
     // save the resulting XML document
 
-    // if we already are pretty deep, stop here
-    if(depth >= 5)
+    // if we already are pretty deep, ignore any possible sub-categories
+    if(depth < 5)
     {
-        return;
+        links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_CHILDREN), false, catalog_ipath.get_key(), catalog_ipath.get_branch());
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info child_info;
+        while(link_ctxt->next_link(child_info))
+        {
+            content::path_info_t sub_category_ipath;
+            sub_category_ipath.set_path(child_info.key());
+
+            // now manage all sub-categories; if this category
+            // and all of its children have no files then we get
+            // false as the return value
+            //
+            if(!create_catalog(sub_category_ipath, depth + 1))
+            {
+                continue;
+            }
+
+            has_data = true;
+
+            // add the sub-category to our list
+            //
+            QDomElement sub_category(doc.createElement("sub-category"));
+            root.appendChild(sub_category);
+            QDomText sub_category_uri(doc.createTextNode(sub_category_ipath.get_key()));
+            sub_category.appendChild(sub_category_uri);
+
+            QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(sub_category_ipath.get_revision_key()));
+            QString const category_name(revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue());
+            sub_category.setAttribute("name", snap_dom::remove_tags(category_name));
+        }
     }
+
+    // We always create the top-most .xml because otherwise we end up
+    // creating links to an inexistant file. Also servers will automatically
+    // go to that XML file and expect to find it (instead of getting a 404)
+    // and such a file can be empty meaning that no files are available for
+    // download.
+    //
+    if(!has_data
+    && depth != 0)
+    {
+        return false;
+    }
+
+    // modified since we last generated that file?
+    //
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(catalog_ipath.get_key()));
+    //int64_t const modified(row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))->value().safeInt64Value(0, 0));
+    //int64_t const last_snsd_update(row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE))->value().safeInt64Value(0, 0));
+    //if(last_snsd_update > 0
+    //&& (modified == 0 || modified < last_snsd_update))
+    //{
+    //    continue;
+    //}
+
+    {
+        if(f_table_of_content_ipath)
+        {
+            QDomElement tag(doc.createElement("toc"));
+            root.appendChild(tag);
+            QDomText text(doc.createTextNode(f_table_of_content_ipath->get_key()));
+            tag.appendChild(text);
+        }
+
+        {
+            QDomElement tag(doc.createElement("base_uri"));
+            root.appendChild(tag);
+            QDomText text(doc.createTextNode(f_snap->get_site_key_with_slash()));
+            tag.appendChild(text);
+        }
+
+        {
+            QDomElement tag(doc.createElement("page_uri"));
+            root.appendChild(tag);
+            QDomText text(doc.createTextNode(catalog_ipath.get_key()));
+            tag.appendChild(text);
+        }
+
+        xslt x;
+        x.set_xsl(f_snap_software_description_parser_catalog_xsl);
+        x.set_document(doc);
+        QString const output(QString("<?xml version=\"1.0\"?>%1").arg(x.evaluate_to_string()));
+
+        {
+            // the root file is named "snap-software-description.xml"
+            // and the files further down are named "catalog.xml"
+            //
+            QString const filename(depth == 0 ? "snap-software-description.xml" : "catalog.xml");
+
+            snap::content::attachment_file attachment(f_snap);
+
+            attachment.set_multiple(false);
+            attachment.set_parent_cpath(catalog_ipath.get_cpath());
+            attachment.set_field_name("snap_software_description::catalog_xml");
+            attachment.set_attachment_owner(attachment_plugin->get_plugin_name());
+            attachment.set_attachment_type("attachment/public");
+            attachment.set_creation_time(start_date);
+            attachment.set_update_time(start_date);
+            //attachment.set_dependencies(...);
+            attachment.set_file_name(filename);
+            attachment.set_file_filename(filename);
+            attachment.set_file_creation_time(start_date);
+            attachment.set_file_modification_time(start_date);
+            attachment.set_file_index(1);
+            attachment.set_file_data(output.toUtf8());
+            attachment.set_file_mime_type("text/xml");
+
+            content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+        }
+
+        row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE))->setValue(start_date);
+    }
+
+    return true;
 }
 
 
-void snap_software_description::create_file(content::path_info_t & ipath)
+/** \brief Generate an SNSD file.
+ *
+ * This function reads the data from a file and generates the corresponding
+ * \<snsd-file> XML file.
+ *
+ * If the file cannot be created, false is returned.
+ *
+ * If the file is created or already exists, the function returns true.
+ *
+ * The snsd-file format offers 6 different lengths of teasers.
+ *
+ * On a regular page, we offer users to enter all of the following
+ * data which can be used as the various descriptions in an SNSD file:
+ *
+ * \li Short Title
+ * \li (Normal) Title
+ * \li Long Title
+ * \li Abstract
+ * \li Description
+ * \li Body
+ *
+ * All of these may be used by the Snap Software Description
+ * implementation. We could also make use of a teaser (especially
+ * for the one of 2,000 characters,) only our teaser mechanism does
+ * not (yet) allow us to limit the input by characters, only words.
+ *
+ * Limitation: There is one major limitation in our current implementation.
+ * If you have many files for download on a single page marked as a
+ * Snap Software Description File (i.e. categorized with a link to a
+ * snap-software-description/category tag,) then you may not be able
+ * to properly encompass all the available downloads. The concept, though,
+ * functions properly assuming you create something like a .deb or a
+ * tarball of your software, then you would have just one file to
+ * download.
+ *
+ * \param[in] file_ipath  The ipath to the file.
+ *
+ * \return true if the file was created and saved or the file already existed,
+ *         false if creating the file failed.
+ */
+bool snap_software_description::create_file(content::path_info_t & file_ipath)
 {
-    NOTUSED(ipath);
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    path::path * path_plugin(path::path::instance());
+    attachment::attachment * attachment_plugin(attachment::attachment::instance());
+    layout::layout * layout_plugin(layout::layout::instance());
+    int64_t const start_date(f_snap->get_start_date());
+
+    // modified since we last generated that file?
+    //
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(file_ipath.get_key()));
+    int64_t const modified(row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))->value().safeInt64Value(0, 0));
+    int64_t const last_snsd_update(row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE))->value().safeInt64Value(0, 0));
+    if(last_snsd_update > 0
+    && modified < last_snsd_update)  // this case includes 'modified == 0'
+    {
+        // this assumes that the file.xml is just fine...
+        //
+        return true;
+    }
+
+    // only pages that can be handled by layouts are added
+    // others are silently ignored (note that only broken
+    // pages should fail the following test)
+    //
+    quiet_error_callback snap_software_description_error_callback(f_snap, true);
+    plugins::plugin * layout_ready(path_plugin->get_plugin(file_ipath, snap_software_description_error_callback));
+    layout::layout_content * layout_ptr(dynamic_cast<layout::layout_content *>(layout_ready));
+    if(!layout_ptr)
+    {
+        // log the error?
+        // this is probably not the role of the snap-software-description
+        // implementation...
+        //
+        return false;
+    }
+
+    // since we are a backend, the main ipath remains equal
+    // to the home page and that is what gets used to generate
+    // the path to each page in the feed data so we have to
+    // change it before we apply the layout
+    f_snap->set_uri_path(QString("/%1").arg(file_ipath.get_cpath()));
+
+    // Create the Snap Software Description
+    //
+    {
+        QDomDocument doc(layout_plugin->create_document(file_ipath, layout_ready));
+        layout_plugin->create_body(doc, file_ipath, f_snap_software_description_parser_file_xsl, layout_ptr, false, "snap-software-description-file-parser");
+
+        QDomXPath dom_xpath;
+        dom_xpath.setXPath("/snap/page/body/output/snsd-file");
+        QDomXPath::node_vector_t file_tag(dom_xpath.apply(doc));
+        if(file_tag.isEmpty())
+        {
+            SNAP_LOG_FATAL("skipping file as the output of create_body() did not give us the expected tags.");
+            return false;
+        }
+
+        QString const output(QString("<?xml version=\"1.0\"?>%1").arg(snap_dom::xml_to_string(file_tag[0])));
+
+        {
+            snap::content::attachment_file attachment(f_snap);
+
+            attachment.set_multiple(false);
+            attachment.set_parent_cpath(file_ipath.get_cpath());
+            attachment.set_field_name("snap_software_description::file_xml");
+            attachment.set_attachment_owner(attachment_plugin->get_plugin_name());
+            attachment.set_attachment_type("attachment/public");
+            attachment.set_creation_time(start_date);
+            attachment.set_update_time(start_date);
+            //attachment.set_dependencies(...);
+            attachment.set_file_name("file.xml");
+            attachment.set_file_filename("file.xml");
+            attachment.set_file_creation_time(start_date);
+            attachment.set_file_modification_time(start_date);
+            attachment.set_file_index(1);
+            attachment.set_file_data(output.toUtf8());
+            attachment.set_file_mime_type("text/xml");
+
+            content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+        }
+    }
+
+    // save the last update before saving the PADFile so if saving
+    // the PADFile fails, it just gets ignored
+    //
+    row->cell(get_name(name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE))->setValue(start_date);
+
+    // Create the PADFile
+    //
+    {
+        QDomDocument doc(layout_plugin->create_document(file_ipath, layout_ready));
+        layout_plugin->create_body(doc, file_ipath, f_padfile_xsl, layout_ptr, false, "padfile-parser");
+
+        QDomXPath dom_xpath;
+        dom_xpath.setXPath("/snap/page/body/output/XML_DIZ_INFO");
+        QDomXPath::node_vector_t padfile_tag(dom_xpath.apply(doc));
+        if(padfile_tag.isEmpty())
+        {
+            SNAP_LOG_FATAL("skipping PAD file as the output of create_body() did not give us the expected tags.");
+
+            // The PADFile is not considered important so we don't return
+            // false in this case
+            //return false;
+        }
+        else
+        {
+            QString const output(QString("<?xml version=\"1.0\"?>%1").arg(snap_dom::xml_to_string(padfile_tag[0])));
+
+            snap::content::attachment_file attachment(f_snap);
+
+            attachment.set_multiple(false);
+            attachment.set_parent_cpath(file_ipath.get_cpath());
+            attachment.set_field_name("snap_software_description::padfile_xml");
+            attachment.set_attachment_owner(attachment_plugin->get_plugin_name());
+            attachment.set_attachment_type("attachment/public");
+            attachment.set_creation_time(start_date);
+            attachment.set_update_time(start_date);
+            //attachment.set_dependencies(...);
+            attachment.set_file_name("padfile.xml");
+            attachment.set_file_filename("padfile.xml");
+            attachment.set_file_creation_time(start_date);
+            attachment.set_file_modification_time(start_date);
+            attachment.set_file_index(1);
+            attachment.set_file_data(output.toUtf8());
+            attachment.set_file_mime_type("text/xml");
+
+            content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+        }
+    }
+
+    return true;
 }
 
+
+/** \brief Load an XSL file.
+ *
+ * The Snap Software Description backend makes use of many XSL files to
+ * transform the data available in a page to an actual Snap Software
+ * Description file.
+ *
+ * This function loads one of the XSL files. It will also apply any
+ * \<xsl:include ...> it finds in that file.
+ *
+ * If the function cannot load the file, false is returned and a fatal
+ * error message is sent to the logger.
+ *
+ * Note that the \p xsl parameter is expected to be a field in this object.
+ * That way it gets loaded just once even if you call the function many times.
+ *
+ * \param[in] filename  The resource filename to load the XSL file.
+ * \param[out] xsl  The variable holding the XSL data.
+ *
+ * \return true if the load succeeded, false otherwise.
+ */
+bool snap_software_description::load_xsl_file(QString const & filename, QString & xsl)
+{
+    if(xsl.isEmpty())
+    {
+        QFile file(filename);
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            SNAP_LOG_FATAL("snap_software_description::load_xsl_file() could not open the \"")
+                          (filename)
+                          ("\" resource file.");
+            return false;
+        }
+        QByteArray data(file.readAll());
+        xsl = QString::fromUtf8(data.data(), data.size());
+        if(xsl.isEmpty())
+        {
+            SNAP_LOG_FATAL("snap_software_description::load_xsl_file() could not read the \"")
+                          (filename)
+                          ("\" resource file.");
+            return false;
+        }
+
+        // replace <xsl:include ...> with other XSLT files (should be done
+        // by the parser, but Qt's parser does not support it yet)
+        layout::layout * layout_plugin(layout::layout::instance());
+        layout_plugin->replace_includes(xsl);
+    }
+
+    return true;
+}
 
 
 SNAP_PLUGIN_END()

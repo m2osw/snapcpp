@@ -57,14 +57,25 @@ snap_validate_xml( content.xml                                      content/cont
 snap_validate_xml( snap_software_description-settings-page.xml      editor/editor-form.dtd )
 
 snap_validate_xml( snap_software_description-settings-parser.xsl    layout/simplified-xslt20.dtd )
+#snap_validate_xml( padlist-parser.xsl                               layout/simplified-xslt20.dtd )
+
+snap_validate_xml( snap-software-description-catalog-parser.xsl     snap-software-description-xslt20.dtd )
+snap_validate_xml( snap-software-description-file-parser.xsl        snap-software-description-xslt20.dtd )
+snap_validate_xml( snap-software-description-publisher-parser.xsl   snap-software-description-xslt20.dtd )
+snap_validate_xml( snap-software-description-support-parser.xsl     snap-software-description-xslt20.dtd )
 
 add_library(snap_software_description SHARED
     snap_software_description.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    padlist-parser.xsl
+    snap-software-description-catalog-parser.xsl
+    snap-software-description-file-parser.xsl
+    snap-software-description-publisher-parser.xsl
     snap_software_description-settings-page.xml
     snap_software_description-settings-parser.xsl
+    snap-software-description-support-parser.xsl
 )
 
 target_link_libraries( snap_software_description ${QT_LIBRARIES} )
@@ -81,6 +92,16 @@ install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwebsites/plugins/snap_software_description
     FILES_MATCHING PATTERN "*.h"
+)
+
+################################################################################
+# Install DTD file.
+#
+install(
+	FILES
+		snap-software-description-xslt20.dtd
+	DESTINATION
+		share/snapwebsites/dtd
 )
 
 # vim: ts=4 sw=4 et

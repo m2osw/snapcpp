@@ -673,12 +673,12 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
  *
  * \return A DOM document with the basic layout tree.
  */
-QDomDocument layout::create_document(content::path_info_t& ipath, plugin *content_plugin)
+QDomDocument layout::create_document(content::path_info_t & ipath, plugin * content_plugin)
 {
     // Initialize the XML document tree
     // More is done in the generate_header_content_impl() function
-    QDomDocument doc("snap");
-    QDomElement root = doc.createElement("snap");
+    QDomDocument doc;
+    QDomElement root(doc.createElement("snap"));
     root.setAttribute("path", ipath.get_cpath());
 
     if(content_plugin != nullptr)

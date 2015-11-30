@@ -178,7 +178,7 @@ void xslt::add_variable(QString const & name, QVariant const & value)
 }
 
 
-/** \brief Clear the variables.
+/** \brief Clear all the variables.
  *
  * This function can be used to clear all the variables of an XSLT
  * object. Any variable that were added with the add_variable()

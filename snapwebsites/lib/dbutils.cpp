@@ -565,6 +565,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n.endsWith("::sendmail::created")
          || n == "sendmail::unsubscribe_on"
          || n == "sessions::date"
+         || n == "snap_software_description::last_update"
          || n == "shorturl::date"
          || n == "users::created_time"
          || n == "users::forgot_password_on"

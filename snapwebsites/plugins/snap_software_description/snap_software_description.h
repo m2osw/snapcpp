@@ -25,13 +25,20 @@ namespace snap_software_description
 
 enum class name_t
 {
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_CATEGORY,
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_ENABLE,
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_HTTP_HEADER,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_LAST_UPDATE,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_PUBLISHER_FIELD,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_PUBLISHER_TYPE_PATH,
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_MAX_FILES,
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_PATH,
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_END_MARKER,
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_TAGS,
-    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_WORDS
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SETTINGS_TEASER_WORDS,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SUPPORT_FIELD,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_SUPPORT_TYPE_PATH,
+    SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_TABLE_OF_CONTENT
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
@@ -82,14 +89,23 @@ private:
     void                                    content_update(int64_t variables_timestamp);
 
     QString                                 get_root_path();
-    void                                    create_publisher();
-    void                                    create_support();
-    void                                    create_catalog(content::path_info_t & ipath, int const depth);
-    void                                    create_file(content::path_info_t & ipath);
+    void                                    save_pad_file_data();
+    bool                                    create_publisher();
+    bool                                    create_support();
+    bool                                    create_catalog(content::path_info_t & catalog_ipath, int const depth);
+    bool                                    create_file(content::path_info_t & file_ipath);
+    bool                                    load_xsl_file(QString const & filename, QString & xsl);
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraRow::pointer_t   f_snap_software_description_settings_row;
-    QString                                 f_snap_software_description_parser_xsl;
+    content::path_info_t::pointer_t         f_table_of_content_ipath;
+    QString                                 f_snap_software_description_parser_catalog_xsl;
+    QString                                 f_snap_software_description_parser_file_xsl;
+    QString                                 f_snap_software_description_parser_publisher_xsl;
+    QString                                 f_snap_software_description_parser_support_xsl;
+    QString                                 f_padfile_xsl;
+    QString                                 f_padmap_txt;
+    QDomDocument                            f_padlist_xml;
 };
 
 } // namespace snap_software_description

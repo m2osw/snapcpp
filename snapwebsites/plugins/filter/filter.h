@@ -94,7 +94,7 @@ public:
             return f_name < rhs.f_name;
         }
 
-        static char const *type_name(token_t type)
+        static char const * type_name(token_t type)
         {
             switch(type)
             {
@@ -140,7 +140,7 @@ public:
             return f_name.startsWith(name);
         }
 
-        bool is_token(char const *name)
+        bool is_token(char const * name)
         {
             // in a way, once marked as found a token is viewed as used up
             // and thus it does not match anymore; same with errors
@@ -249,7 +249,7 @@ public:
             return it != f_parameters.end();
         }
 
-        parameter_t get_arg(QString const& name, int position = -1, token_t type = token_t::TOK_UNDEFINED)
+        parameter_t get_arg(QString const & name, int position = -1, token_t type = token_t::TOK_UNDEFINED)
         {
             parameter_t const null;
             QVector<parameter_t>::const_iterator it(f_parameters.end());
