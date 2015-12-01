@@ -2316,7 +2316,7 @@ snap_init::pointer_t snap_init::f_instance;
 
 snap_init::snap_init( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
-    , f_lock_filename( QString("%1/snapinit.lock")
+    , f_lock_filename( QString("%1/snapinit-lock.pid")
                        .arg(f_opt.get_string("lockdir").c_str())
                      )
     , f_lock_file( f_lock_filename )
@@ -3296,7 +3296,7 @@ void snap_init::start()
 {
     // The following open() prevents race conditions
     //
-    int const fd(::open( f_lock_file.fileName().toUtf8().data(), O_CREAT | O_EXCL, S_IRUSR | S_IWUSR ));
+    int const fd(::open( f_lock_file.fileName().toUtf8().data(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR ));
     if( fd == -1 )
     {
         if(errno == EEXIST)
@@ -3318,7 +3318,13 @@ void snap_init::start()
         exit(1);
         snap::NOTREACHED();
     }
+
     f_lock_file.open( fd, QFile::ReadWrite ); // save fd in the QFile object
+
+    // save our PID in the lock file (useful for the stop() processus)
+    //
+    f_lock_file.write(QString("%1").arg(getpid()).toUtf8());
+    f_lock_file.flush();
 
     if( f_opt.is_defined("detach") )
     {
@@ -3496,7 +3502,28 @@ void snap_init::stop()
         return;
     }
 
-    SNAP_LOG_INFO("Stop Snap! Websites services.");
+    // read the PID of the locking process so we can wait on its PID
+    // and not just the lock (because in case it is restarted immediately
+    // we would not see the lock file disappear...)
+    //
+    int lock_file_pid(-1);
+    {
+        if(f_lock_file.open(QFile::ReadOnly))
+        {
+            QByteArray const data(f_lock_file.readAll());
+            f_lock_file.close();
+            QString const pid_string(QString::fromUtf8(data));
+            bool ok(false);
+            lock_file_pid = pid_string.toInt(&ok, 10);
+            if(!ok)
+            {
+                // just in case, make 100% sure that we have -1 as the PID
+                lock_file_pid = -1;
+            }
+        }
+    }
+
+    SNAP_LOG_INFO("Stop Snap! Websites services (pid = ")(lock_file_pid)(").");
 
     QString udp_addr;
     int udp_port;
@@ -3523,10 +3550,23 @@ void snap_init::stop()
     {
         sleep(1);
 
-        if( !f_lock_file.exists() )
+        // the lock_file_pid should always be >= 0
+        //
+        if(lock_file_pid >= 0)
         {
-            // it worked!
-            return;
+            if(getpgid(lock_file_pid) < 0)
+            {
+                // errno == ESRCH -- the process does not exist anymore
+                return;
+            }
+        }
+        else
+        {
+            if( !f_lock_file.exists() )
+            {
+                // it worked!
+                return;
+            }
         }
     }
 
