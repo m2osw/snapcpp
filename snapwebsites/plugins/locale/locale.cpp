@@ -893,7 +893,7 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
         }
 
         // UDate is a double in milliseconds
-        return static_cast<time_t>(result / 1000LL);
+        return static_cast<time_t>(result / 1000.0);
     }
 }
 

@@ -792,7 +792,7 @@ public:
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t& result, double a, double b)
+    typename enable_if<has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t & result, double a, double b)
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::floating_points(a, b));
@@ -802,13 +802,13 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
-    typename enable_if<!has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t& result, double a, double b)
+    typename enable_if<!has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t & result, double a, double b)
     {
     }
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_string_integer>::type do_string_integer(variable_t& result, QString const& a, int64_t b)
+    typename enable_if<has_function<F>::has_string_integer>::type do_string_integer(variable_t & result, QString const & a, int64_t b)
     {
         QtCassandra::QCassandraValue value;
         value.setStringValue(F::string_integer(a, b));
@@ -818,13 +818,13 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
-    typename enable_if<!has_function<F>::has_string_integer>::type do_string_integer(variable_t& result, QString const& a, int64_t b)
+    typename enable_if<!has_function<F>::has_string_integer>::type do_string_integer(variable_t & result, QString const & a, int64_t b)
     {
     }
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t& result, QString const& a, int64_t b)
+    typename enable_if<has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t & result, QString const & a, int64_t b)
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::string_integer(a, b));
@@ -834,13 +834,13 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
-    typename enable_if<!has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t& result, QString const& a, int64_t b)
+    typename enable_if<!has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t & result, QString const & a, int64_t b)
     {
     }
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_strings>::type do_strings(variable_t& result, QString const& a, QString const& b)
+    typename enable_if<has_function<F>::has_strings>::type do_strings(variable_t & result, QString const & a, QString const & b)
     {
         QtCassandra::QCassandraValue value;
         value.setStringValue(F::strings(a, b));
@@ -856,7 +856,7 @@ public:
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t& result, QString const& a, QString const& b)
+    typename enable_if<has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t & result, QString const & a, QString const & b)
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::strings(a, b));
@@ -866,7 +866,7 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
-    typename enable_if<!has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t& result, QString const& a, QString const& b)
+    typename enable_if<!has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t & result, QString const & a, QString const & b)
     {
     }
 #pragma GCC diagnostic pop
@@ -3081,7 +3081,7 @@ public:
     }
 
     template<typename F>
-    void bool_binary_operation(char const *op, variable_t& result, variable_t::variable_vector_t const& sub_results)
+    void bool_binary_operation(char const * op, variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         verify_binary(sub_results);
 
@@ -3104,47 +3104,47 @@ public:
             {
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
@@ -3310,7 +3310,7 @@ public:
         }
     }
 
-    void assignment(variable_t& result, variable_t::variable_vector_t const& sub_results, variable_t::variable_map_t& variables)
+    void assignment(variable_t & result, variable_t::variable_vector_t const & sub_results, variable_t::variable_map_t & variables)
     {
 #ifdef DEBUG
         if(sub_results.size() != 1)
@@ -3323,7 +3323,7 @@ public:
         result = variables[f_name];
     }
 
-    void load_variable(variable_t& result, variable_t::variable_map_t& variables)
+    void load_variable(variable_t & result, variable_t::variable_map_t & variables)
     {
         if(variables.contains(f_name))
         {
