@@ -1,3 +1,33 @@
+zipios (2.1.0.5~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 02 Dec 2015 03:01:28 -0800
+
+zipios (2.1.0.4~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 01 Dec 2015 03:01:32 -0800
+
+zipios (2.1.0.3~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 30 Nov 2015 03:01:30 -0800
+
+zipios (2.1.0.2~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 29 Nov 2015 03:01:31 -0800
+
+zipios (2.1.0.1~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 28 Nov 2015 19:25:49 -0800
+
 zipios (2.1.0~trusty) trusty; urgency=high
 
   * Renamed the include directory to remove the '++'.
