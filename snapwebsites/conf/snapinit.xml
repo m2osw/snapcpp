@@ -187,7 +187,7 @@
   <service name="snapbackend">
     <priority>75</priority>
     <config>/etc/snapwebsites/snapserver.conf</config>
-    <cron>300</cron>
+    <cron>3600</cron>
   </service>
 </snapservices>
 <!--
