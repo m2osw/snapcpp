@@ -19,6 +19,7 @@ DESC=snapinit
 NAME=snapserver
 USER=snapwebsites
 SNAPINIT=/usr/bin/snapinit
+PIDFILE=/run/lock/snapwebsites/snapinit-lock.pid
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -58,9 +59,10 @@ case "$1" in
 		2)   log_end_msg 1 ;;
 	esac
 	;;
-  #status)
-       #do_status && exit 0 || exit $?
-       #;;
+  status)
+       status_of_proc -p $PIDFILE "snapserver" "$NAME"
+	   exit $?
+       ;;
   restart|force-reload)
 	#
 	# If the "reload" option is implemented then remove the

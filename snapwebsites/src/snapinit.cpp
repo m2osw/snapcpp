@@ -3287,20 +3287,111 @@ void snap_init::start()
     int const fd(::open( f_lock_file.fileName().toUtf8().data(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR ));
     if( fd == -1 )
     {
-        if(errno == EEXIST)
+        int const e(errno);
+        if(e == EEXIST)
         {
-            SNAP_LOG_FATAL("Lock file \"")(f_lock_file.fileName())("\" exists! Is this a race condition?");
-            if(g_isatty)
+            int lock_file_pid(-1);
             {
-                std::cerr << "snapinit: fatal: Lock file \"" << f_lock_file.fileName() << "\" exists! Is this a race condition?" << std::endl;
+                if(f_lock_file.open(QFile::ReadOnly))
+                {
+                    QByteArray const data(f_lock_file.readAll());
+                    f_lock_file.close();
+                    QString const pid_string(QString::fromUtf8(data).trimmed());
+                    bool ok(false);
+                    lock_file_pid = pid_string.toInt(&ok, 10);
+                    if(!ok)
+                    {
+                        // just in case, make 100% sure that we have -1 as
+                        // the PID when invalid
+                        lock_file_pid = -1;
+                    }
+                }
+            }
+
+            if(lock_file_pid != -1)
+            {
+                if(getpgid(lock_file_pid) < 0)
+                {
+                    // although the lock file is in place, the PID defined in
+                    // it does not exist, change the error message accordingly
+                    //
+                    // TODO: look into implementing a delete, but for that we
+                    //       need to open the file locked, otherwise we may
+                    //       have a race condition!
+                    //       (see SNAP-133 which is closed)
+                    //
+                    SNAP_LOG_FATAL("Lock file \"")
+                                  (f_lock_file.fileName())
+                                  ("\" exists! However, process with PID ")
+                                  (lock_file_pid)
+                                  (" is not running. To delete the lock, use `snapinit --remove-lock`.");
+                    if(g_isatty)
+                    {
+                        std::cerr << "snapinit: fatal: Lock file \""
+                                  << f_lock_file.fileName()
+                                  << "\" exists! However, process with PID "
+                                  << lock_file_pid
+                                  << " is not running. To delete the lock, use `snapinit --remove-lock`."
+                                  << std::endl;
+                    }
+                }
+                else
+                {
+                    // snapinit is running
+                    //
+                    SNAP_LOG_FATAL("Lock file \"")
+                                  (f_lock_file.fileName())
+                                  ("\" exists! snapinit is already running as PID ")
+                                  (lock_file_pid)
+                                  (".");
+                    if(g_isatty)
+                    {
+                        std::cerr << "snapinit: fatal: Lock file \""
+                                  << f_lock_file.fileName()
+                                  << "\" exists! snapinit is already running as PID "
+                                  << lock_file_pid
+                                  << "."
+                                  << std::endl;
+                    }
+                }
+            }
+            else
+            {
+                // snapinit is running
+                //
+                SNAP_LOG_FATAL("Lock file \"")
+                              (f_lock_file.fileName())
+                              ("\" exists! Is this a race condition? (errno: ")
+                              (e)
+                              (" -- ")
+                              (strerror(e))
+                              (")");
+                if(g_isatty)
+                {
+                    std::cerr << "snapinit: fatal: Lock file \""
+                              << f_lock_file.fileName()
+                              << "\" exists! Is this a race condition? (errno: "
+                              << e
+                              << " -- "
+                              << strerror(e)
+                              << ")"
+                              << std::endl;
+                }
             }
         }
         else
         {
-            SNAP_LOG_FATAL("Lock file \"")(f_lock_file.fileName())("\" could not be created.");
+            SNAP_LOG_FATAL("Lock file \"")(f_lock_file.fileName())("\" could not be created. (errno: ")(e)(" -- ")(strerror(e))(")");
             if(g_isatty)
             {
-                std::cerr << "snapinit: fatal: Lock file \"" << f_lock_file.fileName() << "\" could not be created." << std::endl;
+                std::cerr << "snapinit: fatal: Lock file \""
+                          << f_lock_file.fileName()
+                          << "\" could not be created. (errno: "
+                          << e
+                          << " -- "
+                          << strerror(e)
+                          << ")"
+                          << std::endl;
             }
         }
         exit(1);
@@ -3310,8 +3401,16 @@ void snap_init::start()
     f_lock_file.open( fd, QFile::ReadWrite ); // save fd in the QFile object
 
     // save our PID in the lock file (useful for the stop() processus)
+    // the correct Debian format is the PID followed by '\n'
     //
-    f_lock_file.write(QString("%1").arg(getpid()).toUtf8());
+    // FHS Version 2.1+:
+    //   > The file should consist of the process identifier in ASCII-encoded
+    //   > decimal, followed by a newline character. For example, if crond was
+    //   > process number 25, /var/run/crond.pid would contain three characters:
+    //   > two, five, and newline.
+    // 
+    //
+    f_lock_file.write(QString("%1\n").arg(getpid()).toUtf8());
     f_lock_file.flush();
 
     if( f_opt.is_defined("detach") )
@@ -3500,7 +3599,7 @@ void snap_init::stop()
         {
             QByteArray const data(f_lock_file.readAll());
             f_lock_file.close();
-            QString const pid_string(QString::fromUtf8(data));
+            QString const pid_string(QString::fromUtf8(data).trimmed());
             bool ok(false);
             lock_file_pid = pid_string.toInt(&ok, 10);
             if(!ok)
