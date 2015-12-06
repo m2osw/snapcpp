@@ -387,7 +387,8 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         QtCassandra::QCassandraValue const identifier(c->columnKey());
         name = QString("%1").arg(identifier.safeInt64Value());
     }
-    else if(f_tableName == "tracker")
+    else if(f_tableName == "tracker"
+         || (f_tableName == "backend" && !f_rowName.startsWith("*")))
     {
         QtCassandra::QCassandraValue const start_date(c->columnKey());
         name = microseconds_to_string(start_date.safeInt64Value(), true);
@@ -540,7 +541,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // 64 bit float
         return column_type_t::CT_float64_value;
     }
-    else if(n == "content::created"
+    else if((f_tableName == "backend" && f_rowName.startsWith("*"))
+         || n == "content::created"
          || n == "content::cloned"
          || n == "content::files::created"
          || n == "content::files::secure::last_check"

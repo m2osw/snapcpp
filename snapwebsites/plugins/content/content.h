@@ -708,7 +708,7 @@ public:
     // signal handling
     void                on_execute(QString const & uri_path);
     void                on_save_content();
-    void                on_register_backend_action(server::backend_action::map_t & actions);
+    void                on_register_backend_action(server::backend_action_set & actions);
     virtual void        on_backend_action(QString const & action);
     void                on_backend_process();
     void                on_load_file(snap_child::post_file_t & file, bool & found);

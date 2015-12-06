@@ -36,7 +36,7 @@
 
 #include "content.h"
 
-//#include "../messages/messages.h" -- we now have 2 levels (messages and output) so we could include messages.h here
+//#include "../messages/messages.h" -- we now have 2 levels (messages and output) so we could include messages.h there
 
 #include "compression.h"
 #include "dbutils.h"
@@ -72,7 +72,7 @@ SNAP_PLUGIN_START(content, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     // Note: <branch>.<revision> are actually replaced by a full version
     //       when dealing with JavaScript and CSS files (Version: field)
@@ -444,7 +444,7 @@ content::~content()
  *
  * \return A pointer to the content plugin.
  */
-content *content::instance()
+content * content::instance()
 {
     return g_plugin_content_factory.instance();
 }

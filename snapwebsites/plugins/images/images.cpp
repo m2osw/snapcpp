@@ -326,6 +326,7 @@ void images::bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN0(images, "server", server, attach_to_session);
+    SNAP_LISTEN(images, "server", server, register_backend_cron, _1);
     SNAP_LISTEN(images, "server", server, register_backend_action, _1);
     SNAP_LISTEN(images, "links", links::links, modified_link, _1);
     SNAP_LISTEN(images, "path", path::path, can_handle_dynamic_path, _1, _2);
@@ -876,8 +877,37 @@ void images::on_attach_to_session()
     if(f_ping_backend)
     {
         // send a PING to the backend
-        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_IMAGES_ACTION)));
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_IMAGES_ACTION));
     }
+}
+
+
+/** \brief Register the "images" action.
+ *
+ * This function registers this plugin as supporting the
+ * "images" CRON action.
+ *
+ * This action is used to apply a "script" against images and other
+ * attachment to generate a transformed image. The "script" support
+ * most of the features available in the convert tool of ImageMagick.
+ * So one can add transparency, borders, rotate, change colors, etc.
+ *
+ * The transformation includes the conversion of other attachments
+ * such as PDF files to a preview image (or even a full scale,
+ * printable version of the source image.)
+ *
+ * In most cases, the transformations are initiated when a client
+ * sends a PING signal. Others may be defined as scripts to run
+ * against specific types of data (i.e. always create a preview for
+ * a Word processor document, make it 350 wide and automatically
+ * compute the height, add a border, and a shadow.)
+ *
+ * \param[in,out] actions  The list of supported CRON actions where we add
+ *                         ourselves.
+ */
+void images::on_register_backend_cron(server::backend_action_set & actions)
+{
+    actions.add_action(get_name(name_t::SNAP_NAME_IMAGES_ACTION), this);
 }
 
 
@@ -903,10 +933,9 @@ void images::on_attach_to_session()
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void images::on_register_backend_action(server::backend_action::map_t & actions)
+void images::on_register_backend_action(server::backend_action_set & actions)
 {
-    actions[get_name(name_t::SNAP_NAME_IMAGES_ACTION)] = this;
-    actions[get_name(name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE)] = this;
+    actions.add_action(get_name(name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE), this);
 }
 
 
@@ -924,24 +953,6 @@ void images::on_versions_libraries(filter::filter::token_info_t & token)
     size_t ignore;
     token.f_replacement += MagickCore::GetMagickVersion(&ignore);
     token.f_replacement += " (compiled with " MagickLibVersionText ")</li>";
-}
-
-
-/** \brief Return the name to use to create the UDP signal listener.
- *
- * This function returns the UDP signal listener name.
- *
- * \param[in] action  The concerned action.
- *
- * \return The name of the UDP signal for the image plugin.
- */
-char const * images::get_signal_name(QString const & action) const
-{
-    if(action == get_name(name_t::SNAP_NAME_IMAGES_ACTION))
-    {
-        return get_name(name_t::SNAP_NAME_IMAGES_SIGNAL_NAME);
-    }
-    return backend_action::get_signal_name(action);
 }
 
 
@@ -971,50 +982,8 @@ void images::on_backend_action(QString const & action)
         {
             throw images_exception_no_backend("could not determine the snap_backend pointer");
         }
-        f_backend->create_signal( get_signal_name(action) );
 
-        QString const core_plugin_threshold(get_name(snap::name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
-        // loop until stopped
-        int64_t more_work(0);
-        for(;;)
-        {
-            // verify that the site is ready, if not, do not process images yet
-            QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
-            if(!threshold.nullValue())
-            {
-                more_work = transform_images();
-            }
-
-            // Stop on error
-            //
-            if( f_backend->get_error() )
-            {
-                SNAP_LOG_FATAL("images::on_backend_action(): caught a UDP server error");
-                exit(1);
-            }
-
-            // sleep till next PING (but max. 5 minutes)
-            // unless there is more work to be done in which case we wait
-            // just the necessary amount of time (note: more_work is in
-            // micro-seconds, pop_message() expects milli-seconds)
-            //
-            snap_backend::message_t message;
-            if( f_backend->pop_message( message, more_work ? (more_work + 999) / 1000 : 5 * 60 * 1000 ) )
-            {
-                // here handle messages other than PING
-                //if(message == "OTHR") ...
-            }
-            // else 5 min. time out or STOP received
-
-            // quickly end this process if the user requested a stop
-            if(f_backend->stop_received())
-            {
-                // clean STOP
-                // we have to exit otherwise we'd get called again with
-                // the next website!?
-                exit(0);
-            }
-        }
+        transform_images();
     }
     else if(action == get_name(name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE))
     {

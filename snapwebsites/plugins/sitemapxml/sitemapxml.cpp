@@ -38,6 +38,34 @@
 #include "poison.h"
 
 
+/** \file
+ * \brief This plugin generates a sitemap.xml for your website.
+ *
+ * The plugin knows how to gerenate XML sitemap files. Either one
+ * if small enough (10Mb / 50,000 files) or any number of site
+ * maps and one site map index file.
+ *
+ * \todo
+ * The XML files get saved in the sites table at this point. I
+ * think we should save them as attachments. We first need to make
+ * sure we can really overwrite an attachment, otherwise we could
+ * end up with millions of files per website for nothing.
+ *
+ * To validate the resulting XML files, use the following commands:
+ *
+ * \code
+ *      # For an XML sitemap file
+ *      xmllint --schema plugins/sitemapxml/sitemap.xsd sitemap.xml
+ *
+ *      # For an XML site index file
+ *      xmllint --schema plugins/sitemapxml/siteindex.xsd siteindex.xml
+ * \endcode
+ *
+ * The result should be "\<filename> validates" along a copy of the input
+ * file. You may avoid a copy of the input with --noout or redirect the
+ * output with --output or the standard shell redirection (>).
+ */
+
 SNAP_PLUGIN_START(sitemapxml, 1, 0)
 
 
@@ -1134,11 +1162,6 @@ void sitemapxml::generate_one_sitemap(int32_t const position, size_t & index)
         url.appendChild(loc);
         snap_dom::append_plain_text_to_node(loc, u.get_uri());
 
-        // create /url/priority
-        QDomElement priority(doc.createElement("priority"));
-        url.appendChild(priority);
-        snap_dom::append_plain_text_to_node(priority, QString("%1").arg(u.get_priority()));
-
         // create /url/lastmod (optional)
         time_t const t(u.get_last_modification());
         if(t != 0)
@@ -1155,6 +1178,7 @@ void sitemapxml::generate_one_sitemap(int32_t const position, size_t & index)
             QString frequency("never");
             if(f > 0)
             {
+                // we could add "always" and "hourly" too...
                 if(f < 86400 + 86400 / 2)
                 {
                     frequency = "daily";
@@ -1167,10 +1191,6 @@ void sitemapxml::generate_one_sitemap(int32_t const position, size_t & index)
                 {
                     frequency = "monthly";
                 }
-                else if(f < 86400 * 7 * 5 * 3 + 86400 * 7 * 5 * 3 / 2)
-                {
-                    frequency = "quarterly";
-                }
                 else
                 {
                     frequency = "yearly";
@@ -1180,6 +1200,11 @@ void sitemapxml::generate_one_sitemap(int32_t const position, size_t & index)
             url.appendChild(changefreq);
             snap_dom::append_plain_text_to_node(changefreq, frequency);
         }
+
+        // create /url/priority
+        QDomElement priority(doc.createElement("priority"));
+        url.appendChild(priority);
+        snap_dom::append_plain_text_to_node(priority, QString("%1").arg(u.get_priority()));
 
         // create the /url/xhtml:link (rel="alternate")
         // see http://googlewebmastercentral.blogspot.com/2012/05/multilingual-and-multinational-site.html

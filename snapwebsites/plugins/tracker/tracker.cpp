@@ -436,9 +436,9 @@ void tracker::on_attach_to_session()
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void tracker::on_register_backend_action(server::backend_action::map_t & actions)
+void tracker::on_register_backend_action(server::backend_action_set & actions)
 {
-    actions[get_name(name_t::SNAP_NAME_TRACKER_TRACKINGDATA)] = this;
+    actions.add_action(get_name(name_t::SNAP_NAME_TRACKER_TRACKINGDATA), this);
 }
 
 

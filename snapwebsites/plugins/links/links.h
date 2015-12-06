@@ -273,7 +273,7 @@ public:
 
     // server signals
     void                on_add_snap_expr_functions(snap_expr::functions_t & functions);
-    void                on_register_backend_action(server::backend_action::map_t & actions);
+    void                on_register_backend_action(server::backend_action_set & actions);
 
     // server::backend_action implementation
     virtual void        on_backend_action(QString const & action);

@@ -158,7 +158,7 @@ private:
 
 bool is_ipv4(char const * ip);
 bool is_ipv6(char const * ip);
-void get_addr_port(QString const & addr_port, QString & addr, int & port, int const default_port = 0);
+void get_addr_port(QString const & addr_port, QString & addr, int & port, char const * protocol);
 
 
 } // namespace tcp_client_server

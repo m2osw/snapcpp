@@ -400,10 +400,8 @@ public:
     void                        trace(char const * data);
     void                        show_resources(std::ostream & out);
 
-    void                        udp_ping(char const * name, char const * message = "PING");
-
-    typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
-    udp_server_t                udp_get_server( char const * name );
+    void                        backend_process();
+    void                        udp_ping(char const * name);
 
 protected:
     pid_t                       fork_child();
@@ -418,6 +416,7 @@ protected:
     controlled_vars::flbool_t                   f_is_child;
     zpid_t                                      f_child_pid;
     zfile_descriptor_t                          f_socket;
+    QtCassandra::QCassandra::pointer_t          f_cassandra;
     QtCassandra::QCassandraContext::pointer_t   f_context;
     controlled_vars::mint64_t                   f_start_date; // time request arrived
     controlled_vars::flbool_t                   f_ready; // becomes true just before the server::execute() call
@@ -450,7 +449,6 @@ private:
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
 
-    QtCassandra::QCassandra::pointer_t          f_cassandra;
     QtCassandra::QCassandraTable::pointer_t     f_site_table;
     controlled_vars::flbool_t                   f_new_content;
     controlled_vars::flbool_t                   f_is_being_initialized;

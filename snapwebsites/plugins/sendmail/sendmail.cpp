@@ -19,7 +19,6 @@
 
 #include "../output/output.h"
 #include "../users/users.h"
-#include "../sessions/sessions.h"
 
 #include "http_strings.h"
 #include "log.h"
@@ -1577,7 +1576,7 @@ void sendmail::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(sendmail, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(sendmail, "server", server, register_backend_cron, _1);
     SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(sendmail, "users", users::users, check_user_security, _1, _2, _3, _4, _5);
 
@@ -1896,7 +1895,7 @@ void sendmail::post_email(email const & e)
     emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW))->cell(key)->setValue(value);
 
     // signal the listening server if IP is available (send PING)
-    f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_SENDMAIL)));
+    f_snap->udp_ping(get_name(name_t::SNAP_NAME_SENDMAIL));
 }
 
 
@@ -1927,39 +1926,23 @@ QString sendmail::default_from() const
 
 
 
-/** \brief Register the sendmail action.
+/** \brief Register the "sendmail" action.
  *
- * This function registers this plugin as supporting the "sendmail" action.
- * This is used by the backend to start a sendmail server so users on a
- * website sending emails end up having the email sent when this action
- * is running in the background.
+ * This function registers this plugin as supporting the "sendmail" CRON
+ * action. This backend is used on a backend that supports a standard Unix
+ * sendmail tool, which is used to send emails to users.
  *
- * At this time we only support one action named "sendmail".
+ * When the front end sends emails, it actually calls the post_email()
+ * function which registers the email in the database table named "emails".
+ * The backend process retrieves those emails and processes them by
+ * determining the final users who are to receive the email and send
+ * a seperate copy of the email to each destination user.
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void sendmail::on_register_backend_action(server::backend_action::map_t & actions)
+void sendmail::on_register_backend_cron(server::backend_action_set & actions)
 {
-    actions[get_name(name_t::SNAP_NAME_SENDMAIL)] = this;
-}
-
-
-/** \brief Retrieve the signal name for the sendmail plugin.
- *
- * This function returns "sendmail_udp_signal". See the definition
- * of the name_t::SNAP_NAME_SENDMAIL_SIGNAL_NAME.
- *
- * \param[in] action  The concerned action.
- *
- * \return The name of the UDP signal used by sendmail.
- */
-char const * sendmail::get_signal_name(QString const & action) const
-{
-    if(action == get_name(name_t::SNAP_NAME_SENDMAIL))
-    {
-        return get_name(name_t::SNAP_NAME_SENDMAIL_SIGNAL_NAME);
-    }
-    return backend_action::get_signal_name(action);
+    actions.add_action(get_name(name_t::SNAP_NAME_SENDMAIL), this);
 }
 
 
@@ -2000,101 +1983,47 @@ char const * sendmail::get_signal_name(QString const & action) const
  */
 void sendmail::on_backend_action(QString const & action)
 {
-    if(action != get_name(name_t::SNAP_NAME_SENDMAIL))
+    if(action == get_name(name_t::SNAP_NAME_SENDMAIL))
     {
-        // unknown action (we should not have been called with that name!)
-        throw snap_logic_exception(QString("sendmail.cpp:on_backend_action(): sendmail::on_backend_action(\"%1\") called with an unknown action...").arg(action));
-    }
-
-    try
-    {
-        f_backend = dynamic_cast<snap_backend *>(f_snap.get());
-        if(!f_backend)
+        try
         {
-            throw sendmail_exception_no_backend("could not determine the snap_backend pointer");
-        }
-        f_backend->create_signal( get_signal_name(action) );
+            f_backend = dynamic_cast<snap_backend *>(f_snap.get());
+            if(!f_backend)
+            {
+                throw sendmail_exception_no_backend("could not determine the snap_backend pointer");
+            }
 
-        for(;;)
-        {
-            // immediately process emails that are in the database and
-            // are ready to go (i.e. their time is in the past or now)
-            clear_caches();
+            // process emails that are in the database and are ready to go
+            // (i.e. their time is in the past or now)
+            //
             check_bounced_emails();
             process_emails();
             run_emails();
-
-            // Stop on error
-            //
-            if( f_backend->get_error() )
-            {
-                SNAP_LOG_FATAL("sendmail::on_backend_action(): caught a UDP server error");
-                exit(1);
-            }
-
-            // Process UDP message, if any
-            // Wait up to 5 minutes before trying again
-            //
-            snap_backend::message_t message;
-            if( f_backend->pop_message( message, 5 * 60 * 1000 ) )
-            {
-                // If we are to test messages other than PING,
-                // add the code here
-                //if(message == "OTHR") ...
-            }
-
-            if(f_backend->stop_received())
-            {
-                // clean STOP
-                // we have to exit otherwise we'd get called again with
-                // the next website!?
-                exit(0);
-            }
+        }
+        catch( snap_exception const & e )
+        {
+            SNAP_LOG_FATAL("sendmail::on_backend_action(): snap exception caught: ")(e.what());
+            exit(1);
+            NOTREACHED();
+        }
+        catch( std::exception const & e )
+        {
+            SNAP_LOG_FATAL("sendmail::on_backend_action(): exception caught: ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+            exit(1);
+            NOTREACHED();
+        }
+        catch( ... )
+        {
+            SNAP_LOG_FATAL("sendmail::on_backend_action(): unknown exception caught!");
+            exit(1);
+            NOTREACHED();
         }
     }
-    catch( snap_exception const& except )
+    else
     {
-        SNAP_LOG_FATAL("sendmail::on_backend_action(): snap exception caught: ")(except.what());
-        exit(1);
-        NOTREACHED();
+        // unknown action (we should not have been called with that name!)
+        throw snap_logic_exception(QString("sendmail::on_backend_action(\"%1\") called with an unknown action...").arg(action));
     }
-    catch( std::exception const& std_except )
-    {
-        SNAP_LOG_FATAL("sendmail::on_backend_action(): exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
-        exit(1);
-        NOTREACHED();
-    }
-    catch( ... )
-    {
-        SNAP_LOG_FATAL("sendmail::on_backend_action(): unknown exception caught!");
-        exit(1);
-        NOTREACHED();
-    }
-}
-
-
-/** \brief Clear various table caches.
- *
- * This should disappear once we have the proper implementation with
- * snapcommunicator since caches will not survice exiting the child
- * process and re-instantiating it.
- */
-void sendmail::clear_caches()
-{
-    // clear some caches so things work better in the long run
-    users::users * users_plugin(users::users::instance());
-    QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-    users_table->clearCache();
-
-    content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    content_table->clearCache();
-
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    branch_table->clearCache();
-
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    revision_table->clearCache();
 }
 
 

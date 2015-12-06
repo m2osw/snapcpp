@@ -1123,7 +1123,7 @@ void snap_communicator::snap_connection::process_error()
     //      case? because the get_socket() function will not return
     //      -1 after such errors...
 
-    SNAP_LOG_ERROR("socket of connection \"")(f_name)("\" was marked as erroneous by the kernel.");
+    SNAP_LOG_ERROR("socket ")(get_socket())(" of connection \"")(f_name)("\" was marked as erroneous by the kernel.");
 
     remove_from_communicator();
 }
@@ -1148,6 +1148,8 @@ void snap_communicator::snap_connection::process_hup()
     // TBD: should we offer a virtual close() function to handle this
     //      case? because the get_socket() function will not return
     //      -1 after such errors...
+
+    SNAP_LOG_INFO("socket of connection \"")(f_name)("\" hang up.");
 
     remove_from_communicator();
 }
@@ -1174,6 +1176,30 @@ void snap_communicator::snap_connection::process_invalid()
     SNAP_LOG_ERROR("socket of connection \"")(f_name)("\" was marked as invalid by the kernel.");
 
     remove_from_communicator();
+}
+
+
+/** \brief Callback called whenever this connection gets added.
+ *
+ * This function gets called whenever this connection is added to
+ * the snap_communicator object. This gives you the opportunity
+ * to do additional initialization before the run() loop gets
+ * called or re-entered.
+ */
+void snap_communicator::snap_connection::connection_added()
+{
+}
+
+
+/** \brief Callback called whenever this connection gets removed.
+ *
+ * This callback gets called after it got removed from the
+ * snap_communicator object. This gives you the opportunity
+ * to do additional clean ups before the run() loop gets
+ * re-entered.
+ */
+void snap_communicator::snap_connection::connection_removed()
+{
 }
 
 
@@ -1548,7 +1574,7 @@ snap_communicator::snap_thread_done_signal::snap_thread_done_signal()
     if(pipe2(f_pipe, O_NONBLOCK | O_CLOEXEC) != 0)
     {
         // pipe could not be created
-        throw snap_communicator_initialization_error("somehow the pipe used to detect the death of a thread could not be created.");
+        throw snap_communicator_initialization_error("somehow the pipes used to detect the death of a thread could not be created.");
     }
 }
 
@@ -1624,6 +1650,413 @@ void snap_communicator::snap_thread_done_signal::thread_done()
 
 
 
+//////////////////////////
+// Snap Pipe Connection //
+//////////////////////////
+
+
+
+/** \brief Initializes the pipe connection.
+ *
+ * This function creates the pipes that are to be used to connect
+ * two processes (these are actually Unix sockets). These are
+ * used whenever you fork() so the parent process can very quickly
+ * communicate with the child process using complex messages just
+ * like you do between services and Snap Communicator.
+ *
+ * \warning
+ * The sockets are opened in a non-blocking state. However, they are
+ * not closed when you call fork() since they are to be used across
+ * processes.
+ *
+ * \warning
+ * You need to create a new snap_pipe_connection each time you want
+ * to create a new child.
+ *
+ * \exception snap_communicator_initialization_error
+ * This exception is raised if the pipes cannot be created.
+ */
+snap_communicator::snap_pipe_connection::snap_pipe_connection()
+{
+    if(socketpair(AF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0, f_socket) != 0)
+    {
+        // pipe could not be created
+        throw snap_communicator_initialization_error("somehow the pipes used for a two way pipe connection could not be created.");
+    }
+
+    f_parent = getpid();
+}
+
+
+/** \brief Read data from this pipe connection.
+ *
+ * This function reads up to count bytes from this pipe connection.
+ *
+ * The function makes sure to use the correct socket for the calling
+ * process (i.e. depending on whether this is the parent or child.)
+ *
+ * Just like the system read(2) function, errno is set to the error
+ * that happened when the function returns -1.
+ *
+ * \param[in] buf  A pointer to a buffer of data.
+ * \param[in] count  The number of bytes to read from the pipe connection.
+ *
+ * \return The number of bytes read from this pipe socket, or -1 on errors.
+ */
+ssize_t snap_communicator::snap_pipe_connection::read(void * buf, size_t count)
+{
+    int const s(get_socket());
+    if(s == -1)
+    {
+        errno = EBADF;
+        return -1;
+    }
+    return ::read(s, buf, count);
+}
+
+
+/** \brief Write data to this pipe connection.
+ *
+ * This function writes count bytes to this pipe connection.
+ *
+ * The function makes sure to use the correct socket for the calling
+ * process (i.e. depending on whether this is the parent or child.)
+ *
+ * Just like the system write(2) function, errno is set to the error
+ * that happened when the function returns -1.
+ *
+ * \param[in] buf  A pointer to a buffer of data.
+ * \param[in] count  The number of bytes to write to the pipe connection.
+ *
+ * \return The number of bytes written to this pipe socket, or -1 on errors.
+ */
+ssize_t snap_communicator::snap_pipe_connection::write(void const * buf, size_t count)
+{
+    int const s(get_socket());
+    if(s == -1)
+    {
+        errno = EBADF;
+        return -1;
+    }
+    if(buf != nullptr && count > 0)
+    {
+        return ::write(s, buf, count);
+    }
+    return 0;
+}
+
+
+/** \brief Make sure to close the pipes.
+ *
+ * The destructor ensures that the pipes get closed.
+ *
+ * They may already have been closed if a broken pipe was detected.
+ */
+snap_communicator::snap_pipe_connection::~snap_pipe_connection()
+{
+    close();
+}
+
+
+/** \brief Close the sockets.
+ *
+ * This function closes the pair of sockets managed by this
+ * pipe connection object.
+ *
+ * After this call, the pipe connection is closed and cannot be
+ * used anymore. The read and write functions will return immediately
+ * if called.
+ */
+void snap_communicator::snap_pipe_connection::close()
+{
+    if(f_socket[0] != -1)
+    {
+        ::close(f_socket[0]);
+        ::close(f_socket[1]);
+        f_socket[0] = -1;
+        f_socket[1] = -1;
+    }
+}
+
+
+/** \brief Pipe connections accept reads.
+ *
+ * This function returns true meaning that the pipe connection can be
+ * used to read data.
+ *
+ * \return true since a pipe connection is a reader.
+ */
+bool snap_communicator::snap_pipe_connection::is_reader() const
+{
+    return true;
+}
+
+
+/** \brief This function returns the pipe we want to listen on.
+ *
+ * This function returns the file descriptor of one of the two
+ * sockets. The parent process returns the descriptor of socket
+ * number 0. The child process returns the descriptor of socket
+ * number 1.
+ *
+ * \note
+ * If the close() function was called, this function returns -1.
+ *
+ * \return A pipe descriptor to listen on with poll().
+ */
+int snap_communicator::snap_pipe_connection::get_socket() const
+{
+    if(f_parent == getpid())
+    {
+        return f_socket[0];
+    }
+
+    return f_socket[1];
+}
+
+
+
+
+/////////////////////////////////
+// Snap Pipe Buffer Connection //
+/////////////////////////////////
+
+
+
+
+/** \brief Pipe connections accept writes.
+ *
+ * This function returns true when there is some data in the pipe
+ * connection buffer meaning that the pipe connection needs to
+ * send data to the other side of the pipe.
+ *
+ * \return true if some data has to be written to the pipe.
+ */
+bool snap_communicator::snap_pipe_buffer_connection::is_writer() const
+{
+    return get_socket() != -1 && !f_output.empty();
+}
+
+
+/** \brief Write the specified data to the pipe buffer.
+ *
+ * This function writes the data specified by \p data to the pipe buffer.
+ * Note that the data is not sent immediately. This will only happen
+ * when the Snap Communicator loop is re-entered.
+ *
+ * \param[in] data  The pointer to the data to write to the pipe.
+ * \param[in] length  The size of the data buffer.
+ *
+ * \return The number of bytes written. The function returns 0 when no
+ *         data can be written to that connection (i.e. it was already
+ *         closed or data is a null pointer.)
+ */
+ssize_t snap_communicator::snap_pipe_buffer_connection::write(void const * data, size_t length)
+{
+    if(get_socket() == -1)
+    {
+        errno = EBADF;
+        return -1;
+    }
+
+    if(data != nullptr && length > 0)
+    {
+        char const * d(reinterpret_cast<char const *>(data));
+        f_output.insert(f_output.end(), d, d + length);
+        return length;
+    }
+
+    return 0;
+}
+
+
+/** \brief Read data that was received on this pipe.
+ *
+ * This function is used to read data whenever the process on
+ * the other side sent us a message.
+ */
+void snap_communicator::snap_pipe_buffer_connection::process_read()
+{
+    if(get_socket() != -1)
+    {
+        // we read one character at a time until we get a '\n'
+        // since we have a non-blocking socket we can read as
+        // much as possible and then check for a '\n' and keep
+        // any extra data in a cache.
+        //
+        std::vector<char> buffer;
+        buffer.resize(1024);
+        for(;;)
+        {
+            errno = 0;
+            ssize_t const r(read(&buffer[0], buffer.size()));
+            if(r > 0)
+            {
+                for(ssize_t position(0); position < r; )
+                {
+                    std::vector<char>::const_iterator it(std::find(buffer.begin() + position, buffer.begin() + r, '\n'));
+                    if(it == buffer.begin() + r)
+                    {
+                        // no newline, just add the whole thing
+                        f_line += std::string(&buffer[position], r - position);
+                        break; // do not waste time, we know we are done
+                    }
+
+                    // retrieve the characters up to the newline
+                    // character and process the line
+                    //
+                    f_line += std::string(&buffer[position], it - buffer.begin() - position);
+                    process_line(QString::fromUtf8(f_line.c_str()));
+
+                    // done with that line
+                    f_line.clear();
+
+                    // we had a newline, we may still have some data
+                    // in that buffer; (+1 to skip the '\n' itself)
+                    //
+                    position = it - buffer.begin() + 1;
+                }
+            }
+            else if(r == 0 || errno == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                // no more data available at this time
+                break;
+            }
+            else //if(r < 0)
+            {
+                int const e(errno);
+                SNAP_LOG_ERROR("an error occurred while reading from socket (errno: ")(e)(" -- ")(strerror(e))(").");
+                process_error();
+                return;
+            }
+        }
+    }
+    //else -- TBD: should we at least log an error when read() is called without a valid socket?
+
+    // process the next level
+    snap_pipe_connection::process_read();
+}
+
+
+/** \brief Write as much data as we can to the pipe.
+ *
+ * This function writes the data that was cached in our f_output
+ * buffer to the pipe, as much as possible, then it returns.
+ *
+ * The is_writer() function takes care of returning true if more
+ * data is present in the f_output buffer and thus the process_write()
+ * needs to be called again.
+ */
+void snap_communicator::snap_pipe_buffer_connection::process_write()
+{
+    if(get_socket() != -1)
+    {
+        errno = 0;
+        ssize_t const r(snap_pipe_connection::write(&f_output[f_position], f_output.size() - f_position));
+        if(r > 0)
+        {
+            // some data was written
+            f_position += r;
+            if(f_position >= f_output.size())
+            {
+                f_output.clear();
+                f_position = 0;
+            }
+        }
+        else if(r != 0 && errno != 0 && errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            // connection is considered bad, get rid of it
+            //
+            int const e(errno);
+            SNAP_LOG_ERROR("an error occurred while writing to socket of \"")(f_name)("\" (errno: ")(e)(" -- ")(strerror(e))(").");
+            process_error();
+            return;
+        }
+    }
+    //else -- TBD: should we generate an error when the socket is not valid?
+
+    // process next level too
+    snap_pipe_connection::process_write();
+}
+
+
+/** \brief The process received a hanged up pipe.
+ *
+ * The pipe on the other end was closed, somehow.
+ */
+void snap_communicator::snap_pipe_buffer_connection::process_hup()
+{
+    close();
+
+    snap_pipe_connection::process_hup();
+}
+
+
+
+
+
+
+//////////////////////////////////
+// Snap Pipe Message Connection //
+//////////////////////////////////
+
+
+
+/** \brief Send a message.
+ *
+ * This function sends a message to the process on the other side
+ * of this pipe connection.
+ *
+ * \param[in] message  The message to be sent.
+ */
+void snap_communicator::snap_pipe_message_connection::send_message(snap_communicator_message const & message)
+{
+    // transform the message to a string and write to the socket
+    // the writing is asynchronous so the message is saved in a cache
+    // and transferred only later when the run() loop is hit again
+    //
+    QString const msg(message.to_message());
+    QByteArray const utf8(msg.toUtf8());
+    std::string buf(utf8.data(), utf8.size());
+    buf += "\n";
+    write(buf.c_str(), buf.length());
+}
+
+
+/** \brief Process a line (string) just received.
+ *
+ * The function parses the line as a message (snap_communicator_message)
+ * and then calls the process_message() function if the line was valid.
+ *
+ * \param[in] line  The line of text that was just read.
+ */
+void snap_communicator::snap_pipe_message_connection::process_line(QString const & line)
+{
+    if(line.isEmpty())
+    {
+        return;
+    }
+
+    snap_communicator_message message;
+    if(message.from_message(line))
+    {
+        process_message(message);
+    }
+    else
+    {
+        // TODO: what to do here? This could be that the version changed
+        //       and the messages are not compatible anymore.
+        //
+        SNAP_LOG_ERROR("snap_communicator::snap_pipe_message_connection::process_line() was asked to process an invalid message (")(line)(")");
+    }
+}
+
+
+
+
+
+
+
 ////////////////////////////////
 // Snap TCP Client Connection //
 ////////////////////////////////
@@ -1647,16 +2080,50 @@ snap_communicator::snap_tcp_client_connection::snap_tcp_client_connection(std::s
 }
 
 
-/** \brief Retrieve the socket of this client connection.
+/** \brief Read from the client socket.
  *
- * This function retrieves the socket this client connection. In this case
- * the socket is defined in the bio_client class.
+ * This function reads data from the client socket and copy it in
+ * \p buf. A maximum of \p count bytes are read.
  *
- * \return The socket of this client connection.
+ * \param[in,out] buf  The buffer where the data is read.
+ * \param[in] count  The maximum number of bytes to read.
+ *
+ * \return -1 if an error occurs, zero if no data gets read, a positive
+ *         number representing the number of bytes read otherwise.
  */
-int snap_communicator::snap_tcp_client_connection::get_socket() const
+ssize_t snap_communicator::snap_tcp_client_connection::read(void * buf, size_t count)
 {
-    return bio_client::get_socket();
+    if(get_socket() == -1)
+    {
+        errno = EBADF;
+        return -1;
+    }
+    return bio_client::read(reinterpret_cast<char *>(buf), count);
+}
+
+
+/** \brief Write to the client socket.
+ *
+ * This function writes \p count bytes from \p buf to this
+ * client socket.
+ *
+ * The function can safely be called after the socket was closed, although
+ * it will return -1 and set errno to EBADF in tha case.
+ *
+ * \param[in] buf  The buffer to write to the client connection socket.
+ * \param[in] count  The maximum number of bytes to write on this connection.
+ *
+ * \return -1 if an error occurs, zero if nothing was written, a positive
+ *         number representing the number of bytes successfully written.
+ */
+ssize_t snap_communicator::snap_tcp_client_connection::write(void const * buf, size_t count)
+{
+    if(get_socket() == -1)
+    {
+        errno = EBADF;
+        return -1;
+    }
+    return bio_client::write(reinterpret_cast<char const *>(buf), count);
 }
 
 
@@ -1676,6 +2143,19 @@ int snap_communicator::snap_tcp_client_connection::get_socket() const
 bool snap_communicator::snap_tcp_client_connection::is_reader() const
 {
     return true;
+}
+
+
+/** \brief Retrieve the socket of this client connection.
+ *
+ * This function retrieves the socket this client connection. In this case
+ * the socket is defined in the bio_client class.
+ *
+ * \return The socket of this client connection.
+ */
+int snap_communicator::snap_tcp_client_connection::get_socket() const
+{
+    return bio_client::get_socket();
 }
 
 
@@ -1710,135 +2190,6 @@ snap_communicator::snap_tcp_client_buffer_connection::snap_tcp_client_buffer_con
 }
 
 
-/** \brief Instantiation of process_read().
- *
- * This function reads incoming data from a socket.
- *
- * The function is what manages our low level TCP/IP connection protocol
- * which is to read one line of data (i.e. bytes up to the next '\n'
- * character; note that '\r' are not understood.)
- *
- * Once a complete line of data was read, it is converted to UTF-8 and
- * sent to the next layer using the process_line() function passing
- * the line it just read (without the '\n') to that callback.
- *
- * \sa process_write()
- * \sa process_line()
- */
-void snap_communicator::snap_tcp_client_buffer_connection::process_read()
-{
-    // we read one character at a time until we get a '\n'
-    // since we have a non-blocking socket we can read as
-    // much as possible and then check for a '\n' and keep
-    // any extra data in a cache.
-    //
-    std::vector<char> buffer;
-    buffer.resize(1024);
-    for(;;)
-    {
-        errno = 0;
-        ssize_t const r(::read(get_socket(), &buffer[0], buffer.size()));
-        if(r > 0)
-        {
-            for(ssize_t position(0); position < r; )
-            {
-                std::vector<char>::const_iterator it(std::find(buffer.begin() + position, buffer.begin() + r, '\n'));
-                if(it == buffer.begin() + r)
-                {
-                    // no newline, just add the whole thing
-                    f_line += std::string(&buffer[position], r - position);
-                    break; // do not waste time, we know we are done
-                }
-
-                // retrieve the characters up to the newline
-                // character and process the line
-                //
-                f_line += std::string(&buffer[position], it - buffer.begin() - position);
-                process_line(QString::fromUtf8(f_line.c_str()));
-
-                // done with that line
-                f_line.clear();
-
-                // we had a newline, we may still have some data
-                // in that buffer; (+1 to skip the '\n' itself)
-                //
-                position = it - buffer.begin() + 1;
-            }
-        }
-        else if(r == 0 || errno == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
-        {
-            // no more data available at this time
-            break;
-        }
-        else //if(r < 0)
-        {
-            // TODO: do something about the error
-            SNAP_LOG_ERROR("an error occured while reading from socket.");
-            remove_from_communicator();
-            break;
-        }
-    }
-
-    // process next level too
-    snap_tcp_client_connection::process_read();
-}
-
-
-/** \brief Instantiation of process_write().
- *
- * This function writes outgoing data to a socket.
- *
- * This function manages our own internal cache, which we use to allow
- * for out of synchronization (non-blocking) output.
- *
- * \sa write()
- * \sa process_read()
- */
-void snap_communicator::snap_tcp_client_buffer_connection::process_write()
-{
-    errno = 0;
-    ssize_t const r(::write(get_socket(), &f_output[f_position], f_output.size() - f_position));
-    if(r > 0)
-    {
-        // some data was written
-        f_position += r;
-        if(f_position >= f_output.size())
-        {
-            f_output.clear();
-            f_position = 0;
-        }
-
-        // process next level too
-        snap_tcp_client_connection::process_write();
-    }
-    else if(r < 0 && errno != 0 && errno != EAGAIN && errno != EWOULDBLOCK)
-    {
-        // connection is considered bad, generate an error
-        //
-        int const e(errno);
-        SNAP_LOG_ERROR("an error occurred while writing to socket of \"")(f_name)("\" (errno: ")(e)(" -- ")(strerror(e))(").");
-        process_error();
-    }
-}
-
-
-/** \brief The hang up event occurred.
- *
- * This function closes the socket and then calls the previous level
- * hang up code which removes this connection from the snap_communicator
- * object it was last added in.
- */
-void snap_communicator::snap_tcp_client_buffer_connection::process_hup()
-{
-    // this connection is dead...
-    //
-    close();
-
-    // process next level too
-    snap_tcp_client_connection::process_hup();
-}
-
-
 /** \brief Write data to the connection.
  *
  * This function can be used to send data to this TCP/IP connection.
@@ -1862,13 +2213,27 @@ void snap_communicator::snap_tcp_client_buffer_connection::process_hup()
  *
  * \param[in] data  The pointer to the buffer of data to be sent.
  * \param[out] length  The number of bytes to send.
+ *
+ * \return The number of bytes that were saved in our buffer, 0 if
+ *         no data was written to the buffer (i.e. the socket is
+ *         closed, length is zero, or data is a null pointer.)
  */
-void snap_communicator::snap_tcp_client_buffer_connection::write(char const * data, size_t length)
+ssize_t snap_communicator::snap_tcp_client_buffer_connection::write(void const * data, size_t length)
 {
-    if(length > 0)
+    if(get_socket() == -1)
     {
-        f_output.insert(f_output.end(), data, data + length);
+        errno = EBADF;
+        return -1;
     }
+
+    if(data != nullptr && length > 0)
+    {
+        char const * d(reinterpret_cast<char const *>(data));
+        f_output.insert(f_output.end(), d, d + length);
+        return length;
+    }
+
+    return 0;
 }
 
 
@@ -1881,7 +2246,144 @@ void snap_communicator::snap_tcp_client_buffer_connection::write(char const * da
  */
 bool snap_communicator::snap_tcp_client_buffer_connection::is_writer() const
 {
-    return !f_output.empty();
+    return get_socket() != -1 && !f_output.empty();
+}
+
+
+/** \brief Instantiation of process_read().
+ *
+ * This function reads incoming data from a socket.
+ *
+ * The function is what manages our low level TCP/IP connection protocol
+ * which is to read one line of data (i.e. bytes up to the next '\n'
+ * character; note that '\r' are not understood.)
+ *
+ * Once a complete line of data was read, it is converted to UTF-8 and
+ * sent to the next layer using the process_line() function passing
+ * the line it just read (without the '\n') to that callback.
+ *
+ * \sa process_write()
+ * \sa process_line()
+ */
+void snap_communicator::snap_tcp_client_buffer_connection::process_read()
+{
+    // we read one character at a time until we get a '\n'
+    // since we have a non-blocking socket we can read as
+    // much as possible and then check for a '\n' and keep
+    // any extra data in a cache.
+    //
+    if(get_socket() != -1)
+    {
+        std::vector<char> buffer;
+        buffer.resize(1024);
+        for(;;)
+        {
+            errno = 0;
+            ssize_t const r(read(&buffer[0], buffer.size()));
+            if(r > 0)
+            {
+                for(ssize_t position(0); position < r; )
+                {
+                    std::vector<char>::const_iterator it(std::find(buffer.begin() + position, buffer.begin() + r, '\n'));
+                    if(it == buffer.begin() + r)
+                    {
+                        // no newline, just add the whole thing
+                        f_line += std::string(&buffer[position], r - position);
+                        break; // do not waste time, we know we are done
+                    }
+
+                    // retrieve the characters up to the newline
+                    // character and process the line
+                    //
+                    f_line += std::string(&buffer[position], it - buffer.begin() - position);
+                    process_line(QString::fromUtf8(f_line.c_str()));
+
+                    // done with that line
+                    f_line.clear();
+
+                    // we had a newline, we may still have some data
+                    // in that buffer; (+1 to skip the '\n' itself)
+                    //
+                    position = it - buffer.begin() + 1;
+                }
+            }
+            else if(r == 0 || errno == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                // no more data available at this time
+                break;
+            }
+            else //if(r < 0)
+            {
+                // TODO: do something about the error
+                int const e(errno);
+                SNAP_LOG_ERROR("an error occurred while reading from socket (errno: ")(e)(" -- ")(strerror(e))(").");
+                process_error();
+                return;
+            }
+        }
+    }
+
+    // process next level too
+    snap_tcp_client_connection::process_read();
+}
+
+
+/** \brief Instantiation of process_write().
+ *
+ * This function writes outgoing data to a socket.
+ *
+ * This function manages our own internal cache, which we use to allow
+ * for out of synchronization (non-blocking) output.
+ *
+ * \sa write()
+ * \sa process_read()
+ */
+void snap_communicator::snap_tcp_client_buffer_connection::process_write()
+{
+    if(get_socket() != -1)
+    {
+        errno = 0;
+        ssize_t const r(snap_tcp_client_connection::write(&f_output[f_position], f_output.size() - f_position));
+        if(r > 0)
+        {
+            // some data was written
+            f_position += r;
+            if(f_position >= f_output.size())
+            {
+                f_output.clear();
+                f_position = 0;
+            }
+        }
+        else if(r < 0 && errno != 0 && errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            // connection is considered bad, generate an error
+            //
+            int const e(errno);
+            SNAP_LOG_ERROR("an error occurred while writing to socket of \"")(f_name)("\" (errno: ")(e)(" -- ")(strerror(e))(").");
+            process_error();
+            return;
+        }
+    }
+
+    // process next level too
+    snap_tcp_client_connection::process_write();
+}
+
+
+/** \brief The hang up event occurred.
+ *
+ * This function closes the socket and then calls the previous level
+ * hang up code which removes this connection from the snap_communicator
+ * object it was last added in.
+ */
+void snap_communicator::snap_tcp_client_buffer_connection::process_hup()
+{
+    // this connection is dead...
+    //
+    close();
+
+    // process next level too
+    snap_tcp_client_connection::process_hup();
 }
 
 
@@ -1944,7 +2446,7 @@ void snap_communicator::snap_tcp_client_message_connection::process_line(QString
     }
     else
     {
-        // TODO: what to do here? This could because the version changed
+        // TODO: what to do here? This could be that the version changed
         //       and the messages are not compatible anymore.
         //
         SNAP_LOG_ERROR("snap_communicator::snap_tcp_server_client_message_reader_connection::process_line() was asked to process an invalid message (")(line)(")");
@@ -1957,7 +2459,7 @@ void snap_communicator::snap_tcp_client_message_connection::process_line(QString
  * This function sends a message to the client on the other side
  * of this connection.
  *
- * \param[in] message  The message to be processed.
+ * \param[in] message  The message to be sent.
  */
 void snap_communicator::snap_tcp_client_message_connection::send_message(snap_communicator_message const & message)
 {
@@ -2065,6 +2567,58 @@ snap_communicator::snap_tcp_server_client_connection::snap_tcp_server_client_con
 snap_communicator::snap_tcp_server_client_connection::~snap_tcp_server_client_connection()
 {
     close();
+}
+
+
+/** \brief Read data from the TCP server client socket.
+ *
+ * This function reads as much data up to the specified amount
+ * in \p count. The read data is saved in \p buf.
+ *
+ * \param[in,out] buf  The buffer where the data gets read.
+ * \param[in] count  The maximum number of bytes to read in buf.
+ *
+ * \return The number of bytes read or -1 if an error occurred.
+ */
+ssize_t snap_communicator::snap_tcp_server_client_connection::read(void * buf, size_t count)
+{
+    if(f_socket == -1)
+    {
+        errno = EBADF;
+        return -1;
+    }
+    return ::read(f_socket, buf, count);
+}
+
+
+/** \brief Write data to this connection's socket.
+ *
+ * This function writes up to \p count bytes of data from \p buf
+ * to this connection's socket.
+ *
+ * \warning
+ * This write function may not always write all the data you are
+ * trying to send to the remote connection. If you want to make
+ * sure that all your data is written to the other connection,
+ * you want to instead use the snap_tcp_server_client_buffer_connection
+ * which overloads the write() function and saves the data to be
+ * written to the socket in a buffer. The snap communicator run
+ * loop is then responsible for sending all the data.
+ *
+ * \param[in] buf  The buffer of data to be written to the socket.
+ * \param[in] count  The number of bytes the caller wants to write to the
+ *                   conneciton.
+ *
+ * \return The number of bytes written to the socket or -1 if an error occurred.
+ */
+ssize_t snap_communicator::snap_tcp_server_client_connection::write(void const * buf, size_t count)
+{
+    if(f_socket == -1)
+    {
+        errno = EBADF;
+        return -1;
+    }
+    return ::write(f_socket, buf, count);
 }
 
 
@@ -2198,20 +2752,30 @@ void snap_communicator::snap_tcp_server_client_connection::set_addr(std::string 
  */
 std::string snap_communicator::snap_tcp_server_client_connection::get_addr() const
 {
-    char buf[INET_ADDRSTRLEN];
-    char const * r;
+    size_t const max_length(std::max(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1);
+
+// in release mode this should not be dynamic (although the syntax is so
+// the warning would happen), but in debug it is likely an alloca()
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvla"
+    char buf[max_length];
+#pragma GCC diagnostic pop
+
+    char const * r(nullptr);
 
     if(f_address.sa_family == AF_INET)
     {
-        r = inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in const &>(f_address).sin_addr, buf, INET_ADDRSTRLEN);
+        r = inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in const &>(f_address).sin_addr, buf, max_length);
     }
     else
     {
-        r = inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 const &>(f_address).sin6_addr, buf, INET_ADDRSTRLEN);
+        r = inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 const &>(f_address).sin6_addr, buf, max_length);
     }
 
     if(r == nullptr)
     {
+        int const e(errno);
+        SNAP_LOG_FATAL("inet_ntop() could not convert IP address (errno: ")(e)(" -- ")(strerror(e))(").");
         throw snap_communicator_runtime_error("snap_tcp_server_client_connection::get_addr(): inet_ntop() could not convert IP address properly.");
     }
 
@@ -2252,116 +2816,20 @@ snap_communicator::snap_tcp_server_client_buffer_connection::snap_tcp_server_cli
 }
 
 
-/** \brief Read and process as much data as possible.
+/** \brief Tells that this connection is a writer when we have data to write.
  *
- * This function reads as much incoming data as possible and processes
- * it.
+ * This function checks to know whether there is data to be writen to
+ * this connection socket. If so then the function returns true. Otherwise
+ * it just returns false.
  *
- * \todo
- * Look into a way, if possible to have a single instantiation since
- * as far as I know this code matches the one written in the
- * process_read() of the snap_tcp_client_buffer_connection class.
+ * This happens whenever you called the write() function and our cache
+ * is not empty yet.
+ *
+ * \return true if there is data to write to the socket, false otherwise.
  */
-void snap_communicator::snap_tcp_server_client_buffer_connection::process_read()
+bool snap_communicator::snap_tcp_server_client_buffer_connection::is_writer() const
 {
-    // we read one character at a time until we get a '\n'
-    // since we have a non-blocking socket we can read as
-    // much as possible and then check for a '\n' and keep
-    // any extra data in a cache.
-    //
-    std::vector<char> buffer;
-    buffer.resize(1024);
-    for(;;)
-    {
-        errno = 0;
-        ssize_t const r(::read(get_socket(), &buffer[0], buffer.size()));
-        if(r > 0)
-        {
-            for(ssize_t position(0); position < r; )
-            {
-                std::vector<char>::const_iterator it(std::find(buffer.begin() + position, buffer.begin() + r, '\n'));
-                if(it == buffer.begin() + r)
-                {
-                    // no newline, just add the whole thing
-                    f_line += std::string(&buffer[position], r - position);
-                    break; // do not waste time, we know we are done
-                }
-
-                // retrieve the characters up to the newline
-                // character and process the line
-                //
-                f_line += std::string(&buffer[position], it - buffer.begin() - position);
-                process_line(QString::fromUtf8(f_line.c_str()));
-
-                // done with that line
-                f_line.clear();
-
-                // we had a newline, we may still have some data
-                // in that buffer; (+1 to skip the '\n' itself)
-                //
-                position = it - buffer.begin() + 1;
-            }
-        }
-        else if(r == 0 || errno == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
-        {
-            // no more data available at this time
-            break;
-        }
-        else //if(r < 0)
-        {
-            // TODO: do something about the error
-            SNAP_LOG_ERROR("an error occured while reading from socket.");
-            remove_from_communicator();
-            break;
-        }
-    }
-}
-
-
-/** \brief Write to the connection's socket.
- *
- * This function writes as much data as possible to the
- * connection's socket.
- */
-void snap_communicator::snap_tcp_server_client_buffer_connection::process_write()
-{
-    errno = 0;
-    ssize_t r(::write(get_socket(), &f_output[f_position], f_output.size() - f_position));
-    if(r > 0)
-    {
-        // some data was written
-        f_position += r;
-        if(f_position >= f_output.size())
-        {
-            f_output.clear();
-            f_position = 0;
-        }
-
-        // process next level too
-        snap_tcp_server_client_connection::process_write();
-    }
-    else if(r != 0 && errno != 0 && errno != EAGAIN && errno != EWOULDBLOCK)
-    {
-        // connection is considered bad, get rid of it
-        //
-        int const e(errno);
-        SNAP_LOG_ERROR("an error occurred while writing to socket of \"")(f_name)("\" (errno: ")(e)(" -- ")(strerror(e))(").");
-        process_error();
-    }
-}
-
-
-/** \brief The remote used hanged up.
- *
- * This function makes sure that the connection gets closed properly.
- */
-void snap_communicator::snap_tcp_server_client_buffer_connection::process_hup()
-{
-    // this connection is dead...
-    //
-    close();
-
-    remove_from_communicator();
+    return get_socket() != -1 && !f_output.empty();
 }
 
 
@@ -2383,29 +2851,150 @@ void snap_communicator::snap_tcp_server_client_buffer_connection::process_hup()
  * \param[in] data  The pointer to the buffer of data to be sent.
  * \param[out] length  The number of bytes to send.
  */
-void snap_communicator::snap_tcp_server_client_buffer_connection::write(char const * data, size_t length)
+ssize_t snap_communicator::snap_tcp_server_client_buffer_connection::write(void const * data, size_t length)
 {
-    if(length > 0)
+    if(get_socket() == -1)
     {
-        f_output.insert(f_output.end(), data, data + length);
+        errno = EBADF;
+        return -1;
     }
+
+    if(data != nullptr && length > 0)
+    {
+        char const * d(reinterpret_cast<char const *>(data));
+        f_output.insert(f_output.end(), d, d + length);
+        return length;
+    }
+
+    return 0;
 }
 
 
-/** \brief Tells that this connection is a writer when we have data to write.
+/** \brief Read and process as much data as possible.
  *
- * This function checks to know whether there is data to be writen to
- * this connection socket. If so then the function returns true. Otherwise
- * it just returns false.
+ * This function reads as much incoming data as possible and processes
+ * it.
  *
- * This happens whenever you called the write() function and our cache
- * is not empty yet.
+ * If the input includes a newline character ('\n') then this function
+ * calls the process_line() callback which can further process that
+ * line of data.
  *
- * \return true if there is data to write to the socket, false otherwise.
+ * \todo
+ * Look into a way, if possible, to have a single instantiation since
+ * as far as I know this code matches the one written in the
+ * process_read() of the snap_tcp_client_buffer_connection and
+ * the snap_pipe_buffer_connection classes.
  */
-bool snap_communicator::snap_tcp_server_client_buffer_connection::is_writer() const
+void snap_communicator::snap_tcp_server_client_buffer_connection::process_read()
 {
-    return !f_output.empty();
+    // we read one character at a time until we get a '\n'
+    // since we have a non-blocking socket we can read as
+    // much as possible and then check for a '\n' and keep
+    // any extra data in a cache.
+    //
+    if(get_socket() != -1)
+    {
+        std::vector<char> buffer;
+        buffer.resize(1024);
+        for(;;)
+        {
+            errno = 0;
+            ssize_t const r(read(&buffer[0], buffer.size()));
+            if(r > 0)
+            {
+                for(ssize_t position(0); position < r; )
+                {
+                    std::vector<char>::const_iterator it(std::find(buffer.begin() + position, buffer.begin() + r, '\n'));
+                    if(it == buffer.begin() + r)
+                    {
+                        // no newline, just add the whole thing
+                        f_line += std::string(&buffer[position], r - position);
+                        break; // do not waste time, we know we are done
+                    }
+
+                    // retrieve the characters up to the newline
+                    // character and process the line
+                    //
+                    f_line += std::string(&buffer[position], it - buffer.begin() - position);
+                    process_line(QString::fromUtf8(f_line.c_str()));
+
+                    // done with that line
+                    f_line.clear();
+
+                    // we had a newline, we may still have some data
+                    // in that buffer; (+1 to skip the '\n' itself)
+                    //
+                    position = it - buffer.begin() + 1;
+                }
+            }
+            else if(r == 0 || errno == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                // no more data available at this time
+                break;
+            }
+            else //if(r < 0)
+            {
+                int const e(errno);
+                SNAP_LOG_ERROR("an error occurred while reading from socket (errno: ")(e)(" -- ")(strerror(e))(").");
+                process_error();
+                return;
+            }
+        }
+    }
+
+    // process next level too
+    snap_tcp_server_client_connection::process_read();
+}
+
+
+/** \brief Write to the connection's socket.
+ *
+ * This function implementation writes as much data as possible to the
+ * connection's socket.
+ */
+void snap_communicator::snap_tcp_server_client_buffer_connection::process_write()
+{
+    if(get_socket() != -1)
+    {
+        errno = 0;
+        ssize_t const r(snap_tcp_server_client_connection::write(&f_output[f_position], f_output.size() - f_position));
+        if(r > 0)
+        {
+            // some data was written
+            f_position += r;
+            if(f_position >= f_output.size())
+            {
+                f_output.clear();
+                f_position = 0;
+            }
+        }
+        else if(r != 0 && errno != 0 && errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            // connection is considered bad, get rid of it
+            //
+            int const e(errno);
+            SNAP_LOG_ERROR("an error occurred while writing to socket of \"")(f_name)("\" (errno: ")(e)(" -- ")(strerror(e))(").");
+            process_error();
+            return;
+        }
+    }
+
+    // process next level too
+    snap_tcp_server_client_connection::process_write();
+}
+
+
+/** \brief The remote used hanged up.
+ *
+ * This function makes sure that the connection gets closed properly.
+ */
+void snap_communicator::snap_tcp_server_client_buffer_connection::process_hup()
+{
+    // this connection is dead...
+    //
+    close();
+
+    snap_tcp_server_client_connection::process_hup();
 }
 
 
@@ -2514,6 +3103,7 @@ public:
             : snap_tcp_server_client_message_connection(socket)
             , f_client(client)
         {
+            set_name("snap_tcp_client_permanent_message_connection_impl messager");
         }
 
         // snap_connection implementation
@@ -2560,7 +3150,7 @@ public:
 
         /** \brief This signal was emitted.
          *
-         * This function get called whenever the thread is just about to
+         * This function gets called whenever the thread is just about to
          * quit. Calling f_thread.is_running() may still return true when
          * you get in the 'thread_done()' callback. However, an
          * f_thread.stop() will return very quickly.
@@ -2628,8 +3218,13 @@ public:
                 // we cannot directly create the right type of
                 // object otherwise...)
                 //
-                tcp_client_server::bio_client::pointer_t tcp_connection(new tcp_client_server::bio_client(f_address, f_port, f_mode));
-                f_socket = dup(tcp_connection->get_socket());
+                f_tcp_connection.reset(new tcp_client_server::bio_client(f_address, f_port, f_mode));
+
+                // we make a copy of the socket because we may
+                // be using a thread and the variable has to be
+                // atomic, which f_socket is
+                //
+                f_socket = f_tcp_connection->get_socket();
             }
             catch(tcp_client_server::tcp_client_server_runtime_error const & e)
             {
@@ -2720,11 +3315,29 @@ public:
         }
 
 
+        /** \brief Close the connection.
+         *
+         * This function closes the connection. Since the f_tcp_connection
+         * holds the socket to the remote server, we have get this function
+         * called in order to completely disconnect.
+         *
+         * \note
+         * This function does not clear the f_last_error parameter so it
+         * can be read later.
+         */
+        void close()
+        {
+            f_tcp_connection.reset();
+            f_socket = -1;
+        }
+
+
     private:
         snap_tcp_client_permanent_message_connection_impl * f_client_impl;
         std::string const                                   f_address;
         int const                                           f_port;
         tcp_client_server::bio_client::mode_t const         f_mode;
+        tcp_client_server::bio_client::pointer_t            f_tcp_connection;
         std::atomic<int>                                    f_socket; // = -1 -- must be done in constructor
         std::string                                         f_last_error;
     };
@@ -2753,6 +3366,25 @@ public:
         //, f_messager(nullptr) -- auto-init
         //, f_message_cache() -- auto-init
     {
+    }
+
+
+    /** \brief Destroy the permanent message connection.
+     *
+     * This function makes sure that the messager was lost.
+     */
+    ~snap_tcp_client_permanent_message_connection_impl()
+    {
+        // to make sure we can lose the messager, first we want to be sure
+        // that we do not have a thread running
+        //
+        f_thread.stop();
+
+        // although the message variable is deleted, it would not get
+        // removed from the snap communicator if we were not doing
+        // it explicitly
+        //
+        lose_messager();
     }
 
 
@@ -2859,6 +3491,10 @@ public:
         {
             f_messager.reset(new messager(f_client, f_thread_runner.get_socket()));
 
+            // add the messager to the communicator
+            //
+            snap_communicator::instance()->add_connection(f_messager);
+
             // if some signals were cached, process them immediately
             //
             while(!f_message_cache.empty())
@@ -2867,6 +3503,8 @@ public:
                 f_message_cache.erase(f_message_cache.begin());
             }
 
+            // let the client know we are now connected
+            //
             f_client->process_connected();
         }
     }
@@ -2911,7 +3549,15 @@ public:
      */
     void lose_messager()
     {
-        f_messager.reset();
+        if(f_messager)
+        {
+            snap_communicator::instance()->remove_connection(f_messager);
+            f_messager.reset();
+
+            // just the messager does not close the TCP connection because
+            // we have a copy in the thread runner
+            f_thread_runner.close();
+        }
     }
 
 
@@ -2926,6 +3572,15 @@ private:
 
 
 /** \brief Initializes this TCP client message connection.
+ *
+ * This implementation creates what we call a permanent connection.
+ * Such a connection may fail once in a while. In such circumstances,
+ * the class automatically requests for a reconnection (see various
+ * parameters in the regard below.) However, this causes one issue:
+ * by default, the connection just never ends. When you are about
+ * ready to close the connection, you must call the mark_done()
+ * function first. This will tell the various error functions to
+ * drop this connection instead of restarting it after a small pause.
  *
  * This constructor makes sure to initialize the timer and saves
  * the address, port, mode, pause, and use_thread parameters.
@@ -2968,63 +3623,6 @@ snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client
 }
 
 
-/** \brief Internal timeout callback implementation.
- *
- * This callback implements the guts of this class: it attempts to connect
- * to the specified address and port, optionally after creating a thread
- * so the attempt can happen asynchroneously.
- *
- * When the connection fails, the timer is used to try again pause
- * microseconds later (pause as specified in the constructor).
- *
- * When a connection succeeds, the timer is disabled until you detect
- * an error while using the connection and re-enable the timer.
- *
- * \warning
- * This function changes the timeout delay to the pause amount
- * as defined with the constructor. If you want to change that
- * amount, you can do so an any point after this function call
- * using the set_timeout_delay() function. If the pause parameter
- * was set to -1, then the timeout never gets changed.
- */
-void snap_communicator::snap_tcp_client_permanent_message_connection::process_timeout()
-{
-    // change the timeout delay although we will not use it immediately
-    // if we start the thread or attempt an immediate connection, but
-    // that way the user can change it by calling set_timeout_delay()
-    // at any time after the first process_timeout() call
-    //
-    if(f_pause > 0)
-    {
-        set_timeout_delay(f_pause);
-        f_pause = -1;
-    }
-
-    if(f_use_thread)
-    {
-        // in this case we create a thread, run it and know whether the
-        // connection succeeded only when the thread tells us it did
-        //
-        f_impl->background_connect();
-
-        // we started the thread successfully, so block the timer
-        //
-        set_enable(false);
-    }
-    else
-    {
-        f_impl->connect();
-
-        // if it worked, stop the timer
-        //
-        if(f_message_connection)
-        {
-            set_enable(false);
-        }
-    }
-}
-
-
 /** \brief Attempt to send a message to this connection.
  *
  * If the connection is currently enabled, the message is sent immediately.
@@ -3046,6 +3644,85 @@ bool snap_communicator::snap_tcp_client_permanent_message_connection::send_messa
 }
 
 
+/** \brief Call once you are done with a permanent connection.
+ *
+ * This function lets the permanent connection know that you are done with
+ * it. It is very important to call this function before you send the last
+ * message to the server. For example, the snapbackend tool will do:
+ *
+ * \code
+ *      f_messager->mark_done();
+ *      f_messager->send_message(stop_message);
+ * \endcode
+ *
+ * That way the next HUP error is properly interpreted as "we are done".
+ * Otherwise, a HUP is interpreted as a lost connection and since this
+ * is a permanent connection, it simply restarts the process and reconnects
+ * to the server.
+ */
+void snap_communicator::snap_tcp_client_permanent_message_connection::mark_done()
+{
+    f_done = true;
+}
+
+
+/** \brief Internal timeout callback implementation.
+ *
+ * This callback implements the guts of this class: it attempts to connect
+ * to the specified address and port, optionally after creating a thread
+ * so the attempt can happen asynchroneously.
+ *
+ * When the connection fails, the timer is used to try again pause
+ * microseconds later (pause as specified in the constructor).
+ *
+ * When a connection succeeds, the timer is disabled until you detect
+ * an error while using the connection and re-enable the timer.
+ *
+ * \warning
+ * This function changes the timeout delay to the pause amount
+ * as defined with the constructor. If you want to change that
+ * amount, you can do so an any point after this function call
+ * using the set_timeout_delay() function. If the pause parameter
+ * was set to -1, then the timeout never gets changed.
+ * However, you should not use a permanent message timer as your
+ * own or you will interfer with the internal use of the timer.
+ */
+void snap_communicator::snap_tcp_client_permanent_message_connection::process_timeout()
+{
+    // change the timeout delay although we will not use it immediately
+    // if we start the thread or attempt an immediate connection, but
+    // that way the user can change it by calling set_timeout_delay()
+    // at any time after the first process_timeout() call
+    //
+    if(f_pause > 0)
+    {
+        set_timeout_delay(f_pause);
+        f_pause = -1;
+    }
+
+    if(f_use_thread)
+    {
+        // in this case we create a thread, run it and know whether the
+        // connection succeeded only when the thread tells us it did
+        //
+        if(f_impl->background_connect())
+        {
+            // we started the thread successfully, so block the timer
+            //
+            set_enable(false);
+        }
+    }
+    else
+    {
+        // the success is noted when we receive a call to
+        // process_connected(); there we do set_enable(false)
+        // so the timer stops
+        //
+        f_impl->connect();
+    }
+}
+
+
 /** \brief Process an error.
  *
  * When an error occurs, we restart the timer so we can attempt to reconnect
@@ -3061,8 +3738,15 @@ bool snap_communicator::snap_tcp_client_permanent_message_connection::send_messa
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::process_error()
 {
-    f_impl->lose_messager();
-    set_enable(true);
+    if(f_done)
+    {
+        snap_timer::process_error();
+    }
+    else
+    {
+        f_impl->lose_messager();
+        set_enable(true);
+    }
 }
 
 
@@ -3075,14 +3759,21 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_er
  * implementation or enable the timer yourselves.
  *
  * \warning
- * This function does not call the snap_timer::process_error() function
+ * This function does not call the snap_timer::process_hup() function
  * which means that this connection is not automatically removed from
  * the snapcommunicator object on failures.
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::process_hup()
 {
-    f_impl->lose_messager();
-    set_enable(true);
+    if(f_done)
+    {
+        snap_timer::process_hup();
+    }
+    else
+    {
+        f_impl->lose_messager();
+        set_enable(true);
+    }
 }
 
 
@@ -3095,14 +3786,34 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_hu
  * implementation or enable the timer yourselves.
  *
  * \warning
- * This function does not call the snap_timer::process_error() function
+ * This function does not call the snap_timer::process_invalid() function
  * which means that this connection is not automatically removed from
  * the snapcommunicator object on failures.
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::process_invalid()
 {
+    if(f_done)
+    {
+        snap_timer::process_invalid();
+    }
+    else
+    {
+        f_impl->lose_messager();
+        set_enable(true);
+    }
+}
+
+
+/** \brief Make sure that the messager connection gets removed.
+ *
+ * This function makes sure that the messager sub-connection also gets
+ * removed from the snap communicator. Otherwise it would lock the system
+ * since connections are saved in the snap communicator object as shared
+ * pointers.
+ */
+void snap_communicator::snap_tcp_client_permanent_message_connection::connection_removed()
+{
     f_impl->lose_messager();
-    set_enable(true);
 }
 
 
@@ -3133,10 +3844,12 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_co
  * REGISTER to the snapcommunicator system and thus implements this
  * function.
  *
- * The default implementation does nothing.
+ * The default implementation makes sure that the timer gets turned off
+ * so we do not try to reconnect every minute or so.
  */
 void snap_communicator::snap_tcp_client_permanent_message_connection::process_connected()
 {
+    set_enable(false);
 }
 
 
@@ -3290,6 +4003,10 @@ void snap_communicator::snap_udp_server_message_connection::process_read()
             // we received a valid message, process it
             process_message(message);
         }
+        else
+        {
+            SNAP_LOG_ERROR("snap_communicator::snap_udp_server_message_connection::process_read() was asked to process an invalid message (")(udp_message)(")");
+        }
     }
 }
 
@@ -3384,6 +4101,8 @@ bool snap_communicator::add_connection(snap_connection::pointer_t connection)
 
     f_connections.push_back(connection);
 
+    connection->connection_added();
+
     return true;
 }
 
@@ -3406,6 +4125,8 @@ bool snap_communicator::remove_connection(snap_connection::pointer_t connection)
     }
 
     f_connections.erase(it);
+
+    connection->connection_removed();
 
     return true;
 }

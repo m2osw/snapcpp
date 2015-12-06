@@ -166,6 +166,8 @@ public:
         virtual void                process_error();
         virtual void                process_hup();
         virtual void                process_invalid();
+        virtual void                connection_added();
+        virtual void                connection_removed();
 
     private:
         friend snap_communicator;
@@ -241,6 +243,69 @@ public:
         int                         f_pipe[2];      // pipes
     };
 
+    class snap_pipe_connection
+        : public snap_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_pipe_connection>    pointer_t;
+
+                                    snap_pipe_connection();
+                                    ~snap_pipe_connection();
+
+        virtual ssize_t             read(void * buf, size_t count);
+        virtual ssize_t             write(void const * buf, size_t count);
+        void                        close();
+
+        // snap_connection implementation
+        virtual bool                is_reader() const;
+        virtual int                 get_socket() const;
+
+    private:
+        pid_t                       f_parent;       // the process that created these pipes (read/write to 0 if getpid() == f_parent, read/write to 1 if getpid() != f_parent)
+        int                         f_socket[2];    // socket pair
+    };
+
+    class snap_pipe_buffer_connection
+        : public snap_pipe_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_pipe_buffer_connection>    pointer_t;
+
+        // snap::snap_communicator::snap_connection
+        virtual bool                is_writer() const;
+
+        // snap::snap_communicator::snap_pipe_connection implementation
+        virtual ssize_t             write(void const * data, size_t length);
+        virtual void                process_read();
+        virtual void                process_write();
+        virtual void                process_hup();
+
+        // new callback
+        virtual void                process_line(QString const & line) = 0;
+
+    private:
+        std::string                 f_line; // do NOT use QString because UTF-8 would break often... (since we may only receive part of messages)
+        std::vector<char>           f_output;
+        size_t                      f_position = 0;
+    };
+
+    class snap_pipe_message_connection
+        : public snap_pipe_buffer_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_pipe_message_connection>    pointer_t;
+
+        void                        send_message(snap_communicator_message const & message);
+
+        // snap_tcp_server_client_buffer_connection implementation
+        virtual void                process_line(QString const & line);
+
+        // new callback
+        virtual void                process_message(snap_communicator_message const & message) = 0;
+
+    private:
+    };
+
     class snap_tcp_client_connection
         : public snap_connection
         , public tcp_client_server::bio_client
@@ -249,6 +314,9 @@ public:
         typedef std::shared_ptr<snap_tcp_client_connection>    pointer_t;
 
                                     snap_tcp_client_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+
+        virtual ssize_t             read(void * buf, size_t count);
+        virtual ssize_t             write(void const * buf, size_t count);
 
         // snap_connection implementation
         virtual bool                is_reader() const;
@@ -280,6 +348,8 @@ public:
                                     snap_tcp_server_client_connection(int socket);
         virtual                     ~snap_tcp_server_client_connection();
 
+        virtual ssize_t             read(void * buf, size_t count);
+        virtual ssize_t             write(void const * buf, size_t count);
         void                        close();
 
         // snap_connection implementation
@@ -305,12 +375,11 @@ public:
 
                                     snap_tcp_server_client_buffer_connection(int socket);
 
-        void                        write(char const * data, size_t length);
-
         // snap::snap_communicator::snap_connection
         virtual bool                is_writer() const;
 
         // snap::snap_communicator::snap_tcp_server_client_connection implementation
+        virtual ssize_t             write(void const * data, size_t length);
         virtual void                process_read();
         virtual void                process_write();
         virtual void                process_hup();
@@ -351,9 +420,8 @@ public:
 
                                     snap_tcp_client_buffer_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
 
-        void                        write(char const * data, size_t length);
-
         // snap::snap_communicator::snap_tcp_client_connection implementation
+        virtual ssize_t             write(void const * data, size_t length);
         virtual bool                is_writer() const;
         virtual void                process_read();
         virtual void                process_write();
@@ -390,16 +458,19 @@ public:
     public:
         typedef std::shared_ptr<snap_tcp_client_permanent_message_connection>    pointer_t;
 
-        static int64_t const        DEFAULT_PAUSE_BEFORE_RECONNECTING = 60 * 1000000LL;  // 1 minute
+        static int64_t const        DEFAULT_PAUSE_BEFORE_RECONNECTING = 60LL * 1000000LL;  // 1 minute
 
                                     snap_tcp_client_permanent_message_connection(std::string const & address, int port, tcp_client_server::bio_client::mode_t mode = tcp_client_server::bio_client::mode_t::MODE_PLAIN, int64_t const pause = DEFAULT_PAUSE_BEFORE_RECONNECTING, bool const use_thread = true);
 
         bool                        send_message(snap_communicator_message const & message, bool cache = false);
+        void                        mark_done();
 
         // snap_connection implementation
+        virtual void                process_timeout();
         virtual void                process_error();
         virtual void                process_hup();
         virtual void                process_invalid();
+        virtual void                connection_removed();
 
         // new callbacks
         virtual void                process_message(snap_communicator_message const & message) = 0;
@@ -407,14 +478,11 @@ public:
         virtual void                process_connected();
 
     private:
-        // snap_connection implementation
-        virtual void                process_timeout();
-
         std::shared_ptr<snap_tcp_client_permanent_message_connection_impl>
-                                                        f_impl;
-        int64_t                                         f_pause;
-        bool const                                      f_use_thread;
-        snap_tcp_client_message_connection::pointer_t   f_message_connection;
+                                    f_impl;
+        int64_t                     f_pause = -1;
+        bool const                  f_use_thread = true;
+        bool                        f_done = false;
     };
 
     class snap_udp_server_connection

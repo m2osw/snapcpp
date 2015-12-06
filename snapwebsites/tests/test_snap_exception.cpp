@@ -23,6 +23,7 @@
 //
 
 #include "snap_exception.h"
+
 #include "log.h"
 #include "qstring_stream.h"
 #include "not_reached.h"
@@ -43,7 +44,7 @@ int main(int /*argc*/, char * /*argv*/[])
         throw snap::snap_exception( "This is an exception!" );
         snap::NOTREACHED();
     }
-    catch( snap::snap_exception& except )
+    catch( snap::snap_exception & except )
     {
         SNAP_LOG_INFO() << "Caught snap exception [" << except.what() << "].";
     }

@@ -4125,7 +4125,7 @@ void snap_child::connect_cassandra()
  * \param[in] table_name  The name of the table to create.
  * \param[in] comment  The comment to attach to the table.
  */
-QtCassandra::QCassandraTable::pointer_t snap_child::create_table(QString const& table_name, QString const& comment)
+QtCassandra::QCassandraTable::pointer_t snap_child::create_table(QString const & table_name, QString const & comment)
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
@@ -5766,7 +5766,7 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name
  * \param[in] name  The name of the parameter to save.
  * \param[in] value  The new value for this parameter.
  */
-void snap_child::set_site_parameter(QString const& name, QtCassandra::QCassandraValue const& value)
+void snap_child::set_site_parameter(QString const & name, QtCassandra::QCassandraValue const & value)
 {
     // retrieve site table if not there yet
     if(!f_site_table)
@@ -8440,89 +8440,72 @@ snap_child::country_name_t const *snap_child::get_countries()
 }
 
 
-/** \brief Send a PING message to the specified UDP server.
+/** \brief Send the backend_process() signal to all plugins.
  *
- * This function sends a PING message (4 bytes) to the specified
- * UDP server. This is used after you saved data in the Cassandra
- * cluster to wake up a background process which can then "slowly"
- * process the data further.
+ * This function sends the server::backend_process() signal to all
+ * the currently registered plugins.
  *
- * Remember that UDP is not reliable so we do not in any way
- * guarantee that this goes anywhere. The function returns no
- * feedback at all. We do not wait for a reply since at the time
- * we send the message the listening server may be busy. The
- * idea of this ping is just to make sure that if the server is
- * sleeping at that time, it wakes up sooner rather than later
- * so it can immediately start processing the data we just added
- * to Cassandra.
+ * This is called by the content plugin whenever the action is set
+ * to "snapbackend" which is the default when no action was specified
+ * and someone started the snapbackend process:
  *
- * The \p message is expected to be a NUL terminated string. The
- * NUL is not sent across. At this point most of our servers
- * accept a PING message to wake up and start working on new
- * data.
- *
- * The \p name parameter is the name of a variable in the server
- * configuration file.
- *
- * \param[in] name  The name of the configuration variable used to read the IP and port
- * \param[in] message  The message to send, "PING" by default.
+ * \code
+ *      snapbackend
+ *        [or]
+ *      snapbackend --action snapbackend
+ * \endcode
  */
-void snap_child::udp_ping(char const * name, char const * message)
+void snap_child::backend_process()
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
-    server->udp_ping(name, message);
+    server->backend_process();
 }
 
 
-/** \brief Create a UDP server that receives udp_ping() messages.
+/** \brief Send a PING message to the specified service.
  *
- * This function is used to receive PING messages from the udp_ping()
- * function. Other messages can also be sent such as RSET and STOP.
+ * This function sends a PING message to the specified service.
+ * This is used to wake up a backend process after you saved
+ * data in the Cassandra cluster. That backend can then "slowly"
+ * process the data further.
  *
- * The server is expected to be used with the recv() or timed_recv()
- * functions to wait for a message and act accordingly. A server
- * that makes use of these pings is expected to be waiting for some
- * data which, once available requires additional processing. The
- * server that handles the row data sends the PING to the server.
- * For example, the sendmail plugin just saves the email data in
- * the Cassandra database, then it sends a PING to the sendmail
- * backend process. That backend process wakes up and actually
- * processes the email by sending it to the mail server.
+ * The message is sent using a UDP packet. It is sent to the
+ * Snap! Communicator running on the same server as this
+ * child.
  *
- * \param[in] name  The name of the configuration variable used to read the IP and port
+ * Remember that UDP is not reliable so we do not in any way
+ * guarantee that this goes anywhere. The function returns no
+ * feedback at all. We do not wait for a reply since at the time
+ * we send the message the listening server may be busy. The
+ * idea of this ping is just to make sure that if the backend is
+ * sleeping at the time, it wakes up sooner rather than later
+ * so it can immediately start processing the data we just added
+ * to Cassandra.
+ *
+ * The \p service_name is the name of the backend as it appears
+ * when you run the following command:
+ *
+ * \code
+ *      snapinit --list
+ * \endcode
+ *
+ * At time of writing, we have the following backends: "images::images",
+ * "list::pagelist", and "sendmail::sendmail".
+ *
+ * \param[in] service_name  The name of the backend (service) to ping.
  */
-snap_child::udp_server_t snap_child::udp_get_server( char const *name )
+void snap_child::udp_ping(char const * service_name)
 {
-    if(!name)
+    server::pointer_t server( f_server.lock() );
+    if(!server)
     {
-        throw snap_logic_exception("name pointer is nullptr");
+        throw snap_logic_exception("server pointer is nullptr");
     }
-
-    try
-    {
-        server::pointer_t server( f_server.lock() );
-        if(!server)
-        {
-            throw snap_logic_exception("server pointer is nullptr");
-        }
-        return server::udp_get_server( server->get_parameter(name) );
-    }
-    catch( const std::runtime_error& runtime_error )
-    {
-        SNAP_LOG_FATAL() << "Runtime error caught: '" << runtime_error.what() << "'. Cannot connect to server for name '" << name << "'!";
-    }
-    catch( ... )
-    {
-        SNAP_LOG_FATAL() << "Unknown error caught. Cannot connect to server for name '" << name << "'!";
-    }
-
-    exit(1);
-    NOTREACHED();
-    return snap_child::udp_server_t();
+    server->udp_ping_server(service_name, f_uri.get_uri());
 }
 
 

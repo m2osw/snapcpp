@@ -80,7 +80,7 @@ public:
     virtual void        bootstrap(snap_child * snap);
 
     // server signals
-    void                on_register_backend_action(server::backend_action::map_t & actions);
+    void                on_register_backend_action(server::backend_action_set & actions);
 
     // server::backend_action implementation
     virtual void        on_backend_action(QString const & action);

@@ -47,6 +47,7 @@ enum class name_t
     SNAP_NAME_DOMAINS,          // Cassandra Table used for domains
     SNAP_NAME_WEBSITES,         // Cassandra Table used for websites
     SNAP_NAME_SITES,            // Cassandra Table used for sites (one site per row)
+    SNAP_NAME_BACKEND,          // Cassandra Table used to know where we are with backends
 
     // names used by core (server & snap_child)
     SNAP_NAME_CORE_ADMINISTRATOR_EMAIL,
@@ -70,6 +71,7 @@ enum class name_t
     SNAP_NAME_CORE_SITE_NAME,
     SNAP_NAME_CORE_SITE_READY,
     SNAP_NAME_CORE_SITE_SHORT_NAME,
+    SNAP_NAME_CORE_SNAPBACKEND,
     SNAP_NAME_CORE_STATUS_HEADER,
     SNAP_NAME_CORE_USER_COOKIE_NAME,
     SNAP_NAME_CORE_X_POWERED_BY_HEADER
@@ -160,11 +162,22 @@ public:
     class backend_action
     {
     public:
-        typedef QMap<QString, backend_action *>     map_t;
-
         virtual                 ~backend_action() {}
-        virtual char const *    get_signal_name(QString const & action) const;
         virtual void            on_backend_action(QString const & action) = 0;
+    };
+
+    class backend_action_set
+    {
+    public:
+        void                    add_action(QString const & action, plugins::plugin * p);
+        bool                    has_action(QString const & action) const;
+        void                    execute_action(QString const & action);
+        QString                 get_plugin_name(QString const & action);
+        void                    display();
+
+    private:
+        typedef QMap<QString, backend_action *> actions_map_t;
+        actions_map_t           f_actions;
     };
 
     class accessible_flag_t
@@ -226,7 +239,6 @@ public:
     void                backend();
     int                 cassandra_port() const { return f_cassandra_port; }
     QString const &     cassandra_host() const { return f_cassandra_host; }
-    void                udp_ping(char const * name, char const * message = "PING");
     void                capture_zombies(pid_t child_pid);
     void                process_message(snap_communicator_message const & message);
 
@@ -234,8 +246,7 @@ public:
 
     std::string         servername() const;
 
-    static udp_server_t udp_get_server ( QString const & udp_addr_port );
-    static void         udp_ping_server( QString const & udp_addr_port, char const *message = "PING" );
+    void                udp_ping_server( QString const & service, QString const & uri );
 
 #ifdef SNAP_NO_FORK
     bool nofork() const;
@@ -249,7 +260,8 @@ public:
     SNAP_SIGNAL_WITH_MODE(define_locales, (QString & locales), (locales), NEITHER);
     SNAP_SIGNAL_WITH_MODE(process_post, (QString const & url), (url), NEITHER);
     SNAP_SIGNAL_WITH_MODE(execute, (QString const & url), (url), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(register_backend_action, (backend_action::map_t & actions), (actions), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(register_backend_cron, (backend_action_set & actions), (actions), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(register_backend_action, (backend_action_set & actions), (actions), NEITHER);
     SNAP_SIGNAL_WITH_MODE(backend_process, (), (), NEITHER);
     SNAP_SIGNAL_WITH_MODE(save_content, (), (), NEITHER);
     SNAP_SIGNAL_WITH_MODE(xss_filter, (QDomNode & node,
@@ -261,10 +273,6 @@ public:
     SNAP_SIGNAL_WITH_MODE(table_is_accessible, (QString const & table, accessible_flag_t & accessible), (table, accessible), NEITHER);
     SNAP_SIGNAL_WITH_MODE(add_snap_expr_functions, (snap_expr::functions_t & functions), (functions), NEITHER);
     SNAP_SIGNAL_WITH_MODE(output_result, (QString const & uri_path, QByteArray & output), (uri_path, output), NEITHER);
-
-// TODO: temporary function until the event listener is a full class
-//       that listens to snapcommunicator and not directly on a UDP port
-void check_listen_runner();
 
 protected:
                                 server();

@@ -181,13 +181,13 @@ QString canonicalize_neighbors(QString const & neighbors)
             //
             continue;
         }
+        QString address; // no default address for neighbors
+        int port(4040);
+        tcp_client_server::get_addr_port(neighbor, address, port, "tcp");
+
         // TODO: move canonicalization to tcp_client_server so other software
         //       can make use of it
         //
-        QString address;
-        int port;
-        tcp_client_server::get_addr_port(neighbor, address, port, 4040);
-
         if(tcp_client_server::is_ipv4(address.toUtf8().data()))
         {
             // TODO: the inet_pton() does not support all possible IPv4
@@ -710,7 +710,7 @@ private:
  * This class is an implementation of the snap server connection so we can
  * handle new connections from various clients.
  */
-class listener_impl
+class listener
         : public snap::snap_communicator::snap_tcp_server_connection
 {
 public:
@@ -728,7 +728,7 @@ public:
      * \param[in] auto_close  Whether to automatically close the socket once more
      *            needed anymore.
      */
-    listener_impl(snap_communicator_server::pointer_t cs, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
+    listener(snap_communicator_server::pointer_t cs, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
         : snap_tcp_server_connection(addr, port, max_connections, reuse_addr, auto_close)
         , f_communicator_server(cs)
     {
@@ -745,7 +745,7 @@ public:
         {
             // an error occurred, report in the logs
             int const e(errno);
-            SNAP_LOG_ERROR("somehow accept() failed with errno: ")(e);
+            SNAP_LOG_ERROR("somehow accept() failed with errno: ")(e)(" -- ")(strerror(e));
             return;
         }
 
@@ -756,7 +756,13 @@ public:
         //
         connection->set_name("client connection");
 
-        snap::snap_communicator::instance()->add_connection(connection);
+        if(!snap::snap_communicator::instance()->add_connection(connection))
+        {
+            // this should never happens here since each new creates a
+            // new pointer
+            //
+            SNAP_LOG_ERROR("new client connection could not be added the snap_communicator list of clients");
+        }
     }
 
 private:
@@ -890,13 +896,9 @@ void snap_communicator_server::init()
     // on the tcp_server object
     //
     {
-        QString addr("127.0.0.1"); // this default is most certainly wrong
+        QString addr("0.0.0.0"); // the default is quite permissive here...
         int port(4040);
-        QString const listen_info(f_server->get_parameter("listen"));
-        if(!listen_info.isEmpty())
-        {
-            tcp_client_server::get_addr_port(listen_info, addr, port, 4040);
-        }
+        tcp_client_server::get_addr_port(f_server->get_parameter("listen"), addr, port, "tcp");
 
         int max_pending_connections(10);
         QString const max_pending_connections_str(f_server->get_parameter("max_pending_connections"));
@@ -913,7 +915,7 @@ void snap_communicator_server::init()
             }
         }
 
-        f_listener.reset(new listener_impl(shared_from_this(), addr.toUtf8().data(), port, max_pending_connections, true, false));
+        f_listener.reset(new listener(shared_from_this(), addr.toUtf8().data(), port, max_pending_connections, true, false));
         f_listener->set_name("snap communicator listener");
         f_communicator->add_connection(f_listener);
     }
@@ -921,11 +923,7 @@ void snap_communicator_server::init()
     {
         QString addr("127.0.0.1"); // this default should work just fine
         int port(4041);
-        QString const signal_info(f_server->get_parameter("signal"));
-        if(!signal_info.isEmpty())
-        {
-            tcp_client_server::get_addr_port(signal_info, addr, port, 4041);
-        }
+        tcp_client_server::get_addr_port(f_server->get_parameter("signal"), addr, port, "tcp");
 
         f_messager.reset(new messager_impl(shared_from_this(), addr.toUtf8().data(), port));
         f_messager->set_name("snap communicator messager (UDP)");
@@ -942,10 +940,10 @@ void snap_communicator_server::init()
                                                  it != f_all_neighbors.end();
                                                  ++it)
     {
-        QString addr;
+        QString addr; // no default address for neighbors
         int port(4040);
-        QString const ip(it.key());
-        tcp_client_server::get_addr_port(ip, addr, port, 4040);
+        tcp_client_server::get_addr_port(it.key(), addr, port, "tcp");
+
         // TODO: we should never have two entries with the same IP address
         //       (even if the port is different, because you can only have
         //       one snapcommunicator per computer)
@@ -1026,7 +1024,7 @@ void snap_communicator_server::verify_command(connection_impl::pointer_t connect
  */
 void snap_communicator_server::process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message, bool udp)
 {
-    SNAP_LOG_TRACE("SNAP COMMUNICATOR: received a message [")(message.to_message())("]");
+    SNAP_LOG_TRACE("received a message [")(message.to_message())("]");
 
     QString const command(message.get_command());
 
@@ -1041,16 +1039,29 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
     {
         if(f_shutdown)
         {
+            // if the user sent us an UNREGISTER we should not generate a
+            // QUITTING because the UNREGISTER is in reply to our STOP
+            // TBD: we may want to implement the UNREGISTER in this
+            //      situation?
+            //
             if(!udp)
             {
-                // we are shutting down so just send a quick QUTTING reply
-                // letting the other process know about it
-                //
-                snap::snap_communicator_message reply;
-                reply.set_command("QUITTING");
+                if(command != "UNREGISTER")
+                {
+                    // we are shutting down so just send a quick QUTTING reply
+                    // letting the other process know about it
+                    //
+                    snap::snap_communicator_message reply;
+                    reply.set_command("QUITTING");
 
-                verify_command(c, reply);
-                c->send_message(reply);
+                    verify_command(c, reply);
+                    c->send_message(reply);
+                }
+
+                // get rid of that connection now, we don't need any more
+                // messages coming from it
+                //
+                f_communicator->remove_connection(c);
             }
             //else -- UDP message arriving after f_shutdown are ignored
             return;
@@ -2068,12 +2079,8 @@ void snap_communicator_server::shutdown(bool full)
                     c->send_message(reply);
 
                     // we cannot yet remove the connection from the communicator
-                    // or these messages will never be sent... instead we can
-                    // setup a timeout which will be processed immediately if
-                    // we put a very small delay
-                    //
-                    // TBD: why did I think that?!? Was it late?
-                    //c->set_timeout_delay(10);
+                    // or these messages will never be sent... the client is
+                    // expected to reply with UNREGISTER which does the removal
                 }
             }
             // else -- ignore the main TCP and UDP servers which we
@@ -2084,8 +2091,8 @@ void snap_communicator_server::shutdown(bool full)
     // remove the two main servers; we will not respond to any more
     // requests anyway
     //
-    f_communicator->remove_connection(f_listener);
-    f_communicator->remove_connection(f_messager);
+    f_communicator->remove_connection(f_listener);      // TCP/IP
+    f_communicator->remove_connection(f_messager);      // UDP/IP
 }
 
 

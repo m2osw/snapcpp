@@ -51,6 +51,10 @@ SNAP_PLUGIN_EXTENSION_START(content)
  * of all the nodes, see the list of available resources to a website,
  * destroy a page (as in do not even trash it,) etc.
  *
+ * \li snapbackend -- this is a special case which is used to implement
+ *                    the standard CRON backend processes; it calls the
+ *                    server::backend_process() signal and returns
+ *                    immediately after
  * \li resetstatus -- go through all the pages of a website and reset their
  *                    status to Normal. This should be used by programmers
  *                    when they make a mistake and mess up an entry; pages
@@ -80,29 +84,38 @@ SNAP_PLUGIN_EXTENSION_START(content)
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void content::on_register_backend_action(server::backend_action::map_t & actions)
+void content::on_register_backend_action(server::backend_action_set & actions)
 {
-    actions[get_name(name_t::SNAP_NAME_CONTENT_RESETSTATUS)] = this;
-    actions[get_name(name_t::SNAP_NAME_CONTENT_FORCERESETSTATUS)] = this;
-    actions[get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES)] = this;
-    actions[get_name(name_t::SNAP_NAME_CONTENT_DESTROYPAGE)] = this;
-    actions[get_name(name_t::SNAP_NAME_CONTENT_NEWFILE)] = this;
-    actions[get_name(name_t::SNAP_NAME_CONTENT_REBUILDINDEX)] = this;
+    // this first one is a "special case" which is used to run the backend
+    //
+    actions.add_action(snap::get_name(snap::name_t::SNAP_NAME_CORE_SNAPBACKEND), this);
+
+    actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_RESETSTATUS),      this);
+    actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_FORCERESETSTATUS), this);
+    actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES),     this);
+    actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_DESTROYPAGE),      this);
+    actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_NEWFILE),          this);
+    actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_REBUILDINDEX),     this);
 }
 
 
 /** \brief Process various backend tasks.
  *
- * Content backend processes:
+ * The list of backend processes are defined in the
+ * on_register_backend_action() function.
  *
- * \li Reset the status of pages that somehow got a working status
- *     but that status never got reset.
- *
- * \li Check new attachements as those files may be or include viruses.
+ * \param[in] action  The action requested.
  */
 void content::on_backend_action(QString const & action)
 {
-    if(action == get_name(name_t::SNAP_NAME_CONTENT_RESETSTATUS))
+    if(action == snap::get_name(snap::name_t::SNAP_NAME_CORE_SNAPBACKEND))
+    {
+        // special case to handle the standard backend processes that
+        // run through the snapinit CRON mechanism
+        //
+        f_snap->backend_process();
+    }
+    else if(action == get_name(name_t::SNAP_NAME_CONTENT_RESETSTATUS))
     {
         backend_action_reset_status(false);
     }

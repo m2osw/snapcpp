@@ -21,6 +21,7 @@
 
 #include "../test_plugin_suite/test_plugin_suite.h"
 
+#include "snap_backend.h"
 #include "snap_expr.h"
 
 
@@ -38,6 +39,7 @@ enum class name_t
     SNAP_NAME_LIST_LINK,
     SNAP_NAME_LIST_NAME,
     SNAP_NAME_LIST_NAMESPACE,
+    SNAP_NAME_LIST_NEXT_UPDATE,
     SNAP_NAME_LIST_NUMBER_OF_ITEMS,
     SNAP_NAME_LIST_ORDERED_PAGES,
     SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT,
@@ -256,11 +258,11 @@ public:
 
     // server::backend_action implementation
     virtual void        on_backend_action(QString const & action);
-    virtual char const *get_signal_name(QString const & action) const;
 
     // server signals
     void                on_backend_process();
-    void                on_register_backend_action(server::backend_action::map_t & actions);
+    void                on_register_backend_cron(server::backend_action_set & actions);
+    void                on_register_backend_action(server::backend_action_set & actions);
     void                on_attach_to_session();
 
     // layout::layout_content implementation
@@ -311,6 +313,7 @@ private:
     SNAP_TEST_PLUGIN_TEST_DECL(test_add_page_twice)
 
     zpsnap_child_t                          f_snap;
+    snap_backend::zpsnap_backend_t          f_backend;
     QtCassandra::QCassandraTable::pointer_t f_list_table;
     QtCassandra::QCassandraTable::pointer_t f_listref_table;
     snap_expr::expr::expr_map_t             f_check_expressions;

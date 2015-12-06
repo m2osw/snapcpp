@@ -91,12 +91,12 @@ public:
     virtual void        bootstrap(snap_child * snap);
 
     // server::backend_action implementation
-    virtual char const *get_signal_name(QString const & action) const;
     virtual void        on_backend_action(QString const & action);
 
     // server signals
     void                on_attach_to_session();
-    void                on_register_backend_action(server::backend_action::map_t& actions);
+    void                on_register_backend_cron(server::backend_action_set & actions);
+    void                on_register_backend_action(server::backend_action_set & actions);
 
     // links signals
     void                on_modified_link(links::link_info const & src);

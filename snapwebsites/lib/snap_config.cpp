@@ -39,7 +39,7 @@ snap_config::snap_config()
 }
 
 
-QString& snap_config::operator [] ( QString const & name )
+QString & snap_config::operator [] ( QString const & name )
 {
     return f_parameters[name];
 }
@@ -47,7 +47,12 @@ QString& snap_config::operator [] ( QString const & name )
 
 QString snap_config::operator [] ( QString const & name ) const
 {
-    return f_parameters[name];
+    if(f_parameters.contains(name))
+    {
+        return f_parameters[name];
+    }
+
+    return QString();
 }
 
 

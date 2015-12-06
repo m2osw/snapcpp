@@ -73,6 +73,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LIST_NAMESPACE:
         return "list";
 
+    case name_t::SNAP_NAME_LIST_NEXT_UPDATE:
+        return "list::next_update";
+
     case name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS:
         return "list::number_of_items";
 
@@ -1266,6 +1269,7 @@ void list::bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN0(list, "server", server, attach_to_session);
+    SNAP_LISTEN(list, "server", server, register_backend_cron, _1);
     SNAP_LISTEN(list, "server", server, register_backend_action, _1);
     SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(list, "content", content::content, modified_content, _1);
@@ -1598,7 +1602,7 @@ void list::on_attach_to_session()
     if(f_ping_backend)
     {
         // send a PING to the backend
-        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
     }
 }
 
@@ -1842,26 +1846,44 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
 }
 
 
-/** \brief Register the pagelist and standalonelist actions.
+/** \brief Register the pagelist action.
  *
- * This function registers this plugin as supporting the actions:
- *
- * \li pagelist
- * \li processlist
- * \li standalonelist
- * \li resetlists
- * \li resetsite
+ * This function registers this plugin CRON action named pagelist.
  *
  * The "pagelist" is used by the backend to continuously and as fast as
- * possible build lists of pages. It understands PINGs so one can wake
- * this backend up as soon as required.
+ * possible build and update lists of pages.
  *
- * The "standalonelist" is similar to the "pagelist", only it processes
- * a single website.
+ * \param[in,out] actions  The list of supported actions where we add ourselves.
+ */
+void list::on_register_backend_cron(server::backend_action_set & actions)
+{
+    actions.add_action(get_name(name_t::SNAP_NAME_LIST_PAGELIST), this);
+}
+
+
+/** \brief Register the various list actions.
+ *
+ * This function registers this plugin as supporting the following
+ * one time actions:
+ *
+ * \li list::processalllists
+ * \li list::processlist
+ * \li list::resetlists
+ *
+ * The "processalllist" adds all the pages of a website to the 'list'
+ * table. This will force the system to re-check every single page.
+ * In this case, the pages are give a really low priority which means
+ * pretty much all other requests will be worked on first. This is
+ * similar to running "list::resetlists" except that it does not
+ * recompute lists in one go.
+ *
+ * \code
+ * sendbackend http://example.com -a list::processalllists
+ * \endcode
  *
  * The "processlist" expects a URL parameter set to the page to be
- * checked, in other words, the URL to simulate a change to
- * that specific page. This is useful to get the system to re-build
+ * checked, in other words, the URL of a page for which we want to
+ * simulate a change to. This is useful to get the system to re-build
  * lists that may include that page as soon as possible. That being said,
  * it appends it to the existing list of pages to be processed and that
  * list could be (very) long so it may still take a moment before it
@@ -1869,352 +1891,103 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
  * without doing such. The URL may just include the path.
  *
  * \code
- * sendbackend http://example.com -a processlist -p URL=journal/201508
+ * sendbackend http://example.com -a list::processlist -p URL=journal/201508
  * \endcode
  *
- * The "resetlists" goes through the pages marked as lists and delete
+ * The "list::resetlists" goes through the pages marked as lists and delete
  * the existing list scripts (but not the content of the lists.) This
  * will force the list process to recalculate the entire list instead
  * of just a few changes.
  *
- * The "resetsite" adds all the pages to the 'list' table. This will
- * force the system to re-check each time as time allows. In this case
- * the pages are give a really low priority which means pretty much all
- * other requests will be worked on first. This is similar to running
- * "resetlists" except that it does not recompute lists in one go.
- *
- * \note
- * At this time there is a 10 seconds delay between a PING and the
- * processing of the list. This is to make sure that all the data
- * was saved by the main server before running the backend.
+ * \code
+ * sendbackend http://example.com -a list::resetlists
+ * \endcode
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void list::on_register_backend_action(server::backend_action::map_t & actions)
+void list::on_register_backend_action(server::backend_action_set & actions)
 {
-    actions[get_name(name_t::SNAP_NAME_LIST_PAGELIST)] = this;
-    actions[get_name(name_t::SNAP_NAME_LIST_PROCESSLIST)] = this;
-    actions[get_name(name_t::SNAP_NAME_LIST_PROCESSALLLISTS)] = this;
-    actions[get_name(name_t::SNAP_NAME_LIST_STANDALONELIST)] = this;
-    actions[get_name(name_t::SNAP_NAME_LIST_RESETLISTS)] = this;
-}
-
-
-/** \brief Retrieve the name of the signal used by the list plugin.
- *
- * This function returns "pagelist_udp_signal". Note that it says "pagelist"
- * instead of just "list" because the --list command line option already
- * "allocates" the list action name.
- *
- * See also the name_t::SNAP_NAME_LIST_SIGNAL_NAME.
- *
- * \param[in] action  The concerned action.
- *
- * \return The name of the list UDP signal.
- */
-char const * list::get_signal_name(QString const & action) const
-{
-    if(action == get_name(name_t::SNAP_NAME_LIST_PAGELIST))
-    {
-        return get_name(name_t::SNAP_NAME_LIST_SIGNAL_NAME);
-    }
-    return backend_action::get_signal_name(action);
+    actions.add_action(get_name(name_t::SNAP_NAME_LIST_PROCESSALLLISTS), this);
+    actions.add_action(get_name(name_t::SNAP_NAME_LIST_PROCESSLIST),     this);
+    actions.add_action(get_name(name_t::SNAP_NAME_LIST_RESETLISTS),      this);
 }
 
 
 /** \brief Start the page list server.
  *
  * When running the backend the user can ask to run the pagelist
- * server (--action pagelist). This function captures those events.
- * It loops until stopped with a STOP message via the UDP address/port.
- * Note that Ctrl-C won't work because it does not support killing
- * both: the parent and child processes (we do a fork() to create
- * this child.)
+ * server (--cron-action list::pagelist). This function captures those
+ * events. It loops until stopped with a STOP message via the UDP
+ * address/port. Note that Ctrl-C will not work because it does not
+ * support killing both: the parent and child processes (we do a
+ * fork() to create this child.)
  *
- * The loop updates all the lists as required, then it
- * falls asleep until the next UDP PING event received via the
- * "pagelist_udp_signal" IP:Port information. (see get_signal_name().)
+ * The loop updates all the lists as required, then it returns.
+ * The snap_backend object will call us back in 5 minutes or when
+ * a PING is received.
  *
- * Note that because the UDP signals are not 100% reliable, the
- * server actually sleeps for 5 minutes and checks for new pages
- * whether a PING signal was received or not.
- *
- * The lists data is found in the Cassandra cluster and never
- * sent along the UDP signal. This means the UDP signals do not need
- * to be secure.
- *
- * The server should be stopped with the snapsignal tool using the
- * STOP event as follow:
+ * The pagelist backend can be stopped with the snapsignal tool
+ * using the STOP event as follow:
  *
  * \code
- * snapsignal -a pagelist STOP
+ * snapsignal pagelist/STOP
  * \endcode
  *
- * \note
- * The \p action parameter is here because some plugins may
- * understand multiple actions in which case we need to know
- * which action is waking us up.
+ * However, if you are running snapinit, you want to STOP snapinit
+ * instead:
+ *
+ * \code
+ * snapinit stop
+ * \endcode
  *
  * \param[in] action  The action this function is being called with.
  */
 void list::on_backend_action(QString const & action)
 {
-    content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
-    QtCassandra::QCassandraTable::pointer_t cache_table(content_plugin->get_cache_table());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-
     if(action == get_name(name_t::SNAP_NAME_LIST_PAGELIST))
     {
-        snap_backend * backend( dynamic_cast<snap_backend *>(f_snap.get()) );
-        if(backend == nullptr)
+        f_backend = dynamic_cast<snap_backend *>(f_snap.get());
+        if(!f_backend)
         {
-            throw list_exception_no_backend("list.cpp:on_backend_action(): could not determine the snap_backend pointer");
+            throw list_exception_no_backend("list::on_backend_action(): could not determine the snap_backend pointer");
         }
-        backend->create_signal( get_signal_name(action) );
 
-// Test creating just one link (*:*)
-//content::path_info_t list_ipath;
-//list_ipath.set_path("admin");
-//content::path_info_t page_ipath;
-//page_ipath.set_path("user");
-//bool const source_unique(false);
-//bool const destination_unique(false);
-//links::link_info source("list::links_test", source_unique, list_ipath.get_key(), list_ipath.get_branch());
-//links::link_info destination("list::links_test", destination_unique, page_ipath.get_key(), page_ipath.get_branch());
-//links::links::instance()->create_link(source, destination);
-//return;
+        // by default the date limit is 'now + 5 minutes'
+        f_date_limit = f_snap->get_start_date() + 5LL * 60LL * 1000000LL;
 
+        // if we did some work, we want to restart our process again
+        // as soon as possible (although we give other websites a chance
+        // to also get their lists up to date)
+        //
         QString const site_key(f_snap->get_site_key_with_slash());
-        QString const core_plugin_threshold(get_name(snap::name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
-        //QString const last_updated(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED));
-        // loop until stopped
-        for(;;)
+        int const did_work(generate_new_lists(site_key)
+                         | generate_all_lists(site_key));
+
+        // Calculate when we want to be awaken again and transmit that
+        // information to the backend process via the database
+        //
+        int64_t date_limit(f_date_limit - f_snap->get_current_date());
+        if(date_limit < 0
+        || did_work != 0)
         {
-            // once we run for 100 items of 10ms and return to the backend
-            // process, these will not be required since we will have a new
-            // process each time anyway
-            //
-            f_snap->reset_site_table();
-            list_table->clearCache();
-            cache_table->clearCache();
-            content_table->clearCache();
-            branch_table->clearCache();
-            revision_table->clearCache();
-
-            int did_work(0);
-
-            f_snap->init_start_date();
-            //int64_t const start_date(f_snap->get_start_date());
-            // date limit is now + 5 minutes
-            f_date_limit = f_snap->get_start_date() + 5LL * 60LL * 1000000LL;
-
-            // TODO: move this verification to the backend class
-            //
-            // verify that the site is ready, if not, do not process lists yet
-            //
-            QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
-            if(!threshold.nullValue())
-            {
-                // WARNING: Old code assumed that we could work on more than
-                //          one website within a single backend child...
-                //
-                // // work as long as there is work to do
-                // bool worked(false);
-                // int did_work(1);
-                // while(did_work != 0)
-                // {
-                //     did_work = 0;
-                //     QtCassandra::QCassandraRowPredicate row_predicate;
-                //     row_predicate.setCount(1000);
-                //     for(;;)
-                //     {
-                //         list_table->clearCache();
-                //         uint32_t const count(list_table->readRows(row_predicate));
-                //         if(count == 0)
-                //         {
-                //             // no more lists to process
-                //             break;
-                //         }
-                //         QtCassandra::QCassandraRows const rows(list_table->rows());
-                //         for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
-                //                 o != rows.end(); ++o)
-                //         {
-                //             // do not work on standalone websites
-                //             if(!(*o)->exists(get_name(name_t::SNAP_NAME_LIST_STANDALONE)))
-                //             {
-                //                 f_snap->init_start_date();
-                //                 QString const key(QString::fromUtf8(o.key().data()));
-                //                 //if(key.startsWith(site_key))
-                //                 if(key == site_key)
-                //                 {
-                //                     worked = true;
-                //                     did_work |= generate_new_lists(key);
-                //                     did_work |= generate_all_lists(key);
-                //                 }
-                //             }
-
-                //             // quickly end this process if the user requested a stop
-                //             if(backend->stop_received())
-                //             {
-                //                 // clean STOP
-                //                 // we have to exit otherwise we'd get called again with
-                //                 // the next website!?
-                //                 exit(0);
-                //             }
-                //         }
-                //     }
-                // }
-
-                // // if nothing happened (i.e. the list table was empty), we
-                // // still want to run the process once with the site_key as
-                // // the function parameters
-                // if(!worked)
-                // {
-                    did_work |= generate_new_lists(site_key);
-                    did_work |= generate_all_lists(site_key);
-
-                    // TBD -- really required?
-                    // note that also these last 2 calls should not be required
-                    // (since nothing changed in the lists, there is no need
-                    // for it to be checked) -- yet once in a while we miss
-                    // something and having such will probably help
-                // }
-
-                // That scheme makes the list work 24/7 which is not too good
-                // because then it accesses the database constantly... I
-                // think we can have a backend process for that so that way
-                // we can make sure to reset a database once in a while if
-                // it looks like some lists are not up to snuff, but otherwise
-                // we will change the timings when creating some pages.
-                //if(did_work == 0)
-                //{
-                //    // no work, check against the last time we did some
-                //    // work and if long enough since, re-add the entire
-                //    // website to the list table...
-                //    //
-                //    QtCassandra::QCassandraValue last_updated_value(f_snap->get_site_parameter(last_updated));
-                //    int64_t last_time(last_updated_value.safeInt64Value());
-                //    if(start_date - last_time > 15 * 60 * 1000000)
-                //    {
-                //        // re-add the entire website (this is really not
-                //        // efficient, but makes it way surer that things
-                //        // get in lists; note that with the priority
-                //        // scheme it pushes this data at the very end
-                //        // so we should be just fine...)
-                //        add_all_pages_to_list_table(site_key);
-                //    }
-                //}
-                //else
-                //{
-                //    // we did some work, update the time when we last did
-                //    // some work
-                //    //
-                //    QtCassandra::QCassandraValue last_updated_value;
-                //    last_updated_value.setInt64Value(start_date);
-                //    f_snap->set_site_parameter(last_updated, last_updated_value);
-                //}
-            }
-
-            // Stop on error
-            //
-            if( backend->get_error() )
-            {
-                SNAP_LOG_FATAL("list::on_backend_action(): caught a UDP server error");
-                exit(1);
-            }
-
-            // sleep till next PING (but max. 5 minutes)
-            //
-            // Here we want to quit this child process, but we need a
-            // mechanism to let the backend process know whether we did
-            // work or not; if we did work then the backend process
-            // should not go to sleep, instead it should call us back
-            // ASAP so we can finish up with all our lists as quickly
-            // as possible
-            //
-            int64_t date_limit(f_date_limit - f_snap->get_current_date());
-            if(date_limit < 0
-            || did_work != 0)
-            {
-                date_limit = 0;
-            }
-            else if(date_limit > 5LL * 60LL * 1000000LL)
-            {
-                // wait at most 5 min.
-                //
-                // note that should never happen since we start with
-                // "now + 5min." in f_date_limit and only reduce that
-                // value in the loops below
-                //
-                date_limit = 5LL * 60LL * 1000000LL;
-            }
-//SNAP_LOG_WARNING("waiting amount = ")(date_limit / 1000000LL)(" . ")(date_limit % 1000000LL);
-            // we round the time up because otherwise we could get out
-            // of the pop_message() one millisecond too soon and waste
-            // and entire round trip
-            //
-            snap_backend::message_t message;
-            if( backend->pop_message( message, (date_limit + 999) / 1000LL ) )
-            {
-                // quickly end this process if the user requested a stop
-                if(backend->stop_received())
-                {
-                    // clean STOP
-                    // we have to exit otherwise we'd get called again with
-                    // the next website!?
-                    exit(0);
-                }
-
-                // we only understand STOP and PING, so if we did not
-                // receive the STOP message yet, we got a PING (or
-                // at least assume so)
-
-                // Note: I applied a couple of fixes in regard to the
-                //       latency although once we have the proper
-                //       snap_communicator processing, we will need
-                //       yet another fix (i.e. the wait has to be
-                //       reflected there too)
-                //
-                // Because there is a delay of LIST_PROCESSING_LATENCY
-                // between the time when the user generates the PING and
-                // the time we can make use of the data, we sleep here
-                // before processing; note that in most cases that means
-                // the data will be processed very quickly in comparison
-                // to skipping on it now and waiting another 5 minutes
-                // before doing anything on the new data (i.e. at this
-                // time LIST_PROCESSING_LATENCY is only 10 seconds!)
-                //
-                // LIST_PROCESSING_LATENCY is in micro-seconds, whereas
-                // the timespec structure expects nanoseconds
-                // TBD -- should we add 1 sec., just in case?
-                // TBD -- should we check for other UDP packets while
-                //        waiting?
-                //struct timespec wait;
-                //wait.tv_sec = LIST_PROCESSING_LATENCY / 1000000;
-                //wait.tv_nsec = (LIST_PROCESSING_LATENCY % 1000000) * 1000;
-                //nanosleep(&wait, NULL);
-            }
-            // else -- 5 min. time out or we received the STOP message
-
-            // quickly end this process if the user requested a stop
-            if(backend->stop_received())
-            {
-                // clean STOP
-                // we have to exit otherwise we'd get called again with
-                // the next website!?
-                exit(0);
-            }
+            date_limit = f_snap->get_start_date();
         }
-    }
-    else if(action == get_name(name_t::SNAP_NAME_LIST_STANDALONELIST))
-    {
-        // mark the site as a standalone website for its list management
-        QString const site_key(f_snap->get_site_key_with_slash());
-        int8_t const standalone(1);
-        list_table->row(site_key)->cell(get_name(name_t::SNAP_NAME_LIST_STANDALONE))->setValue(standalone);
+        else if(date_limit > 5LL * 60LL * 1000000LL)
+        {
+            // wait at most 5 min. from the start date
+            //
+            // note that should never happen since we start with
+            // "now + 5min." in f_date_limit and only reduce that
+            // value in the loops below
+            //
+            date_limit = f_snap->get_start_date() + 5LL * 60LL * 1000000LL;
+        }
+
+        snap_backend * sb(dynamic_cast<snap_backend *>(f_snap.get()));
+        if(sb != nullptr)
+        {
+            sb->add_uri_for_processing(action, date_limit, site_key);
+        }
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_PROCESSLIST))
     {
@@ -2222,7 +1995,7 @@ void list::on_backend_action(QString const & action)
         content::path_info_t ipath;
         ipath.set_path(url);
         on_modified_content(ipath);
-        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_PROCESSALLLISTS))
     {
@@ -2231,7 +2004,7 @@ void list::on_backend_action(QString const & action)
         // we "process" all the pages that may go in those lists
         //
         add_all_pages_to_list_table(f_snap->get_site_key_with_slash());
-        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_RESETLISTS))
     {
@@ -2240,6 +2013,9 @@ void list::on_backend_action(QString const & action)
         // should be useful only when the code changes in such a way
         // that the current lists may not be 100% correct as they are
         //
+        content::content * content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+
         int64_t const start_date(f_snap->get_start_date());
         content::path_info_t ipath;
         QString const site_key(f_snap->get_site_key_with_slash());
@@ -2315,7 +2091,7 @@ void list::add_all_pages_to_list_table(QString const & site_key)
             // that...)
             //
             // // quickly end this process if the user requested a stop
-            // if(backend->stop_received())
+            // if(f_backend->stop_received())
             // {
             //     // clean STOP
             //     // we have to exit otherwise we'd get called again with

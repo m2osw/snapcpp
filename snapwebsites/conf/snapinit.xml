@@ -153,7 +153,7 @@
     <priority>-10</priority>
     <config>/etc/snapwebsites/snapcommunicator.conf</config>
     <connect>127.0.0.1:4040</connect>
-    <wait>10</wait>
+    <wait>1</wait>
   </service>
   <service name="snapserver" required="required">
     <priority>0</priority>
@@ -162,19 +162,19 @@
   </service>
   <service name="sendmail">
     <command>/usr/bin/snapbackend</command>
-    <options>--action sendmail</options>
+    <options>--cron-action sendmail::sendmail</options>
     <config>/etc/snapwebsites/snapserver.conf</config>
     <recovery>3600</recovery>
   </service>
   <service name="pagelist">
     <command>/usr/bin/snapbackend</command>
-    <options>--action pagelist</options>
+    <options>--cron-action list::pagelist</options>
     <config>/etc/snapwebsites/snapserver.conf</config>
     <recovery>3600</recovery>
   </service>
   <service name="images">
     <command>/usr/bin/snapbackend</command>
-    <options>--action images</options>
+    <options>--cron-action images::images</options>
     <config>/etc/snapwebsites/snapserver.conf</config>
     <recovery>3600</recovery>
   </service>

@@ -23,9 +23,13 @@
 
 #include <sstream>
 
-#include <string.h>
-#include <unistd.h>
 #include <netdb.h>
+#include <netinet/tcp.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "poison.h"
 
@@ -120,14 +124,62 @@ void bio_initialize()
 }
 
 
-
-void bio_deleter(BIO *bio)
+/** \brief Free a BIO object.
+ *
+ * This deleter is used to make sure that the BIO object gets freed
+ * whenever the object holding it gets destroyed.
+ *
+ * Note that deleting a BIO connection calls shutdown() and close()
+ * on the socket. In other words, it hangs up.
+ *
+ * \param[in] bio  The BIO object to be freed.
+ */
+void bio_deleter(BIO * bio)
 {
+    // IMPORTANT NOTE:
+    //
+    //   The following is terribly ugly, unfortunately, the BIO_free_all()
+    //   function does this:
+    //
+    //      shutdown(s, SHUT_RDWR);
+    //      close(s);
+    //
+    //   instead of just the expected close(s). This means it destroys the
+    //   connection. In general, that's not the end of the world, but in our
+    //   case, since we often create a socket in a parent, then fork(),
+    //   the parent or child (whoever wants to close the socket on their
+    //   end) is likely to destroy the socket communication for both
+    //   parties.
+    //
+    //   Now, the good thing is that when applied in the following order,
+    //   the shutdown() does nothing:
+    //
+    //      close(s);
+    //      shutdown(s); // err, ignore
+    //      close(s);    // err, ignore
+    //
+    //   Therefore we force a close ahead of time.
+    //
+    int c;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+    BIO_get_fd(bio, &c);
+#pragma GCC diagnostic pop
+    if(c != -1)
+    {
+        close(c);
+    }
+
     BIO_free_all(bio);
 }
 
 
-void ssl_ctx_deleter(SSL_CTX *ssl_ctx)
+/** \brief Free an SSL_CTX object.
+ *
+ * This deleter is used to make sure that the SSL_CTX object gets
+ * freed whenever the object holding it gets destroyed.
+ */
+void ssl_ctx_deleter(SSL_CTX * ssl_ctx)
 {
     SSL_CTX_free(ssl_ctx);
 }
@@ -801,6 +853,10 @@ int tcp_server::get_last_accepted_socket() const
  * the connection to the server can be obtained even if a secure
  * connection could not be made to work.
  *
+ * \todo
+ * Create another client with BIO_new_socket() so one can create an SSL
+ * connection with a socket retrieved from an accept() call.
+ *
  * \exception tcp_client_server_parameter_error
  * This exception is raised if the \p port parameter is out of range or the
  * IP address is an empty string or otherwise an invalid address.
@@ -857,7 +913,7 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
             }
 
             // verify that the connection worked
-            SSL *ssl(nullptr);
+            SSL * ssl(nullptr);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
             BIO_get_ssl(bio.get(), &ssl);
@@ -969,10 +1025,14 @@ bio_client::~bio_client()
 /** \brief Close the connection.
  *
  * This function closes the connection by losing the f_bio object.
+ *
+ * As we are at it, we also lose the SSL context since we are not going
+ * to use it anymore either.
  */
 void bio_client::close()
 {
     f_bio.reset();
+    f_ssl_ctx.reset();
 }
 
 
@@ -1629,7 +1689,8 @@ bool is_ipv6(char const * ip)
  *
  * The address can either be an IPv4 address followed by a colon and
  * the port number, or an IPv6 address written between square brackets
- * ([::1]) followed by a colon and the port number.
+ * ([::1]) followed by a colon and the port number. We also support
+ * just a port specification as in ":4040".
  *
  * Port numbers are limited to a number between 1 and 65535 inclusive.
  * They can only be specified in base 10.
@@ -1638,80 +1699,118 @@ bool is_ipv6(char const * ip)
  * default the \p default_port parameter is set to zero meaning that
  * it is not specified.)
  *
+ * If the addr_port string is empty, then the addr and port parameters
+ * are not modified, which means you want to define them with defaults
+ * before calling this function.
+ *
  * \exception snapwebsites_exception_invalid_parameters
  * If any parameter is considered invalid (albeit the validity of the
  * address is not checked since it could be a fully qualified domain
  * name) then this exception is raised.
  *
- * \todo
- * Add support for named ports? (i.e. as defined in /etc/services)
- *
  * \param[in] addr_port  The address and port pair.
- * \param[out] addr  The address part, without the square brackets for IPv6
- *             addresses.
- * \param[out] port  The port number (1 to 65535 inclusive.)
- * \param[in] default_port  To render the port specification optional, a
- *            port number.
+ * \param[in,out] addr  The address part, without the square brackets for IPv6
+ *                addresses.
+ * \param[in,out] port  The port number (1 to 65535 inclusive.)
+ * \param[in] protocol  The protocol for the port (i.e. "tcp" or "udp")
  */
-void get_addr_port(QString const & addr_port, QString & addr, int & port, int const default_port)
+void get_addr_port(QString const & addr_port, QString & addr, int & port, char const * protocol)
 {
-    //addr.clear() -- not necessary, we do not return until the address gets defined
-    //port = 0 -- not necessary, we do not return until the port gets defined
-
-    QString port_str;
-    int const bracket(addr_port.lastIndexOf("]"));
+    // if there is a colon, we may have a port or IPv6
+    //
     int const p(addr_port.lastIndexOf(":"));
     if(p != -1)
     {
+        QString port_str;
+
+        // if there is a ']' then we have an IPv6
+        //
+        int const bracket(addr_port.lastIndexOf("]"));
         if(bracket != -1)
         {
-            if(p > bracket)
+            // we must have a starting '[' otherwise it is wrong
+            //
+            if(addr_port[0] != '[')
             {
-                // IPv6 port specification
-                addr = addr_port.mid(1, bracket - 1); // exclude the '[' and ']'
+                SNAP_LOG_FATAL("invalid address/port specification in \"")(addr_port)("\" (missing '[' at the start.)");
+                throw tcp_client_server_parameter_error("get_addr_port(): invalid [IPv6]:port specification, '[' missing.");
+            }
+
+            // extract the address
+            //
+            addr = addr_port.mid(1, bracket - 1); // exclude the '[' and ']'
+
+            // is there a port?
+            //
+            if(p == bracket + 1)
+            {
+                // IPv6 port specification is just after the ']'
+                //
                 port_str = addr_port.mid(p + 1); // ignore the ':'
             }
-            else
+            else if(bracket != addr_port.length() - 1)
             {
-                SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
-                throw tcp_client_server_parameter_error("server::get_addr_port(): invalid [IPv6]:port specification, port missing.");
+                // the ']' is not at the very end when no port specified
+                //
+                SNAP_LOG_FATAL("invalid address/port specification in \"")(addr_port)("\" (']' is not at the end)");
+                throw tcp_client_server_parameter_error("get_addr_port(): invalid [IPv6]:port specification, ']' not at the end.");
             }
         }
         else
         {
             // IPv4 port specification
-            addr = addr_port.mid(0, p); // ignore the ':'
+            //
+            if(p > 0)
+            {
+                // if p is zero, then we just had a port (:4040)
+                //
+                addr = addr_port.mid(0, p); // ignore the ':'
+            }
             port_str = addr_port.mid(p + 1); // ignore the ':'
         }
 
-        // TODO: add support for named ports (i.e. read from /etc/services)
+        // if port_str is still empty, we had an IPv6 without port
         //
-
-        bool ok(false);
-        port = port_str.toInt(&ok, 10); // force base 10
-        if(!ok)
+        if(!port_str.isEmpty())
         {
-            SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
-            throw tcp_client_server_parameter_error("server::get_addr_port(): invalid addr:port specification, port number is not valid.");
+            // first check whether the port is a number
+            //
+            bool ok(false);
+            port = port_str.toInt(&ok, 10); // force base 10
+            if(!ok)
+            {
+                // not a valid number, try to get it from /etc/services
+                //
+                struct servent const * s(getservbyname(port_str.toUtf8().data(), protocol));
+                if(s == nullptr)
+                {
+                    SNAP_LOG_FATAL("invalid port specification in \"")(addr_port)("\", port not a decimal number nor a known service name.");
+                    throw tcp_client_server_parameter_error("get_addr_port(): invalid addr:port specification, port number or name is not valid.");
+                }
+                port = s->s_port;
+            }
         }
     }
-    else if(default_port > 0)
+    else if(!addr_port.isEmpty())
     {
+        // just an IPv4 address specified, no port
+        //
         addr = addr_port;
-        port = default_port;
     }
-    else
+
+    // the address could end up being the empty string here
+    if(addr.isEmpty())
     {
-        SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
-        throw tcp_client_server_parameter_error("server::get_addr_port(): invalid addr:port specification, port missing and no default provided.");
+        SNAP_LOG_FATAL("invalid address/port specification in \"")(addr_port)("\", address is empty.");
+        throw tcp_client_server_parameter_error("get_addr_port(): invalid addr:port specification, address is empty (this generally happens when a request is done with no default address).");
     }
 
     // finally verify that the port is in range
     if(port <= 0
     || port > 65535)
     {
-        SNAP_LOG_FATAL("invalid address/port specification in ")(addr_port);
-        throw tcp_client_server_parameter_error("server::get_addr_port(): invalid addr:port specification, port number is out of bounds (1 .. 65535).");
+        SNAP_LOG_FATAL("invalid address/port specification in \"")(addr_port)("\", port out of bounds.");
+        throw tcp_client_server_parameter_error("get_addr_port(): invalid addr:port specification, port number is out of bounds (1 .. 65535).");
     }
 }
 

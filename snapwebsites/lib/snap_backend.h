@@ -17,6 +17,7 @@
 #pragma once
 
 #include "snap_child.h"
+#include "snap_communicator.h"
 #include "snap_thread.h"
 
 namespace snap
@@ -28,59 +29,43 @@ public:
     typedef controlled_vars::ptr_auto_init<snap_backend>    zpsnap_backend_t;
     typedef std::string                                     message_t;
 
-                snap_backend( server_pointer_t s );
-    virtual     ~snap_backend();
+                                snap_backend( server_pointer_t s );
+    virtual                     ~snap_backend();
 
-    void        create_signal( std::string const & name );
+    void                        create_signal( std::string const & name );
 
-    bool        is_message_pending() const;
-    bool        pop_message( message_t & message, int const wait_secs = 1 );
-    bool        get_error() const;
-    bool        stop_received() const;
+    bool                        stop_received() const;
+    void                        add_uri_for_processing(QString const & cron_action, int64_t date, QString const & website_uri);
+    void                        remove_processed_uri(QString const & action, QString const & website_uri);
 
-    void        run_backend();
+    void                        run_backend();
+
+    // internal functions that need to be public...
+    // (until we create friends)
+    //
+    void                        process_tick();
+    bool                        process_timeout();
+    void                        process_message(snap::snap_communicator_message const & message);
+    void                        process_child_message(snap::snap_communicator_message const & message);
+    void                        capture_zombies(pid_t pid);
 
 private:
-    typedef QSharedPointer<udp_client_server::udp_server>   udp_signal_t;
+    void                        process_action();
+    bool                        process_backend_uri(QString const & uri);
+    void                        stop(bool quitting);
+    std::string                 get_signal_name_from_action();
+    bool                        is_cron_action(QString const & action);
+    bool                        is_ready(QString const & uri);
 
-    class udp_monitor
-        : public snap_thread::snap_runner
-    {
-    public:
-        typedef controlled_vars::ptr_auto_init<udp_monitor>     zp_t;
-
-        udp_monitor();
-
-        // initialization
-        udp_signal_t get_signal() const;
-        void set_signal( udp_signal_t signal );
-        void set_backend( zpsnap_backend_t backend );
-
-        // current status
-        bool get_error() const;
-        bool stop_received() const;
-        bool is_message_pending() const;
-        bool pop_message( message_t & message, int const wait_secs );
-
-        // from snap_thread::snap_runner
-        virtual void run();
-
-    private:
-        mutable snap_thread::snap_fifo<message_t>   f_mutex_and_message_fifo;
-
-        zpsnap_backend_t                    f_backend;
-        udp_signal_t                        f_udp_signal;
-        controlled_vars::flbool_t           f_error;
-        controlled_vars::flbool_t           f_stop_received;
-    };
-
-    //mutable snap_thread::snap_mutex f_mutex;
-
-    udp_monitor                 f_monitor;
-    snap_thread                 f_thread;
-
-    void                        process_backend_uri(QString const & uri);
-    std::string                 get_signal_name_from_action(QString const & action);
+    pid_t                                   f_parent_pid = -1;
+    QtCassandra::QCassandraTable::pointer_t f_sites_table;
+    QtCassandra::QCassandraTable::pointer_t f_backend_table;
+    QString                                 f_action;
+    QString                                 f_website;
+    bool                                    f_cron_action = false;
+    bool                                    f_stop_received = false;
+    bool                                    f_emit_warning = true;
+    bool                                    f_pinged = false;
 };
 
 

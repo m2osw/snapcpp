@@ -145,17 +145,17 @@ namespace
 class snap_cgi
 {
 public:
-    snap_cgi( int argc, char * argv[] );
-    ~snap_cgi();
+                        snap_cgi( int argc, char * argv[] );
+                        ~snap_cgi();
 
-    int error(char const * code, char const * msg);
-    bool verify();
-    int process();
+    int                 error(char const * code, char const * msg);
+    bool                verify();
+    int                 process();
 
 private:
     advgetopt::getopt   f_opt;
-    int                 f_port;     // snap server port
-    std::string         f_address;  // snap server address
+    int                 f_port = -1;    // snap server port
+    std::string         f_address;      // snap server address
 };
 
 

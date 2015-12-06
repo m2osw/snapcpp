@@ -169,18 +169,19 @@ target_link_libraries(test_ip_strings
 )
 
 
-add_executable(test_snap_udp_message
-    test_snap_udp_message.cpp
-)
-add_dependencies( test_snap_udp_message test_prereqs )
-target_link_libraries(test_snap_udp_message
-    snapwebsites
-    ${QTCASSANDRA_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
-    dl
-)
+# This one is retired because we now use snap_communicator
+##add_executable(test_snap_udp_message
+##    test_snap_udp_message.cpp
+##)
+##add_dependencies( test_snap_udp_message test_prereqs )
+##target_link_libraries(test_snap_udp_message
+##    snapwebsites
+##    ${QTCASSANDRA_LIBRARIES}
+##    ${LIBTLD_LIBRARIES}
+##    ${QT_LIBRARIES}
+##    ${THRIFT_LIBRARIES}
+##    dl
+##)
 
 
 add_executable(test_quoted_printable
@@ -227,9 +228,12 @@ target_link_libraries(test_snap_version
 
 
 
+##
+## Check catching and displaying of snap exceptions
+## (because we render the stack)
+##
 add_executable( test_snap_exception
 	test_snap_exception.cpp
-	test_snap_exception.conf
 )
 add_dependencies( test_snap_exception test_prereqs )
 target_link_libraries(test_snap_exception
@@ -240,7 +244,37 @@ target_link_libraries(test_snap_exception
 	${THRIFT_LIBRARIES}
 	dl
 )
-file( INSTALL test_snap_exception.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+
+
+##
+## Test a client/server via snap_communicator to see whether shutdown()
+## has the same effect in the parent as it has in the client
+##
+add_executable( test_shutdown_server
+	test_shutdown_server.cpp
+)
+add_dependencies( test_shutdown_server test_prereqs )
+target_link_libraries(test_shutdown_server
+	snapwebsites
+	${QTCASSANDRA_LIBRARIES}
+	${LIBTLD_LIBRARIES}
+	${QT_LIBRARIES}
+	${THRIFT_LIBRARIES}
+	dl
+)
+
+add_executable( test_shutdown_client
+	test_shutdown_client.cpp
+)
+add_dependencies( test_shutdown_client test_prereqs )
+target_link_libraries(test_shutdown_client
+	snapwebsites
+	${QTCASSANDRA_LIBRARIES}
+	${LIBTLD_LIBRARIES}
+	${QT_LIBRARIES}
+	${THRIFT_LIBRARIES}
+	dl
+)
 
 
 ##

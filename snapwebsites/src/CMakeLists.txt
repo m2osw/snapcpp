@@ -354,27 +354,6 @@ install(
 )
 
 
-# new version until it can become the main snapinit in place of
-# the "old" version; it is very similar, only driven by an XML
-# file and snapcommunicator
-project(new_snapinit)
-
-add_executable(${PROJECT_NAME}
-    new_snapinit.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    snapwebsites
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
 
 
 ################################################################################

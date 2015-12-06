@@ -21,6 +21,8 @@
 // to the server. The server quits when it receives the STOP message.
 //
 
+/////////////////// Retired since we have snap_communicator now and that has its own tests
+
 #include "snapwebsites.h"
 
 int main(int argc, char *argv[])

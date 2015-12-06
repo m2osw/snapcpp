@@ -248,12 +248,11 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_emails_table();
 
     // server signals
-    void                    on_register_backend_action(server::backend_action::map_t & actions);
+    void                    on_register_backend_cron(server::backend_action_set & actions);
     void                    on_replace_token(content::path_info_t & cpath, QDomDocument & xml, filter::filter::token_info_t & token);
 
     // server::backend_action implementation
     virtual void            on_backend_action(QString const & action);
-    virtual char const *    get_signal_name(QString const & action) const;
 
     // layout::layout_content
     virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
@@ -273,7 +272,6 @@ public:
 
 private:
     void                    content_update(int64_t variables_timestamp);
-    void                    clear_caches();
     void                    check_bounced_emails();
     void                    reorganize_bounce_email(QByteArray const & column_key, QString const & bounce_report);
     void                    process_bounce_email(QByteArray const & column_key, QString const & bounce_report, email const * e);

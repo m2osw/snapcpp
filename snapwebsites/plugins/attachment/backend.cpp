@@ -68,9 +68,9 @@ SNAP_PLUGIN_EXTENSION_START(attachment)
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void attachment::on_register_backend_action(server::backend_action::map_t & actions)
+void attachment::on_register_backend_action(server::backend_action_set & actions)
 {
-    actions[get_name(name_t::SNAP_NAME_ATTACHMENT_ACTION_EXTRACTFILE)] = this;
+    actions.add_action(get_name(name_t::SNAP_NAME_ATTACHMENT_ACTION_EXTRACTFILE), this);
 }
 
 
