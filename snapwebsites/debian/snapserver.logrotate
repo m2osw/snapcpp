@@ -1,11 +1,125 @@
+# Snap Server
 /var/log/snapwebsites/snapserver.log {
-        weekly
-		su snapwebsites snapwebsites
-        missingok
-        rotate 10
-        postrotate
-                /usr/bin/snapsignal -a snapserver NLOG
-        endscript
-        compress
-        notifempty
+    weekly
+    maxsize 10Mb
+    su snapwebsites snapwebsites
+    missingok
+    rotate 10
+    postrotate
+        /usr/bin/snapsignal snapserver/LOG
+    endscript
+    compress
+    delaycompress
+    notifempty
 }
+/var/log/snapwebsites/secure/snapserver.log {
+    weekly
+    maxage 92
+    maxsize 10Mb
+    su snapwebsites snapwebsites
+    missingok
+    rotate 5
+    postrotate
+        /usr/bin/snapsignal snapserver/LOG
+    endscript
+    compress
+    delaycompress
+    notifempty
+    shred
+    nomail
+}
+
+# Snap Communicator
+/var/log/snapwebsites/snapcommunicator.log {
+    weekly
+    maxsize 10Mb
+    su snapwebsites snapwebsites
+    missingok
+    rotate 10
+    postrotate
+        /usr/bin/snapsignal snapcommunicator/LOG
+    endscript
+    compress
+    delaycompress
+    notifempty
+}
+/var/log/snapwebsites/secure/snapcommunicator.log {
+    weekly
+    maxage 92
+    maxsize 10Mb
+    su snapwebsites snapwebsites
+    missingok
+    rotate 5
+    postrotate
+        /usr/bin/snapsignal snapcommunicator/LOG
+    endscript
+    compress
+    delaycompress
+    notifempty
+    shred
+    nomail
+}
+
+# Snap Init
+/var/log/snapwebsites/snapinit.log {
+    weekly
+    maxsize 10Mb
+    su snapwebsites snapwebsites
+    missingok
+    rotate 10
+    postrotate
+        /usr/bin/snapsignal snapinit/LOG
+    endscript
+    compress
+    delaycompress
+    notifempty
+}
+/var/log/snapwebsites/secure/snapinit.log {
+    weekly
+    maxage 92
+    maxsize 10Mb
+    su snapwebsites snapwebsites
+    missingok
+    rotate 5
+    postrotate
+        /usr/bin/snapsignal snapinit/LOG
+    endscript
+    compress
+    delaycompress
+    notifempty
+    shred
+    nomail
+}
+
+# Logging Server
+/var/log/snapwebsites/server.log {
+    weekly
+    maxsize 10Mb
+    #su snapwebsites snapwebsites -- TBD
+    missingok
+    rotate 10
+    #postrotate -- TODO
+    #    /usr/bin/snapsignal loggingserver/LOG
+    #endscript
+    compress
+    delaycompress
+    notifempty
+}
+/var/log/snapwebsites/secure/secure.log {
+    weekly
+    maxage 92
+    maxsize 10Mb
+    #su snapwebsites snapwebsites -- TBD
+    missingok
+    rotate 5
+    #postrotate -- TODO
+    #    /usr/bin/snapsignal loggingserver/LOG
+    #endscript
+    compress
+    delaycompress
+    notifempty
+    shred
+    nomail
+}
+
+# vim: ts=4 sw=4 et

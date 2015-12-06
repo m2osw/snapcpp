@@ -27,11 +27,22 @@ then
 			snapwebsites
 	fi
 
-	# make the snapwebsites log folder
+	# make the snapwebsites log directory
+    # make sure that apache2 can write in there because of snapcgi.log
+    # (note: we should look into whether we could use root:adm like apache2)
 	#
 	SNAPLOGDIR=/var/log/snapwebsites
 	mkdir -p ${SNAPLOGDIR}
-	chown snapwebsites.snapwebsites ${SNAPLOGDIR}
+	chown snapwebsites.www-data ${SNAPLOGDIR}
+    chmod 775 ${SNAPLOGDIR}
+
+    # the secure log directory must be writable by www-data for snapcgi.log
+    # (note: we should look into whether we could use root:adm like apache2)
+    #
+	SECURELOGDIR=/var/log/snapwebsites/secure
+	mkdir -p ${SECURELOGDIR}
+	chown snapwebsites.www-data ${SECURELOGDIR}
+    chmod 770 ${SECURELOGDIR}
 
 	# we need a place to write data not directly stored in the cassandra db
 	#
@@ -58,7 +69,7 @@ then
             /usr/bin/snaplayout ${FULLPATH}/*
         done
         /usr/bin/snapserver --no-log --add-host
-        echo "Basic database is complete, but you must add domains and websites using the snap-manager tool."
+        echo "Basic database is complete, but you must add domains and websites using the snapmanager tool."
     fi
 fi
 
