@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2014 Made to Order Software Corp.
+#      Copyright (c) 2011-2015 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -34,7 +34,12 @@
 ##
 install(
     FILES
+        # log4cplus properties
+        snapwatchdog.properties
+
+        # snap watchdog configuration files
         snapwatchdog.conf
+
     DESTINATION
         share/snapwebsites/conf
 )

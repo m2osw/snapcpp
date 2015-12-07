@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap watchdog daemon
-// Copyright (C) 2011-2014  Made to Order Software Corp.
+// Copyright (C) 2011-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,10 +61,258 @@ extern QString g_next_register_filename;
 }
 
 
-namespace watchdog
+namespace
 {
 
 
+/** \brief The snap communicator singleton.
+ *
+ * This variable holds a copy of the snap communicator singleton.
+ * It is a null pointer until the watchdog() function is called.
+ */
+snap_communicator::pointer_t g_communicator;
+
+
+/** \brief The timer to produce ticks once every minute.
+ *
+ * This timer is the one used to know when to gather the data again.
+ *
+ * By default the interval is set to one minute, although it is possible
+ * to change that amount in the configuration file.
+ */
+class tick_timer
+        : public snap::snap_communicator::snap_timer
+{
+public:
+    typedef std::shared_ptr<tick_timer>        pointer_t;
+
+                                tick_timer( watchdog_server::pointer_t ws, int64_t interval );
+
+    // snap::snap_communicator::snap_timer implementation
+    virtual void                process_timeout();
+
+private:
+    watchdog_server::pointer_t  f_watchdog_server;
+};
+
+
+/** \brief The tick timer.
+ *
+ * We create one tick timer. It is saved in this variable if needed.
+ */
+tick_timer::pointer_t             g_tick_timer;
+
+
+/** \brief Initializes the timer with a pointer to the snap backend.
+ *
+ * The constructor saves the pointer of the snap_backend object so
+ * it can later be used when the process times out.
+ *
+ * The timer is setup to trigger immediately after creation.
+ * This is what starts the snap backend process.
+ *
+ * \param[in] sb  A pointer to the snap_backend object.
+ */
+tick_timer::tick_timer(watchdog_server::pointer_t ws, int64_t interval)
+    : snap_timer(interval)
+    , f_watchdog_server(ws)
+{
+    set_name("watchdog_server tick_timer");
+
+    // start right away, but we do not want to use snap_timer(0)
+    // because otherwise we will not get ongoing ticks as expected
+    //
+    set_timeout_date(snap_communicator::get_current_date());
+}
+
+
+/** \brief The timeout happened.
+ *
+ * This function gets called once every minute (although the interval can
+ * be changed, it is 1 minute by default.) Whenever it happens, the
+ * watchdog runs all the plugins once.
+ */
+void tick_timer::process_timeout()
+{
+    f_watchdog_server->process_tick();
+}
+
+
+
+
+
+/** \brief Handle messages from the Snap Communicator server.
+ *
+ * This class is an implementation of the TCP client message connection
+ * so we can handle incoming messages.
+ */
+class messager
+        : public snap_communicator::snap_tcp_client_permanent_message_connection
+{
+public:
+    typedef std::shared_ptr<messager>    pointer_t;
+
+                                messager(watchdog_server::pointer_t ws, std::string const & addr, int port);
+
+    // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
+    virtual void                process_message(snap::snap_communicator_message const & message);
+    virtual void                process_connection_failed(std::string const & error_message);
+    virtual void                process_connected();
+
+private:
+    // this is owned by a server function so no need for a smart pointer
+    watchdog_server::pointer_t  f_watchdog_server;
+};
+
+
+/** \brief The messager.
+ *
+ * We create only one messager. It is saved in this variable.
+ */
+messager::pointer_t             g_messager;
+
+
+/** \brief The messager initialization.
+ *
+ * The messager is a connection to the snapcommunicator server.
+ *
+ * In most cases we receive STOP and LOG messages from it. We implement
+ * a few other messages too (HELP, READY...)
+ *
+ * We use a permanent connection so if the snapcommunicator restarts
+ * for whatever reason, we reconnect automatically.
+ *
+ * \param[in] ws  The snap watchdog server we are listening for.
+ * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
+ * \param[in] port  The port to listen on (4040).
+ */
+messager::messager(watchdog_server::pointer_t ws, std::string const & addr, int port)
+    : snap_tcp_client_permanent_message_connection(
+                addr,
+                port,
+                tcp_client_server::bio_client::mode_t::MODE_PLAIN,
+                snap_communicator::snap_tcp_client_permanent_message_connection::DEFAULT_PAUSE_BEFORE_RECONNECTING,
+                false) // do not use a separate thread, we do many fork()'s
+    , f_watchdog_server(ws)
+{
+    set_name("watchdog_server messager");
+}
+
+
+/** \brief Pass messages to the Snap Backend.
+ *
+ * This callback is called whenever a message is received from
+ * Snap! Communicator. The message is immediately forwarded to the
+ * watchdog_server object which is expected to process it and reply
+ * if required.
+ *
+ * \param[in] message  The message we just received.
+ */
+void messager::process_message(snap::snap_communicator_message const & message)
+{
+    f_watchdog_server->process_message(message);
+}
+
+
+/** \brief The messager could not connect to snapcommunicator.
+ *
+ * This function is called whenever the messagers fails to
+ * connect to the snapcommunicator server. This could be
+ * because snapcommunicator is not running or because the
+ * information given to the snapwatchdog is wrong...
+ *
+ * With snapinit the snapcommunicator should always already
+ * be running so this error should not happen once everything
+ * is properly setup.
+ *
+ * \param[in] error_message  An error message.
+ */
+void messager::process_connection_failed(std::string const & error_message)
+{
+    SNAP_LOG_ERROR("connection to snapcommunicator failed (")(error_message)(")");
+
+    // also call the default function, just in case
+    snap_tcp_client_permanent_message_connection::process_connection_failed(error_message);
+}
+
+
+/** \brief The connection was established with Snap! Communicator.
+ *
+ * Whenever the connection is establied with the Snap! Communicator,
+ * this callback function is called.
+ *
+ * The messager reacts by REGISTERing "snapwatchdog" service with the
+ * Snap! Communicator.
+ */
+void messager::process_connected()
+{
+    snap_tcp_client_permanent_message_connection::process_connected();
+
+    snap::snap_communicator_message register_backend;
+    register_backend.set_command("REGISTER");
+    register_backend.add_parameter("service", "snapwatchdog");
+    register_backend.add_parameter("version", snap::snap_communicator::VERSION);
+    send_message(register_backend);
+}
+
+
+
+
+/** \brief Handle the death of a child process.
+ *
+ * This class is an implementation of the snap signal connection so we can
+ * get an event whenever our child dies.
+ */
+class sigchld_impl
+        : public snap::snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<sigchld_impl>    pointer_t;
+
+                                sigchld_impl(watchdog_server::pointer_t ws);
+
+    // snap::snap_communicator::snap_signal implementation
+    virtual void                process_signal();
+
+private:
+    // this is owned by a server function so no need for a smart pointer
+    watchdog_server::pointer_t  f_watchdog_server;
+};
+
+
+/** \brief The SIGCHLD signal initialization.
+ *
+ * The constructor defines this signal connection as a listener for
+ * the SIGCHLD signal.
+ *
+ * \param[in] ws  The watchdog server we are listening for.
+ */
+sigchld_impl::sigchld_impl(watchdog_server::pointer_t ws)
+    : snap_signal(SIGCHLD)
+    , f_watchdog_server(ws)
+{
+}
+
+
+/** \brief Process the child death signal.
+ *
+ * The watchdog_server process received a SIGCHLD. We can call the
+ * process_sigchld() function of the watchdog_server object.
+ */
+void sigchld_impl::process_signal()
+{
+    // we can call the same function
+    f_watchdog_server->process_sigchld();
+}
+
+
+
+
+} // no name namespace
+
+
+namespace watchdog
+{
 
 /** \brief Get a fixed watchdog plugin name.
  *
@@ -75,7 +323,7 @@ namespace watchdog
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -97,9 +345,6 @@ char const *get_name(name_t name)
     case SNAP_NAME_WATCHDOG_STATISTICS_TTL:
         return "statistics_ttl";
 
-    case SNAP_NAME_WATCHDOG_STOP:
-        return "STOP";
-
     default:
         // invalid index
         throw snap_logic_exception("Invalid SNAP_NAME_WATCHDOG_CPU_...");
@@ -111,12 +356,25 @@ char const *get_name(name_t name)
 }
 
 
+/** \brief Initialize the watchdog server.
+ *
+ * This constructor makes sure to setup the correct filename for the
+ * snapwatchdog server configuration file.
+ */
 watchdog_server::watchdog_server()
 {
     set_default_config_filename( "/etc/snapwebsites/snapwatchdog.conf" );
 }
 
 
+/** \brief Retrieve a pointer to the watchdog server.
+ *
+ * This function retrieve an instance pointer of the watchdog server.
+ * If the instance does not exist yet, then it gets created. A
+ * server is also a plugin which is named "server".
+ *
+ * \return A manager pointer to the watchdog server.
+ */
 watchdog_server::pointer_t watchdog_server::instance()
 {
     server::pointer_t s(get_instance());
@@ -148,6 +406,13 @@ void watchdog_server::show_version()
 }
 
 
+/** \brief Finish watchdog initialization and start the event loop.
+ *
+ * This function finishes the initialization such as defining the
+ * server name, check that cassandra is available, and create various
+ * connections such as the messager to communicate with the
+ * snapcommunicator service.
+ */
 void watchdog_server::watchdog()
 {
     SNAP_LOG_INFO("watchdog_server::watchdog(): starting watchdog daemon.");
@@ -159,40 +424,121 @@ void watchdog_server::watchdog()
     // TODO: test that the "sites" table is available?
     //       (we will not need any such table here)
 
-    char const *stop_message(get_name(watchdog::SNAP_NAME_WATCHDOG_STOP));
+    g_communicator = snap_communicator::instance();
 
-    snap_child::udp_server_t udp_signal(udp_get_server(get_parameter(get_name(watchdog::SNAP_NAME_WATCHDOG_SIGNAL_NAME))));
-    for(;;)
+    // get the snapcommunicator IP and port
+    QString communicator_addr("127.0.0.1");
+    int communicator_port(4040);
+    tcp_client_server::get_addr_port(get_parameter("snapcommunicator_listen"), communicator_addr, communicator_port, "tcp");
+
+    // create the messager, a connection between the snapwatchdogserver
+    // and the snapcommunicator which allows us to communicate with
+    // the watchdog (STATUS and STOP especially, more later)
+    //
+    g_messager.reset(new messager(instance(), communicator_addr.toUtf8().data(), communicator_port));
+    g_communicator->add_connection(g_messager);
+
+    // add the ticker, this wakes the system up once in a while so
+    // we can gather statistics at a given interval
+    //
+    g_tick_timer.reset(new tick_timer(instance(), f_statistics_frequency));
+    g_communicator->add_connection(g_tick_timer);
+
+    // now start the run() loop
+    //
+    g_communicator->run();
+}
+
+
+/** \brief Process one tick.
+ *
+ * This function is called once a minute (by default). It goes and gather
+ * all the data from all the plugins and then save that in the database.
+ *
+ * In case the tick happens too often, the function makes sure that the
+ * child process is started at most once.
+ */
+void watchdog_server::process_tick()
+{
+    if(f_processes)
     {
-        // run the watchdog plugins once immediately on startup
-        {
-            watchdog_child processes(instance());
-            processes.run_watchdog_plugins();
-        }
-
-        // TODO: we may want to synchronize the wait to the top of the minute
-        //       and not a random shifting position...
-        char buf[256];
-        int const r(udp_signal->timed_recv(buf, sizeof(buf), f_statistics_frequency)); // wait up to 1 minute
-        if(r != -1 || errno != EAGAIN)
-        {
-            if(r < 1 || r >= static_cast<int>(sizeof(buf) - 1))
-            {
-                perror("watchdog_server::watchdog(): f_udp_signal->timed_recv():");
-                SNAP_LOG_FATAL("snap_backend::udp_monitor::run(): an error occurred in the UDP recv() call, returned size: ")(r);
-                break;
-            }
-            buf[r] = '\0';
-
-            if(strcmp(buf, stop_message) == 0)
-            {
-                SNAP_LOG_INFO("watchdog_server::watchdog(): STOP requested.");
-                break;
-            }
-
-            // assuming we received PING...
-        }
+        f_processes.reset(new watchdog_child(instance()));
+        f_processes->run_watchdog_plugins();
     }
+}
+
+
+/** \brief The process detected that its child died.
+ *
+ * The watchdog starts a child to run watchdog plugins to check various
+ * things on each server (i.e. whether a process is running, etc.)
+ *
+ * This callback is run whenever the SIGCHLD is received. The function
+ * waits on the child to remove the zombie and then it resets the
+ * child process object.
+ */
+void watchdog_server::process_sigchld()
+{
+    // block until child is done
+    //
+    // XXX should we have a way to break the wait after a "long"
+    //     while in the event the child locks up?
+    int status(0);
+    pid_t const the_pid(waitpid(f_processes->get_child_pid(), &status, 0));
+
+    if( the_pid == -1 )
+    {
+        // the waitpid() should never fail... we just generate a log and
+        // go on
+        //
+        int const e(errno);
+        SNAP_LOG_ERROR("waitpid() returned an error (")(strerror(e))(").");
+    }
+    else
+    {
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        if(WIFEXITED(status))
+        {
+            int const exit_code(WEXITSTATUS(status));
+
+            if( exit_code == 0 )
+            {
+                // when this happens there is not really anything to tell about
+                SNAP_LOG_DEBUG("Service \"snapwatchdog\" terminated normally.");
+            }
+            else
+            {
+                SNAP_LOG_INFO("Service \"snapwatchdog\" terminated normally, but with exit code ")(exit_code);
+            }
+        }
+        else if(WIFSIGNALED(status))
+        {
+            int const signal_code(WTERMSIG(status));
+            bool const has_code_dump(!!WCOREDUMP(status));
+
+            SNAP_LOG_ERROR("Service \"snapwatchdog\" terminated because of OS signal \"")
+                          (strsignal(signal_code))
+                          ("\" (")
+                          (signal_code)
+                          (")")
+                          (has_code_dump ? " and a core dump was generated" : "")
+                          (".");
+        }
+        else
+        {
+            // I do not think we can reach here...
+            //
+            SNAP_LOG_ERROR("Service \"snapwatchdog\" terminated abnormally in an unknown way.");
+        }
+#pragma GCC diagnostic pop
+
+    }
+
+    // one with that child
+    //
+    f_processes.reset();
 }
 
 
@@ -217,6 +563,11 @@ void watchdog_server::define_server_name()
 }
 
 
+/** \brief Initialize the Cassandra connection.
+ *
+ * This function initializes the Cassandra connection and creates
+ * the watchdog "serverstats" table.
+ */
 void watchdog_server::check_cassandra()
 {
     snap_cassandra cassandra( f_parameters );
@@ -226,7 +577,7 @@ void watchdog_server::check_cassandra()
     QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
     if( !context )
     {
-        SNAP_LOG_FATAL() << "snap_websites context does not exist! Exiting.";
+        SNAP_LOG_FATAL("snap_websites context does not exist! Exiting.");
         exit(1);
     }
 
@@ -240,24 +591,54 @@ void watchdog_server::check_cassandra()
 }
 
 
+/** \brief Initialize the watchdog server parameters.
+ *
+ * This function gets the parameters from the watchdog configuration file
+ * and convert them for use by the watchdog_server implementation.
+ *
+ * If a parameter is not valid, the function calls exit(1) so the server
+ * does not do anything.
+ */
 void watchdog_server::init_parameters()
 {
     // Time Frequency (how often we gather the stats)
     {
         QString const statistics_frequency(get_parameter(get_name(watchdog::SNAP_NAME_WATCHDOG_STATISTICS_FREQUENCY)));
-        f_statistics_frequency = static_cast<int64_t>(statistics_frequency.toLongLong());
+        bool ok(false);
+        f_statistics_frequency = static_cast<int64_t>(statistics_frequency.toLongLong(&ok));
+        if(!ok)
+        {
+            SNAP_LOG_FATAL("watchdog_server::init_parameters(): statistic frequency \"")(statistics_frequency)("\" is not a valid number.");
+            exit(1);
+        }
+        if(f_statistics_frequency < 0)
+        {
+            SNAP_LOG_FATAL("watchdog_server::init_parameters(): statistic frequency (")(statistics_frequency)(") cannot be a negative number.");
+            exit(1);
+        }
         if(f_statistics_frequency < 60)
         {
             // minimum is 1 minute
             f_statistics_frequency = 60;
         }
-        f_statistics_frequency *= 1000; // timed_recv() wants the value in ms
+        f_statistics_frequency *= 1000000; // the value in microseconds
     }
 
     // Time Period (how many stats we keep in the db)
     {
         QString const statistics_period(get_parameter(get_name(watchdog::SNAP_NAME_WATCHDOG_STATISTICS_PERIOD)));
-        f_statistics_period = static_cast<int64_t>(statistics_period.toLongLong());
+        bool ok(false);
+        f_statistics_period = static_cast<int64_t>(statistics_period.toLongLong(&ok));
+        if(!ok)
+        {
+            SNAP_LOG_FATAL("watchdog_server::init_parameters(): statistic period \"")(statistics_period)("\" is not a valid number.");
+            exit(1);
+        }
+        if(f_statistics_period < 0)
+        {
+            SNAP_LOG_FATAL("watchdog_server::init_parameters(): statistic period (")(statistics_period)(") cannot be a negative number.");
+            exit(1);
+        }
         if(f_statistics_period < 3600)
         {
             // minimum is 1 hour
@@ -270,7 +651,18 @@ void watchdog_server::init_parameters()
     // Time To Live (TTL, used to make sure we do not over crowd the database)
     {
         QString const statistics_ttl(get_parameter(get_name(watchdog::SNAP_NAME_WATCHDOG_STATISTICS_TTL)));
-        f_statistics_ttl = static_cast<int64_t>(statistics_ttl.toLongLong());
+        bool ok(false);
+        f_statistics_ttl = static_cast<int64_t>(statistics_ttl.toLongLong(&ok));
+        if(!ok)
+        {
+            SNAP_LOG_FATAL("watchdog_server::init_parameters(): statistic ttl \"")(statistics_ttl)("\" is not a valid number.");
+            exit(1);
+        }
+        if(f_statistics_ttl < 0)
+        {
+            SNAP_LOG_FATAL("watchdog_server::init_parameters(): statistic ttl (")(statistics_ttl)(") cannot be a negative number.");
+            exit(1);
+        }
         if(f_statistics_ttl < 3600)
         {
             // minimum is 1 hour
@@ -280,17 +672,129 @@ void watchdog_server::init_parameters()
 }
 
 
+/** \brief Process a message received from the watchdog server.
+ *
+ * The process for the watchdog server handles events incoming from
+ * Snap Communicator using this function.
+ *
+ * \param[in] message  The message we just received.
+ */
+void watchdog_server::process_message(snap::snap_communicator_message const & message)
+{
+    SNAP_LOG_TRACE("received message [")(message.to_message())("]");
+
+    QString const command(message.get_command());
+
+// ******************* TCP and UDP messages
+
+    // someone sent "snapwatchdog/STOP" to snapcommunicator
+    //
+    if(command == "STOP"
+    || command == "QUITTING")
+    {
+        SNAP_LOG_INFO("Stopping watchdog server.");
+
+        // someone asking us to stop snap_init; this means we want to stop
+        // all the services that snap_init started; if we have a
+        // snapcommunicator, then we use that to send the STOP signal to
+        // all services at once
+        //
+        snap_communicator_message unregister;
+        unregister.set_command("UNREGISTER");
+        unregister.add_parameter("service", "snapwatchdog");
+        g_messager->send_message(unregister);
+
+        g_communicator->remove_connection(g_tick_timer);
+        return;
+    }
+
+// ******************* TCP only messages
+
+    if(command == "READY")
+    {
+        // TBD: should we wait on this signal before we start the g_tick_timer?
+        //      since we do not need the snap communicator, probably not useful
+        //
+        return;
+    }
+
+    if(command == "LOG")
+    {
+        SNAP_LOG_INFO("Logging reconfiguration.");
+        logging::reconfigure();
+        return;
+    }
+
+    // all have to implement the HELP command
+    //
+    if(command == "HELP")
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("COMMANDS");
+
+        // list of commands understood by snapinit
+        //
+        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+
+        g_messager->send_message(reply);
+        return;
+    }
+
+    if(command == "UNKNOWN")
+    {
+        SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+        return;
+    }
+
+    // unknown command is reported and process goes on
+    //
+    SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received on the TCP connection.");
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("UNKNOWN");
+        reply.add_parameter("command", command);
+        g_messager->send_message(reply);
+    }
+}
+
+
+
+
+
+
+/** \brief Initialize the watchdog child.
+ *
+ * This function saves the server pointer so it can be accessed
+ * as we do in plugins with the f_snap pointer.
+ *
+ * \param[in] s  The server watchdog.
+ */
 watchdog_child::watchdog_child(server_pointer_t s)
     : snap_child(s)
 {
 }
 
 
+/** \brief Clean up the watchdog child.
+ *
+ * Make sure the child is cleaned.
+ */
 watchdog_child::~watchdog_child()
 {
 }
 
 
+/** \brief Run watchdog plugins.
+ *
+ * This function runs all the watchdog plugins and saves the results
+ * in a file and the database.
+ *
+ * If no plugins are are defined, the result will be empty.
+ *
+ * The function makes use of a try/catch block to avoid ending the
+ * process if an error occurs. However, problems should get fixed
+ * or you will certainly not get the results you are looking for.
+ */
 void watchdog_child::run_watchdog_plugins()
 {
     // create a child process so the data between sites does not get
@@ -298,24 +802,18 @@ void watchdog_child::run_watchdog_plugins()
     // the foot print each time we run a new website,) but the worst
     // are the plugins; we can request a plugin to be unloaded but
     // frankly the system is not very well written to handle that case.
-    pid_t const p(fork_child());
-    if(p != 0)
+    f_child_pid = fork_child();
+    if(f_child_pid != 0)
     {
+        int const e(errno);
+
         // parent process
-        if(p == -1)
+        if(f_child_pid == -1)
         {
-            SNAP_LOG_FATAL("watchdog_server::run_watchdog_process() could not create a child process.");
             // we do not try again, we just abandon the whole process
-            exit(1);
-            NOTREACHED();
+            //
+            SNAP_LOG_ERROR("watchdog_server::run_watchdog_process() could not create child process, fork() failed with errno: ")(e)(" -- ")(strerror(e))(".");
         }
-        // block until child is done
-        //
-        // XXX should we have a way to break the wait after a "long"
-        //     while in the event the child locks up?
-        int status(0);
-        wait(&status);
-        // TODO: check status?
         return;
     }
 
@@ -331,7 +829,7 @@ void watchdog_child::run_watchdog_plugins()
 
         connect_cassandra();
 
-        auto server = std::dynamic_pointer_cast<watchdog_server>(f_server.lock());
+        auto server(std::dynamic_pointer_cast<watchdog_server>(f_server.lock()));
         if(!server)
         {
             throw snap_child_exception_no_server("watchdog_child::run_watchdog_plugins(): The p_server weak pointer could not be locked");
@@ -359,14 +857,14 @@ void watchdog_child::run_watchdog_plugins()
         }
         else
         {
-            int64_t start_date(get_start_date());
+            int64_t const start_date(get_start_date());
             // round to the hour first, then apply period
-            int64_t date((start_date / (1000000LL * 60LL) * 60LL) % server->get_statistics_period());
+            int64_t const date((start_date / (1000000LL * 60LL) * 60LL) % server->get_statistics_period());
 
             // add the date in ns to this result
             QDomElement watchdog_tag(snap_dom::create_element(doc, "watchdog"));
             watchdog_tag.setAttribute("date", static_cast<qlonglong>(start_date));
-            result = doc.toString();
+            result = doc.toString(-1);
 
             // save the result in a file first
             QString data_path(server->get_parameter(watchdog::get_name(watchdog::SNAP_NAME_WATCHDOG_DATA_PATH)));
@@ -389,7 +887,7 @@ void watchdog_child::run_watchdog_plugins()
             QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
 
             QtCassandra::QCassandraValue value;
-            value.setStringValue(doc.toString());
+            value.setStringValue(doc.toString(-1));
             value.setTtl(server->get_statistics_ttl());
             QByteArray cell_key;
             QtCassandra::setInt64Value(cell_key, date);
@@ -400,13 +898,13 @@ void watchdog_child::run_watchdog_plugins()
         exit(0);
         NOTREACHED();
     }
-    catch(snap_exception const& except)
+    catch(snap_exception const & e)
     {
-        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(except.what());
+        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(e.what());
     }
-    catch(std::exception const& std_except)
+    catch(std::exception const & e)
     {
-        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("watchdog_server::run_watchdog_plugins(): exception caught ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
     }
     catch(...)
     {
@@ -417,6 +915,20 @@ void watchdog_child::run_watchdog_plugins()
 }
 
 
-} // namespace snap
+/** \brief Return the child pid.
+ *
+ * This function can be used to retrieve the PID of the child process.
+ * The child is created after when the run_watchdog_plugins() is called.
+ * Until then it is -1. Note that in the child process, this function
+ * will return 0.
+ *
+ * \return The child process identifier.
+ */
+pid_t watchdog_child::get_child_pid() const
+{
+    return f_child_pid;
+}
 
+
+} // namespace snap
 // vim: ts=4 sw=4 et
