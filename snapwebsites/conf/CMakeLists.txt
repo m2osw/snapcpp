@@ -49,6 +49,9 @@ install(
         snapinit.conf
         snapserver.conf
 
+        # various other files
+        snapinit.xml
+
     DESTINATION
         share/snapwebsites/conf
 )

@@ -276,7 +276,7 @@ private:
 
 /** \brief The messager.
  *
- * We create only one messager. It is saved in this variable if needed.
+ * We create only one messager. It is saved in this variable.
  */
 messager::pointer_t             g_messager;
 
@@ -317,6 +317,8 @@ messager::messager(snap_backend * sb, QString const & action, std::string const 
  * Snap! Communicator. The message is immediately forwarded to the
  * snap_backend object which is expected to process it and reply
  * if required.
+ *
+ * \param[in] message  The message we just received.
  */
 void messager::process_message(snap::snap_communicator_message const & message)
 {
@@ -332,7 +334,8 @@ void messager::process_message(snap::snap_communicator_message const & message)
  * information for the snapbackend is wrong...
  *
  * With snapinit the snapcommunicator should always already
- * be running so this error should not happen.
+ * be running so this error should not happen once everything
+ * is properly setup.
  *
  * \param[in] error_message  An error message.
  */

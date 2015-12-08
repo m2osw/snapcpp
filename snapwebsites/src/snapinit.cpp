@@ -642,8 +642,7 @@ public:
     /** \brief Handle the death of a child process.
      *
      * This class is an implementation of the snap signal connection so we can
-     * get an event whenever one of our children dies. This allows us to avoid
-     * polling (waking up every second!) to check whether a process died out.
+     * get an event whenever one of our children dies.
      */
     class sigchld_impl
             : public snap::snap_communicator::snap_signal
@@ -657,10 +656,6 @@ public:
          * the SIGCHLD signal.
          *
          * \param[in] si  The snap init server we are listening for.
-         * \param[in] addr  The address to listen on. Most often it is 127.0.0.1.
-         *                  for the UDP because we currently only allow for
-         *                  local messages.
-         * \param[in] port  The port to listen on.
          */
         sigchld_impl(snap_init::pointer_t si)
             : snap_signal(SIGCHLD)
@@ -1955,7 +1950,7 @@ bool service::is_running() const
     // check whether the process is still running
     //
     int status = 0;
-    int const the_pid(waitpid( f_pid, &status, WNOHANG ));
+    pid_t const the_pid(waitpid( f_pid, &status, WNOHANG ));
     if( the_pid == 0 )
     {
         return true;
@@ -2948,7 +2943,6 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
         reply.add_parameter("command", command);
         f_listener_connection->send_message(reply);
     }
-    return;
 }
 
 
