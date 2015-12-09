@@ -186,12 +186,35 @@ install(
 
 
 #################################################################################
-## Snap signals manager
+## Snap signal manager
 ##
 project(snapcommunicator)
 
 add_executable(${PROJECT_NAME}
     snapcommunicator.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+#################################################################################
+## Snap firewall manager
+##
+project(snapfirewall)
+
+add_executable(${PROJECT_NAME}
+    snapfirewall.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

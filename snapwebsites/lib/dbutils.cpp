@@ -388,7 +388,8 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         name = QString("%1").arg(identifier.safeInt64Value());
     }
     else if(f_tableName == "tracker"
-         || (f_tableName == "backend" && !f_rowName.startsWith("*")))
+         || (f_tableName == "backend" && !f_rowName.startsWith("*"))
+         || f_tableName == "firewall")
     {
         QtCassandra::QCassandraValue const start_date(c->columnKey());
         name = microseconds_to_string(start_date.safeInt64Value(), true);

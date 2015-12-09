@@ -122,4 +122,35 @@
     nomail
 }
 
+# Snap Firewall
+/var/log/snapwebsites/snapfirewall.log {
+    weekly
+    maxsize 10Mb
+    su snapwebsites snapwebsites
+    missingok
+    rotate 10
+    postrotate
+        /usr/bin/snapsignal snapfirewall/LOG
+    endscript
+    compress
+    delaycompress
+    notifempty
+}
+/var/log/snapwebsites/secure/snapfirewall.log {
+    weekly
+    maxage 92
+    maxsize 10Mb
+    su snapwebsites snapwebsites
+    missingok
+    rotate 5
+    postrotate
+        /usr/bin/snapsignal snapfirewall/LOG
+    endscript
+    compress
+    delaycompress
+    notifempty
+    shred
+    nomail
+}
+
 # vim: ts=4 sw=4 et

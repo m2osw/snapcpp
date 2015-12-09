@@ -310,6 +310,13 @@ bool snap_cgi::verify()
         }
     }
 
+    char const * remote_addr(getenv("REMOTE_ADDR"));
+    if(remote_addr == nullptr)
+    {
+        error("400 Bad Request", "The REMOTE_ADDR parameter is not available.");
+        return false;
+    }
+
     {
         // WARNING: do not use std::string because nullptr will crash
         //
@@ -330,7 +337,7 @@ bool snap_cgi::verify()
                         << "X-Powered-By: snap.cgi" << std::endl
                         << std::endl
                         ;
-            // TODO: send IP to firewall
+            snap::server::block_ip(remote_addr, "week");
             return false;
         }
         if(tcp_client_server::is_ipv6(http_host))
@@ -341,7 +348,7 @@ bool snap_cgi::verify()
                         << "X-Powered-By: snap.cgi" << std::endl
                         << std::endl
                         ;
-            // TODO: send IP to firewall
+            snap::server::block_ip(remote_addr, "week");
             return false;
         }
     }
@@ -368,7 +375,7 @@ bool snap_cgi::verify()
         if(strncmp(request_uri, "/cgi-bin/", 9) == 0)
         {
             error("404 Page Not Found", "The REQUEST_URI cannot start with \"/cgi-bin/\".");
-            // TODO: send IP to firewall?
+            snap::server::block_ip(remote_addr);
             return false;
         }
 
@@ -379,7 +386,7 @@ bool snap_cgi::verify()
         {
             // avoid proxy accesses
             error("404 Page Not Found", "The REQUEST_URI cannot start with \"http[s]://\".");
-            // TODO: send IP to firewall?
+            snap::server::block_ip(remote_addr);
             return false;
         }
     }
@@ -394,6 +401,7 @@ bool snap_cgi::verify()
             // we probably do not have our snap.cgi run anyway...
             //
             error("400 Bad Request", "The path to the page you want to read must be specified.");
+            snap::server::block_ip(remote_addr, "month");
             return false;
         }
 #ifdef _DEBUG
@@ -412,7 +420,7 @@ bool snap_cgi::verify()
         if(*user_agent == 0)
         {
             error("400 Bad Request", "The HTTP_USER_AGENT cannot be empty.");
-            // TODO: send IP to firewall service?
+            snap::server::block_ip(remote_addr, "month");
             return false;
         }
     }

@@ -3157,6 +3157,8 @@ public:
          */
         virtual void process_read()
         {
+            snap_thread_done_signal::process_read();
+
             f_client->thread_done();
         }
 
@@ -3420,12 +3422,20 @@ public:
      */
     bool background_connect()
     {
+        if(f_thread.is_running())
+        {
+            SNAP_LOG_ERROR("A background connection attempt is already in progress. Further requests are ignored.");
+            return false;
+        }
+
         // create the f_thread_done only when required
         //
         if(!f_thread_done)
         {
             f_thread_done.reset(new thread_done_signal(this));
         }
+
+        snap_communicator::instance()->add_connection(f_thread_done);
 
         if(!f_thread.start())
         {
@@ -3473,6 +3483,11 @@ public:
      */
     void thread_done()
     {
+        // if we used the thread we have to remove the signal used
+        // to know that the thread was done
+        //
+        snap_communicator::instance()->remove_connection(f_thread_done);
+
         if(f_thread_runner.get_socket() == -1)
         {
             // we will access the f_last_error member of the thread runner

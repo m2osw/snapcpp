@@ -155,6 +155,11 @@
     <connect>127.0.0.1:4040</connect>
     <wait>1</wait>
   </service>
+  <service name="snapfirewall" required="required">
+    <priority>-5</priority>
+    <config>/etc/snapwebsites/snapfirewall.conf</config>
+    <safe>firewall</safe>
+  </service>
   <service name="snapserver" required="required">
     <priority>0</priority>
     <config>/etc/snapwebsites/snapserver.conf</config>

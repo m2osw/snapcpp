@@ -1405,6 +1405,54 @@ void server::udp_ping_server( QString const & service, QString const & uri )
 }
 
 
+/** \brief Block an IP address at the firewall level.
+ *
+ * This function sends a BLOCK message to the snapfirewall service in
+ * order to have the specified \p ip blocked for the specified \p period.
+ *
+ * The \p period parameter is not required. If not specified, the default
+ * will apply. At this time, the snapfirewall tool uses "day" as its default.
+ * The supported periods are:
+ *
+ * \li "hour" -- block the IP address for one hour.
+ * \li "day" -- block the IP address for 24h.
+ * \li "week" -- block the IP address for 7 days.
+ * \li "month" -- block the IP address for 31 days.
+ * \li "year" -- block the IP address for 366 days.
+ * \li "forever" -- block the IP address for 5 years.
+ *
+ * \param[in] ip  The IP address of to ban.
+ * \param[in] period  The duration for which the ban applies.
+ */
+void server::block_ip( QString const & ip, QString const & period )
+{
+    // create a server object (we are a static function!)
+    //
+    snap::server::pointer_t s( snap::server::instance() );
+
+    // retrieve the IP and port to the snapcommunicator
+    //
+    QString addr("127.0.0.1");
+    int port(4041);
+    tcp_client_server::get_addr_port(s->get_parameter("snapcommunicator_signal"), addr, port, "udp");
+
+    // create a BLOCK message
+    //
+    snap::snap_communicator_message message;
+    message.set_command("BLOCK");
+    message.set_service("snapfirewall");
+    message.add_parameter("ip", ip);
+    if(!period.isEmpty())
+    {
+        message.add_parameter("period", period);
+    }
+
+    // send the message using a UDP signal
+    //
+    snap::snap_communicator::snap_udp_server_message_connection::send_message(addr.toUtf8().data(), port, message);
+}
+
+
 #ifdef SNAP_NO_FORK
 /** \brief Don't fork the snap child if true.
  *

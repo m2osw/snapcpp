@@ -22,16 +22,12 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 #include "snapwebsites.h"
-#include "snap_cassandra.h"
 #include "snap_communicator.h"
 #include "log.h"
 #include "mkdir_p.h"
 #include "not_used.h"
 
-#include <QtCassandra/QCassandraTable.h>
-
 #include <QFile>
-#include <QTime>
 
 #include <fcntl.h>
 #include <proc/sysinfo.h>
@@ -497,6 +493,8 @@ public:
     bool                        is_stopping() const;
     bool                        has_stopped() const;
     bool                        is_connection_required() const;
+    bool                        is_safe_required() const;
+    QString const &             get_safe_message() const;
     bool                        cron_task() const;
     QString const &             get_config_filename() const;
     QString const &             get_service_name() const;
@@ -525,6 +523,7 @@ private:
     int64_t                     f_start_date = 0;       // in microseconds, to calculate an interval
     int                         f_wait_interval = 0;    // in seconds
     int                         f_recovery = 0;         // in seconds
+    QString                     f_safe_message;
     rlim_t                      f_coredump_limit = 0;   // avoid core dump files by default
     bool                        f_started = false;
     bool                        f_failed = false;
@@ -823,11 +822,12 @@ private:
 
     static pointer_t            f_instance;
     advgetopt::getopt           f_opt;
+    bool                        f_debug = false;
+    snap::snap_config           f_config;
+    QString                     f_log_conf;
     command_t                   f_command = command_t::COMMAND_UNKNOWN;
     QString                     f_lock_filename;
     QFile                       f_lock_file;
-    snap::snap_config           f_config;
-    QString                     f_log_conf;
     QString                     f_spool_path;
     mutable bool                f_spool_directory_created = false;
     service::vector_t           f_service_list;
@@ -843,6 +843,7 @@ private:
     QString                     f_udp_addr;
     int                         f_udp_port = 4039;
     int                         f_stop_max_wait = 60;
+    QString                     f_expected_safe_message;
 };
 
 
@@ -1014,6 +1015,24 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                     exit(1);
                     snap::NOTREACHED();
                 }
+            }
+        }
+    }
+
+    // user may specify a safe tag, in that case we have to wait for
+    // a SAFE message with the same name as the one specified in this
+    // safe tag
+    //
+    {
+        QDomElement const sub_element(e.firstChildElement("safe"));
+        if(!sub_element.isNull())
+        {
+            f_safe_message = sub_element.text();
+            if(f_safe_message == "none")
+            {
+                // "none" is equivalent to nothing which is the default
+                //
+                f_safe_message.clear();
             }
         }
     }
@@ -2137,6 +2156,39 @@ bool service::is_connection_required() const
 }
 
 
+/** \brief Determine whether this service requires us to wait on a SAFE message.
+ *
+ * snapinit starts the snapfirewall and wait for the SAFE message it
+ * sends to let us know that the firewall is up and running and that
+ * it is now safe to start the snapserver.
+ *
+ * Obviously, the main firewall setup should already be up by the time
+ * we start the snapfirewall. The snapfirewall service only adds a
+ * set of rules blocking IP addresses that were received from various
+ * anti-hacker and anti-spam plugins and tools.
+ *
+ * \return true if this module requires a SAFE message.
+ */
+bool service::is_safe_required() const
+{
+    return !f_safe_message.isEmpty();
+}
+
+
+/** \brief Retrieve the safe message.
+ *
+ * This function returns a copy of the expected safe message from the
+ * last service that we started and required us to wait on such a
+ * safe message before starting even more services.
+ *
+ * \return The safe message as defined in the safe tag.
+ */
+QString const & service::get_safe_message() const
+{
+    return f_safe_message;
+}
+
+
 /** \brief Determine whether this is a cron task or not.
  *
  * At this time we have one service (backend) which we want to run on
@@ -2299,11 +2351,11 @@ snap_init::pointer_t snap_init::f_instance;
 
 snap_init::snap_init( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
+    , f_log_conf( "/etc/snapwebsites/snapinit.properties" )
     , f_lock_filename( QString("%1/snapinit-lock.pid")
                        .arg(f_opt.get_string("lockdir").c_str())
                      )
     , f_lock_file( f_lock_filename )
-    , f_log_conf( "/etc/snapwebsites/snapinit.properties" )
     , f_spool_path( "/var/spool/snap/snapinit" )
     , f_communicator(snap::snap_communicator::instance())
 {
@@ -2336,6 +2388,8 @@ snap_init::snap_init( int argc, char * argv[] )
         snap::NOTREACHED();
     }
 
+    f_debug = f_opt.is_defined("debug");
+
     // read the configuration file
     //
     f_config.read_config_file( f_opt.get_string("config").c_str() );
@@ -2359,6 +2413,15 @@ snap_init::snap_init( int argc, char * argv[] )
         }
         snap::logging::configure_conffile( f_log_conf );
     }
+
+    if( f_debug )
+    {
+        // Force the logger level to DEBUG
+        // (unless already lower)
+        //
+        snap::logging::reduce_log_output_level( snap::logging::log_level_t::LOG_LEVEL_DEBUG );
+    }
+
     g_logger_ready = true;
 
     // do not do too much in the constructor or we may get in
@@ -2577,7 +2640,7 @@ snap_init::pointer_t snap_init::instance()
 {
     if( !f_instance )
     {
-        throw std::invalid_argument( "snap_init instance must be created with create_instance()!" );
+        throw std::invalid_argument( "snapinit instance must be created with create_instance()!" );
     }
     return f_instance;
 }
@@ -2588,7 +2651,6 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
     QDomNodeList services(doc.elementsByTagName("service"));
 
     QString const binary_path( QString::fromUtf8(f_opt.get_string("binary-path").c_str()) );
-    bool const debug( f_opt.is_defined("debug") );
 
     // use a map to make sure that each service has a distinct name
     //
@@ -2602,7 +2664,7 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
         && !e.attributes().contains("disabled"))
         {
             service::pointer_t s( new service(shared_from_this()) );
-            s->configure( e, binary_path, debug );
+            s->configure( e, binary_path, f_debug );
 
             // avoid two services with the same name
             //
@@ -2682,10 +2744,14 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
  * Note that cron tasks do not get their tick date and time modified
  * here since it has to start exactly on their specific tick date
  * and time.
+ *
+ * \todo
+ * Redesign the waking up to have a current state instead of having
+ * special, rather complicated rules as we have now.
  */
 void snap_init::wakeup_services()
 {
-    SNAP_LOG_TRACE("Wake Up Services called. (# of services: ")(f_service_list.size())(")");
+    SNAP_LOG_TRACE("Wake Up Services called. (Total number of services: ")(f_service_list.size())(")");
 
     int64_t timeout_date(snap::snap_child::get_current_date());
     for(auto s : f_service_list)
@@ -2693,7 +2759,14 @@ void snap_init::wakeup_services()
         // ignore the connection service, it already got started when
         // this function is called
         //
-        if(s->is_connection_required())
+        // TODO: as noted in the documentation above, we need to redisign
+        //       this "wake up services" for several reasons, but here
+        //       the "is_running()" call is actually absolutely incorrect
+        //       since the process could have died in between and thus
+        //       we would get false when we would otherwise expect true.
+        //
+        if(s->is_connection_required()
+        || s->is_running())
         {
             continue;
         }
@@ -2711,6 +2784,15 @@ void snap_init::wakeup_services()
         // it as required by the current status
         //
         s->set_enable(true);
+
+        // if we just started a service that has to send us a SAFE message
+        // then we cannot start anything more at this point
+        //
+        if(s->is_safe_required())
+        {
+            f_expected_safe_message = s->get_safe_message();
+            break;
+        }
 
         // this service may want the next service to start later
         // (notice how that will not affect a cron task...)
@@ -2906,6 +2988,27 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
         return;
     }
 
+    if(command == "SAFE")
+    {
+        // we received a "we are safe" message so we can move on and
+        // start the next service
+        //
+        if(f_expected_safe_message != message.get_parameter("name"))
+        {
+            SNAP_LOG_FATAL("received wrong SAFE message. We expected \"")(f_expected_safe_message)("\" but we received \"")(message.get_parameter("name"))("\".");
+
+            // Simulate a STOP, we cannot continue safely
+            //
+            terminate_services();
+            return;
+        }
+
+        // wakeup other services
+        //
+        wakeup_services();
+        return;
+    }
+
     if(command == "LOG")
     {
         SNAP_LOG_INFO("Logging reconfiguration.");
@@ -2922,7 +3025,7 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
 
         // list of commands understood by snapinit
         //
-        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,SAFE,STOP,UNKNOWN");
 
         f_listener_connection->send_message(reply);
         return;

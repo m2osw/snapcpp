@@ -358,12 +358,14 @@ void snapdb::drop_tables(bool all)
     // there are re-created when we connect and refilled when
     // we access a page; obviously this is VERY dangerous on
     // a live system!
+    context->dropTable("backend");
     context->dropTable("branch");
     context->dropTable("cache");
     context->dropTable("content");
     context->dropTable("emails");
     context->dropTable("epayment_paypal");
     context->dropTable("files");
+    context->dropTable("firewall");
     context->dropTable("layout");
     context->dropTable("libQtCassandraLockTable");
     context->dropTable("links");

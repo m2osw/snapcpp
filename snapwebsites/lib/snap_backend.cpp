@@ -31,6 +31,96 @@
 namespace snap
 {
 
+/** \class snap_backend
+ * \brief Backend process class.
+ *
+ * This class handles backend processing for the snapserver.
+ *
+ * The process for backends works this way:
+ *
+ * \li Backend tool prepares the server
+ * \li Backend tool creates a snap_backend object.
+ * \li Backend tool calls run_backend()
+ * \li run_backend() connects to the database
+ * \li run_backend() checks whether the "sites" table exists
+ * \li if not ready -- wait until the "sites" table exists
+ * \li -- while waiting for the "sites" table, we also listen for
+ *     incoming messages such as STOP and LOG
+ *
+ * Note that the backend, like pretty much all other Snap processes
+ * is event based. It receives messages from various sources and
+ * deals with those as required. The following describes those
+ * messages:
+ *
+ * \msc
+ * hscale = 2;
+ * a [label="snapcommunicator"],
+ * b [label="snapbackend"],
+ * c [label="child process"],
+ * d [label="wakeup timer"],
+ * e [label="cassandra"];
+ *
+ * #
+ * # Register to the snap communicator
+ * #
+ * b=>b [label="open socket to snapcommunicator"];
+ * b->a [label="REGISTER service=<service name>;version=<version>"];
+ * a->b [label="READY"];
+ * a->b [label="HELP"];
+ * b->a [label="COMMANDS list=HELP,LOG,PING,READY,..."];
+ *
+ * #
+ * # Start a child at a specified time
+ * #
+ * b=>b [label="wakeup timer timed out"];
+ * b->e [label="lock website"];
+ * b->c [label="start child"];
+ * c->b [label="child died"];
+ * b->e [label="unlock website"];
+ *
+ * #
+ * # Start a child periodically
+ * #
+ * b=>b [label="tick timer timed out"];
+ * b->e [label="lock website"];
+ * b->c [label="start child"];
+ * c->b [label="child died"];
+ * b->e [label="unlock website"];
+ *
+ * #
+ * # When the child dies
+ * #
+ * b=>b [label="another run is already schedule"];
+ * b->e [label="lock website"];
+ * b->c [label="start child"];
+ * c->b [label="child died"];
+ * b->e [label="unlock website"];
+ *
+ * #
+ * # PING is received
+ * #
+ * a->b [label="PING sent to backend"];
+ * b=>b [label="register request in database"];
+ * b->e [label="lock website"];
+ * b->c [label="start child"];
+ * c->b [label="child died"];
+ * b->e [label="unlock website"];
+ * \endmsc
+ *
+ * \note
+ * If a child is already running, then it does not get started a
+ * second time. This is quite important since if you have a large
+ * number of websites (say 1,000) then you could otherwise get that
+ * many processes running simultaneously... Instead we run at most
+ * one child per instance of the snapbackend process. You may, however,
+ * have one instance per computer in your cluster so as to alleviate
+ * the load through multi-processing.
+ *
+ * \sa snap_child
+ */
+
+
+
 namespace plugins
 {
 extern QString g_next_register_name;
@@ -503,30 +593,6 @@ void child_connection::process_message(snap_communicator_message const & message
 
 
 
-/** \class backend
- * \brief Backend process class.
- *
- * This class handles backend processing for the snapserver.
- *
- * The process for backends works this way:
- *
- * \li Backend tool prepares the server
- * \li Backend tool creates a snap_backend object.
- * \li Backend tool calls run_backend()
- * \li run_backend() connects to the database
- * \li run_backend() checks whether the sites table exists
- * \li if not ready -- wait until the sites table exists
- * \li -- while waiting for the sites table, we also listen for messages
- *
- * \note
- * The constructor initializes the monitor and thread objects, however,
- * the thread is only started when the child is called with an action.
- *
- * \todo
- * Add more documentation about the backend and how it works.
- *
- * \sa snap_child
- */
 snap_backend::snap_backend( server_pointer_t s )
     : snap_child(s)
     , f_parent_pid(getpid())
@@ -663,11 +729,11 @@ void snap_backend::run_backend()
     }
     catch( snap_exception const & e )
     {
-        SNAP_LOG_FATAL("snap_backend::run_backend(): exception caught: ")(e.what());
+        SNAP_LOG_FATAL("snap_backend::run_backend(): snap exception caught: ")(e.what());
     }
     catch( std::exception const & e )
     {
-        SNAP_LOG_FATAL("snap_backend::run_backend(): exception caught: ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("snap_backend::run_backend(): standard exception caught: ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
     }
     catch( ... )
     {
