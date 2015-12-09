@@ -32,10 +32,15 @@ cmake_minimum_required(VERSION 2.8)
 ## IP Lock Version
 ##
 set(IPLOCK_MAJOR 2)
-set(IPLOCK_MINOR 0)
-set(IPLOCK_PATCH 1)
+set(IPLOCK_MINOR 1)
+set(IPLOCK_PATCH 0)
 
 project(iplock)
+
+# Put the version in the cpp file
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/iplock.h.in ${CMAKE_CURRENT_BINARY_DIR}/iplock.h )
+
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 ##
 ## Include common Snap! cmake modules

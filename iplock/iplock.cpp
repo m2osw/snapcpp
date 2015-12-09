@@ -3,7 +3,7 @@
 // Object:	Allow users to easily add and remove IPs to/from a blacklist
 //              of IP defined in an iptables firewall
 //
-// Copyright:	Copyright (c) 2007-2014 Made to Order Software Corp.
+// Copyright:	Copyright (c) 2007-2015 Made to Order Software Corp.
 //		All Rights Reserved.
 //
 // http://snapwebsites.org/
@@ -28,14 +28,18 @@
 // THE SOFTWARE.
 //
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include "iplock.h"
+
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 
 class configuration
@@ -68,7 +72,7 @@ configuration::configuration()
 	: f_ports_defined(false)
 	//, f_ports -- auto-init
 {
-	FILE *f = fopen("/etc/network/iplock.conf", "r");
+	FILE * f = fopen("/etc/network/iplock.conf", "r");
 	if(f == NULL)
 	{
 		// no configuration
@@ -97,9 +101,11 @@ configuration::configuration()
 			if(isspace(*s))
 			{
 				*s = '\0';
-				do {
+				do
+				{
 					++s;
-				} while(isspace(*s));
+				}
+				while(isspace(*s));
 				break;
 			}
 			++s;
@@ -290,6 +296,11 @@ int main(int argc, const char *argv[])
 			usage();
 			/*NOTREACHED*/
 		}
+		if(strcmp(argv[i], "--version") == 0)
+		{
+			std::cerr << IPLOCK_VERSION_STRING << std::endl;
+			exit(0);
+		}
 		if(strcmp(argv[i], "-q") == 0
 		|| strcmp(argv[i], "--quiet") == 0)
 		{
@@ -307,7 +318,7 @@ int main(int argc, const char *argv[])
 		}
 		else if(argv[i][0] == '-')
 		{
-			fprintf(stderr, "iplock:error:unknown command line flag \"%s\".\n", argv[i]);
+			std::cerr << "iplock:error:unknown command line flag \"" << argv[i] << "\"." << std::endl;
 			exit(1);
 		}
 		else
@@ -317,7 +328,8 @@ int main(int argc, const char *argv[])
 			{
 				block_ip(conf, argv[i], quiet);
 			}
-			else {
+			else
+			{
 				unblock_ip(conf, argv[i], quiet);
 			}
 		}
