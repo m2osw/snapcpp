@@ -37,15 +37,28 @@ Description: Track status and health of any number of servers.
 Package: snapwatchdog
 Section: utils
 Architecture: any
-Depends: adduser, libsnapwatchdog (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: adduser, libsnapwatchdog (= ${binary:Version}),
+    snapwatchdog-core-plugins, ${shlibs:Depends}, ${misc:Depends}
 Recommends: cassandra (>= 2.0.3)
-Suggests: snapwebsites (= ${binary:Version})
+Suggests: snapserver (= ${binary:Version})
 Description: Track status and health of any number of servers.
  Snap! Watchdog is a tool that works on any number of servers to
  gather various information that let you know how your server is
  doing.
  .
- This package installs the server daemon that communicates with
- other watchdogs and a Cassandra server.
+ This package installs the server daemon that gathers the statistics
+ on one server.
+
+Package: snapwatchdog-core-plugins
+Section: utils
+Architecture: any
+Depends: libsnapwatchdog (= ${binary:Version}), ${shlibs:Depends},
+    ${misc:Depends}
+Description: Plugins used to gather various types of data from your
+ servers for the purpose of indicating the health of each computer
+ in your cluster. This includes processes, CPU, memory, disk,
+ number of network hits.
+ .
+ This package contains required core plugins for the snapwatchdog daemon.
 
 # vim: ts=4 sw=4 et
