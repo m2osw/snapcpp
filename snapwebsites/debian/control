@@ -81,6 +81,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  .
  html2text required for sendmail.
  clamav required for antivirus.
+ libqrencode3 required for qrcode.
 
 Package: snapserver
 Section: web
@@ -95,10 +96,12 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  The basic concept is taken from a large set of Drupal 6.x
  modules from Drupal Core and necessary 3rd party modules (we've been using
  over 220 modules on top of the Core modules.) The result is quite
- extensible as it offers a plug-in mechanism that everyone is welcome to use to
- create their own extensions.
+ extensible as it offers a plug-in mechanism that everyone is welcome to
+ use to create their own extensions.
  .
- This package installs the server daemon that communicates with the Cassandra server.
+ This package installs the server daemon that communicates with the
+ Cassandra server.
+ iplock require for snapfirewall.
 
 Package: snapcgi
 Section: web
