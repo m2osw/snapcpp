@@ -57,7 +57,7 @@ Depends: libsnapwatchdog (= ${binary:Version}), ${shlibs:Depends},
 Description: Plugins used to gather various types of data from your
  servers for the purpose of indicating the health of each computer
  in your cluster. This includes processes, CPU, memory, disk,
- number of network hits.
+ number of network hits, connectivity.
  .
  This package contains required core plugins for the snapwatchdog daemon.
 
