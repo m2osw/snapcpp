@@ -26,6 +26,15 @@ namespace snap
 namespace cpu
 {
 
+
+enum class name_t
+{
+    SNAP_NAME_WATCHDOG_CPU_NAME
+};
+char const * get_name(name_t name) __attribute__ ((const));
+
+
+
 class cpu_exception : public snap_exception
 {
 public:
@@ -44,13 +53,6 @@ public:
 
 
 
-
-
-enum name_t
-{
-    SNAP_NAME_WATCHDOG_CPU_NAME
-};
-char const * get_name(name_t name) __attribute__ ((const));
 
 
 class cpu

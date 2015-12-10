@@ -31,9 +31,10 @@ namespace snap
 
 namespace watchdog
 {
-enum name_t
+enum class name_t
 {
     SNAP_NAME_WATCHDOG_DATA_PATH,
+    SNAP_NAME_WATCHDOG_SERVER_NAME,
     SNAP_NAME_WATCHDOG_SERVERSTATS,
     SNAP_NAME_WATCHDOG_SIGNAL_NAME,
     SNAP_NAME_WATCHDOG_STATISTICS_FREQUENCY,
@@ -66,7 +67,8 @@ class watchdog_child;
 
 
 
-class watchdog_server : public server
+class watchdog_server
+        : public server
 {
 public:
     typedef std::shared_ptr<watchdog_server>         pointer_t;
@@ -77,7 +79,7 @@ public:
     void                watchdog();
 
     virtual void        show_version();
-    QString             get_server_name() const { return f_parameters["servername"]; } // TODO use getname() for "servername"
+    QString             get_server_name() const { return f_parameters[get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVER_NAME)]; }
     int64_t             get_statistics_period() const { return f_statistics_period; }
     int64_t             get_statistics_ttl() const { return f_statistics_ttl; }
 
@@ -98,6 +100,7 @@ private:
     controlled_vars::zint64_t       f_statistics_period;
     controlled_vars::zint64_t       f_statistics_ttl;
     std::shared_ptr<watchdog_child> f_processes;
+    bool                            f_stopping = false;
 };
 
 

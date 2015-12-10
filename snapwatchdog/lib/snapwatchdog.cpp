@@ -263,13 +263,13 @@ void messager::process_connected()
  * This class is an implementation of the snap signal connection so we can
  * get an event whenever our child dies.
  */
-class sigchld_impl
+class sigchld_connection
         : public snap::snap_communicator::snap_signal
 {
 public:
-    typedef std::shared_ptr<sigchld_impl>    pointer_t;
+    typedef std::shared_ptr<sigchld_connection>    pointer_t;
 
-                                sigchld_impl(watchdog_server::pointer_t ws);
+                                sigchld_connection(watchdog_server::pointer_t ws);
 
     // snap::snap_communicator::snap_signal implementation
     virtual void                process_signal();
@@ -280,6 +280,15 @@ private:
 };
 
 
+/** \brief A pointer to the child signal connection.
+ *
+ * When adding connections we include this one so we can capture the
+ * death of the child we create to run the statistic gathering using
+ * plugins.
+ */
+sigchld_connection::pointer_t       g_sigchld_connection;
+
+
 /** \brief The SIGCHLD signal initialization.
  *
  * The constructor defines this signal connection as a listener for
@@ -287,7 +296,7 @@ private:
  *
  * \param[in] ws  The watchdog server we are listening for.
  */
-sigchld_impl::sigchld_impl(watchdog_server::pointer_t ws)
+sigchld_connection::sigchld_connection(watchdog_server::pointer_t ws)
     : snap_signal(SIGCHLD)
     , f_watchdog_server(ws)
 {
@@ -299,7 +308,7 @@ sigchld_impl::sigchld_impl(watchdog_server::pointer_t ws)
  * The watchdog_server process received a SIGCHLD. We can call the
  * process_sigchld() function of the watchdog_server object.
  */
-void sigchld_impl::process_signal()
+void sigchld_connection::process_signal()
 {
     // we can call the same function
     f_watchdog_server->process_sigchld();
@@ -327,22 +336,25 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_DATA_PATH:
+    case name_t::SNAP_NAME_WATCHDOG_DATA_PATH:
         return "data_path";
 
-    case SNAP_NAME_WATCHDOG_SERVERSTATS:
+    case name_t::SNAP_NAME_WATCHDOG_SERVER_NAME:
+        return "server_name";
+
+    case name_t::SNAP_NAME_WATCHDOG_SERVERSTATS:
         return "serverstats";
 
-    case SNAP_NAME_WATCHDOG_SIGNAL_NAME:
+    case name_t::SNAP_NAME_WATCHDOG_SIGNAL_NAME:
         return "snapwatchdog_udp_signal";
 
-    case SNAP_NAME_WATCHDOG_STATISTICS_FREQUENCY:
+    case name_t::SNAP_NAME_WATCHDOG_STATISTICS_FREQUENCY:
         return "statistics_frequency";
 
-    case SNAP_NAME_WATCHDOG_STATISTICS_PERIOD:
+    case name_t::SNAP_NAME_WATCHDOG_STATISTICS_PERIOD:
         return "statistics_period";
 
-    case SNAP_NAME_WATCHDOG_STATISTICS_TTL:
+    case name_t::SNAP_NAME_WATCHDOG_STATISTICS_TTL:
         return "statistics_ttl";
 
     default:
@@ -415,7 +427,7 @@ void watchdog_server::show_version()
  */
 void watchdog_server::watchdog()
 {
-    SNAP_LOG_INFO("watchdog_server::watchdog(): starting watchdog daemon.");
+    SNAP_LOG_INFO("------------------------------------ starting watchdog daemon.");
 
     define_server_name();
     check_cassandra();
@@ -444,6 +456,11 @@ void watchdog_server::watchdog()
     g_tick_timer.reset(new tick_timer(instance(), f_statistics_frequency));
     g_communicator->add_connection(g_tick_timer);
 
+    // create a signal handler that knows when the child dies.
+    //
+    g_sigchld_connection.reset(new sigchld_connection(instance()));
+    g_communicator->add_connection(g_sigchld_connection);
+
     // now start the run() loop
     //
     g_communicator->run();
@@ -460,7 +477,7 @@ void watchdog_server::watchdog()
  */
 void watchdog_server::process_tick()
 {
-    if(f_processes)
+    if(!f_processes)
     {
         f_processes.reset(new watchdog_child(instance()));
         f_processes->run_watchdog_plugins();
@@ -506,11 +523,11 @@ void watchdog_server::process_sigchld()
             if( exit_code == 0 )
             {
                 // when this happens there is not really anything to tell about
-                SNAP_LOG_DEBUG("Service \"snapwatchdog\" terminated normally.");
+                SNAP_LOG_DEBUG("\"snapwatchdog\" statistics plugins terminated normally.");
             }
             else
             {
-                SNAP_LOG_INFO("Service \"snapwatchdog\" terminated normally, but with exit code ")(exit_code);
+                SNAP_LOG_INFO("\"snapwatchdog\" statistics plugins terminated normally, but with exit code ")(exit_code);
             }
         }
         else if(WIFSIGNALED(status))
@@ -518,7 +535,7 @@ void watchdog_server::process_sigchld()
             int const signal_code(WTERMSIG(status));
             bool const has_code_dump(!!WCOREDUMP(status));
 
-            SNAP_LOG_ERROR("Service \"snapwatchdog\" terminated because of OS signal \"")
+            SNAP_LOG_ERROR("\"snapwatchdog\" statistics plugins terminated because of OS signal \"")
                           (strsignal(signal_code))
                           ("\" (")
                           (signal_code)
@@ -530,7 +547,7 @@ void watchdog_server::process_sigchld()
         {
             // I do not think we can reach here...
             //
-            SNAP_LOG_ERROR("Service \"snapwatchdog\" terminated abnormally in an unknown way.");
+            SNAP_LOG_ERROR("\"snapwatchdog\" statistics plugins terminated abnormally in an unknown way.");
         }
 #pragma GCC diagnostic pop
 
@@ -539,6 +556,11 @@ void watchdog_server::process_sigchld()
     // one with that child
     //
     f_processes.reset();
+
+    if(f_stopping)
+    {
+        g_communicator->remove_connection(g_sigchld_connection);
+    }
 }
 
 
@@ -559,7 +581,7 @@ void watchdog_server::define_server_name()
 
     // save it in our list of parameters
     // (we could directly access f_parameters[] but that way is cleaner)
-    set_parameter("server_name", wc["server_name"]);
+    set_parameter(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVER_NAME), wc[get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVER_NAME)]);
 }
 
 
@@ -583,11 +605,20 @@ void watchdog_server::check_cassandra()
 
     // this is sucky, the host/port info should not be taken that way!
     // also we should allow servers without access to cassandra...
+    //
     f_cassandra_host = cassandra.get_cassandra_host();
     f_cassandra_port = cassandra.get_cassandra_port();
 
     // create possibly missing tables
-    create_table(context, get_name(watchdog::SNAP_NAME_WATCHDOG_SERVERSTATS),  "Statistics of all our servers.");
+    //
+    create_table(context, get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS),  "Statistics of all our servers.");
+
+    // make sure it is synchronized
+    //
+    // TODO: fix that by using snap_cassandra all along (in the snapserver
+    //       too actually...)
+    //
+    create_table(context, get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS),  "Statistics of all our servers.");
 }
 
 
@@ -603,7 +634,7 @@ void watchdog_server::init_parameters()
 {
     // Time Frequency (how often we gather the stats)
     {
-        QString const statistics_frequency(get_parameter(get_name(watchdog::SNAP_NAME_WATCHDOG_STATISTICS_FREQUENCY)));
+        QString const statistics_frequency(get_parameter(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_STATISTICS_FREQUENCY)));
         bool ok(false);
         f_statistics_frequency = static_cast<int64_t>(statistics_frequency.toLongLong(&ok));
         if(!ok)
@@ -626,7 +657,7 @@ void watchdog_server::init_parameters()
 
     // Time Period (how many stats we keep in the db)
     {
-        QString const statistics_period(get_parameter(get_name(watchdog::SNAP_NAME_WATCHDOG_STATISTICS_PERIOD)));
+        QString const statistics_period(get_parameter(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_STATISTICS_PERIOD)));
         bool ok(false);
         f_statistics_period = static_cast<int64_t>(statistics_period.toLongLong(&ok));
         if(!ok)
@@ -650,7 +681,7 @@ void watchdog_server::init_parameters()
 
     // Time To Live (TTL, used to make sure we do not over crowd the database)
     {
-        QString const statistics_ttl(get_parameter(get_name(watchdog::SNAP_NAME_WATCHDOG_STATISTICS_TTL)));
+        QString const statistics_ttl(get_parameter(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_STATISTICS_TTL)));
         bool ok(false);
         f_statistics_ttl = static_cast<int64_t>(statistics_ttl.toLongLong(&ok));
         if(!ok)
@@ -694,6 +725,9 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
     {
         SNAP_LOG_INFO("Stopping watchdog server.");
 
+        f_stopping = true;
+        g_messager->mark_done();
+
         // someone asking us to stop snap_init; this means we want to stop
         // all the services that snap_init started; if we have a
         // snapcommunicator, then we use that to send the STOP signal to
@@ -705,6 +739,11 @@ void watchdog_server::process_message(snap::snap_communicator_message const & me
         g_messager->send_message(unregister);
 
         g_communicator->remove_connection(g_tick_timer);
+        if(!f_processes)
+        {
+            g_communicator->remove_connection(g_sigchld_connection);
+        }
+
         return;
     }
 
@@ -867,7 +906,7 @@ void watchdog_child::run_watchdog_plugins()
             result = doc.toString(-1);
 
             // save the result in a file first
-            QString data_path(server->get_parameter(watchdog::get_name(watchdog::SNAP_NAME_WATCHDOG_DATA_PATH)));
+            QString data_path(server->get_parameter(watchdog::get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_DATA_PATH)));
             data_path += QString("/%1.xml").arg(date);
             {
                 std::ofstream out;
@@ -883,7 +922,7 @@ void watchdog_child::run_watchdog_plugins()
             // (if the cluster is not available, we still have the files!)
             //
             // retrieve server statistics table
-            QString const table_name(get_name(watchdog::SNAP_NAME_WATCHDOG_SERVERSTATS));
+            QString const table_name(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVERSTATS));
             QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
 
             QtCassandra::QCassandraValue value;

@@ -38,7 +38,7 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_CASSANDRA_NAME:
+    case name_t::SNAP_NAME_WATCHDOG_CASSANDRA_NAME:
         return "name";
 
     default:

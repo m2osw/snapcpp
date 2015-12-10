@@ -26,6 +26,15 @@ namespace snap
 namespace memory
 {
 
+
+enum class name_t
+{
+    SNAP_NAME_WATCHDOG_MEMORY_NAME
+};
+char const * get_name(name_t name) __attribute__ ((const));
+
+
+
 class memory_exception : public snap_exception
 {
 public:
@@ -46,14 +55,8 @@ public:
 
 
 
-enum name_t
-{
-    SNAP_NAME_WATCHDOG_MEMORY_NAME
-};
-char const * get_name(name_t name) __attribute__ ((const));
-
-
-class memory : public plugins::plugin
+class memory
+        : public plugins::plugin
 {
 public:
                         memory();

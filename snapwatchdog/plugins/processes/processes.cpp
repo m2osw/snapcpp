@@ -46,7 +46,7 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_PROCESSES:
+    case name_t::SNAP_NAME_WATCHDOG_PROCESSES:
         return "watchdog_processes";
 
     default:
@@ -162,8 +162,8 @@ void processes::bootstrap(snap_child * snap)
  */
 void processes::on_process_watch(QDomDocument doc)
 {
-std::cerr << "starting on processes...\n";
-    QString process_names(f_snap->get_server_parameter(get_name(SNAP_NAME_WATCHDOG_PROCESSES)));
+//std::cerr << "starting on processes...\n";
+    QString process_names(f_snap->get_server_parameter(get_name(name_t::SNAP_NAME_WATCHDOG_PROCESSES)));
     if(process_names.isEmpty())
     {
         return;

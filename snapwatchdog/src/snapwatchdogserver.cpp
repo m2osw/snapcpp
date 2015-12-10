@@ -21,7 +21,7 @@
 #include "not_reached.h"
 
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
     int exitval = 1;
     try

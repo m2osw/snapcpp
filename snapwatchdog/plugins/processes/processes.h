@@ -26,6 +26,15 @@ namespace snap
 namespace processes
 {
 
+
+enum class name_t
+{
+    SNAP_NAME_WATCHDOG_PROCESSES
+};
+char const * get_name(name_t name) __attribute__ ((const));
+
+
+
 //class apache_exception : public snap_exception
 //{
 //public:
@@ -46,14 +55,8 @@ namespace processes
 
 
 
-enum name_t
-{
-    SNAP_NAME_WATCHDOG_PROCESSES
-};
-char const * get_name(name_t name) __attribute__ ((const));
-
-
-class processes : public plugins::plugin
+class processes
+        : public plugins::plugin
 {
 public:
                         processes();

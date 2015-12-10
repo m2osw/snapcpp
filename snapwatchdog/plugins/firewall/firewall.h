@@ -24,6 +24,13 @@ namespace snap
 namespace apache
 {
 
+enum class name_t
+{
+    SNAP_NAME_WATCHDOG_APACHE_NAME
+};
+char const * get_name(name_t name) __attribute__ ((const));
+
+
 //class apache_exception : public snap_exception
 //{
 //public:
@@ -44,14 +51,8 @@ namespace apache
 
 
 
-enum name_t
-{
-    SNAP_NAME_WATCHDOG_APACHE_NAME
-};
-char const * get_name(name_t name) __attribute__ ((const));
-
-
-class apache : public plugins::plugin
+class apache
+        : public plugins::plugin
 {
 public:
                         apache();

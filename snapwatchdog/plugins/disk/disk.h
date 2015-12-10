@@ -26,6 +26,15 @@ namespace snap
 namespace disk
 {
 
+enum class name_t
+{
+    SNAP_NAME_WATCHDOG_DISK_NAME
+};
+char const * get_name(name_t name) __attribute__ ((const));
+
+
+
+
 class disk_exception : public snap_exception
 {
 public:
@@ -46,14 +55,8 @@ public:
 
 
 
-enum name_t
-{
-    SNAP_NAME_WATCHDOG_DISK_NAME
-};
-char const * get_name(name_t name) __attribute__ ((const));
-
-
-class disk : public plugins::plugin
+class disk
+        : public plugins::plugin
 {
 public:
                         disk();

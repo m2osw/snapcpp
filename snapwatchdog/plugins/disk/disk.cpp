@@ -44,7 +44,7 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_DISK_NAME:
+    case name_t::SNAP_NAME_WATCHDOG_DISK_NAME:
         return "admin/drafts";
 
     default:

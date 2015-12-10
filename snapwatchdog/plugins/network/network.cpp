@@ -45,7 +45,7 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_NETWORK_NAME:
+    case name_t::SNAP_NAME_WATCHDOG_NETWORK_NAME:
         return "name";
 
     default:
@@ -164,7 +164,7 @@ void network::on_init()
 {
     // it is an XML file because the data varies quite a bit depending
     // on the number of servers supported
-    f_network_data_path = QString("%1/network.xml").arg(f_snap->get_server_parameter(watchdog::get_name(watchdog::SNAP_NAME_WATCHDOG_DATA_PATH)));
+    f_network_data_path = QString("%1/network.xml").arg(f_snap->get_server_parameter(watchdog::get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_DATA_PATH)));
 }
 
 
