@@ -2036,8 +2036,11 @@ void sendmail::on_backend_action(QString const & action)
  */
 void sendmail::check_bounced_emails()
 {
-    SNAP_LOG_TRACE("process raw bounced emails");
+    //SNAP_LOG_TRACE("process raw bounced emails");
 
+    // TODO: this one needs to be protected if we are to allow multi-computer
+    //       processing of emails
+    //
     QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     QtCassandra::QCassandraRow::pointer_t raw_row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_RAW)));
     QtCassandra::QCassandraColumnRangePredicate all_column_predicate;
@@ -2076,7 +2079,7 @@ void sendmail::check_bounced_emails()
 
     QString const website_key(f_snap->get_website_key());
 
-    SNAP_LOG_TRACE("process \"")(website_key)("\" bounced emails");
+    //SNAP_LOG_TRACE("process \"")(website_key)("\" bounced emails");
 
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;

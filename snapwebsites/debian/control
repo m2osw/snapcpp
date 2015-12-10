@@ -86,8 +86,8 @@ Package: snapserver
 Section: web
 Architecture: any
 Depends: adduser, libsnapwebsites (= ${binary:Version}),
-    snapserver-core-plugins (= ${binary:Version}), ${shlibs:Depends},
-    ${misc:Depends}
+    snapserver-core-plugins (= ${binary:Version}), iplock,
+    ${shlibs:Depends}, ${misc:Depends}
 Recommends: cassandra (>= 2.0.3)
 Suggests: snapcgi (= ${binary:Version})
 Description: Fast Websites: powerful CMS for Apache written in C++.
