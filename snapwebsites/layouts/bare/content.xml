@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>This box is shown on the left side of the content.</p>]]>
     </param>
   </content>
-  <content path="/admin/layouts/bare/left/login" owner="users">
+  <content path="/admin/layouts/bare/left/login" owner="users_ui">
     <!--
       this is a default box as a proof of concept
       once we can edit this data it will be much less useful

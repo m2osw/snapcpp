@@ -586,7 +586,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             // TBD error or default if f_owner is empty?
             //     (f_ipath can be empty because the root cpath is "")
             f_state.push_back(s);
-//std::cerr << "Push " << s.f_owner << ", path " << s.f_ipath << "\n";
+//SNAP_LOG_TRACE("Push ")(s.f_owner)(", path ")(s.f_ipath.get_key());
         }
 
         void pop(QDomNode p)

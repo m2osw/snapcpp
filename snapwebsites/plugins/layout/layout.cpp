@@ -537,7 +537,7 @@ QString layout::define_layout(content::path_info_t & ipath, QString const & name
     // Retrieve the name of the layout for this path
     layout_name = get_layout(ipath, name, true);
 
-//SNAP_LOG_TRACE() << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")";
+//SNAP_LOG_TRACE("Got theme / layout name = [")(layout_name)("] (key=")(ipath.get_key())(")");
 
     // If layout_name is not default, attempt to obtain the selected
     // theme from the layout table.
@@ -1057,7 +1057,7 @@ void layout::generate_boxes(content::path_info_t & ipath, QString const & layout
                         box_ipath.set_path(child_info.key());
                         box_ipath.set_parameter("action", "view"); // we are always only viewing those boxes from here
 SNAP_LOG_TRACE("box_ipath key = ")(box_ipath.get_key())(", branch_key=")(box_ipath.get_branch_key());
-                        plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
+                        plugin * box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
                         if(!box_error_callback.has_error() && box_plugin)
                         {
                             layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
@@ -1069,7 +1069,7 @@ SNAP_LOG_TRACE("box_ipath key = ")(box_ipath.get_key())(", branch_key=")(box_ipa
                                 filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
                                 filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                                 dom_boxes[i].appendChild(filter_box);
-SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
+SNAP_LOG_TRACE("handle box for ")(box_plugin->get_plugin_name())(" with owner \"")(box_plugin->get_plugin_name())("\"");
 
                                 // Unfortunately running the full header content
                                 // signal would overwrite the main data... not good!
@@ -1907,7 +1907,7 @@ bool layout::on_improve_signature(QString const & path, QDomDocument doc, QDomEl
   </body>
   <boxes>
    <left>
-    <filter path="admin/layouts/bare/left/login" owner="users">
+    <filter path="admin/layouts/bare/left/login" owner="users_ui">
      <titles>
       <title>User Login</title>
      </titles>

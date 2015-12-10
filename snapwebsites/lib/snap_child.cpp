@@ -5392,7 +5392,7 @@ void snap_child::attach_to_session()
  *
  * \return true if the file was found, false otherwise.
  */
-bool snap_child::load_file(post_file_t& file)
+bool snap_child::load_file(post_file_t & file)
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
@@ -5468,7 +5468,7 @@ QString snap_child::snapenv(QString const & name) const
  *
  * \return true if the value is defined, false otherwise.
  */
-bool snap_child::postenv_exists(const QString& name) const
+bool snap_child::postenv_exists(QString const & name) const
 {
     return f_post.contains(name);
 }
@@ -5489,7 +5489,7 @@ bool snap_child::postenv_exists(const QString& name) const
  *
  * \return The value of that POST variable or the \p default_value.
  */
-QString snap_child::postenv(QString const& name, QString const& default_value) const
+QString snap_child::postenv(QString const & name, QString const & default_value) const
 {
     return f_post.value(name, default_value);
 }
@@ -5523,7 +5523,7 @@ void snap_child::replace_postenv(QString const & name, QString const & value)
  *
  * \sa postfile()
  */
-bool snap_child::postfile_exists(QString const& name) const
+bool snap_child::postfile_exists(QString const & name) const
 {
     // the QMap only returns a reference if this is not constant
     return f_files.contains(name) && f_files[name].get_size() != 0;
@@ -5548,7 +5548,7 @@ bool snap_child::postfile_exists(QString const& name) const
  *
  * \sa postfile_exists()
  */
-const snap_child::post_file_t& snap_child::postfile(QString const& name) const
+const snap_child::post_file_t& snap_child::postfile(QString const & name) const
 {
     // the QMap only returns a reference if this is not constant
     return const_cast<snap_child *>(this)->f_files[name];
@@ -5569,7 +5569,7 @@ const snap_child::post_file_t& snap_child::postfile(QString const& name) const
  *
  * \return true if the cookie was sent to us, false otherwise.
  */
-bool snap_child::cookie_is_defined(const QString& name) const
+bool snap_child::cookie_is_defined(QString const & name) const
 {
     return f_browser_cookies.contains(name);
 }
@@ -5588,7 +5588,7 @@ bool snap_child::cookie_is_defined(const QString& name) const
  *
  * \return The content of the cookie, an empty string if the cookie is not defined.
  */
-QString snap_child::cookie(const QString& name) const
+QString snap_child::cookie(QString const & name) const
 {
     if(f_browser_cookies.contains(name))
     {
@@ -5651,7 +5651,7 @@ bool snap_child::is_debug() const
  *
  * \return A pointer to the version of the running server library.
  */
-char const *snap_child::get_running_server_version()
+char const * snap_child::get_running_server_version()
 {
     return server::version();
 }

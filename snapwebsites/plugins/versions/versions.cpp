@@ -23,6 +23,7 @@
 #include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
+#include "process.h"
 
 #include <csspp/csspp.h>
 #include <libtld/tld.h>
@@ -45,7 +46,7 @@ SNAP_PLUGIN_START(versions, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -285,6 +286,18 @@ void versions::versions_libraries_done(filter::filter::token_info_t & token)
 bool versions::versions_tools_impl(filter::filter::token_info_t & token)
 {
     token.f_replacement += "<h3>Tools</h3><ul>";
+
+        // iplock
+    token.f_replacement += "<li>iplock ";
+    {
+        process p("check iplock version");
+        p.set_mode(p.mode_t::PROCESS_MODE_OUTPUT);
+        p.set_command("iplock");
+        p.add_argument("--version");
+        p.run();
+        token.f_replacement += p.get_output();
+    }
+    token.f_replacement += "</li>";
 
     return true;
 }

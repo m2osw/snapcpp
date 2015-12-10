@@ -73,9 +73,6 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LIST_NAMESPACE:
         return "list";
 
-    case name_t::SNAP_NAME_LIST_NEXT_UPDATE:
-        return "list::next_update";
-
     case name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS:
         return "list::number_of_items";
 
@@ -3290,65 +3287,71 @@ void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
                 // the list in the first place)
                 item_ipath.set_parameter("mode", "display");
                 plugin * item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
+                layout_content * l(dynamic_cast<layout_content *>(item_plugin));
                 if(!list_error_callback.has_error() && item_plugin)
                 {
-                    // put each box in a filter tag so that way we have
-                    // a different owner and path for each
-                    QDomDocument item_doc(layout_plugin->create_document(item_ipath, item_plugin));
-                    QDomElement item_root(item_doc.documentElement());
-                    item_root.setAttribute("index", index);
-
-                    FIELD_SEARCH
-                        (content::field_search::command_t::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
-                        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
-
-                        // snap/head/metadata/desc[@type="list_uri"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_key())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_uri]/data")
-
-                        // snap/head/metadata/desc[@type="list_path"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_cpath)
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_path]/data")
-
-                        // snap/head/metadata/desc[@type="box_uri"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_uri]/data")
-
-                        // snap/head/metadata/desc[@type="box_path"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_cpath())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_path]/data")
-
-                        // snap/head/metadata/desc[@type="main_page_uri"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_uri]/data")
-
-                        // snap/head/metadata/desc[@type="main_page_path"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_cpath())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_path]/data")
-
-                        // retrieve names of all the boxes
-                        ;
-
-                    layout_content * l(dynamic_cast<layout_content *>(item_plugin));
-                    if(!l)
+                    if(l)
                     {
-                        throw snap_logic_exception("the item_plugin pointer was not a layout_content");
-                    }
+                        // put each box in a filter tag so that way we have
+                        // a different owner and path for each
+                        //
+                        QDomDocument item_doc(layout_plugin->create_document(item_ipath, item_plugin));
+                        QDomElement item_root(item_doc.documentElement());
+                        item_root.setAttribute("index", index);
+
+                        FIELD_SEARCH
+                            (content::field_search::command_t::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
+                            (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+
+                            // snap/head/metadata/desc[@type="list_uri"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_key())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_uri]/data")
+
+                            // snap/head/metadata/desc[@type="list_path"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_cpath)
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_path]/data")
+
+                            // snap/head/metadata/desc[@type="box_uri"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_uri]/data")
+
+                            // snap/head/metadata/desc[@type="box_path"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_cpath())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_path]/data")
+
+                            // snap/head/metadata/desc[@type="main_page_uri"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_uri]/data")
+
+                            // snap/head/metadata/desc[@type="main_page_path"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_cpath())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_path]/data")
+
+                            // retrieve names of all the boxes
+                            ;
+
 //SNAP_LOG_WARNING("create body for item ")(i)(" with index ")(index);
-                    layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, l);
+                        layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, l);
 //std::cerr << "source to be parsed [" << item_doc.toString(-1) << "]\n";
-                    QDomElement item_body(snap_dom::get_element(item_doc, "body"));
-                    item_body.setAttribute("index", index);
+                        QDomElement item_body(snap_dom::get_element(item_doc, "body"));
+                        item_body.setAttribute("index", index);
 //SNAP_LOG_WARNING("apply theme to item ")(i)(" with index ")(index);
-                    QString const themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
+                        QString const themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
 //std::cerr << "themed item [" << themed_item << "]\n";
 
-                    // add that result to the list document
-                    QDomElement item(list_doc.createElement("item"));
-                    list_element.appendChild(item);
-                    snap_dom::insert_html_string_to_xml_doc(item, themed_item);
+                        // add that result to the list document
+                        QDomElement item(list_doc.createElement("item"));
+                        list_element.appendChild(item);
+                        snap_dom::insert_html_string_to_xml_doc(item, themed_item);
 
-                    ++index; // index only counts items added to the output
+                        ++index; // index only counts items added to the output
+                    }
+                    else
+                    {
+                        SNAP_LOG_ERROR("the item_plugin pointer for \"")
+                                      (item_plugin->get_plugin_name())
+                                      ("\" is not a layout_content");
+                    }
                 }
             }
 
