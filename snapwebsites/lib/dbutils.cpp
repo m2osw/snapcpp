@@ -380,7 +380,8 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         }
     }
     else if((f_tableName == "users"    && f_rowName == "*index_row*")
-         || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*")))
+         || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
+         || f_tableName == "serverstats")
     {
         // special case where the column key is a 64 bit integer
         //const QByteArray& name(c->columnKey());

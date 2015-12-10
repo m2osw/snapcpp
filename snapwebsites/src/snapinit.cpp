@@ -919,6 +919,7 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
     f_debug = debug;
 
     // first make sure we have a name for this service
+    //
     f_service_name = e.attribute("name");
     if(f_service_name.isEmpty())
     {
@@ -1236,7 +1237,25 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
     //
     if(f_command[0] != '/')
     {
-        f_full_path = QString("%1/%2").arg(binary_path).arg(f_command);
+        snap::snap_string_list paths(binary_path.split(':'));
+        for(auto p : paths)
+        {
+            f_full_path = QString("%1/%2").arg(p).arg(f_command);
+            QFile file(f_full_path);
+            if(file.exists())
+            {
+                goto done;
+            }
+        }
+
+        SNAP_LOG_FATAL("could not find \"")
+                      (f_service_name)
+                      ("\" in any of the paths \"")
+                      (binary_path)
+                      ("\".");
+        exit(1);
+        snap::NOTREACHED();
+done:;
     }
     else
     {
@@ -2591,6 +2610,15 @@ void snap_init::init()
     // make sure the path to the lock file exists
     //
     snap::mkdir_p(f_lock_filename, true);
+
+    // Stop on these signals, log them, then terminate.
+    //
+    // Note: the handler may access the snap_init instance
+    //
+    signal( SIGSEGV, sighandler );
+    signal( SIGBUS,  sighandler );
+    signal( SIGFPE,  sighandler );
+    signal( SIGILL,  sighandler );
 }
 
 
@@ -3934,15 +3962,6 @@ int main(int argc, char *argv[])
         // First, create the static snap_init object
         //
         snap_init::create_instance( argc, argv );
-
-        // Stop on these signals, log them, then terminate.
-        //
-        // Note: the handler may access the snap_init instance
-        //
-        signal( SIGSEGV, snap_init::sighandler );
-        signal( SIGBUS,  snap_init::sighandler );
-        signal( SIGFPE,  snap_init::sighandler );
-        signal( SIGILL,  snap_init::sighandler );
 
         // Now run our processes!
         //

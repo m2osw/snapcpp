@@ -20,13 +20,6 @@
 #include "not_used.h"
 #include "snap_cassandra.h"
 
-//#include <QtCassandra/QCassandraLock.h>
-
-//#include <wait.h>
-//#include <fcntl.h>
-//#include <sys/resource.h>
-
-
 
 namespace
 {

@@ -8525,7 +8525,7 @@ void snap_child::udp_ping(char const * service_name)
  *
  * \return true if the tag is considered to be inline by default.
  */
-bool snap_child::tag_is_inline(char const *tag, int length)
+bool snap_child::tag_is_inline(char const * tag, int length)
 {
     if(tag == nullptr)
     {
