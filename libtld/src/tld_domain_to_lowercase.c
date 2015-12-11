@@ -527,6 +527,7 @@ char *tld_domain_to_lowercase(const char *domain)
         if(tld_wctomb(wc, &output, &len) != 0)
         {
             // could not encode; buffer is probably full
+            free(result);
             return (char *) 0;
         }
     }
