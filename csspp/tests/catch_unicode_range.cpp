@@ -182,7 +182,7 @@ TEST_CASE("Unicode range: start/end differ", "[unicode-range] [range]")
             {
                 std::swap(unicode_start, unicode_end);
             }
-            while(unicode_end & 15 == 15)
+            while((unicode_end & 15) == 15)
             {
                 unicode_end &= rand() % 15;
                 if(unicode_start > unicode_end)

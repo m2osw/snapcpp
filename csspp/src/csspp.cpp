@@ -243,6 +243,11 @@ namespace
 
 std::vector<std::string> const g_configuration_files; // Empty
 
+void free_char(char * ptr)
+{
+    free(ptr);
+}
+
 advgetopt::getopt::option const g_options[] =
 {
     {
@@ -436,7 +441,7 @@ int pp::compile()
         }
         else
         {
-            char * cwd(get_current_dir_name());
+            std::unique_ptr<char, void (*)(char *)> cwd(get_current_dir_name(), free_char);
             ss.reset(new std::stringstream);
             pos.reset(new csspp::position("csspp.css"));
             for(int idx(0); idx < arg_count; ++idx)
@@ -465,7 +470,7 @@ int pp::compile()
                 else
                 {
                     // make absolute so we do not need to have a "." path
-                    *ss << "@import \"" << cwd << "/" << filename << "\";\n";
+                    *ss << "@import \"" << cwd.get() << "/" << filename << "\";\n";
                 }
             }
             l.reset(new csspp::lexer(*ss, *pos));
@@ -618,6 +623,16 @@ int main(int argc, char *argv[])
     {
         // something went wrong in the library
         return e.exit_code();
+    }
+    catch(csspp::csspp_exception_runtime const & e)
+    {
+        std::cerr << "fatal error: an exception occurred: " << e.what() << std::endl;
+        exit(1);
+    }
+    catch(advgetopt::getopt_exception_invalid const & e)
+    {
+        std::cerr << "fatal error: there is an error on your command line, an exception occurred: " << e.what() << std::endl;
+        exit(1);
     }
 }
 

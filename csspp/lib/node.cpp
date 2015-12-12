@@ -866,6 +866,7 @@ std::string node::to_string(int flags) const
 
     case node_type_t::VARIABLE_FUNCTION:
         out << '$';
+        /*FALLTHROUGH*/
     case node_type_t::FUNCTION:
         {
             out << f_string << "(";

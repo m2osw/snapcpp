@@ -38,6 +38,11 @@
 #include <sys/stat.h>
 
 
+void free_char(char * ptr)
+{
+    free(ptr);
+}
+
 TEST_CASE("Compile set_date_time_variables() called too soon", "[compiler] [invalid]")
 {
         csspp::compiler c;
@@ -1727,7 +1732,7 @@ TEST_CASE("Invalid attributes", "[compiler] [invalid]")
     {
         char const * invalid_value[] =
         {
-            "identifier-too"
+            "identifier-too",
             "123",
             "1.23",
             "'1.23'",
@@ -1756,7 +1761,7 @@ TEST_CASE("Invalid attributes", "[compiler] [invalid]")
             "~",
             "&",
             "|",
-            "||",
+            "||"
         };
 
         for(auto iv : invalid_value)
@@ -7201,7 +7206,7 @@ TEST_CASE("Advanced variables", "[compiler] [variable]")
                 {
                     f_variable.push_back(v1);
                 }
-                if(r1 && strcmp(r1, "WHITESPACE") != 0)
+                if(strcmp(r1, "WHITESPACE") != 0)
                 {
                     f_variable.push_back(r1);
                 }
@@ -9563,9 +9568,12 @@ TEST_CASE("User @import", "[compiler] [at-keyword]")
             importing << "/* @preserve this worked! {$_csspp_version} */";
         }
         std::stringstream ss;
-        ss << "@import url(file://"
-           << get_current_dir_name()
-           << "/importing.scss);";
+        {
+            std::unique_ptr<char, void (*)(char *)> cwd(get_current_dir_name(), free_char);
+            ss << "@import url(file://"
+               << cwd.get()
+               << "/importing.scss);";
+        }
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 

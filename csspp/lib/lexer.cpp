@@ -436,6 +436,7 @@ node::pointer_t lexer::next_token()
                 }
                 ungetc(n);
             }
+            /*FALLTHROUGH*/
         case '\\':
         case '@':
             {
@@ -728,7 +729,7 @@ void lexer::ungetc(wide_char_t c)
     }
 
     // make sure we do not overflow the buffer
-    if(f_ungetc_pos >= sizeof(f_ungetc))
+    if(f_ungetc_pos >= sizeof(f_ungetc) / sizeof(f_ungetc[0]))
     {
         // this error should never happen
         throw csspp_exception_logic("lexer called ungetc() too many times and ran out of space"); // LCOV_EXCL_LINE

@@ -284,6 +284,7 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
     {
     case mix_node_types(node_type_t::INTEGER, node_type_t::STRING):
         std::swap(lhs, rhs);
+        /*FALLTHROUGH*/
     case mix_node_types(node_type_t::STRING, node_type_t::INTEGER):
         if(op != node_type_t::MULTIPLY)
         {
@@ -427,6 +428,7 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
             return node::pointer_t();
         }
         std::swap(lhs, rhs);
+        /*FALLTHROUGH*/
     case mix_node_types(node_type_t::COLOR, node_type_t::INTEGER):
         bf = static_cast<decimal_number_t>(rhs->get_integer());
         goto color_multiplicative;
@@ -441,6 +443,7 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
             return node::pointer_t();
         }
         std::swap(lhs, rhs);
+        /*FALLTHROUGH*/
     case mix_node_types(node_type_t::COLOR, node_type_t::DECIMAL_NUMBER):
     case mix_node_types(node_type_t::COLOR, node_type_t::PERCENT):
         bf = rhs->get_decimal_number();

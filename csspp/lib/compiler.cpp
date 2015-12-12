@@ -336,7 +336,7 @@ node::pointer_t compiler::compiler_state_t::execute_user_function(node::pointer_
         }
     }
 
-    compiler c(this);
+    compiler c(true);
     c.set_root(root);
     c.f_state.f_paths = f_paths;
     c.f_state.f_empty_on_undefined_variable = f_empty_on_undefined_variable;
@@ -1652,6 +1652,7 @@ void compiler::remove_empty_rules(node::pointer_t n)
             f_state.get_previous_parent()->remove_child(n);
             return;
         }
+        /*FALLTHROUGH*/
     case node_type_t::AT_KEYWORD:
     //case node_type_t::ARG:
     case node_type_t::DECLARATION:

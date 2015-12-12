@@ -158,4 +158,3 @@ std::string decimal_number_to_string(decimal_number_t d, bool remove_leading_zer
 // End:
 
 // vim: ts=4 sw=4 et
-

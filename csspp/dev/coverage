@@ -45,7 +45,7 @@ then
     echo "   --test name    run a specific test in a test specific directory"
     echo "                  (see list below, do NOT include the square brackets)"
     echo
-    echo "To run specific tests, use one of the tags defined in the test suite."
+    echo "To run specific tests, use one of the tags defined in the test suite with --test."
     echo "   '[additive]' (expressions sub-set)"
     echo "   '[assembler]'"
     echo "   '[color]'"
