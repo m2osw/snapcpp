@@ -31,6 +31,7 @@
  */
 
 #include "zipios/zipfile.hpp"
+#include "zipios/zipiosexceptions.hpp"
 
 #include <cstring>
 
@@ -127,113 +128,121 @@ int main(int argc, char *argv[])
         g_progname = e + 1;
     }
 
-    // check the various command line options
-    std::vector<std::string> files;
-    func_t function(func_t::UNDEFINED);
-    for(int i(1); i < argc; ++i)
+    try
     {
-        if(argv[i][0] == '-')
+        // check the various command line options
+        std::vector<std::string> files;
+        func_t function(func_t::UNDEFINED);
+        for(int i(1); i < argc; ++i)
         {
-            if(strcmp(argv[i], "--help") == 0)
+            if(argv[i][0] == '-')
             {
-                usage();
+                if(strcmp(argv[i], "--help") == 0)
+                {
+                    usage();
+                }
+                if(strcmp(argv[i], "--version") == 0)
+                {
+                    // version of the .so library
+                    std::cout << zipios::getVersion() << std::endl;
+                    exit(0);
+                }
+                if(strcmp(argv[i], "--version-tool") == 0)
+                {
+                    // version of this tool (compiled with this version)
+                    // it should be the same as the --version
+                    std::cout << ZIPIOS_VERSION_STRING << std::endl;
+                    exit(0);
+                }
+                if(strcmp(argv[i], "--count") == 0)
+                {
+                    function = func_t::COUNT;
+                }
+                else if(strcmp(argv[i], "--count-directories") == 0)
+                {
+                    function = func_t::COUNT_DIRECTORIES;
+                }
+                else if(strcmp(argv[i], "--count-files") == 0)
+                {
+                    function = func_t::COUNT_FILES;
+                }
             }
-            if(strcmp(argv[i], "--version") == 0)
+            else
             {
-                // version of the .so library
-                std::cout << zipios::getVersion() << std::endl;
-                exit(0);
-            }
-            if(strcmp(argv[i], "--version-tool") == 0)
-            {
-                // version of this tool (compiled with this version)
-                // it should be the same as the --version
-                std::cout << ZIPIOS_VERSION_STRING << std::endl;
-                exit(0);
-            }
-            if(strcmp(argv[i], "--count") == 0)
-            {
-                function = func_t::COUNT;
-            }
-            else if(strcmp(argv[i], "--count-directories") == 0)
-            {
-                function = func_t::COUNT_DIRECTORIES;
-            }
-            else if(strcmp(argv[i], "--count-files") == 0)
-            {
-                function = func_t::COUNT_FILES;
+                files.push_back(argv[i]);
             }
         }
-        else
+
+        switch(function)
         {
-            files.push_back(argv[i]);
+        case func_t::COUNT:
+            for(auto it(files.begin()); it != files.end(); ++it)
+            {
+                zipios::ZipFile zf(*it);
+                if(files.size() > 1)
+                {
+                    // write filename in case there is more than one file
+                    std::cout << *it << ": ";
+                }
+                std::cout << zf.entries().size() << std::endl;
+            }
+            break;
+
+        case func_t::COUNT_DIRECTORIES:
+            for(auto it(files.begin()); it != files.end(); ++it)
+            {
+                zipios::ZipFile zf(*it);
+                if(files.size() > 1)
+                {
+                    // write filename in case there is more than one file
+                    std::cout << *it << ": ";
+                }
+                int count(0);
+                zipios::FileEntry::vector_t entries(zf.entries());
+                for(auto entry(entries.begin()); entry != entries.end(); ++entry)
+                {
+                    if((*entry)->isDirectory())
+                    {
+                        ++count;
+                    }
+                }
+                std::cout << count << std::endl;
+            }
+            break;
+
+        case func_t::COUNT_FILES:
+            for(auto it(files.begin()); it != files.end(); ++it)
+            {
+                zipios::ZipFile zf(*it);
+                if(files.size() > 1)
+                {
+                    // write filename in case there is more than one file
+                    std::cout << *it << ": ";
+                }
+                int count(0);
+                zipios::FileEntry::vector_t entries(zf.entries());
+                for(auto entry(entries.begin()); entry != entries.end(); ++entry)
+                {
+                    if(!(*entry)->isDirectory())
+                    {
+                        ++count;
+                    }
+                }
+                std::cout << count << std::endl;
+            }
+            break;
+
+        default:
+            std::cerr << g_progname << ":error: undefined function." << std::endl;
+            usage();
+            break;
+
         }
     }
-
-    switch(function)
+    catch(zipios::Exception const & e)
     {
-    case func_t::COUNT:
-        for(auto it(files.begin()); it != files.end(); ++it)
-        {
-            zipios::ZipFile zf(*it);
-            if(files.size() > 1)
-            {
-                // write filename in case there is more than one file
-                std::cout << *it << ": ";
-            }
-            std::cout << zf.entries().size() << std::endl;
-        }
-        break;
-
-    case func_t::COUNT_DIRECTORIES:
-        for(auto it(files.begin()); it != files.end(); ++it)
-        {
-            zipios::ZipFile zf(*it);
-            if(files.size() > 1)
-            {
-                // write filename in case there is more than one file
-                std::cout << *it << ": ";
-            }
-            int count(0);
-            zipios::FileEntry::vector_t entries(zf.entries());
-            for(auto entry(entries.begin()); entry != entries.end(); ++entry)
-            {
-                if((*entry)->isDirectory())
-                {
-                    ++count;
-                }
-            }
-            std::cout << count << std::endl;
-        }
-        break;
-
-    case func_t::COUNT_FILES:
-        for(auto it(files.begin()); it != files.end(); ++it)
-        {
-            zipios::ZipFile zf(*it);
-            if(files.size() > 1)
-            {
-                // write filename in case there is more than one file
-                std::cout << *it << ": ";
-            }
-            int count(0);
-            zipios::FileEntry::vector_t entries(zf.entries());
-            for(auto entry(entries.begin()); entry != entries.end(); ++entry)
-            {
-                if(!(*entry)->isDirectory())
-                {
-                    ++count;
-                }
-            }
-            std::cout << count << std::endl;
-        }
-        break;
-
-    default:
-        std::cerr << g_progname << ":error: undefined function." << std::endl;
-        usage();
-        break;
-
+        std::cerr << g_progname << ":error: an exception occurred: "
+                  << e.what() << std::endl;
     }
 
     return 0;
