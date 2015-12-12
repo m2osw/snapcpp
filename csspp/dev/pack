@@ -41,7 +41,7 @@ then
     echo "To use this script, we expect you to have a directory named"
     echo "sources-repo, which is a pristine copy of the git repository."
     echo "Create that directory like any other git repository and place"
-    echo "it as the parent of the csspp directory. The script will update"
+    echo "it in the parent of the csspp directory. The script will update"
     echo "the files on each run."
     exit 1
 fi
