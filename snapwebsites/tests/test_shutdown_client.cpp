@@ -147,7 +147,11 @@ int main(int /*argc*/, char * /*argv*/[])
         mc->set_timeout_delay(1LL * 1000000LL);
 
         int flag(1);
-        setsockopt(mc->get_socket(), IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
+        if(setsockopt(mc->get_socket(), IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0)
+        {
+            int const e(errno);
+            SNAP_LOG_WARNING("setsockopt() with TCP_NODELAY failed. (errno: ")(e)(" -- ")(strerror(e))(")");
+        }
 
         snap::snap_communicator::instance()->add_connection(mc);
 

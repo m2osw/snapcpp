@@ -398,6 +398,7 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
     && content_table->row(ipath.get_key())->exists(primary_owner))
     //&& content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_STATUS)))
     {
+SNAP_LOG_TRACE("found path ")(ipath.get_key())(" in database... no dynamic stuff.");
         QString const action(define_action(ipath));
 
         // I don't think this is smart, instead I pass the action to the
@@ -623,11 +624,11 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
         // this key does not exist as is in the database, but...
         // it may be a dynamically defined path, check for a
         // plugin that would have defined such a path
-//SNAP_LOG_TRACE("Testing for page dynamically [")(ipath.get_cpath())("]");
         dynamic_plugin_t dp;
         can_handle_dynamic_path(ipath, dp);
 
         owner_plugin = dp.get_plugin();
+//SNAP_LOG_TRACE("Testing for page dynamically [")(ipath.get_cpath())("] -> ")(owner_plugin ? owner_plugin->get_plugin_name() : "no plugin found");
         if(owner_plugin == nullptr)
         {
             // a plugin (such as the attachment, images, or search plugins)
@@ -824,7 +825,7 @@ void path::on_execute(QString const & uri_path)
     ipath.set_main_page(true);
 
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get_cpath() << "] [" << ipath.get_branch() << "] [" << ipath.get_revision() << "]";
+SNAP_LOG_TRACE("path::on_execute(\"")(uri_path)("\") -> [")(ipath.get_cpath())("] [")(ipath.get_branch())("] [")(ipath.get_revision())("]");
 #endif
 
     // allow modules to redirect now, it has to be really early, note

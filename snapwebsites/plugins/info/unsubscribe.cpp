@@ -32,12 +32,10 @@ SNAP_PLUGIN_EXTENSION_START(info)
 
 void info::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
-SNAP_LOG_FATAL("got in info::on_can_handle_dynamic_path()");
     QString const cpath(ipath.get_cpath());
     if(cpath.startsWith(QString("%1/").arg(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH))))
     {
         // tell the path plugin that this is ours
-SNAP_LOG_FATAL("info::on_can_handle_dynamic_path() says we know of this one!");
         plugin_info.set_plugin(this);
         return;
     }
@@ -46,11 +44,9 @@ SNAP_LOG_FATAL("info::on_can_handle_dynamic_path() says we know of this one!");
 
 bool info::unsubscribe_on_path_execute(content::path_info_t & ipath)
 {
-SNAP_LOG_FATAL("info::unsubscribe_on_path_execute() trying to take over...");
     QString const cpath(ipath.get_cpath());
     if(!cpath.startsWith(QString("%1/").arg(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH))))
     {
-SNAP_LOG_FATAL("info::unsubscribe_on_path_execute() disagreed with the path!?");
         return false;
     }
 

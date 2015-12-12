@@ -1682,10 +1682,24 @@ void server::process_message(snap_communicator_message const & message)
     || command == "QUITTING")  // QUITTING happens when we send a message to snapcommunicator after it received a STOP
     {
         SNAP_LOG_INFO("Stopping server.");
+
+        if(g_connection->f_messager)
+        {
+            std::static_pointer_cast<messager>(g_connection->f_messager)->mark_done();
+
+            if(command != "QUITTING")
+            {
+                snap::snap_communicator_message cmd;
+                cmd.set_command("UNREGISTER");
+                cmd.add_parameter("service", "snapserver");
+                std::static_pointer_cast<messager>(g_connection->f_messager)->send_message(cmd);
+            }
+        }
+
         {
             g_connection->f_communicator->remove_connection(g_connection->f_listener);
             g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
-            g_connection->f_communicator->remove_connection(g_connection->f_messager);
+            //g_connection->f_communicator->remove_connection(g_connection->f_messager); -- will HUP once done
         }
         return;
     }
@@ -1806,6 +1820,15 @@ void listener_impl::process_accept()
     // a new client just connected
     //
     int const new_socket(accept());
+    if(new_socket < 0)
+    {
+        // TBD: should we call process_error() instead? problem is this
+        //      listener would be removed from the list of connections...
+        //
+        int const e(errno);
+        SNAP_LOG_ERROR("accept() returned an error. (errno: ")(e)(" -- ")(strerror(e))("). No new connection will be created.");
+        return;
+    }
 
     // we just have a socket and the keepalive() function in the
     // snap_connection requires... a snap_connection object.
@@ -2675,9 +2698,13 @@ void server::backend_action_set::execute_action(QString const & action)
         // the plugin itself expects the action name without the namespace
         // so we remove it here before we run the callback
         //
-        QString const namespace_name(dynamic_cast<plugins::plugin *>(f_actions[action])->get_plugin_name());
-        // the +2 is to skip the '::'
-        f_actions[action]->on_backend_action(action.mid(namespace_name.length() + 2));
+        plugins::plugin * p(dynamic_cast<plugins::plugin *>(f_actions[action]));
+        if(p) // always expected to be defined
+        {
+            QString const namespace_name(p->get_plugin_name());
+            // the +2 is to skip the '::'
+            f_actions[action]->on_backend_action(action.mid(namespace_name.length() + 2));
+        }
     }
 }
 
@@ -2695,7 +2722,11 @@ QString server::backend_action_set::get_plugin_name(QString const & action)
 {
     if(has_action(action))
     {
-        return dynamic_cast<plugins::plugin *>(f_actions[action])->get_plugin_name();
+        plugins::plugin * p(dynamic_cast<plugins::plugin *>(f_actions[action]));
+        if(p) // always expected to be defined
+        {
+            return p->get_plugin_name();
+        }
     }
 
     return QString();

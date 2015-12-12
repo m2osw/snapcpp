@@ -101,14 +101,20 @@ snap_uri::snap_uri()
  * This function sets the URI to the specified string. The parsing
  * is the same as in the set_uri() function.
  *
+ * \todo
+ * Should this function throw if the URI is considered invalid?
+ *
  * \param[in] uri  The URI to assign to this Snap URI object.
  *
  * \sa set_uri()
  */
 snap_uri::snap_uri(QString const & uri)
 {
-    set_uri(uri);
-    // TBD: should we throw if set_uri() returns false?
+    if(!set_uri(uri))
+    {
+        // TBD: should we throw if set_uri() returns false?
+        SNAP_LOG_ERROR("URI \"")(uri)("\" is considered invalid.");
+    }
 }
 
 /** \brief Replace the URI of this Snap URI object.
@@ -442,14 +448,10 @@ bool snap_uri::set_uri(QString const & uri)
     f_domain = domain_name;
     f_top_level_domain = tld;
     f_sub_domains = sub_domain_names;
-    //int max_sub_domains(sub_domains.size());
-    //for(int i(0); i < max_sub_domains; ++i) {
-    //    f_sub_domains << sub_domains[i];
-    //}
     f_path = uri_path;
 
     // options come from parsing the sub-domains, query strings and paths
-    // and at this point we don't have that information...
+    // and at this point we do not have that information...
     f_options.clear();
 
     f_query_strings = query_strings;
@@ -756,7 +758,7 @@ QString snap_uri::get_part(QString const& name, int part) const
  *
  * \param[in] uri_protocol  The name of the protocol.
  */
-void snap_uri::set_protocol(QString const& uri_protocol)
+void snap_uri::set_protocol(QString const & uri_protocol)
 {
     if(uri_protocol.isEmpty())
     {
@@ -906,7 +908,7 @@ bool snap_uri::process_domain(QString const & full_domain_name,
  * \param[in] full_domain_name  A full domain name, without protocol, path,
  *                              query string or anchor.
  */
-void snap_uri::set_domain(QString const& full_domain_name)
+void snap_uri::set_domain(QString const & full_domain_name)
 {
     snap_string_list sub_domain_names;
     QString domain_name;

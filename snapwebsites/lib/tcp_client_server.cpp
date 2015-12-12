@@ -221,7 +221,7 @@ void ssl_ctx_deleter(SSL_CTX * ssl_ctx)
  * \param[in] addr  The address of the server to connect to. It must be valid.
  * \param[in] port  The port the server is listening on.
  */
-tcp_client::tcp_client(std::string const& addr, int port)
+tcp_client::tcp_client(std::string const & addr, int port)
     : f_socket(-1)
     , f_port(port)
     , f_addr(addr)
@@ -547,6 +547,8 @@ tcp_server::tcp_server(std::string const & addr, int port, int max_connections, 
     f_socket = socket(addr_info.f_addrinfo->ai_family, SOCK_STREAM, IPPROTO_TCP);
     if(f_socket < 0)
     {
+        int const e(errno);
+        SNAP_LOG_FATAL("socket() failed to create a socket descriptor (errno: ")(e)(" -- ")(strerror(e))(")");
         throw tcp_client_server_runtime_error("could not create socket for client");
     }
 
@@ -1124,9 +1126,17 @@ std::string bio_client::get_addr() const
  */
 int bio_client::get_client_port() const
 {
+    // get_socket() returns -1 if f_bio is nullptr
+    //
+    int const s(get_socket());
+    if(s < 0)
+    {
+        return -1;
+    }
+
     struct sockaddr addr;
     socklen_t len(sizeof(addr));
-    int const r(getsockname(get_socket(), &addr, &len));
+    int const r(getsockname(s, &addr, &len));
     if(r != 0)
     {
         return -1;
@@ -1164,14 +1174,17 @@ int bio_client::get_client_port() const
  */
 std::string bio_client::get_client_addr() const
 {
-    if(!f_bio)
+    // the socket may be invalid, i.e. f_bio may have been deallocated.
+    //
+    int const s(get_socket());
+    if(s < 0)
     {
-        return "";
+        return std::string();
     }
 
     struct sockaddr addr;
     socklen_t len(sizeof(addr));
-    int const r(getsockname(get_socket(), &addr, &len));
+    int const r(getsockname(s, &addr, &len));
     if(r != 0)
     {
         throw tcp_client_server_runtime_error("failed reading address");
@@ -1180,10 +1193,12 @@ std::string bio_client::get_client_addr() const
     switch(addr.sa_family)
     {
     case AF_INET:
+        // TODO: verify that 'r' >= sizeof(something)
         inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in *>(&addr)->sin_addr, buf, sizeof(buf));
         break;
 
     case AF_INET6:
+        // TODO: verify that 'r' >= sizeof(something)
         inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 *>(&addr)->sin6_addr, buf, sizeof(buf));
         break;
 
@@ -1346,7 +1361,7 @@ int bio_client::write(char const * buf, size_t size)
         return -1;
     }
 
-    int r(static_cast<int>(BIO_write(f_bio.get(), buf, size)));
+    int const r(static_cast<int>(BIO_write(f_bio.get(), buf, size)));
     if(r <= -2)
     {
         // the BIO is not implemented
@@ -1709,8 +1724,8 @@ bool is_ipv6(char const * ip)
  * name) then this exception is raised.
  *
  * \param[in] addr_port  The address and port pair.
- * \param[in,out] addr  The address part, without the square brackets for IPv6
- *                addresses.
+ * \param[in,out] addr  The address part, without the square brackets for
+ *                IPv6 addresses.
  * \param[in,out] port  The port number (1 to 65535 inclusive.)
  * \param[in] protocol  The protocol for the port (i.e. "tcp" or "udp")
  */

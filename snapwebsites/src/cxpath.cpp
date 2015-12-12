@@ -253,7 +253,12 @@ void cxpath_execute()
         exit(1);
     }
     fseek(f, 0, SEEK_END);
-    const int program_size(ftell(f));
+    long const program_size(ftell(f));
+    if(program_size < 0)
+    {
+        std::cerr << "error: could not tell program size for \"" << program_filename.c_str() << "\"." << std::endl;
+        exit(1);
+    }
     fseek(f, 0, SEEK_SET);
     QDomXPath::program_t program;
     program.resize(program_size);

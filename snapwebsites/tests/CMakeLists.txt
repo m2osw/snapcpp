@@ -293,5 +293,21 @@ target_link_libraries(string_speed
 )
 
 
+##
+## Check gethostbyname()
+##
+add_executable( gethostips
+	gethostips.cpp
+)
+target_link_libraries(gethostips
+	#snapwebsites
+	#${QTCASSANDRA_LIBRARIES}
+	#${LIBTLD_LIBRARIES}
+	#${QT_LIBRARIES}
+	#${THRIFT_LIBRARIES}
+	#dl
+)
+
+
 
 # vim: ts=4 sw=4 et

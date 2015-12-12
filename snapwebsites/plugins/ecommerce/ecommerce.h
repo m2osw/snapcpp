@@ -98,7 +98,7 @@ public:
     // epayment signals
     void                        on_generate_invoice(content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment::epayment_product_list & plist);
 
-    SNAP_SIGNAL(product_allowed, (QDomElement product, content::path_info_t product_ipath), (product, product_ipath));
+    SNAP_SIGNAL(product_allowed, (QDomElement product, content::path_info_t & product_ipath), (product, product_ipath));
 
 private:
     void                        content_update(int64_t variables_timestamp);

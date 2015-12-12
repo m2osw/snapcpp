@@ -1654,7 +1654,7 @@ bool images::func_composite(parameters_t & params)
     {
         composite_operator = Magick::OverCompositeOp;
     }
-    if(composite_str == "copy")
+    else if(composite_str == "copy")
     {
         composite_operator = Magick::CopyCompositeOp;
     }

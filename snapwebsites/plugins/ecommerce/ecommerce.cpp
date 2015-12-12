@@ -1515,7 +1515,7 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
  *
  * \return true if the signal should be processed, false otherwise.
  */
-bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t product_ipath)
+bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t & product_ipath)
 {
     // Is this GUID pointing to a page which represents a product at least?
     links::link_info product_info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, product_ipath.get_key(), product_ipath.get_branch());

@@ -351,20 +351,19 @@ public:
         virtual ssize_t             read(void * buf, size_t count);
         virtual ssize_t             write(void const * buf, size_t count);
         void                        close();
+        size_t                      get_client_address(struct sockaddr_storage & address) const;
+        std::string                 get_client_addr() const;
 
         // snap_connection implementation
         virtual bool                is_reader() const;
         virtual int                 get_socket() const;
 
-        void                        set_address(struct sockaddr * address, size_t length);
-        size_t                      get_address(struct sockaddr & address) const;
-        void                        set_addr(std::string const & addr);
-        std::string                 get_addr() const;
-
     private:
-        int                         f_socket;
-        struct sockaddr             f_address;
-        size_t                      f_length;
+        bool                        define_address();
+
+        int                         f_socket = -1;
+        struct sockaddr_storage     f_address;
+        socklen_t                   f_length = 0;
     };
 
     class snap_tcp_server_client_buffer_connection
@@ -464,6 +463,8 @@ public:
 
         bool                        send_message(snap_communicator_message const & message, bool cache = false);
         void                        mark_done();
+        size_t                      get_client_address(struct sockaddr_storage & address) const;
+        std::string                 get_client_addr() const;
 
         // snap_connection implementation
         virtual void                process_timeout();

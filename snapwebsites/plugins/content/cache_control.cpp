@@ -35,7 +35,7 @@ SNAP_PLUGIN_EXTENSION_START(content)
 
 
 
-void content::set_cache_control_page(path_info_t ipath)
+void content::set_cache_control_page(path_info_t & ipath)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 

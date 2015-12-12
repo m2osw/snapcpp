@@ -76,6 +76,7 @@ QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
 )
 
 add_library( ${PROJECT_NAME} SHARED
+    addr.cpp                                    # handling of host IP addresses (IPv4 and IPv6)
     cache_control.cpp                           # Parse / handle Cache-Control settings
     compression.cpp                             # Compress/decompress data
     dbutils.h                                   # Utilities to help convert coded table and row names

@@ -493,7 +493,7 @@ public:
         QtCassandra::QCassandraValue const & get_value() const { return f_value; }
         QDomElement         get_element() const { return f_element; }
         search_result_t *   get_result() const { return f_result; }
-        path_info_t const & get_ipath() const { return f_path_info; }
+        path_info_t &       get_ipath() const { return const_cast<path_info_t &>(f_path_info); }
 
     private:
         safe_command_t                  f_cmd;
@@ -755,7 +755,7 @@ public:
     bool                trash_page(path_info_t & ipath);
 
     // cache control
-    void                set_cache_control_page(path_info_t ipath);
+    void                set_cache_control_page(path_info_t & ipath);
 
     // content plugin signals
     SNAP_SIGNAL(new_content, (path_info_t & path), (path));

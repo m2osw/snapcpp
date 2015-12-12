@@ -19,7 +19,7 @@
 namespace snap
 {
     template <class T>
-        inline void NOTUSED( T result )
+        inline void NOTUSED( T const & result )
         {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"

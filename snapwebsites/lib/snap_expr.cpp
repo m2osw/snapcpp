@@ -84,7 +84,7 @@ QtCassandra::QCassandraValue const& variable_t::get_value() const
 }
 
 
-void variable_t::set_value(variable_type_t type, QtCassandra::QCassandraValue const& value)
+void variable_t::set_value(variable_type_t type, QtCassandra::QCassandraValue const & value)
 {
     f_type = type;
     f_value = value;
@@ -183,28 +183,28 @@ void variable_t::set_value(double value)
 }
 
 
-void variable_t::set_value(char const *value)
+void variable_t::set_value(char const * value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
     f_value = QString::fromUtf8(value);
 }
 
 
-void variable_t::set_value(wchar_t const *value)
+void variable_t::set_value(wchar_t const * value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
     f_value = QString::fromWCharArray(value);
 }
 
 
-void variable_t::set_value(QString const& value)
+void variable_t::set_value(QString const & value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
     f_value = value;
 }
 
 
-void variable_t::set_value(QByteArray const& value)
+void variable_t::set_value(QByteArray const & value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_BINARY;
     f_value = value;
@@ -2376,7 +2376,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
-    static void call_segment(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_segment(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 3)
         {

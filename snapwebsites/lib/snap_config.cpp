@@ -78,8 +78,7 @@ void snap_config::read_config_file( QString const & filename )
     // read the configuration file now
     QFile c;
     c.setFileName(filename);
-    c.open(QIODevice::ReadOnly);
-    if(!c.isOpen())
+    if(!c.open(QIODevice::ReadOnly))
     {
         // if for nothing else we need to have the list of plugins so we always
         // expect to have a configuration file... if we're here we could not

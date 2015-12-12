@@ -907,7 +907,16 @@ int main(int argc, char *argv[])
         {
             std::cerr << "----- Dependency #" << i << " -----" << std::endl;
         }
-        errcnt += check_dependency(g_dependencies + i);
+        try
+        {
+            errcnt += check_dependency(g_dependencies + i);
+        }
+        catch(snap::snap_logic_exception const & e)
+        {
+            // got an unexpected exception
+            ++errcnt;
+            std::cerr << "error: check_dependency() failed (" << e.what() << ")." << std::endl;
+        }
     }
 
     // display # of errors discovered (should always be zero)
@@ -919,7 +928,7 @@ int main(int argc, char *argv[])
                   << " tests)" << std::endl;
     }
 
-    return errcnt;
+    return errcnt > 0 ? 1 : 0;
 }
 
 // vim: ts=4 sw=4 et

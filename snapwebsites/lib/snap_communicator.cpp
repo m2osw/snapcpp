@@ -1626,7 +1626,11 @@ int snap_communicator::snap_thread_done_signal::get_socket() const
 void snap_communicator::snap_thread_done_signal::process_read()
 {
     char c(0);
-    read(f_pipe[0], &c, sizeof(char));
+    if(read(f_pipe[0], &c, sizeof(char)) != sizeof(char))
+    {
+        int const e(errno);
+        SNAP_LOG_ERROR("an error occurred while reading from a pipe used to know whether a thread is done (errno: ")(e)(" -- ")(strerror(e))(").");
+    }
 }
 
 
@@ -1641,7 +1645,11 @@ void snap_communicator::snap_thread_done_signal::process_read()
 void snap_communicator::snap_thread_done_signal::thread_done()
 {
     char c(1);
-    write(f_pipe[1], &c, sizeof(char));
+    if(write(f_pipe[1], &c, sizeof(char)) != sizeof(char))
+    {
+        int const e(errno);
+        SNAP_LOG_ERROR("an error occurred while writing to a pipe used to know whether a thread is done (errno: ")(e)(" -- ")(strerror(e))(").");
+    }
 }
 
 
@@ -2670,75 +2678,33 @@ bool snap_communicator::snap_tcp_server_client_connection::is_reader() const
 }
 
 
-/** \brief The address of this client connection.
- *
- * This function saves the address of the client connection.
- *
- * There are times when we are given the address so we call this function
- * to save it instead of having to query it again later.
- *
- * \exception snap_communicator_parameter_error
- * The address pointer cannot be nullptr. The address cannot be larger
- * than struct sockaddr. If either parameter is wrong, then this
- * exception is raised.
- *
- * \param[in] address  The address of this client connection.
- * \param[in] length  The length of the address defined in addr.
- */
-void snap_communicator::snap_tcp_server_client_connection::set_address(struct sockaddr * address, size_t length)
-{
-    if(address == nullptr
-    || length > sizeof(f_address))
-    {
-        throw snap_communicator_parameter_error("snap_communicator::snap_tcp_server_client_connection::save_address(): the address received by evconnlistener is larger than our sockaddr.");
-    }
-
-    // keep a copy of the address
-    memcpy(&f_address, address, length);
-    if(length < sizeof(f_address))
-    {
-        // reset the rest of the structure, just in case
-        memset(reinterpret_cast<char *>(&f_address) + length, 0, sizeof(f_address) - length);
-    }
-
-    f_length = length;
-}
-
-
 /** \brief Retrieve a copy of the client's address.
  *
  * This function makes a copy of the address of this client connection
  * to the \p address parameter and returns the length.
  *
- * \todo
- * To be compatible with the tcp implementation we need to return
- * a string here or have a get_addr() which converts the address
- * into a string.
+ * If the function returns zero, then the \p address buffer is not
+ * modified and no address is defined in this connection.
  *
- * \param[in] address  The reference to an address variable where the
- *                     address gets copied.
+ * \param[out] address  The reference to an address variable where the
+ *                      client's address gets copied.
  *
  * \return Return the length of the address which may be smaller than
  *         sizeof(struct sockaddr). If zero, then no address is defined.
+ *
+ * \sa get_addr()
  */
-size_t snap_communicator::snap_tcp_server_client_connection::get_address(struct sockaddr & address) const
+size_t snap_communicator::snap_tcp_server_client_connection::get_client_address(struct sockaddr_storage & address) const
 {
+    // make sure the address is defined and the socket open
+    //
+    if(const_cast<snap_communicator::snap_tcp_server_client_connection *>(this)->define_address() != 0)
+    {
+        return 0;
+    }
+
     address = f_address;
     return f_length;
-}
-
-
-/** \brief Save the address defined as a string.
- *
- * This function is used to transform the \p addr parameter to an address
- * and save that internally. This function is called when you get the
- * address as a string instead of a raw sockaddr structure.
- *
- * \param[in] addr  The address to save in this client connection.
- */
-void snap_communicator::snap_tcp_server_client_connection::set_addr(std::string const & addr)
-{
-    inet_aton(addr.c_str(), reinterpret_cast<struct in_addr *>(&f_address));
 }
 
 
@@ -2750,8 +2716,15 @@ void snap_communicator::snap_tcp_server_client_connection::set_addr(std::string 
  *
  * \return The client's address in the form of a string.
  */
-std::string snap_communicator::snap_tcp_server_client_connection::get_addr() const
+std::string snap_communicator::snap_tcp_server_client_connection::get_client_addr() const
 {
+    // make sure the address is defined and the socket open
+    //
+    if(const_cast<snap_communicator::snap_tcp_server_client_connection *>(this)->define_address() != 0)
+    {
+        return std::string();
+    }
+
     size_t const max_length(std::max(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1);
 
 // in release mode this should not be dynamic (although the syntax is so
@@ -2763,7 +2736,7 @@ std::string snap_communicator::snap_tcp_server_client_connection::get_addr() con
 
     char const * r(nullptr);
 
-    if(f_address.sa_family == AF_INET)
+    if(f_address.ss_family == AF_INET)
     {
         r = inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in const &>(f_address).sin_addr, buf, max_length);
     }
@@ -2782,6 +2755,56 @@ std::string snap_communicator::snap_tcp_server_client_connection::get_addr() con
     return buf;
 }
 
+
+/** \brief Retrieve the socket address if we have not done so yet.
+ *
+ * This function make sure that the f_address and f_length parameters are
+ * defined. This is done by calling the getsockname() function.
+ *
+ * If f_length is still zero, then it is expected that address was not
+ * yet read.
+ *
+ * Note that the function returns -1 if the socket is now -1 (i.e. the
+ * connection is closed) whether or not the function worked before.
+ *
+ * \return false if the address cannot be defined, true otherwise
+ */
+bool snap_communicator::snap_tcp_server_client_connection::define_address()
+{
+    int const s(get_socket());
+    if(s == -1)
+    {
+        return false;
+    }
+
+    if(f_length == 0)
+    {
+        // address no defined yet, retrieve with with getsockname()
+        //
+        f_length = sizeof(f_address);
+        if(getsockname(s, reinterpret_cast<struct sockaddr *>(&f_address), &f_length) != 0)
+        {
+            int const e(errno);
+            SNAP_LOG_ERROR("getsockname() failed retrieving IP address (errno: ")(e)(" -- ")(strerror(e))(").");
+            f_length = 0;
+            return false;
+        }
+        if(f_address.ss_family != AF_INET
+        && f_address.ss_family != AF_INET6)
+        {
+            SNAP_LOG_ERROR("address returned by getsockname() is not understood, it is neither an IPv4 nor IPv6.");
+            f_length = 0;
+            return false;
+        }
+        if(f_length < sizeof(f_address))
+        {
+            // reset the rest of the structure, just in case
+            memset(reinterpret_cast<char *>(&f_address) + f_length, 0, sizeof(f_address) - f_length);
+        }
+    }
+
+    return true;
+}
 
 
 
@@ -3576,6 +3599,32 @@ public:
     }
 
 
+    /** \brief Return the address and size of the remote computer.
+     *
+     * This function retrieve the socket address.
+     *
+     * \param[out] address  The binary address of the remote computer.
+     *
+     * \return The size of the sockaddr structure.
+     */
+    size_t get_client_address(struct sockaddr_storage & address) const
+    {
+        return f_messager->get_client_address(address);
+    }
+
+
+    /** \brief Return the address of the f_message object.
+     *
+     * This function returns the address of the message object.
+     *
+     * \return The address of the remote computer.
+     */
+    std::string get_client_addr() const
+    {
+        return f_messager->get_client_addr();
+    }
+
+
 private:
     snap_communicator::snap_tcp_client_permanent_message_connection *   f_client;
     thread_done_signal::pointer_t                                       f_thread_done;
@@ -3678,6 +3727,38 @@ bool snap_communicator::snap_tcp_client_permanent_message_connection::send_messa
 void snap_communicator::snap_tcp_client_permanent_message_connection::mark_done()
 {
     f_done = true;
+}
+
+
+/** \brief Retrieve a copy of the client's address.
+ *
+ * This function makes a copy of the address of this client connection
+ * to the \p address parameter and returns the length.
+ *
+ * \param[in] address  The reference to an address variable where the
+ *                     address gets copied.
+ *
+ * \return Return the length of the address which may be smaller than
+ *         sizeof(struct sockaddr). If zero, then no address is defined.
+ *
+ * \sa get_addr()
+ */
+size_t snap_communicator::snap_tcp_client_permanent_message_connection::get_client_address(struct sockaddr_storage & address) const
+{
+    return f_impl->get_client_address(address);
+}
+
+
+/** \brief Retrieve the remote computer address as a string.
+ *
+ * This function returns the address of the remote computer as a string.
+ * It will be a canonicalized IP address.
+ *
+ * \return The cacnonicalized IP address.
+ */
+std::string snap_communicator::snap_tcp_client_permanent_message_connection::get_client_addr() const
+{
+    return f_impl->get_client_addr();
 }
 
 

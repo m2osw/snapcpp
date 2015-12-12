@@ -8480,7 +8480,7 @@ const QDomXPath::program_t& getProgram() const
 
 private:
     QDomXPath *                 f_owner;
-    controlled_vars::rbool_t    f_show_commands;
+    bool                        f_show_commands = false;
 
     // parser parameters
     QString                     f_xpath;

@@ -214,7 +214,7 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
             f_content_plugin->page_cloned(f_clones);
         }
 
-        void clone_children(path_info_t source_parent, path_info_t destination_parent)
+        void clone_children(path_info_t & source_parent, path_info_t & destination_parent)
         {
             QString const source_key(source_parent.get_key());
             links::link_info info(get_name(name_t::SNAP_NAME_CONTENT_CHILDREN), false, source_key, source_parent.get_branch());
@@ -229,7 +229,7 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
             }
         }
 
-        void clone_page(path_info_t source, path_info_t destination)
+        void clone_page(path_info_t & source, path_info_t & destination)
         {
             // setup the status using RAII
             path_info_t::status_t src_now(source.get_status());
@@ -277,7 +277,7 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
             clone_children(source, destination);
         }
 
-        void copy_content(path_info_t& source, path_info_t& destination)
+        void copy_content(path_info_t & source, path_info_t & destination)
         {
             QString revision_control(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL));
             QString current_branch_key(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY));
@@ -345,7 +345,7 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
             }
         }
 
-        void copy_branches(cloned_page_t& page)
+        void copy_branches(cloned_page_t & page)
         {
             // WARNING: Do not even remotely try to use a row predicate
             //          along the setStartRowName() and setEndRowName()
@@ -458,7 +458,7 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
             }
         }
 
-        void copy_revisions(cloned_page_t& page, cloned_branch_t& cloned_branch)
+        void copy_revisions(cloned_page_t & page, cloned_branch_t & cloned_branch)
         {
             // TODO: add support to only copy the current revisions
             //       (current and working, or a few latest revisions)

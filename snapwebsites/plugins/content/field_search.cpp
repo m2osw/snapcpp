@@ -409,7 +409,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
  * \param[in] cmd  The search instruction (i.e. COMMAND_PATH_INFO, etc.)
  * \param[in] ipath  A full defined path to a page.
  */
-field_search::cmd_info_t::cmd_info_t(command_t cmd, path_info_t const& ipath)
+field_search::cmd_info_t::cmd_info_t(command_t cmd, path_info_t const & ipath)
     : f_cmd(cmd)
     //, f_value() -- auto-init
     //, f_element() -- auto-init
@@ -677,7 +677,7 @@ field_search& field_search::operator () (command_t cmd, search_result_t& result)
  *
  * \return A reference to the field_search so further () can be used.
  */
-field_search& field_search::operator () (command_t cmd, path_info_t& ipath)
+field_search& field_search::operator () (command_t cmd, path_info_t & ipath)
 {
     cmd_info_t inst(cmd, ipath);
     f_program.push_back(inst);
@@ -861,7 +861,7 @@ void field_search::run()
             }
         }
 
-        void cmd_path_info(path_info_t const& ipath, content::param_revision_t mode)
+        void cmd_path_info(path_info_t & ipath, content::param_revision_t mode)
         {
             switch(mode)
             {
