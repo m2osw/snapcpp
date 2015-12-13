@@ -5,7 +5,7 @@ Build-Depends: debhelper, cmake, libadvgetopt-dev (>= 1.0.15.231~trusty),
     libqt4-dev (>= 4.8.3), libqtwebkit-dev, doxygen, graphviz, zip,
     snapcmakemodules (>= 1.0.23.230~trusty), libqtcassandra-dev (>= 0.5.7),
     libcontrolledvars-dev (>= 1.4.15.230~trusty),
-    libsnapwebsites-dev (>= 0.1.71.222~trusty), liblog4cplus-dev (>= 1.2.0),
+    libsnapwebsites-dev (>= 0.1.71.223~trusty), liblog4cplus-dev (>= 1.2.0),
     libtld-dev (>= 1.4.21.92~trusty), libthrift-dev (>= 0.9.0),
     libqtserialization-dev (>= 0.1.16.231~trusty)
 Standards-Version: 3.9.4
@@ -20,7 +20,7 @@ Section: admin
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: cassandra (>= 2.0.3)
-Suggests: snapserver (>= 0.1.71.222~trusty)
+Suggests: snapserver (>= 0.1.71.223~trusty)
 Description: GUI tool to maintain your cassandra database. Optimized for snapwebsites.
  This graphical tool allows the user to view and edit a cassandra database. It is optimized
  for a snapwebsites database, and understands the business rules for transforming the
