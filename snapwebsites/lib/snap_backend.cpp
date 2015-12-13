@@ -933,6 +933,9 @@ void snap_backend::process_tick()
     //
     if(!g_child_connection)
     {
+#ifdef DEBUG
+        SNAP_LOG_TRACE("Immediately tick the wakeup_timer from the last tick timeout.");
+#endif
         g_wakeup_timer->set_timeout_date(snap_communicator::get_current_date());
     }
 }
@@ -1478,6 +1481,10 @@ bool snap_backend::process_backend_uri(QString const & uri)
     {
         return false;
     }
+
+#ifdef DEBUG
+    SNAP_LOG_TRACE("Process website \"")(f_website)("\".");
+#endif
 
     // create a child connection so our child and us can communicate
     // (especially, we can send the child a STOP if we ourselves receive

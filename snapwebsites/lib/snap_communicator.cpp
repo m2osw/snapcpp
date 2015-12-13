@@ -2792,7 +2792,7 @@ bool snap_communicator::snap_tcp_server_client_connection::define_address()
         if(f_address.ss_family != AF_INET
         && f_address.ss_family != AF_INET6)
         {
-            SNAP_LOG_ERROR("address returned by getsockname() is not understood, it is neither an IPv4 nor IPv6.");
+            SNAP_LOG_ERROR("address family (")(f_address.ss_family)(") returned by getsockname() is not understood, it is neither an IPv4 nor IPv6.");
             f_length = 0;
             return false;
         }
