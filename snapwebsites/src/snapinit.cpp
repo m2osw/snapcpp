@@ -3561,6 +3561,13 @@ void snap_init::start()
                 exit(1);
                 snap::NOTREACHED();
             }
+
+            // in this case we MUST keep the lock in place,
+            // which is done by reset that file; if the file
+            // is closed whenever we hit the remove_lock()
+            // function, then the file does not get deleted
+            //
+            f_lock_file.close();
             return;
         }
 
