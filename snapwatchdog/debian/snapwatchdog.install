@@ -1,2 +1,4 @@
 usr/bin/*
+conf/snapwatchdog.properties etc/snapwebsites/
+conf/snapwatchdog.conf etc/snapwebsites/
 usr/share/snapwebsites/conf/*
