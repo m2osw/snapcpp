@@ -237,7 +237,7 @@ void unblock_ip(configuration& conf, const char *ip, bool quiet)
         {
             cmd += " 2>/dev/null";
         }
-        if(system(cmd.c_str()) != 0)
+        if(system(cmd.c_str()) != 0 && !quiet)
         {
             perror("unblock firewall command failed");
         }
