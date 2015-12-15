@@ -229,10 +229,10 @@ void processes::on_process_watch(QDomDocument doc)
         QString utf8_name(QString::fromUtf8(name.c_str()));
 
         QString cmdline(utf8_name);
-        int count_max(info->get_args_size());
+        int const count_max(info->get_args_size());
         for(int c(0); c < count_max; ++c)
         {
-            // is it Cassandra?
+            // skip empty arguments
             if(info->get_arg(c) != "")
             {
                 cmdline += " ";

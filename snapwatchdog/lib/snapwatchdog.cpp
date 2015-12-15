@@ -345,9 +345,6 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_WATCHDOG_SERVERSTATS:
         return "serverstats";
 
-    case name_t::SNAP_NAME_WATCHDOG_SIGNAL_NAME:
-        return "snapwatchdog_udp_signal";
-
     case name_t::SNAP_NAME_WATCHDOG_STATISTICS_FREQUENCY:
         return "statistics_frequency";
 
