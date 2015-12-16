@@ -86,7 +86,7 @@ public:
 
 private:
     // either way, keep address in an IPv6 structure
-    struct sockaddr_in6 f_address;
+    struct sockaddr_in6 f_address = sockaddr_in6();
     int                 f_protocol = IPPROTO_TCP;
 };
 
