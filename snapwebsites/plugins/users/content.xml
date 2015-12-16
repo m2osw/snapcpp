@@ -48,6 +48,25 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
   </content>
+  <content path="/js/users">
+    <!-- JavaScript code for the users session handling, client side -->
+    <param name="content::title" revision="revision">Users Source</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>JavaScript code for the Snap! Users.</p>]]>
+    </param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="users" type="attachment/public">
+      <path>qrc:/js/users/users.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>popup (&gt;= 0.1.0.10)</dependency>
+    </attachment>
+  </content>
+  <content path="/types/permissions/rights/administer/website/info" owner="permissions">
+    <param name="content::title" revision="revision">Administer Basic Website Information Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Administer basic information on the website.</p><p>This right gives the user access to all basic information available on the website.</p>]]>
+    </param>
+  </content>
   <content path="/types/users">
     <param name="content::title" revision="revision">Users</param>
     <param name="content::body" revision="revision">

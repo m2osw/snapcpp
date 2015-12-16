@@ -779,6 +779,7 @@ public:
     void                add_attachment(QString const & path, content_attachment const & attachment);
     bool                load_attachment(QString const & key, attachment_file & file, bool load_data = true);
     void                add_javascript(QDomDocument doc, QString const & name);
+    void                add_inline_javascript(QDomDocument doc, QString const & code);
     void                add_css(QDomDocument doc, QString const & name);
     bool                is_updating();
 

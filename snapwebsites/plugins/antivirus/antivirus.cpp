@@ -301,7 +301,7 @@ void antivirus::on_check_attachment_security(content::attachment_file const & fi
             if(out.open(QIODevice::Append))
             {
                 // TODO: convert to use our logger?
-                QString const timestamp(QDateTime::currentDateTimeUtc().toString("MM/dd/yyyy hh:mm:ss antivirus: "));
+                QString const timestamp(QDateTime::currentDateTimeUtc().toString("MM/dd/yyyy hh:mm:ss' antivirus: '"));
                 QByteArray const timestamp_buf(timestamp.toUtf8());
                 char buf[1024];
                 for(;;)

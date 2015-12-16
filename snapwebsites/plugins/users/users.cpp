@@ -18,17 +18,55 @@
 /** \file
  * \brief Users handling.
  *
- * This plugin handles the users which includes:
+ * This plugin handles the low level user functions such as the
+ * authentication and user sessions.
  *
- * \li The log in screen.
- * \li The log out feature and thank you page.
- * \li The registration.
- * \li The verification of an email to register.
- * \li The request for a new password.
- * \li The verification of an email to change a forgotten password.
+ * \li Authenticate user given a certain set of parameters (log in name
+ *     and password or a cookie.)
+ * \li Log user out of his account.
+ * \li Create new user accounts.
+ * \li Blocking user accounts.
+ * \li A few other things....
  *
- * It is also responsible for creating new user accounts, blocking accounts,
- * etc.
+ * The Snap! Websites Core offers a separate User UI plugin to access
+ * those functions (see plugins/users_ui/...).
+ *
+ * User sessions currently support several deadlines as defined here:
+ *
+ * \li Login Limit
+ *
+ * This is a Unix time_t value defining a hard (non moving) limit
+ * of when the user becomes a non-administrator. By default this
+ * limit is set to 3 hours, which should be plenty for an
+ * administrator to do whatever he needs to do.
+ *
+ * This limit can be a security issue if too large.
+ *
+ * \li Time Limit
+ *
+ * This is a Unix time_t value defining a soft (moving) limit of
+ * when the user completely loses all of his log rights. This limit
+ * is viewed as a soft limit because each time you hit the website
+ * it is reset to the current time plus duration of such a session.
+ *
+ * The default duration of this session limit is 5 days.
+ *
+ * \li Time to Live
+ *
+ * This is a duration in second of how long the session is kept alive.
+ * Whether the user is logged in or not, we like to keep a session in
+ * order to track various things that the user may do. For example,
+ * if the user added items to our e-Commerce cart, then we want to
+ * be able to present that cart back to him at a later time.
+ *
+ * The default duration of the session as a whole is one whole year.
+ * Note that the e-Commerce cart may have its own timeout which could
+ * be shorter than the user session.
+ *
+ * The time to live limit is also a soft (moving) limit. Each time
+ * the user accesses the site, the session time to live remains the
+ * same so the dead line for the death of the session is automatically
+ * pushed back, whether the user is logged in or not.
  */
 
 #include "users.h"
@@ -85,6 +123,9 @@ const char *get_name(name_t name)
 {
     switch(name)
     {
+    case name_t::SNAP_NAME_USERS_ADMINISTRATIVE_SESSION_DURATION:
+        return "users::administrative_session_duration";
+
     case name_t::SNAP_NAME_USERS_ANONYMOUS_PATH:
         return "user";
 
@@ -214,6 +255,9 @@ const char *get_name(name_t name)
     case name_t::SNAP_NAME_USERS_PREVIOUS_LOGIN_ON:
         return "users::previous_login_on";
 
+    case name_t::SNAP_NAME_USERS_SOFT_ADMINISTRATIVE_SESSION:
+        return "users::soft_administrative_session";
+
     // WARNING: We do not use a statically defined name!
     //          To be more secure each Snap! website can use a different
     //          cookie name; possibly one that changes over time and
@@ -232,8 +276,14 @@ const char *get_name(name_t name)
     case name_t::SNAP_NAME_USERS_TIMEZONE: // user timezone for dates/calendars
         return "users::timezone";
 
+    case name_t::SNAP_NAME_USERS_TOTAL_SESSION_DURATION:
+        return "users::total_session_duration";
+
     case name_t::SNAP_NAME_USERS_USERNAME:
         return "users::username";
+
+    case name_t::SNAP_NAME_USERS_USER_SESSION_DURATION:
+        return "users::user_session_duration";
 
     case name_t::SNAP_NAME_USERS_VERIFIED_IP:
         return "users::verified_ip";
@@ -259,17 +309,10 @@ const char *get_name(name_t name)
 /** \class users
  * \brief The users plugin to handle user accounts.
  *
- * This class handles all the necessary user related pages:
+ * The class handles the low level authentication procedure with
+ * credentials (login and password) or a cookie.
  *
- * \li User log in
- * \li User registration
- * \li User registration token verification
- * \li User registration token re-generation
- * \li User forgotten password
- * \li User forgotten password token verification
- * \li User profile
- * \li User change of password
- * \li ...
+ * It also offers ways to create new users and block existing users.
  *
  * To enhance the security of the user session we randomly assign the name
  * of the user session cookie. This way robots have a harder time to
@@ -299,6 +342,7 @@ users::users()
     //: f_snap(nullptr) -- auto-init
     //, f_user_key("") -- auto-init
     //, f_user_logged_in(false) -- auto-init
+    //, f_user_changing_password_key() -- auto-init
     //, f_info(nullptr) -- auto-init
 {
 }
@@ -375,7 +419,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 10, 14, 16, 49, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 16, 3, 27, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -461,6 +505,142 @@ QtCassandra::QCassandraTable::pointer_t users::get_users_table()
 }
 
 
+/** \brief Retrieve the total duration of the session.
+ *
+ * Whenever a user visits a Snap! website, he is given a cookie with
+ * a session identifier. This session has a very long duration. By
+ * default it is actually set to 1 year which is the maximum duration
+ * for a cookie (although browsers are free to delete cookies sooner
+ * than that, obviously.)
+ *
+ * The default duration of the session is 365 days.
+ *
+ * \note
+ * The function is considered internal although it can be called by
+ * other plugins.
+ *
+ * \warning
+ * The value is read once and cached by this function.
+ *
+ * \return The duration of the administrative session in seconds.
+ */
+int64_t users::get_total_session_duration()
+{
+    int64_t const default_total_session_duration(365LL * 24LL * 60LL); // 1 year by default, in minutes
+    static int64_t value(-1);
+
+    if(value == -1)
+    {
+        QtCassandra::QCassandraValue const total_session_duration(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_TOTAL_SESSION_DURATION)));
+        // value in database is in days
+        value = total_session_duration.safeInt64Value(0, default_total_session_duration) * 60LL;
+    }
+
+    return value;
+}
+
+
+/** \brief Retrieve the duration of the administrative session.
+ *
+ * The user has three types of session durations, as defined in the
+ * authorize_user() function. This function returns the duration
+ * of the administrative login session.
+ *
+ * The default duration of the administrative session is 3 hours.
+ *
+ * \note
+ * The function is considered internal although it can be called by
+ * other plugins.
+ *
+ * \warning
+ * The value is read once and cached by this function.
+ *
+ * \return The duration of the administrative session in seconds.
+ */
+int64_t users::get_user_session_duration()
+{
+    int64_t const default_user_session_duration(5LL * 24LL * 60LL); // 5 days by default, in minutes
+    static int64_t value(-1);
+
+    if(value == -1)
+    {
+        QtCassandra::QCassandraValue const user_session_duration(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_USER_SESSION_DURATION)));
+        // value in database is in minutes
+        value = user_session_duration.safeInt64Value(0, default_user_session_duration) * 60LL;
+    }
+
+    return value;
+}
+
+
+/** \brief Retrieve the duration of the administrative session.
+ *
+ * The user has three types of session durations, as defined in the
+ * authorize_user() function. This function returns the duration
+ * of the administrative login session.
+ *
+ * The default duration of the administrative session is 3 hours.
+ *
+ * \note
+ * The function is considered internal although it can be called by
+ * other plugins.
+ *
+ * \warning
+ * The value is read once and cached by this function.
+ *
+ * \return The duration of the administrative session in seconds.
+ */
+int64_t users::get_administrative_session_duration()
+{
+    int64_t const default_administrative_session_duration(3LL * 60LL);
+    static int64_t value(-1);
+
+    if(value == -1)
+    {
+        QtCassandra::QCassandraValue const administrative_session_duration(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_ADMINISTRATIVE_SESSION_DURATION)));
+        // value in database is in minutes
+        value = administrative_session_duration.safeInt64Value(0, default_administrative_session_duration) * 60LL;
+    }
+
+    return value;
+}
+
+
+/** \brief Check whether the administrative session is soft or not.
+ *
+ * By default, the administrative session is considered a hard session.
+ * This means that the duration of that session is hard coded once when
+ * the user logs in and stays that way until it times out. After that
+ * the user must re-login.
+ *
+ * There is more information in the authenticated_user() function.
+ *
+ * The default value for this field is 'false'.
+ *
+ * \note
+ * The function is considered internal although it can be called by
+ * other plugins.
+ *
+ * \warning
+ * The value is read once and cached by this function.
+ *
+ * \return Whether the administrative session has been soften.
+ */
+bool users::get_soft_administrative_session()
+{
+    signed char const default_soft_administrative_session(0);
+    static signed char value(-1);
+
+    if(value == -1)
+    {
+        QtCassandra::QCassandraValue const soft_administrative_session(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_SOFT_ADMINISTRATIVE_SESSION)));
+        value = soft_administrative_session.safeSignedCharValue(0, default_soft_administrative_session);
+    }
+
+    return value != 0;
+}
+
+
 /** \brief Retrieve the user cookie name.
  *
  * This function retrieves the user cookie name. This can be changed on
@@ -483,11 +663,12 @@ QString users::get_user_cookie_name()
         // user cookie name not yet assigned or reset so a new name
         // gets assigned
         unsigned char buf[COOKIE_NAME_SIZE];
-        int r(RAND_bytes(buf, sizeof(buf)));
+        int const r(RAND_bytes(buf, sizeof(buf)));
         if(r != 1)
         {
             f_snap->die(snap_child::http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE,
-                    "Service Not Available", "The server was not able to generate a safe random number. Please try again in a moment.",
+                    "Service Not Available",
+                    "The server was not able to generate a safe random number. Please try again in a moment.",
                     "User cookie name could not be generated as the RAND_bytes() function could not generate enough random data");
             NOTREACHED();
         }
@@ -559,9 +740,26 @@ void users::on_process_cookies()
             // this session qualifies as a log in session
             // so now verify the user
             QString const path(f_info->get_object_path());
-            authenticated_user(path.mid(6), nullptr);
+            if(!authenticated_user(path.mid(6), nullptr))
+            {
+                // we are logged out because the session timed out
+                //
+                // TODO: this is actually wrong, we do not want to lose the user path, but it will do better for now...
+                //
+                f_info->set_object_path("/user/"); // no user id for the anonymous user
+            }
             create_new_session = false;
         }
+    }
+
+    // complete reset?
+    if(create_new_session)
+    {
+        // we may have some spurious data in the f_info structure
+        // so we do a complete reset first
+        //
+        sessions::sessions::session_info new_session;
+        *f_info = new_session; 
     }
 
     // There is a login limit so we do not need to "randomly" limit
@@ -573,9 +771,26 @@ void users::on_process_cookies()
     //   2) user was sent to the site through an affiliate link, we
     //      want to reward the affiliate whether the user was sent
     //      there 1 day or 1 year ago
+    //
     // To satisfy any user, we need this to be an administrator setup
-    // value. By default we use one whole year...
-    f_info->set_time_to_live(86400 * 365);  // 365 days
+    // value. By default we use one whole year. (note that this time
+    // to live default is also what's defined in the sessions plugin.)
+    //
+    int64_t const total_session_duration(get_total_session_duration());
+    f_info->set_time_to_live(total_session_duration);
+
+    // extend the user session, it is always a soft session
+    int64_t const user_session_duration(get_user_session_duration());
+    f_info->set_time_limit(f_snap->get_start_time() + user_session_duration);
+
+    if(get_soft_administrative_session())
+    {
+        // website administrator asked that the administrative session be
+        // grown each time the administrator accesses the site
+        //
+        int64_t const administrative_session_duration(get_administrative_session_duration());
+        f_info->set_administrative_login_limit(f_snap->get_start_time() + administrative_session_duration);
+    }
 
     // create or refresh the session
     if(create_new_session)
@@ -591,9 +806,6 @@ void users::on_process_cookies()
     }
     else
     {
-        // extend the session
-        f_info->set_time_to_live(86400 * 5);  // 5 days
-
         // TODO: change the 5 minutes with a parameter the admin can change
         //       if the last session was created more than 5 minutes ago then
         //       we generate a new random identifier (doing it on each access
@@ -602,7 +814,7 @@ void users::on_process_cookies()
         //
         // TBD: random is not working right if the user attempts to open
         //      multiple pages quickly at the same time
-        bool const new_random(f_info->get_date() + 60 * 5 * 1000000 < f_snap->get_start_date());
+        bool const new_random(f_info->get_date() + NEW_RANDOM_INTERVAL < f_snap->get_start_date());
         sessions::sessions::instance()->save_session(*f_info, new_random);
     }
 
@@ -612,7 +824,7 @@ void users::on_process_cookies()
             user_cookie_name,
             QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random())
         );
-    cookie.set_expire_in(86400 * 5);  // 5 days
+    cookie.set_expire_in(f_info->get_time_to_live());
     cookie.set_http_only(); // make it a tad bit safer
     f_snap->set_cookie(cookie);
 //std::cerr << "user session id [" << f_info->get_session_key() << "] [" << f_user_key << "]\n";
@@ -659,9 +871,9 @@ void users::on_process_cookies()
  * \param[in,out] check_time_limit  Set to true if you are NOT going to call
  *                                  authenticated_user() afterward.
  *
- * \return true of the load succeeds and the user is considered to have
- *         logged in successfully in the past. HOWEVER, that does not
- *         mean the user is logged in. You still need to call
+ * \return LOGIN_STATUS_OK (0) if the load succeeds and the user is
+ *         considered to have logged in successfully in the past. HOWEVER,
+ *         that does not mean the user is logged in. You still need to call
  *         authenticated_user() to make sure of that.
  */
 users::login_status_t users::load_login_session(QString const & session_cookie, sessions::sessions::session_info & info, bool const check_time_limit)
@@ -678,7 +890,6 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
         if(!ok || random_value < 0)
         {
             SNAP_LOG_INFO("cookie included an invalid random key, ")(parameters[1])(" is not a valid decimal number or is negative.");
-            authenticated = false;
             authenticated |= LOGIN_STATUS_INVALID_RANDOM_NUMBER;
         }
     }
@@ -687,14 +898,23 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
     sessions::sessions::instance()->load_session(session_key, info, false);
 
     // the session must be be valid (duh!)
-    if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
+    //
+    // Note that a user session marked out of date is a valid session, only
+    // the time limit was passed, meaning that the user is not logged in
+    // anymore. It is very important to keep such sessions if we want to
+    // properly track things long term.
+    //
+    sessions::sessions::session_info::session_info_type_t session_type(info.get_session_type());
+    if(session_type != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
+    && session_type != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_OUT_OF_DATE)
     {
-        SNAP_LOG_INFO("cookie refused because session is not marked as valid, ")(static_cast<int>(info.get_session_type()));
+        SNAP_LOG_INFO("cookie refused because session is not marked as valid, ")(static_cast<int>(session_type));
         authenticated |= LOGIN_STATUS_INVALID_SESSION;
     }
 
     // the session must be of the right type otherwise it was not a log in session...
-    if(info.get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION)
+    if(info.get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION
+    || info.get_plugin_owner() != get_plugin_name())
     {
         SNAP_LOG_INFO("cookie refused because this is not a user session, ")(info.get_session_id());
         authenticated |= LOGIN_STATUS_SESSION_TYPE_MISMATCH;
@@ -711,7 +931,7 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
         //                          out even when it should not...
         //
         // From what I can tell, this mainly happens if someone uses two
-        // tabs accessing the same site. But I've seen it quite a bit
+        // tabs accessing the same site. But I have seen it quite a bit
         // if the system crashes and thus does not send the new random
         // number to the user. We could also look into a way to allow
         // the previous random for a while longer.
@@ -719,6 +939,11 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
 
     // user agent cannot change, frankly! who copies their cookies between
     // devices or browsers?
+    //
+    // TODO: we actually need to not check the agent version; although
+    //       having to log back in whenever you do an upgrade of your
+    //       browser is probably fine
+    //
     if(info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
     {
         SNAP_LOG_INFO("cookie refused because user agent \"")(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
@@ -740,12 +965,12 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
     // logged in for real without actually making this user the
     // logged in user
     //
-    // login limit is a time_t value
+    // time limit is a time_t value
     //
     if(check_time_limit
-    && f_snap->get_start_time() >= info.get_login_limit())
+    && f_snap->get_start_time() >= info.get_time_limit())
     {
-        SNAP_LOG_INFO("cookie is acceptable but time limit is passed. Now: ")(f_snap->get_start_time())(" >= Limit: ")(info.get_login_limit());
+        SNAP_LOG_INFO("cookie is acceptable but time limit is passed. Now: ")(f_snap->get_start_time())(" >= Limit: ")(info.get_time_limit());
         authenticated |= LOGIN_STATUS_PASSED_LOGIN_LIMIT;
     }
 
@@ -756,14 +981,69 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
 /** \brief Allow other plugins to authenticate a user.
  *
  * We use a cookie to authenticate a returning user. The cookie
- * holds a session identification. This function checks that
- * the session is still valid and mark the user as logged in if
- * so.
+ * holds a session identifier. This function checks that
+ * the session is still valid and mark the user as logged in if so.
  *
- * If no session is passed in, the f_info session information is
- * used to check the time limit of the session. If the time
- * limit indicates that the user has waited too long, he does
- * not get logged in.
+ * Note that the function returns with one of the following states:
+ *
+ * \li User is not logged in, the function returns false and there
+ *     is no user key to speak of... the user can still be tracked
+ *     with the cookie, but the data cannot be attacked to an account
+ *
+ *       . f_user_key -- nullptr
+ *       . f_user_logged_in -- false
+ *       . f_administrative_logged_in -- false
+ *
+ * \li User is "logged in", the function returns true; the login
+ *     status is one of following statuses:
+ *
+ * \li User is strongly logged in, meaning that he has administrative
+ *     rights at this time; by default this is true for 3h after an
+ *     active log in; the administrative rights are dropped after 3h
+ *     and you need to re-login to gain the administrative rights
+ *     again. This type of session is NOT extended by default. That
+ *     means it lasts 3h then times out, whether or not the user is
+ *     accessing/using the website administratively or otherwise.
+ *     This can be changed to function like the soft login though
+ *     each access by the user can extend the current timeout to
+ *     "now + 3h". If you choose to do that, you probably want to
+ *     reduce the time to something much shorter like 15 or 30 min.
+ *
+ *       . f_user_key -- defined
+ *       . f_user_logged_in -- true
+ *       . f_administrative_logged_in -- true
+ *
+ * \li User is softly logged in, meaning that he has read/write access
+ *     to everything except administrative tasks; when the user tries
+ *     to access an administrative task, he is sent to the login screen
+ *     in an attempt to see whether we can grant the user such rights...
+ *     The soft login time limit gets extended each time the user hits
+ *     the website. So the duration can be very long assuming the user
+ *     comes to the website at least once a day or so.
+ *
+ *       . f_user_key -- defined
+ *       . f_user_logged_in -- true
+ *       . f_administrative_logged_in -- false
+ *
+ * \li User is weakly logged in, meaning that he was logged in on the
+ *     website in the past, but now the logging session still exists
+ *     but does not grant much write access at all (if any, it is
+ *     really very safe tasks...); the user is asked to log back in
+ *     to edit content. Note that this is called Long Session, it is
+ *     turned on by default, but it can be turned off.
+ *
+ *       . f_user_key -- defined
+ *       . f_user_logged_in -- false
+ *       . f_administrative_logged_in -- false
+ *
+ * \note
+ * At this time, if f_user_logged_in is false, then
+ * f_administrative_logged_in is false too.
+ *
+ * If no session is passed in, the users plugin f_info session information
+ * is used to check the time limits of the session. If the time
+ * limits indicate that the user has waited too long, he does
+ * not get strongly or softly logged in as indicated above.
  *
  * If the path of the main URI starts with /logout then the user
  * is forcibly logged out instead of logged in. You do not have
@@ -776,7 +1056,7 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
  * and the pointer is not nullptr.
  *
  * \note
- * The user email cannot be empty.
+ * The user email cannot be empty for the function to succeed.
  *
  * \warning
  * The user may be marked as known / valid, and even the function may
@@ -787,7 +1067,8 @@ users::login_status_t users::load_login_session(QString const & session_cookie, 
  * user opposed to a fully registered user.) To determine whether
  * the user is indeed logged in, please make sure to check the
  * f_user_logged_in flag. From the outside of the users plugin,
- * this is what the user_is_logged_in() function returns.
+ * this is what the user_is_logged_in() or user_has_administrative_rights()
+ * functions return.
  *
  * \param[in] email  The user email.
  * \param[in] info  A pointer to the user's session information to be used.
@@ -840,16 +1121,36 @@ bool users::authenticated_user(QString const & email, sessions::sessions::sessio
     //
     // TODO: we need an additional form to authorize
     //       the user to do more
-    time_t limit(info ? info->get_login_limit() : f_info->get_login_limit());
+    //
+    time_t const limit(info ? info->get_time_limit() : f_info->get_time_limit());
     f_user_logged_in = f_snap->get_start_time() < limit;
     if(!f_user_logged_in)
     {
-        SNAP_LOG_INFO("user authentication timed out by ")(limit - f_snap->get_start_time())(" micro seconds");
+        SNAP_LOG_TRACE("user authentication timed out by ")(limit - f_snap->get_start_time())(" micro seconds");
+
+        // just in case, make sure the administrative logged in variable
+        // is also false
+        //
+        f_administrative_logged_in = false;
+    }
+    else
+    {
+        time_t const admin_limit(info ? info->get_administrative_login_limit() : f_info->get_administrative_login_limit());
+        f_administrative_logged_in = f_snap->get_start_time() < admin_limit;
+        if(!f_administrative_logged_in)
+        {
+            SNAP_LOG_TRACE("user administrative authentication timed out by ")(admin_limit - f_snap->get_start_time())(" micro seconds");
+        }
     }
 
     // the website may opt out of the long session scheme
     // the following loses the user key if the website
     // administrator said so...
+    //
+    // long sessions allows us to track the user even after
+    // the time limit was reached (i.e. returning user,
+    // opposed to just a returning visitor)
+    //
     QtCassandra::QCassandraValue const long_sessions(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_LONG_SESSIONS)));
     if(f_user_logged_in
     || (long_sessions.nullValue() || long_sessions.signedCharValue()))
@@ -905,8 +1206,12 @@ void users::user_logout()
 
     // the software is requesting to log the user out
     //
-    // cancel the session
+    // "cancel" the session
     f_info->set_object_path("/user/");
+
+    // extend the session even on logout
+    int64_t const total_session_duration(get_total_session_duration());
+    f_info->set_time_to_live(total_session_duration);
 
     // drop the referrer if there is one, it is a security
     // issue to keep that info on an explicit log out!
@@ -1263,6 +1568,64 @@ void users::on_generate_header_content(content::path_info_t & ipath, QDomElement
                 data.appendChild(text);
             }
         }
+
+        time_t time_to_live(f_info->get_time_to_live());
+        {   // snap/head/metadata/desc[@type='users::session_time_to_live']/data
+            if(time_to_live < 0)
+            {
+                time_to_live = 0;
+            }
+            QDomElement desc(doc.createElement("desc"));
+            desc.setAttribute("type", "users::session_time_to_live");
+            metadata.appendChild(desc);
+            QDomElement data(doc.createElement("data"));
+            desc.appendChild(data);
+            QDomText text(doc.createTextNode(QString("%1").arg(time_to_live)));
+            data.appendChild(text);
+        }
+
+        time_t user_time_limit(f_info->get_time_limit());
+        {   // snap/head/metadata/desc[@type='users::session_time_limit']/data
+            if(user_time_limit < 0)
+            {
+                user_time_limit = 0;
+            }
+            QDomElement desc(doc.createElement("desc"));
+            desc.setAttribute("type", "users::session_time_limit");
+            metadata.appendChild(desc);
+            QDomElement data(doc.createElement("data"));
+            desc.appendChild(data);
+            QDomText text(doc.createTextNode(QString("%1").arg(user_time_limit)));
+            data.appendChild(text);
+        }
+
+        time_t administrative_login_time_limit(f_info->get_administrative_login_limit());
+        {   // snap/head/metadata/desc[@type='users::administrative_login_time_limit']/data
+            if(administrative_login_time_limit < 0)
+            {
+                administrative_login_time_limit = 0;
+            }
+            QDomElement desc(doc.createElement("desc"));
+            desc.setAttribute("type", "users::administrative_login_time_limit");
+            metadata.appendChild(desc);
+            QDomElement data(doc.createElement("data"));
+            desc.appendChild(data);
+            QDomText text(doc.createTextNode(QString("%1").arg(administrative_login_time_limit)));
+            data.appendChild(text);
+        }
+
+        // save those values in an inline JavaScript snippet
+        QString const code(QString(
+            "/* users plugin */"
+            "users__session_time_to_live=%1;"
+            "users__session_time_limit=%2;"
+            "users__administrative_login_time_limit=%3;")
+                    .arg(time_to_live)
+                    .arg(user_time_limit)
+                    .arg(administrative_login_time_limit));
+        content::content * content_plugin(content::content::instance());
+        content_plugin->add_inline_javascript(doc, code);
+        content_plugin->add_javascript(doc, "users");
     }
 }
 
@@ -1396,8 +1759,11 @@ void users::verify_user(content::path_info_t & ipath)
         // So in this case we want to log out the current user and
         // process the form as if no one had been logged in.
         f_info->set_object_path("/user/");
-        f_info->set_time_to_live(86400 * 5);  // 5 days
-        bool const new_random(f_info->get_date() + 60 * 5 * 1000000 < f_snap->get_start_date());
+
+        int32_t const total_session_duration(get_total_session_duration());
+        f_info->set_time_to_live(total_session_duration);
+
+        bool const new_random(f_info->get_date() + NEW_RANDOM_INTERVAL < f_snap->get_start_date());
 
         // drop the referrer if there is one, it is a security
         // issue to keep that info on an almost explicit log out!
@@ -1411,7 +1777,7 @@ void users::verify_user(content::path_info_t & ipath)
                 user_cookie_name,
                 QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random())
             );
-        cookie.set_expire_in(86400 * 5);  // 5 days
+        cookie.set_expire_in(f_info->get_time_to_live());
         cookie.set_http_only(); // make it a tad bit safer
         f_snap->set_cookie(cookie);
 
@@ -1747,7 +2113,7 @@ QString users::login_user(QString const & email, QString const & password, bool 
                 QByteArray const saved_hash(value.binaryValue());
 
                 // (6) compare both hashes
-                // (note: at this point I don't trust the == operator of the QByteArray
+                // (note: at this point I do not trust the == operator of the QByteArray
                 // object; will it work with '\0' bytes???)
                 valid_password = hash.size() == saved_hash.size()
                               && memcmp(hash.data(), saved_hash.data(), hash.size()) == 0;
@@ -1877,7 +2243,12 @@ void users::create_logged_in_user_session(QString const & user_key)
     // the other parameters were already defined in the
     // on_process_cookies() function
     f_info->set_object_path("/user/" + user_key);
-    f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
+    int64_t const total_session_duration(get_total_session_duration());
+    f_info->set_time_to_live(total_session_duration);
+    int64_t const user_session_duration(get_user_session_duration());
+    f_info->set_time_limit(f_snap->get_start_time() + user_session_duration);
+    int64_t const administrative_session_duration(get_administrative_session_duration());
+    f_info->set_administrative_login_limit(f_snap->get_start_time() + administrative_session_duration);
     sessions::sessions::instance()->save_session(*f_info, true); // force new random session number
 
     // if there was another active login for that very user,
@@ -1926,8 +2297,13 @@ void users::create_logged_in_user_session(QString const & user_key)
         }
     }
 
-    http_cookie cookie(f_snap, get_user_cookie_name(), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
-    cookie.set_expire_in(86400 * 5);  // 5 days
+    QString const user_cookie_name(get_user_cookie_name());
+    http_cookie cookie(
+                f_snap,
+                user_cookie_name,
+                QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random())
+            );
+    cookie.set_expire_in(f_info->get_time_to_live());
     cookie.set_http_only(); // make it a tad bit safer
     f_snap->set_cookie(cookie);
 
@@ -1955,6 +2331,12 @@ void users::create_logged_in_user_session(QString const & user_key)
  * before making use of the user's information:
  *
  * \code
+ *      // this:
+ *      if(!users::users::instance()->user_has_administrative_rights())
+ *      {
+ *          return;
+ *      }
+ *      // or this:
  *      if(!users::users::instance()->user_is_logged_in())
  *      {
  *          return;
@@ -1986,13 +2368,16 @@ void users::create_logged_in_user_session(QString const & user_key)
  * WARNING WARNING WARNING
  * This returns the user key which is his email address. It does not
  * tell you that the user is logged in. For that purpose you MUST
- * use the user_is_logged_in() function.
+ * use one of the user_is_logged_in() or user_has_administrative_rights()
+ * function.
  *
  * This function returns the key of the user that last logged
  * in. This key is the user's email address. Remember that by default a
- * user is not considered fully logged in if his sesion his more than
- * 3 hours old. You must make sure to check the user_is_logged_in()
- * too. Note that the permission system should already take care of
+ * user is not considered administratively logged in if his sesion his
+ * more than 3 hours old, see the user_has_administrative_rights()
+ * function to determine that status. Further, the user is not fully
+ * logged in (i.e. is a returning registered user) when user_is_logged_in()
+ * return false. Note that the permission system should already take care of
  * most of those problems for you anyway, but you need to know what
  * you are doing!
  *
@@ -2003,19 +2388,24 @@ void users::create_logged_in_user_session(QString const & user_key)
  * \code
  * if(users::users::instance()->get_user_key().isEmpty())
  * {
- *   // anonymous visitory user code
+ *   // anonymous visitor user code
+ * }
+ * else if(users::users::instance()->user_has_administrative_rights())
+ * {
+ *   // user recently logged in (winthin last 3 hours by default)
+ *   // here you can process "dangerous / top-secret" stuff
+ *   // such as changing his password or make a payment
  * }
  * else if(users::users::instance()->user_is_logged_in())
  * {
- *   // user recently logged in (last 3 hours by default)
- *   // here you can process "dangerous / top-secret" stuff
+ *   // user is logged in and can do mundane work
+ *   // such as editing a page the user has access to in edit mode
  * }
  * else
  * {
- *   // registered user code
- *   // user logged in more than 3 hours ago and is now considered
- *   // a registered user, opposed to a logged in user who can
- *   // make changes to his account, etc.
+ *   // returning registered user...
+ *   // no editing should be offered at this level, unless quite
+ *   // safe such as editing the user's e-Cart
  * }
  * \endcode
  *
@@ -2027,7 +2417,8 @@ void users::create_logged_in_user_session(QString const & user_key)
  * WARNING WARNING WARNING
  * This returns the user key which is his email address. It does not
  * tell you that the user is logged in. For that purpose you MUST
- * use the user_is_logged_in() function.
+ * use one of the user_is_logged_in() or user_has_administrative_rights()
+ * functions.
  *
  * \return The user email address (which is the user key in the users table).
  */
@@ -2046,8 +2437,8 @@ QString users::get_user_key() const
  * \warning
  * The path returned may NOT be from a logged in user. We may know the
  * user key (his email address) and yet not have a logged in user. Whether
- * the user is logged in needs to be checked with the user_is_logged_in()
- * function.
+ * the user is logged in needs to be checked with one of the
+ * user_is_logged_in() or user_has_administrative_rights() functions.
  *
  * \note
  * To test whether the returned value represents the anonymous user,
@@ -2082,8 +2473,8 @@ QString users::get_user_path() const
  * \warning
  * The identifier returned may NOT be from a logged in user. We may know the
  * user key (his email address) and yet not have a logged in user. Whether
- * the user is logged in needs to be checked with the user_is_logged_in()
- * function.
+ * the user is logged in needs to be checked with one of the
+ * user_is_logged_in() or user_has_administrative_rights() functions.
  *
  * \return The identifer of the current user.
  */
@@ -2588,7 +2979,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     // (nothing else should be create at the path until now)
     content::path_info_t user_ipath;
     user_ipath.set_path(QString("%1/%2").arg(user_path).arg(identifier));
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     snap_version::version_number_t const branch_number(content_plugin->get_current_user_branch(user_ipath.get_key(), "", true));
     user_ipath.force_branch(branch_number);
     // default revision when creating a new branch
@@ -2782,6 +3173,11 @@ void users::check_user_security_done(QString const & user_key, QString const & e
  * user. It is up to you to determine whether the user is logged in
  * if the intend is to use the session information only of logged in
  * users.
+ *
+ * \exception snap_logic_exception
+ * This exception is raised if the f_info pointer is still null.
+ * This means you called this function too early (i.e. in your
+ * bootstrap() function and you appear before the users plugin).
  *
  * \return A constant reference to this user session information.
  */
@@ -3348,20 +3744,59 @@ bool users::user_is_a_spammer()
 /** \brief Whether the user was logged in recently.
  *
  * This function MUST be called to know whether the user is a logged in
- * user or just a registered user with a valid session.
+ * user who has read and write access to the website, or just a
+ * registered user with a valid session.
  *
- * What's the difference really?
+ * Make sure to call the user_has_administrative_rights() if he needs
+ * administrative rights.
  *
- * \li A user who logged in within the last 3 hours (can be changed) has
- *     more permissions; for example he can see all his account details
- *     and edit them.
- * \li A user who is just a registered user can only see the publicly
- *     visible information from his account and he has no way to edit
- *     anything without first going to the verify credential page.
+ * The details about the various possible logged in user states are
+ * defined in authenticated_user(().
+ *
+ * \return true if the user was logged in recently enough that he still
+ *         has read/write access to the website. However, he may not have
+ *         have administrative rights anymore.
+ *
+ * \sa user_has_administrative_rights()
  */
-bool users::user_is_logged_in()
+bool users::user_is_logged_in() const
 {
     return f_user_logged_in;
+}
+
+
+/** \brief Whether the user was logged in recently.
+ *
+ * This function MUST be called to know whether the user is a logged in
+ * user who logged in very recently, sufficiently recently so as to
+ * be given access to the most advanced administrative tasks.
+ *
+ * The details about the various possible logged in user states are
+ * defined in authenticated_user().
+ *
+ * \return true if the user was logged in very recently (by default,
+ *         this means within the last 3h).
+ *
+ * \sa user_is_logged_in()
+ */
+bool users::user_has_administrative_rights() const
+{
+    return f_administrative_logged_in;
+}
+
+
+/** \brief Determines when the session was created.
+ *
+ * This function returns true if the session is considered "pretty old"
+ * which by default means about 12h old. Such a user is considered a
+ * returning user and thus may be given slightly different permissions.
+ *
+ * \return true if the user's session is considered old.
+ */
+bool users::user_session_is_old() const
+{
+    // user came back at least 1 day ago, then session is considered "old"
+    return (f_snap->get_start_date() - f_info->get_creation_date()) > 86400LL * 1000000LL;
 }
 
 

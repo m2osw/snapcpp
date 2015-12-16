@@ -3703,6 +3703,9 @@ void content::on_save_links(content_block_links_offset_t list, bool const create
  * If the script was already added, either immediately or as a dependency
  * of another script, then nothing more happens.
  *
+ * This function adds a reference to a file. To add an inline javascript
+ * snippet, check out the add_inline_javascript() function instead.
+ *
  * \param[in,out] doc  The XML document receiving the javascript.
  * \param[in] name  The name of the script.
  */
@@ -3952,6 +3955,97 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             "JavaScript \"" + name + "\" was not found. Was it installed?",
             "The named JavaScript was not found in the \"javascripts\" row of the \"files\" table.");
     NOTREACHED();
+}
+
+
+/** \brief Add inline javascript code to the page.
+ *
+ * This function adds a javascript code snippet to the page.
+ *
+ * At this time there is nothing to prevents duplication, nor is there
+ * any way to change the order in which such javascript snippets are
+ * added to a page. In most cases, these should just and only be variables
+ * such as:
+ *
+ * \code
+ *      users_administrative_login_time_limit = 123;
+ * \endcode
+ *
+ * This method to add javascript code snippet should only be used when
+ * the values are nearly always changing between each call. Otherwise,
+ * look into dynamically creating a javascript file and reference that
+ * file instead (i.e. a snippet that only changes when you edit some
+ * preferences must be saved in a file. The cookie_consent_silktide
+ * plugin does that if you want to see an example of such.)
+ *
+ * To add a reference to a script, check the add_javascript() function
+ * instead.
+ *
+ * \warning
+ * All the code must be valid JavaScript code that ends with ';' or '}'
+ * as required. This function does not end your code in any specific
+ * way. If the ending ';' is missing, then the concatenation of multiple
+ * JavaScript entries will fail.
+ *
+ * \param[in,out] doc  The XML document receiving the JavaScript.
+ * \param[in] code  The actual script.
+ */
+void content::add_inline_javascript(QDomDocument doc, QString const & code)
+{
+    // TBD: it may make sense to move to the javascript plugin since it now
+    //      can include the content plugin; the one advantage would be that
+    //      the get_name() from the JavaScript plugin would then make use
+    //      of the "local" name_t::SNAP_NAME_JAVASCRIPT_...
+    //
+    if(code.isEmpty())
+    {
+        // nothing to add, return immediately
+        return;
+    }
+
+    // .../metadata
+    QDomNodeList metadata(doc.elementsByTagName("metadata"));
+
+    // .../metadata/inline-javascript
+    QDomNode inline_javascript_tag(metadata.at(0).firstChildElement("inline-javascript"));
+    if(inline_javascript_tag.isNull())
+    {
+        inline_javascript_tag = doc.createElement("inline-javascript");
+        metadata.at(0).appendChild(inline_javascript_tag);
+    }
+
+    // .../metadata/inline-javascript/script
+    QDomNode script_tag(inline_javascript_tag.firstChildElement("script"));
+    if(script_tag.isNull())
+    {
+        QDomElement script_element(doc.createElement("script"));
+        script_element.setAttribute("type", "text/javascript");
+        script_element.setAttribute("charset", "utf-8");
+        inline_javascript_tag.appendChild(script_element);
+        script_tag = script_element;
+    }
+
+    QDomNode data(script_tag.firstChild());
+    if(data.isNull())
+    {
+        data = doc.createTextNode(code);
+        script_tag.appendChild(data);
+    }
+    else if(data.isText())
+    {
+        QDomText data_section(data.toText());
+        data_section.insertData(data_section.length(), code);
+    }
+    else
+    {
+        // Not too sure that a die() is really appropriate here, but
+        // we found a node of an unexpected type...
+        //
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Inline JavaScript CDATA Section Not Found",
+                "The metadata/inline-javascript/script included a child node which was not a CDATA section. We do not know how to proceed.",
+                "This error should never happen unless someone messes around with the metadata tree and inserts nodes before the CDATA section.");
+        NOTREACHED();
+    }
 }
 
 

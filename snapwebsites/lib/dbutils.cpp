@@ -441,6 +441,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     || n == "users::long_sessions"
     || (f_tableName == "content" && f_rowName == "*index*")
     || (f_tableName == "list" && f_rowName != "*standalone*")
+    || n == "users::soft_administrative_session"
     || n == "finball::data_status" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::number_of_cashiers" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::plan" // TODO -- remove at some point since that is a cutomer's field
@@ -507,6 +508,9 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "feed::teaser_words"
          || n == "feed::top_maximum_number_of_items_in_any_feed"
          || n == "sessions::check_flags"
+         || n == "users::administrative_session_duration"
+         || n == "users::total_session_duration"
+         || n == "users::user_session_duration"
          )
     {
         return column_type_t::CT_int64_value;
@@ -580,6 +584,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "users::start_date"
          || n == "users::verified_on"
          || (f_tableName == "users" && n.startsWith("users::website_reference::"))
+         || n == "sessions::creation_date"
          || (f_tableName == "test_results" && n == "test_plugin::end_date")
          || (f_tableName == "test_results" && n == "test_plugin::start_date")
          || n == "finball::void_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)

@@ -2066,13 +2066,20 @@ QString const & permissions::get_login_status()
             QString const user_path(get_user_path());
             if(user_path.isEmpty())
             {
-                f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
-                // TODO: determine, once possible, whether the user came on the
-                //       website before (i.e. returning visitor)
-                //       (it is already possible since we have a cookie, just
-                //       need to take the time to do it!)
+                // no user attached, if the session is considered old we
+                // considered the user as a returning user
+                //
+                if(users_plugin->user_session_is_old())
+                {
+                    f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR);
+                }
+                else
+                {
+                    f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
+                }
             }
             else if(users_plugin->user_is_logged_in())
+               /* || users_plugin->user_has_administrative_rights() -- not required since user_is_logged_in() is always true if user_has_administrative_rights() is true */
             {
                 f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED);
             }

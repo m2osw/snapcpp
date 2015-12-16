@@ -52,11 +52,14 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml                  content/content.dtd )
 
+snap_validate_js( users.js )
+
 add_library(users SHARED
     users.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    users.js
 )
 
 target_link_libraries( users ${QT_LIBRARIES} )
@@ -73,6 +76,13 @@ install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwebsites/plugins/users
     FILES_MATCHING PATTERN "*.h"
+)
+
+install(
+    FILES
+        users.js
+    DESTINATION
+        share/javascript/snapwebsites/users
 )
 
 # vim: ts=4 sw=4 et

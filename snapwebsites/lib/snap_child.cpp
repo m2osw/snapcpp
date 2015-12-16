@@ -7206,7 +7206,7 @@ void snap_child::execute()
     // adding it here generates a 500 Internal Server Error
     //QDateTime date(QDateTime().toUTC());
     //date.setTime_t(f_start_date / 1000000); // micro-seconds
-    //set_header("Date", date.toString("ddd, dd MMM yyyy hh:mm:ss") + " GMT");
+    //set_header("Date", date.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
 
     // cache controls are now defined in f_server_cache_control
     // and f_page_cache_control; the defaults are not exactly what

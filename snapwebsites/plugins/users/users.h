@@ -27,6 +27,7 @@ namespace users
 
 enum class name_t
 {
+    SNAP_NAME_USERS_ADMINISTRATIVE_SESSION_DURATION,
     SNAP_NAME_USERS_ANONYMOUS_PATH,
     SNAP_NAME_USERS_AUTHOR,
     SNAP_NAME_USERS_AUTHORED_PAGES,
@@ -72,10 +73,13 @@ enum class name_t
     SNAP_NAME_USERS_PREVIOUS_LOGIN_IP,
     SNAP_NAME_USERS_PREVIOUS_LOGIN_ON,
     //SNAP_NAME_USERS_SESSION_COOKIE, -- use a random name instead
+    SNAP_NAME_USERS_SOFT_ADMINISTRATIVE_SESSION,
     SNAP_NAME_USERS_STATUS,
     SNAP_NAME_USERS_TABLE,
     SNAP_NAME_USERS_TIMEZONE,
+    SNAP_NAME_USERS_TOTAL_SESSION_DURATION,
     SNAP_NAME_USERS_USERNAME,
+    SNAP_NAME_USERS_USER_SESSION_DURATION,
     SNAP_NAME_USERS_VERIFIED_IP,
     SNAP_NAME_USERS_VERIFIED_ON,
     SNAP_NAME_USERS_VERIFY_EMAIL,
@@ -151,6 +155,8 @@ public:
         LOGIN_MODE_FULL,
         LOGIN_MODE_VERIFICATION
     };
+
+    static int64_t const    NEW_RANDOM_INTERVAL = 5LL * 60LL * 1000000LL; // 5 min. in microseconds
 
     // the login status, returned by load_login_session(), is a set of flags
     typedef int         login_status_t;
@@ -270,12 +276,18 @@ public:
     SNAP_SIGNAL_WITH_MODE(user_logged_in, (user_logged_info_t & logged_info), (logged_info), NEITHER);
     SNAP_SIGNAL_WITH_MODE(logged_in_user_ready, (), (), NEITHER);
 
+    int64_t                 get_total_session_duration();
+    int64_t                 get_user_session_duration();
+    int64_t                 get_administrative_session_duration();
+    bool                    get_soft_administrative_session();
     QString                 get_user_cookie_name();
     QString                 get_user_key() const;
     QString                 get_user_path() const;
     int64_t                 get_user_identifier() const;
     bool                    user_is_a_spammer();
-    bool                    user_is_logged_in();
+    bool                    user_is_logged_in() const;
+    bool                    user_has_administrative_rights() const;
+    bool                    user_session_is_old() const;
     static QString          create_password();
     void                    create_password_salt(QByteArray & salt);
     void                    encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash);
@@ -314,6 +326,7 @@ private:
 
     QString                     f_user_key;                     // logged in user email address
     controlled_vars::fbool_t    f_user_logged_in;               // user is logged in only if this is true
+    controlled_vars::fbool_t    f_administrative_logged_in;     // user is logged in and has administrative rights if this is true
     QString                     f_user_changing_password_key;   // not quite logged in user
     std::shared_ptr<sessions::sessions::session_info> f_info;   // user, logged in or anonymous, cookie related information
 };

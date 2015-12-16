@@ -243,6 +243,11 @@ void info::on_generate_page_content(content::path_info_t & ipath, QDomElement & 
     NOTUSED(ipath);
 
     // only check if user is logged in
+    // (if user is not administratively logged in at the moment, try to
+    // go to the administration page will require a relogin which is fine)
+    //
+    // XXX: we may want to show the bookmarks to returning users?
+    //
     if(users::users::instance()->user_is_logged_in())
     {
         // only show the /admin link if the user can go there
@@ -340,6 +345,12 @@ void info::on_improve_signature(QString const & path, QDomDocument doc, QDomElem
     NOTUSED(path);
 
     // only check if user is logged in
+    // (if user is not administratively logged in at the moment, try to
+    // go to the administration page will require a relogin which is fine)
+    //
+    // XXX: we may want to show the Administration link to returning users?
+    //      (i.e. just !f_user_key.isEmpty() instead of user_is_logged_in())
+    //
     if(users::users::instance()->user_is_logged_in())
     {
         // only show the /admin link if the user can go there

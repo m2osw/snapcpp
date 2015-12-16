@@ -143,12 +143,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/admin/settings/users">
     <param name="content::title" revision="revision">User Settings</param>
     <param name="content::body" revision="revision">
-        <![CDATA[<p>Set of settings specific to the Users plugin.</p>]]>
+      <![CDATA[<p>Set of settings specific to the Users plugin.</p>]]>
     </param>
-    <!-- do not allow multi-login by default; set to 1 to allow such -->
-    <param name="users::multiple_login" revision="revision">0</param>
-    <!-- TODO: create a form, see info plugin for details / how to -->
+    <param name="editor::layout" revision="global" overwrite="yes">"users-settings-page";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"users-settings-parser";</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/private</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/admin/email/users">
     <param name="content::title" revision="revision">User Emails</param>

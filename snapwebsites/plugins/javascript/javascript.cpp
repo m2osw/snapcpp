@@ -597,12 +597,12 @@ QVariant javascript::evaluate_script(QString const & script)
     if(value.isError())
     {
         // this happens if the script is not correct and it cannot be executed
-        SNAP_LOG_ERROR() << "javascript: value says there is an error in \"" << script << "\"!";
+        SNAP_LOG_ERROR("javascript: value says there is an error in \"")(script)("\"!");
     }
     if(engine.hasUncaughtException())
     {
         QScriptValue e(engine.uncaughtException());
-        SNAP_LOG_ERROR() << "javascript: result = " << engine.hasUncaughtException() << ", e = " << e.isError() << ", s = \"" << e.toString() << "\"";
+        SNAP_LOG_ERROR("javascript: result = ")(engine.hasUncaughtException())(", e = ")(e.isError())(", s = \"")(e.toString())("\"");
     }
     return value.toVariant();
 }

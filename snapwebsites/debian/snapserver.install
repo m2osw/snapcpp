@@ -3,3 +3,4 @@ usr/share/snapwebsites/layouts/*
 conf/loggingserver.properties conf/log.properties conf/logserver.properties conf/snapcommunicator.properties conf/snapinit.properties etc/snapwebsites/
 conf/snapcommunicator.conf conf/snapinit.conf conf/snapserver.conf etc/snapwebsites/
 conf/snap-apache2.conf etc/apache2/sites-available/
+usr/share/snapwebsites/conf/*

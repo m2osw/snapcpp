@@ -85,6 +85,9 @@ public:
     // filter signals
     void                    on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
+    // editor signals
+    void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
+
     // form stuff
     virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
 

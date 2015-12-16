@@ -17,6 +17,7 @@
 
 #include "http_cookie.h"
 
+#include "log.h"
 #include "snapwebsites.h"
 
 #include <QtCassandra/QCassandra.h>
@@ -434,6 +435,10 @@ void http_cookie::set_session()
  * To delete a cookie, you can set the expiration date to a date in the past.
  * This is also achieved by calling the set_delete() function.
  *
+ * \note
+ * If the date represents a date more than 1 year in the future, then it
+ * gets clamped.
+ *
  * \param[in] date_time  The new expiration date and time.
  *
  * \sa set_session();
@@ -443,7 +448,19 @@ void http_cookie::set_session()
  */
 void http_cookie::set_expire(QDateTime const & date_time)
 {
-    f_expire = date_time;
+    time_t const seconds(date_time.toTime_t() - (f_snap ? f_snap->get_start_time() : time(nullptr)));
+    if(seconds > 86400LL * 365LL)
+    {
+        // save 'now + 1 year' instead of date_time which is further in
+        // the future and thus not HTTP 1.1 compatible
+        //
+        int64_t const start_date(f_snap ? f_snap->get_start_date() : snap_child::get_current_date());
+        f_expire = QDateTime::fromMSecsSinceEpoch(start_date / 1000LL + 86400LL * 1000LL);
+    }
+    else
+    {
+        f_expire = date_time;
+    }
 }
 
 
@@ -469,20 +486,16 @@ void http_cookie::set_expire(QDateTime const & date_time)
  * \sa set_delete();
  * \sa set_session();
  */
-void http_cookie::set_expire_in(int seconds)
+void http_cookie::set_expire_in(int64_t seconds)
 {
-    if(f_snap)
+    // clamp to 1 year (max. allowed by HTTP 1.1)
+    if(seconds > 86400LL * 365LL)
     {
-        f_expire = QDateTime::fromMSecsSinceEpoch(f_snap->get_start_date() / 1000 + seconds * 1000);
+        seconds = 86400LL * 365LL;
     }
-    else
-    {
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        int64_t const start_date(static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
-                         + static_cast<int64_t>(tv.tv_usec));
-        f_expire = QDateTime::fromMSecsSinceEpoch(start_date / 1000 + seconds * 1000);
-    }
+
+    int64_t const start_date(f_snap ? f_snap->get_start_date() : snap_child::get_current_date());
+    f_expire = QDateTime::fromMSecsSinceEpoch(start_date / 1000LL + seconds * 1000LL);
 }
 
 
@@ -788,7 +801,7 @@ QString http_cookie::to_http_header() const
         // HTTP format generates: Sun, 06 Nov 1994 08:49:37 GMT
         // (see http://tools.ietf.org/html/rfc2616#section-3.3.1)
         //
-        result += "; Expires=" + f_expire.toString("ddd, dd MMM yyyy hh:mm:ss GMT");
+        result += "; Expires=" + f_expire.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'");
 
         // Modern browsers are expected to use the Max-Age=... field
         // instead of the Expires to avoid potential date synchronization

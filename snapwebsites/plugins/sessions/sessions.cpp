@@ -18,17 +18,143 @@
 /** \file
  * \brief Session handling.
  *
- * Sessions are used to track anonymous and logged in users. Especially, the
- * users plugin make use of sessions.
+ * Sessions are used to track anonymous and logged in users. Especially,
+ * the users plugin make use of sessions.
  *
- * The form plugin uses sessions too so as to avoid robots that just POST
- * content. This is because a form includes a session reference which
- * changes for each user. If a robot just sends a POST, it won't have a
- * valid session reference.
+ * The "form" and "editor" plugins use sessions too so as to avoid robots
+ * that just POST content. This is because a form includes a session
+ * reference which changes for each user each time a form is loaded.
+ * If a robot just sends a POST, it will not have a valid session
+ * reference and it will be refused.
  *
  * Other plugins are welcome to make use of sessions, although, if possible
  * any data to carry for a user over multiple accesses should make use of
- * the attach/detach/get session feature available in the user plugin.
+ * the attach_to_session() and detach_from_session() functions available in
+ * the "users" plugin.
+ *
+ * Sessions include four main things:
+ *
+ * \li The plugin name, an identifier, a key, a random number
+ *
+ * We expect the name of the plugin owning this session (i.e. when
+ * the "users" plugin creates a session, it saves "users" as the
+ * owner of that session.) This allows for the session plugin to
+ * be used with any plugin and still be safe by distinguishing
+ * whether a certain session is owned by such and such plugin.
+ *
+ * The plugin is also expected to define an identifier for the
+ * session. This identifier can be used by the plugin to know what
+ * the session represents (i.e. the "users" plugin used that
+ * identifier to know which form it was dealing with when receiving
+ * a POST back from the client.)
+ *
+ * Further a session includes an object path and a page path. However,
+ * this may not really define the unicity of the session.
+ *
+ * The session plugin creates a unique key with the create_session()
+ * function. This is used as the key to access the session again later.
+ * (i.e. the key used to index the session in the database). This is
+ * the key saved in your \<input> tag, a session attribute for the
+ * "editor" plugin, the cookie for a user cookie.
+ *
+ * The size of the session key depends on the type of session you
+ * choose to use.
+ *
+ * The session key is accompagned by a random number. Only at this point
+ * we ignore the random number because in most cases it does not work very
+ * well (i.e. the cookie does not always get properly updated and as a
+ * result the client may hit the server with the wrong random number. This
+ * is a problem when you do multiple accesses and all replies do not happen
+ * before further calls are made and as a result some requests may include
+ * the old random number.) We may look into fixing this problem at some
+ * point because having a random number allows us to make long term
+ * sessions much safer.
+ *
+ * \li Client Unicity Parameters
+ *
+ * In order to better identify the client, we save the client Agent
+ * string. We know that the agent string may change between accesses,
+ * however, we enforce it in some circumstances. For example, a user
+ * who registers an account using Firefox, cannot then finish the
+ * creation of the account using Chrome, the Agent string will change
+ * and the second access will be refused.
+ *
+ * In long term session, the agent can be used to make sure that the
+ * type of browser does not change. However, we cannot match the
+ * string one to one because the versions are likely to change once
+ * in a while.
+ *
+ * \li A time limit
+ *
+ * We actually handle several time fields to limit various things in a
+ * session.
+ *
+ * * First we have a relative time, see set_time_to_live(), which is used
+ *   to define the TTL to use in the Cassandra database. By default, this
+ *   value is set to five minute.
+ *  
+ *   The user plugin changes this value to one year because we try to keep
+ *   user sessions as long as possible. The one year limit comes from the
+ *   fact that a cookie cannot last more than one year, as per HTTP 1.1.
+ *  
+ *   Note that a user session may be given a new identifier once in a while
+ *   even when it did not yet time out as per this TTL information.
+ *
+ *   This parameter can be set to zero, in which case the time limit will
+ *   be used instead. If both, the time limit and the TTL are zero, then
+ *   the limit reverts back to the default five minutes.
+ *
+ * * Second we have a time limit. This is a date at which the session
+ *   is considered out of date. This does not prevent you from using the
+ *   session, only the user cannot write permanent, public, or
+ *   administrative data to the database anymore. We use long sessions so
+ *   that way we can keep track of certain data a user enters while not
+ *   logged in such as his cart or various other choices on the website.
+ *   Once the user logs in, that data can be saved in his account more
+ *   permanently if necessary.
+ *  
+ *   If the time limit represents a date further in the future than
+ *   "now + TTL", then the TTL is pushed back to match the time limit.
+ *   In other words, the time limit is authoritative over the TTL.
+ *
+ * * Third we have a logged in date. This date is a short period for
+ *   which the user is logged in as an administrator. You reach this
+ *   state either with a special login form or every time you re-log
+ *   in. This time is not updated when you hit the website. It can
+ *   only be extended when a user re-log in.
+ *
+ *   The logged in date is clamped to the time limit if it is larger.
+ *
+ * * Forth we save the date when the session is last saved in the database.
+ *   This can be retrieved with the sessions::session_info::get_date()
+ *   function. Although you can change this value with the set_date(),
+ *   the save_session() function ignores it. It always makes use of the
+ *   snap_child::get_start_date() when saving that field in the database.
+ *
+ * \li User data fields.
+ *
+ * A session can be used to save your own data linked with the user or
+ * other object that is linked with this session (like a form).
+ *
+ * The "sessions" plugin offers three functions to deal with such data:
+ *
+ * * attach_to_session() saves the specified data to the session. The
+ *   name is expected to be a valid field name (i.e. the name of your
+ *   plugin as the namespace two colons and the name of the field.)
+ *   For example, the "users" plugin saves the HTTP REFERER in case
+ *   we need to ask for the user log in to continue. That way we can
+ *   send the user right back where he was.
+ *
+ * * detach_from_session() reads the specified data from the session
+ *   and removes it from the session (i.e. read ONCE.) This is the
+ *   opposite of the attach_to_session(). It removes the value from
+ *   the session assuming that you do not need it anymore once done.
+ *   The returned value is equal to the last value that was saved
+ *   using the attach_to_session() with the name.
+ *
+ * * get_from_session() reads the specified data from the session,
+ *   but keeps the value in the session for later reads. This is used
+ *   to check a value from a session, but keep it for later.
  */
 
 #include "sessions.h"
@@ -61,12 +187,15 @@ SNAP_PLUGIN_START(sessions, 1, 1)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
     case name_t::SNAP_NAME_SESSIONS_CHECK_FLAGS:
         return "sessions::check_flags";
+
+    case name_t::SNAP_NAME_SESSIONS_CREATION_DATE:
+        return "sessions::creation_date";
 
     case name_t::SNAP_NAME_SESSIONS_DATE:
         return "sessions::date";
@@ -158,6 +287,8 @@ sessions::session_info::session_info()
     //, f_time_limit(0) -- auto-init
     //, f_login_limit(0) -- auto-init
     //, f_date(0) -- auto-init
+    //, f_creation_date(0) -- auto-init
+    //, f_check_flags(CHECK_HTTP_USER_AGENT) -- auto-init
 {
 }
 
@@ -231,7 +362,7 @@ void sessions::session_info::set_session_id(session_id_t id)
  *
  * \sa get_session_key()
  */
-void sessions::session_info::set_session_key(QString const& key)
+void sessions::session_info::set_session_key(QString const & key)
 {
     f_session_key = key;
 }
@@ -294,7 +425,7 @@ void sessions::session_info::set_session_random(int32_t random)
  *
  * \sa get_plugin_owner()
  */
-void sessions::session_info::set_plugin_owner(QString const& plugin_owner)
+void sessions::session_info::set_plugin_owner(QString const & plugin_owner)
 {
     f_plugin_owner = plugin_owner;
 }
@@ -392,6 +523,30 @@ void sessions::session_info::set_user_agent(QString const & user_agent)
 }
 
 
+/** \brief Save the client Remote IP address for this session.
+ *
+ * This function saves the IP address of the session loaded from the
+ * database.
+ *
+ * The IP address cannot be changed in this way. When you save the
+ * session, we force the remote IP address from the snap_child
+ * REMOTE_ADDR parameter. We use the following line of code to
+ * define that value:
+ *
+ * \code
+ *      value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
+ * \endcode
+ *
+ * \param[in] remote_addr  The remote IP address defined.
+ *
+ * \sa get_remote_addr()
+ */
+void sessions::session_info::set_remote_addr(QString const & remote_addr)
+{
+    f_remote_addr = remote_addr;
+}
+
+
 /** \brief The time to live of this session.
  *
  * All sessions have a maximum life time of five minutes by default. This function
@@ -452,7 +607,10 @@ void sessions::session_info::set_time_to_live(int32_t time_to_live)
  *
  * A limit of zero means that the time limit is not used.
  *
- * \param[in] time_limit  The time when the session becomes completely invalid.
+ * \param[in] time_limit  The time, in seconds, when the session becomes
+ *                        invalid (note that if the time to live is larger
+ *                        than the session will continue to exist even after
+ *                        the time limit).
  *
  * \sa get_time_limit()
  * \sa set_time_to_live()
@@ -471,12 +629,12 @@ void sessions::session_info::set_time_limit(time_t time_limit)
  * More or less, the session goes from a fully logged in registered user
  * to a mostly logged in user.
  *
- * \param[in] time_limit  The time when the logged in session becomes
- *                        completely invalid.
+ * \param[in] time_limit  The time when the secure logged in session
+ *                        becomes invalid.
  *
  * \sa get_time_limit()
  */
-void sessions::session_info::set_login_limit(time_t time_limit)
+void sessions::session_info::set_administrative_login_limit(time_t time_limit)
 {
     f_login_limit = time_limit;
 }
@@ -497,6 +655,44 @@ void sessions::session_info::set_login_limit(time_t time_limit)
 void sessions::session_info::set_date(int64_t date)
 {
     f_date = date;
+}
+
+
+/** \brief Timestamp of when the session was created.
+ *
+ * This function defines the date when the session was created. The date is
+ * in microseconds.
+ *
+ * This function is called only when a session gets loaded. It should not
+ * be changed otherwise.
+ *
+ * \note
+ * If you se the creation date of your session_info object before calling
+ * the create_session() function, then the save_session() function ends
+ * up NOT saving the session creation date which creates a problem on
+ * the load_session() because the row will be empty. As a result, you
+ * get an exception and the session is considered invalid.
+ *
+ * \exception
+ * The session creation date cannot be changed in the database, to
+ * prevent such from happening the date cannot be set to 0 which is
+ * a signal for the save_session() function that the session is brand
+ * new.
+ *
+ * \param[in] date  The date when the session was created.
+ *
+ * \sa get_date()
+ * \sa set_date()
+ * \sa get_creation_date()
+ */
+void sessions::session_info::set_creation_date(int64_t date)
+{
+    if(date <= 0)
+    {
+        throw sessions_exception_invalid_range("sessions.cpp: sessions::session_info::set_creation_date() was called with date set to 0 or less.");
+    }
+
+    f_creation_date = date;
 }
 
 
@@ -718,9 +914,31 @@ QString const & sessions::session_info::get_object_path() const
  *
  * \sa set_user_agent()
  */
-QString const& sessions::session_info::get_user_agent() const
+QString const & sessions::session_info::get_user_agent() const
 {
     return f_user_agent;
+}
+
+
+/** \brief Get the remote address of the attached object.
+ *
+ * A session is always created with the last remote IP address of the
+ * client saved in it.
+ *
+ * Note that in most cases, quick accesses will have the same IP address
+ * but you cannot hope that a client will not be given a new IP once
+ * in a while.
+ *
+ * That being said, while loading one page, you are more than likely
+ * going to receive all the requests from the exact same IP address.
+ *
+ * \return This session remote IP address when it was last saved.
+ *
+ * \sa set_remote_addr()
+ */
+QString const & sessions::session_info::get_remote_addr() const
+{
+    return f_remote_addr;
 }
 
 
@@ -749,7 +967,7 @@ int32_t sessions::session_info::get_time_to_live() const
  *
  * See the set_time_limit() function for more information.
  *
- * \return The session Unix time limit.
+ * \return The session Unix time limit (so it is in seconds).
  *
  * \sa set_time_limit()
  * \sa get_time_to_live()
@@ -770,9 +988,9 @@ time_t sessions::session_info::get_time_limit() const
  *
  * \return The log in session Unix time limit.
  *
- * \sa set_login_limit()
+ * \sa set_administrative_login_limit()
  */
-time_t sessions::session_info::get_login_limit() const
+time_t sessions::session_info::get_administrative_login_limit() const
 {
     return f_login_limit;
 }
@@ -784,6 +1002,8 @@ time_t sessions::session_info::get_login_limit() const
  * was last saved in Cassandra. This is used by the plugins using sessions
  * to know whether a new random number should be used.
  *
+ * If the session was never saved, the function returns zero.
+ *
  * \return The Unix time in microseconds when the session was last saved.
  *
  * \sa set_date()
@@ -791,6 +1011,23 @@ time_t sessions::session_info::get_login_limit() const
 int64_t sessions::session_info::get_date() const
 {
     return f_date;
+}
+
+
+/** \brief Get the timestamp of when the session was created.
+ *
+ * This function returns the date when the session was created. The date is
+ * in microseconds.
+ *
+ * \return The date, in microseconds, when the session was created.
+ *
+ * \sa get_date()
+ * \sa set_date()
+ * \sa set_creation_date()
+ */
+int64_t sessions::session_info::get_creation_date() const
+{
+    return f_creation_date;
 }
 
 
@@ -825,6 +1062,76 @@ char const * sessions::session_info::session_type_to_string(session_info_type_t 
     }
     return type_names[static_cast<int>(type)];
 }
+
+
+/** \brief Define the TTL for a Cassandra value.
+ *
+ * This function defines the TTL value for a QCassandraValue object.
+ *
+ * The TTL is calculated from the time limit and the time to live.
+ * The time to live has priority and if longer than the time limit,
+ * it gets used and the time limit is totally ignored.
+ *
+ * If the time limit is after what now plus the time to live
+ * represents then the TTL is set to the time limit.
+ *
+ * You may reuse the same value variable over and over again once the
+ * TTL was setup once. It will be a lot faster than calling this
+ * function each time you have to save a new value.
+ *
+ * \param[in,out] value  The QCassandraValue which TTL will be set.
+ */
+int32_t sessions::session_info::get_ttl(int64_t now) const
+{
+    // define timestamp for the session value in seconds
+    int64_t timestamp(0);
+    if(f_time_limit == 0)
+    {
+        if(f_time_to_live == 0)
+        {
+            // the default time to live is five minutes
+            // as defined in the time_to_live_t controlled variable.
+            //
+            timestamp = now + time_to_live_t();
+        }
+        else
+        {
+            timestamp = now + f_time_to_live;
+        }
+    }
+    else
+    {
+        if(f_time_to_live == 0)
+        {
+            timestamp = f_time_limit;
+        }
+        else
+        {
+            timestamp = now + f_time_to_live;
+            if(timestamp < f_time_limit)
+            {
+                // keep the largest dead line time
+                timestamp = f_time_limit;
+            }
+        }
+    }
+    // keep it in the database for 1 more day than what we need it for
+    // the difference should always fit 32 bits
+    int64_t const ttl(timestamp + 86400LL - now);
+    if(ttl < 0LL || ttl > 0x7FFFFFFFLL)
+    {
+        throw sessions_exception_invalid_range(QString("sessions::session_info::get_ttl(): the session computed ttl %1 is out of bounds (time to live: %2, time limit: %3).")
+                        .arg(ttl).arg(f_time_to_live).arg(f_time_limit));
+    }
+
+    // we checked and know it fits 32 bits so this cast is safe
+    //
+    return static_cast<int32_t>(ttl);
+}
+
+
+
+
 
 
 /** \brief Initialize the sessions plugin.
@@ -1124,9 +1431,9 @@ void sessions::on_generate_main_content(content::path_info_t & ipath, QDomElemen
 QString sessions::create_session(session_info & info)
 {
     // creating a session of less than 1 minute?!
-    time_t time_limit(info.get_time_limit());
-    int32_t time_to_live(info.get_time_to_live());
-    int64_t now(f_snap->get_start_time());
+    time_t const time_limit(info.get_time_limit());
+    int32_t const time_to_live(info.get_time_to_live());
+    int64_t const now(f_snap->get_start_time());
     if((time_limit != 0 && time_limit <= now + 60)
     || (time_to_live != 0 && time_to_live <= 60))
     {
@@ -1143,6 +1450,11 @@ QString sessions::create_session(session_info & info)
     if(info.get_user_agent().isEmpty())
     {
         throw sessions_exception_invalid_parameter("all sessions must have a user agent specified.");
+    }
+
+    if(info.get_creation_date() != 0)
+    {
+        throw sessions_exception_invalid_parameter("the sessions plugin is the only one in charge of setting up the creation date of the session.");
     }
 
     // TODO? Need we set a specific OpenSSL random generator?
@@ -1227,6 +1539,13 @@ QString sessions::create_session(session_info & info)
  * \li The user logs in at some level (we can have multiple log in levels!)
  * \li The user was inactive for long enough (i.e. over a minute?)
  *
+ * \todo
+ * Do some tests and see whether we can change the time_limit and TTL
+ * values to zero after we did a load_session() and before we do a
+ * save_session(). If it is possible, then we have to check that special
+ * case in the save_session() function (it is checked in the create_session()
+ * but not here!) because the load_session() hopes that this is always true.
+ *
  * \param[in,out] info  The session info to save.
  * \param[in] new_random  Whether the session should be given a new random number.
  */
@@ -1239,53 +1558,11 @@ void sessions::save_session(session_info & info, bool const new_random)
 
     QString const key(f_snap->get_website_key() + "/" + info.get_session_key());
 
-    // define timestamp for the session value in seconds
-    time_t const time_limit(info.get_time_limit());
-    int32_t const time_to_live(info.get_time_to_live());
-    int64_t const now(f_snap->get_start_time());
-    int64_t timestamp(0);
-    if(time_limit == 0)
-    {
-        if(time_to_live == 0)
-        {
-            // never expire we use 1 year which is
-            // way over the head of everyone
-            timestamp = now + 86400 * 365;
-        }
-        else
-        {
-            timestamp = now + time_to_live;
-        }
-    }
-    else
-    {
-        if(time_to_live == 0)
-        {
-            timestamp = time_limit;
-        }
-        else
-        {
-            timestamp = now + time_to_live;
-            if(timestamp < time_limit)
-            {
-                // keep the largest dead line time
-                timestamp = time_limit;
-            }
-        }
-    }
-    // keep it in the database for 1 more day than what we need it for
-    // the difference should always fit 32 bits
-    int64_t const ttl(timestamp + 86400 - now);
-    if(ttl < 0 || ttl > 0x7FFFFFFF)
-    {
-        throw sessions_exception_invalid_range(QString("the session computed ttl %1 is out of bounds (save_session)").arg(ttl));
-    }
-
     QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     QtCassandra::QCassandraRow::pointer_t row(table->row(key));
 
     QtCassandra::QCassandraValue value;
-    value.setTtl(static_cast<int32_t>(ttl));
+    value.setTtl(info.get_ttl(f_snap->get_start_time()));
 
     value.setInt32Value(info.get_session_id());
     row->cell(get_name(name_t::SNAP_NAME_SESSIONS_ID))->setValue(value);
@@ -1305,15 +1582,22 @@ void sessions::save_session(session_info & info, bool const new_random)
     value.setInt32Value(info.get_time_to_live());
     row->cell(get_name(name_t::SNAP_NAME_SESSIONS_TIME_TO_LIVE))->setValue(value);
 
-    value.setInt64Value(timestamp);
-    info.set_time_limit(timestamp);
+    value.setInt64Value(info.get_time_limit());
     row->cell(get_name(name_t::SNAP_NAME_SESSIONS_TIME_LIMIT))->setValue(value);
 
-    value.setInt64Value(info.get_login_limit());
+    value.setInt64Value(info.get_administrative_login_limit());
     row->cell(get_name(name_t::SNAP_NAME_SESSIONS_LOGIN_LIMIT))->setValue(value);
 
     value.setInt64Value(f_snap->get_start_date());
     row->cell(get_name(name_t::SNAP_NAME_SESSIONS_DATE))->setValue(value);
+
+    if(info.get_creation_date() == 0)
+    {
+        // save it in the info structure as well
+        info.set_creation_date(f_snap->get_start_time());
+        value.setInt64Value(f_snap->get_start_date());
+        row->cell(get_name(name_t::SNAP_NAME_SESSIONS_CREATION_DATE))->setValue(value);
+    }
 
     value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
     row->cell(get_name(name_t::SNAP_NAME_SESSIONS_REMOTE_ADDR))->setValue(value);
@@ -1382,7 +1666,7 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
     QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     if(!table->exists(key))
     {
-        // if the key doesn't exist it was either tempered with
+        // if the key does not exist it was either tempered with
         // or the database already deleted it (i.e. it timed out)
         info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
@@ -1392,7 +1676,7 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
     if(!row)
     {
         // XXX
-        // if we get a problem here it's probably something else
+        // if we get a problem here it is probably something else
         // than a missing row...
         info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
@@ -1404,7 +1688,7 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
     QtCassandra::QCassandraValue value;
 
     value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_ID))->value();
-    if(value.nullValue())
+    if(value.size() != sizeof(int32_t))
     {
         // row timed out between calls
         info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
@@ -1430,8 +1714,11 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
     value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_USER_AGENT))->value();
     info.set_user_agent(value.stringValue());
 
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_REMOTE_ADDR))->value();
+    info.set_remote_addr(value.stringValue());
+
     value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_CHECK_FLAGS))->value();
-    if(value.nullValue())
+    if(value.size() != sizeof(int64_t))
     {
         // row timed out between calls
         info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
@@ -1440,7 +1727,7 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
     info.set_check_flags(value.int64Value());
 
     value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_TIME_TO_LIVE))->value();
-    if(value.nullValue())
+    if(value.size() != sizeof(int32_t))
     {
         // row timed out between calls
         info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
@@ -1449,7 +1736,7 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
     info.set_time_to_live(value.int32Value());
 
     value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_TIME_LIMIT))->value();
-    if(value.nullValue())
+    if(value.size() != sizeof(int64_t))
     {
         // row timed out between calls
         info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
@@ -1458,16 +1745,16 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
     info.set_time_limit(value.int64Value());
 
     value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_LOGIN_LIMIT))->value();
-    if(value.nullValue())
+    if(value.size() != sizeof(int64_t))
     {
         // row timed out between calls
         info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
-    info.set_login_limit(value.int64Value());
+    info.set_administrative_login_limit(value.int64Value());
 
     value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_DATE))->value();
-    if(value.nullValue())
+    if(value.size() != sizeof(int64_t))
     {
         // row timed out between calls
         info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
@@ -1475,8 +1762,17 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
     }
     info.set_date(value.int64Value());
 
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_CREATION_DATE))->value();
+    if(value.size() != sizeof(int64_t))
+    {
+        // row timed out between calls
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
+        return;
+    }
+    info.set_creation_date(value.int64Value());
+
     value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_RANDOM))->value();
-    if(value.nullValue())
+    if(value.size() != sizeof(int32_t))
     {
         // row timed out between calls
         info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
@@ -1484,17 +1780,12 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
     }
     info.set_session_random(value.int32Value());
 
-    // At this point we don't have a field in the info structure for this one
-    // value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_REMOTE_ADDR))->value();
-
-    int64_t now(f_snap->get_start_time());
-    if(info.get_time_limit() < now)
-    {
-        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_OUT_OF_DATE);
-        return;
-    }
-
     // check whether the session was already used up
+    //
+    // WARNING: do not use the 'value' variable here because otherwise
+    //          we will destroy the Cassandra TTL used when saving the
+    //          used up below
+    //
     QtCassandra::QCassandraValue used_up_value(row->cell(get_name(name_t::SNAP_NAME_SESSIONS_USED_UP))->value());
     if(!used_up_value.nullValue())
     {
@@ -1512,7 +1803,37 @@ void sessions::load_session(QString const & session_key, session_info & info, bo
         row->cell(get_name(name_t::SNAP_NAME_SESSIONS_USED_UP))->setValue(value);
     }
 
-    // only case when it is valid
+    // a session has three time limits:
+    //
+    //   1. the total time to live (TTL) -- the session will not get deleted
+    //      for that long
+    //
+    //   2. a time limit which represents the time when the session is
+    //      considered to have timed out; if that time limit is 0, we use
+    //      the TTL to time out the session
+    //
+    //   3. a login / administrative time limit; this is not tested here,
+    //      instead the users plugin makes use of that one; other plugins
+    //      can also test this value
+    //
+    // A valid session cannot have a time to live and time limit that are
+    // both zero (it is checked in the create_session() function.)
+    //
+    int64_t const now(f_snap->get_start_time());
+    int64_t time_limit(info.get_time_limit());
+    if(time_limit == 0)
+    {
+        int64_t const time_to_live(info.get_time_to_live());
+        int64_t const creation_date(info.get_creation_date() / 1000000LL);
+        time_limit = creation_date + time_to_live;
+    }
+    if(time_limit < now)
+    {
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_OUT_OF_DATE);
+        return;
+    }
+
+    // only case when it is 100% valid
     info.set_session_type(session_info::session_info_type_t::SESSION_INFO_VALID);
 }
 
@@ -1576,11 +1897,11 @@ bool sessions::session_exists(QString const & website_key, QString const & sessi
  * \sa detach_from_session()
  * \sa get_from_session()
  */
-void sessions::attach_to_session(session_info const& info, QString const& name, QString const& data)
+void sessions::attach_to_session(session_info const & info, QString const & name, QString const & data)
 {
-    QString key(f_snap->get_website_key() + "/" + info.get_session_key());
+    QString const key(f_snap->get_website_key() + "/" + info.get_session_key());
 
-    SNAP_LOG_DEBUG() << "sessions::attach_to_session(), key = " << key << ", name = " << name << ", data = " << data;
+    SNAP_LOG_DEBUG("sessions::attach_to_session(), key = ")(key)(", name = ")(name)(", data = ")(data);
 
     QtCassandra::QCassandraTable::pointer_t table(get_sessions_table());
     if(!table->exists(key))
@@ -1594,20 +1915,8 @@ void sessions::attach_to_session(session_info const& info, QString const& name, 
         return;
     }
 
-    // we use the saved time limit
-    time_t timestamp(info.get_time_limit());
-    int64_t now(f_snap->get_start_time());
-
-    // keep it in the database for 1 more day than what we need it for
-    // the difference should always fit 32 bits
-    int64_t ttl(timestamp + 86400 - now);
-    if(ttl < 0 || ttl > 0x7FFFFFFF)
-    {
-        throw sessions_exception_invalid_range(QString("the session computed ttl %1 is out of bounds (attach_to_session) timestamp=%2, now=%3").arg(ttl).arg(timestamp).arg(now));
-    }
-
     QtCassandra::QCassandraValue value;
-    value.setTtl(static_cast<int32_t>(ttl));
+    value.setTtl(info.get_ttl(f_snap->get_start_time()));
 
     value.setStringValue(data);
     row->cell(name)->setValue(value);
@@ -1629,7 +1938,7 @@ void sessions::attach_to_session(session_info const& info, QString const& name, 
  *
  * \return The data in a string.
  */
-QString sessions::detach_from_session(const session_info& info, const QString& name)
+QString sessions::detach_from_session(session_info const & info, QString const & name)
 {
     QString key(f_snap->get_website_key() + "/" + info.get_session_key());
 
@@ -1666,7 +1975,7 @@ QString sessions::detach_from_session(const session_info& info, const QString& n
  *
  * \return The data in a string.
  */
-QString sessions::get_from_session(const session_info& info, const QString& name)
+QString sessions::get_from_session(session_info const & info, QString const & name)
 {
     QString key(f_snap->get_website_key() + "/" + info.get_session_key());
 

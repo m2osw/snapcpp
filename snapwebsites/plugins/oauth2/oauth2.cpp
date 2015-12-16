@@ -398,7 +398,7 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
                     // make sure user is currently valid otherwise it would
                     // be a way for a user to bypass being blocked!
                     QString ignore_status_key;
-                    users::users::status_t status(users_plugin->user_status(email, ignore_status_key));
+                    users::users::status_t const status(users_plugin->user_status(email, ignore_status_key));
                     if(status == users::users::status_t::STATUS_VALID
                     || status == users::users::status_t::STATUS_PASSWORD)
                     {
@@ -434,11 +434,11 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
     QString session_id;
     if(details.isEmpty())
     {
-        sessions::sessions::session_info const & session_info(users_plugin->get_session());
+        sessions::sessions::session_info const & info(users_plugin->get_session());
         session_id = QString("%1/%2")
-                    .arg(session_info.get_session_key())
-                    .arg(session_info.get_session_random());
-        login_limit = session_info.get_login_limit();
+                    .arg(info.get_session_key())
+                    .arg(info.get_session_random());
+        login_limit = info.get_administrative_login_limit();
     }
     else
     {
@@ -773,6 +773,7 @@ void oauth2::on_process_cookies()
         }
     }
 }
+
 
 /*
 

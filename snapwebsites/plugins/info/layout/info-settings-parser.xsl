@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == editor test parser for our test form
+Snap Websites Server == info settings parser
 Copyright (C) 2014-2015  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify

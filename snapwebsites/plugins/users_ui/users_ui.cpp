@@ -35,6 +35,7 @@
 
 #include "users_ui.h"
 
+#include "../editor/editor.h"
 #include "../output/output.h"
 #include "../messages/messages.h"
 #include "../sendmail/sendmail.h"
@@ -140,7 +141,7 @@ QString users_ui::description() const
  */
 QString users_ui::dependencies() const
 {
-    return "|form|layout|messages|output|path|sendmail|users|";
+    return "|editor|form|layout|messages|output|path|sendmail|users|";
 }
 
 
@@ -161,8 +162,8 @@ int64_t users_ui::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 11, 4, 15, 46, 36, content_update);
     SNAP_PLUGIN_UPDATE(2015, 11, 4, 15, 46, 37, fix_owner_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 16, 2, 33, 36, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -247,6 +248,7 @@ void users_ui::bootstrap(::snap::snap_child * snap)
     SNAP_LISTEN0(users_ui, "server", server, detach_from_session);
     SNAP_LISTEN(users_ui, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users_ui, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(users_ui, "editor", editor::editor, finish_editor_form_processing, _1, _2);
 }
 
 
@@ -653,15 +655,21 @@ void users_ui::prepare_replace_password_form(QDomElement & body)
     users::users * users_plugin(users::users::instance());
 
     // make sure the user is properly setup
-    if(users_plugin->user_is_logged_in())
+    //
+    if(users_plugin->user_has_administrative_rights())
     {
-        // user is logged in already, send him to his normal password form
+        // user is administratively (recently) logged in already,
+        // send him to his normal password form
+        //
         f_snap->page_redirect("user/password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER, "Already Logged In", "You are already logged in so you cannot access this page at this time.");
         NOTREACHED();
     }
     if(!users_plugin->get_user_key().isEmpty())
     {
         // user logged in a while back, ask for credentials again
+        // (we want the user to have  administrative permissions,
+        // meaning we want the user to have logged in recently.)
+        //
         f_snap->page_redirect("verify-credentials", snap_child::http_code_t::HTTP_CODE_SEE_OTHER, "Not Enough Permissions", "You are logged in with minimal permissions. To access this page we have to verify your credentials.");
         NOTREACHED();
     }
@@ -855,12 +863,16 @@ void users_ui::prepare_verify_credentials_form()
         NOTREACHED();
     }
 
-    if(users_plugin->user_is_logged_in())
+    if(users_plugin->user_has_administrative_rights())
     {
         // ?!? -- what should we do in this case?
         f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
+
+    // Note that here users_plugin->user_is_logged_in() may return
+    // true, only this is not enough to administer the website
+    // so not enough to let a user change his password
 }
 
 
@@ -2227,6 +2239,50 @@ void users_ui::forgot_password_email(QString const & email, QString const & user
     // really this just saves it in the database, the sendmail itself
     // happens on the backend; see sendmail::on_backend_action()
     sendmail::sendmail::instance()->post_email(e);
+}
+
+
+void users_ui::on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded)
+{
+    if(!succeeded)
+    {
+        return;
+    }
+
+    if(ipath.get_cpath() != "admin/settings/users")
+    {
+        return;
+    }
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(ipath.get_revision_key()));
+
+    QtCassandra::QCassandraValue value;
+
+    value = settings_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_SOFT_ADMINISTRATIVE_SESSION))->value();
+    if(value.size() == sizeof(int8_t))
+    {
+        f_snap->set_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_SOFT_ADMINISTRATIVE_SESSION), value);
+    }
+
+    value = settings_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_ADMINISTRATIVE_SESSION_DURATION))->value();
+    if(value.size() == sizeof(int64_t))
+    {
+        f_snap->set_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_ADMINISTRATIVE_SESSION_DURATION), value);
+    }
+
+    value = settings_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_USER_SESSION_DURATION))->value();
+    if(value.size() == sizeof(int64_t))
+    {
+        f_snap->set_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_USER_SESSION_DURATION), value);
+    }
+
+    value = settings_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_TOTAL_SESSION_DURATION))->value();
+    if(value.size() == sizeof(int64_t))
+    {
+        f_snap->set_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_TOTAL_SESSION_DURATION), value);
+    }
 }
 
 
