@@ -362,7 +362,7 @@ public:
         bool                        define_address();
 
         int                         f_socket = -1;
-        struct sockaddr_storage     f_address;
+        struct sockaddr_storage     f_address = sockaddr_storage();
         socklen_t                   f_length = 0;
     };
 
