@@ -3446,14 +3446,14 @@ void snap_init::start()
                     //       (see SNAP-133 which is closed)
                     //
                     SNAP_LOG_FATAL("Lock file \"")
-                                  (f_lock_file.fileName())
+                                  (f_lock_filename)
                                   ("\" exists! However, process with PID ")
                                   (lock_file_pid)
                                   (" is not running. To delete the lock, use `snapinit --remove-lock`.");
                     if(g_isatty)
                     {
                         std::cerr << "snapinit: fatal: Lock file \""
-                                  << f_lock_file.fileName()
+                                  << f_lock_filename
                                   << "\" exists! However, process with PID "
                                   << lock_file_pid
                                   << " is not running. To delete the lock, use `snapinit --remove-lock`."
@@ -3465,14 +3465,14 @@ void snap_init::start()
                     // snapinit is running
                     //
                     SNAP_LOG_FATAL("Lock file \"")
-                                  (f_lock_file.fileName())
+                                  (f_lock_filename)
                                   ("\" exists! snapinit is already running as PID ")
                                   (lock_file_pid)
                                   (".");
                     if(g_isatty)
                     {
                         std::cerr << "snapinit: fatal: Lock file \""
-                                  << f_lock_file.fileName()
+                                  << f_lock_filename
                                   << "\" exists! snapinit is already running as PID "
                                   << lock_file_pid
                                   << "."
@@ -3485,7 +3485,7 @@ void snap_init::start()
                 // snapinit is running
                 //
                 SNAP_LOG_FATAL("Lock file \"")
-                              (f_lock_file.fileName())
+                              (f_lock_filename)
                               ("\" exists! Is this a race condition? (errno: ")
                               (e)
                               (" -- ")
@@ -3494,7 +3494,7 @@ void snap_init::start()
                 if(g_isatty)
                 {
                     std::cerr << "snapinit: fatal: Lock file \""
-                              << f_lock_file.fileName()
+                              << f_lock_filename
                               << "\" exists! Is this a race condition? (errno: "
                               << e
                               << " -- "
@@ -3506,11 +3506,11 @@ void snap_init::start()
         }
         else
         {
-            SNAP_LOG_FATAL("Lock file \"")(f_lock_file.fileName())("\" could not be created. (errno: ")(e)(" -- ")(strerror(e))(")");
+            SNAP_LOG_FATAL("Lock file \"")(f_lock_filename)("\" could not be created. (errno: ")(e)(" -- ")(strerror(e))(")");
             if(g_isatty)
             {
                 std::cerr << "snapinit: fatal: Lock file \""
-                          << f_lock_file.fileName()
+                          << f_lock_filename
                           << "\" could not be created. (errno: "
                           << e
                           << " -- "
@@ -3523,20 +3523,25 @@ void snap_init::start()
         snap::NOTREACHED();
     }
 
-    f_lock_file.open( fd, QFile::ReadWrite ); // save fd in the QFile object
-
-    // save our PID in the lock file (useful for the stop() processus)
-    // the correct Debian format is the PID followed by '\n'
+    // save fd in the QFile object
     //
-    // FHS Version 2.1+:
-    //   > The file should consist of the process identifier in ASCII-encoded
-    //   > decimal, followed by a newline character. For example, if crond was
-    //   > process number 25, /var/run/crond.pid would contain three characters:
-    //   > two, five, and newline.
-    // 
+    // WARNING: this call removes the filename from the QFile
+    //          hence, we generally use the f_lock_filename instead of
+    //          the f_lock_file.fileName() function
     //
-    f_lock_file.write(QString("%1\n").arg(getpid()).toUtf8());
-    f_lock_file.flush();
+    if(!f_lock_file.open( fd, QFile::ReadWrite ))
+    {
+        SNAP_LOG_FATAL("Lock file \"")(f_lock_filename)("\" could not be registered with Qt.");
+        if(g_isatty)
+        {
+            std::cerr << "snapinit: fatal: Lock file \""
+                      << f_lock_filename
+                      << "\" could not be registered with Qt."
+                      << std::endl;
+        }
+        exit(1);
+        snap::NOTREACHED();
+    }
 
     if( f_opt.is_defined("detach") )
     {
@@ -3573,6 +3578,18 @@ void snap_init::start()
 
         // the child goes on
     }
+
+    // save our (child) PID in the lock file (useful for the stop() processus)
+    // the correct Debian format is the PID followed by '\n'
+    //
+    // FHS Version 2.1+:
+    //   > The file should consist of the process identifier in ASCII-encoded
+    //   > decimal, followed by a newline character. For example, if crond was
+    //   > process number 25, /var/run/crond.pid would contain three characters:
+    //   > two, five, and newline.
+    //
+    f_lock_file.write(QString("%1\n").arg(getpid()).toUtf8());
+    f_lock_file.flush();
 
     // check whether all executables are available
     //

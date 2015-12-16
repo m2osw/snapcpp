@@ -1483,7 +1483,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
     }
 
 #ifdef DEBUG
-    SNAP_LOG_TRACE("Process website \"")(f_website)("\".");
+    SNAP_LOG_TRACE("Process website \"")(uri)("\".");
 #endif
 
     // create a child connection so our child and us can communicate
