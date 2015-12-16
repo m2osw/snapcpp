@@ -897,7 +897,15 @@ int main(int argc, char *argv[])
         {
             std::cerr << "----- Filename #" << i << " -----" << std::endl;
         }
-        errcnt += check_version(g_versions + i);
+        try
+        {
+            errcnt += check_version(g_versions + i);
+        }
+        catch(snap::snap_logic_exception const & e)
+        {
+            ++errcnt;
+            std::cerr << "error: check_version() failed (" << e.what() << ")." << std::endl;
+        }
     }
 
     // check a long stack of name / versions / browsers dependencies
