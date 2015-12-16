@@ -37,49 +37,49 @@ namespace snap
 class snap_child_exception : public snap_exception
 {
 public:
-    snap_child_exception(char const *        whatmsg) : snap_exception("snap_child", whatmsg) {}
-    snap_child_exception(std::string const & whatmsg) : snap_exception("snap_child", whatmsg) {}
-    snap_child_exception(QString const &     whatmsg) : snap_exception("snap_child", whatmsg) {}
+    explicit snap_child_exception(char const *        whatmsg) : snap_exception("snap_child", whatmsg) {}
+    explicit snap_child_exception(std::string const & whatmsg) : snap_exception("snap_child", whatmsg) {}
+    explicit snap_child_exception(QString const &     whatmsg) : snap_exception("snap_child", whatmsg) {}
 };
 
 class snap_child_exception_unique_number_error : public snap_child_exception
 {
 public:
-    snap_child_exception_unique_number_error(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_unique_number_error(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_unique_number_error(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_unique_number_error(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_unique_number_error(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_unique_number_error(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_invalid_header_value : public snap_child_exception
 {
 public:
-    snap_child_exception_invalid_header_value(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_value(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_value(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_value(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_value(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_value(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_invalid_header_field_name : public snap_child_exception
 {
 public:
-    snap_child_exception_invalid_header_field_name(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_field_name(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_field_name(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_field_name(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_field_name(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_field_name(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_no_server : public snap_child_exception
 {
 public:
-    snap_child_exception_no_server(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_no_server(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_no_server(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_no_server(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_no_server(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_no_server(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_invalid_email : public snap_child_exception
 {
 public:
-    snap_child_exception_invalid_email(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_email(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_email(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_email(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_email(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_email(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 
