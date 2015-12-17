@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <content path="/admin/settings/info">
+  <content path="/admin/settings/info" owner="output">
     <param name="content::title" revision="revision">Website Basic Settings</param>
     <param name="content::body" revision="revision">
       <p>Site wide settings as offerred by the core system of your website.</p>
@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
   </content>
   <!-- handle the messages settings because messages is too low level for having a form of its own -->
-  <content path="/admin/settings/messages">
+  <content path="/admin/settings/messages" owner="output">
     <param name="content::title" revision="revision">Messages Administration</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Settings on how to handle your website messages (errors, information, debug).</p>]]>

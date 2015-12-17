@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::final" type="int8" revision="global">1</param>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
   </content>
-  <content path="/admin/settings/sitemapxml">
+  <content path="/admin/settings/sitemapxml" owner="output">
     <param name="content::title" revision="revision">sitemap.xml settings</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Administer the different sitemap.xml files of your website. These files are for robots only. In most cases the default works as is.</p>]]>

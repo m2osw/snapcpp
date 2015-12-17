@@ -398,7 +398,7 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
     && content_table->row(ipath.get_key())->exists(primary_owner))
     //&& content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_STATUS)))
     {
-SNAP_LOG_TRACE("found path ")(ipath.get_key())(" in database... no dynamic stuff.");
+//SNAP_LOG_TRACE("found path ")(ipath.get_key())(" in database... no dynamic stuff.");
         QString const action(define_action(ipath));
 
         // I don't think this is smart, instead I pass the action to the
