@@ -21,10 +21,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <auto-reset minutes="30"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
-  <focus refid="administrative_session_duration"/>
+  <focus refid="soft_administrative_session"/>
   <on-save allow-edit="yes"/>
   <taborder>
+    <tabindex refid="soft_administrative_session"/>
     <tabindex refid="administrative_session_duration"/>
+    <tabindex refid="user_session_duration"/>
+    <tabindex refid="total_session_duration"/>
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
