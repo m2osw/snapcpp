@@ -40,12 +40,14 @@ install(
         logserver.properties
         snapcgi.properties
         snapcommunicator.properties
+        snapfirewall.properties
         snapinit.properties
 
         # snap configuration files
         snap-apache2.conf
         snapcgi.conf
         snapcommunicator.conf
+        snapfirewall.conf
         snapinit.conf
         snapserver.conf
 
