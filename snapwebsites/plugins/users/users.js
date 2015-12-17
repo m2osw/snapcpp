@@ -1,6 +1,6 @@
 /** @preserve
  * Name: users
- * Version: 0.0.1.4
+ * Version: 0.0.1.5
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -119,7 +119,6 @@ snapwebsites.Users.prototype.startAutoLogout = function()
         delay = (users__session_time_limit + 20) * 1000 - now,
         that = this;
 
-console.log("logout delay = " + delay);
     // we may get called again before the existing timeout was triggered
     // so if the ID is not NaN, we call the clearTimeout() on it
     //
