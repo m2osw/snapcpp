@@ -1,9 +1,9 @@
 #
-# File:		CMakeLists.txt
-# Object:	Definitions to create the build environment
+# File:         CMakeLists.txt
+# Object:       Definitions to create the build environment
 #
-# Copyright:	Copyright (c) 2012-2013 Made to Order Software Corp.
-#		All Rights Reserved.
+# Copyright:    Copyright (c) 2012-2015 Made to Order Software Corp.
+#               All Rights Reserved.
 #
 # http://snapwebsites.org/
 # contact@m2osw.com
@@ -58,11 +58,21 @@ find_package( SnapCMakeModules )
 ##
 ## IP Lock Tool
 ##
-add_executable(iplock
-	iplock.cpp
+add_executable(${PROJECT_NAME}
+    iplock.cpp
 )
 
-install( TARGETS iplock RUNTIME DESTINATION bin )
+install(
+    TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION sbin
+)
+
+install(
+    FILES
+        iplock.conf
+    DESTINATION
+        share/iplock
+)
 
 ##
 ## To pack the source
@@ -85,3 +95,4 @@ set(CPACK_DEBIAN_PACKAGE_SECTION "admin")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/iplock")
 include(CPack)
 
+# vim: ts=4 sw=4 et
