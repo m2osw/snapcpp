@@ -78,7 +78,7 @@ configuration::configuration()
     //, f_ports -- auto-init
 {
     FILE * f = fopen("/etc/network/iplock.conf", "r");
-    if(f == NULL)
+    if(f == nullptr)
     {
         // no configuration
         return;
