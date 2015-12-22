@@ -33,9 +33,11 @@ cmake_minimum_required(VERSION 2.8)
 ##
 set(IPLOCK_MAJOR 2)
 set(IPLOCK_MINOR 1)
-set(IPLOCK_PATCH 0)
+set(IPLOCK_PATCH 1)
 
 project(iplock)
+
+INCLUDE(GNUInstallDirs)
 
 # Put the version in the cpp file
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/iplock.h.in ${CMAKE_CURRENT_BINARY_DIR}/iplock.h )
@@ -64,35 +66,14 @@ add_executable(${PROJECT_NAME}
 
 install(
     TARGETS ${PROJECT_NAME}
-    RUNTIME DESTINATION sbin
+    RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}
 )
 
 install(
     FILES
         iplock.conf
     DESTINATION
-        share/iplock
+        share/iplock/conf
 )
-
-##
-## To pack the source
-##
-set(CPACK_PACKAGE_NAME "iplock")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "iplock -- Tool to block (or release) an IP address in your iptables firewall")
-set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
-set(CPACK_RESOURCE_FILE_LICENSE "${iplock_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_GENERATOR "TGZ" "DEB")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
-set(CPACK_PACKAGE_VERSION "${IPLOCK_MAJOR}.${IPLOCK_MINOR}.${IPLOCK_PATCH}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${IPLOCK_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${IPLOCK_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${IPLOCK_PATCH}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "iplock-${IPLOCK_MAJOR}.${IPLOCK_MINOR}.${IPLOCK_PATCH}")
-#set(CPACK_PACKAGE_EXECUTABLES "")
-set(CPACK_DEBIAN_PACKAGE_SECTION "admin")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/iplock")
-include(CPack)
 
 # vim: ts=4 sw=4 et
