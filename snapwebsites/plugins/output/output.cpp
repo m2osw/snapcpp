@@ -42,7 +42,7 @@ SNAP_PLUGIN_START(output, 1, 0)
  *
  * \return A pointer to the name.
  */
-//char const *get_name(name_t name)
+//char const * get_name(name_t name)
 //{
 //    switch(name)
 //    {
@@ -99,6 +99,28 @@ output * output::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString output::settings_path() const
+{
+    return "/admin/settings/info";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString output::icon() const
+{
+    return "/images/snap/snap-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -144,7 +166,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 11, 4, 21, 7, 44, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 18, 16, 44, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

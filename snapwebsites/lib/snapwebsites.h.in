@@ -214,6 +214,7 @@ public:
     virtual void        show_version();
 
     // plugins::plugin implementation
+    virtual QString     icon() const;
     virtual QString     description() const;
     virtual QString     dependencies() const;
     virtual void        bootstrap(snap_child * snap);

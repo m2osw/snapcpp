@@ -41,6 +41,8 @@ enum class name_t
     SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL,
     SNAP_NAME_USERS_FORGOT_PASSWORD_IP,
     SNAP_NAME_USERS_FORGOT_PASSWORD_ON,
+    SNAP_NAME_USERS_HIT_TRANSPARENT,
+    SNAP_NAME_USERS_HIT_USER,
     SNAP_NAME_USERS_IDENTIFIER,
     SNAP_NAME_USERS_ID_ROW,
     SNAP_NAME_USERS_INDEX_ROW,
@@ -229,6 +231,8 @@ public:
 
     // plugins::plugin implementation
     static users *          instance();
+    virtual QString         settings_path() const;
+    virtual QString         icon() const;
     virtual QString         description() const;
     virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);

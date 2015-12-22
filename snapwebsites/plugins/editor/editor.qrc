@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>content.xml</file>
   </qresource>
   <qresource prefix="/xml/editor">
+    <file>default-page.xml</file>
     <file>new-draft.xml</file>
     <file>editor-test-page.xml</file>
   </qresource>
@@ -29,6 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>editor.js</file>
   </qresource>
   <qresource prefix="/images/editor">
+    <file>editor-logo-64x64.png</file>
     <file>buttons.png</file>
     <file>checkmark-15x11.png</file>
     <file>dropdown-arrow-15x15.png</file>

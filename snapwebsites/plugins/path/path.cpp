@@ -44,7 +44,7 @@ SNAP_PLUGIN_START(path, 1, 0)
  *
  * \return A pointer to the name.
  */
-//char const *get_name(name_t name)
+//char const * get_name(name_t name)
 //{
 //    // Note: <branch>.<revision> are actually replaced by a full version
 //    //       when dealing with JavaScript and CSS files (Version: field)
@@ -401,7 +401,7 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
 //SNAP_LOG_TRACE("found path ")(ipath.get_key())(" in database... no dynamic stuff.");
         QString const action(define_action(ipath));
 
-        // I don't think this is smart, instead I pass the action to the
+        // I do not think this is smart, instead I pass the action to the
         // on_path_execute() function (within the ipath, really) which
         // has to react accordingly...
         // (That way a plugin may completely forbid a delete, for example.)
@@ -871,7 +871,7 @@ SNAP_LOG_TRACE("path::on_execute(\"")(uri_path)("\") -> [")(ipath.get_cpath())("
 
     // if a plugin pointer was defined we expect that the dynamic_cast<> will
     // always work, however path_plugin may be nullptr
-    path_execute *pe(dynamic_cast<path_execute *>(path_plugin));
+    path_execute * pe(dynamic_cast<path_execute *>(path_plugin));
     if(pe == nullptr)
     {
         // not found, give a chance to some plugins to do something with the

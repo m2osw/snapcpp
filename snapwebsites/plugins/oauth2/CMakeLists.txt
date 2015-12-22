@@ -65,6 +65,7 @@ add_library(oauth2 SHARED
     content.xml
     oauth2-settings-page.xml
     oauth2-settings-parser.xsl
+    oauth2-logo-64x64.png
 )
 
 target_link_libraries( oauth2 ${QT_LIBRARIES} )

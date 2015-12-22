@@ -21,6 +21,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/plugins/oauth2">
     <file>content.xml</file>
   </qresource>
+  <qresource prefix="/images/oauth2">
+    <file>oauth2-logo-64x64.png</file>
+  </qresource>
   <qresource prefix="/xml/editor">
     <file>oauth2-settings-page.xml</file>
   </qresource>

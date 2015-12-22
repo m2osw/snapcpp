@@ -56,6 +56,7 @@ public:
     // plugins::plugin implementation
     static header *     instance();
     virtual QString     dependencies() const;
+    virtual QString     settings_path() const;
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
     virtual void        bootstrap(snap_child * snap);

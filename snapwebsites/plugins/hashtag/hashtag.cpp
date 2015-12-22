@@ -91,6 +91,28 @@ hashtag * hashtag::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString hashtag::settings_path() const
+{
+    return "/admin/settings/hashtag";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString hashtag::icon() const
+{
+    return "/images/hashtag/hashtag-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -138,7 +160,7 @@ int64_t hashtag::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 3, 22, 29, 42, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 21, 0, 2, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

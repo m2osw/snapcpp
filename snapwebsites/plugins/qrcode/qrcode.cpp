@@ -158,6 +158,28 @@ qrcode * qrcode::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString qrcode::settings_path() const
+{
+    return "/admin/settings/qrcode";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString qrcode::icon() const
+{
+    return "/images/qrcode/qrcode-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -202,7 +224,7 @@ int64_t qrcode::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 5, 21, 4, 52, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 20, 1, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

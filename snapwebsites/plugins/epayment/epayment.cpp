@@ -1432,6 +1432,28 @@ epayment * epayment::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString epayment::settings_path() const
+{
+    return "/admin/settings/epayment";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString epayment::icon() const
+{
+    return "/images/epayment/epayment-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -1478,7 +1500,7 @@ int64_t epayment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 10, 5, 0, 37, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 21, 59, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

@@ -450,6 +450,16 @@ content * content::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString content::settings_path() const
+{
+    return "/admin/settings/info";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.

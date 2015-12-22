@@ -16,7 +16,10 @@
 // @compilation_level ADVANCED_OPTIMIZATIONS
 // @externs $CLOSURE_COMPILER/contrib/externs/jquery-1.9.js
 // @externs plugins/output/externs/jquery-extensions.js
+// @externs plugins/users/externs/users-externs.js
 // @js plugins/output/output.js
+// @js plugins/output/popup.js
+// @js plugins/server_access/server-access.js
 // ==/ClosureCompiler==
 //
 
@@ -115,8 +118,7 @@ snapwebsites.Users.prototype.startAutoLogout = function()
     // we add 20 seconds to the time limit to make sure that we
     // timeout AFTER the session is dead;
     //
-    var now = new Date().getTime(),
-        delay = (users__session_time_limit + 20) * 1000 - now,
+    var delay = (users__session_time_limit + 20) * 1000 - Date.now(),
         that = this;
 
     // we may get called again before the existing timeout was triggered
@@ -206,6 +208,7 @@ snapwebsites.Users.prototype.autoLogout_ = function()
     redirect_uri = redirect_uri.replace(/\?a=edit$/, "")
                                .replace(/\?a=edit&/, "?")
                                .replace(/&a=edit&/, "&");
+    snapwebsites.ServerAccess.appendQueryString(redirect_uri, { hit: "transparent" });
     doc.location = redirect_uri;
 };
 

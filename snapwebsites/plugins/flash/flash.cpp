@@ -85,6 +85,16 @@ flash * flash::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString flash::settings_path() const
+{
+    return "/admin/settings/flash";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.

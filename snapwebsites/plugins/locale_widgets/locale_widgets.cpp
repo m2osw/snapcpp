@@ -40,7 +40,7 @@ SNAP_PLUGIN_START(locale_widgets, 1, 0)
 // *
 // * \return A pointer to the name.
 // */
-//char const *get_name(name_t name)
+//char const * get_name(name_t name)
 //{
 //    switch(name)
 //    {
@@ -97,6 +97,28 @@ locale_widgets * locale_widgets::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString locale_widgets::settings_path() const
+{
+    return "/admin/settings/locale";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString locale_widgets::icon() const
+{
+    return "/images/locale/locale-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -110,6 +132,28 @@ QString locale_widgets::description() const
 {
     return "Define locale functions to be used throughout all the plugins."
         " It handles time and date, timezone, numbers, currency, etc.";
+}
+
+
+/** \brief Change the help URI to the base plugin.
+ *
+ * This help_uri() function returns the URI to the base plugin URI
+ * since this plugin is just an extension and does not need to have
+ * a separate help page.
+ *
+ * \return The URI to the locale plugin help page.
+ */
+QString locale_widgets::help_uri() const
+{
+    // TBD: should we instead call the help_uri() of the locale plugin?
+    //
+    //      locale::locale::instance()->help_uri();
+    //
+    //      I am afraid that it would be a bad example because the pointer
+    //      may not be a good pointer anymore at this time (once we
+    //      properly remove plugins that we loaded just to get their info.)
+    //
+    return "http://snapwebsites.org/help/plugin/locale";
 }
 
 

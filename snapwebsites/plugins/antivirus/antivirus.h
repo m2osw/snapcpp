@@ -54,6 +54,7 @@ public:
     // plugins::plugin implementation
     static antivirus *      instance();
     virtual QString         description() const;
+    virtual QString         icon() const;
     virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
     virtual void            bootstrap(snap_child * snap);

@@ -1,7 +1,7 @@
 /*
  * Name: bare
  * Layout: bare
- * Version: 0.0.1
+ * Version: 0.0.2
  * Browsers: all
  * Copyright: Copyright 2011-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -74,6 +74,20 @@ div.message h3
 
 .inner-page
 {
+}
+
+.inner-page .content .breadcrumb
+{
+	text-align: right;
+}
+.inner-page .content .breadcrumb ol
+{
+	margin: 0;
+}
+
+.inner-page .content .page-title h2
+{
+	margin-top: 0;
 }
 
 .content .body

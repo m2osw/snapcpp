@@ -116,6 +116,28 @@ tracker * tracker::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString tracker::settings_path() const
+{
+    return "/admin/settings/tracker";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString tracker::icon() const
+{
+    return "/images/tracker/tracker-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -161,7 +183,7 @@ int64_t tracker::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 22, 22, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

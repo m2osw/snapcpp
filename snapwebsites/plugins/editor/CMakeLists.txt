@@ -54,17 +54,24 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     editor.qrc
 )
 
-snap_validate_xml( content.xml content/content.dtd )
+# Form dependency to be removed.
 snap_validate_xml( new-draft.xml form/snap-form.dtd )
-snap_validate_xml( editor-form.xsl layout/simplified-xslt20.dtd )
-snap_validate_xml( editor-test-page.xml editor/editor-form.dtd )
-snap_validate_xml( editor-test-parser.xsl layout/simplified-xslt20.dtd )
+
+snap_validate_xml( content.xml              content/content.dtd )
+
+snap_validate_xml( default-page.xml         editor/editor-form.dtd )
+snap_validate_xml( editor-test-page.xml     editor/editor-form.dtd )
+
+snap_validate_xml( editor-test-parser.xsl   layout/simplified-xslt20.dtd )
+
+snap_validate_xml( editor-form.xsl          layout/simplified-xslt20.dtd )
 
 # Unfortunate, but at this time this doesn't work too well...
 # (i.e. xmllint [as in libxml2] does not support this complex XSD schema)
 #snap_validate_xml( editor-form.xsl schema-for-xslt20.xsd )
 
 snap_validate_js( editor.js )
+
 
 add_library(editor SHARED
     editor.cpp
@@ -75,6 +82,7 @@ add_library(editor SHARED
     dropdown-arrow-15x15.png
     editor.js
     editor.css
+    editor-logo-64x64.png
     content.xml
     editor-form.xsl
     editor-test-page.xml

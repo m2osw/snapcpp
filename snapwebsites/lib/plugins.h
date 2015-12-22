@@ -53,6 +53,7 @@ public:
     plugin_exception_invalid_order(QString const &     what_msg) : plugin_exception(what_msg) {}
 };
 
+
 class plugin_signal
 {
 public:
@@ -73,7 +74,11 @@ public:
     int                                 get_minor_version() const;
     QString                             get_plugin_name() const;
     int64_t                             last_modification() const;
+    virtual QString                     icon() const;
     virtual QString                     description() const = 0;
+    virtual QString                     plugin_categorization_tags() const;
+    virtual QString                     help_uri() const;
+    virtual QString                     settings_path() const;
     virtual QString                     dependencies() const = 0;
     virtual void                        bootstrap(snap_child * snap) = 0;
     virtual int64_t                     do_update(int64_t last_updated);
@@ -91,6 +96,39 @@ typedef std::shared_ptr<plugin>                 plugin_ptr_t;
 typedef QMap<QString, plugin *>                 plugin_map_t;
 typedef QVector<plugin *>                       plugin_vector_t;
 typedef controlled_vars::ptr_auto_init<plugin>  plugin_zptr_t;
+
+
+class plugin_info
+{
+public:
+                        plugin_info(QString const & plugin_paths, QString const & name);
+
+    QString const &     get_name() const;
+    QString const &     get_filename() const;
+    int64_t             get_last_modification() const;
+    QString const &     get_icon() const;
+    QString const &     get_description() const;
+    QString const &     get_plugin_categorization_tags() const;
+    QString const &     get_help_uri() const;
+    QString const &     get_settings_path() const;
+    QString const &     get_dependencies() const;
+    int32_t             get_version_major() const;
+    int32_t             get_version_minor() const;
+
+private:
+    QString             f_name;
+    QString             f_filename;
+    int64_t             f_last_modification = 0;
+    QString             f_icon;
+    QString             f_description;
+    QString             f_categorization_tags;
+    QString             f_help_uri;
+    QString             f_settings_path;
+    QString             f_dependencies;
+    int32_t             f_version_major = 0;
+    int32_t             f_version_minor = 0;
+};
+
 
 snap_string_list        list_all(QString const & plugin_path);
 bool                    load(QString const & plugin_path, snap_child * snap, plugin_ptr_t server, snap_string_list const & list_of_plugins);

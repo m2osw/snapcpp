@@ -316,6 +316,7 @@ public:
     void                        exit(int code);
     bool                        is_debug() const;
     static char const *         get_running_server_version();
+    bool                        is_core_plugin(QString const & name) const;
     QString                     get_server_parameter(QString const & name);
     void                        reset_site_table();
     QtCassandra::QCassandraValue get_site_parameter(QString const & name);

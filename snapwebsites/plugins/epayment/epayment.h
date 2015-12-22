@@ -69,57 +69,57 @@ char const * get_name(name_t name) __attribute__ ((const));
 class epayment_exception : public snap_exception
 {
 public:
-    epayment_exception(char const *        what_msg) : snap_exception("epayment", what_msg) {}
-    epayment_exception(std::string const & what_msg) : snap_exception("epayment", what_msg) {}
-    epayment_exception(QString const &     what_msg) : snap_exception("epayment", what_msg) {}
+    explicit epayment_exception(char const *        what_msg) : snap_exception("epayment", what_msg) {}
+    explicit epayment_exception(std::string const & what_msg) : snap_exception("epayment", what_msg) {}
+    explicit epayment_exception(QString const &     what_msg) : snap_exception("epayment", what_msg) {}
 };
 
 class epayment_invalid_type_exception : public epayment_exception
 {
 public:
-    epayment_invalid_type_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_invalid_type_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_invalid_type_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_type_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_type_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_type_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_cannot_set_exception : public epayment_exception
 {
 public:
-    epayment_cannot_set_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_set_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_set_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_set_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_set_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_set_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_cannot_unset_exception : public epayment_exception
 {
 public:
-    epayment_cannot_unset_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_unset_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_unset_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_unset_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_unset_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_unset_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_cannot_find_exception : public epayment_exception
 {
 public:
-    epayment_cannot_find_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_find_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_find_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_find_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_find_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_find_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_missing_product_exception : public epayment_exception
 {
 public:
-    epayment_missing_product_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_missing_product_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_missing_product_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_missing_product_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_missing_product_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_missing_product_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_invalid_recurring_field_exception : public epayment_exception
 {
 public:
-    epayment_invalid_recurring_field_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_invalid_recurring_field_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_invalid_recurring_field_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_recurring_field_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_recurring_field_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_recurring_field_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 
@@ -309,6 +309,8 @@ public:
 
     // plugins::plugin implementation
     static epayment *           instance();
+    virtual QString             settings_path() const;
+    virtual QString             icon() const;
     virtual QString             description() const;
     virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);

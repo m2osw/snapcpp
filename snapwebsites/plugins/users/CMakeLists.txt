@@ -60,6 +60,7 @@ add_library(users SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
     users.js
+    users-logo-64x64.png
 )
 
 target_link_libraries( users ${QT_LIBRARIES} )

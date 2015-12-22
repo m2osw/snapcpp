@@ -667,7 +667,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 }
 
 
-QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool display_only ) const
+QString dbutils::get_column_value( QCassandraCell::pointer_t c, bool const display_only ) const
 {
     QString v;
     try

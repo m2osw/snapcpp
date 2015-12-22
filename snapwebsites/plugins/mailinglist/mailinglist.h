@@ -71,6 +71,7 @@ public:
 
     // plugins::plugin implementation
     static mailinglist *instance();
+    virtual QString     settings_path() const;
     virtual QString     description() const;
     virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);

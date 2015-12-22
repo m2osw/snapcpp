@@ -62,10 +62,11 @@ public:
 
 
 
-class attachment : public plugins::plugin
-                 , public path::path_execute
-                 , public server::backend_action
-                 , public permission_error_callback::error_by_mime_type
+class attachment
+        : public plugins::plugin
+        , public path::path_execute
+        , public server::backend_action
+        , public permission_error_callback::error_by_mime_type
 {
 public:
                         attachment();
@@ -74,6 +75,7 @@ public:
     static attachment * instance();
 
     // plugins::plugin implementation
+    virtual QString     icon() const;
     virtual QString     description() const;
     virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);

@@ -165,6 +165,12 @@ const char *get_name(name_t name)
     case name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_ON:
         return "users::forgot_password_on";
 
+    case name_t::SNAP_NAME_USERS_HIT_TRANSPARENT:
+        return "transparent";
+
+    case name_t::SNAP_NAME_USERS_HIT_USER:
+        return "user";
+
     case name_t::SNAP_NAME_USERS_IDENTIFIER:
         return "users::identifier";
 
@@ -372,6 +378,28 @@ users * users::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString users::settings_path() const
+{
+    return "/admin/settings/users";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString users::icon() const
+{
+    return "/images/users/users-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -419,7 +447,7 @@ int64_t users::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 12, 17, 3, 13, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 22, 9, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -779,17 +807,51 @@ void users::on_process_cookies()
     int64_t const total_session_duration(get_total_session_duration());
     f_info->set_time_to_live(total_session_duration);
 
-    // extend the user session, it is always a soft session
-    int64_t const user_session_duration(get_user_session_duration());
-    f_info->set_time_limit(f_snap->get_start_time() + user_session_duration);
-
-    if(get_soft_administrative_session())
+    // check the type of hit, if not "user" then do NOT extend the
+    // session at all
+    //
+    QString hit(get_name(name_t::SNAP_NAME_USERS_HIT_USER));
     {
-        // website administrator asked that the administrative session be
-        // grown each time the administrator accesses the site
+        QString const qs_hit(f_snap->get_server_parameter("qs_hit"));
+        snap_uri const & uri(f_snap->get_uri());
+        if(uri.has_query_option(qs_hit))
+        {
+            // the user specified an action
+            hit = uri.query_option(qs_hit);
+            if(hit != get_name(name_t::SNAP_NAME_USERS_HIT_USER)
+            && hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
+            {
+                SNAP_LOG_WARNING("received an unknown type of hit \"")(hit)("\", forcing to \"user\"");
+                hit = get_name(name_t::SNAP_NAME_USERS_HIT_USER);
+            }
+        }
+    }
+
+    // if the hit is marked as "transparent", then do not extend the
+    // session; this is used by scripts that access the server once
+    // in a while and do not want to extend the session (because
+    // otherwise it could end up extending the session forever)
+    //
+    if(hit != get_name(name_t::SNAP_NAME_USERS_HIT_TRANSPARENT))
+    {
+        // is the session over?  if so, do not extend it
         //
-        int64_t const administrative_session_duration(get_administrative_session_duration());
-        f_info->set_administrative_login_limit(f_snap->get_start_time() + administrative_session_duration);
+        if(f_snap->get_start_time() >= f_info->get_time_limit())
+        {
+            // extend the user session, it is always a soft session
+            //
+            int64_t const user_session_duration(get_user_session_duration());
+            f_info->set_time_limit(f_snap->get_start_time() + user_session_duration);
+
+            if(get_soft_administrative_session())
+            {
+                // website administrator asked that the administrative session be
+                // grown each time the administrator accesses the site
+                //
+                int64_t const administrative_session_duration(get_administrative_session_duration());
+                f_info->set_administrative_login_limit(f_snap->get_start_time() + administrative_session_duration);
+            }
+        }
     }
 
     // create or refresh the session

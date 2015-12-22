@@ -103,6 +103,18 @@ attachment * attachment::instance()
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString attachment::icon() const
+{
+    return "/images/attachment/attachment-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -150,7 +162,7 @@ int64_t attachment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 11, 26, 15, 15, 12, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 22, 50, 12, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

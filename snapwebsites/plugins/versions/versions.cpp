@@ -103,6 +103,16 @@ versions * versions::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString versions::settings_path() const
+{
+    return "/admin/versions";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.

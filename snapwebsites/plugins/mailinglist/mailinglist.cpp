@@ -176,6 +176,16 @@ mailinglist * mailinglist::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString mailinglist::settings_path() const
+{
+    return "/admin/settings/mailinglist";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.

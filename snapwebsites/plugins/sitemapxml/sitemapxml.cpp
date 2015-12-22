@@ -546,6 +546,16 @@ sitemapxml * sitemapxml::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString sitemapxml::settings_path() const
+{
+    return "/admin/settings/sitemapxml";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -592,7 +602,7 @@ int64_t sitemapxml::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2013, 12, 23, 18, 46, 42, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 1, 15, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

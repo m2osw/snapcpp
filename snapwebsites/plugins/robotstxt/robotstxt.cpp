@@ -36,7 +36,7 @@ SNAP_PLUGIN_START(robotstxt, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -103,6 +103,28 @@ robotstxt * robotstxt::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString robotstxt::settings_path() const
+{
+    return "/admin/settings/robotstxt";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString robotstxt::icon() const
+{
+    return "/images/robotstxt/robotstxt-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -149,7 +171,7 @@ int64_t robotstxt::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 10, 20, 38, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 19, 58, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

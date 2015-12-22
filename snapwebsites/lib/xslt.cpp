@@ -239,8 +239,10 @@ void xslt::evaluate_to_document(QDomDocument & output)
  * that would allow us to avoid some (many?) conversions to and from
  * string.
  *
- * \param[out] output_string  The output string if evaluate_to_string() was called.
- * \param[in,out] output_document  The output document if evaluate_to_document() was called.
+ * \param[out] output_string  The output string if evaluate_to_string()
+ *                            was called.
+ * \param[in,out] output_document  The output document if
+ *                                 evaluate_to_document() was called.
  */
 void xslt::evaluate(QString * output_string, QDomDocument * output_document)
 {

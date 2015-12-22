@@ -5,9 +5,6 @@
 # Description:
 #      Plug-in used to handle the search capability of websites.
 #
-#      Note: At this point this is just a stub to test the signature
-#            capability.
-#
 # Documentation:
 #      See the CMake documentation.
 #
@@ -59,6 +56,7 @@ add_library(search SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    search-logo-64x64.png
 )
 
 target_link_libraries( search ${QT_LIBRARIES} )

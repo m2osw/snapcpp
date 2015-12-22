@@ -63,6 +63,7 @@ add_library(avatar SHARED
     content.xml
     avatar-settings-page.xml
     avatar-settings-parser.xsl
+    avatar-logo-64x64.png
 )
 
 target_link_libraries( avatar ${QT_LIBRARIES} )

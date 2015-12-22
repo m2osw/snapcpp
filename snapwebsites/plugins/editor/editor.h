@@ -216,6 +216,8 @@ public:
 
     // plugins::plugin implementation
     static editor *     instance();
+    virtual QString     settings_path() const;
+    virtual QString     icon() const;
     virtual QString     description() const;
     virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
@@ -256,7 +258,7 @@ public:
     static save_mode_t  string_to_save_mode(QString const & mode);
     static QString      clean_post_value(QString const & widget_type, QString value);
     void                parse_out_inline_img(content::path_info_t & ipath, QString & body, QDomElement widget);
-    QDomDocument        get_editor_widgets(content::path_info_t & ipath);
+    QDomDocument        get_editor_widgets(content::path_info_t & ipath, bool saving = false);
     void                add_editor_widget_templates(QDomDocument doc);
     void                add_editor_widget_templates(QString const & doc);
     void                add_editor_widget_templates_from_file(QString const & filename);
@@ -291,6 +293,7 @@ private:
     bool                save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget);
     QString             verify_html_validity(QString body);
     bool                widget_is_secret(QDomElement widget);
+    void                retrieve_original_field(content::path_info_t ipath);
 
     zpsnap_child_t          f_snap;
     QDomDocument            f_editor_form;          // XSL from editor-form.xsl + other plugin extensions

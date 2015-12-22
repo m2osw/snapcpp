@@ -117,6 +117,16 @@ password * password::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString password::settings_path() const
+{
+    return "/admin/settings/password";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.

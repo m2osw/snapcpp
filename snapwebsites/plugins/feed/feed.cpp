@@ -151,6 +151,28 @@ feed *feed::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString feed::settings_path() const
+{
+    return "/admin/settings/feed";
+}
+
+
+/** \brief A path or URI to a logo for the feed system.
+ *
+ * This function returns a 64x64 icons representing the feed plugin.
+ *
+ * \return A path to the feed logo.
+ */
+QString feed::icon() const
+{
+    return "/images/feed/feed-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -197,7 +219,7 @@ int64_t feed::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 10, 26, 0, 54, 42, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 17, 9, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

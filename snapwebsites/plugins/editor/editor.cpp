@@ -371,6 +371,28 @@ editor * editor::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString editor::settings_path() const
+{
+    return "/admin/settings/editor";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString editor::icon() const
+{
+    return "/images/editor/editor-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -419,7 +441,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 11, 6, 0, 32, 56, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 21, 0, 25, 56, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -602,7 +624,7 @@ void editor::on_generate_header_content(content::path_info_t & ipath, QDomElemen
  * \return true if the processing worked as expected, false if the page
  *         cannot be created ("Page Not Present" results on false)
  */
-bool editor::on_path_execute(content::path_info_t& ipath)
+bool editor::on_path_execute(content::path_info_t & ipath)
 {
     // the editor forms are generated using token replacements
     f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
@@ -824,8 +846,24 @@ void editor::process_new_draft()
  */
 void editor::on_process_post(QString const & uri_path)
 {
+    content::path_info_t ipath;
+    ipath.set_path(uri_path);
+    ipath.set_main_page(true);
+    ipath.force_locale("xx");
+
+    QString const editor_request_original_data(f_snap->postenv("_editor_request_original_data"));
+    if(!editor_request_original_data.isEmpty())
+    {
+        // the client is asking for the original content of a field
+        //
+        // TODO: make sure to get the _editor_session checked too!!!
+        //
+        retrieve_original_field(ipath);
+        return;
+    }
+
     QString const editor_full_session(f_snap->postenv("_editor_session"));
-//std::cerr << "***\n*** process post of [" << uri_path << "] [" << editor_full_session << "]\n***\n";
+//SNAP_LOG_WARNING("process post of [") << uri_path << "] [" << editor_full_session << "]";
     if(editor_full_session.isEmpty())
     {
         // if the _editor_session variable does not exist, do not consider this
@@ -846,7 +884,7 @@ void editor::on_process_post(QString const & uri_path)
         NOTREACHED();
     }
 
-//std::cerr << "***\n*** save mode [" << static_cast<int>(editor_save_mode) << "]\n***\n";
+//SNAP_LOG_WARNING("save mode [")(static_cast<int>(editor_save_mode))("]");
     // [0] -- session Id, [1] -- random number
     snap_string_list const session_data(editor_full_session.split("/"));
     if(session_data.size() != 2)
@@ -860,12 +898,7 @@ void editor::on_process_post(QString const & uri_path)
         NOTREACHED();
     }
 
-    messages::messages *messages(messages::messages::instance());
-
-    content::path_info_t ipath;
-    ipath.set_path(uri_path);
-    ipath.set_main_page(true);
-    ipath.force_locale("xx");
+    messages::messages * messages(messages::messages::instance());
 
     // First we verify the editor form session information
     // <div id="content" form_name="..." class="editor-form ..." session="session_id/random_number">...</div>
@@ -1033,6 +1066,82 @@ void editor::on_process_post(QString const & uri_path)
 
     // create the AJAX response
     server_access_plugin->create_ajax_result(ipath, succeeded);
+    server_access_plugin->ajax_output();
+}
+
+
+void editor::retrieve_original_field(content::path_info_t ipath)
+{
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
+    messages::messages * messages(messages::messages::instance());
+
+    QString const field_name(f_snap->postenv("field_name"));
+
+    // the name we are given in "field_name" is not the name of
+    // the field in the database, we have to do a conversion
+    //
+    QDomDocument editor_widgets(get_editor_widgets(ipath, true));
+    if(editor_widgets.isNull())
+    {
+        // problem...
+        messages->set_error(
+            "Field Not Found",
+            "The system encountered a problem as it could not determine which field is required by the editor.",
+            QString("Search for field named \"%1\" was cut short as the editor widgets could not even be loaded.").arg(field_name),
+            false
+        );
+    }
+    else
+    {
+        QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
+        int const max_widgets(widgets.size());
+        for(int i(0); i < max_widgets; ++i)
+        {
+            QDomElement widget(widgets.at(i).toElement());
+
+            QString const widget_name(widget.attribute("id"));
+            if(widget_name == field_name)
+            {
+                QString const database_field_name(widget.attribute("field"));
+
+                content::content * content_plugin(content::content::instance());
+                QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+                dbutils du("revision", database_field_name);
+                QtCassandra::QCassandraCell::pointer_t c(revision_table->row(ipath.get_revision_key())->cell(database_field_name));
+                dbutils::column_type_t const ct( du.get_column_type( c ) );
+                QString field_data;
+                if(ct == dbutils::column_type_t::CT_string_value)
+                {
+                    // in this case we do not use the dbutils which
+                    // replaces "\n" characters with "\\n"...
+                    //
+                    // TODO:
+                    // we certainly should have another function in the
+                    // dbutils to load and save data for the editor...
+                    // so we do not need to have special cases like this
+                    //
+                    field_data = c->value().stringValue();
+                }
+                else
+                {
+                    field_data = du.get_column_value(c, false);
+                }
+                server_access_plugin->create_ajax_result(ipath, true);
+                server_access_plugin->ajax_append_data("field_data", field_data.toUtf8());
+                server_access_plugin->ajax_output();
+                return;
+            }
+        }
+
+        messages->set_error(
+            "Field Not Found",
+            "The system encountered a problem as it could not determine which field is required by the editor.",
+            QString("Searched field named \"%1\" in the default set of widget and it was not found.").arg(field_name),
+            false
+        );
+    }
+
+    server_access_plugin->create_ajax_result(ipath, false);
     server_access_plugin->ajax_output();
 }
 
@@ -1474,7 +1583,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
     QString const locale(ipath.get_locale());
 
     // get the widgets
-    QDomDocument editor_widgets(get_editor_widgets(ipath));
+    QDomDocument editor_widgets(get_editor_widgets(ipath, true));
 
     // check whether auto-save is ON
     QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
@@ -1614,7 +1723,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
                     // get the draft value from the database
                     //
                     // note that was not converted, we only use strings in
-                    // this row! (dbutil won't work right on these rows!)
+                    // this row! (dbutils will not work right on these rows!)
                     f_draft_values[widget_name] = draft_row->cell(field_name)->value().stringValue();
                 }
 
@@ -2209,7 +2318,7 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
  *
  * \return The QDomDocument representing the editor form, may be null.
  */
-QDomDocument editor::get_editor_widgets(content::path_info_t & ipath)
+QDomDocument editor::get_editor_widgets(content::path_info_t & ipath, bool saving)
 {
     static QMap<QString, QDomDocument> g_cached_form;
 
@@ -2217,7 +2326,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t & ipath)
     if(!g_cached_form.contains(cpath))
     {
         QDomDocument editor_widgets;
-        layout::layout *layout_plugin(layout::layout::instance());
+        layout::layout * layout_plugin(layout::layout::instance());
         QString script(layout_plugin->get_layout(ipath, get_name(name_t::SNAP_NAME_EDITOR_LAYOUT), true));
         snap_string_list const script_parts(script.split("/"));
         if(script_parts.size() == 2)
@@ -2234,12 +2343,57 @@ QDomDocument editor::get_editor_widgets(content::path_info_t & ipath)
         }
         else if(script_parts.size() != 1)
         {
+            // the script parts cannot be empty even if we start with an
+            // empty string so this code is unreachable
+            //
             f_snap->die(snap_child::http_code_t::HTTP_CODE_CONFLICT, "Conflict Error",
                 QString("Editor layout name \"%1\" is not valid.").arg(script),
                 "The editor layout name is not composed of exactly one or two names.");
             NOTREACHED();
         }
-        if(script != "default")
+        if(script == "default")
+        {
+            if(saving)
+            {
+                // the default starts with our hard coded file from the resources
+                // other plugins can add to it whenever their
+                // dynamic_editor_widget() signal implementation is called.
+                //
+                QFile rc_widgets(":/xml/editor/default-page.xml");
+                if(!rc_widgets.open(QIODevice::ReadOnly))
+                {
+                    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Missing File",
+                        "Editor default layout for a standard page could not be opened.",
+                        "The editor \"default-page.xml\" layout file could not be opened.");
+                    NOTREACHED();
+                }
+
+                QByteArray const data(rc_widgets.readAll());
+                if(data.isEmpty())
+                {
+                    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Missing File",
+                        "Editor default layout for a standard page could not be read.",
+                        "The editor \"default-page.xml\" layout file could not be read.");
+                    NOTREACHED();
+                }
+
+                QString const widgets_xml(QString::fromUtf8(data.data(), data.size()));
+                if(widgets_xml.isEmpty())
+                {
+                    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Missing File",
+                        "Editor default layout is empty.",
+                        "The editor \"default-page.xml\" layout file is empty?");
+                    NOTREACHED();
+                }
+
+                QDomDocument named_editor_widgets("editor-form");
+                editor_widgets = named_editor_widgets;
+                editor_widgets.setContent(widgets_xml);
+
+                dynamic_editor_widget(ipath, script, editor_widgets);
+            }
+        }
+        else
         {
             // in this case we totally ignore the query string because it would
             // most certainly not correspond to the right theme (the one that

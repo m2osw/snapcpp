@@ -34,7 +34,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>output.css</file>
   </qresource>
   <qresource prefix="/images/output">
+    <file>snap-logo-64x64.png</file>
     <file>close-button.png</file>
+    <file>plugin-icon-64x64.png</file>
     <file>progress.gif</file>
     <file>wait.gif</file>
     <file>wait-dots.gif</file>

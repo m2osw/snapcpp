@@ -109,7 +109,8 @@ DTD of the XSLT 2.0.
 <!-- This is a tag we often use to generate our output
      and to avoid problems with xsl:output, we should change it -->
 <!ELEMENT output ANY>
-<!ATTLIST output lang CDATA #IMPLIED>
+<!ATTLIST output filter CDATA #IMPLIED
+                 lang CDATA #IMPLIED>
 
 <!ELEMENT css ANY>
 <!ATTLIST css name CDATA #REQUIRED>

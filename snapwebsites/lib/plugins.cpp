@@ -19,6 +19,7 @@
 
 #include "log.h"
 #include "not_used.h"
+#include "snapwebsites.h"
 
 #include <qstring_stream.h>
 
@@ -29,6 +30,8 @@
 #include <QDir>
 #include <QMap>
 #include <QFileInfo>
+
+#include <sstream>
 
 #include "poison.h"
 
@@ -49,17 +52,73 @@ QString             g_next_register_filename;
  * This is used in the administrator screen to offer users a complete list of
  * plugins that can be installed.
  *
- * \param[in] plugin_path  The path to all the Snap plugins.
+ * \param[in] plugin_paths  The paths to all the Snap plugins.
  *
  * \return A list of plugin names.
  */
-snap_string_list list_all(const QString& plugin_path)
+snap_string_list list_all(QString const & plugin_paths)
 {
     // note that we expect the plugin directory to be clean
     // (we may later check the validity of each directory to make 100% sure
     // that it includes a corresponding .so file)
-    QDir dir(plugin_path);
-    return dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    snap_string_list const paths(plugin_paths.split(':'));
+    snap_string_list filters;
+    filters << "*.so";
+    snap_string_list result;
+    for(auto p : paths)
+    {
+        QDir dir(p);
+
+        dir.setSorting(QDir::Name | QDir::IgnoreCase);
+
+        // TBD: while in development, plugins are in sub-directories
+        //      once installed, they are not...
+        //      maybe we should have some sort of flag to skip on the
+        //      sub-directories once building a package?
+        //
+        snap_string_list const sub_dirs(dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot));
+        for(auto s : sub_dirs)
+        {
+            QDir sdir(QString("%1/%2").arg(p).arg(s));
+
+            sdir.setSorting(QDir::Name | QDir::IgnoreCase);
+            sdir.setNameFilters(filters);
+
+            result << sdir.entryList(QDir::Files);
+        }
+
+        dir.setNameFilters(filters);
+
+        result << dir.entryList(QDir::Files);
+    }
+
+    // clean up the list
+    for(int p(result.size() - 1); p >= 0; --p)
+    {
+        if(result[p].length() < 4
+        || !result[p].endsWith(".so"))
+        {
+            // this should never happen
+            result.removeAt(p);
+        }
+        else if(result[p].length() > 6
+             && result[p].startsWith("lib"))
+        {
+            // remove the "lib" and ".so"
+            result[p] = result[p].mid(3, result[p].length() - 6);
+        }
+        else
+        {
+            // remove the ".so"
+            result[p] = result[p].left(result[p].length() - 3);
+        }
+    }
+
+    result << "server";
+
+    result.sort();
+
+    return result;
 }
 
 
@@ -269,7 +328,7 @@ QString find_plugin_filename(snap_string_list const & plugin_paths, QString cons
         }
     }
 
-    return "";
+    return QString();
 }
 
 
@@ -504,6 +563,111 @@ int64_t plugin::last_modification() const
 }
 
 
+/** \brief Return the URL to an icon representing your plugin.
+ *
+ * Each plugin can be assigned an icon. The path to that icon has
+ * to be returned by this function. It us used whenever we build
+ * lists representing plugins.
+ *
+ * The default function returns the path to a default plugin image.
+ *
+ * The image must be a 64x64 picture. The CSS will enforce the size
+ * so it will possibly get stretched in weird ways if you did not
+ * use the correct size to start withicon.
+ *
+ * \return The path to the default plugin icon.
+ */
+QString plugin::icon() const
+{
+    return "/images/snap/plugin-icon-64x64.png";
+}
+
+
+/** \fn QString plugin::description() const;
+ * \brief Return a string describing this plugin.
+ *
+ * This function must be overloaded. It is expected to return a description
+ * of the plugin. The string may include HTML. It should be limited to
+ * inline HTML tags, although it can include header tags and paragraphs
+ * too.
+ *
+ * The description should be relatively brief. The plugins also offer a
+ * help URI which sends users to our snapwebsites.org website (or the
+ * author of the plugin wbesite) so we do not need to go crazy in the
+ * description. That external help page can go at length.
+ *
+ * \return A string representing the plugin description.
+ */
+
+
+/** \brief Comma separated list of tags.
+ *
+ * This function returns a list of comma separated tags. It is used
+ * to categorize a plugin so that way it makes it easier to find
+ * in the large list presented to users under the Plugin Selector.
+ *
+ * For example, plugins that are used to test other plugins and
+ * other parts of the system can be assigned the tag "test".
+ *
+ * By default plugins are not assigned any tags. This means they
+ * will appear under the "others" special tag. You can always
+ * make this explicit or offer the "others" tag along with
+ * more useful tags, for example: "image,others".
+ *
+ * \return A list of tags, comma separated.
+ */
+QString plugin::plugin_categorization_tags() const
+{
+    return "";
+}
+
+
+/** \brief Return the URI to the help page for this plugin.
+ *
+ * Each plugin can be assigned a help page. By default, we
+ * define the URL as:
+ *
+ * \code
+ *      http://snapwebsites.org/help/plugin/<plugin-name>
+ * \endcode
+ *
+ * If you program your own plugin, you are expected to overload
+ * this function and send users to your own website.
+ *
+ * \return The URI to the help page for this plugin.
+ */
+QString plugin::help_uri() const
+{
+    return QString("http://snapwebsites.org/help/plugin/%1").arg(f_name);
+}
+
+
+/** \brief Return the path to the settings page for this plugin.
+ *
+ * Each plugin can be assigned a settings page. By default, this
+ * function returns an empty string meaning that no settings are
+ * available.
+ *
+ * The function has to return an absolute path to a site borne
+ * page that will allow an administrator to change various
+ * settings that this plugin is handling.
+ *
+ * Some plugins may not themelves offer settings, but they may
+ * still return a settings path to another plugin that is setup
+ * to handle their settings (i.e. the info plugin handles many
+ * other lower level plugins settings.)
+ *
+ * By default the function returns an empty path, meaning that the
+ * settings button needs to be disabled in the plugin selector.
+ *
+ * \return The path to the settings page for this plugin.
+ */
+QString plugin::settings_path() const
+{
+    return QString();
+}
+
+
 /** \fn QString plugin::dependencies() const;
  * \brief Return a list of required dependencies.
  *
@@ -661,6 +825,243 @@ plugin_vector_t const & get_plugin_vector()
 {
     return g_ordered_plugins;
 }
+
+
+/** \brief Read a plugin information.
+ *
+ * This constructor reads all the available information from the named
+ * plugin.
+ */
+plugin_info::plugin_info(QString const & plugin_paths, QString const & name)
+{
+    if(name == "server")
+    {
+        // this is a special case, the user is requesting information about
+        // the snapserver (snapwebsites.cpp) and not a plugin per-se.
+        //
+        f_name =                name;
+        f_filename =            "snapserver";
+        f_last_modification =   0;
+        f_icon =                "/images/snap/snap-logo-64x64.png";
+        f_description =         "The Snap! Websites server defines the base plugin used by the snap system.";
+        f_categorization_tags = "core";
+        f_help_uri =            "http://snapwebsites.org/help/plugin/server";
+        f_settings_path =       "/admin/plugins";
+        f_dependencies =        "";
+        f_version_major =       SNAPWEBSITES_VERSION_MAJOR;
+        f_version_minor =       SNAPWEBSITES_VERSION_MINOR;
+        return;
+    }
+
+    snap_string_list const paths(plugin_paths.split(':'));
+    QString const filename(find_plugin_filename(paths, name));
+    if(filename.isEmpty())
+    {
+        throw plugin_exception(QString("plugin named \"%1\" not found.").arg(name));
+    }
+
+    // "normal" load of the plugin... (We do not really have a choice)
+    //
+    // Note that this is the normal low level load, that means the plugin
+    // will not get its bootstrap() and other initialization functions
+    // called... we will be limited to a very small number of functions.
+    //
+    // XXX: allow for the non-adding to the global list?
+    //      in general we should be fine since their signals will not
+    //      be installed, however, the plugin_exists() function will
+    //      return 'true', which is not correct
+    //
+    g_next_register_name = name;
+    g_next_register_filename = filename;
+    void const * const h(dlopen(filename.toUtf8().data(), RTLD_LAZY | RTLD_GLOBAL));
+    if(h == nullptr)
+    {
+        int const e(errno);
+        std::stringstream ss;
+        ss << "error: cannot load plugin file \"" << filename << "\" (errno: " << e << ", " << dlerror() << ")";
+        throw plugin_exception(ss.str());
+    }
+    g_next_register_name.clear();
+    g_next_register_filename.clear();
+
+    plugin * p(get_plugin(name));
+    if(p == nullptr)
+    {
+        std::stringstream ss;
+        ss << "error: cannot find plugin \"" << name << "\", even though the loading was successful.";
+        throw plugin_exception(ss.str());
+    }
+
+    f_name =                name;
+    f_filename =            filename;
+    f_last_modification =   p->last_modification();
+    f_icon =                p->icon();
+    f_description =         p->description();
+    f_categorization_tags = p->plugin_categorization_tags();
+    f_help_uri =            p->help_uri();
+    f_settings_path =       p->settings_path();
+    f_dependencies =        p->dependencies();
+    f_version_major =       p->get_major_version();
+    f_version_minor =       p->get_minor_version();
+}
+
+
+/** \brief Retrieve the name of the plugin.
+ *
+ * This function returns the name of this plugin.
+ *
+ * \return The name of this plugin.
+ */
+QString const & plugin_info::get_name() const
+{
+    return f_name;
+}
+
+
+/** \brief Get the filename of the plugin.
+ *
+ * Advanced informaton, the plugin path on the server. This is really
+ * only useful for developers and administrators to make sure things
+ * are in the right place.
+ *
+ * \return The path to this plugin.
+ */
+QString const & plugin_info::get_filename() const
+{
+    return f_filename;
+}
+
+
+/** \brief Get the last modification time of this plugin.
+ *
+ * This function reads the mtime in microseconds of the file attached
+ * to this plugin and returns that value.
+ *
+ * Assuming people do not temper with the modification of the file,
+ * this represents the last time the plugin was compiled and packaged.
+ *
+ * \return The time of the last modifications of this plugin in microseconds.
+ */
+int64_t plugin_info::get_last_modification() const
+{
+    return f_last_modification;
+}
+
+
+/** \brief Retrieve path to the icon.
+ *
+ * This function returns the local path to the icon representing this plugin.
+ *
+ * \return A path to the plugin icon.
+ */
+QString const & plugin_info::get_icon() const
+{
+    return f_icon;
+}
+
+
+/** \brief Retrieve URI to the help page for this plugin.
+ *
+ * This function returns the URI to the help page for this plugin.
+ * In most cases this is a URI to an external website that describes
+ * the plugin in details: what it does, what it does not do, what
+ * the settings are for, how to set it up in this way or that way, etc.
+ *
+ * \return The URI to the help page.
+ */
+QString const & plugin_info::get_help_uri() const
+{
+    return f_help_uri;
+}
+
+
+/** \brief Retrieve path to the settings page for this plugin.
+ *
+ * This function returns the path to the main settings of this plugin.
+ *
+ * \return The path to the settings page.
+ */
+QString const & plugin_info::get_settings_path() const
+{
+    return f_settings_path;
+}
+
+
+/** \brief Retrieve the plugin description.
+ *
+ * Each plugin has a small description defined in the code. This
+ * description is shown when you have to deal with the plugin
+ * in such places as the page allowing you to install / uninstall
+ * the plugin.
+ *
+ * \return The description of the plugin.
+ */
+QString const & plugin_info::get_description() const
+{
+    return f_description;
+}
+
+
+/** \brief Retrieve the plugin last of tags used for categorization.
+ *
+ * Each plugin can be given a set of tags, comma separated, to define
+ * its category. For example, core plugins are generally marked with
+ * the "core" tag. The "base" tag is generally used by the set of
+ * plugins that one cannot uninstall because otherwise the system
+ * would break. Etc.
+ *
+ * \return The list of comma separated tags.
+ */
+QString const & plugin_info::get_plugin_categorization_tags() const
+{
+    return f_categorization_tags;
+}
+
+
+/** \brief Retrieve the plugin dependencies.
+ *
+ * Most plugins have a set of dependencies which must be
+ * initialized before they themselves get initialized. This
+ * way they will receive events after those dependencies.
+ * In other words, we have a system which is well defined
+ * (deterministic in terms of who receives what and when.)
+ *
+ * This function returns the raw string defined in the plugins
+ * which means the list of plugin names are written between
+ * pipes (|) characters.
+ *
+ * \return The dependencies of the plugin.
+ */
+QString const & plugin_info::get_dependencies() const
+{
+    return f_dependencies;
+}
+
+
+/** \brief Retrieve the major version of the plugin.
+ *
+ * This function returns the major version of the plugin as a number.
+ *
+ * \return The major version of this plugin.
+ */
+int32_t plugin_info::get_version_major() const
+{
+    return f_version_major;
+}
+
+
+/** \brief Retrieve the minor version of the plugin.
+ *
+ * This function returns the minor version of the plugin as a number.
+ *
+ * \return The minor version of this plugin.
+ */
+int32_t plugin_info::get_version_minor() const
+{
+    return f_version_minor;
+}
+
+
 
 
 } // namespace plugins

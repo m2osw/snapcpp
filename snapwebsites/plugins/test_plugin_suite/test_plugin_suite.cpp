@@ -170,6 +170,30 @@ test_plugin_suite * test_plugin_suite::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin "settings". In case of the
+ * test plugin suite, this is really the page that allows one
+ * to run the tests.
+ */
+QString test_plugin_suite::settings_path() const
+{
+    return "/admin/test-plugin";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString test_plugin_suite::icon() const
+{
+    return "/images/test-plugin/test-plugin-logo-64x64.jpg";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -251,7 +275,7 @@ void test_plugin_suite::bootstrap(snap_child * snap)
  *
  * \return The pointer to the test_results table.
  */
-test_list_t const& test_plugin_suite::get_test_list() const
+test_list_t const & test_plugin_suite::get_test_list() const
 {
     if(f_tests.empty())
     {

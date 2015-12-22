@@ -61,7 +61,10 @@ public:
 
     // plugins::plugin implementation
     static users_ui *       instance();
+    virtual QString         settings_path() const;
+    virtual QString         icon() const;
     virtual QString         description() const;
+    virtual QString         help_uri() const;
     virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
     virtual void            bootstrap(::snap::snap_child * snap);

@@ -312,6 +312,16 @@ messages * messages::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString messages::settings_path() const
+{
+    return "/admin/settings/info";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.

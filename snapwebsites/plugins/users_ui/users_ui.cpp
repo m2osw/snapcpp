@@ -116,6 +116,28 @@ users_ui * users_ui::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString users_ui::settings_path() const
+{
+    return "/admin/settings/users";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString users_ui::icon() const
+{
+    return "/images/users/users-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -129,6 +151,28 @@ QString users_ui::description() const
 {
     return "The users_ui plugin manages all the user interface (forms)"
            " on a website.";
+}
+
+
+/** \brief Change the help URI to the base plugin.
+ *
+ * This help_uri() function returns the URI to the base plugin URI
+ * since this plugin is just an extension and does not need to have
+ * a separate help page.
+ *
+ * \return The URI to the locale plugin help page.
+ */
+QString users_ui::help_uri() const
+{
+    // TBD: should we instead call the help_uri() of the users plugin?
+    //
+    //      users::users::instance()->help_uri();
+    //
+    //      I'm afraid that it would be a bad example because the pointer
+    //      may not be a good pointer anymore at this time (once we
+    //      properly remove plugins that we loaded just to get their info.)
+    //
+    return "http://snapwebsites.org/help/plugin/users";
 }
 
 

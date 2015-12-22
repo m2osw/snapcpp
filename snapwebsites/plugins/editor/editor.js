@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.456
+ * Version: 0.0.3.466
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -747,6 +747,10 @@ snapwebsites.EditorSelection =
  *      virtual function saving(editor_widget: Object, data: EditorWidgetTypeBase.SaveData) : void;
  *      virtual function resetValue(editor_widget: Object) : void;
  *      virtual function setValue(editor_widget: Object, value: Object) : void;
+ *
+ *  private:
+ *      var ajaxReason_: string = "";
+ *      var serverAccess_: ServerAccess = null;
  *  };
  * \endcode
  *
@@ -790,6 +794,41 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeBase, snapwebsites.ServerAcce
  * @typedef {{html: string, result: string}}
  */
 snapwebsites.EditorWidgetTypeBase.SaveData;
+
+
+/** \brief Defines what the serverAccess_ object is used for.
+ *
+ * The ajaxReason_ is a string that represents this widget doing
+ * with the current AJAX request. This is used whenever we receive
+ * the serverAccessSuccess(), serverAccessError(), and
+ * serverAccessComplete() functions.
+ *
+ * By default, it is set to the empty string, meaning that no AJAX
+ * is going on.
+ *
+ * @type {string}
+ * @private
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.ajaxReason_ = "";
+
+
+/** \brief A server access object.
+ *
+ * This object is used differently depending on the widget and user
+ * actions.
+ *
+ * For example, EditorWidgetTypeDroppedFileWithPreview makes use of this
+ * server to check on the validity, type, etc. of the dropped file.
+ *
+ * \note
+ * This serverAccess_ object is shared between all the drop widget.
+ * For this reason, we have another field, ajaxReason_, which tells
+ * us what the serverAccess_ is.
+ *
+ * @type {snapwebsites.ServerAccess}
+ * @private
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.serverAccess_ = null;
 
 
 /** \brief Retrieve the name of this widget type.
@@ -3015,8 +3054,8 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
  *      static const SAVE_MODE_SAVE_DRAFT: string;
  *
  * private:
- *      editorBase_: EditorBase;
- *      formWidget_: jQuery;
+ *      var editorBase_: EditorBase;
+ *      var formWidget_: jQuery;
  * };
  * \endcode
  *
@@ -3524,7 +3563,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      var saveFunctionOnError_: function(editor_form: EditorForm, result: snapwebsites.ServerAccessCallbacks.ResultData);
  *                                              // function called in case the save failed
  *      var savedData_: Object;                 // a set of objects to know whether things changed while saving
- *      var serverAccess_: ServerAccess;        // a ServerAccess object to send the AJAX
+ *      var serverAccess_: ServerAccess = null; // a ServerAccess object to send the AJAX
  * };
  * \endcode
  *
@@ -3977,8 +4016,8 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
 
     snapwebsites.EditorForm.superClass_.serverAccessSuccess.call(this, result);
 
-    // success! so it was saved and now that's the new original value
-    // and next "Save" doesn't do anything
+    // success! so it was saved and now that is the new original value
+    // and next "Save" does not do anything
     for(key in this.editorWidgets_)
     {
         if(this.editorWidgets_.hasOwnProperty(key))
@@ -5953,7 +5992,7 @@ snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // abstr
  *  public:
  *      function EditorWidgetTypeContentEditable();
  *      function setupEditButton(editor_widget: snapwebsites.EditorWidget) : void;
- *      function getEditButton() : string;
+ *      virtual function getEditButton() : string;
  *  };
  * \endcode
  *
@@ -5991,7 +6030,8 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeContentEditable, snapwebsites
  */
 snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = function(editor_widget)
 {
-    var w = editor_widget.getWidget(),
+    var that = this,
+        w = editor_widget.getWidget(),
         c = editor_widget.getWidgetContent(),
         html,
         edit_button_popup;
@@ -6024,13 +6064,21 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
             // then remove the hover events
             w.mouseleave().off("mouseenter mouseleave");
 
-            // make the child editable
-            // TODO: either select all or at least place the cursor at the
-            //       end in some cases...
-            c.attr("contenteditable", "true");
-
-            // give the widget focus if not disabled
-            editor_widget.focus();
+            // request the original data which is about to be edited;
+            // this is important if it included any tokens or similar
+            // fields
+            that.ajaxReason_ = "request_original_data";
+            that.ajaxWidget_ = editor_widget;
+            if(!that.serverAccess_)
+            {
+                that.serverAccess_ = new snapwebsites.ServerAccess(that);
+            }
+            that.serverAccess_.setURI(jQuery("link[rel='canonical']").attr("href"));
+            that.serverAccess_.setData({
+                            _editor_request_original_data: 1,
+                            field_name: editor_widget.getName()
+                        });
+            that.serverAccess_.send(e);
         });
 
     // this adds the mouseenter and mouseleave events
@@ -6061,6 +6109,49 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
 snapwebsites.EditorWidgetTypeContentEditable.prototype.getEditButton = function() // virtual
 {
     return "<div class='editor-edit-button'><a class='activate-editor' href='#'>Edit</a></div>";
+};
+
+
+/** \brief Manage request to retrieve field original content.
+ *
+ * We just sent an AJAX request to retrieve the field original content.
+ * This content is to be shown in the widget in place of the final
+ * content (i.e. without all the tokens replaced, filters applied, etc.)
+ *
+ * The function makes sure that the AJAX reason is indeed
+ * "request_original_data" and if so, it starts the editing
+ * of the widget.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data.
+ */
+snapwebsites.EditorWidgetTypeContentEditable.prototype.serverAccessSuccess = function(result) // virtual
+{
+    var editor_widget,
+        w,
+        c,
+        xml_data,
+        attachment_path;
+
+    snapwebsites.EditorWidgetTypeContentEditable.superClass_.serverAccessSuccess.call(this, result);
+
+    if(this.ajaxReason_ == "request_original_data")
+    {
+        editor_widget = this.ajaxWidget_;
+        w = editor_widget.getWidget();
+        c = editor_widget.getWidgetContent();
+
+        xml_data = jQuery(result.jqxhr.responseXML);
+        c.html(xml_data.find("data[name='field_data']").text());
+
+        // make the child editable
+        // TODO: either select all or at least place the cursor at the
+        //       end in some cases...
+        c.attr("contenteditable", "true");
+
+        // give the widget focus if not disabled
+        editor_widget.focus();
+    }
 };
 
 
@@ -6189,10 +6280,34 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widg
                 return;
             }
 
-            // TBD: we may need to allow various keys when the widget is
-            //      marked as 'read-only' (i.e. Ctrl-C, arrows, etc.)
-            if(w.is(".read-only")
-            || w.is(".disabled"))
+            if(w.is(".read-only"))
+            {
+                switch(e.which)
+                {
+                case 33:    // page up
+                case 34:    // page down
+                case 35:    // end
+                case 36:    // home
+                case 37:    // arrow left
+                case 38:    // arrow up
+                case 39:    // arrow right
+                case 40:    // arrow down
+                    return;
+
+                case 67:    // Ctlr-C (copy text)
+                    if(e.ctrlKey)
+                    {
+                        return;
+                    }
+                    break;
+
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            if(w.is(".disabled"))
             {
                 // no typing allowed
                 e.preventDefault();
@@ -7958,23 +8073,6 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview = function()
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeDroppedFileWithPreview, snapwebsites.EditorWidgetTypeImageBox);
 
 
-/** \brief A server access object.
- *
- * Whenever the user drops a file, we use this object to send it to
- * the server. In turn the server sends us a reply to know whether
- * the file was accepted or not. Later we will be able to check on
- * the server to know whether it has a preview for us to display.
- *
- * \note
- * This serverAccess_ object is shared between all the drop widget
- * of this type of attachments.
- *
- * @type {snapwebsites.ServerAccess}
- * @private
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccess_ = null;
-
-
 /** \brief Return "dropped-file-with-preview".
  *
  * Return the name of the image box type.
@@ -8076,6 +8174,7 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
     // show a "Please Wait" image
     editor_widget.showWaitImage();
 
+    this.ajaxReason_ = "dropped_file_with_preview";
     if(!this.serverAccess_)
     {
         this.serverAccess_ = new snapwebsites.ServerAccess(this);

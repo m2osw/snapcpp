@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.32
+ * Version: 0.0.1.33
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -447,6 +447,21 @@ snapwebsites.ServerAccess.FORM_ = "form"; // static const
 snapwebsites.ServerAccess.prototype.callback_ = null;
 
 
+/** \brief A boolean letting us know whether a hit is transparent or not.
+ *
+ * The ServerAccess can be used by background scripts, which means that
+ * the user session should not be extended. This flag, when changed
+ * to true with setTransparent().
+ *
+ * By default the flag is 'false' meaning that the hits are considered
+ * user generated hits.
+ *
+ * @type {boolean}
+ * @private
+ */
+snapwebsites.ServerAccess.prototype.transparent_ = false;
+
+
 /** \brief The URI used to send the request to the server.
  *
  * The ServerAccess object needs a valid URI in order to send a request
@@ -554,6 +569,31 @@ snapwebsites.ServerAccess.willRedirect = function(result) // static
 };
 
 
+/** \brief Set the transparent hit flag.
+ *
+ * Whenever the ServerAccess sends a request to the Snap! server, the hit
+ * can be made transparent, meaning that the hit does not count as an end
+ * user hit. (i.e. a timer generates this ServerAccess and the send()
+ * function, opposed to an action from the user such as clicking a button.)
+ *
+ * This flag is very important if you check the server once in a
+ * while to see whether something is one way or the other on the
+ * server but the user is not involved at that moment.
+ *
+ * Set the flag to 'true' to ask the server to make your AJAX hits
+ * transparent. The default is 'false' which means that each hit
+ * is counted as a user hit and thus the user session gets extended
+ * (assuming it is not already out of date, of course.)
+ *
+ * @param {!boolean} transparent  Whether hits from this server access object
+ *                are transparent or not.
+ */
+snapwebsites.ServerAccess.prototype.setTransparent = function(transparent)
+{
+    this.transparent_ = transparent;
+};
+
+
 /** \brief Set the URI used to send the data.
  *
  * This function is used to set the URI and optional query string of
@@ -561,7 +601,13 @@ snapwebsites.ServerAccess.willRedirect = function(result) // static
  *
  * The query string parameter (\p opt_queryString) is an object representing
  * the query string of this URI. By default it is set to undefined meaning
- * that no query string will be added.
+ * that no query string will be added. The object is a set of key and values.
+ * The key represents the name of the query string. For example, the following
+ * object defines "?page=3&order=reversed" as the query string:
+ *
+ * \code
+ *      { page: 3, order: "reversed" }
+ * \endcode
  *
  * @param {!string} uri  The URI where the data is to be sent.
  * @param {Object=} opt_queryString  An option set of key/value pairs.
@@ -700,7 +746,24 @@ snapwebsites.ServerAccess.prototype.setData = function(data)
 snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
 {
     var that = this,
-        uri = snapwebsites.ServerAccess.appendQueryString(this.uri_, this.queryString_);
+        query_string = this.queryString_,
+        uri;
+
+    // add the "hit" entry with "transparent" if requested
+    // (note that the user may already have such in his query string)
+    //
+    // TODO: make sure to have the name "hit" as the qs_hit string.
+    //
+    if(this.transparent_)
+    {
+        if(!query_string)
+        {
+            query_string = {};
+        }
+        query_string["hit"] = "transparent";
+    }
+
+    uri = snapwebsites.ServerAccess.appendQueryString(this.uri_, query_string);
 
     /** \brief Initialize the result object.
      *
@@ -1283,7 +1346,7 @@ snapwebsites.ServerAccessTimer.prototype.send = function()
 
     if(this.processing_)
     {
-        // as the completion function to send another request
+        // ask the completion function to send another request
         // (it may require a timer, but we do not know at this point)
         //
         // Note: the following is safe because JavaScript is not multithreaded
@@ -1347,9 +1410,19 @@ snapwebsites.ServerAccessTimer.prototype.sendRequest_ = function() // static
     if(!this.serverAccess_)
     {
         this.serverAccess_ = new snapwebsites.ServerAccess(this);
+
+        // By default, a script using a timer is viewed as a background
+        // script and not a direct user action and thus it is given
+        // the transparent flag.
+        //
+        // The script that makes use of this Timer can always call
+        // this function with 'false' if required (see callback
+        // call below)
+        //
+        this.serverAccess_.setTransparent(true);
     }
 
-    // we expect the callback to setup these two parameters
+    // we expect the callback to setup these parameters
     //this.serverAccess_.setURI(...);
     //this.serverAccess_.setData(...);
     this.timerCallback_.serverAccessTimerReady(this.requestName_, this.serverAccess_);
@@ -1414,7 +1487,14 @@ snapwebsites.ServerAccessTimer.prototype.serverAccessError = function(result) //
  * This function is called once the whole process is over. It is most
  * often used to do some cleanup.
  *
- * By default this function does nothing.
+ * This functon makes sure that the server access timer object is marked
+ * as done with its current processing and request a new send() if
+ * required. Therefore, it is very important that you call this
+ * function:
+ *
+ * \code
+ *      snapwebsites.ServerAccessTimer.superClass_.serverAccessComplete.call(this, result);
+ * \endcode
  *
  * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
  *          resulting data with information about the error(s).

@@ -17,7 +17,6 @@
 
 #include "info.h"
 
-#include "../messages/messages.h"
 #include "../output/output.h"
 #include "../permissions/permissions.h"
 #include "../sendmail/sendmail.h"
@@ -69,6 +68,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_INFO_NAME:
         return "name";
 
+    case name_t::SNAP_NAME_INFO_PLUGIN_SELECTION:
+        return "admin/plugins";
+
     case name_t::SNAP_NAME_INFO_SHORT_NAME:
         return "short_name";
 
@@ -111,6 +113,28 @@ info::~info()
 info * info::instance()
 {
     return g_plugin_info_factory.instance();
+}
+
+
+/** \brief Send users to the info settings.
+ *
+ * This path represents the info settings.
+ */
+QString info::settings_path() const
+{
+    return "/admin/settings/info";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString info::icon() const
+{
+    return "/images/info/info-logo-64x64.png";
 }
 
 
@@ -160,7 +184,7 @@ int64_t info::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 11, 3, 15, 57, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 21, 0, 12, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -217,6 +241,12 @@ bool info::on_path_execute(content::path_info_t & ipath)
 {
     // first check whether the unsubscribe implementation understands this path
     if(unsubscribe_on_path_execute(ipath))
+    {
+        return true;
+    }
+
+    // then check whether the plugin selection wants to deal with this hit
+    if(plugin_selection_on_path_execute(ipath))
     {
         return true;
     }
@@ -379,6 +409,35 @@ void info::on_improve_signature(QString const & path, QDomDocument doc, QDomElem
 }
 
 
+void info::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
+{
+    QString const cpath(ipath.get_cpath());
+    if(cpath.startsWith(QString("%1/").arg(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH)))
+    || cpath.startsWith(QString("%1/install/").arg(get_name(name_t::SNAP_NAME_INFO_PLUGIN_SELECTION)))
+    || cpath.startsWith(QString("%1/remove/").arg(get_name(name_t::SNAP_NAME_INFO_PLUGIN_SELECTION))))
+    {
+        // tell the path plugin that this is ours
+        plugin_info.set_plugin(this);
+        return;
+    }
+}
+
+
+void info::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row)
+{
+    NOTUSED(field_type);
+    NOTUSED(row);
+
+    QString const cpath(ipath.get_cpath());
+    if(cpath == "unsubscribe")
+    {
+        init_unsubscribe_editor_widgets(ipath, field_id, widget);
+    }
+    else if(cpath == "admin/plugins")
+    {
+        init_plugin_selection_editor_widgets(ipath, field_id, widget);
+    }
+}
 
 
 

@@ -579,6 +579,18 @@ server::pointer_t server::set_instance(pointer_t other_server)
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString server::icon() const
+{
+    return "/images/snap/snap-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -659,6 +671,7 @@ server::server()
     f_parameters["listen"]         = "0.0.0.0:4004";
     f_parameters["plugins_path"]   = "/usr/lib/snapwebsites/plugins";
     f_parameters["qs_action"]      = "a";
+    f_parameters["qs_hit"]         = "hit";
     f_parameters["server_name"]    = "";
     f_parameters["wait_interval"]  = "5";  // default: 1 second
     f_parameters["wait_max_tries"] = "-1"; // default: indefinite wait

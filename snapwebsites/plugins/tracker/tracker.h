@@ -36,25 +36,25 @@ char const * get_name(name_t name) __attribute__ ((const));
 class tracker_exception : public snap_exception
 {
 public:
-    tracker_exception(char const *        what_msg) : snap_exception("tracker", what_msg) {}
-    tracker_exception(std::string const & what_msg) : snap_exception("tracker", what_msg) {}
-    tracker_exception(QString const &     what_msg) : snap_exception("tracker", what_msg) {}
+    explicit tracker_exception(char const *        what_msg) : snap_exception("tracker", what_msg) {}
+    explicit tracker_exception(std::string const & what_msg) : snap_exception("tracker", what_msg) {}
+    explicit tracker_exception(QString const &     what_msg) : snap_exception("tracker", what_msg) {}
 };
 
 class tracker_exception_no_backend : public tracker_exception
 {
 public:
-    tracker_exception_no_backend(char const *        what_msg) : tracker_exception(what_msg) {}
-    tracker_exception_no_backend(std::string const & what_msg) : tracker_exception(what_msg) {}
-    tracker_exception_no_backend(QString const &     what_msg) : tracker_exception(what_msg) {}
+    explicit tracker_exception_no_backend(char const *        what_msg) : tracker_exception(what_msg) {}
+    explicit tracker_exception_no_backend(std::string const & what_msg) : tracker_exception(what_msg) {}
+    explicit tracker_exception_no_backend(QString const &     what_msg) : tracker_exception(what_msg) {}
 };
 
 class tracker_exception_invalid_number_of_parameters : public tracker_exception
 {
 public:
-    tracker_exception_invalid_number_of_parameters(char const *        what_msg) : tracker_exception(what_msg) {}
-    tracker_exception_invalid_number_of_parameters(std::string const & what_msg) : tracker_exception(what_msg) {}
-    tracker_exception_invalid_number_of_parameters(QString const &     what_msg) : tracker_exception(what_msg) {}
+    explicit tracker_exception_invalid_number_of_parameters(char const *        what_msg) : tracker_exception(what_msg) {}
+    explicit tracker_exception_invalid_number_of_parameters(std::string const & what_msg) : tracker_exception(what_msg) {}
+    explicit tracker_exception_invalid_number_of_parameters(QString const &     what_msg) : tracker_exception(what_msg) {}
 };
 
 
@@ -73,6 +73,8 @@ public:
 
     // plugins::plugin implementation
     static tracker *    instance();
+    virtual QString     settings_path() const;
+    virtual QString     icon() const;
     virtual QString     description() const;
     virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);

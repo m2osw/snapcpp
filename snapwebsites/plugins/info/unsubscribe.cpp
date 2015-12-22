@@ -30,18 +30,6 @@
 SNAP_PLUGIN_EXTENSION_START(info)
 
 
-void info::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
-{
-    QString const cpath(ipath.get_cpath());
-    if(cpath.startsWith(QString("%1/").arg(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH))))
-    {
-        // tell the path plugin that this is ours
-        plugin_info.set_plugin(this);
-        return;
-    }
-}
-
-
 bool info::unsubscribe_on_path_execute(content::path_info_t & ipath)
 {
     QString const cpath(ipath.get_cpath());
@@ -59,41 +47,34 @@ bool info::unsubscribe_on_path_execute(content::path_info_t & ipath)
 }
 
 
-void info::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row)
+void info::init_unsubscribe_editor_widgets(content::path_info_t & ipath, QString const & field_id, QDomElement & widget)
 {
-    NOTUSED(field_type);
-    NOTUSED(row);
-
-    QString const cpath(ipath.get_cpath());
-    if(cpath == "unsubscribe")
+    if(field_id == "email")
     {
-        if(field_id == "email")
+        // if we have an identifier parameter in the ipath then we want to
+        // transform that to an email address and put it in this field
+        QString const identifier(ipath.get_parameter("identifier"));
+        if(!identifier.isEmpty())
         {
-            // if we have an identifier parameter in the ipath then we want to
-            // transform that to an email address and put it in this field
-            QString const identifier(ipath.get_parameter("identifier"));
-            if(!identifier.isEmpty())
+            sessions::sessions::session_info session_info;
+            sessions::sessions::instance()->load_session(identifier, session_info, false);
+            if(session_info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
             {
-                sessions::sessions::session_info session_info;
-                sessions::sessions::instance()->load_session(identifier, session_info, false);
-                if(session_info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
+                QString const & object_path(session_info.get_object_path());
+                int const pos(object_path.lastIndexOf("/"));
+                if(pos > 0)
                 {
-                    QString const & object_path(session_info.get_object_path());
-                    int const pos(object_path.lastIndexOf("/"));
-                    if(pos > 0)
+                    QString const to(object_path.mid(pos + 1));
+                    if(!to.isEmpty())
                     {
-                        QString const to(object_path.mid(pos + 1));
-                        if(!to.isEmpty())
-                        {
-                            QDomDocument doc(widget.ownerDocument());
-                            QDomElement value(snap_dom::create_element(widget, "value"));
-                            QDomText text(doc.createTextNode(to));
-                            value.appendChild(text);
-                        }
+                        QDomDocument doc(widget.ownerDocument());
+                        QDomElement value(snap_dom::create_element(widget, "value"));
+                        QDomText text(doc.createTextNode(to));
+                        value.appendChild(text);
                     }
                 }
-				// else -- TBD should we redirect the user to just /unsubscribe ?
             }
+            // else -- TBD should we redirect the user to just /unsubscribe ?
         }
     }
 }

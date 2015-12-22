@@ -50,7 +50,7 @@ snapwebsites.Unsubscribe = function()
     // replace Save Dialog with our Save Button
     save_dialog.setPopup(save_button, false);
     unsubscribe_form.setSaveFunctionOnSuccess(
-            function (unsubscribe_form, result)
+            function(unsubscribe_form, result)
             {
                 that.onSaved(unsubscribe_form, result);
             }

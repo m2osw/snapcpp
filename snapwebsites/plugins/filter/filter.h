@@ -366,8 +366,10 @@ public:
 
     // plugins::plugin implementation
     static filter *     instance();
+    virtual QString     settings_path() const;
     virtual QString     description() const;
     virtual QString     dependencies() const;
+    virtual int64_t     do_update(int64_t last_updated);
     virtual void        bootstrap(::snap::snap_child * snap);
 
     // server signals
@@ -384,6 +386,8 @@ public:
     SNAP_SIGNAL(filter_text, (filter_text_t & txt_filt), (txt_filt));
 
 private:
+    void                content_update(int64_t variables_timestamp);
+
     zpsnap_child_t      f_snap;
 };
 

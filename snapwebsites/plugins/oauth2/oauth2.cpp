@@ -146,6 +146,28 @@ oauth2 * oauth2::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString oauth2::settings_path() const
+{
+    return "/admin/settings/oauth2";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString oauth2::icon() const
+{
+    return "/images/oauth2/oauth2-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -194,7 +216,7 @@ int64_t oauth2::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 23, 13, 39, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 20, 9, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

@@ -43,9 +43,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class test_plugin_exception : public snap_exception
 {
 public:
-    test_plugin_exception(char const *        what_msg) : snap_exception("Test Plugin", what_msg) {}
-    test_plugin_exception(std::string const & what_msg) : snap_exception("Test Plugin", what_msg) {}
-    test_plugin_exception(QString const &     what_msg) : snap_exception("Test Plugin", what_msg) {}
+    explicit test_plugin_exception(char const *        what_msg) : snap_exception("Test Plugin", what_msg) {}
+    explicit test_plugin_exception(std::string const & what_msg) : snap_exception("Test Plugin", what_msg) {}
+    explicit test_plugin_exception(QString const &     what_msg) : snap_exception("Test Plugin", what_msg) {}
 };
 
 
@@ -62,7 +62,10 @@ public:
 
     // plugins::plugin implementation
     static test_plugin *    instance();
+    virtual QString         settings_path() const;
+    virtual QString         icon() const;
     virtual QString         description() const;
+    virtual QString         help_uri() const;
     virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
     virtual void            bootstrap(snap_child * snap);

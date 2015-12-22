@@ -106,6 +106,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="epayment-logo" type="attachment/public">
+      <path>:/images/epayment/epayment-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
   </content>
   <content path="/types/taxonomy/system/content-types/epayment" owner="output">
     <param name="content::title" revision="revision">e-Payment Related Types</param>

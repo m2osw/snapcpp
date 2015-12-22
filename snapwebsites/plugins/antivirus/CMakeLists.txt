@@ -63,6 +63,7 @@ add_library(antivirus SHARED
     content.xml
     antivirus-settings-page.xml
     antivirus-settings-parser.xsl
+    antivirus-logo-64x64.png
 )
 
 target_link_libraries( antivirus ${QT_LIBRARIES} )

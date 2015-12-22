@@ -29,6 +29,7 @@ enum class name_t
 {
     SNAP_NAME_INFO_LONG_NAME,
     SNAP_NAME_INFO_NAME,
+    SNAP_NAME_INFO_PLUGIN_SELECTION,
     SNAP_NAME_INFO_SHORT_NAME
 };
 char const * get_name(name_t name) __attribute__ ((const));
@@ -37,24 +38,25 @@ char const * get_name(name_t name) __attribute__ ((const));
 class info_exception : public snap_exception
 {
 public:
-    info_exception(char const *        what_msg) : snap_exception("Info", what_msg) {}
-    info_exception(std::string const & what_msg) : snap_exception("Info", what_msg) {}
-    info_exception(QString const &     what_msg) : snap_exception("Info", what_msg) {}
+    explicit info_exception(char const *        what_msg) : snap_exception("Info", what_msg) {}
+    explicit info_exception(std::string const & what_msg) : snap_exception("Info", what_msg) {}
+    explicit info_exception(QString const &     what_msg) : snap_exception("Info", what_msg) {}
 };
 
 class info_exception_invalid_path : public info_exception
 {
 public:
-    info_exception_invalid_path(char const *        what_msg) : info_exception(what_msg) {}
-    info_exception_invalid_path(std::string const & what_msg) : info_exception(what_msg) {}
-    info_exception_invalid_path(QString const &     what_msg) : info_exception(what_msg) {}
+    explicit info_exception_invalid_path(char const *        what_msg) : info_exception(what_msg) {}
+    explicit info_exception_invalid_path(std::string const & what_msg) : info_exception(what_msg) {}
+    explicit info_exception_invalid_path(QString const &     what_msg) : info_exception(what_msg) {}
 };
 
 
 
-class info : public plugins::plugin
-           , public path::path_execute
-           , public layout::layout_content
+class info
+        : public plugins::plugin
+        , public path::path_execute
+        , public layout::layout_content
 {
 public:
     static const sessions::sessions::session_info::session_id_t INFO_SESSION_ID_SETTINGS = 1;      // settings-form.xml
@@ -64,6 +66,8 @@ public:
 
     // plugin implementation
     static info *           instance();
+    virtual QString         settings_path() const;
+    virtual QString         icon() const;
     virtual QString         description() const;
     virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
@@ -90,6 +94,11 @@ public:
 
 private:
     void                    content_update(int64_t variables_timestamp);
+
+    void                    init_plugin_selection_editor_widgets(content::path_info_t & ipath, QString const & field_id, QDomElement & widget);
+    bool                    plugin_selection_on_path_execute(content::path_info_t & ipath);
+
+    void                    init_unsubscribe_editor_widgets(content::path_info_t & ipath, QString const & field_id, QDomElement & widget);
     void                    unsubscribe_on_finish_editor_form_processing(content::path_info_t & ipath);
     bool                    unsubscribe_on_path_execute(content::path_info_t & ipath);
 

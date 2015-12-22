@@ -71,7 +71,10 @@ add_library(epayment_paypal SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     epayment-paypal.css
     epayment-paypal.js
+    paypal-logo-64x64.png
     paypal.png
+    paypal-medium.png
+    paypal-large.png
     epayment-paypal-settings-page.xml
     epayment-paypal-settings-parser.xsl
 )

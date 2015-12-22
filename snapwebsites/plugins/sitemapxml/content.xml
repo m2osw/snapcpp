@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Administer the different sitemap.xml files of your website. These files are for robots only. In most cases the default works as is.</p>]]>
     </param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/types/taxonomy/system/sitemapxml">
     <param name="content::title" revision="revision">XML Sitemap</param>

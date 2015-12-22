@@ -24,6 +24,7 @@
 #include "../permissions/permissions.h"
 #include "../shorturl/shorturl.h"
 
+#include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
 #include "qdomxpath.h"
@@ -388,9 +389,31 @@ ecommerce::~ecommerce()
  *
  * \return A pointer to the ecommerce plugin.
  */
-ecommerce *ecommerce::instance()
+ecommerce * ecommerce::instance()
 {
     return g_plugin_ecommerce_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString ecommerce::settings_path() const
+{
+    return "/admin/settings/ecommerce";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString ecommerce::icon() const
+{
+    return "/images/ecommerce/ecommerce-logo-64x64.png";
 }
 
 
@@ -444,7 +467,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 2, 20, 36, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 17, 45, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1189,7 +1212,7 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
         return;
     }
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
     // TODO: loop through all the products to allow for other plugins to

@@ -104,6 +104,18 @@ antivirus * antivirus::instance()
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString antivirus::icon() const
+{
+    return "/images/antivirus/antivirus-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -151,7 +163,7 @@ int64_t antivirus::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 11, 27, 3, 43, 45, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 17, 15, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

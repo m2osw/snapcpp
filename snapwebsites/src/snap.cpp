@@ -372,7 +372,7 @@ bool snap_cgi::verify()
         // if we receive this, someone tried to directly access our snap.cgi
         // which will not work right so better err immediately
         //
-        if(strncmp(request_uri, "/cgi-bin/", 9) == 0)
+        if(strncasecmp(request_uri, "/cgi-bin/", 9) == 0)
         {
             error("404 Page Not Found", "The REQUEST_URI cannot start with \"/cgi-bin/\".");
             snap::server::block_ip(remote_addr);
@@ -381,12 +381,21 @@ bool snap_cgi::verify()
 
         // TBD: we could test <protocol>:// instead of specifically http
         //
-        if(strncmp(request_uri, "http://", 7) == 0
-        || strncmp(request_uri, "https://", 8) == 0)
+        if(strncasecmp(request_uri, "http://", 7) == 0
+        || strncasecmp(request_uri, "https://", 8) == 0)
         {
             // avoid proxy accesses
             error("404 Page Not Found", "The REQUEST_URI cannot start with \"http[s]://\".");
             snap::server::block_ip(remote_addr);
+            return false;
+        }
+
+		// TODO: move to snapserver because this could be the name of a legal page...
+        if(strcasestr(request_uri, "phpmyadmin") != nullptr)
+        {
+            // block myPhpAdmin accessors
+            error("410 Gone", "MySQL left.");
+            snap::server::block_ip(remote_addr, "year");
             return false;
         }
     }
@@ -417,8 +426,11 @@ bool snap_cgi::verify()
         // if we receive this, someone tried to directly access our snap.cgi
         // which will not work right so better err immediately
         //
-        if(*user_agent == 0)
+        if(*user_agent == '\0'
+        || (*user_agent == '-' && user_agent[1] == '\0')
+        || strcasestr(user_agent, "ZmEu") != nullptr)
         {
+            // note that we consider "-" as empty for this test
             error("400 Bad Request", "The HTTP_USER_AGENT cannot be empty.");
             snap::server::block_ip(remote_addr, "month");
             return false;

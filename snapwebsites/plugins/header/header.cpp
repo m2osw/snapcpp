@@ -87,6 +87,16 @@ header * header::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString header::settings_path() const
+{
+    return "/admin/settings/header";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.

@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>epayment-paypal.css</file>
   </qresource>
   <qresource prefix="/images/epayment">
+    <file>paypal-logo-64x64.png</file>
     <file>paypal.png</file>
     <file>paypal-medium.png</file>
     <file>paypal-large.png</file>

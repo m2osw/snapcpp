@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == robots.txt database setup
+Snap Websites Server == filter database setup
 Copyright (C) 2011-2015  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -18,11 +18,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <content path="/admin/settings/filter">
+  <content path="/admin/settings/filter" owner="output">
     <param name="content::title" revision="revision">Filter Manager</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Manage the website Filters. Filters are an important part of your website. They allow you to let others post content safely.</p>]]>
     </param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/types/filter">
     <param name="content::title" revision="revision">Filter Types</param>

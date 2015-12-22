@@ -735,7 +735,7 @@ QDomDocument layout::create_document(content::path_info_t & ipath, plugin * cont
  *
  * \return The resulting body in an XML document.
  */
-void layout::create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, bool handle_boxes, QString const & layout_name)
+void layout::create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, bool const handle_boxes, QString const & layout_name)
 {
 #ifdef DEBUG
 SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() << "] name = [" << layout_name << "]";
@@ -779,15 +779,58 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     //       filters he wants to apply agains the page content
     //       (i.e. ultimately we want to have some sort of filter
     //       tagging capability)
+    QString filtered_xsl(xsl);
     if(plugins::exists("filter"))
     {
 //SNAP_LOG_WARNING("*** Filter all of that...: [")(doc.toString())("]");
         // replace all tokens when filtering is available
         filter::filter::instance()->on_token_filter(ipath, doc);
+
+        // XSLT parser may also request a pre-filtering
+        //
+        int const output_pos(filtered_xsl.indexOf("<output"));
+        if(output_pos > 0)
+        {
+            for(QChar const * s(filtered_xsl.data() + output_pos + 7); !s->isNull(); ++s)
+            {
+                ushort c(s->unicode());
+                if(c == '>')
+                {
+                    // found end of tag, exit loop now
+                    break;
+                }
+                if(c == 'f')
+                {
+                    // filter="token" or filter='token'
+                    if(s[1].unicode() == 'i'
+                    && s[2].unicode() == 'l'
+                    && s[3].unicode() == 't'
+                    && s[4].unicode() == 'e'
+                    && s[5].unicode() == 'r'
+                    && s[6].unicode() == '='
+                    && (s[7].unicode() == '"' || s[7].unicode() == '\'')
+                    && s[8].unicode() == 't'
+                    && s[9].unicode() == 'o'
+                    && s[10].unicode() == 'k'
+                    && s[11].unicode() == 'e'
+                    && s[12].unicode() == 'n'
+                    && (s[7].unicode() == s[13].unicode())) // closing must be the same as opening
+                    {
+                        QDomDocument xsl_doc;
+                        if(xsl_doc.setContent(filtered_xsl))
+                        {
+                            filter::filter::instance()->on_token_filter(ipath, xsl_doc);
+                            filtered_xsl = xsl_doc.toString(-1);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
     }
 
 //std::cerr << "*** Filtered content...\n";
-    filtered_content(ipath, doc, xsl);
+    filtered_content(ipath, doc, filtered_xsl);
 
 #if 0
 std::cout << "Generated XML is [" << doc.toString(-1) << "]\n";
@@ -806,7 +849,7 @@ out.write(doc.toString(-1).toUtf8());
     QDomDocument doc_output("output");
 
     xslt x;
-    x.set_xsl(xsl);
+    x.set_xsl(filtered_xsl);
     x.set_document(doc);
     x.evaluate_to_document(doc_output);
 
@@ -1562,6 +1605,26 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
     snap_uri const& uri(f_snap->get_uri());
     QString const action(uri.query_option(qs_action));
 
+    QString site_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)).stringValue().trimmed());
+    QString site_short_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME)).stringValue().trimmed());
+    QString site_long_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME)).stringValue().trimmed());
+
+    if(site_name.isEmpty())
+    {
+        if(!site_long_name.isEmpty())
+        {
+            site_name = site_long_name;
+        }
+        else if(!site_short_name.isEmpty())
+        {
+            site_name = site_short_name;
+        }
+        else
+        {
+            site_name = "Your Website Name";
+        }
+    }
+
     FIELD_SEARCH
         (content::field_search::command_t::COMMAND_ELEMENT, metadata)
         (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
@@ -1587,13 +1650,13 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=real_uri]/data")
 
         // snap/head/metadata/desc[@type="name"]/data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)))
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, site_name)
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/data")
         // snap/head/metadata/desc[@type="name"]/short-data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME)))
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, site_short_name)
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/short-data")
         // snap/head/metadata/desc[@type="name"]/long-data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME)))
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, site_long_name)
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/long-data")
 
         // snap/head/metadata/desc[@type="email"]/data
@@ -1619,7 +1682,7 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
 /** \fn void layout::generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
  * \brief Generate the page main content.
  *
- * This function generates the main content of the page. Other
+ * This signal generates the main content of the page. Other
  * plugins will also have the event called if they subscribed and
  * thus will be given a chance to add their own content to the
  * main page. This part is the one that (in most cases) appears
@@ -1638,18 +1701,13 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
 
 
 /** \fn void layout::filtered_content(content::path_info_t & ipath, QDomDocument & doc, QString const & xsl)
- * \brief Generate the page main content.
+ * \brief Signals that the content in the DOM document was filtered.
  *
- * This function generates the main content of the page. Other
- * plugins will also have the event called if they subscribed and
- * thus will be given a chance to add their own content to the
- * main page. This part is the one that (in most cases) appears
- * as the main content on the page although the content of some
- * areas may be interleaved with this content.
+ * This signal is called once all the filters for that page were applied
+ * on the DOM document.
  *
- * Note that this is NOT the HTML output. It is the <page> tag of
- * the snap XML file format. The theme layout XSLT will be used
- * to generate the intermediate and final output.
+ * This allows your plugin to do further processing of the content after
+ * all the filters were applied.
  *
  * \param[in] ipath  The path being managed.
  * \param[in,out] doc  The document that was just generated.

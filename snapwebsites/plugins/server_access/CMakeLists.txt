@@ -65,6 +65,7 @@ add_library(server_access SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
     server-access.js
+    server-access-logo-64x64.png
 )
 
 target_link_libraries( server_access ${QT_LIBRARIES} )

@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.33
+ * Version: 0.0.1.34
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -335,6 +335,11 @@
 {
 	padding: 3px;
 	height: 1.2em;
+	white-space: nowrap;
+	overflow: hidden;
+	/* another possibility instead of nowrap+hidden is (like text-edit):
+	min-height: 1.2em;
+	*/
 }
 
 

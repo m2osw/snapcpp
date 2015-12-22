@@ -68,6 +68,7 @@ add_library(sendmail SHARED
     layout/sendmail-content.xml
     layout/sendmail-theme-parser.xsl
     layout/sendmail-body-parser.xsl
+    sendmail-logo-64x64.png
 )
 
 target_link_libraries( sendmail ${QT_LIBRARIES} )

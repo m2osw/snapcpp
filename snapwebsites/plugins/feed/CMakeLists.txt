@@ -76,6 +76,7 @@ add_library(feed SHARED
     feed-settings-parser.xsl
     rss.xsl
     rss-xslt20.dtd
+    feed-logo-64x64.png
 )
 
 target_link_libraries( feed ${QT_LIBRARIES} )

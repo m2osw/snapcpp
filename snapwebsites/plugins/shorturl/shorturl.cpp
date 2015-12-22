@@ -154,6 +154,16 @@ shorturl * shorturl::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString shorturl::settings_path() const
+{
+    return "/admin/settings/shorturl";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -199,7 +209,7 @@ int64_t shorturl::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 10, 29, 3, 34, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 1, 11, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

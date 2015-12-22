@@ -89,15 +89,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </div>
           <div class="content">
             <!--  contenteditable="true" -->
+            <div class="breadcrumb"><xsl:copy-of select="/snap/page/body/breadcrumb/node()"/></div>
             <div class="page-title">
-              <div><h2 name="title"><xsl:choose>
-                <xsl:when test="/snap/page/body/titles/long-title">
-                  <xsl:copy-of select="/snap/page/body/titles/long-title/node()"/>
-                </xsl:when>
-                <xsl:otherwise>
-                  <xsl:copy-of select="/snap/page/body/titles/title/node()"/>
-                </xsl:otherwise>
-            </xsl:choose></h2></div></div>
+              <h2 name="title">
+                <div field_type="text-edit" field_name="title">
+                  <xsl:attribute name="class"><xsl:if test="$action = 'administer'">snap-editor</xsl:if></xsl:attribute>
+                  <div class="editor-content" name="title">
+                     <!-- TODO: on display we may choose the long or normal
+                                title but at this time we only allow the
+                                editing of the normal title -->
+                    <xsl:choose>
+                      <xsl:when test="/snap/page/body/titles/long-title">
+                        <xsl:copy-of select="/snap/page/body/titles/long-title/node()"/>
+                      </xsl:when>
+                      <xsl:otherwise>
+                        <xsl:copy-of select="/snap/page/body/titles/title/node()"/>
+                      </xsl:otherwise>
+                    </xsl:choose>
+                  </div>
+                </div>
+              </h2>
+            </div>
             <div class="body">
               <xsl:copy-of select="output/node()"/>
             </div>

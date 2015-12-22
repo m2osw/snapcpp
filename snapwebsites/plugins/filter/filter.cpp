@@ -185,6 +185,16 @@ filter * filter::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString filter::settings_path() const
+{
+    return "/admin/settings/filter";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -213,6 +223,43 @@ QString filter::description() const
 QString filter::dependencies() const
 {
     return "|content|locale|messages|";
+}
+
+
+/** \brief Check whether updates are necessary.
+ *
+ * This function updates the database when a newer version is installed
+ * and the corresponding updates where not run.
+ *
+ * This works for newly installed plugins and older plugins that were
+ * updated.
+ *
+ * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
+ *
+ * \return The UTC Unix date of the last update of this plugin.
+ */
+int64_t filter::do_update(int64_t last_updated)
+{
+    SNAP_PLUGIN_UPDATE_INIT();
+
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 0, 36, 0, content_update);
+
+    SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Update the database with our info references.
+ *
+ * Send our info to the database so the system can find us when a
+ * user references our pages.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ */
+void filter::content_update(int64_t variables_timestamp)
+{
+    NOTUSED(variables_timestamp);
+
+    content::content::instance()->add_xml(get_plugin_name());
 }
 
 
@@ -644,24 +691,16 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
     if(g_ipaths.contains(ipath.get_key()))
     {
         // we do not throw, instead we want to "return" an error
-        // however we're not (yet) replacing a token here so we just
-        // generate a "standard" message
-        QString paths;
-        for(save_paths_t::const_iterator it(g_ipaths.begin());
-                                        it != g_ipaths.end();
-                                        ++it)
-        {
-            if(!paths.isEmpty())
-            {
-                paths += ", ";
-            }
-            paths += it.key();
-        }
+        //
+        QString const paths(static_cast<QStringList const &>(g_ipaths.keys()).join(", "));
+
         // Lists have a HUGE problem with this one... for now I'm
         // turning off the error message because in most cases it
         // is not a real problem (We can move on...)
         //
         SNAP_LOG_ERROR("One or more tokens are looping back to page \"")(ipath.get_key())("\" (all paths are: \"")(paths)("\").");
+
+        // this does not work well when we are in a recurring loop
         //messages::messages::instance()->set_error(
         //    "Recursive Token(s)",
         //    QString("One or more tokens are looping back to page \"%1\" (all paths are: \"%2\").").arg(ipath.get_key()).arg(paths),
@@ -684,8 +723,8 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
             f_map.remove(f_ipath.get_key());
         }
 
-        save_paths_t&           f_map;
-        content::path_info_t&   f_ipath;
+        save_paths_t &          f_map;
+        content::path_info_t &  f_ipath;
     };
     add_remove_path_t safe_ipath(g_ipaths, ipath);
 
@@ -697,7 +736,7 @@ void filter::on_token_filter(content::path_info_t & ipath, QDomDocument & xml)
     {
         QVector<QDomNode> to_pop;
 
-        // determine the next pointer so we can delete this node
+        // determine the next node before we handle this node
         QDomNode parent(n.parentNode());
         QDomNode next(n.firstChild());
         if(next.isNull())

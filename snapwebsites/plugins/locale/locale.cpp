@@ -98,6 +98,28 @@ locale * locale::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString locale::settings_path() const
+{
+    return "/admin/settings/locale";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString locale::icon() const
+{
+    return "/images/locale/locale-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -605,7 +627,11 @@ void locale::set_timezone_done()
  * Save the DateFormat so if the function is called multiple times,
  * we do not have to re-create it.
  *
- * \param[in] d  The time to be presented to the end user.
+ * \todo
+ * Allow for milliseconds (or even microseconds) as input to be
+ * more compatible with other Snap! functions.
+ *
+ * \param[in] d  The time to be presented to the end user in seconds.
  *
  * \return A string formatted as per the locale.
  */

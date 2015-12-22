@@ -55,7 +55,7 @@ SNAP_PLUGIN_START(test_plugin, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -127,6 +127,30 @@ test_plugin * test_plugin::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin "settings". In case of the
+ * test plugin, this is really the page that allows one
+ * to run the tests.
+ */
+QString test_plugin::settings_path() const
+{
+    return "/admin/test-plugin";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString test_plugin::icon() const
+{
+    return "/images/test-plugin/test-plugin-logo-64x64.jpg";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -141,6 +165,28 @@ QString test_plugin::description() const
     return "The test_plugin plugin is capable of finding tests throughout"
           " all the plugins and run them one by one, per group,"
           " or all at once.";
+}
+
+
+/** \brief Change the help URI to the base plugin.
+ *
+ * This help_uri() function returns the URI to the base plugin URI
+ * since this plugin is just an extension and does not need to have
+ * a separate help page.
+ *
+ * \return The URI to the test_plugin_suite plugin help page.
+ */
+QString test_plugin::help_uri() const
+{
+    // TBD: should we instead call the help_uri() of the test_plugin_suite plugin?
+    //
+    //      test_plugin_suite::test_plugin_suite::instance()->help_uri();
+    //
+    //      I'm afraid that it would be a bad example because the pointer
+    //      may not be a good pointer anymore at this time (once we
+    //      properly remove plugins that we loaded just to get their info.)
+    //
+    return "http://snapwebsites.org/help/plugin/test_plugin_suite";
 }
 
 
@@ -174,7 +220,7 @@ int64_t test_plugin::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 6, 1, 17, 33, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 23, 29, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

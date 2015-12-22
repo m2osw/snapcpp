@@ -5657,6 +5657,46 @@ char const * snap_child::get_running_server_version()
 }
 
 
+/** \brief Check whether the plugin is considered a Core Plugin.
+ *
+ * Plugins can be forced defined by the administrator in the
+ * snapserver.conf under the name "plugins". In that case,
+ * only those specific plugins are loaded. This is quite practicle
+ * if a plugin is generating problems and you cannot otherwise
+ * check out your website.
+ *
+ * The list of plugins can be soft defined in the default_plugins
+ * variable. This variable is used by new websites until the
+ * user adds and removes plugins to his website by editing the
+ * list of plugins via the Plugin Selector ("/admin/plugin").
+ *
+ * However, in all cases, the system will not work if you do not
+ * have a certain number of low level plugins running such as the
+ * content and users plugins. These are considered Core Plugins.
+ * This function returns true whenever the specified \p name
+ * represents a Core Plugin.
+ *
+ * \param[in] name  The name of the plugin to check.
+ *
+ * \return true if the plugin is a Core Plugin.
+ */
+bool snap_child::is_core_plugin(QString const & name) const
+{
+    // TODO: make sure the table is sorted alphabetically and use
+    //       a binary search
+    //
+    for(size_t i(0); i < sizeof(g_minimum_plugins) / sizeof(g_minimum_plugins[0]); ++i)
+    {
+        if(name == g_minimum_plugins[i])
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 /** \brief Retrieve a server parameter.
  *
  * This function calls the get_parameter() function of the server. This
@@ -6736,6 +6776,7 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
     }
 
     // load the plugins for this website
+    bool need_cleanup(true);
     QString site_plugins(server->get_parameter("plugins")); // forced by .conf?
     if(site_plugins.isEmpty())
     {
@@ -6748,18 +6789,28 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
             // then get the default from the server configuration
             site_plugins = server->get_parameter("default_plugins");
         }
+        else
+        {
+            // we assume that the list of plugins in the database is already
+            // cleaned up and thus avoid an extra loop (see below)
+            //
+            need_cleanup = false;
+        }
     }
     snap_string_list list_of_plugins(site_plugins.split(',', QString::SkipEmptyParts));
 
     // clean up the list
-    for(int i(0); i < list_of_plugins.length(); ++i)
+    if(need_cleanup)
     {
-        list_of_plugins[i] = list_of_plugins[i].trimmed();
-        if(list_of_plugins.at(i).isEmpty())
+        for(int i(0); i < list_of_plugins.length(); ++i)
         {
-            // remove parts that the trimmed() rendered empty
-            list_of_plugins.removeAt(i);
-            --i;
+            list_of_plugins[i] = list_of_plugins[i].trimmed();
+            if(list_of_plugins.at(i).isEmpty())
+            {
+                // remove parts that the trimmed() rendered empty
+                list_of_plugins.removeAt(i);
+                --i;
+            }
         }
     }
 
@@ -6784,7 +6835,7 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
         die( http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE
            , "Plugin path not configured"
            , "Server cannot find any plugins because the path is not properly configured."
-           , "An error occured loading the server plugins (plugins_path parameter in the snapserver.conf)."
+           , "An error occured loading the server plugins (plugins_path parameter in snapserver.conf is undefined)."
            );
         NOTREACHED();
     }
@@ -6806,6 +6857,7 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
 
     return list_of_plugins;
 }
+
 
 /** \brief Run all the updates as required.
  *

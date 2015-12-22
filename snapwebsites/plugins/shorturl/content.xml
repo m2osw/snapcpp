@@ -25,6 +25,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/admin" owner="output">
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/shorturl/no_shorturl</link>
   </content>
+  <content path="/admin/settings/shorturl" owner="output">
+    <param name="content::title" revision="revision">Short URL</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Edit the Short URL settings.</p>]]>
+    </param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+  </content>
   <content path="/s">
     <param name="content::title" revision="revision">Short URL Parent Page</param>
     <param name="content::body" revision="revision">

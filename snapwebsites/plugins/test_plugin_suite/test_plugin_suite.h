@@ -28,25 +28,25 @@ namespace test_plugin_suite
 class test_plugin_suite_exception : public snap_exception
 {
 public:
-    test_plugin_suite_exception(char const *        what_msg) : snap_exception("Test Plugin Suite", what_msg) {}
-    test_plugin_suite_exception(std::string const & what_msg) : snap_exception("Test Plugin Suite", what_msg) {}
-    test_plugin_suite_exception(QString const &     what_msg) : snap_exception("Test Plugin Suite", what_msg) {}
+    explicit test_plugin_suite_exception(char const *        what_msg) : snap_exception("Test Plugin Suite", what_msg) {}
+    explicit test_plugin_suite_exception(std::string const & what_msg) : snap_exception("Test Plugin Suite", what_msg) {}
+    explicit test_plugin_suite_exception(QString const &     what_msg) : snap_exception("Test Plugin Suite", what_msg) {}
 };
 
 class test_plugin_suite_already_exists : public test_plugin_suite_exception
 {
 public:
-    test_plugin_suite_already_exists(char const *        what_msg) : test_plugin_suite_exception(what_msg) {}
-    test_plugin_suite_already_exists(std::string const & what_msg) : test_plugin_suite_exception(what_msg) {}
-    test_plugin_suite_already_exists(QString const &     what_msg) : test_plugin_suite_exception(what_msg) {}
+    explicit test_plugin_suite_already_exists(char const *        what_msg) : test_plugin_suite_exception(what_msg) {}
+    explicit test_plugin_suite_already_exists(std::string const & what_msg) : test_plugin_suite_exception(what_msg) {}
+    explicit test_plugin_suite_already_exists(QString const &     what_msg) : test_plugin_suite_exception(what_msg) {}
 };
 
 class test_plugin_suite_assert_failed : public test_plugin_suite_exception
 {
 public:
-    test_plugin_suite_assert_failed(char const *        what_msg) : test_plugin_suite_exception(what_msg) {}
-    test_plugin_suite_assert_failed(std::string const & what_msg) : test_plugin_suite_exception(what_msg) {}
-    test_plugin_suite_assert_failed(QString const &     what_msg) : test_plugin_suite_exception(what_msg) {}
+    explicit test_plugin_suite_assert_failed(char const *        what_msg) : test_plugin_suite_exception(what_msg) {}
+    explicit test_plugin_suite_assert_failed(std::string const & what_msg) : test_plugin_suite_exception(what_msg) {}
+    explicit test_plugin_suite_assert_failed(QString const &     what_msg) : test_plugin_suite_exception(what_msg) {}
 };
 
 
@@ -250,6 +250,8 @@ public:
 
     // plugins::plugin implementation
     static test_plugin_suite *  instance();
+    virtual QString             settings_path() const;
+    virtual QString             icon() const;
     virtual QString             description() const;
     virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);

@@ -145,6 +145,28 @@ cookie_consent_silktide * cookie_consent_silktide::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString cookie_consent_silktide::settings_path() const
+{
+    return "/admin/settings/cookie-consent-silktide";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString cookie_consent_silktide::icon() const
+{
+    return "/images/cookie-consent-silktide/cookie-consent-silktide-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -190,7 +212,7 @@ int64_t cookie_consent_silktide::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 19, 2, 8, 34, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 19, 45, 34, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

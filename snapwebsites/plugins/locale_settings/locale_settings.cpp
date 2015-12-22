@@ -41,7 +41,7 @@ SNAP_PLUGIN_START(locale_settings, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -104,6 +104,28 @@ locale_settings * locale_settings::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString locale_settings::settings_path() const
+{
+    return "/admin/settings/locale";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString locale_settings::icon() const
+{
+    return "/images/locale/locale-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -117,6 +139,28 @@ QString locale_settings::description() const
 {
     return "Define locale functions to be used throughout all the plugins."
         " It handles time and date, timezone, numbers, currency, etc.";
+}
+
+
+/** \brief Change the help URI to the base plugin.
+ *
+ * This help_uri() function returns the URI to the base plugin URI
+ * since this plugin is just an extension and does not need to have
+ * a separate help page.
+ *
+ * \return The URI to the locale plugin help page.
+ */
+QString locale_settings::help_uri() const
+{
+    // TBD: should we instead call the help_uri() of the locale plugin?
+    //
+    //      locale::locale::instance()->help_uri();
+    //
+    //      I'm afraid that it would be a bad example because the pointer
+    //      may not be a good pointer anymore at this time (once we
+    //      properly remove plugins that we loaded just to get their info.)
+    //
+    return "http://snapwebsites.org/help/plugin/locale";
 }
 
 
@@ -149,7 +193,7 @@ int64_t locale_settings::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 7, 25, 0, 30, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 20, 32, 8, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

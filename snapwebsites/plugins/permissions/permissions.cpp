@@ -1240,7 +1240,7 @@ permissions::~permissions()
  *
  * \return A pointer to the permissions plugin.
  */
-permissions *permissions::instance()
+permissions * permissions::instance()
 {
     return g_plugin_permissions_factory.instance();
 }
@@ -1845,7 +1845,8 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
     QString const & login_status(get_login_status());
     QString const & user_path(get_user_path());
     content::permission_flag allowed;
-    path::path::instance()->access_allowed(user_path, ipath, action, login_status, allowed);
+    path::path * path_plugin(path::path::instance());
+    path_plugin->access_allowed(user_path, ipath, action, login_status, allowed);
     if(!allowed.allowed())
     {
         // by default we allow redirects to the login page;
@@ -1917,8 +1918,8 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             // if the page is to appear in an IFRAME then we want to
             // remove the frame before showing the login screen, for
             // that purpose we have a special page which does all that
-            // work for us; not that if you still want to open a login
-            // screen in an IFRAME, you'll want to make sure to NOT
+            // work for us; note that if you still want to open a login
+            // screen in an IFRAME, you will want to make sure to NOT
             // put the iframe=true parameter in the URL query string
             //
             snap_uri const & main_uri(f_snap->get_uri());
@@ -1951,12 +1952,31 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             {
                 users_plugin->set_referrer( ipath.get_cpath() );
             }
+
+            // the title of public pages can be show in the error message;
+            // the title should be more helpful to end users, especially
+            // for the home page that would otherwise be shown as ""
             //
+            // by default show the user the path to the page
+            //
+            QString page_title(QString("/%1").arg(ipath.get_cpath()));
+            content::permission_flag public_page;
+            path_plugin->access_allowed("", ipath, "view", get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR), public_page);
+            if(public_page.allowed())
+            {
+                // the page is public, get the title instead
+                //
+                content::content * content_plugin(content::content::instance());
+                QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+                page_title = revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue();
+            }
+
             // if the page is inside an IFRAME we want to remove the iframe
+            //
             err_callback.on_redirect(
                 // message
                 "Unauthorized",
-                QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(ipath.get_cpath()),
+                QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(page_title),
                 QString("User trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
                 false,
                 // redirect
@@ -1970,7 +1990,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             {
                 // allowed if logged in?
                 content::permission_flag allowed_if_logged_in;
-                path::path::instance()->access_allowed(user_path, ipath, action, get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
+                path_plugin->access_allowed(user_path, ipath, action, get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
                 if(allowed_if_logged_in.allowed())
                 {
                     // TODO: find a way to save the data that is about
@@ -2756,7 +2776,7 @@ void permissions::check_permissions(QString const & email, QString const & page,
  */
 void permissions::on_user_verified(content::path_info_t & ipath, int64_t identifier)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     uint64_t const created_date(f_snap->get_start_date());
 

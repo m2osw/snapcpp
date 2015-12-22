@@ -25,7 +25,9 @@ FILES="plugins/ecommerce/ecommerce.js
        plugins/editor/editor.js
        plugins/epayment/epayment.js
        plugins/epayment_paypal/epayment-paypal.js
+       plugins/flash/flash-detection.js
        plugins/form/form.js
+       plugins/info/info/info.js
        plugins/info/sendmail/unsubscribe.js
        plugins/listener/listener.js
        plugins/list/list/list.js
@@ -36,7 +38,8 @@ FILES="plugins/ecommerce/ecommerce.js
        plugins/output/rotate-animation.js
        plugins/permissions/remove-iframe-for-login.js
        plugins/server_access/server-access.js
-       plugins/test_plugin/test-plugin.js"
+       plugins/test_plugin/test-plugin.js
+       plugins/users/users.js"
 
 CLOSURE_COMPILER=/home/snapwebsites/tmp/google-js-compiler/closure-compiler
 

@@ -45,6 +45,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Cookie Consent silktide Images.</p>]]>
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="cookie-consent-silktide" type="attachment/public">
+      <path>:/images/cookie-consent-silktide/cookie-consent-silktide-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
     <attachment name="dark-top" type="attachment/public">
       <path>:/images/cookie-consent-silktide/dark-top.png</path>
       <mime-type>image/png</mime-type>

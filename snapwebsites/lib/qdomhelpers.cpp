@@ -107,6 +107,21 @@ void append_plain_text_to_node(QDomNode & node, QString const & plain_text)
 }
 
 
+/** \brief Useful function to append an integer to a QDomNode.
+ *
+ * The function creates a Text node set to the integer converted to
+ * ASCII and append the result to the specified child.
+ *
+ * \param[in,out] node  The child where the integer is appended.
+ * \param[in] integer  The integer to append to the node.
+ */
+void append_integer_to_node(QDomNode & node, int64_t integer)
+{
+    QDomText text(node.ownerDocument().createTextNode(QString("%1").arg(integer)));
+    node.appendChild(text);
+}
+
+
 /** \brief Useful function that transforms a QString to XML.
  *
  * When inserting a string in the XML document and that string may include
@@ -515,7 +530,8 @@ QDomElement create_element(QDomNode parent, QString const& path)
  *
  * \todo
  * We may want to support any type of entities which I think the current
- * implementation will fail to convert (because XML is limit to 3...)
+ * implementation will fail to convert (because XML is limited to three:
+ * \&amp;, \&lt;, \&gt;.)
  *
  * \param[in] html  The input that includes tags.
  *

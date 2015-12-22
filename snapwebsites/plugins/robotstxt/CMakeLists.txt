@@ -72,6 +72,7 @@ add_library(robotstxt SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    robotstxt-logo-64x64.png
 )
 
 target_link_libraries( robotstxt ${QT_LIBRARIES} )

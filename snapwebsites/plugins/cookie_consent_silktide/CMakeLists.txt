@@ -67,6 +67,7 @@ add_library(cookie_consent_silktide SHARED
     cookie-consent-silktide.js
     cookie-consent-silktide-page.xml
     cookie-consent-silktide-parser.xsl
+    cookie-consent-silktide-logo-64x64.png
     dark-top.png
     dark-floating.png
     dark-bottom.png
