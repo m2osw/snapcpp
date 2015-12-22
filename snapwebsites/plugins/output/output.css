@@ -1,6 +1,6 @@
 /*
  * Name: output
- * Version: 0.0.24
+ * Version: 0.0.25
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -219,3 +219,35 @@ div.editor-block div.plugin .last-row .dependencies
 	font-style: italic;
 }
 
+
+/** list navigation */
+
+.navigation
+{
+	text-align: center;
+}
+.navigation ul
+{
+	display: inline-block;
+	margin: 10px 0;
+	padding: 0;
+}
+.navigation li
+{
+	display: block;
+	float: left;
+	margin: 0 5px;
+	list-style: none;
+}
+.navigation li.list-navigation-current
+{
+	font-weight: bold;
+}
+.navigation a
+{
+	text-decoration: none;
+}
+.navigation .div-clear
+{
+	clear: both;
+}
