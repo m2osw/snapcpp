@@ -9,7 +9,7 @@
 
 override_dh_fixperms:
 	dh_fixperms
-	chmod u+s usr/sbin/iplock
+	chmod u+s debian/iplock/usr/sbin/iplock
 
 override_dh_install:
 	@echo "skip dh_install"
