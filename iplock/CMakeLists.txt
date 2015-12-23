@@ -37,7 +37,7 @@ set(IPLOCK_PATCH 1)
 
 project(iplock)
 
-INCLUDE(GNUInstallDirs)
+include(GNUInstallDirs)
 
 # Put the version in the cpp file
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/iplock.h.in ${CMAKE_CURRENT_BINARY_DIR}/iplock.h )
