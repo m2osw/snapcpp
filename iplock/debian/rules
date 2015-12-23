@@ -7,6 +7,6 @@
 %:
 	dh $@ 
 
-#override_dh_fixperms:
-#	dh_fixperms
-#	chmod u+s usr/sbin/iplock
+override_dh_fixperms:
+	dh_fixperms
+	chmod u+s usr/sbin/iplock
