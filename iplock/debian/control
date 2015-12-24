@@ -2,7 +2,7 @@ Source: iplock
 Section: net
 Priority: optional
 Maintainer: Alexis Wilke <alexis@m2osw.com>
-Build-Depends: debhelper, cmake, snapcmakemodules (>= 1.0.24.210~trusty), doxygen
+Build-Depends: debhelper, cmake, snapcmakemodules (>= 1.0.24.211~trusty), doxygen
 Standards-Version: 3.9.4
 Homepage: http://www.snapwebsites.org/
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
