@@ -199,6 +199,36 @@ public:
         STATUS_PASSWORD         // user has to enter a new password (marked as "PASSWORD")
     };
 
+    class user_security_t
+    {
+    public:
+        void                        set_user_key(QString const & user_key);
+        void                        set_email(QString const & email);
+        void                        set_password(QString const & password);
+        void                        set_policy(QString const & policy);
+        void                        set_bypass_blacklist(bool const bypass);
+        void                        set_status(status_t status);
+
+        bool                        has_password() const;
+
+        QString const &             get_user_key() const;
+        QString const &             get_email() const;
+        QString const &             get_password() const;
+        QString const &             get_policy() const;
+        bool                        get_bypass_blacklist() const;
+        content::permission_flag &  get_secure();
+        status_t                    get_status() const;
+
+    private:
+        QString                     f_user_key;
+        QString                     f_email;
+        QString                     f_password = "!";
+        QString                     f_policy = "users";
+        bool                        f_bypass_blacklist = false;
+        content::permission_flag    f_secure;
+        status_t                    f_status = status_t::STATUS_VALID;
+    };
+
     class user_logged_info_t
     {
     public:
@@ -274,7 +304,7 @@ public:
     // links::links_cloned implementation
     virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
 
-    SNAP_SIGNAL_WITH_MODE(check_user_security, (QString const & user_key, QString const & email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure), (user_key, email, password, bypass_blacklist, secure), START_AND_DONE);
+    SNAP_SIGNAL_WITH_MODE(check_user_security, (user_security_t & security), (security), START_AND_DONE);
     SNAP_SIGNAL_WITH_MODE(user_registered, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_verified, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_logged_in, (user_logged_info_t & logged_info), (logged_info), NEITHER);
@@ -295,7 +325,7 @@ public:
     static QString          create_password();
     void                    create_password_salt(QByteArray & salt);
     void                    encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash);
-    status_t                register_user(QString const & email, QString const & password);
+    status_t                register_user(QString const & email, QString const & password, QString & reason);
     void                    verify_user(content::path_info_t & ipath);
     status_t                user_status(QString const & email, QString & status_key);
     sessions::sessions::session_info const & get_session() const;

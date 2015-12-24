@@ -323,16 +323,12 @@ DTD of the XSLT 2.0.
 <!ELEMENT item ANY>
 
 <!ELEMENT attachment ANY>
-<!ATTLIST attachment foo CDATA #REQUIRED>
 
 <!ELEMENT background-value ANY>
-<!ATTLIST background-value foo CDATA #REQUIRED>
 
 <!ELEMENT help ANY>
-<!ATTLIST help foo CDATA #REQUIRED>
 
 <!ELEMENT tooltip ANY>
-<!ATTLIST tooltip foo CDATA #REQUIRED>
 
 
 <!-- TODO: I'm not too sure how I can handle "special" tags used in

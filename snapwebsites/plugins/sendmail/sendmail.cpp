@@ -1590,7 +1590,7 @@ void sendmail::bootstrap(snap_child * snap)
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_cron, _1);
     SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
-    SNAP_LISTEN(sendmail, "users", users::users, check_user_security, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(sendmail, "users", users::users, check_user_security, _1);
 
     SNAP_TEST_PLUGIN_SUITE_LISTEN(sendmail);
 }
@@ -1713,9 +1713,15 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
     // any password checked.
     //
     content::permission_flag secure;
-    users_plugin->check_user_security(user_key, user_email, "!", bypass_blacklist, secure);
+    users::users::user_security_t security;
+    security.set_user_key(user_key);
+    security.set_email(user_email);
+    //security.set_password("!"); -- leave the default
+    //security.set_policy("users"); -- leave the default
+    security.set_bypass_blacklist(bypass_blacklist);
+    users_plugin->check_user_security(security);
 
-    return secure.allowed();
+    return security.get_secure().allowed();
 }
 
 
@@ -1749,20 +1755,14 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
  * signal. The validate_email() accepts the email you are about to
  * post_email() so it can check the bypass flag of that email.
  *
- * \param[in] user_key  The user_key (the canoniconalized email).
- * \param[in] email  The email of the user about to be registered.
- * \param[in] password  The user password.
- * \param[in,out] secure  The flag defining whether the flag is secure.
+ * \param[in,out] security  The user security parameters.
  *
  * \return EMAIL_STATUS_VALID if the email is considered valid, another status
  *         in all other cases.
  */
-void sendmail::on_check_user_security(QString const & user_key, QString const & user_email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure)
+void sendmail::on_check_user_security(users::users::user_security_t & security)
 {
-    NOTUSED(user_key);
-    NOTUSED(password);
-
-    if(!secure.allowed())
+    if(!security.get_secure().allowed())
     {
         return;
     }
@@ -1775,7 +1775,7 @@ void sendmail::on_check_user_security(QString const & user_key, QString const & 
     {
         QString diagnostic;
         QString const bounce_diagnostic_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE)).arg(0));
-        if(users_plugin->load_user_parameter(user_email, bounce_diagnostic_name, diagnostic))
+        if(users_plugin->load_user_parameter(security.get_email(), bounce_diagnostic_name, diagnostic))
         {
             if(diagnostic.startsWith("5."))
             {
@@ -1794,9 +1794,10 @@ void sendmail::on_check_user_security(QString const & user_key, QString const & 
                 //
                 int64_t arrival_date_us(0);
                 QString const bounce_arrival_date_name(QString("%1%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE)).arg(0));
-                if(users_plugin->load_user_parameter(user_email, bounce_arrival_date_name, arrival_date_us))
+                if(users_plugin->load_user_parameter(security.get_email(), bounce_arrival_date_name, arrival_date_us))
                 {
                     // if we tried more than 4 months ago, we can try again
+                    // (i.e. the user may have been created in the meantime)
                     //
                     if(f_snap->get_start_date() > arrival_date_us + 86400 * 124)
                     {
@@ -1805,7 +1806,8 @@ void sendmail::on_check_user_security(QString const & user_key, QString const & 
                 }
                 if(arrival_date_us == 0)
                 {
-                    secure.not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_email));
+                    security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(security.get_email()));
+                    security.set_status(users::users::status_t::STATUS_BLOCKED);
                     return;
                 }
             }
@@ -1813,8 +1815,8 @@ void sendmail::on_check_user_security(QString const & user_key, QString const & 
     }
 
     QString level;
-    if(users_plugin->load_user_parameter(user_email, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level)
-    || users_plugin->load_user_parameter(user_email, QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level))
+    if(users_plugin->load_user_parameter(security.get_email(), get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level)
+    || users_plugin->load_user_parameter(security.get_email(), QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level))
     {
         // If the user was put in the Angry List then we have no way
         // to send any emails... so the user cannot register or change
@@ -1825,7 +1827,7 @@ void sendmail::on_check_user_security(QString const & user_key, QString const & 
         // email.)
         //
         if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
-        && bypass_blacklist)
+        && security.get_bypass_blacklist())
         {
             // allow these emails
             level = get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_WHITELIST);
@@ -1833,7 +1835,8 @@ void sendmail::on_check_user_security(QString const & user_key, QString const & 
         if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
         || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST))
         {
-            secure.not_permitted(QString("\"%1\" does not look like a valid email address.").arg(user_email));
+            security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(security.get_email()));
+            security.set_status(users::users::status_t::STATUS_BLOCKED);
             return;
         }
     }
@@ -2766,7 +2769,33 @@ void sendmail::attach_user_email(email const & e)
         // sort of account because otherwise we could not easily track
         // people's wishes (i.e. whether they do not want to receive our
         // emails); this system allows us to block all emails
-        users_plugin->register_user(m.f_email_only.c_str(), "!");
+        QString reason;
+        users::users::status_t status(users_plugin->register_user(m.f_email_only.c_str(), "!", reason));
+        switch(status)
+        {
+        case users::users::status_t::STATUS_NEW:
+            // TODO: Since we automatically created this account, change the
+            //       status from NEW to AUTO...
+            //
+            break;
+
+        // these are considered valid, but they should not occur since if
+        // the account already had such a status we should not be in
+        // this if() block...
+        //
+        case users::users::status_t::STATUS_VALID:
+        case users::users::status_t::STATUS_AUTO:
+        case users::users::status_t::STATUS_PASSWORD:
+            break;
+
+        default:
+            // the email is not attached to a valid account, we cannot
+            // send anything to anyone...
+            //
+            SNAP_LOG_ERROR("Could not create a new account for email \"")(m.f_email_only)("\" (")(reason)("). No email will be sent to that user.");
+            return;
+
+        }
     }
 
     // TODO: if the user is a placeholder (i.e. user changed his email

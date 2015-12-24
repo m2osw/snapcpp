@@ -19,15 +19,59 @@
 
 #include "../permissions/permissions.h"
 
+#include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
 
+#include <algorithm>
 #include <iostream>
+
+#include <openssl/rand.h>
+
+#include <QChar>
 
 #include "poison.h"
 
 
 SNAP_PLUGIN_START(password, 1, 0)
+
+
+
+namespace
+{
+
+// random bytes generator
+//
+class random_generator
+{
+public:
+    static const int    RANDOM_BUFFER_SIZE = 256;
+
+    unsigned char get_byte()
+    {
+        if(f_pos >= RANDOM_BUFFER_SIZE)
+        {
+            f_pos = 0;
+        }
+
+        if(f_pos == 0)
+        {
+            // get the random bytes
+            RAND_bytes(f_buf, RANDOM_BUFFER_SIZE);
+        }
+
+        ++f_pos;
+        return f_buf[f_pos - 1];
+    }
+
+private:
+    unsigned char       f_buf[RANDOM_BUFFER_SIZE];
+    size_t              f_pos = 0;
+};
+
+
+} // no name namespace
+
 
 
 /* \brief Get a fixed password name.
@@ -46,11 +90,14 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_DIGITS:
         return "password::minimum_digits";
 
+    case name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH:
+        return "password::minimum_length";
+
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_LETTERS:
         return "password::minimum_letters";
 
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS:
-        return "password::minimum_uppercase_letters";
+        return "password::minimum_lowercase_letters";
 
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_SPACES:
         return "password::minimum_spaces";
@@ -66,6 +113,9 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST:
         return "password::check_blacklist";
+
+    case name_t::SNAP_NAME_PASSWORD_TABLE:
+        return "password";
 
     default:
         // invalid index
@@ -174,7 +224,7 @@ int64_t password::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 23, 16, 56, 51, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -229,7 +279,21 @@ void password::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(password, "users", users::users, check_user_security, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(password, "editor", editor::editor, prepare_editor_form, _1);
+    SNAP_LISTEN(password, "users", users::users, check_user_security, _1);
+}
+
+
+/** \brief Add the locale widget to the editor XSLT.
+ *
+ * The editor is extended by the locale plugin by adding a time zone
+ * and other various widgets.
+ *
+ * \param[in] e  A pointer to the editor plugin.
+ */
+void password::on_prepare_editor_form(editor::editor * e)
+{
+    e->add_editor_widget_templates_from_file(":/xsl/password_widgets/password-form.xsl");
 }
 
 
@@ -260,158 +324,266 @@ QtCassandra::QCassandraTable::pointer_t password::get_password_table()
 /** \brief Check a password of a user.
  *
  * This function checks the user password for strength and against a
- * blacklist
+ * blacklist.
+ *
+ * \note
+ * The password may be set to "!" in which case it gets ignored. This
+ * is because "!" cannot be valid as the editor will enforce a length
+ * of at least 8 characters (10 by default) and thus "!" cannot in
+ * any way represent a password entered by the end user.
  *
  * \param[in] user_key  The key to a user (i.e. canonicalized email).
  * \param[in] email  The original user email address.
  * \param[in] password  The password we want to check.
+ * \param[in] policy  The name of the policy used to check this user's password.
  * \param[in] bypass_blacklist  Whether the email blacklist should be bypassed.
  * \param[in,out] secure  Whether the password / user is considered secure.
  */
-void password::on_check_user_security(QString const & user_key, QString const & email, QString const & user_password, bool const bypass_blacklist, content::permission_flag & secure)
+void password::on_check_user_security(users::users::user_security_t & security)
 {
-    NOTUSED(user_key);
-    NOTUSED(email);
-    NOTUSED(bypass_blacklist);
-
-    if(!secure.allowed())
+    if(!security.get_secure().allowed()
+    || !security.has_password())
     {
         return;
     }
 
-    // count the various types of characters
-    int lowercase_letters(0);
-    int uppercase_letters(0);
-    int letters(0);
-    int digits(0);
-    int spaces(0);
-    int special(0);
-    int unicode(0);
-
-    for(QChar const * s(user_password.constData()); s->isNull(); ++s)
+    QString const reason(check_password_against_policy(security.get_password(), security.get_policy()));
+    if(!reason.isEmpty())
     {
-        switch(s->category())
+        SNAP_LOG_TRACE("password::on_check_user_security(): password was not accepted: ")(reason);
+        security.get_secure().not_permitted(reason);
+        security.set_status(users::users::status_t::STATUS_PASSWORD);
+    }
+}
+
+
+/** \brief Check password against a specific policy.
+ *
+ * This function is used to calculate the strength of a password depending
+ * on a policy.
+ *
+ * \param[in] user_password  The password being checked.
+ * \param[in] policy  The policy used to verify the password strength.
+ *
+ * \return A string with some form of error message about the password
+ *         weakness(es) or an empty string if the password is okay.
+ */
+QString password::check_password_against_policy(QString const & user_password, QString const & policy)
+{
+    policy_t const pp(policy);
+
+    policy_t up;
+    up.count_password_characters(user_password);
+
+    QString const too_small(up.compare(pp));
+    if(!too_small.isEmpty())
+    {
+        return too_small;
+    }
+
+    return pp.is_blacklisted(user_password);
+}
+
+
+/** \brief Create a default password.
+ *
+ * In some cases an administrator may want to create an account for a user
+ * which should then have a valid, albeit unknown, password.
+ *
+ * This function can be used to create that password.
+ *
+ * It is strongly advised to NOT send such passwords to the user via email
+ * because they will contain all sorts of "strange" characters and emails
+ * are notoriously not safe.
+ *
+ * The password will be at least 64 characters, more if the policy
+ * requires more. The type of characters is also defined by the
+ * policy and quite shuffled before the function returns.
+ *
+ * \param[in] policy  Create password that is valid for this policy.
+ *
+ * \return The string with the new password.
+ */
+QString password::create_password(QString const & policy)
+{
+    // to create a password that validates against a certain policy
+    // we have to make sure that we have all the criterias covered
+    // so we need to have the policy information and generate the
+    // password as expected
+    //
+    policy_t pp(policy);
+
+    random_generator gen;
+
+    QString result;
+
+    // to generate characters of each given type, we loop through
+    // each set and then we randomize the final string
+    //
+    int64_t const minimum_lowercase_letters(pp.get_minimum_lowercase_letters());
+    if(minimum_lowercase_letters > 0)
+    {
+        for(int64_t idx(0); idx < minimum_lowercase_letters; ++idx)
         {
-        case QChar::Letter_Lowercase:
-        case QChar::Letter_Other:
-            ++letters;
-            ++lowercase_letters;
-            break;
+            // lower case letters are between 'a' and 'z'
+            ushort const c(gen.get_byte() % 26 + 'a');
+            result += QChar(c);
+        }
+    }
 
-        case QChar::Letter_Uppercase:
-        case QChar::Letter_Titlecase:
-            ++letters;
-            ++uppercase_letters;
-            break;
+    int64_t const minimum_uppercase_letters(pp.get_minimum_uppercase_letters());
+    if(minimum_uppercase_letters > 0)
+    {
+        for(int64_t idx(0); idx < minimum_uppercase_letters; ++idx)
+        {
+            // lower case letters are between 'A' and 'Z'
+            ushort const c(gen.get_byte() % 26 + 'A');
+            result += QChar(c);
+        }
+    }
 
-        case QChar::Number_DecimalDigit:
-        case QChar::Number_Letter:
-        case QChar::Number_Other:
-            ++digits;
-            break;
-
-        case QChar::Mark_SpacingCombining:
-        case QChar::Separator_Space:
-        case QChar::Separator_Line:
-        case QChar::Separator_Paragraph:
-            ++spaces;
-            ++special; // it is also considered special
-            break;
-
-        default:
-            if(s->unicode() < 0x100)
+    int64_t const minimum_letters(pp.get_minimum_letters());
+    if(minimum_letters > minimum_lowercase_letters + minimum_uppercase_letters)
+    {
+        for(int64_t idx(minimum_lowercase_letters + minimum_uppercase_letters); idx < minimum_uppercase_letters; ++idx)
+        {
+            // letters are between 'A' and 'Z' or 'a' and 'z'
+            ushort c(gen.get_byte() % (26 * 2) + 'A');
+            if(c > 'Z')
             {
-                ++special;
+                c += 'a' - 'Z' - 1;
             }
-            break;
-
+            result += QChar(c);
         }
+    }
 
-        if(s->unicode() >= 0x100)
+    int64_t const minimum_digits(pp.get_minimum_digits());
+    if(minimum_digits > 0)
+    {
+        for(int64_t idx(0); idx < minimum_digits; ++idx)
         {
-            ++unicode;
+            // digits are between '0' and '9'
+            int byte(gen.get_byte());
+            ushort const c1(byte % 10 + '0');
+            result += QChar(c1);
+            if(idx + 1 < minimum_digits)
+            {
+                ++idx;
+                ushort const c2(byte / 10 % 10 + '0');
+                result += QChar(c2);
+            }
         }
     }
 
-    content::content * content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-
-    // then check that it is enough of each type
-    content::path_info_t settings_ipath;
-    settings_ipath.set_path("admin/settings/password");
-    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
-
-    // enough lowercase letters?
-    int64_t const minimum_lowercase_letters(settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS))->value().safeInt64Value(0, 0));
-    if(lowercase_letters < minimum_lowercase_letters)
+    int64_t const minimum_spaces(pp.get_minimum_spaces());
+    if(minimum_spaces > 0)
     {
-        secure.not_permitted("not enough lowercase letter characters");
-        return;
+        for(int64_t idx(0); idx < minimum_spaces; ++idx)
+        {
+            // TBD: should we support all the different types of
+            //      spaces instead?
+            ushort const c(' ');
+            result += QChar(c);
+        }
     }
 
-    // enough uppercase letters?
-    int64_t const minimum_uppercase_letters(settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UPPERCASE_LETTERS))->value().safeInt64Value(0, 0));
-    if(uppercase_letters < minimum_uppercase_letters)
+    int64_t const minimum_special(pp.get_minimum_special());
+    if(minimum_special > minimum_spaces)
     {
-        secure.not_permitted("not enough uppercase letter characters");
-        return;
+        for(int64_t idx(minimum_spaces); idx < minimum_special; )
+        {
+            ushort const byte(gen.get_byte());
+            QChar const c(byte);
+            switch(c.category())
+            {
+            case QChar::Letter_Lowercase:
+            case QChar::Letter_Other:
+            case QChar::Letter_Uppercase:
+            case QChar::Letter_Titlecase:
+            case QChar::Number_DecimalDigit:
+            case QChar::Number_Letter:
+            case QChar::Number_Other:
+            case QChar::Mark_SpacingCombining:
+            case QChar::Separator_Space:
+            case QChar::Separator_Line:
+            case QChar::Separator_Paragraph:
+                break;
+
+            default:
+                result += c;
+                ++idx;
+                break;
+
+            }
+        }
     }
 
-    // enough letters?
-    int64_t const minimum_letters(settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LETTERS))->value().safeInt64Value(0, 0));
-    if(letters < minimum_letters)
+    int64_t const minimum_unicode(pp.get_minimum_unicode());
+    if(minimum_unicode > 0)
     {
-        secure.not_permitted("not enough letter characters");
-        return;
+        for(int64_t idx(0); idx < minimum_unicode; )
+        {
+            // Unicode are characters over 0x0100, although
+            // we avoid surrogates because they are more complicated
+            // to handle and not as many characters are assigned in
+            // those pages
+            //
+            ushort const s((gen.get_byte() << 8) | gen.get_byte());
+            if(s >= 0x0100 && (s < 0xD800 || s > 0xDFFF))
+            {
+                QChar const c(s);
+                if(c.unicodeVersion() != QChar::Unicode_Unassigned)
+                {
+                    // only keep assigned (known) unicode characters
+                    //
+                    // TODO: 
+                    //
+                    result += c;
+                    ++idx;
+                }
+            }
+        }
     }
 
-    // enough digits?
-    int64_t const minimum_digits(settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_DIGITS))->value().safeInt64Value(0, 0));
-    if(digits < minimum_digits)
+    // we want a minimum of 64 character long passwords at this point
+    //
+    for(int64_t const minimum_length(std::max(pp.get_minimum_length(), static_cast<int64_t>(64))); result.length() < minimum_length; )
     {
-        secure.not_permitted("not enough digit characters");
-        return;
-    }
-
-    // enough spaces?
-    int64_t const minimum_spaces(settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPACES))->value().safeInt64Value(0, 0));
-    if(spaces < minimum_spaces)
-    {
-        secure.not_permitted("not enough space characters");
-        return;
-    }
-
-    // enough special?
-    int64_t const minimum_special(settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPECIAL))->value().safeInt64Value(0, 0));
-    if(special < minimum_special)
-    {
-        secure.not_permitted("not enough special characters");
-        return;
-    }
-
-    // enough unicode?
-    int64_t const minimum_unicode(settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UNICODE))->value().safeInt64Value(0, 0));
-    if(unicode < minimum_unicode)
-    {
-        secure.not_permitted("not enough unicode characters");
-        return;
-    }
-
-    // also check the blacklist?
-    int8_t const check_blacklist(settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST))->value().safeSignedCharValue(0, 0));
-    if(check_blacklist)
-    {
-        // the password has to be the row name to be spread on all nodes
+        // include some other characters from the ASCII range to reach
+        // the minimum length of the policy
         //
-        QtCassandra::QCassandraTable::pointer_t table(get_password_table());
-        if(table->exists(user_password))
-        {
-            secure.not_permitted("this password is blacklisted and cannot be used");
-            return;
-        }
+        ushort const byte(gen.get_byte() % (0x7E - 0x20 + 1) + 0x20);
+        result += QChar(byte);
     }
 
-    // password is all good
+    // shuffle all the characters once so that way it does not appear
+    // in the order it was created above
+    //
+    for(int j(0); j < result.length(); ++j)
+    {
+        int i(0);
+        if(result.length() < 256)
+        {
+            i = gen.get_byte() % result.length();
+        }
+        else
+        {
+            i = ((gen.get_byte() << 8) | gen.get_byte()) % result.length();
+        }
+        QChar c(result[i]);
+        result[i] = result[j];
+        result[j] = c;
+    }
+
+    // make sure that it worked as expected
+    //
+    QString const reason(check_password_against_policy(result, policy));
+    if(!reason.isEmpty())
+    {
+        throw snap_logic_exception("somehow we generated a password that did not match the policy we were working against...");
+    }
+
+    return result;
 }
 
 

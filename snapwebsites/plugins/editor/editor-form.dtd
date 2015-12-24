@@ -54,7 +54,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
      (line-edit|text-edit|image-box|...)
      but that would prevent extensions from being used so we keep the
      NMTOKEN in that place... -->
-<!ELEMENT widget (label|tooltip|help|background-value|attachment|sizes|filters|geometry|required|classes|value|preset|default|state)*>
+<!ELEMENT widget (label|tooltip|help|background-value|background-confirm|attachment|sizes|filters|geometry|required|classes|value|preset|default|state)*>
 <!ATTLIST widget id ID #REQUIRED
                  type NMTOKEN #REQUIRED
                  field CDATA #IMPLIED
@@ -74,6 +74,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT tooltip (#PCDATA|%html-data;)*>
 <!ELEMENT help (#PCDATA|%html-data;)*>
 <!ELEMENT background-value (#PCDATA|%html-data;)*>
+<!ELEMENT background-confirm (#PCDATA|%html-data;)*>
 <!ELEMENT required (#PCDATA)*>
 <!ELEMENT classes (#PCDATA)*>
 <!ELEMENT state (#PCDATA)*>

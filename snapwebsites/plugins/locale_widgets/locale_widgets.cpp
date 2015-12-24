@@ -131,7 +131,7 @@ QString locale_widgets::icon() const
 QString locale_widgets::description() const
 {
     return "Define locale functions to be used throughout all the plugins."
-        " It handles time and date, timezone, numbers, currency, etc.";
+          " It handles time and date, timezone, numbers, currency, etc.";
 }
 
 

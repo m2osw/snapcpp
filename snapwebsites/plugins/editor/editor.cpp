@@ -441,7 +441,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 21, 0, 25, 56, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 23, 4, 46, 56, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -5190,7 +5190,7 @@ void editor::add_editor_widget_templates(QDomDocument doc)
 }
 
 
-void editor::add_editor_widget_templates(QString const& xslt)
+void editor::add_editor_widget_templates(QString const & xslt)
 {
     if(f_editor_form.documentElement().isNull())
     {

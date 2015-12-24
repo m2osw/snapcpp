@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../users/users.h"
+#include "../editor/editor.h"
 
 namespace snap
 {
@@ -28,6 +28,7 @@ enum class name_t
 {
     SNAP_NAME_PASSWORD_CHECK_BLACKLIST,
     SNAP_NAME_PASSWORD_MINIMUM_DIGITS,
+    SNAP_NAME_PASSWORD_MINIMUM_LENGTH,
     SNAP_NAME_PASSWORD_MINIMUM_LETTERS,
     SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS,
     SNAP_NAME_PASSWORD_MINIMUM_SPACES,
@@ -42,21 +43,54 @@ char const * get_name(name_t name) __attribute__ ((const));
 class password_exception : public snap_exception
 {
 public:
-    password_exception(char const *        what_msg) : snap_exception("versions", what_msg) {}
-    password_exception(std::string const & what_msg) : snap_exception("versions", what_msg) {}
-    password_exception(QString const &     what_msg) : snap_exception("versions", what_msg) {}
+    explicit password_exception(char const *        what_msg) : snap_exception("versions", what_msg) {}
+    explicit password_exception(std::string const & what_msg) : snap_exception("versions", what_msg) {}
+    explicit password_exception(QString const &     what_msg) : snap_exception("versions", what_msg) {}
 };
 
 class password_exception_invalid_content_xml : public password_exception
 {
 public:
-    password_exception_invalid_content_xml(char const *        what_msg) : password_exception(what_msg) {}
-    password_exception_invalid_content_xml(std::string const & what_msg) : password_exception(what_msg) {}
-    password_exception_invalid_content_xml(QString const &     what_msg) : password_exception(what_msg) {}
+    explicit password_exception_invalid_content_xml(char const *        what_msg) : password_exception(what_msg) {}
+    explicit password_exception_invalid_content_xml(std::string const & what_msg) : password_exception(what_msg) {}
+    explicit password_exception_invalid_content_xml(QString const &     what_msg) : password_exception(what_msg) {}
 };
 
 
 
+
+
+class policy_t
+{
+public:
+    explicit        policy_t(QString const & policy_name = QString());
+
+    void            count_password_characters(QString const & password);
+
+    int64_t         get_minimum_length() const;
+    int64_t         get_minimum_lowercase_letters() const;
+    int64_t         get_minimum_uppercase_letters() const;
+    int64_t         get_minimum_letters() const;
+    int64_t         get_minimum_digits() const;
+    int64_t         get_minimum_spaces() const;
+    int64_t         get_minimum_special() const;
+    int64_t         get_minimum_unicode() const;
+    bool            get_check_blacklist() const;
+
+    QString         compare(policy_t const & rhs) const;
+    QString         is_blacklisted(QString const & user_password) const;
+
+private:
+    int64_t         f_minimum_length = 0;
+    int64_t         f_minimum_lowercase_letters = 0;
+    int64_t         f_minimum_uppercase_letters = 0;
+    int64_t         f_minimum_letters = 0;
+    int64_t         f_minimum_digits = 0;
+    int64_t         f_minimum_spaces = 0;
+    int64_t         f_minimum_special = 0;
+    int64_t         f_minimum_unicode = 0;
+    bool            f_check_blacklist = false;
+};
 
 
 
@@ -76,9 +110,14 @@ public:
     virtual void        bootstrap(snap_child * snap);
 
     // users signals
-    void                on_check_user_security(QString const & user_key, QString const & email, QString const & user_password, bool const bypass_blacklist, content::permission_flag & secure);
+    void                on_check_user_security(users::users::user_security_t & security);
+
+    // editor signals
+    void                on_prepare_editor_form(editor::editor * e);
 
     QtCassandra::QCassandraTable::pointer_t get_password_table();
+    QString             check_password_against_policy(QString const & user_password, QString const & policy);
+    QString             create_password(QString const & policy = "users");
 
 private:
     void                initial_update(int64_t variables_timestamp);

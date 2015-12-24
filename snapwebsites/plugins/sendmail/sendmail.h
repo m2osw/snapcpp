@@ -16,9 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../sessions/sessions.h"
-#include "../filter/filter.h"
-#include "../path/path.h"
+#include "../users/users.h"
 
 #include "../test_plugin_suite/test_plugin_suite.h"
 
@@ -259,7 +257,7 @@ public:
     virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
 
     // users signals
-    void                    on_check_user_security(QString const & user_key, QString const & user_email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure);
+    void                    on_check_user_security(users::users::user_security_t & security);
 
     bool                    validate_email(QString const & user_email, email const * e);
     void                    post_email(email const & e);

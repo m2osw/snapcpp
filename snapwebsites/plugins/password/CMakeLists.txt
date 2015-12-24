@@ -50,17 +50,30 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     password.qrc
 )
 
-snap_validate_xml( content.xml content/content.dtd )
 
 
+snap_validate_xml( content.xml                          content/content.dtd )
+
+snap_validate_xml( editor/password-policy-page.xml      editor/editor-form.dtd )
+
+snap_validate_xml( layout/password-policy-parser.xsl    layout/simplified-xslt20.dtd )
+snap_validate_xml( password_widgets/password-form.xsl   layout/simplified-xslt20.dtd )
+
+snap_validate_js( password.js )
 
 
 add_library(password SHARED
     password.cpp
     password.h
+    policy.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    editor/password-policy-page.xml
+    layout/password-policy-parser.xsl
+    password.css
+    password.js
+    password_widgets/password-form.xsl
 )
 
 target_link_libraries( password ${QT_LIBRARIES} )

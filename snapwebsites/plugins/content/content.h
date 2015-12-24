@@ -135,105 +135,105 @@ char const * get_name(name_t name) __attribute__ ((const));
 class content_exception : public snap_exception
 {
 public:
-    content_exception(char const *        what_msg) : snap_exception("content", what_msg) {}
-    content_exception(std::string const & what_msg) : snap_exception("content", what_msg) {}
-    content_exception(QString const &     what_msg) : snap_exception("content", what_msg) {}
+    explicit content_exception(char const *        what_msg) : snap_exception("content", what_msg) {}
+    explicit content_exception(std::string const & what_msg) : snap_exception("content", what_msg) {}
+    explicit content_exception(QString const &     what_msg) : snap_exception("content", what_msg) {}
 };
 
 class content_exception_content_invalid_state : public content_exception
 {
 public:
-    content_exception_content_invalid_state(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_content_invalid_state(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_content_invalid_state(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_content_invalid_state(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_content_invalid_state(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_content_invalid_state(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_content_not_initialized : public content_exception
 {
 public:
-    content_exception_content_not_initialized(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_content_not_initialized(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_content_not_initialized(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_content_not_initialized(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_content_not_initialized(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_content_not_initialized(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_invalid_content_xml : public content_exception
 {
 public:
-    content_exception_invalid_content_xml(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_content_xml(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_content_xml(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_content_xml(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_content_xml(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_content_xml(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_parameter_not_defined : public content_exception
 {
 public:
-    content_exception_parameter_not_defined(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_parameter_not_defined(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_parameter_not_defined(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_parameter_not_defined(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_parameter_not_defined(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_parameter_not_defined(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_content_already_defined : public content_exception
 {
 public:
-    content_exception_content_already_defined(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_content_already_defined(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_content_already_defined(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_content_already_defined(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_content_already_defined(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_content_already_defined(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_circular_dependencies : public content_exception
 {
 public:
-    content_exception_circular_dependencies(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_circular_dependencies(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_circular_dependencies(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_circular_dependencies(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_circular_dependencies(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_circular_dependencies(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_type_mismatch : public content_exception
 {
 public:
-    content_exception_type_mismatch(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_type_mismatch(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_type_mismatch(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_type_mismatch(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_type_mismatch(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_type_mismatch(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_invalid_sequence : public content_exception
 {
 public:
-    content_exception_invalid_sequence(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_sequence(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_sequence(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_sequence(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_sequence(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_sequence(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_invalid_name : public content_exception
 {
 public:
-    content_exception_invalid_name(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_name(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_name(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_name(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_name(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_name(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_unexpected_revision_type : public content_exception
 {
 public:
-    content_exception_unexpected_revision_type(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_unexpected_revision_type(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_unexpected_revision_type(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_unexpected_revision_type(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_unexpected_revision_type(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_unexpected_revision_type(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_data_missing : public content_exception
 {
 public:
-    content_exception_data_missing(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_data_missing(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_data_missing(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_data_missing(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_data_missing(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_data_missing(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_io_error : public content_exception
 {
 public:
-    content_exception_io_error(char const *        what_msg) : content_exception(what_msg) {}
-    content_exception_io_error(std::string const & what_msg) : content_exception(what_msg) {}
-    content_exception_io_error(QString const &     what_msg) : content_exception(what_msg) {}
+    explicit content_exception_io_error(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_io_error(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_io_error(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 

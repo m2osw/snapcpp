@@ -114,6 +114,7 @@ char const * g_minimum_plugins[] =
     "links",
     "list",
     "listener",
+    "locale",
     "menu",
     "messages",
     "output",

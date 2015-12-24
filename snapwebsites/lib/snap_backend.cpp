@@ -1335,17 +1335,17 @@ void snap_backend::capture_zombies(pid_t pid)
             int const exit_code(WEXITSTATUS(status));
             if(exit_code != 0)
             {
-                SNAP_LOG_ERROR("child process for backend ")(f_action)(f_cron_action)(" returned with an error: ")(exit_code)(".");
+                SNAP_LOG_ERROR("child process for backend ")(f_action)(" returned with an error: ")(exit_code)(".");
             }
         }
         else if(WIFSIGNALED(status))
         {
             int const sig(WTERMSIG(status));
-            SNAP_LOG_ERROR("child process for backend ")(f_action)(f_cron_action)(" returned abnormally because of signal \"")(strsignal(sig))("\" (")(sig)(").");
+            SNAP_LOG_ERROR("child process for backend ")(f_action)(" returned abnormally because of signal \"")(strsignal(sig))("\" (")(sig)(").");
         }
         else
         {
-            SNAP_LOG_ERROR("child process for backend ")(f_action)(f_cron_action)(" returned abnormally.");
+            SNAP_LOG_ERROR("child process for backend ")(f_action)(" returned abnormally.");
         }
     }
 

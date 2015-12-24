@@ -109,11 +109,11 @@ snapwebsites.EditorWidgetTypeLocaleTimezone = function()
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeLocaleTimezone, snapwebsites.EditorWidgetType);
 
 
-/** \brief Return "hidden".
+/** \brief Return "locale_timezone".
  *
- * Return the name of the hidden type.
+ * Return the name of the locale timezone widget type.
  *
- * @return {string} The name of the hidden type.
+ * @return {string} The name of the locale timezone widget type.
  * @override
  */
 snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.getType = function() // virtual

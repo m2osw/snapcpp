@@ -1462,7 +1462,8 @@ void users_ui::process_register_form()
         return;
     }
 
-    users::users::status_t const status(users_plugin->register_user(email, f_snap->postenv("password")));
+    QString reason;
+    users::users::status_t const status(users_plugin->register_user(email, f_snap->postenv("password"), reason));
     switch(status)
     {
     case users::users::status_t::STATUS_NEW:
@@ -1493,6 +1494,28 @@ void users_ui::process_register_form()
                 "You are not allowed to create an account on this website.",
                 QString("User \"%1\" is blocked and does not have permission to create an account here.").arg(email));
         NOTREACHED();
+        break;
+
+    case users::users::status_t::STATUS_PASSWORD:
+        if(!reason.isEmpty())
+        {
+            // password not viewed as secure enough
+            messages->set_error(
+                "Password Not Strong Enough",
+                QString("The password you specified is not considered secure enough. Please, try again with a stronger password. Reason: %1").arg(reason),
+                "password used is either not strong enough or was black listed.",
+                true
+            );
+        }
+        else
+        {
+            messages->set_error(
+                "User Already Exists",
+                QString("A user with email \"%1\" already exists. However, he needs to verify his email address. If it is you, try the Enter Verification Code link.").arg(email),
+                QString("user \"%1\" trying to register a second time.").arg(email),
+                true
+            );
+        }
         break;
 
     default:

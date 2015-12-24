@@ -234,7 +234,11 @@ bool info::plugin_selection_on_path_execute(content::path_info_t & ipath)
 
     QtCassandra::QCassandraValue plugins(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS)));
     QString site_plugins(plugins.stringValue());
-    snap_string_list plugin_list(site_plugins.split(','));
+    snap_string_list plugin_list;
+    if(!site_plugins.isEmpty())
+    {
+        plugin_list = site_plugins.split(',');
+    }
 
     QString const function(cpath.mid(strlen(get_name(name_t::SNAP_NAME_INFO_PLUGIN_SELECTION)) + 1));
     if(function.startsWith("install/"))

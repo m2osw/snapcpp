@@ -2814,6 +2814,8 @@ QString users::get_user_path(QString const & email)
  *
  * \param[in] email  The email of the user. It must be a valid email address.
  * \param[in] password  The password of the user or "!".
+ * \param[out] reason  If the function returns something other than STATUS_NEW
+ *                     or STATUS_VALID, the reason for the error.
  *
  * \return STATUS_NEW if the user was just created and a verification email
  *         is expected to be sent to him or her;
@@ -2822,9 +2824,13 @@ QString users::get_user_path(QString const & email)
  *         STATUS_BLOCKED if this email address is blocked on this website
  *         or entire Snap! environment or the user already exists but was
  *         blocked by an administrator;
+ *         STATUS_PASSWORD and !reason.isEmpty() if the password is considered
+ *         insecure: too simple or found in the password blacklist;
  */
-users::status_t users::register_user(QString const & email, QString const & password)
+users::status_t users::register_user(QString const & email, QString const & password, QString & reason)
 {
+    reason.clear();
+
     QString const user_key(email_to_user_key(email));
 
     QByteArray salt;
@@ -2871,12 +2877,18 @@ users::status_t users::register_user(QString const & email, QString const & pass
     // against a black list or verified in other ways; also the password
     // can this way be checked by another plugin (i.e. password database)
     //
-    content::permission_flag secure;
-    check_user_security(user_key, email, password, true, secure);
-    if(!secure.allowed())
+    user_security_t security;
+    security.set_user_key(user_key);
+    security.set_email(email);
+    security.set_password(password);
+    security.set_bypass_blacklist(true);
+    check_user_security(security);
+    if(!security.get_secure().allowed())
     {
         // well... someone said "do not save that user in there"!
-        return status_t::STATUS_BLOCKED;
+        SNAP_LOG_ERROR("user security says no: ")(security.get_secure().reason());
+        reason = security.get_secure().reason();
+        return security.get_status();
     }
 
     // we got as much as we could ready before locking
@@ -2974,6 +2986,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
                     // XXX redirect user to an error page instead?
                     //     if they try again it will fail again until the
                     //     database gets fixed properly...
+                    reason = "the system failed creating a new user identifier";
                     return status_t::STATUS_UNDEFINED;
                 }
                 identifier = current_identifier.int64Value();
@@ -3118,29 +3131,25 @@ users::status_t users::register_user(QString const & email, QString const & pass
  * is already marked as not secure; something like this:
  *
  * \code
- * void my_plugin::on_check_user_security(QString const & user_key, QString const & email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure)
+ * void my_plugin::on_check_user_security(user_security_t & security)
  * {
- *     if(!secure.allowed())
+ *     if(!security.get_secure.allowed())
  *     {
  *         return;
  *     }
+ *
+ *     // add your tests here:
+ *     ...
  * }
  * \endcode
  *
- * \param[in] user_key  The user_key (the canoniconalized email).
- * \param[in] email  The email of the user about to be registered.
- * \param[in] password  The user password.
- * \param[in,out] secure  The flag defining whether the flag is secure.
+ * \param[in,out] security  The variable user security parameters.
  *
  * \return true if this very function thinks that the user is still
  *         considered valid; false if it already knows otherwise
  */
-bool users::check_user_security_impl(QString const & user_key, QString const & email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure)
+bool users::check_user_security_impl(user_security_t & security)
 {
-    NOTUSED(user_key);
-    NOTUSED(password);
-    NOTUSED(bypass_blacklist);
-
     // make sure that the user email is valid
     // this snap_child function throws if the email is not acceptable
     // (i.e. the validate_email() signal expects the function to only
@@ -3148,11 +3157,12 @@ bool users::check_user_security_impl(QString const & user_key, QString const & e
     //
     try
     {
-        f_snap->verify_email(email);
+        f_snap->verify_email(security.get_email());
     }
     catch(snap_child_exception_invalid_email const &)
     {
-        secure.not_permitted(QString("\"%1\" does not look like a valid email address.").arg(email));
+        security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(security.get_email()));
+        security.set_status(status_t::STATUS_BLOCKED);
         return false;
     }
 
@@ -3165,7 +3175,8 @@ bool users::check_user_security_impl(QString const & user_key, QString const & e
         // this is considered a spammer, just tell the user that the email is
         // considered blocked.
         //
-        secure.not_permitted(QString("\"%1\" is blocked.").arg(email));
+        security.get_secure().not_permitted(QString("\"%1\" is blocked.").arg(security.get_email()));
+        security.set_status(status_t::STATUS_BLOCKED);
         return false;
     }
 
@@ -3182,24 +3193,17 @@ bool users::check_user_security_impl(QString const & user_key, QString const & e
  * status. If not considered valid (i.e. new, password, valid...)
  * then STATUS_SPAMMER is returned.
  *
- * \param[in] user_key  The user_key (the canoniconalized email).
- * \param[in] email  The email of the user about to be registered.
- * \param[in] password  The user password.
- * \param[in,out] secure  The flag defining whether the flag is secure.
+ * \param[in,out] security  The variable user security parameters.
  */
-void users::check_user_security_done(QString const & user_key, QString const & email, QString const & password, bool const bypass_blacklist, content::permission_flag & secure)
+void users::check_user_security_done(user_security_t & security)
 {
-    NOTUSED(user_key);
-    NOTUSED(password);
-    NOTUSED(bypass_blacklist);
-
     // if the user is not yet blocked, do a final test with the user
     // current status
     //
-    if(secure.allowed())
+    if(security.get_secure().allowed())
     {
         QString status_key;
-        status_t const status(user_status(email, status_key));
+        status_t const status(user_status(security.get_email(), status_key));
         if(status != status_t::STATUS_NOT_FOUND
         && status != status_t::STATUS_VALID
         && status != status_t::STATUS_NEW
@@ -3209,7 +3213,8 @@ void users::check_user_security_done(QString const & user_key, QString const & e
         {
             // This may be a spammer, hacker, impolite person, etc.
             //
-            secure.not_permitted(QString("\"%1\" is blocked.").arg(email));
+            security.get_secure().not_permitted(QString("\"%1\" is blocked.").arg(security.get_email()));
+            security.set_status(status_t::STATUS_BLOCKED);
             return;
         }
     }

@@ -69,6 +69,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:copy-of select="page/body/editor/password_widget/node()"/>
 						</div>
 
+						<!-- password/confirm widget -->
+						<fieldset class="selection">
+							<legend>Password/Confirm</legend>
+							<div class="editor-block">
+								<xsl:copy-of select="page/body/editor/password_confirm_widget/node()"/>
+							</div>
+						</fieldset>
+
 						<!-- text edit widget -->
 						<div class="editor-block">
 							<label for="text_edit_widget" class="editor-title">Text Edit Widget</label>
