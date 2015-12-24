@@ -21,7 +21,7 @@ Description: Add or remove IP addresses from your iptables firewall.
 
 Package: iplock-doc
 Section: doc
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}
 Recommends: iplock (= ${binary:Version})
 Description: Add or remove IP addresses from your iptables firewall.
