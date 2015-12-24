@@ -28,12 +28,14 @@
 #
 cmake_minimum_required(VERSION 2.8)
 
+enable_language( CXX )
+
 ##
 ## IP Lock Version
 ##
 set(IPLOCK_MAJOR 2)
 set(IPLOCK_MINOR 1)
-set(IPLOCK_PATCH 1)
+set(IPLOCK_PATCH 2)
 
 project(iplock)
 
@@ -55,7 +57,14 @@ if( NOT CMAKE_MODULE_PATH )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
-find_package( SnapCMakeModules )
+
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
+
+
+# The documentation
+add_subdirectory(doc)
+
 
 ##
 ## IP Lock Tool

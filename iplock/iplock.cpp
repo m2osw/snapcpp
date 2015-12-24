@@ -28,6 +28,17 @@
 // THE SOFTWARE.
 //
 
+/** \file
+ * \brief iplock tool.
+ *
+ * This implementation offers a way to easily and safely add and remove
+ * IP address one wants to block temporarily.
+ *
+ * The tool makes use of the iptables tool to add and remove rules
+ * to one specific table which is expected to be included in your
+ * INPUT rules (with a -j \<table-name>).
+ */
+
 #include "iplock.h"
 
 #include <iostream>
@@ -46,6 +57,23 @@
                    vprintf  vfprintf  vsprintf  vsnprintf \
                    wprintf  fwprintf  swprintf  snwprintf \
                    vwprintf vfwprintf vswprintf vswnprintf
+
+/** \mainpage
+ *
+ * \image html iplock-logo.jpg
+ *
+ * The iplock tool can be used to very easily add and remove IP addresses
+ * you want blocking unwanted clients.
+ *
+ * Once installed properly, it will be capable to become root and
+ * thus access the firewall as required. The rules used to add and
+ * remove IPs are defined in the configuration file found under
+ * /etc/network/iplock.conf (to avoid any security problems, the path
+ * to the configuration file cannot be changed.)
+ *
+ * By default, the iplock tool expects a chain entry named bad_robots.
+ * This can be changed in the configuration file.
+ */
 
 class configuration
 {

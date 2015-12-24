@@ -1,8 +1,11 @@
-iplock (2.1.1.1~trusty) trusty; urgency=high
+iplock (2.1.2~trusty) trusty; urgency=high
 
-  * Nightly build.
+  * Added an iplock-doc package to support the build with .install files.
+  * Started, barely, the documentating of this tool. We need docs about
+    the configuration file and command line too.
+  * Finally fixed the debian/copyright file.
 
- -- Build Server <build@m2osw.com>  Wed, 23 Dec 2015 03:01:23 -0800
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 23 Dec 2015 20:34:23 -0800
 
 iplock (2.1.1~trusty) trusty; urgency=high
 
