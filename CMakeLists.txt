@@ -88,6 +88,7 @@ ConfigureMakeProject( PROJECT_NAME log4cplus
 ConfigureMakeProject( PROJECT_NAME iplock
     CONFIG_ARGS
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules
 )
 
 ConfigureMakeProject( PROJECT_NAME controlled_vars
