@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == info settings parser
+Snap Websites Server == password policy settings parser
 Copyright (C) 2014-2015  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -23,13 +23,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:snap="snap:snap">
 
 	<!-- some special variables to define the theme -->
-	<xsl:variable name="layout-area">info-settings-parser</xsl:variable>
-	<xsl:variable name="layout-modified">2015-09-07 23:22:10</xsl:variable>
-	<xsl:variable name="layout-editor">info-settings-page</xsl:variable>
+	<xsl:variable name="layout-area">password-policy-parser</xsl:variable>
+	<xsl:variable name="layout-modified">2015-12-20 23:22:10</xsl:variable>
+	<xsl:variable name="layout-editor">password-policy-page</xsl:variable>
 
 	<xsl:template match="snap">
 		<output filter="token"> <!-- lang="{$lang}" 'lang variable undefined' -->
-			<div id="content" class="editor-form" form_name="info">
+			<div id="content" class="editor-form" form_name="password">
 				<xsl:attribute name="session"><xsl:copy-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 
 				<h3>Password Policy</h3>
@@ -83,7 +83,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 					</fieldset>
 
-					<fieldset class="breadcrumbs">
+					<fieldset class="blaclist">
 						<legend>Blacklist</legend>
 
 						<!-- check password against blacklist widget -->
@@ -91,6 +91,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:copy-of select="page/body/password/check_blacklist/node()"/>
 						</div>
 
+					</fieldset>
+
+					<fieldset class="check-passwords">
+						<legend>Check Passwords</legend>
+
+						<div class="editor-block">
+							<p>
+								TODO: add a widget so one can check a sample password
+								against this policy.
+							</p>
+						</div>
 					</fieldset>
 
 					<!--div class="buttons">

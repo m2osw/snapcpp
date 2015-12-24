@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.469
+ * Version: 0.0.3.471
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -750,6 +750,7 @@ snapwebsites.EditorSelection =
  *
  *  private:
  *      var ajaxReason_: string = "";
+ *      var ajaxWidget_: EditorWidget = "";
  *      var serverAccess_: ServerAccess = null;
  *  };
  * \endcode
@@ -810,6 +811,17 @@ snapwebsites.EditorWidgetTypeBase.SaveData;
  * @private
  */
 snapwebsites.EditorWidgetTypeBase.prototype.ajaxReason_ = "";
+
+
+/** \brief Hold a reference to the widget in link with the last AJAX request.
+ *
+ * Whenever the editor needs to send an AJAX request, it saves the
+ * reason in ajaxReason_ and the concerned width in ajaxWidget_.
+ *
+ * @type {snapwebsites.EditorWidget}
+ * @private
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.ajaxWidget_ = null;
 
 
 /** \brief A server access object.
@@ -6079,7 +6091,7 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
             {
                 that.serverAccess_ = new snapwebsites.ServerAccess(that);
             }
-            that.serverAccess_.setURI(jQuery("link[rel='canonical']").attr("href"));
+            that.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorWidgetTypeContentEditable.setupEditButton()"));
             that.serverAccess_.setData({
                             _editor_request_original_data: 1,
                             field_name: editor_widget.getName()
@@ -6148,7 +6160,7 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.serverAccessSuccess = fun
         c = editor_widget.getWidgetContent();
 
         xml_data = jQuery(result.jqxhr.responseXML);
-        c.html(xml_data.find("data[name='field_data']").text());
+        c.html(snapwebsites.castToString(xml_data.find("data[name='field_data']").text(), "casting field_data to a string"));
 
         // make the child editable
         // TODO: either select all or at least place the cursor at the
@@ -7632,9 +7644,12 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.initializeWidget = function(widg
     // backgrounds are positioned as "absolute" so their width
     // is "broken" and we cannot center them in their parent
     // which is something we want to do for image-box objects
-    background.css("width", snapwebsites.castToNumber(w.width(), "ImageBox widget width"))
-              .css("margin-top", (snapwebsites.castToNumber(w.height(), "ImageBox widget height")
+    if(background.exists())
+    {
+        background.css("width", snapwebsites.castToNumber(w.width(), "ImageBox widget width"))
+                  .css("margin-top", (snapwebsites.castToNumber(w.height(), "ImageBox widget height")
                                       - snapwebsites.castToNumber(background.height(), "ImageBox background height")) / 2);
+    }
 
     // by default we offer the Drag & Drop area and also show a Browse
     // button to let people browse their hard drive with the normal

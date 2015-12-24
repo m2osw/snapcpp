@@ -20,6 +20,10 @@
 // @externs $CLOSURE_COMPILER/contrib/externs/jquery-1.9.js
 // @externs plugins/output/externs/jquery-extensions.js
 // @js plugins/output/output.js
+// @js plugins/output/popup.js
+// @js plugins/server_access/server-access.js
+// @js plugins/listener/listener.js
+// @js plugins/editor/editor.js
 // ==/ClosureCompiler==
 //
 
@@ -37,6 +41,7 @@
  *
  * @constructor
  * @struct
+ * @extends {snapwebsites.ServerAccessCallbacks}
  */
 snapwebsites.PluginSelection = function()
 {
@@ -71,7 +76,7 @@ snapwebsites.PluginSelectionInstance = null; // static
  * Note that this is the toolbar object, not the DOM. The DOM is
  * defined within the toolbar object and is considered private.
  *
- * @type {snapwebsites.EditorToolbar}
+ * @type {snapwebsites.ServerAccess}
  * @private
  */
 snapwebsites.PluginSelection.prototype.serverAccess_ = null;

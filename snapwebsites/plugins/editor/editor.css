@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.42
+ * Version: 0.0.1.48
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -260,14 +260,14 @@
 	pointer-events: none;
 }
 
-.editable.snap-editor:not(.disabled):not(.no-hover):hover,
+.editable.snap-editor:not(.disabled):not(.no-hover):hover
 {
 	box-shadow: inset 0 0 0 3px rgba(64, 192, 64, 0.5);
 }
 
 .editable.snap-editor [contenteditable="true"] .filter-token
 {
-	background-color:#e0e0e0;
+	background-color: #e0e0e0;
 }
 
 
@@ -277,7 +277,8 @@
 	cursor: pointer;
 }
 
-.editable.image-box .editor-content
+.editable.image-box .editor-content,
+.editable.dropped-file-with-preview-box .editor-content
 {
 	min-width: 200px;
 	min-height: 200px;

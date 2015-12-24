@@ -37,39 +37,39 @@ enum class name_t
     SNAP_NAME_LAYOUT_THEME,
     SNAP_NAME_LAYOUT_THEME_XSL
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class layout_exception : public snap_exception
 {
 public:
-    layout_exception(char const *        what_msg) : snap_exception("layout", what_msg) {}
-    layout_exception(std::string const & what_msg) : snap_exception("layout", what_msg) {}
-    layout_exception(QString const &     what_msg) : snap_exception("layout", what_msg) {}
+    explicit layout_exception(char const *        what_msg) : snap_exception("layout", what_msg) {}
+    explicit layout_exception(std::string const & what_msg) : snap_exception("layout", what_msg) {}
+    explicit layout_exception(QString const &     what_msg) : snap_exception("layout", what_msg) {}
 };
 
 class layout_exception_invalid_xslt_data : public layout_exception
 {
 public:
-    layout_exception_invalid_xslt_data(char const *        what_msg) : layout_exception(what_msg) {}
-    layout_exception_invalid_xslt_data(std::string const & what_msg) : layout_exception(what_msg) {}
-    layout_exception_invalid_xslt_data(QString const &     what_msg) : layout_exception(what_msg) {}
+    explicit layout_exception_invalid_xslt_data(char const *        what_msg) : layout_exception(what_msg) {}
+    explicit layout_exception_invalid_xslt_data(std::string const & what_msg) : layout_exception(what_msg) {}
+    explicit layout_exception_invalid_xslt_data(QString const &     what_msg) : layout_exception(what_msg) {}
 };
 
 
 class layout_content
 {
 public:
-    virtual ~layout_content() {} // ensure proper virtual tables
-    virtual void on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body) = 0;
+    virtual         ~layout_content() {} // ensure proper virtual tables
+    virtual void    on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body) = 0;
 };
 
 
 class layout_boxes
 {
 public:
-    virtual ~layout_boxes() {} // ensure proper virtual tables
-    virtual void on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes) = 0;
+    virtual         ~layout_boxes() {} // ensure proper virtual tables
+    virtual void    on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes) = 0;
 };
 
 

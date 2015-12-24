@@ -437,6 +437,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     || n == "feed::publish_full_article"
     || n == "oauth2::enable"
     || n == "password::check_blacklist"
+    || n == "password::exists_in_blacklist"
     || n == "permissions::dynamic"
     || n == "users::multiuser"
     || n == "users::long_sessions"

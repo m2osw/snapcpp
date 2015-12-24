@@ -27,6 +27,7 @@ namespace password
 enum class name_t
 {
     SNAP_NAME_PASSWORD_CHECK_BLACKLIST,
+    SNAP_NAME_PASSWORD_EXISTS_IN_BLACKLIST,
     SNAP_NAME_PASSWORD_MINIMUM_DIGITS,
     SNAP_NAME_PASSWORD_MINIMUM_LENGTH,
     SNAP_NAME_PASSWORD_MINIMUM_LETTERS,
@@ -94,8 +95,30 @@ private:
 
 
 
+class blacklist_t
+{
+public:
+    void                add_passwords(QString const & passwords);
+    void                remove_passwords(QString const & passwords);
 
-class password : public plugins::plugin
+    void                reset_counters();
+    size_t              passwords_applied() const;
+    size_t              passwords_skipped() const;
+
+private:
+    void                passwords_to_list(QString const & passwords);
+
+    snap_string_list    f_list;
+    size_t              f_count = 0;
+    size_t              f_skipped = 0;
+};
+
+
+
+class password
+        : public plugins::plugin
+        , public path::path_execute
+        , public layout::layout_content
 {
 public:
                         password();
@@ -112,8 +135,14 @@ public:
     // users signals
     void                on_check_user_security(users::users::user_security_t & security);
 
+    // path::path_execute implementation
+    bool                on_path_execute(content::path_info_t & ipath);
+
     // editor signals
     void                on_prepare_editor_form(editor::editor * e);
+
+    // layout::layout_content implementation
+    void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
     QtCassandra::QCassandraTable::pointer_t get_password_table();
     QString             check_password_against_policy(QString const & user_password, QString const & policy);
@@ -122,6 +151,9 @@ public:
 private:
     void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
+    void                on_path_execute__is_password_blacklisted(content::path_info_t & ipath);
+    void                on_path_execute__blacklist_new_passwords(content::path_info_t & ipath);
+    void                on_path_execute__blacklist_remove_passwords(content::path_info_t & ipath);
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraTable::pointer_t f_password_table;

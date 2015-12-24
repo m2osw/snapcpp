@@ -25,25 +25,6 @@
 
 #include "password.h"
 
-//#include "../output/output.h"
-//#include "../locale/snap_locale.h"
-//#include "../messages/messages.h"
-//#include "../server_access/server_access.h"
-//
-//#include "log.h"
-//#include "not_reached.h"
-//#include "not_used.h"
-//#include "qdomhelpers.h"
-//#include "qstring_stream.h"
-//
-//#include <iostream>
-//
-//#include <QtCassandra/QCassandraLock.h>
-//#include <QFile>
-//
-//#include <openssl/evp.h>
-//#include <openssl/rand.h>
-
 #include "poison.h"
 
 
@@ -60,7 +41,8 @@ SNAP_PLUGIN_EXTENSION_START(password)
  */
 policy_t::policy_t(QString const & policy_name)
 {
-    if(!policy_name.isEmpty())
+    if(!policy_name.isEmpty()
+    && policy_name != "blacklist")
     {
         content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
@@ -394,6 +376,20 @@ QString policy_t::compare(policy_t const & rhs) const
 }
 
 
+/** \brief Check whether the user password is blacklisted.
+ *
+ * Our system maintains a list of words that we want to forbid
+ * users from ever entering as passwords because they are known
+ * by hackers and thus not useful as a security token.
+ *
+ * \todo
+ * Later we may have degrees of blacklisted password, i.e. we may
+ * still authorize some of those if they pass the policy rules.
+ *
+ * \param[in] user_password  The password to be checked.
+ *
+ * \return An error message if the password is blacklisted.
+ */
 QString policy_t::is_blacklisted(QString const & user_password) const
 {
     // also check against the blacklist?
@@ -402,8 +398,12 @@ QString policy_t::is_blacklisted(QString const & user_password) const
     {
         // the password has to be the row name to be spread on all nodes
         //
+        // later we may use columns to define whether a password 100%
+        // forbidden (password1,) "mostly" forbidden (complex enough
+        // for the current policy,) etc.
+        //
         QtCassandra::QCassandraTable::pointer_t table(password::password::instance()->get_password_table());
-        if(table->exists(user_password))
+        if(table->exists(user_password.toLower()))
         {
             return "this password is blacklisted and cannot be used";
         }

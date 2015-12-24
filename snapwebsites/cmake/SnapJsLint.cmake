@@ -49,7 +49,7 @@ endfunction()
 # Call snap_build_js_targets() after calling snap_validate_js() above.
 #
 macro( snap_build_js_targets )
-	set( arg_count 2 )
+    set( arg_count 2 )
     unset( lint_file_list )
     get_property( JS_FILE_LIST GLOBAL PROPERTY JS_FILE_LIST )
     list( LENGTH JS_FILE_LIST range )

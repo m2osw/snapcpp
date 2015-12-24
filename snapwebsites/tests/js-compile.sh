@@ -27,7 +27,7 @@ FILES="plugins/ecommerce/ecommerce.js
        plugins/epayment_paypal/epayment-paypal.js
        plugins/flash/flash-detection.js
        plugins/form/form.js
-       plugins/info/info/info.js
+       plugins/info/plugin-selection/plugin-selection.js
        plugins/info/sendmail/unsubscribe.js
        plugins/listener/listener.js
        plugins/list/list/list.js
@@ -36,6 +36,8 @@ FILES="plugins/ecommerce/ecommerce.js
        plugins/output/output.js
        plugins/output/popup.js
        plugins/output/rotate-animation.js
+       plugins/password/password.js
+       plugins/password/password-blacklist.js
        plugins/permissions/remove-iframe-for-login.js
        plugins/server_access/server-access.js
        plugins/test_plugin/test-plugin.js

@@ -33,6 +33,7 @@
 // in a global variable.
 
 var flash_version = 0;
+var agent = null;
 
 
 // Netscape 3+ and Opera 3+
@@ -65,9 +66,9 @@ document.write("<p>Description: " + flash_plugin.description + "</p>");
 
 // Internet Explorer 4+ on Win32
 if(flash_version == 0) {
-	var agent = navigator.userAgent.toLowerCase();
+	agent = navigator.userAgent.toLowerCase();
 	if(agent.indexOf("msie") != -1
-	&& parseInt(navigator.appVersion) >= 4
+	&& parseInt(navigator.appVersion, 10) >= 4
 	&& agent.indexOf("win") != -1
 	&& agent.indexOf("16bit") == -1) {
 		document.write('<scr' + 'ipt language="VBScript"\>\n');
@@ -99,7 +100,7 @@ if(flash_version == 0) {
 
 // WebTV 2.5 supports flash 3
 if(flash_version == 0) {
-	var agent = navigator.userAgent.toLowerCase();
+	agent = navigator.userAgent.toLowerCase();
 	if(agent.indexOf("webtv/2.5") != -1) {
 		flash_version = 3;
 	}
@@ -114,7 +115,7 @@ if(flash_version == 0) {
 // width - the width of the flash animation and image
 // height - the height of the flash animation and image
 // min_version - the minimum version of flash you need for this movie
-// flash_vars - variables to pass down to the flash plug-in
+// parameters - variables to pass down to the flash plug-in
 //
 // This function inserts a flash movie, or if the flash movie is either
 // too advanced or no plug-in is available, insert a corresponding image.
@@ -123,9 +124,10 @@ if(flash_version == 0) {
 // link or a style on the image, for instance.
 //
 		
-function insert_flash_movie(flash, image, width, height, min_version, extra)
+function insert_flash_movie(flash, image, width, height, min_version, parameters)
 { 
-	if(min_version <= flash_version) {
+	if(min_version <= flash_version)
+	{
 		document.write('<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ');
 		document.write('codebase="https://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=' + min_version + ',0,0,0" ');
 		document.write('width="' + width + '" height="' + height +'">');
@@ -134,7 +136,7 @@ function insert_flash_movie(flash, image, width, height, min_version, extra)
 		document.write('<param name="quality" value="best">');
 		document.write('<param name="play" value="true">');
 		document.write('<embed pluginspage="https://www.macromedia.com/go/getflashplayer" ');
-		document.write('src="' + flashUrl + '" type="application/x-shockwave-flash" ');
+		document.write('src="' + flash + '" type="application/x-shockwave-flash" ');
 		document.write('flashvars="' + parameters  + '" ');
 		document.write('height="' + height +'" width="' + width + '" ');
 		document.write('quality="best" play="true"></embed>');

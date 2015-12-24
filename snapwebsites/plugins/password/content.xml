@@ -32,6 +32,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           plugin makes use of its own password policy, which is
           much weaker than the normal users policy.
         </p>
+        <p>
+          Another password setup is the <a href="password/blacklist">blacklist</a>.
+          By default your user's passwords are checked against that blacklist.
+          If the words are present in the blacklist, then the
+          password system refuses that password. It is possible
+          to not check the blacklist on a per policy basis. It is
+          not always necessary to check the blacklist if your
+          password policy is very strong because it is likely that
+          all the blacklisted passwords would not pass the
+          policy rules anyway.
+        </p>
         <!--p style="float: right;">
           Maybe we will offer that option later, but at this point
           I don't see how that could be useful...
@@ -63,6 +74,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <!-- since we do not specify "prevent-delete", this policy is not delatable by default -->
   </content>
+  <content path="/admin/settings/password/blacklist"><!-- this one needs to be owned by "password" -->
+    <param name="content::title" revision="revision">Manage Password Blacklist</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>This page is used to manage lists of passwords that were blacklisted.</p>]]>
+    </param>
+    <param name="editor::layout" revision="global" overwrite="yes">"password-blacklist-page";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"password-blacklist-parser";</param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+  </content>
   <content path="/js/password">
     <!-- JavaScript code for the password extension -->
     <param name="content::title" revision="revision">Password Scripts</param>
@@ -72,6 +92,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="password" type="attachment/public">
       <path>qrc:/js/password/password.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>editor (&gt;= 0.0.3.468)</dependency>
+    </attachment>
+    <attachment name="password-blacklist" type="attachment/public">
+      <path>qrc:/js/password/password-blacklist.js</path>
       <mime-type>text/javascript</mime-type>
       <dependency>editor (&gt;= 0.0.3.468)</dependency>
     </attachment>

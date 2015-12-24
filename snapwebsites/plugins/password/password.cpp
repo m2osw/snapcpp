@@ -17,6 +17,8 @@
 
 #include "./password.h"
 
+#include "../output/output.h"
+#include "../messages/messages.h"
 #include "../permissions/permissions.h"
 
 #include "log.h"
@@ -87,6 +89,12 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
+    case name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST:
+        return "password::check_blacklist";
+
+    case name_t::SNAP_NAME_PASSWORD_EXISTS_IN_BLACKLIST:
+        return "password::exists_in_blacklist";
+
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_DIGITS:
         return "password::minimum_digits";
 
@@ -110,9 +118,6 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_UPPERCASE_LETTERS:
         return "password::minimum_uppercase_letters";
-
-    case name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST:
-        return "password::check_blacklist";
 
     case name_t::SNAP_NAME_PASSWORD_TABLE:
         return "password";
@@ -224,7 +229,7 @@ int64_t password::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 12, 23, 16, 56, 51, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 24, 2, 49, 51, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -294,6 +299,190 @@ void password::bootstrap(snap_child * snap)
 void password::on_prepare_editor_form(editor::editor * e)
 {
     e->add_editor_widget_templates_from_file(":/xsl/password_widgets/password-form.xsl");
+}
+
+
+/** \brief Capture various hits to the website to process some AJAX calls.
+ *
+ * The blacklist page and some other such pages receive AJAX requests
+ * that are not specific to the editor and this function will handle them.
+ *
+ * \param[in,out] ipath  The path being processed.
+ *
+ * \return true if the path was handled.
+ */
+bool password::on_path_execute(content::path_info_t & ipath)
+{
+    QString const action(ipath.get_parameter("action"));
+    if(action == "administer")
+    {
+        QString const password_function(f_snap->postenv("password_function"));
+        if(password_function == "is_password_blacklisted")
+        {
+            on_path_execute__is_password_blacklisted(ipath);
+            return true;
+        }
+        if(password_function == "blacklist_new_passwords")
+        {
+            on_path_execute__blacklist_new_passwords(ipath);
+            return true;
+        }
+        if(password_function == "blacklist_remove_passwords")
+        {
+            on_path_execute__blacklist_remove_passwords(ipath);
+            return true;
+        }
+    }
+
+    // the default is to call the output() function and let it
+    // do whatever it does by default
+    //
+    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
+
+    return true;
+}
+
+
+/** \brief Generate the main content of a page handled by this plugin.
+ *
+ * Some pages are owned by the password plugin and this function is
+ * used to generate the output. This is used because we want to
+ * capture some of the hits when a page sends us an AJAX request.
+ *
+ * \param[in] ipath  The path being rendered.
+ * \param[in,out] page  The page elements.
+ * \param[in,out] body  The body element.
+ */
+void password::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
+{
+    output::output::instance()->on_generate_main_content(ipath, page, body);
+}
+
+
+/** \brief Check whether a password is blacklisted or not.
+ *
+ * This function is called whenever we receive an AJAX request from
+ * the blacklist manager page.
+ *
+ * It generates an AJAX response informing the client on whether
+ * the specified password is indeed blacklisted or not.
+ *
+ * \param[in,out] ipath  The path information.
+ */
+void password::on_path_execute__is_password_blacklisted(content::path_info_t & ipath)
+{
+    QString const user_password(f_snap->postenv("password").toLower());
+    QtCassandra::QCassandraTable::pointer_t table(password::password::instance()->get_password_table());
+    if(table->exists(user_password))
+    {
+        messages::messages::instance()->set_info(
+            "Blacklisted!",
+            QString("The password \"%1\" is in your password blacklist. No one will be able to use it.").arg(user_password)
+        );
+    }
+    else
+    {
+        messages::messages::instance()->set_warning(
+            "Not Blacklisted",
+            QString("Password \"%1\" is not blacklisted. One of your users can still make use of it, assuming the corresponding policy allows it.").arg(user_password),
+            "Sending answer querying about whether a password is blacklisted."
+        );
+    }
+
+    // create the AJAX response
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
+    server_access_plugin->create_ajax_result(ipath, true);
+    server_access_plugin->ajax_output();
+}
+
+
+/** \brief Check whether a password is blacklisted or not.
+ *
+ * This function is called whenever we receive an AJAX request from
+ * the blacklist manager page.
+ *
+ * It will add the specified passwords (in the "password" POST variable)
+ * to the password blacklist.
+ *
+ * \param[in,out] ipath  The path information.
+ */
+void password::on_path_execute__blacklist_new_passwords(content::path_info_t & ipath)
+{
+    blacklist_t bl;
+    bl.add_passwords(f_snap->postenv("password"));
+
+    size_t const count(bl.passwords_applied());
+    size_t const skipped(bl.passwords_skipped());
+
+    if(count > 0)
+    {
+        messages::messages::instance()->set_info(
+            "Blacklisted",
+            QString("%1 password%2%3 %4 added to your password blacklist.")
+                    .arg(count)
+                    .arg(count != 1 ? "s" : "")
+                    .arg(skipped > 0 ? QString(" (out of %1 passwords)").arg(count + skipped) : "")
+                    .arg(count != 1 ? "were" : "was")
+        );
+    }
+    else
+    {
+        messages::messages::instance()->set_warning(
+            "Already Blacklisted",
+            "All of these passwords were already blacklisted.",
+            "Letting user know that all the passwords he specified were already in his password blacklist."
+        );
+    }
+
+    // create the AJAX response
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
+    server_access_plugin->create_ajax_result(ipath, true);
+    server_access_plugin->ajax_output();
+}
+
+
+/** \brief Remove the specified list of passwords from the password blacklist.
+ *
+ * This function is called whenever we receive an AJAX request from
+ * the blacklist manager page.
+ *
+ * It will remove the specified passwords (in the "password" POST variable)
+ * from the password blacklist.
+ *
+ * \param[in,out] ipath  The path information.
+ */
+void password::on_path_execute__blacklist_remove_passwords(content::path_info_t & ipath)
+{
+    blacklist_t bl;
+    bl.remove_passwords(f_snap->postenv("password"));
+
+    size_t const count(bl.passwords_applied());
+    size_t const skipped(bl.passwords_skipped());
+
+    if(count > 0)
+    {
+        messages::messages::instance()->set_info(
+            "Whitelisted",
+            QString("%1 password%2%3 %4 removed from your password blacklist.")
+                    .arg(count)
+                    .arg(count != 1 ? "s" : "")
+                    .arg(skipped > 0 ? QString(" (out of %1 passwords)").arg(count + skipped) : "")
+                    .arg(count != 1 ? "were" : "was")
+        );
+    }
+    else
+    {
+        messages::messages::instance()->set_warning(
+            "Not Blacklisted",
+            "All of these passwords were not in your password blacklist.",
+            "Letting user know that none of the passwords he specified were in his password blacklist."
+        );
+    }
+
+    // create the AJAX response
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
+    server_access_plugin->create_ajax_result(ipath, true);
+    server_access_plugin->ajax_output();
 }
 
 
