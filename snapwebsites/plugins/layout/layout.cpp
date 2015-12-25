@@ -265,6 +265,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
                 // TODO: change the algorithm to use one last_updated time
                 //       per layout (just like plugins, having a single
                 //       time definition is actually bogus)
+                //
                 int64_t const limit(install_layout(name, last_updated));
                 if(limit > new_last_updated)
                 {
@@ -1418,6 +1419,7 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
 {
     content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
     QtCassandra::QCassandraValue last_updated_value;
@@ -1466,11 +1468,14 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
         }
     }
 
-    // make sure the layout is valid
-    content::path_info_t::status_t const status(layout_ipath.get_status());
-    if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
+    // make sure the layout is valid if it exists
+    if(content_table->exists(layout_ipath.get_key()))
     {
-        return 0;
+        content::path_info_t::status_t const status(layout_ipath.get_status());
+        if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
+        {
+            return 0;
+        }
     }
 
     // this layout is missing, create necessary basic info
@@ -1838,7 +1843,7 @@ void layout::add_layout_from_resources_done(QString const & name)
 {
     QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
 
-    int64_t updated(f_snap->get_start_date());
+    int64_t const updated(f_snap->get_start_date());
     layout_table->row(name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
 }
 
