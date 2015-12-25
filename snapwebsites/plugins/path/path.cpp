@@ -491,13 +491,15 @@ plugins::plugin * path::get_plugin(content::path_info_t & ipath, permission_erro
         {
             // if the plugin cannot be found then either it was mispelled
             // or the plugin is not currently installed...
-            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
+            //
+            err_callback.on_error(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                         "Plugin Missing",
                         "This page is not currently available as its plugin is not currently installed.",
                         QString("User tried to access page \"%1\" but its plugin (%2) does not exist (not installed? mispelled?)")
                                 .arg(ipath.get_cpath())
-                                .arg(owner));
-            NOTREACHED();
+                                .arg(owner),
+                        false);
+            return nullptr;
         }
 
         if(status.get_state() == content::path_info_t::status_t::state_t::DELETED)

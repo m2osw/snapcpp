@@ -521,7 +521,7 @@ void paging_t::process_query_string_info()
             {
                 defined_page = true;
                 bool ok(false);
-                int page = p.mid(1).toInt(&ok);
+                int const page(p.mid(1).toInt(&ok));
                 if(ok && page > 0)
                 {
                     f_page = page;
