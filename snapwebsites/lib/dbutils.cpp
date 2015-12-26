@@ -590,6 +590,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "users::login_on"
          || n == "users::logout_on"
          || n == "users::modified"
+         || n == "users::password::modified"
+         || n.startsWith("users::password::modified_")
          || n == "users::previous_login_on"
          || n == "users::start_date"
          || n == "users::verified_on"
@@ -635,7 +637,9 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     }
     else if(n == "sessions::random"
          || n == "users::password::salt"
+         || n.startsWith("users::password::salt_")
          || n == "users::password"
+         || n.startsWith("users::password_")
          )
     {
         // n bit binary value

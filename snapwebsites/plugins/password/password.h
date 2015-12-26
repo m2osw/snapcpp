@@ -27,15 +27,24 @@ namespace password
 enum class name_t
 {
     SNAP_NAME_PASSWORD_CHECK_BLACKLIST,
+    SNAP_NAME_PASSWORD_CHECK_USERNAME,
+    SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED,
     SNAP_NAME_PASSWORD_EXISTS_IN_BLACKLIST,
+    SNAP_NAME_PASSWORD_LIMIT_DURATION,
+    SNAP_NAME_PASSWORD_MAXIMUM_DURATION,
     SNAP_NAME_PASSWORD_MINIMUM_DIGITS,
     SNAP_NAME_PASSWORD_MINIMUM_LENGTH,
+    SNAP_NAME_PASSWORD_MINIMUM_LENGTH_OF_VARIATIONS,
     SNAP_NAME_PASSWORD_MINIMUM_LETTERS,
     SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS,
+    SNAP_NAME_PASSWORD_MINIMUM_OLD_PASSWORDS,
     SNAP_NAME_PASSWORD_MINIMUM_SPACES,
     SNAP_NAME_PASSWORD_MINIMUM_SPECIAL,
     SNAP_NAME_PASSWORD_MINIMUM_UNICODE,
     SNAP_NAME_PASSWORD_MINIMUM_UPPERCASE_LETTERS,
+    SNAP_NAME_PASSWORD_MINIMUM_VARIATION,
+    SNAP_NAME_PASSWORD_OLD_PASSWORDS_MAXIMUM_AGE,
+    SNAP_NAME_PASSWORD_PREVENT_OLD_PASSWORDS,
     SNAP_NAME_PASSWORD_TABLE
 };
 char const * get_name(name_t name) __attribute__ ((const));
@@ -68,6 +77,8 @@ public:
 
     void            count_password_characters(QString const & password);
 
+    bool            get_limit_duration() const;
+    int64_t         get_maximum_duration() const;
     int64_t         get_minimum_length() const;
     int64_t         get_minimum_lowercase_letters() const;
     int64_t         get_minimum_uppercase_letters() const;
@@ -76,12 +87,20 @@ public:
     int64_t         get_minimum_spaces() const;
     int64_t         get_minimum_special() const;
     int64_t         get_minimum_unicode() const;
+    int64_t         get_minimum_variation() const;
+    int64_t         get_minimum_length_of_variations() const;
     bool            get_check_blacklist() const;
+    int64_t         get_check_username() const;
+    bool            get_check_username_reversed() const;
+    bool            get_prevent_old_passwords() const;
+    int64_t         get_minimum_old_passwords() const;
+    int64_t         get_old_passwords_maximum_age() const;
 
     QString         compare(policy_t const & rhs) const;
     QString         is_blacklisted(QString const & user_password) const;
 
 private:
+    int64_t         f_maximum_duration = 92; // 3 months in days
     int64_t         f_minimum_length = 0;
     int64_t         f_minimum_lowercase_letters = 0;
     int64_t         f_minimum_uppercase_letters = 0;
@@ -90,7 +109,15 @@ private:
     int64_t         f_minimum_spaces = 0;
     int64_t         f_minimum_special = 0;
     int64_t         f_minimum_unicode = 0;
+    int64_t         f_minimum_variation = 0;
+    int64_t         f_minimum_length_of_variations = 0;
+    int64_t         f_minimum_old_passwords = 0;
+    int64_t         f_old_passwords_maximum_age = 0;
+    int64_t         f_check_username = 2;
+    bool            f_limit_duration = false;
     bool            f_check_blacklist = false;
+    bool            f_prevent_old_passwords = false;
+    bool            f_check_username_reversed = true;
 };
 
 
@@ -134,6 +161,8 @@ public:
 
     // users signals
     void                on_check_user_security(users::users::user_security_t & security);
+    void                on_user_logged_in(users::users::user_logged_info_t & logged_info);
+    void                on_save_password(QtCassandra::QCassandraRow::pointer_t row, QString const & user_password, QString const & password_policy);
 
     // path::path_execute implementation
     bool                on_path_execute(content::path_info_t & ipath);
@@ -145,7 +174,7 @@ public:
     void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
     QtCassandra::QCassandraTable::pointer_t get_password_table();
-    QString             check_password_against_policy(QString const & user_password, QString const & policy);
+    QString             check_password_against_policy(QString const & user_key, QString const & user_password, QString const & policy);
     QString             create_password(QString const & policy = "users");
 
 private:

@@ -216,7 +216,7 @@ int64_t oauth2::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 20, 20, 9, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 25, 0, 7, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -452,7 +452,7 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
     // create a new user session since the username and password matched
     time_t login_limit(0);
     bool validation_required(false);
-    QString const details(users_plugin->login_user(email, "", validation_required));
+    QString const details(users_plugin->login_user(email, "", validation_required, users::users::login_mode_t::LOGIN_MODE_FULL, "oauth2"));
     QString session_id;
     if(details.isEmpty())
     {

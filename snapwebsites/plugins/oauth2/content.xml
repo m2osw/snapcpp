@@ -35,6 +35,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="layout::layout" revision="global" overwrite="yes">"oauth2-settings-parser";</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
+  <content path="/admin/settings/password/oauth2" owner="output">
+    <param name="content::title" revision="revision">OAuth2 Password Policy</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Policy used by the oauth2 plugin.</p>]]>
+    </param>
+    <param name="editor::layout" revision="global" overwrite="yes">"password-policy-page";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"password-policy-parser";</param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <!-- since we do not specify "prevent-delete", this policy is not delatable by default -->
+  </content>
   <content path="/images/oauth2" owner="output">
     <param name="content::title" revision="revision">OAuth2 Images</param>
     <param name="content::body" revision="revision">

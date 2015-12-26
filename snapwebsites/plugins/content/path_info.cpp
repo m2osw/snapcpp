@@ -735,6 +735,7 @@ QString path_info_t::get_branch_key() const
 #pragma GCC diagnostic pop
     {
         // the branch is still undefined...
+        SNAP_LOG_FATAL("get_branch_key() request failed for \"")(f_cpath)("\", branch not defined (")(f_branch)(")");
         throw content_exception_data_missing(QString("get_branch_key() request failed for \"%1\", branch not defined (%2)").arg(f_cpath).arg(f_branch));
     }
 

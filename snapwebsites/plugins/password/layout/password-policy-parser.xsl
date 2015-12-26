@@ -81,6 +81,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:copy-of select="page/body/password/minimum_unicode/node()"/>
 						</div>
 
+						<!-- minimum variation widget -->
+						<div class="editor-block">
+							<label for="minimum_variation" class="editor-title">Minimum Variation in Set of Characters:</label>
+							<xsl:copy-of select="page/body/password/minimum_variation/node()"/>
+						</div>
+
+						<!-- minimum characters per set in a variation widget -->
+						<div class="editor-block">
+							<label for="minimum_length_of_variations" class="editor-title">Minimum Length of Each Variation:</label>
+							<xsl:copy-of select="page/body/password/minimum_length_of_variations/node()"/>
+						</div>
+
 					</fieldset>
 
 					<fieldset class="blaclist">
@@ -89,6 +101,47 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<!-- check password against blacklist widget -->
 						<div class="editor-block">
 							<xsl:copy-of select="page/body/password/check_blacklist/node()"/>
+						</div>
+
+						<div class="editor-block">
+							<label>Refuse passwords that include the username (case insensitive)</label>
+							<xsl:copy-of select="page/body/password/check_username/node()"/>
+						</div>
+					</fieldset>
+
+					<fieldset class="password-auto-expiration">
+						<legend>Password Auto-Expiration</legend>
+
+						<!-- password can expire? -->
+						<div class="editor-block">
+							<xsl:copy-of select="page/body/password/limit_duration/node()"/>
+						</div>
+
+						<!-- how long before the password expires? -->
+						<div class="editor-block">
+							<label for="maximum_duration" class="editor-title">Number of days before a password expires:</label>
+							<xsl:copy-of select="page/body/password/maximum_duration/node()"/>
+						</div>
+
+					</fieldset>
+
+					<fieldset class="old-passwords-management">
+						<legend>Old Passwords Management</legend>
+						<!-- keep old passwords to prevent reuse? -->
+						<div class="editor-block">
+							<xsl:copy-of select="page/body/password/prevent_old_passwords/node()"/>
+						</div>
+
+						<!-- how many old passwords to keep around? -->
+						<div class="editor-block">
+							<label for="maximum_duration" class="editor-title">Minimum number of old passwords to keep in the database:</label>
+							<xsl:copy-of select="page/body/password/minimum_old_passwords/node()"/>
+						</div>
+
+						<!-- how old can an old pasword become? -->
+						<div class="editor-block">
+							<label for="maximum_duration" class="editor-title">How old must an old password get before it gets deleted? (in days):</label>
+							<xsl:copy-of select="page/body/password/old_passwords_maximum_age/node()"/>
 						</div>
 
 					</fieldset>

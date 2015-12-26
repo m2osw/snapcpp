@@ -67,6 +67,7 @@ enum class name_t
     SNAP_NAME_USERS_ORIGINAL_IP,
     SNAP_NAME_USERS_PASSWORD,
     SNAP_NAME_USERS_PASSWORD_DIGEST,
+    SNAP_NAME_USERS_PASSWORD_MODIFIED,
     SNAP_NAME_USERS_PASSWORD_PATH,
     SNAP_NAME_USERS_PASSWORD_SALT,
     SNAP_NAME_USERS_PATH,
@@ -232,27 +233,39 @@ public:
     class user_logged_info_t
     {
     public:
-        content::path_info_t &  user_ipath() { return f_user_ipath; }
+                                user_logged_info_t(snap_child * snap);
 
-        void                    set_identifier(int64_t identifier) { f_identifier = identifier; }
-        int64_t                 get_identifier() const { return f_identifier; }
+        content::path_info_t &  user_ipath();
 
-        void                    set_user_key(QString const & user_key) { f_user_key = user_key; }
-        QString                 get_user_key() const { return f_user_key; }
+        void                    set_password_policy(QString const & policy);
+        QString const &         get_password_policy() const;
+
+        void                    set_identifier(int64_t identifier);
+        int64_t                 get_identifier() const;
+
+        void                    set_user_key(QString const & user_key);
+        QString const &         get_user_key() const;
 
         // at the point of login we do not have the email, only the user key
         //void                    set_email(QString const & email) { f_email = email; }
         //QString                 get_email() const { return f_email; }
 
+        void                    force_password_change();
+        void                    force_user_to_change_password();
+        bool                    is_password_change_required() const;
+
         // f_uri is mutable so we can change it from anywhere
-        void                    set_uri(QString const & uri) const { f_uri = uri; }
-        QString                 get_uri() const { return f_uri; }
+        void                    set_uri(QString const & uri) const;
+        QString const &         get_uri() const;
 
     private:
+        snap_child *                    f_snap;
         mutable content::path_info_t    f_user_ipath;
+        QString                         f_password_policy;
         QString                         f_user_key;
         QString                         f_email;
-        controlled_vars::zint64_t       f_identifier;
+        int64_t                         f_identifier = 0;
+        bool                            f_force_password_change = false;
         mutable QString                 f_uri;
     };
 
@@ -309,6 +322,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(user_verified, (content::path_info_t & ipath, int64_t identifier), (ipath, identifier), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_logged_in, (user_logged_info_t & logged_info), (logged_info), NEITHER);
     SNAP_SIGNAL_WITH_MODE(logged_in_user_ready, (), (), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(save_password, (QtCassandra::QCassandraRow::pointer_t row, QString const & user_password, QString const & policy), (row, user_password, policy), DONE);
 
     int64_t                 get_total_session_duration();
     int64_t                 get_user_session_duration();
@@ -333,7 +347,7 @@ public:
     QString                 detach_from_session(QString const & name);
     QString                 get_from_session(QString const & name) const;
     void                    set_referrer( QString path );
-    QString                 login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode = login_mode_t::LOGIN_MODE_FULL);
+    QString                 login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode = login_mode_t::LOGIN_MODE_FULL, QString const & password_policy = "users");
     login_status_t          load_login_session(QString const & session_cookie, sessions::sessions::session_info & info, bool check_time_limit);
     bool                    authenticated_user(QString const & email, sessions::sessions::session_info * info);
     void                    create_logged_in_user_session(QString const & user_key);

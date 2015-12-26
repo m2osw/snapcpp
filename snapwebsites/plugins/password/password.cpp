@@ -24,6 +24,7 @@
 #include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
+#include "fuzzy_string_compare.h"
 
 #include <algorithm>
 #include <iostream>
@@ -92,8 +93,20 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST:
         return "password::check_blacklist";
 
+    case name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME:
+        return "password::check_username";
+
+    case name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED:
+        return "password::check_username_reversed";
+
     case name_t::SNAP_NAME_PASSWORD_EXISTS_IN_BLACKLIST:
         return "password::exists_in_blacklist";
+
+    case name_t::SNAP_NAME_PASSWORD_LIMIT_DURATION:
+        return "password::limit_duration";
+
+    case name_t::SNAP_NAME_PASSWORD_MAXIMUM_DURATION:
+        return "password::maximum_duration";
 
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_DIGITS:
         return "password::minimum_digits";
@@ -101,11 +114,17 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH:
         return "password::minimum_length";
 
+    case name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH_OF_VARIATIONS:
+        return "password::minimum_length_of_variations";
+
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_LETTERS:
         return "password::minimum_letters";
 
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS:
         return "password::minimum_lowercase_letters";
+
+    case name_t::SNAP_NAME_PASSWORD_MINIMUM_OLD_PASSWORDS:
+        return "password::minimum_old_passwords";
 
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_SPACES:
         return "password::minimum_spaces";
@@ -119,12 +138,21 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_UPPERCASE_LETTERS:
         return "password::minimum_uppercase_letters";
 
+    case name_t::SNAP_NAME_PASSWORD_MINIMUM_VARIATION:
+        return "password::minimum_variation";
+
+    case name_t::SNAP_NAME_PASSWORD_OLD_PASSWORDS_MAXIMUM_AGE:
+        return "password::old_passwords_maximum_age";
+
+    case name_t::SNAP_NAME_PASSWORD_PREVENT_OLD_PASSWORDS:
+        return "password::prevent_old_passwords";
+
     case name_t::SNAP_NAME_PASSWORD_TABLE:
         return "password";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid name_t::SNAP_NAME_PASSWORD_...");
+        throw snap_logic_exception(QString("invalid name_t::SNAP_NAME_PASSWORD_... (%1)").arg(static_cast<int>(name)));
 
     }
     NOTREACHED();
@@ -286,6 +314,8 @@ void password::bootstrap(snap_child * snap)
 
     SNAP_LISTEN(password, "editor", editor::editor, prepare_editor_form, _1);
     SNAP_LISTEN(password, "users", users::users, check_user_security, _1);
+    SNAP_LISTEN(password, "users", users::users, user_logged_in, _1);
+    SNAP_LISTEN(password, "users", users::users, save_password, _1, _2, _3);
 }
 
 
@@ -521,11 +551,6 @@ QtCassandra::QCassandraTable::pointer_t password::get_password_table()
  * of at least 8 characters (10 by default) and thus "!" cannot in
  * any way represent a password entered by the end user.
  *
- * \param[in] user_key  The key to a user (i.e. canonicalized email).
- * \param[in] email  The original user email address.
- * \param[in] password  The password we want to check.
- * \param[in] policy  The name of the policy used to check this user's password.
- * \param[in] bypass_blacklist  Whether the email blacklist should be bypassed.
  * \param[in,out] secure  Whether the password / user is considered secure.
  */
 void password::on_check_user_security(users::users::user_security_t & security)
@@ -536,7 +561,7 @@ void password::on_check_user_security(users::users::user_security_t & security)
         return;
     }
 
-    QString const reason(check_password_against_policy(security.get_password(), security.get_policy()));
+    QString const reason(check_password_against_policy(security.get_user_key(), security.get_password(), security.get_policy()));
     if(!reason.isEmpty())
     {
         SNAP_LOG_TRACE("password::on_check_user_security(): password was not accepted: ")(reason);
@@ -551,26 +576,174 @@ void password::on_check_user_security(users::users::user_security_t & security)
  * This function is used to calculate the strength of a password depending
  * on a policy.
  *
+ * When the \p user_key parameter is specified (not the empty string) then
+ * the new \p user_password is eventually checked against the old passwords
+ * the user used.
+ *
+ * \param[in] user_key  The user key (email reference in users table)
+ *                      or an empty string.
  * \param[in] user_password  The password being checked.
  * \param[in] policy  The policy used to verify the password strength.
  *
  * \return A string with some form of error message about the password
  *         weakness(es) or an empty string if the password is okay.
  */
-QString password::check_password_against_policy(QString const & user_password, QString const & policy)
+QString password::check_password_against_policy(QString const & user_key, QString const & user_password, QString const & policy)
 {
     policy_t const pp(policy);
 
     policy_t up;
     up.count_password_characters(user_password);
 
+    // check whether any counter is too low to be a match with this policy
+    //
     QString const too_small(up.compare(pp));
     if(!too_small.isEmpty())
     {
         return too_small;
     }
 
-    return pp.is_blacklisted(user_password);
+    // check whether this password is in the password blacklist
+    //
+    QString const blacklisted(pp.is_blacklisted(user_password));
+    if(!blacklisted.isEmpty())
+    {
+        return blacklisted;
+    }
+
+    // TODO: add test against the username once we have that feature
+    //       available; this is checked against the password with
+    //       the Levenshtein fuzzy string compare function.
+#if 0
+    QString const username("random");
+    int64_t check_username(pp.get_check_username());
+    if(check_username > 0)
+    {
+        // TODO: this needs to breakup the password in length equal
+        //       to username.length() + 0,1,2..,check_username and
+        //       each version of the password checked against username;
+        //       as a bonus we can repeat the test with the username
+        //       string reversed
+        int const r(strstr_with_levenshtein_distance(user_password.toLower().toStdWString(), username.toLower().toStdWString(), check_username));
+        if(r >= check_username)
+        {
+            return "your username cannot, even as an approximation, appear in your password";
+        }
+        if(pp.get_check_username_reversed())
+        {
+            QString username_reversed;
+            username_reversed.reserve(username.length());
+            std::reverse_copy(username.begin(), username.end(), username_reversed.begin());
+            // TODO: same as above, we want to use a function which search
+            //       the reversed username within the password
+            int const rr(strstr_with_levenshtein_distance(user_password.toLower().toStdWString(), username_reversed.toLower().toStdWString(), check_username));
+            if(rr >= check_username)
+            {
+                return "your username cannot, even as a reversed approximation, appear in your password";
+            }
+        }
+    }
+#endif
+
+    // now verify that the password is new, that the user is not
+    // reusing an old password
+    //
+    if(pp.get_prevent_old_passwords()
+    && !user_key.isEmpty())
+    {
+        users::users * users_plugin(users::users::instance());
+        QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
+
+        int64_t const minimum_count(pp.get_minimum_old_passwords());
+        int64_t const maximum_age(pp.get_old_passwords_maximum_age());
+        int64_t const age_limit(f_snap->get_start_date() - maximum_age * 86400LL * 1000000LL);
+
+        QString result;
+
+        for(int64_t idx(1);; ++idx)
+        {
+            // if no such password entry exists, we are done
+            //
+            QString const password_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD)).arg(idx));
+            if(!row->exists(password_name))
+            {
+                break;
+            }
+
+            // see whether that old password timed out, if so, we want
+            // to delete it (and any following passwords)
+            //
+            QString const password_modified_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED)).arg(idx));
+            QtCassandra::QCassandraValue const old_password_modified(row->cell(password_modified_name)->value());
+            int64_t const password_start_date(old_password_modified.safeInt64Value(0, 0));
+            if(idx >= minimum_count && password_start_date < age_limit)
+            {
+                // delete all the passwords starting at drop and on
+                //
+                // we have to loop because the user may not have come here in
+                // a long time or he/she may have had many password changes
+                // at some point and all are now timed out
+                //
+                for(;; ++idx)
+                {
+                    QString const old_password_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD)).arg(idx));
+                    if(!row->exists(old_password_name))
+                    {
+                        // no more passwords, we stop now
+                        break;
+                    }
+
+                    QString const old_password_modified_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED)).arg(idx));
+                    QString const old_password_salt_name    (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_SALT    )).arg(idx));
+                    QString const old_password_digest_name  (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST  )).arg(idx));
+
+                    row->dropCell(old_password_name         , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    row->dropCell(old_password_modified_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    row->dropCell(old_password_salt_name    , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    row->dropCell(old_password_digest_name  , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                }
+                break;
+            }
+
+            // no error yet?
+            //
+            if(result.isEmpty())
+            {
+                QString const password_salt_name  (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_SALT  )).arg(idx));
+                QString const password_digest_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)).arg(idx));
+
+                QtCassandra::QCassandraValue const old_password       (row->cell(password_name         )->value());
+                QtCassandra::QCassandraValue const old_password_salt  (row->cell(password_salt_name    )->value());
+                QtCassandra::QCassandraValue const old_password_digest(row->cell(password_digest_name  )->value());
+
+                // we have to encrypt the new password with the old digest to
+                // get a hash similar to the saved hash
+                //
+                QByteArray hash;
+                users_plugin->encrypt_password(old_password_digest.stringValue(), user_password, old_password_salt.binaryValue(), hash);
+                if(old_password.size() == hash.size()
+                && memcmp(old_password.binaryValue().data(), hash.data(), hash.size()) == 0)
+                {
+                    // this is an old password, prevent its use
+                    //
+                    result = "you used this password before and cannot reuse it at this time, please try again with a new password";
+
+                    // WARNING: here we continue looping so that way we
+                    //          can remove old password which is important
+                    //          because we do not want to hold on really
+                    //          old passwords forever
+                }
+            }
+        }
+
+        if(!result.isEmpty())
+        {
+            return result;
+        }
+    }
+
+    return QString();
 }
 
 
@@ -766,13 +939,176 @@ QString password::create_password(QString const & policy)
 
     // make sure that it worked as expected
     //
-    QString const reason(check_password_against_policy(result, policy));
+    QString const reason(check_password_against_policy(QString(), result, policy));
     if(!reason.isEmpty())
     {
         throw snap_logic_exception("somehow we generated a password that did not match the policy we were working against...");
     }
 
     return result;
+}
+
+
+/** \brief Check whether the user password timed out.
+ *
+ * The last time the password was changed is saved in the users
+ * table. If that password was last changed a long time ago
+ * and the current "users" policy says that we should timeout
+ * the password, then this function makes sure the user is
+ * forced to change his password.
+ *
+ * \param[in] logged_info  The information about the user being logged in.
+ */
+void password::on_user_logged_in(users::users::user_logged_info_t & logged_info)
+{
+    // load the policy
+    policy_t const pp(logged_info.get_password_policy());
+
+    // policy limits password lifespan?
+    if(pp.get_limit_duration())
+    {
+        // duration limited to... (in microseconds)
+        int64_t const duration(pp.get_maximum_duration() * 86400LL * 1000000LL);
+
+        // retrieve the last modification time of this user's password
+        users::users * users_plugin(users::users::instance());
+        QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(logged_info.get_user_key()));
+        int64_t const last_modified(row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED))->value().safeInt64Value(0, 0));
+
+        // compare against current date
+        int64_t const start_date(f_snap->get_start_date());
+        if(last_modified != 0
+        && last_modified + duration < start_date)
+        {
+            // password was last modified a long time ago and needs to be
+            // replaced now
+            //
+            logged_info.force_user_to_change_password();
+        }
+    }
+}
+
+
+void password::on_save_password(QtCassandra::QCassandraRow::pointer_t row, QString const & user_password, QString const & password_policy)
+{
+    NOTUSED(user_password);
+
+    if(!row->exists(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD)))
+    {
+        return;
+    }
+
+    policy_t const pp(password_policy);
+    if(!pp.get_prevent_old_passwords())
+    {
+        return;
+    }
+
+    // if a password already exists, make sure to make a copy
+    //
+    // the copies are kept to force users to not reuse an old
+    // password; we copy evenrything because to check the
+    // password we need the salt and digest information
+    //
+    // copies are organized in two main ways:
+    //
+    // . number of copies
+    // . total amount of time we keep a password
+    //
+    // The number of copies is a minimum, it may grow over if we
+    // are to keep passwords for longer and the user changes his
+    // password often; however, we will keep at least that many
+    // even if the time elapses (i.e. if you have a policy that
+    // requires 5 copies and they time out after 1 year, a user
+    // with 3 old passwords will be kept as is even after a year)
+    //
+    // this code does a full roll of all the password history;
+    //
+
+    int64_t const start_date(f_snap->get_start_date());
+    int64_t const old_password(start_date - pp.get_old_passwords_maximum_age() * 86400LL * 1000000LL);
+    int64_t const minimum_count(pp.get_minimum_old_passwords());
+
+    QtCassandra::QCassandraValue previous_password         (row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD         ))->value());
+    QtCassandra::QCassandraValue previous_password_modified(row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED))->value());
+    QtCassandra::QCassandraValue previous_password_salt    (row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_SALT    ))->value());
+    QtCassandra::QCassandraValue previous_password_digest  (row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST  ))->value());
+
+    bool more(true);
+    int64_t drop(0);
+    for(int64_t idx(1); more; ++idx)
+    {
+        // define the names of the next data entries
+        QString const password_name         (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD         )).arg(idx));
+        QString const password_modified_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED)).arg(idx));
+        QString const password_salt_name    (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_SALT    )).arg(idx));
+        QString const password_digest_name  (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST  )).arg(idx));
+
+        QtCassandra::QCassandraValue next_password;
+        QtCassandra::QCassandraValue next_password_modified;
+        QtCassandra::QCassandraValue next_password_salt;
+        QtCassandra::QCassandraValue next_password_digest;
+
+        if(row->exists(password_name))
+        {
+            next_password_modified = row->cell(password_modified_name)->value();
+            int64_t const password_start_date(next_password_modified.safeInt64Value(0, 0));
+            if(idx >= minimum_count && password_start_date < old_password)
+            {
+                 more = false;
+                 drop = idx;
+            }
+            else
+            {
+                next_password          = row->cell(password_name         )->value();
+                next_password_salt     = row->cell(password_salt_name    )->value();
+                next_password_digest   = row->cell(password_digest_name  )->value();
+            }
+        }
+        else
+        {
+            more = false;
+        }
+
+        row->cell(password_name         )->setValue(previous_password);
+        row->cell(password_modified_name)->setValue(previous_password_modified);
+        row->cell(password_salt_name    )->setValue(previous_password_salt);
+        row->cell(password_digest_name  )->setValue(previous_password_digest);
+
+        previous_password          = next_password;
+        previous_password_modified = next_password_modified;
+        previous_password_salt     = next_password_salt;
+        previous_password_digest   = next_password_digest;
+    }
+
+    if(drop > 0)
+    {
+        // delete all the passwords starting at drop and on
+        //
+        // we have to loop because the user may not have come here in
+        // a long time or he/she may have had many password changes
+        // at some point and all are now timed out
+        //
+        for(;; ++drop)
+        {
+            QString const password_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD)).arg(drop));
+            if(!row->exists(password_name))
+            {
+                // no more passwords, we stop now
+                break;
+            }
+
+            QString const password_modified_name(QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED)).arg(drop));
+            QString const password_salt_name    (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_SALT    )).arg(drop));
+            QString const password_digest_name  (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST  )).arg(drop));
+
+            row->dropCell(password_name         , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            row->dropCell(password_modified_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            row->dropCell(password_salt_name    , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            row->dropCell(password_digest_name  , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        }
+    }
 }
 
 

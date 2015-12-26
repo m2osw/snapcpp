@@ -119,7 +119,7 @@ BOOST_STATIC_ASSERT((COOKIE_NAME_SIZE % 3) == 0);
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+const char * get_name(name_t name)
 {
     switch(name)
     {
@@ -243,6 +243,9 @@ const char *get_name(name_t name)
     case name_t::SNAP_NAME_USERS_PASSWORD_DIGEST:
         return "users::password::digest";
 
+    case name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED:
+        return "users::password::modified";
+
     case name_t::SNAP_NAME_USERS_PASSWORD_PATH:
         return "types/users/password";
 
@@ -305,7 +308,7 @@ const char *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid name_t::SNAP_NAME_USERS_...");
+        throw snap_logic_exception(QString("invalid name_t::SNAP_NAME_USERS_... (%1)").arg(static_cast<int>(name)));
 
     }
     NOTREACHED();
@@ -2041,13 +2044,14 @@ void users::verify_user(content::path_info_t & ipath)
  * \param[in] password  The password to log the user in.
  * \param[out] validation_required  Whether the user needs to validate his account.
  * \param[in] login_mode  The mode used to log in: full, verification.
+ * \param[in] password_policy  The policy used to log the user in.
  *
  * \return A string representing an error, an empty string if the login
  *         worked and the user is not being redirected. If the error is
  *         "user validation required" then the validation_required flag
  *         is set to false.
  */
-QString users::login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode)
+QString users::login_user(QString const & email, QString const & password, bool & validation_required, login_mode_t login_mode, QString const & password_policy)
 {
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     validation_required = false;
@@ -2085,7 +2089,8 @@ QString users::login_user(QString const & email, QString const & password, bool 
             }
             NOTREACHED();
         }
-        user_logged_info_t logged_info;
+        user_logged_info_t logged_info(f_snap);
+        logged_info.set_password_policy(password_policy);
         logged_info.set_identifier(user_identifier.int64Value());
         logged_info.user_ipath().set_path(QString("%1/%2")
                 .arg(get_name(name_t::SNAP_NAME_USERS_PATH))
@@ -2105,7 +2110,6 @@ QString users::login_user(QString const & email, QString const & password, bool 
         links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, logged_info.user_ipath().get_key(), logged_info.user_ipath().get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
         links::link_info status_info;
-        bool force_redirect_password_change(false);
         bool valid(true);
         if(link_ctxt->next_link(status_info))
         {
@@ -2145,7 +2149,7 @@ QString users::login_user(QString const & email, QString const & password, bool 
                 // note that the status will not change until the user saves
                 // his new password so this redirection will happen again and
                 // again until the password gets changed
-                force_redirect_password_change = true;
+                logged_info.force_password_change();
             }
             // ignore other statuses at this point
         }
@@ -2234,7 +2238,7 @@ QString users::login_user(QString const & email, QString const & password, bool 
                         return "";
                     }
 
-                    if(force_redirect_password_change)
+                    if(logged_info.is_password_change_required())
                     {
                         // this URI has priority over other plugins URIs
                         logged_info.set_uri("user/password");
@@ -2378,7 +2382,7 @@ void users::create_logged_in_user_session(QString const & user_key)
 }
 
 
-/** \fn void users::user_logged_in(user_logged_info_t& logged_info)
+/** \fn void users::user_logged_in(user_logged_info_t & logged_info)
  * \brief Tell plugins that the user is now logged in.
  *
  * This signal is used to tell plugins that the user is now logged in.
@@ -2416,6 +2420,10 @@ void users::create_logged_in_user_session(QString const & user_key)
  * sets the URI has priority. Note that of course a plugin can decide not
  * to change the URI if it is already set.
  *
+ * If your plugin determines that the user should change his password,
+ * then it can use one of the two functions in the user_logged_info_t
+ * class to enforce such.
+ *
  * \note
  * It is important to remind you that if the system has to send the user to
  * change his password, it will do so, whether a plugin sets another URI
@@ -2444,7 +2452,7 @@ void users::create_logged_in_user_session(QString const & user_key)
  * you are doing!
  *
  * If the user is not recognized, then his key is the empty string. This
- * is a fast way to know whether the current user is logged in, registed,
+ * is a fast way to know whether the current user is logged in, registered,
  * or just a visitor:
  *
  * \code
@@ -2833,27 +2841,6 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
     QString const user_key(email_to_user_key(email));
 
-    QByteArray salt;
-    QByteArray hash;
-    QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)));
-    if(password == "!")
-    {
-        // special case; these users cannot log in
-        // (probably created because they signed up to a newsletter or comments)
-        digest.setStringValue("no password");
-        salt = "no salt";
-        hash = "!";
-    }
-    else
-    {
-        if(digest.nullValue())
-        {
-            digest.setStringValue("sha512");
-        }
-        create_password_salt(salt);
-        encrypt_password(digest.stringValue(), password, salt, hash);
-    }
-
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
@@ -3001,10 +2988,12 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
     // WARNING: if this breaks, someone probably changed the value
     //          content; it should be the user email
-    uint64_t const created_date(f_snap->get_start_date());
+    int64_t const created_date(f_snap->get_start_date());
     if(new_user)
     {
         users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))->cell(new_identifier.binaryValue())->setValue(user_key);
+
+        save_password(row, password, "users");
 
         // Save the user identifier in his user account so we can easily find
         // the content user for that user account/email
@@ -3014,18 +3003,6 @@ users::status_t users::register_user(QString const & email, QString const & pass
         // This is the original untouch email address
         value.setStringValue(email);
         row->cell(get_name(name_t::SNAP_NAME_USERS_CURRENT_EMAIL))->setValue(value);
-
-        // Save the hashed password (never the original password!)
-        value.setBinaryValue(hash);
-        row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD))->setValue(value);
-
-        // Save the password salt (otherwise we couldn't check whether the user
-        // knows his password!)
-        value.setBinaryValue(salt);
-        row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
-
-        // also save the digest since it could change en-route
-        row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
 
         // Save the user IP address when registering
         value.setStringValue(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
@@ -3100,9 +3077,6 @@ users::status_t users::register_user(QString const & email, QString const & pass
         links::links::instance()->create_link(source, destination);
     }
 
-    // last time the user data was modified
-    row->cell(get_name(name_t::SNAP_NAME_USERS_MODIFIED))->setValue(created_date);
-
     user_registered(user_ipath, identifier);
 
     return status;
@@ -3150,34 +3124,37 @@ users::status_t users::register_user(QString const & email, QString const & pass
  */
 bool users::check_user_security_impl(user_security_t & security)
 {
-    // make sure that the user email is valid
-    // this snap_child function throws if the email is not acceptable
-    // (i.e. the validate_email() signal expects the function to only
-    // be called with a valid email)
-    //
-    try
+    if(!security.get_email().isEmpty())
     {
-        f_snap->verify_email(security.get_email());
-    }
-    catch(snap_child_exception_invalid_email const &)
-    {
-        security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(security.get_email()));
-        security.set_status(status_t::STATUS_BLOCKED);
-        return false;
-    }
-
-    // a user may be marked as a spammer whenever his IP
-    // address was blocked or some other anti-spam measure
-    // returns true...
-    //
-    if(user_is_a_spammer())
-    {
-        // this is considered a spammer, just tell the user that the email is
-        // considered blocked.
+        // make sure that the user email is valid
+        // this snap_child function throws if the email is not acceptable
+        // (i.e. the validate_email() signal expects the function to only
+        // be called with a valid email)
         //
-        security.get_secure().not_permitted(QString("\"%1\" is blocked.").arg(security.get_email()));
-        security.set_status(status_t::STATUS_BLOCKED);
-        return false;
+        try
+        {
+            f_snap->verify_email(security.get_email());
+        }
+        catch(snap_child_exception_invalid_email const &)
+        {
+            security.get_secure().not_permitted(QString("\"%1\" does not look like a valid email address.").arg(security.get_email()));
+            security.set_status(status_t::STATUS_BLOCKED);
+            return false;
+        }
+
+        // a user may be marked as a spammer whenever his IP
+        // address was blocked or some other anti-spam measure
+        // returns true...
+        //
+        if(user_is_a_spammer())
+        {
+            // this is considered a spammer, just tell the user that the email is
+            // considered blocked.
+            //
+            security.get_secure().not_permitted(QString("\"%1\" is blocked.").arg(security.get_email()));
+            security.set_status(status_t::STATUS_BLOCKED);
+            return false;
+        }
     }
 
     // let other plugins take over for a while
@@ -3200,7 +3177,8 @@ void users::check_user_security_done(user_security_t & security)
     // if the user is not yet blocked, do a final test with the user
     // current status
     //
-    if(security.get_secure().allowed())
+    if(security.get_secure().allowed()
+    && !security.get_email().isEmpty())
     {
         QString status_key;
         status_t const status(user_status(security.get_email(), status_key));
@@ -3621,7 +3599,7 @@ void users::create_password_salt(QByteArray & salt)
  * \param[in] salt  The salt information, necessary to encrypt passwords.
  * \param[out] hash  The resulting password hash.
  */
-void users::encrypt_password(QString const& digest, QString const& password, QByteArray const& salt, QByteArray& hash)
+void users::encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash)
 {
     // it is an out only so reset it immediately
     hash.clear();
@@ -4018,6 +3996,76 @@ void users::on_table_is_accessible(QString const & table_name, server::accessibl
         //
         accessible.mark_as_secure();
     }
+}
+
+
+/** \brief Save a new password for the specified user.
+ *
+ * This function accepts a \p row which points to a user's account in
+ * the users table and a new \p user_password to save in that user's
+ * account.
+ *
+ * The password can be set to "!" when no password is given to a certain
+ * account. No one can log in such accounts.
+ *
+ * \param[in] row  The row to the users account in the users table (key is the
+ *                 user's email address).
+ * \param[in] user_password  The new password to save in that user's account.
+ * \param[in] password_policy  The policy used to handle this password.
+ */
+void users::save_password_done(QtCassandra::QCassandraRow::pointer_t row, QString const & user_password, QString const & password_policy)
+{
+    NOTUSED(password_policy);
+
+    QByteArray salt;
+    QByteArray hash;
+    QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)));
+    if(user_password == "!")
+    {
+        // special case; these users cannot log in
+        // (probably created because they signed up to a newsletter or comments)
+        //
+        digest.setStringValue("no password");
+        salt = "no salt";
+        hash = "!";
+    }
+    else
+    {
+        if(digest.nullValue())
+        {
+            digest.setStringValue("sha512");
+        }
+        create_password_salt(salt);
+        encrypt_password(digest.stringValue(), user_password, salt, hash);
+    }
+
+    int64_t const start_date(f_snap->get_start_date());
+
+    QtCassandra::QCassandraValue value;
+
+    // save the hashed password (never the original password!)
+    //
+    value.setBinaryValue(hash);
+    row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD))->setValue(value);
+
+    // to be able to time out a password, we have to save when it was
+    // last modified and this is where we do so
+    //
+    row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED))->setValue(start_date);
+
+    // save the password salt (otherwise we could not check whether the user
+    // knows his password!)
+    //
+    value.setBinaryValue(salt);
+    row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
+
+    // also save the digest since it could change en-route
+    //
+    row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
+
+    // the user was just modified
+    //
+    row->cell(get_name(name_t::SNAP_NAME_USERS_MODIFIED))->setValue(start_date);
 }
 
 

@@ -1703,78 +1703,71 @@ void users_ui::process_replace_password_form()
             links::link_info status_info;
             if(link_ctxt->next_link(status_info))
             {
-                // a status link exists...
+                // a password status link exists...
                 QString const site_key(f_snap->get_site_key_with_slash());
                 if(status_info.key() == site_key + users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_PATH))
                 {
-                    // We are good, save the new password and remove that link
-
-                    // First encrypt the password
                     QString const password(f_snap->postenv("password"));
-                    QByteArray salt;
-                    QByteArray hash;
-                    QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)));
-                    if(digest.nullValue())
+
+                    users::users::user_security_t security;
+                    security.set_user_key(f_user_changing_password_key);
+                    security.set_email("");
+                    security.set_password(password);
+                    security.set_bypass_blacklist(true);
+                    users_plugin->check_user_security(security);
+                    if(security.get_secure().allowed())
                     {
-                        digest.setStringValue("sha512");
+
+                        // We are good, save the new password and remove that link
+
+                        // Save encrypted password
+                        users_plugin->save_password(row, password, "users");
+
+                        // Unlink from the password tag too
+                        links::links::instance()->delete_link(user_status_info);
+
+                        // Now we auto-log in the user... the session should
+                        // already be adequate from the on_process_cookies()
+                        // call
+                        //
+                        // TODO to make this safer we really need the extra
+                        //      3 questions and ask one of them when the user
+                        //      request the new password or when he comes back
+                        //      in the replace password form
+                        //
+                        users_plugin->create_logged_in_user_session(f_user_changing_password_key);
+
+                        f_user_changing_password_key.clear();
+
+                        content::content::instance()->modified_content(user_ipath);
+
+                        // once we sent the new code, we can send the user back
+                        // to the verify form
+                        messages::messages::instance()->set_info(
+                            "Password Changed",
+                            "Your new password was saved. Next time you want to log in, you can use your email with this new password."
+                        );
+
+                        // TBD: should we use the saved login redirect instead?
+                        //      (if not then we probably want to clear it)
+                        f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
+                        NOTREACHED();
                     }
-                    users_plugin->create_password_salt(salt);
-                    users_plugin->encrypt_password(digest.stringValue(), password, salt, hash);
 
-                    // Save the hashed password (never the original password!)
-                    QtCassandra::QCassandraValue value;
-                    value.setBinaryValue(hash);
-                    row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD))->setValue(value);
-
-                    // Save the password salt (otherwise we couldn't check whether the user
-                    // knows his password!)
-                    value.setBinaryValue(salt);
-                    row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
-
-                    // Also save the digest since it could change en-route
-                    row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
-
-                    int64_t const start_date(f_snap->get_start_date());
-                    row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_MODIFIED))->setValue(start_date);
-
-                    // Unlink from the password tag too
-                    links::links::instance()->delete_link(user_status_info);
-
-                    // Now we auto-log in the user... the session should
-                    // already be adequate from the on_process_cookies()
-                    // call
-                    //
-                    // TODO to make this safer we really need the extra
-                    //      3 questions and ask one of them when the user
-                    //      request the new password or when he comes back
-                    //      in the replace password form
-                    //
-                    users_plugin->create_logged_in_user_session(f_user_changing_password_key);
-
-                    f_user_changing_password_key.clear();
-
-                    content::content::instance()->modified_content(user_ipath);
-
-                    // once we sent the new code, we can send the user back
-                    // to the verify form
-                    messages::messages::instance()->set_info(
-                        "Password Changed",
-                        "Your new password was saved. Next time you want to log in, you can use your email with this new password."
-                    );
-
-                    // TBD: should we use the saved login redirect instead?
-                    //      (if not then we probably want to clear it)
-                    f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
-                    NOTREACHED();
+                    // well... someone said "I do not like this password"!
+                    details = security.get_secure().reason();
                 }
-
-                details = QString("user \"%1\" is not new (maybe it is active, blocked, auto...), we do not send verification emails to such").arg(f_user_changing_password_key);
+                else
+                {
+                    // the link is not saying "PASSWORD"
+                    details = QString("user \"%1\" did not request change their password").arg(f_user_changing_password_key);
+                }
             }
             else
             {
                 // This happens for all users already active, users who are
                 // blocked, etc.
-                details = QString("user \"%1\" is currently active, we do not send verification emails to such").arg(f_user_changing_password_key);
+                details = QString("user \"%1\" is currently active, only user who forgot their password should be sent here").arg(f_user_changing_password_key);
             }
         }
         else
@@ -1900,63 +1893,80 @@ void users_ui::process_password_form()
             if(old_hash.size() == saved_hash.size()
             && memcmp(old_hash.data(), saved_hash.data(), old_hash.size()) == 0)
             {
-                // The user entered his old password properly
-                // save the new password
-                QString new_password(f_snap->postenv("new_password"));
-                QtCassandra::QCassandraValue new_digest(f_snap->get_site_parameter(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)));
-                if(new_digest.nullValue())
-                {
-                    new_digest.setStringValue("sha512");
-                }
-                QByteArray new_salt;
-                users_plugin->create_password_salt(new_salt);
+                // XXX should we verify the new password validity before
+                //     we verify the old password
+                //
+                QString const new_password(f_snap->postenv("new_password"));
+
+                // make sure the new password is not actually equal to
+                // the existing password
+                //
                 QByteArray new_hash;
-                users_plugin->encrypt_password(new_digest.stringValue(), new_password, new_salt, new_hash);
-
-                // Save the hashed password (never the original password!)
-                value.setBinaryValue(new_hash);
-                row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD))->setValue(value);
-
-                // Save the password salt (otherwise we couldn't check whether the user
-                // knows his password!)
-                value.setBinaryValue(new_salt);
-                row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
-
-                // also save the digest since it could change en-route
-                row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(new_digest);
-
-                // Unlink from the password tag too
-                if(delete_password_status)
+                users_plugin->encrypt_password(old_digest, new_password, old_salt, new_hash);
+                if(old_hash.size() == new_hash.size()
+                && memcmp(old_hash.data(), new_hash.data(), new_hash.size()) == 0)
                 {
-                    links::links::instance()->delete_link(user_status_info);
+                    messages::messages::instance()->set_error(
+                        "Invalid Password",
+                        "The password your entered is the same as your old password which is not allowed. Please try again.",
+                        "user is trying to \"change\" his password with the same password!?",
+                        false
+                    );
+                    return;
                 }
 
-                content::content::instance()->modified_content(user_ipath);
+                users::users::user_security_t security;
+                security.set_user_key(users_plugin->get_user_key());
+                security.set_email("");
+                security.set_password(new_password);
+                security.set_bypass_blacklist(true);
+                users_plugin->check_user_security(security);
+                if(security.get_secure().allowed())
+                {
+                    // The user entered his old password properly
+                    // save the new password
+                    users_plugin->save_password(row, new_password, "users");
 
-                // once we sent the new code, we can send the user back
-                // to the verify form
-                messages::messages::instance()->set_info(
-                    "Password Changed",
-                    "Your new password was saved. Next time you want to log in, you must use your email with this new password."
+                    // Unlink from the password tag too
+                    if(delete_password_status)
+                    {
+                        links::links::instance()->delete_link(user_status_info);
+                    }
+
+                    content::content::instance()->modified_content(user_ipath);
+
+                    // once we sent the new code, we can send the user back
+                    // to the verify form
+                    messages::messages::instance()->set_info(
+                        "Password Changed",
+                        "Your new password was saved. Next time you want to log in, you must use your email with this new password."
+                    );
+                    QString referrer(users_plugin->detach_from_session(users::get_name(users::name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
+                    if(referrer == "user/password")
+                    {
+                        // ignore the default redirect if it is to this page
+                        referrer.clear();
+                    }
+                    if(referrer.isEmpty())
+                    {
+                        // Redirect user to his profile
+                        f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
+                    }
+                    else
+                    {
+                        // If the user logged in when he needed to still change
+                        // his password, then there may very be a referrer path
+                        f_snap->page_redirect(referrer, snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
+                    }
+                    NOTREACHED();
+                }
+                messages::messages::instance()->set_error(
+                    "Invalid Password",
+                    QString("The new password is not strong enough. Please try again. Reason: %1").arg(security.get_secure().reason()),
+                    "user is trying to change his password but the new password is not strong enough for this website",
+                    false
                 );
-                QString referrer(users_plugin->detach_from_session(users::get_name(users::name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
-                if(referrer == "user/password")
-                {
-                    // ignore the default redirect if it is to this page
-                    referrer.clear();
-                }
-                if(referrer.isEmpty())
-                {
-                    // Redirect user to his profile
-                    f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
-                }
-                else
-                {
-                    // If the user logged in when he needed to still change
-                    // his password, then there may very be a referrer path
-                    f_snap->page_redirect(referrer, snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
-                }
-                NOTREACHED();
+                return;
             }
             else
             {

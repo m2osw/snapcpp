@@ -1762,7 +1762,8 @@ bool sendmail::validate_email(QString const & user_email, email const * e)
  */
 void sendmail::on_check_user_security(users::users::user_security_t & security)
 {
-    if(!security.get_secure().allowed())
+    if(!security.get_secure().allowed()
+    || security.get_email().isEmpty())
     {
         return;
     }

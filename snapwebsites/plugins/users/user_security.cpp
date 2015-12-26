@@ -25,25 +25,6 @@
 
 #include "users.h"
 
-//#include "../output/output.h"
-//#include "../locale/snap_locale.h"
-//#include "../messages/messages.h"
-//#include "../server_access/server_access.h"
-//
-//#include "log.h"
-//#include "not_reached.h"
-//#include "not_used.h"
-//#include "qdomhelpers.h"
-//#include "qstring_stream.h"
-//
-//#include <iostream>
-//
-//#include <QtCassandra/QCassandraLock.h>
-//#include <QFile>
-//
-//#include <openssl/evp.h>
-//#include <openssl/rand.h>
-
 #include "poison.h"
 
 
