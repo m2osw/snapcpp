@@ -99,6 +99,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED:
         return "password::check_username_reversed";
 
+    case name_t::SNAP_NAME_PASSWORD_DELAY_BETWEEN_PASSWORD_CHANGES:
+        return "password::delay_between_password_changes";
+
     case name_t::SNAP_NAME_PASSWORD_EXISTS_IN_BLACKLIST:
         return "password::exists_in_blacklist";
 

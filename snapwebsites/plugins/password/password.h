@@ -29,6 +29,7 @@ enum class name_t
     SNAP_NAME_PASSWORD_CHECK_BLACKLIST,
     SNAP_NAME_PASSWORD_CHECK_USERNAME,
     SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED,
+    SNAP_NAME_PASSWORD_DELAY_BETWEEN_PASSWORD_CHANGES,
     SNAP_NAME_PASSWORD_EXISTS_IN_BLACKLIST,
     SNAP_NAME_PASSWORD_LIMIT_DURATION,
     SNAP_NAME_PASSWORD_MAXIMUM_DURATION,
@@ -95,6 +96,7 @@ public:
     bool            get_prevent_old_passwords() const;
     int64_t         get_minimum_old_passwords() const;
     int64_t         get_old_passwords_maximum_age() const;
+    int64_t         get_delay_between_password_changes() const;
 
     QString         compare(policy_t const & rhs) const;
     QString         is_blacklisted(QString const & user_password) const;
@@ -114,6 +116,7 @@ private:
     int64_t         f_minimum_old_passwords = 0;
     int64_t         f_old_passwords_maximum_age = 0;
     int64_t         f_check_username = 2;
+    int64_t         f_delay_between_password_changes = 0;
     bool            f_limit_duration = false;
     bool            f_check_blacklist = false;
     bool            f_prevent_old_passwords = false;

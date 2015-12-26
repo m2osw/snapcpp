@@ -39,6 +39,7 @@
 #include "../output/output.h"
 #include "../messages/messages.h"
 #include "../sendmail/sendmail.h"
+#include "../password/password.h"
 
 #include "log.h"
 #include "not_reached.h"
@@ -291,6 +292,7 @@ void users_ui::bootstrap(::snap::snap_child * snap)
     SNAP_LISTEN0(users_ui, "server", server, attach_to_session);
     SNAP_LISTEN0(users_ui, "server", server, detach_from_session);
     SNAP_LISTEN(users_ui, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(users_ui, "path", path::path, check_for_redirect, _1);
     SNAP_LISTEN(users_ui, "filter", filter::filter, replace_token, _1, _2, _3);
     SNAP_LISTEN(users_ui, "editor", editor::editor, finish_editor_form_processing, _1, _2);
 }
@@ -498,6 +500,53 @@ void users_ui::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dy
         if(user_segments.size() == 2)
         {
             plugin_info.set_plugin(this);
+        }
+    }
+}
+
+
+/** \brief Check whether the user is accessing a "change password" page.
+ *
+ * The system wants to prevent the user from accessing the change
+ * password pages if the user changed his password very recently
+ * (see the delay between password changes as defined by
+ * the "users" password policy.)
+ *
+ * \param[in,out] ipath  The ipath of the page being accessed.
+ */
+void users_ui::on_check_for_redirect(content::path_info_t & ipath)
+{
+    QString const cpath(ipath.get_cpath());
+    if(cpath == "user/password")
+    {
+        users::users * users_plugin(users::users::instance());
+        QString const user_key(users_plugin->get_user_key());
+        if(!user_key.isEmpty()
+        && users_plugin->user_is_logged_in()) // only logged in users can change their password
+        {
+            password::policy_t pp("users");
+            int64_t const delay(pp.get_delay_between_password_changes());
+            if(delay > 0)
+            {
+                // get the logged in user
+                users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED);
+                QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+                int64_t const password_last_modification(users_table->row(user_key)->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_MODIFIED))->value().safeInt64Value(0, 0));
+                int64_t const start_date(f_snap->get_start_date());
+                if(password_last_modification + delay * 60LL * 1000000LL > start_date)
+                {
+                    // trying to change the password again too soon
+                    messages::messages::instance()->set_error(
+                        "Permission Denied",
+                        QString("You are not currently authorized to change your password. You will have to wait about %1 minutes before you can do so again.")
+                                        .arg(1 + (password_last_modification + delay * 60LL * 1000000LL - start_date) / (60LL * 1000000LL)),
+                        "attempt to change password again too soon",
+                        false
+                    );
+                    f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER, "Permission Denied", "You changed your account password recently and this website does not allow you to change it again right away. You will have to wait some time and try again.");
+                    NOTREACHED();
+                }
+            }
         }
     }
 }

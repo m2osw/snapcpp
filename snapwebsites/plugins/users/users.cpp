@@ -2490,7 +2490,7 @@ void users::create_logged_in_user_session(QString const & user_key)
  * use one of the user_is_logged_in() or user_has_administrative_rights()
  * functions.
  *
- * \return The user email address (which is the user key in the users table).
+ * \return The user email address (which is the user key in the users table.)
  */
 QString users::get_user_key() const
 {
@@ -2514,7 +2514,7 @@ QString users::get_user_key() const
  * To test whether the returned value represents the anonymous user,
  * please make use  of get_name() with name_t::SNAP_NAME_USERS_ANONYMOUS_PATH.
  *
- * \return The path to the currently logged in user or "user".
+ * \return The path in the content table to the currently logged in user or "user".
  */
 QString users::get_user_path() const
 {

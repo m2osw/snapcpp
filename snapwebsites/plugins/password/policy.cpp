@@ -52,24 +52,25 @@ policy_t::policy_t(QString const & policy_name)
         settings_ipath.set_path(QString("admin/settings/password/%1").arg(policy_name));
         QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
 
-        f_limit_duration               = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_LIMIT_DURATION))->value().safeSignedCharValue(0, 0) != 0;
-        f_maximum_duration             = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MAXIMUM_DURATION))->value().safeInt64Value(0, 92);
-        f_minimum_length               = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH))->value().safeInt64Value(0, 0);
-        f_minimum_lowercase_letters    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS))->value().safeInt64Value(0, 0);
-        f_minimum_uppercase_letters    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UPPERCASE_LETTERS))->value().safeInt64Value(0, 0);
-        f_minimum_letters              = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LETTERS))->value().safeInt64Value(0, 0);
-        f_minimum_digits               = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_DIGITS))->value().safeInt64Value(0, 0);
-        f_minimum_spaces               = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPACES))->value().safeInt64Value(0, 0);
-        f_minimum_special              = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPECIAL))->value().safeInt64Value(0, 0);
-        f_minimum_unicode              = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UNICODE))->value().safeInt64Value(0, 0);
-        f_minimum_variation            = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_VARIATION))->value().safeInt64Value(0, 0);
-        f_minimum_length_of_variations = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH_OF_VARIATIONS))->value().safeInt64Value(0, 1);
-        f_check_blacklist              = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST))->value().safeSignedCharValue(0, 0) != 0;
-        f_check_username               = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME))->value().safeInt64Value(0, 1);
-        f_check_username_reversed      = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED))->value().safeSignedCharValue(0, 1) != 0;
-        f_prevent_old_passwords        = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_PREVENT_OLD_PASSWORDS))->value().safeSignedCharValue(0, 0) != 0;
-        f_minimum_old_passwords        = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_OLD_PASSWORDS))->value().safeInt64Value(0, 1);
-        f_old_passwords_maximum_age    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_OLD_PASSWORDS_MAXIMUM_AGE))->value().safeInt64Value(0, 365);
+        f_limit_duration                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_LIMIT_DURATION))->value().safeSignedCharValue(0, 0) != 0;
+        f_maximum_duration               = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MAXIMUM_DURATION))->value().safeInt64Value(0, 92);
+        f_minimum_length                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH))->value().safeInt64Value(0, 0);
+        f_minimum_lowercase_letters      = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS))->value().safeInt64Value(0, 0);
+        f_minimum_uppercase_letters      = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UPPERCASE_LETTERS))->value().safeInt64Value(0, 0);
+        f_minimum_letters                = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LETTERS))->value().safeInt64Value(0, 0);
+        f_minimum_digits                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_DIGITS))->value().safeInt64Value(0, 0);
+        f_minimum_spaces                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPACES))->value().safeInt64Value(0, 0);
+        f_minimum_special                = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPECIAL))->value().safeInt64Value(0, 0);
+        f_minimum_unicode                = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UNICODE))->value().safeInt64Value(0, 0);
+        f_minimum_variation              = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_VARIATION))->value().safeInt64Value(0, 0);
+        f_minimum_length_of_variations   = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH_OF_VARIATIONS))->value().safeInt64Value(0, 1);
+        f_check_blacklist                = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST))->value().safeSignedCharValue(0, 0) != 0;
+        f_check_username                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME))->value().safeInt64Value(0, 1);
+        f_check_username_reversed        = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED))->value().safeSignedCharValue(0, 1) != 0;
+        f_prevent_old_passwords          = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_PREVENT_OLD_PASSWORDS))->value().safeSignedCharValue(0, 0) != 0;
+        f_minimum_old_passwords          = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_OLD_PASSWORDS))->value().safeInt64Value(0, 1);
+        f_old_passwords_maximum_age      = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_OLD_PASSWORDS_MAXIMUM_AGE))->value().safeInt64Value(0, 365);
+        f_delay_between_password_changes = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_DELAY_BETWEEN_PASSWORD_CHANGES))->value().safeInt64Value(0, 0);
     }
 }
 
@@ -450,6 +451,20 @@ int64_t policy_t::get_minimum_old_passwords() const
 int64_t policy_t::get_old_passwords_maximum_age() const
 {
     return std::max(static_cast<int64_t>(7LL), f_old_passwords_maximum_age);
+}
+
+
+/** \brief Delay before changing the password further.
+ *
+ * This delay can be used (although it is not recommanded) to prevent
+ * the user from changing his password for some time after the last
+ * change.
+ *
+ * \return The delay to wait before a further change in minutes.
+ */
+int64_t policy_t::get_delay_between_password_changes() const
+{
+    return f_delay_between_password_changes;
 }
 
 

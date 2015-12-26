@@ -93,6 +93,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:copy-of select="page/body/password/minimum_length_of_variations/node()"/>
 						</div>
 
+						<!-- delay between password changes widget -->
+						<div class="editor-block">
+							<label for="delay_between_password_changes" class="editor-title">Delay Between Password Changes (in minutes):</label>
+							<xsl:copy-of select="page/body/password/delay_between_password_changes/node()"/>
+						</div>
+
 					</fieldset>
 
 					<fieldset class="blaclist">
