@@ -3152,6 +3152,17 @@ bool editor::validate_editor_post_for_widget_impl(
                             }
                             break;
 
+                        case 's':
+                            if(regex_name == "signed-decimal")
+                            {
+                                re = "^[-+]?[0-9]+(?:\\.[0-9]+)?$";
+                            }
+                            else if(regex_name == "signed-integer")
+                            {
+                                re = "^[-+]?[0-9]+$";
+                            }
+                            break;
+
                         }
                         // TBD: offer other plugins to support their own named regex?
                         //

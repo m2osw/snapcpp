@@ -26,6 +26,8 @@
 #include "not_used.h"
 #include "fuzzy_string_compare.h"
 
+#include <QtCassandra/QCassandraLock.h>
+
 #include <algorithm>
 #include <iostream>
 
@@ -99,11 +101,26 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED:
         return "password::check_username_reversed";
 
+    case name_t::SNAP_NAME_PASSWORD_COUNT_FAILURES:
+        return "password::count_failures";
+
     case name_t::SNAP_NAME_PASSWORD_DELAY_BETWEEN_PASSWORD_CHANGES:
         return "password::delay_between_password_changes";
 
     case name_t::SNAP_NAME_PASSWORD_EXISTS_IN_BLACKLIST:
         return "password::exists_in_blacklist";
+
+    case name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_BLOCK_DURATION:
+        return "password::invalid_passwords_block_duration";
+
+    case name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_COUNTER:
+        return "password::invalid_passwords_counter";
+
+    case name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_COUNTER_LIFETIME:
+        return "password::invalid_passwords_counter_lifetime";
+
+    case name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_SLOWDOWN:
+        return "password::invalid_passwords_slowdown";
 
     case name_t::SNAP_NAME_PASSWORD_LIMIT_DURATION:
         return "password::limit_duration";
@@ -319,6 +336,7 @@ void password::bootstrap(snap_child * snap)
     SNAP_LISTEN(password, "users", users::users, check_user_security, _1);
     SNAP_LISTEN(password, "users", users::users, user_logged_in, _1);
     SNAP_LISTEN(password, "users", users::users, save_password, _1, _2, _3);
+    SNAP_LISTEN(password, "users", users::users, invalid_password, _1, _2);
 }
 
 
@@ -1112,6 +1130,61 @@ void password::on_save_password(QtCassandra::QCassandraRow::pointer_t row, QStri
             row->dropCell(password_digest_name  , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
         }
     }
+}
+
+
+/** \brief User entered an invalid password.
+ *
+ * This function gets called whenever the user enters an invalid password.
+ * The function increments a counter to know how many times the user entered
+ * an invalid password.
+ *
+ * After a certain number of times, the system reacts by blocking the user
+ * for a temporary amount of time.
+ *
+ * \param[in] row  The row in the users table of the user who failed testing
+ *                 his password.
+ * \param[in] policy  The policy concerned with this invalid password.
+ */
+void password::on_invalid_password(QtCassandra::QCassandraRow::pointer_t row, QString const & policy)
+{
+    policy_t pp(policy);
+
+    int64_t count(0);
+
+    // increase failure counter
+    {
+        QtCassandra::QCassandraLock lock(f_snap->get_context(), row->rowKey());
+
+        QtCassandra::QCassandraValue count_failures(row->cell(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_FAILURES))->value());
+        count = count_failures.safeInt64Value(0, 0) + 1LL;
+        count_failures.setInt64Value(count);
+        count_failures.setTtl(pp.get_invalid_passwords_counter_lifetime() * 60LL * 60LL);
+        row->cell(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_FAILURES))->setValue(count_failures);
+    }
+
+    if(count > pp.get_invalid_passwords_counter())
+    {
+        // user tried too many times, add a temporary block
+        //
+        QtCassandra::QCassandraValue value;
+        value.setSignedCharValue(1);
+        value.setTtl(pp.get_invalid_passwords_block_duration() * 60LL * 60LL);
+        row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_BLOCKED))->setValue(value);
+    }
+
+    //
+    // this could generate an Apache2 timeout error once the counter is
+    // 'pretty large'...
+    //
+    // If so, you may increase your Apache2 TimeOut parameter
+    //
+    // IMPORTANT NOTE: Although we could send this sleep()
+    //                 amount to our snap.cgi, we do not because
+    //                 the we envision to get rid of snap.cgi and
+    //                 Apache2 at some point...
+    //
+    sleep((count - 1) * pp.get_invalid_passwords_slowdown());
 }
 
 

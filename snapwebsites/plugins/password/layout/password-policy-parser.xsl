@@ -131,8 +131,38 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 					</fieldset>
 
+					<fieldset class="invalid-passwords-actions">
+						<legend>Invalid Passwords Actions</legend>
+
+						<!-- number of password failures before a block -->
+						<div class="editor-block">
+							<label for="invalid_passwords_counter" class="editor-title">Invalid Passwords Counter:</label>
+							<xsl:copy-of select="page/body/password/invalid_passwords_counter/node()"/>
+						</div>
+
+						<!-- duration of a block once too may attempts were made -->
+						<div class="editor-block">
+							<label for="invalid_passwords_block_duration" class="editor-title">Invalid Passwords Block Duration (in hours):</label>
+							<xsl:copy-of select="page/body/password/invalid_passwords_block_duration/node()"/>
+						</div>
+
+						<!-- how long we keep the invalid password counter -->
+						<div class="editor-block">
+							<label for="invalid_passwords_counter_lifetime" class="editor-title">Invalid Passwords Counter Lifetime (in hours):</label>
+							<xsl:copy-of select="page/body/password/invalid_passwords_counter_lifetime/node()"/>
+						</div>
+
+						<!-- invalid password pause before returning anything to the client -->
+						<div class="editor-block">
+							<label for="invalid_passwords_slowdown" class="editor-title">Invalid Passwords Slowdown (attempts multiplier):</label>
+							<xsl:copy-of select="page/body/password/invalid_passwords_slowdown/node()"/>
+						</div>
+
+					</fieldset>
+
 					<fieldset class="old-passwords-management">
 						<legend>Old Passwords Management</legend>
+
 						<!-- keep old passwords to prevent reuse? -->
 						<div class="editor-block">
 							<xsl:copy-of select="page/body/password/prevent_old_passwords/node()"/>

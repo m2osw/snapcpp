@@ -6555,7 +6555,7 @@ QString snap_child::get_header(QString const & name) const
  * Note that the Cookies headers are never printed by this function.
  *
  * \note
- * Headers are NOT encoding in UTF-8, we output them as Latin1, this is
+ * Headers are NOT encoded in UTF-8, we output them as Latin1, this is
  * VERY important; headers are checked at the time you do the set_header
  * to ensure that only Latin1 characters are used.
  *
@@ -7403,7 +7403,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
     // TODO when downloading a file (an attachment) that's already
     //      compressed we need to specify the compression of the output
     //      buffer so that way here we can "adjust" the compression as
-    //      required
+    //      required -- some of that is already done/supported TBD
 
     // was the output buffer generated from an already compressed file?
     // if so, then skip the encoding handling

@@ -441,6 +441,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     || n == "permissions::dynamic"
     || n == "users::multiuser"
     || n == "users::long_sessions"
+    || n == "users::password::blocked"
     || (f_tableName == "content" && f_rowName == "*index*")
     || (f_tableName == "list" && f_rowName != "*standalone*")
     || n == "users::soft_administrative_session"
@@ -509,6 +510,11 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "feed::teaser_tags"
          || n == "feed::teaser_words"
          || n == "feed::top_maximum_number_of_items_in_any_feed"
+         || n == "password::count_failures"
+         || n == "password::invalid_passwords_counter"
+         || n == "password::invalid_passwords_block_duration"
+         || n == "password::invalid_passwords_counter_lifetime"
+         || n == "password::invalid_passwords_slowdown"
          || n == "password::minimum_length"
          || n == "password::minimum_letters"
          || n == "password::minimum_lowercase_letters"

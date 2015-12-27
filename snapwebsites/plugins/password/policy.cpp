@@ -52,25 +52,29 @@ policy_t::policy_t(QString const & policy_name)
         settings_ipath.set_path(QString("admin/settings/password/%1").arg(policy_name));
         QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
 
-        f_limit_duration                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_LIMIT_DURATION))->value().safeSignedCharValue(0, 0) != 0;
-        f_maximum_duration               = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MAXIMUM_DURATION))->value().safeInt64Value(0, 92);
-        f_minimum_length                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH))->value().safeInt64Value(0, 0);
-        f_minimum_lowercase_letters      = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS))->value().safeInt64Value(0, 0);
-        f_minimum_uppercase_letters      = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UPPERCASE_LETTERS))->value().safeInt64Value(0, 0);
-        f_minimum_letters                = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LETTERS))->value().safeInt64Value(0, 0);
-        f_minimum_digits                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_DIGITS))->value().safeInt64Value(0, 0);
-        f_minimum_spaces                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPACES))->value().safeInt64Value(0, 0);
-        f_minimum_special                = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPECIAL))->value().safeInt64Value(0, 0);
-        f_minimum_unicode                = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UNICODE))->value().safeInt64Value(0, 0);
-        f_minimum_variation              = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_VARIATION))->value().safeInt64Value(0, 0);
-        f_minimum_length_of_variations   = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH_OF_VARIATIONS))->value().safeInt64Value(0, 1);
-        f_check_blacklist                = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST))->value().safeSignedCharValue(0, 0) != 0;
-        f_check_username                 = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME))->value().safeInt64Value(0, 1);
-        f_check_username_reversed        = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED))->value().safeSignedCharValue(0, 1) != 0;
-        f_prevent_old_passwords          = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_PREVENT_OLD_PASSWORDS))->value().safeSignedCharValue(0, 0) != 0;
-        f_minimum_old_passwords          = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_OLD_PASSWORDS))->value().safeInt64Value(0, 1);
-        f_old_passwords_maximum_age      = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_OLD_PASSWORDS_MAXIMUM_AGE))->value().safeInt64Value(0, 365);
-        f_delay_between_password_changes = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_DELAY_BETWEEN_PASSWORD_CHANGES))->value().safeInt64Value(0, 0);
+        f_limit_duration                     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_LIMIT_DURATION))->value().safeSignedCharValue(0, 0) != 0;
+        f_maximum_duration                   = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MAXIMUM_DURATION))->value().safeInt64Value(0, 92);
+        f_minimum_length                     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH))->value().safeInt64Value(0, 0);
+        f_minimum_lowercase_letters          = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS))->value().safeInt64Value(0, 0);
+        f_minimum_uppercase_letters          = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UPPERCASE_LETTERS))->value().safeInt64Value(0, 0);
+        f_minimum_letters                    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LETTERS))->value().safeInt64Value(0, 0);
+        f_minimum_digits                     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_DIGITS))->value().safeInt64Value(0, 0);
+        f_minimum_spaces                     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPACES))->value().safeInt64Value(0, 0);
+        f_minimum_special                    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPECIAL))->value().safeInt64Value(0, 0);
+        f_minimum_unicode                    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UNICODE))->value().safeInt64Value(0, 0);
+        f_minimum_variation                  = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_VARIATION))->value().safeInt64Value(0, 0);
+        f_minimum_length_of_variations       = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH_OF_VARIATIONS))->value().safeInt64Value(0, 1);
+        f_check_blacklist                    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_BLACKLIST))->value().safeSignedCharValue(0, 0) != 0;
+        f_check_username                     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME))->value().safeInt64Value(0, 1);
+        f_check_username_reversed            = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_CHECK_USERNAME_REVERSED))->value().safeSignedCharValue(0, 1) != 0;
+        f_prevent_old_passwords              = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_PREVENT_OLD_PASSWORDS))->value().safeSignedCharValue(0, 0) != 0;
+        f_minimum_old_passwords              = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_OLD_PASSWORDS))->value().safeInt64Value(0, 1);
+        f_old_passwords_maximum_age          = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_OLD_PASSWORDS_MAXIMUM_AGE))->value().safeInt64Value(0, 365);
+        f_delay_between_password_changes     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_DELAY_BETWEEN_PASSWORD_CHANGES))->value().safeInt64Value(0, 0);
+        f_invalid_passwords_counter          = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_COUNTER))->value().safeInt64Value(0, 5);
+        f_invalid_passwords_block_duration   = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_BLOCK_DURATION))->value().safeInt64Value(0, 3);
+        f_invalid_passwords_counter_lifetime = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_COUNTER_LIFETIME))->value().safeInt64Value(0, 1);
+        f_invalid_passwords_slowdown         = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_INVALID_PASSWORDS_SLOWDOWN))->value().safeInt64Value(0, 1);
     }
 }
 
@@ -163,6 +167,8 @@ bool policy_t::get_limit_duration() const
  */
 int64_t policy_t::get_maximum_duration() const
 {
+    // although f_maximum_duration should already be 7 or more, just
+    // in case enforce it when the client wants a copy of the value.
     return std::min(static_cast<int64_t>(7LL), f_maximum_duration);
 }
 
@@ -465,6 +471,83 @@ int64_t policy_t::get_old_passwords_maximum_age() const
 int64_t policy_t::get_delay_between_password_changes() const
 {
     return f_delay_between_password_changes;
+}
+
+
+/** \brief Maximum count of login trial with an invalid password.
+ *
+ * This function represents the total number of times a user can try
+ * to log in with an invalid password in a row.
+ *
+ * \return The number of times an invalid password can be used, minimum 1.
+ */
+int64_t policy_t::get_invalid_passwords_counter() const
+{
+    return std::max(static_cast<int64_t>(1LL), f_invalid_passwords_counter);
+}
+
+
+/** \brief Duration of the block once too many login attempts were made.
+ *
+ * This function returns a number of hours that the user's account will
+ * be blocked for before he can try to log in again.
+ *
+ * The default is 3, representing a 3 hours block.
+ *
+ * \return The duration of an invalid password block in hours.
+ */
+int64_t policy_t::get_invalid_passwords_block_duration() const
+{
+    return std::max(static_cast<int64_t>(1LL), f_invalid_passwords_block_duration);
+}
+
+
+/** \brief Lifetime of the invalid password counter.
+ *
+ * The counter is saved in the Cassandra database using a TTL defined by
+ * this parameter. The Cassandra TTL is in seconds, however, we use hours
+ * in this value. Thus, the minimum lifetime of the invalid password counter
+ * is 1 hour.
+ *
+ * Once the TTL elapses, the counter is deleted (hidden at first, really)
+ * by the Cassandra cluster, and thus looks like it is still zero (0).
+ * In effect, it automatically resets the counter.
+ *
+ * We do not offer a mechanism which would keep the number of failures
+ * forever.
+ *
+ * \return The invalid password counter lifetime.
+ */
+int64_t policy_t::get_invalid_passwords_counter_lifetime() const
+{
+    return std::max(static_cast<int64_t>(1LL), f_invalid_passwords_counter_lifetime);
+}
+
+
+/** \brief Get the slowdown multiplier.
+ *
+ * Each time the user fails to enter the correct password, the client
+ * system sleeps to slow down the process. It will not kill a person to
+ * wait one or two extra seconds. It will definitively slow down a robot
+ * to have such a slowdown, allowing us to avoid larger loads on our
+ * systems of robots just trying again and again to log in various
+ * accounts.
+ *
+ * This number is expected to be used with the number of times the
+ * password was imporperly entered, minus one. In other words:
+ *
+ * \code
+ *      sleep((failure_counter - 1) * multiplier);
+ * \endcode
+ *
+ * Note that this means the first failure adds no delay. The multiple
+ * can be zero in which case no failure add any delay.
+ *
+ * \return The multiplier for the invalid password slowdown.
+ */
+int64_t policy_t::get_invalid_passwords_slowdown() const
+{
+    return f_invalid_passwords_slowdown;
 }
 
 

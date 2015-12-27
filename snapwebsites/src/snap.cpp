@@ -565,6 +565,7 @@ int snap_cgi::process()
     //       through as it comes in, but in order to be able to return an
     //       error instead of a broken page, we may want to consider
     //       buffering first?
+    //
     for(;;)
     {
         char buf[64 * 1024];

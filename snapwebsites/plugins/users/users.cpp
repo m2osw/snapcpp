@@ -240,6 +240,9 @@ const char * get_name(name_t name)
     case name_t::SNAP_NAME_USERS_PASSWORD:
         return "users::password";
 
+    case name_t::SNAP_NAME_USERS_PASSWORD_BLOCKED:
+        return "users::password::blocked";
+
     case name_t::SNAP_NAME_USERS_PASSWORD_DIGEST:
         return "users::password::digest";
 
@@ -2183,6 +2186,30 @@ QString users::login_user(QString const & email, QString const & password, bool 
                 // object; will it work with '\0' bytes???)
                 valid_password = hash.size() == saved_hash.size()
                               && memcmp(hash.data(), saved_hash.data(), hash.size()) == 0;
+
+                // make sure the user password was not blocked
+                //
+                QtCassandra::QCassandraValue password_blocked;
+                if(row->exists(get_name(name_t::SNAP_NAME_USERS_PASSWORD_BLOCKED)))
+                {
+                    // TBD: should we actually send a note to the firewall?
+                    //      (I think we want to if the "hacker" is still
+                    //      trying again and again--we would need yet another
+                    //      counter, although it would depend on whether all
+                    //      those hits are from the same IP or not too...)
+                    //
+                    f_snap->die(snap_child::http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE,
+                            "Service Not Available",
+                            // WARNING: with the password was valid CANNOT be
+                            //          given to the client since this could
+                            //          be the hacker, thus this message does
+                            //          not change either way.
+                            "The server is not currently available for users to login.",
+                            (valid_password
+                                ? "This time the user entered the correct password, unfortunately, the password has been blocked earlier"
+                                : "Trying to reject a hacker since we got too many attempts at login in with an invalid password"));
+                    NOTREACHED();
+                }
             }
 
             if(valid_password)
@@ -2280,7 +2307,9 @@ QString users::login_user(QString const & email, QString const & password, bool 
             }
             else
             {
-                // user mistyped his password?
+                // user mistyped his password
+                //
+                invalid_password(row, "users");
                 return "invalid credentials (password does not match)";
             }
         }
