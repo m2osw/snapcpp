@@ -42,6 +42,7 @@ cmake_minimum_required(VERSION 2.8)
 project( csspp_project )
 
 enable_language( CXX )
+enable_testing()
 
 ## Include support modules
 ##

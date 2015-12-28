@@ -31,48 +31,50 @@ find_package( Catch )
 
 if(CATCH_FOUND)
 
-project( csspp_tests )
+    project( csspp_tests )
 
-include_directories(
-    ${CATCH_INCLUDE_DIR}
-)
+    include_directories(
+        ${CATCH_INCLUDE_DIR}
+    )
 
-add_executable( ${PROJECT_NAME}
-    catch_tests.cpp
+    add_executable( ${PROJECT_NAME}
+        catch_tests.cpp
 
-    catch_assembler.cpp
-    catch_color.cpp
-    catch_compiler.cpp
-    catch_csspp.cpp
-    catch_error.cpp
-    catch_lexer.cpp
-    catch_node.cpp
-    catch_nth_child.cpp
-    catch_parser.cpp
-    catch_position.cpp
-    catch_unicode_range.cpp
-)
+        catch_assembler.cpp
+        catch_color.cpp
+        catch_compiler.cpp
+        catch_csspp.cpp
+        catch_error.cpp
+        catch_lexer.cpp
+        catch_node.cpp
+        catch_nth_child.cpp
+        catch_parser.cpp
+        catch_position.cpp
+        catch_unicode_range.cpp
+    )
 
-target_link_libraries( ${PROJECT_NAME}
-    csspp
-)
+    target_link_libraries( ${PROJECT_NAME}
+        csspp
+    )
 
-add_custom_target(run_csspp_tests
+    #add_custom_target(run_csspp_tests
+    #    COMMAND ./csspp_tests
+    #)
+
     # You can use the --success command line option to see all the tests
     # as they run; it is a LOT of output though, thus by default we don't
     # use it
-    COMMAND ./csspp_tests
-)
+    add_test( csspp_tests ${PROJECT_NAME} )
 
 else(CATCH_FOUND)
 
-# You may use 'apt-get install catch' under Ubuntu
-message("No test will be created because you do not seem to have catch.hpp installed...")
+    # You may use 'apt-get install catch' under Ubuntu
+    message("No test will be created because you do not seem to have catch.hpp installed...")
 
-# For compatibility, just in case
-add_custom_target(run_csspp_tests
-    COMMAND echo "No tests were built because it looks like you are missing catch.hpp."
-)
+    ## For compatibility, just in case
+    #add_custom_target(run_csspp_tests
+    #    COMMAND echo "No tests were built because it looks like you are missing catch.hpp."
+    #)
 
 endif(CATCH_FOUND)
 
