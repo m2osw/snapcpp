@@ -1,10 +1,14 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      tests/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites Server. This CMake compiles tests that can be used
-#      against the server.
+#      against the server. All C++ tests should be converted to a catch_*
+#      test instead of its own brew. Now that we have a test bed ready for
+#      such the conversion should be easy enough. We will still have separate
+#      tests that are external processes we need to run against the main test.
+#      (i.e. a test for client/server network connections.)
 #
 # Documentation:
 #      See the CMake documentation.
@@ -51,6 +55,51 @@ else()
 endif()
 
 ##
+## The unified unit tests in one large test
+##
+project(test_snap)
+
+
+add_executable(test_snap
+    # Main
+    catch_tests.cpp
+
+    # Test suites
+    catch_snap_communicator.cpp
+)
+add_dependencies( test_snap test_prereqs )
+target_link_libraries(test_snap
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    dl
+)
+
+
+##
+## A client used to test our Snap! Communicator
+##
+project(test_snap_communicator_client)
+
+
+add_executable(test_snap_communicator_client
+    # Main
+    test_snap_communicator_client.cpp
+)
+add_dependencies( test_snap_communicator_client test_prereqs )
+target_link_libraries(test_snap_communicator_client
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    dl
+)
+
+
+##
 ## Send orders to the Snap Server via the snap.cgi tool
 ##
 project(test_snap_cgi)
@@ -92,11 +141,11 @@ add_executable(test_unix_timestamp
 add_dependencies( test_unix_timestamp test_prereqs )
 
 
-add_executable(test_snap_udp_message
-    test_snap_udp_message.cpp
+add_executable(test_entity_filter
+    test_entity_filter.cpp
 )
-add_dependencies( test_snap_udp_message test_prereqs )
-target_link_libraries(test_snap_udp_message
+add_dependencies( test_entity_filter test_prereqs )
+target_link_libraries(test_entity_filter
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -104,6 +153,35 @@ target_link_libraries(test_snap_udp_message
     ${THRIFT_LIBRARIES}
     dl
 )
+
+
+add_executable(test_ip_strings
+    test_ip_strings.cpp
+)
+add_dependencies( test_ip_strings test_prereqs )
+target_link_libraries(test_ip_strings
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    dl
+)
+
+
+# This one is retired because we now use snap_communicator
+##add_executable(test_snap_udp_message
+##    test_snap_udp_message.cpp
+##)
+##add_dependencies( test_snap_udp_message test_prereqs )
+##target_link_libraries(test_snap_udp_message
+##    snapwebsites
+##    ${QTCASSANDRA_LIBRARIES}
+##    ${LIBTLD_LIBRARIES}
+##    ${QT_LIBRARIES}
+##    ${THRIFT_LIBRARIES}
+##    dl
+##)
 
 
 add_executable(test_quoted_printable
@@ -150,9 +228,12 @@ target_link_libraries(test_snap_version
 
 
 
+##
+## Check catching and displaying of snap exceptions
+## (because we render the stack)
+##
 add_executable( test_snap_exception
 	test_snap_exception.cpp
-	test_snap_exception.conf
 )
 add_dependencies( test_snap_exception test_prereqs )
 target_link_libraries(test_snap_exception
@@ -163,7 +244,70 @@ target_link_libraries(test_snap_exception
 	${THRIFT_LIBRARIES}
 	dl
 )
-file( INSTALL test_snap_exception.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+
+
+##
+## Test a client/server via snap_communicator to see whether shutdown()
+## has the same effect in the parent as it has in the client
+##
+add_executable( test_shutdown_server
+	test_shutdown_server.cpp
+)
+add_dependencies( test_shutdown_server test_prereqs )
+target_link_libraries(test_shutdown_server
+	snapwebsites
+	${QTCASSANDRA_LIBRARIES}
+	${LIBTLD_LIBRARIES}
+	${QT_LIBRARIES}
+	${THRIFT_LIBRARIES}
+	dl
+)
+
+add_executable( test_shutdown_client
+	test_shutdown_client.cpp
+)
+add_dependencies( test_shutdown_client test_prereqs )
+target_link_libraries(test_shutdown_client
+	snapwebsites
+	${QTCASSANDRA_LIBRARIES}
+	${LIBTLD_LIBRARIES}
+	${QT_LIBRARIES}
+	${THRIFT_LIBRARIES}
+	dl
+)
+
+
+##
+## String Speed (testing a Qt feature)
+##
+add_executable( string_speed
+	string_speed.cpp
+)
+target_link_libraries(string_speed
+	#snapwebsites
+	#${QTCASSANDRA_LIBRARIES}
+	#${LIBTLD_LIBRARIES}
+	${QT_LIBRARIES}
+	#${THRIFT_LIBRARIES}
+	#dl
+)
+
+
+##
+## Check gethostbyname()
+##
+add_executable( gethostips
+	gethostips.cpp
+)
+target_link_libraries(gethostips
+	#snapwebsites
+	#${QTCASSANDRA_LIBRARIES}
+	#${LIBTLD_LIBRARIES}
+	#${QT_LIBRARIES}
+	#${THRIFT_LIBRARIES}
+	#dl
+)
+
 
 
 # vim: ts=4 sw=4 et

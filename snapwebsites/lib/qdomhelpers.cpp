@@ -16,11 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "qdomhelpers.h"
+
 #include "qstring_stream.h"
+#include "snap_string_list.h"
 
 #include <iostream>
 
-#include <QStringList>
 #include <QTextStream>
 
 #include "poison.h"
@@ -31,42 +32,132 @@ namespace snap_dom
 {
 
 
+/** \brief Retrieve a tag, create it if it doesn't exist.
+ *
+ * This function searches for an element which is expected to exist and
+ * have one instance. If not found, it creates it (by default, you may
+ * prevent the creation by setting the \p create parameter to false.)
+ *
+ * The result is the tag set to the tag we've found if the function
+ * returns true. When false is returned, tag is not modified.
+ *
+ * \param[in] tag_name  The name of the tag to search or create.
+ * \param[in] element  The parent element of the tag to find or create.
+ * \param[in] tag  The found tag (i.e. the answer of this function.)
+ * \param[in] create  Whether the tag is created if it doesn't exist yet.
+ *
+ * \return true when the tag was found or created and can be returned.
+ */
+bool get_tag(QString const & tag_name, QDomElement & element, QDomElement & tag, bool create)
+{
+    QDomNodeList all_tags(element.elementsByTagName(tag_name));
+    switch(all_tags.count())
+    {
+    case 0:
+        if(create)
+        {
+            // missing, create a new one and retrieve it back out
+            tag = element.ownerDocument().createElement(tag_name);
+            element.appendChild(tag);
+        }
+        else
+        {
+            return false;
+        }
+        break;
+
+    case 1:
+        // we have it already!
+        {
+            QDomNode node(all_tags.at(0));
+            if(!node.isElement())
+            {
+                return false;
+            }
+            tag = node.toElement();
+        }
+        break;
+
+    default:
+        // we have a problem here
+        return false;
+
+    }
+
+    return true;
+}
+
+
+/** \brief Useful function to append a string of text to a QDomNode.
+ *
+ * This function appends a node of text at the end of the specified \p node.
+ * This is simply creating a text node and appending it.
+ *
+ * \note
+ * This is equivalent to insert_html_string_to_xml_doc() when \p plain_text
+ * does not include any tags or entities.
+ *
+ * \param[in,out] node  DOM element where the plain text is to be inserted.
+ * \param[in] plain_text  The plain text to append.
+ */
+void append_plain_text_to_node(QDomNode & node, QString const & plain_text)
+{
+    QDomText text(node.ownerDocument().createTextNode(plain_text));
+    node.appendChild(text);
+}
+
+
+/** \brief Useful function to append an integer to a QDomNode.
+ *
+ * The function creates a Text node set to the integer converted to
+ * ASCII and append the result to the specified child.
+ *
+ * \param[in,out] node  The child where the integer is appended.
+ * \param[in] integer  The integer to append to the node.
+ */
+void append_integer_to_node(QDomNode & node, int64_t integer)
+{
+    QDomText text(node.ownerDocument().createTextNode(QString("%1").arg(integer)));
+    node.appendChild(text);
+}
+
+
 /** \brief Useful function that transforms a QString to XML.
  *
  * When inserting a string in the XML document and that string may include
  * HTML code, call this function, it will first convert the string to XML
- * then insert the result as children of the \p child element.
+ * then insert the result as children of the \p node element.
  *
  * \warning
  * If the string is plain text, YOU are responsible for converting the
  * \<, \>, and \& characters before calling this function. Or maybe just
  * make use of the doc.createTextNode(plain_text) function.
  *
- * \param[in,out] child  DOM element receiving the result as children nodes.
+ * \param[in,out] node  DOM element receiving the result as children nodes.
  * \param[in] xml  The input XML string.
  */
-void insert_html_string_to_xml_doc(QDomNode& child, QString const& xml)
+void insert_html_string_to_xml_doc(QDomNode & node, QString const & xml)
 {
     // parsing the XML can be slow, try to avoid that if possible
-    int const max(xml.length());
-    for(int idx(0); idx < max; ++idx)
+    for(QChar const * s(xml.data()); !s->isNull(); ++s)
     {
-        // Note: we do not have to check for '>' because a '>' by itself
-        //       is a spurious character in the stream which most parsers
-        //       accept properly; however, we must use the wrapper scheme
-        //       if we have a '<' (a tag) or a '&' (an entity)
-        ushort c(xml[idx].unicode());
-        if(c == '<' || c == '&')
+        switch(s->unicode())
         {
-            QDomDocument xml_doc("wrapper");
-            xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
-            insert_node_to_xml_doc(child, xml_doc.documentElement());
+        case '<':
+        case '>':
+        case '&':
+            // this requires the full XML round trip
+            {
+                QDomDocument xml_doc("wrapper");
+                xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
+                insert_node_to_xml_doc(node, xml_doc.documentElement());
+            }
             return;
+
         }
     }
 
-    QDomText text(child.ownerDocument().createTextNode(xml));
-    child.appendChild(text);
+    append_plain_text_to_node(node, xml);
 }
 
 
@@ -78,7 +169,7 @@ void insert_html_string_to_xml_doc(QDomNode& child, QString const& xml)
  * \param[in,out] child  The destination node.
  * \param[in] node  The source element node.
  */
-void insert_node_to_xml_doc(QDomNode& child, QDomNode const& node)
+void insert_node_to_xml_doc(QDomNode & child, QDomNode const & node)
 {
     // copy the result in a fragment of our document
     QDomDocumentFragment frag(child.ownerDocument().createDocumentFragment());
@@ -170,17 +261,27 @@ QString xml_children_to_string(QDomNode & node)
 void replace_node_with_html_string(QDomNode & replace, QString const & xml)
 {
     // parsing the XML can be slow, try to avoid that if possible
-    if(xml.contains('<'))
+    for(QChar const * s(xml.data()); !s->isNull(); ++s)
     {
-        QDomDocument xml_doc("wrapper");
-        xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
-        replace_node_with_elements(replace, xml_doc.documentElement());
+        switch(s->unicode())
+        {
+        case '<':
+        case '>':
+        case '&':
+            // this requires the full XML round trip
+            {
+                QDomDocument xml_doc("wrapper");
+                xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
+                replace_node_with_elements(replace, xml_doc.documentElement());
+            }
+            return;
+
+        }
     }
-    else
-    {
-        QDomText text(replace.toText());
-        text.setData(xml);
-    }
+
+    // plain text is faster
+    QDomText text(replace.toText());
+    text.setData(xml);
 }
 
 
@@ -328,7 +429,7 @@ QDomElement get_child_element(QDomNode parent, QString const& path)
     //    return parent.toElement();
     //}
 
-    QStringList const p(path.split('/'));
+    snap_string_list const p(path.split('/'));
 
     int const max_children(p.size());
     for(int i(0); i < max_children && !parent.isNull(); ++i)
@@ -391,7 +492,7 @@ QDomElement create_element(QDomNode parent, QString const& path)
         return parent.toElement();
     }
 
-    QStringList p(path.split('/'));
+    snap_string_list p(path.split('/'));
 
     QDomDocument doc(parent.ownerDocument());
 
@@ -429,13 +530,14 @@ QDomElement create_element(QDomNode parent, QString const& path)
  *
  * \todo
  * We may want to support any type of entities which I think the current
- * implementation will fail to convert (because XML is limit to 3...)
+ * implementation will fail to convert (because XML is limited to three:
+ * \&amp;, \&lt;, \&gt;.)
  *
- * \param[in] html  The input that includes trags.
+ * \param[in] html  The input that includes tags.
  *
  * \return The text found in the html string if any.
  */
-QString remove_tags(QString const& html)
+QString remove_tags(QString const & html)
 {
     QDomDocument doc;
     // TBD: shall we make sure that this 'html' string is compatible XML?
@@ -445,16 +547,26 @@ QString remove_tags(QString const& html)
 }
 
 
-/** \brief Encode entities converting a plain text to an HTML string.
+/** \brief Encode entities converting plain text to a valid HTML string.
  *
  * Somehow the linker cannot find the Qt::escape() function so we
  * have our own version here.
+ *
+ * \note
+ * The function transforms the double quote (") character to &quot;
+ * so the resulting string can be used as an attribute value quoted
+ * with double quotes:
+ *
+ * \code
+ *    QString html(QString("<a href=\"%1\">Click Here</a>")
+ *                      .arg(snap_dom::escape("This \"string\" here"));
+ * \endcode
  *
  * \param[in] str  The string to transform.
  *
  * \return The converted string.
  */
-QString escape(QString const& str)
+QString escape(QString const & str)
 {
     QString result;
     result.reserve(str.length() * 112 / 100 + 20);
@@ -499,8 +611,13 @@ QString escape(QString const& str)
  * Qt offers a function called escape() which transforms plain text
  * to HTML with entities (so for example \< becomes \&lt;,) but for
  * some weird reason they do not offer an unescape() function...
+ *
+ * \param[in] str  The string where HTML characters need to be transformed
+ *                 to regular characters.
+ *
+ * \return The resulting unescaped string.
  */
-QString unescape(QString const& str)
+QString unescape(QString const & str)
 {
     QString result;
     result.reserve(str.length() + 10);

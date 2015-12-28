@@ -21,6 +21,13 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/** \file
+ * \brief Test the tld_email_list class.
+ *
+ * This file implements various tests to verify that the
+ * tld_email_list functions as expected.
+ */
+
 #include "libtld/tld.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -141,8 +148,11 @@ const tld_email list_of_results[] =
       "", "", "", "", "" },
     { "Group with  some sub-comments", "alexis@m2osw.com",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    // TBD: since the colons get canonicalized to %3A we do not need the '[' and ']' in the canonicalized version
     { "", "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>",
-      "Wilke, Alexis", "alexis,wilke", ":special:.m2osw.com", "\"alexis,wilke\"@[:special:.m2osw.com]", "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>" },
+      "Wilke, Alexis", "alexis,wilke", ":special:.m2osw.com", "\"alexis,wilke\"@[:special:.m2osw.com]", "\"Wilke, Alexis\" <\"alexis,wilke\"@%3Aspecial%3A.m2osw.com>" },
+    { "", "alexis@m2osw.com (Simple Comment)",
+      "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
 
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 };
@@ -167,6 +177,7 @@ const valid_email list_of_valid_emails[] =
     { "(Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) alexis@m2osw.com", 1 },
     { "Group with (Comment (Sub-Comment (Sub-Sub-Comment (Sub-Sub-Sub-Comment \\) This is still the Sub-Sub-Sub-Comment!!!)))) some sub-comments \t : alexis@m2osw.com;", 2 },
     { "\"Wilke, Alexis\" <\"alexis,wilke\"@[:special:.m2osw.com]>", 1 },
+    { "alexis@m2osw.com (Simple Comment)", 1 },
 
     // end of list
     { NULL, 0 }
@@ -254,12 +265,15 @@ void test_valid_emails()
             int max(v->f_count);
             if(r != TLD_RESULT_SUCCESS)
             {
+                fprintf(stderr, "return value is %d instead of %d with \"%s\"\n", r, TLD_RESULT_SUCCESS, v->f_input_email);
                 error("error: unexpected return value.");
+                results += max;
             }
             else if(list.count() != max)
             {
                 fprintf(stderr, "parse() returned %d as count, expected %d\n", list.count(), max);
                 error("error: unexpected count");
+                results += max;
             }
             else
             {
@@ -370,9 +384,10 @@ void test_valid_emails()
             tld_email_list *list;
             list = tld_email_alloc();
             tld_result r = tld_email_parse(list, v->f_input_email, 0);
-            int max(v->f_count);
+            const int max(v->f_count);
             if(r != TLD_RESULT_SUCCESS)
             {
+                fprintf(stderr, "return value is %d instead of %d for \"%s\"\n", r, TLD_RESULT_SUCCESS, v->f_input_email);
                 error("error: unexpected return value.");
             }
             else if(tld_email_count(list) != max)
@@ -592,6 +607,10 @@ void test_valid_emails()
             tld_email_list list;
             std::string e("alexis@[ m2osw.");
             e += static_cast<char>(i);
+            if(i == '%')
+            {
+                e += "25";
+            }
             e += ".com\t]";
             if(verbose)
             {
@@ -601,7 +620,7 @@ void test_valid_emails()
             tld_result r(list.parse(e, 0));
             if(r != TLD_RESULT_SUCCESS)
             {
-                error("error: unexpected return value while testing a domain with a special character");
+                error("error: unexpected return value while testing a domain with special character \"" + e + "\"");
             }
         }
     }
@@ -657,6 +676,8 @@ const invalid_email list_of_invalid_emails[] =
     { TLD_RESULT_INVALID, "(Test Errors Once Done) \"Wilke, Alexis\" <alexis@m2osw.com> \"Bad\"" },
     { TLD_RESULT_INVALID, "(Comment with CTRL \b) \"Wilke, Alexis\" <alexis@m2osw.com>" },
     { TLD_RESULT_INVALID, "[m2osw.com]" },
+    { TLD_RESULT_INVALID, "good@[bad-slash\\.com]" },
+    { TLD_RESULT_INVALID, "good@[bad[reopen.com]" },
     { TLD_RESULT_INVALID, "(Test Errors Once Done) \"Wilke, Alexis\" <alexis@m2osw.com> [Bad]" },
     { TLD_RESULT_INVALID, "(Test Errors Once Done) alexis@start[Bad]" },
     { TLD_RESULT_INVALID, "(Test Errors Once Done) alexis@[first][Bad]" },
@@ -779,11 +800,23 @@ void test_direct_email()
 
 
 
+/** \brief Structure used to define a set of fields to test.
+ *
+ * This structure is used in this test to define a list of fields
+ * to test against the library.
+ */
 struct email_field_types
 {
     const char *            f_field;
     tld_email_field_type    f_type;
 };
+
+/** \var email_field_types::f_field
+ * \brief The name of the field to be tested.
+ */
+/** \var email_field_types::f_type
+ * \brief The type we expect the library to return for that field.
+ */
 
 const email_field_types list_of_email_field_types[] =
 {

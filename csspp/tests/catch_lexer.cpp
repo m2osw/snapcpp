@@ -596,6 +596,24 @@ TEST_CASE("Simple tokens", "[lexer] [basics] [delimiters]")
         REQUIRE_ERRORS("");
     }
 
+    // '==' -> EQUAL + warning
+    {
+        std::stringstream ss;
+        csspp::position pos("test.css");
+        csspp::lexer l(ss, pos);
+        ss << "==";
+
+        // so far, no error
+        REQUIRE_ERRORS("");
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EQUAL));
+        REQUIRE_ERRORS("test.css(1): warning: we accepted '==' instead of '=' in an expression, you probably want to change the operator to just '=', though.\n");
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // make sure we got the expected error
+        REQUIRE_ERRORS("");
+    }
+
     // ',' -> COMMA
     {
         std::stringstream ss;
@@ -1744,14 +1762,14 @@ TEST_CASE("C-like comments", "[lexer] [comment]")
 
             std::stringstream ss;
             char mb[6];
+            csspp::position pos("test.css");
+            csspp::lexer l(ss, pos);
+            l.wctomb(i, mb, sizeof(mb) / sizeof(mb[0]));
 //std::cerr << "testing with " << i << "\n";
 //for(int j(0); mb[j] != '\0'; ++j) std::cerr << " " << j << ". " << std::hex << static_cast<int>(static_cast<unsigned char>(mb[j])) << std::dec << "\n";
             std::string cmt("character: ");
             cmt += mb;
             ss << "/* " << cmt << " @preserve */";
-            csspp::position pos("test.css");
-            csspp::lexer l(ss, pos);
-            l.wctomb(i, mb, sizeof(mb) / sizeof(mb[0]));
 
             // comment
             {
@@ -2086,14 +2104,14 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
 
             std::stringstream ss;
             char mb[6];
+            csspp::position pos("test.css");
+            csspp::lexer l(ss, pos);
+            l.wctomb(i, mb, sizeof(mb) / sizeof(mb[0]));
 //std::cerr << "testing with " << i << "\n";
 //for(int j(0); mb[j] != '\0'; ++j) std::cerr << " " << j << ". " << std::hex << static_cast<int>(static_cast<unsigned char>(mb[j])) << std::dec << "\n";
             std::string cmt("character: ");
             cmt += mb;
             ss << "// " << cmt << " @preserve";
-            csspp::position pos("test.css");
-            csspp::lexer l(ss, pos);
-            l.wctomb(i, mb, sizeof(mb) / sizeof(mb[0]));
 
             // comment
             {
@@ -2835,7 +2853,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "alexis"); // identifiers are forced to lowercase since they are case insensitive
+            REQUIRE(string->get_string() == "Alexis"); // identifiers are forced to lowercase since they are case insensitive
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -2858,7 +2876,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "babar"); // prove the space is eaten as expected
+            REQUIRE(string->get_string() == "Babar"); // prove the space is eaten as expected
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -2881,7 +2899,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "carlos"); // prove the space is not required with 6 digits
+            REQUIRE(string->get_string() == "Carlos"); // prove the space is not required with 6 digits
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -2915,7 +2933,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "this");
+            REQUIRE(string->get_string() == "This");
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -2940,7 +2958,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "this");
+            REQUIRE(string->get_string() == "This");
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -2979,7 +2997,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "this");
+            REQUIRE(string->get_string() == "This");
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -3006,7 +3024,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "that");
+            REQUIRE(string->get_string() == "That");
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -3092,7 +3110,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "this");
+            REQUIRE(string->get_string() == "This");
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -3106,7 +3124,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == " id");
+            REQUIRE(string->get_string() == " ID");
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -3129,7 +3147,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "this");
+            REQUIRE(string->get_string() == "This");
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -3143,7 +3161,7 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
         {
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(string->get_string() == "id");
+            REQUIRE(string->get_string() == "ID");
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -3162,136 +3180,152 @@ TEST_CASE("Identifiers", "[lexer] [identifier]")
 TEST_CASE("Urls", "[lexer] [identifier] [url] [function]")
 {
     // a few simple URLs
-    for(int count(0); count < 10; ++count)
+    SECTION("simple URLs")
     {
-        std::stringstream ss;
-        size_t const len(rand() % 20 + 20);
-        std::string word;
-        ss << "url(";
-        size_t const leading(count == 0 ? 0 : rand() % 10);
-        for(size_t i(0); i < leading; ++i)
+        for(int count(0); count < 10; ++count)
         {
-            ss << ' ';
-        }
-        for(size_t i(0); i < len; ++i)
-        {
-            // simple ascii letters
-            int const c(rand() % 26 + 'a');
-            ss << static_cast<char>(c);
-            word += static_cast<char>(c);
-        }
-        size_t const trailing(count == 9 ? 0 : rand() % 10);
-        for(size_t i(0); i < trailing; ++i)
-        {
-            ss << ' ';
-        }
-        ss << ")";
-        csspp::position pos("test.css");
-        csspp::lexer l(ss, pos);
+            std::stringstream ss;
+            size_t const len(rand() % 20 + 20);
+            std::string word;
+            ss << "url(";
+            size_t const leading(count == 0 ? 0 : rand() % 10);
+            for(size_t i(0); i < leading; ++i)
+            {
+                ss << ' ';
+            }
+            for(size_t i(0); i < len; ++i)
+            {
+                // simple ascii letters
+                int const c(rand() % 26 + 'a');
+                ss << static_cast<char>(c);
+                word += static_cast<char>(c);
+            }
+            size_t const trailing(count == 9 ? 0 : rand() % 10);
+            for(size_t i(0); i < trailing; ++i)
+            {
+                ss << ' ';
+            }
+            ss << ")";
+            csspp::position pos("test.css");
+            csspp::lexer l(ss, pos);
 
-        // url
-        {
-            csspp::node::pointer_t string(l.next_token());
-            REQUIRE(string->is(csspp::node_type_t::URL));
-            REQUIRE(string->get_string() == word);
-            csspp::position const & npos(string->get_position());
-            REQUIRE(npos.get_filename() == "test.css");
-            REQUIRE(npos.get_page() == 1);
-            REQUIRE(npos.get_line() == 1);
-            REQUIRE(npos.get_total_line() == 1);
+            // url
+            {
+                csspp::node::pointer_t string(l.next_token());
+                REQUIRE(string->is(csspp::node_type_t::URL));
+                REQUIRE(string->get_string() == word);
+                csspp::position const & npos(string->get_position());
+                REQUIRE(npos.get_filename() == "test.css");
+                REQUIRE(npos.get_page() == 1);
+                REQUIRE(npos.get_line() == 1);
+                REQUIRE(npos.get_total_line() == 1);
+            }
+
+            REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         }
 
-        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+        REQUIRE_ERRORS("");
     }
 
     // a few simple quoted URLs
-    for(int count(0); count < 10; ++count)
+    SECTION("simple quoted URLs")
     {
-        std::stringstream ss;
-        size_t const len(rand() % 20 + 20);
-        std::string word;
-        ss << "url(";
-        size_t const leading(rand() % 10);
-        for(size_t i(0); i < leading; ++i)
+        for(int count(0); count < 10; ++count)
         {
-            ss << ' ';
-        }
-        char const quote("\"'"[rand() % 2]);
-        ss << quote;
-        for(size_t i(0); i < len; ++i)
-        {
-            // simple ascii letters
-            int const c(rand() % 26 + 'a');
-            ss << static_cast<char>(c);
-            word += static_cast<char>(c);
-        }
-        ss << quote;
-        size_t const trailing(rand() % 10);
-        for(size_t i(0); i < trailing; ++i)
-        {
-            ss << ' ';
-        }
-        ss << ")";
-        csspp::position pos("test.css");
-        csspp::lexer l(ss, pos);
+            std::stringstream ss;
+            size_t const len(rand() % 20 + 20);
+            std::string word;
+            ss << "url(";
+            size_t const leading(rand() % 10);
+            for(size_t i(0); i < leading; ++i)
+            {
+                ss << ' ';
+            }
+            char const quote("\"'"[rand() % 2]);
+            ss << quote;
+            for(size_t i(0); i < len; ++i)
+            {
+                // simple ascii letters
+                int const c(rand() % 26 + 'a');
+                ss << static_cast<char>(c);
+                word += static_cast<char>(c);
+            }
+            ss << quote;
+            size_t const trailing(rand() % 10);
+            for(size_t i(0); i < trailing; ++i)
+            {
+                ss << ' ';
+            }
+            ss << ")";
+            csspp::position pos("test.css");
+            csspp::lexer l(ss, pos);
 
-        // url
-        {
-            csspp::node::pointer_t string(l.next_token());
-            REQUIRE(string->is(csspp::node_type_t::URL));
-            REQUIRE(string->get_string() == word);
-            csspp::position const & npos(string->get_position());
-            REQUIRE(npos.get_filename() == "test.css");
-            REQUIRE(npos.get_page() == 1);
-            REQUIRE(npos.get_line() == 1);
-            REQUIRE(npos.get_total_line() == 1);
+            // url
+            {
+                csspp::node::pointer_t string(l.next_token());
+                REQUIRE(string->is(csspp::node_type_t::URL));
+                REQUIRE(string->get_string() == word);
+                csspp::position const & npos(string->get_position());
+                REQUIRE(npos.get_filename() == "test.css");
+                REQUIRE(npos.get_page() == 1);
+                REQUIRE(npos.get_line() == 1);
+                REQUIRE(npos.get_total_line() == 1);
+            }
+
+            REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         }
 
-        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+        REQUIRE_ERRORS("");
     }
 
     // an invalid URL with EOF too soon
-    for(int count(0); count < 10; ++count)
+    SECTION("invalid URL with EOF too soon")
     {
-        std::stringstream ss;
-        size_t const len(rand() % 20 + 20);
-        std::string word;
-        ss << "url(";
-        size_t const leading(count == 0 ? 0 : rand() % 10);
-        for(size_t i(0); i < leading; ++i)
+        for(int count(0); count < 10; ++count)
         {
-            ss << ' ';
-        }
-        for(size_t i(0); i < len; ++i)
-        {
-            // simple ascii letters
-            int const c(rand() % 26 + 'a');
-            ss << static_cast<char>(c);
-            word += static_cast<char>(c);
-        }
-        csspp::position pos("test.css");
-        csspp::lexer l(ss, pos);
+            std::stringstream ss;
+            size_t const len(rand() % 20 + 20);
+            std::string word;
+            ss << "url(";
+            size_t const leading(count == 0 ? 0 : rand() % 10);
+            for(size_t i(0); i < leading; ++i)
+            {
+                ss << ' ';
+            }
+            for(size_t i(0); i < len; ++i)
+            {
+                // simple ascii letters
+                int const c(rand() % 26 + 'a');
+                ss << static_cast<char>(c);
+                word += static_cast<char>(c);
+            }
+            csspp::position pos("test.css");
+            csspp::lexer l(ss, pos);
 
-        // url
-        {
-            csspp::node::pointer_t string(l.next_token());
-            REQUIRE(string->is(csspp::node_type_t::URL));
-            REQUIRE(string->get_string() == word);
-            csspp::position const & npos(string->get_position());
-            REQUIRE(npos.get_filename() == "test.css");
-            REQUIRE(npos.get_page() == 1);
-            REQUIRE(npos.get_line() == 1);
-            REQUIRE(npos.get_total_line() == 1);
+            // url
+            {
+                csspp::node::pointer_t string(l.next_token());
+                REQUIRE(string->is(csspp::node_type_t::URL));
+                REQUIRE(string->get_string() == word);
+                csspp::position const & npos(string->get_position());
+                REQUIRE(npos.get_filename() == "test.css");
+                REQUIRE(npos.get_page() == 1);
+                REQUIRE(npos.get_line() == 1);
+                REQUIRE(npos.get_total_line() == 1);
 
-            REQUIRE_ERRORS(
-                    "test.css(1): error: found an invalid URL, one with forbidden characters.\n"
-                );
+                REQUIRE_ERRORS(
+                        "test.css(1): error: found an invalid URL, one with forbidden characters.\n"
+                    );
+            }
+
+            REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         }
 
-        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+        REQUIRE_ERRORS("");
     }
 
     // an invalid URL with '"', "'", '(', and non-printable
+    SECTION("invalid URL with various unacceptable characters")
     {
         char const invalid_chars[] = "\"'(\x8\xb\xe\xf\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x7f";
         for(size_t ic(0); ic < sizeof(invalid_chars) / sizeof(invalid_chars[0]); ++ic)
@@ -3352,6 +3386,8 @@ TEST_CASE("Urls", "[lexer] [identifier] [url] [function]")
                 REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
             }
         }
+
+        REQUIRE_ERRORS("");
     }
 
     // no error left over
@@ -3821,7 +3857,7 @@ TEST_CASE("Numbers", "[lexer] [number]")
             REQUIRE(npos.get_total_line() == 1);
         }
 
-        // decimal number
+        // integer
         {
             csspp::node::pointer_t integer(l.next_token());
             REQUIRE(integer->is(csspp::node_type_t::INTEGER));
@@ -3842,7 +3878,7 @@ TEST_CASE("Numbers", "[lexer] [number]")
     // (we limit those to 8 digits at this time)
     {
         std::stringstream ss;
-        ss << "decimal_part_too_long: 1.0000000000000000000";
+        ss << "decimal_part_too_long: 1.000000000000000000000";
         csspp::position pos("test.css");
         csspp::lexer l(ss, pos);
 
@@ -4858,7 +4894,7 @@ TEST_CASE("Unicode range", "[lexer] [unicode]")
         {
             csspp::node::pointer_t identifier(l.next_token());
             REQUIRE(identifier->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(identifier->get_string() == "u");
+            REQUIRE(identifier->get_string() == "U");
             csspp::position const & npos(identifier->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -4881,7 +4917,7 @@ TEST_CASE("Unicode range", "[lexer] [unicode]")
         {
             csspp::node::pointer_t identifier(l.next_token());
             REQUIRE(identifier->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(identifier->get_string() == "u");
+            REQUIRE(identifier->get_string() == "U");
             csspp::position const & npos(identifier->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -5138,7 +5174,7 @@ TEST_CASE("Unicode range", "[lexer] [unicode]")
         {
             csspp::node::pointer_t identifier(l.next_token());
             REQUIRE(identifier->is(csspp::node_type_t::IDENTIFIER));
-            REQUIRE(identifier->get_string() == "alexis");
+            REQUIRE(identifier->get_string() == "Alexis");
             csspp::position const & npos(identifier->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -5765,7 +5801,8 @@ TEST_CASE("Placeholders", "[lexer] [hash]")
         {
             csspp::node::pointer_t identifier(l.next_token());
             REQUIRE(identifier->is(csspp::node_type_t::PLACEHOLDER));
-            REQUIRE(identifier->get_string() == lword);
+            REQUIRE(identifier->get_string() == word);
+            REQUIRE(identifier->get_lowercase_string() == lword);
             csspp::position const & npos(identifier->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);

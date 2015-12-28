@@ -18,6 +18,7 @@
 #include "test_plugin_suite.h"
 
 #include "log.h"
+#include "not_used.h"
 
 #include "poison.h"
 
@@ -144,24 +145,13 @@ test_plugin_suite::test_plugin_suite()
 {
 }
 
+
 /** \brief Clean up the test_plugin_suite plugin.
  *
  * Ensure the test_plugin_suite object is clean before it is gone.
  */
 test_plugin_suite::~test_plugin_suite()
 {
-}
-
-/** \brief Initialize the test_plugin_suite.
- *
- * This function terminates the initialization of the test_plugin_suite plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void test_plugin_suite::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
 }
 
 
@@ -174,9 +164,33 @@ void test_plugin_suite::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the test_plugin_suite plugin.
  */
-test_plugin_suite *test_plugin_suite::instance()
+test_plugin_suite * test_plugin_suite::instance()
 {
     return g_plugin_test_plugin_suite_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin "settings". In case of the
+ * test plugin suite, this is really the page that allows one
+ * to run the tests.
+ */
+QString test_plugin_suite::settings_path() const
+{
+    return "/admin/test-plugin";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString test_plugin_suite::icon() const
+{
+    return "/images/test-plugin/test-plugin-logo-64x64.jpg";
 }
 
 
@@ -197,6 +211,19 @@ QString test_plugin_suite::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString test_plugin_suite::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -213,26 +240,24 @@ int64_t test_plugin_suite::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
     //SNAP_PLUGIN_UPDATE(2014, 4, 10, 22, 47, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
 
-// /** \brief Update the database with our info references.
-//  *
-//  * Send our info to the database so the system can find us when a
-//  * user references our pages.
-//  *
-//  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
-//  */
-// void test_plugin_suite::content_update(int64_t variables_timestamp)
-// {
-//     static_cast<void>(variables_timestamp);
-// 
-//     content::content::instance()->add_xml(get_plugin_name());
-// }
+/** \brief Initialize the test_plugin_suite.
+ *
+ * This function terminates the initialization of the test_plugin_suite plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void test_plugin_suite::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+}
 
 
 /** \brief Initialize the test_results table.
@@ -250,7 +275,7 @@ int64_t test_plugin_suite::do_update(int64_t last_updated)
  *
  * \return The pointer to the test_results table.
  */
-test_list_t const& test_plugin_suite::get_test_list() const
+test_list_t const & test_plugin_suite::get_test_list() const
 {
     if(f_tests.empty())
     {

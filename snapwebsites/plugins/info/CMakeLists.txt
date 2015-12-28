@@ -5,8 +5,9 @@
 # Description:
 #      Basic Information about the website. This module lets administrators
 #      edit global information about their website. It is separate from the
-#      content plugin because it requires form, permissions, etc. which the
-#      content plugin cannot directly access.
+#      links, content, and output plugins because it requires the editor,
+#      permissions, etc. which the content and output plugins cannot
+#      directly access.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -52,15 +53,38 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     info.qrc
 )
 
-snap_validate_xml( content.xml content/content.dtd )
-snap_validate_xml( settings-form.xml form/snap-form.dtd )
+snap_validate_xml( content.xml                          content/content.dtd )
+
+snap_validate_xml( editor/info-settings-page.xml        editor/editor-form.dtd )
+snap_validate_xml( editor/plugin-settings-page.xml      editor/editor-form.dtd )
+snap_validate_xml( editor/unsubscribe-page.xml          editor/editor-form.dtd )
+
+snap_validate_xml( layout/info-settings-parser.xsl      layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/plugin-settings-parser.xsl    layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/unsubscribe-parser.xsl        layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/unsubscribe-theme-parser.xsl  layout/simplified-xslt20.dtd )
+
+snap_validate_js( plugin-selection/plugin-selection.js )
+snap_validate_js( sendmail/unsubscribe.js )
+
 
 add_library(info SHARED
     info.cpp
+    plugin_selection.cpp
+    unsubscribe.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    settings-form.xml
+    editor/info-settings-page.xml
+    editor/plugin-settings-page.xml
+    editor/unsubscribe-page.xml
+    layout/info-settings-parser.xsl
+    layout/plugin-settings-parser.xsl
+    layout/unsubscribe-parser.xsl
+    layout/unsubscribe-theme-parser.xsl
+    plugin-selection/plugin-selection.js
+    sendmail/unsubscribe.js
+    info-logo-64x64.png
 )
 
 target_link_libraries( info ${QT_LIBRARIES} )
@@ -77,6 +101,19 @@ install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwebsites/plugins/info
     FILES_MATCHING PATTERN "*.h"
+)
+
+install(
+    FILES
+        plugin-selection/plugin-selection.js
+    DESTINATION
+        share/javascript/snapwebsites/info
+)
+install(
+    FILES
+        sendmail/unsubscribe.js
+    DESTINATION
+        share/javascript/snapwebsites/sendmail
 )
 
 # vim: ts=4 sw=4 et

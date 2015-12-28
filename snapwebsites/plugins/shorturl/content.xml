@@ -22,15 +22,47 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/" owner="output">
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/shorturl/no_shorturl</link>
   </content>
+  <content path="/admin" owner="output">
+    <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/shorturl/no_shorturl</link>
+  </content>
+  <content path="/admin/settings/shorturl" owner="output">
+    <param name="content::title" revision="revision">Short URL</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Edit the Short URL settings.</p>]]>
+    </param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+  </content>
   <content path="/s">
     <param name="content::title" revision="revision">Short URL Parent Page</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>This path is used by the Short URL plugin. When detected by the plugin, it takes the number and redirects the user to the full path page. TODO: add a list of the last 10 public pages that were added to the website.</p>]]>
+      <![CDATA[
+        <p>
+          This path is used by the Short URL plugin. When detected by the
+          plugin, it takes the number and redirects the user to the full
+          path page.
+        </p>
+        <div class="user-list">[list::theme("path", count=10)]</div>
+      ]]>
     </param>
     <param name="permissions::dynamic" type="int8" revision="global">1</param>
+    <!-- create a list of pages with shortcuts sorted by reversed creation data -->
+    <param name="list::original_item_key_script" overwrite="yes">
+      <![CDATA[string(9223372036854775807 - int64(cell("content", page, "content::created")))]]>
+    </param>
+    <!--
+      We want all public pages except "/s" itself, pages that have
+      a "noshortcut" link, and not an attachment.
+    -->
+    <param name="list::original_test_script" overwrite="yes">
+      <![CDATA[path != "s"
+            && perms(path, "user", "view", "visitor")
+            && !linked_to("shorturl::no_shorturl", page, "types/taxonomy/system/shorturl/no_shorturl")
+            && !linked_to("content::page_type", page, "types/taxonomy/system/content-types/attachment/public")]]>
+    </param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/shorturl/no_shorturl</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
+    <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
   </content>
   <content path="/types/taxonomy/system/shorturl">
     <param name="content::title" revision="revision">Short URL Tags</param>

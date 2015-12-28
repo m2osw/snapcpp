@@ -105,11 +105,14 @@ public:
                                 locale();
                                 ~locale();
 
+    // plugin implementation
     static locale *             instance();
+    virtual QString             settings_path() const;
+    virtual QString             icon() const;
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
-
-    void                        on_bootstrap(snap_child *snap);
+    virtual void                bootstrap(snap_child * snap);
 
     locale_list_t const &       get_locale_list();
     timezone_list_t const &     get_timezone_list();
@@ -124,7 +127,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(set_timezone, (), (), START_AND_DONE);
 
     QString                     format_date(time_t d);
-    QString                     format_date(time_t d, QString const & date_format, bool use_locale);
+    QString                     format_date(time_t d, QString const & date_format, bool use_local);
     QString                     format_time(time_t d);
     time_t                      parse_date(QString const & date, parse_error_t & errcode);
     time_t                      parse_time(QString const & time_str, parse_error_t & errcode);

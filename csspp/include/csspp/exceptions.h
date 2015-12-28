@@ -69,7 +69,7 @@ class csspp_exception_exit : public csspp_exception_runtime
 public:
     csspp_exception_exit(int new_exit_code) : csspp_exception_runtime("fatal error"), f_exit_code(new_exit_code) {}
 
-    int     exit_code() { return f_exit_code; }
+    int     exit_code() const { return f_exit_code; }
 
 private:
     int     f_exit_code;

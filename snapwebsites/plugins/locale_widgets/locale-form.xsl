@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == editor form XSLT, generate HTML from editor widgets
+Snap Websites Server == locale form XSLT, editor widget extensions
 Copyright (C) 2014-2015  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="value"/>
     <div field_type="locale_timezone">
       <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-      <!-- shall we really have the classes here since they will be in the locale_timezone widgets already? -->
+      <!-- shall we really have the classes here since they will be in the locale_timezone (did I mean dropdown here?) widgets already? -->
       <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of
         select="classes"/> locale_timezone <xsl:value-of select="$name"/><xsl:if
         test="@immediate or /editor-form/immediate"> immediate</xsl:if></xsl:attribute>

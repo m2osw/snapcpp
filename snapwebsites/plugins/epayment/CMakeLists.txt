@@ -65,6 +65,7 @@ add_library(epayment SHARED
     content.xml
     epayment.js
     epayment-product-parser.xsl
+    epayment-logo-64x64.png
 )
 
 target_link_libraries( epayment

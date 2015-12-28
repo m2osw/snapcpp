@@ -22,6 +22,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -41,7 +42,7 @@ SNAP_PLUGIN_START(menu, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -81,19 +82,6 @@ menu::~menu()
 }
 
 
-/** \brief Initialize the menu plugin.
- *
- * This function terminates the initialization of the menu plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void menu::on_bootstrap(::snap::snap_child *snap)
-{
-    f_snap = snap;
-}
-
-
 /** \brief Get a pointer to the menu plugin.
  *
  * This function returns an instance pointer to the menu plugin.
@@ -103,9 +91,19 @@ void menu::on_bootstrap(::snap::snap_child *snap)
  *
  * \return A pointer to the menu plugin.
  */
-menu *menu::instance()
+menu * menu::instance()
 {
     return g_plugin_menu_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString menu::settings_path() const
+{
+    return "/admin/menu";
 }
 
 
@@ -127,6 +125,19 @@ QString menu::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString menu::dependencies() const
+{
+    return "|content|layout|output|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -143,7 +154,7 @@ int64_t menu::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 0, 49, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -159,9 +170,22 @@ int64_t menu::do_update(int64_t last_updated)
  */
 void menu::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the menu plugin.
+ *
+ * This function terminates the initialization of the menu plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void menu::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
 }
 
 
@@ -181,11 +205,10 @@ void menu::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A fallback path in case ipath is not satisfactory.
  */
-void menu::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void menu::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 

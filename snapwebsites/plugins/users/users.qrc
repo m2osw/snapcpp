@@ -18,24 +18,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
+  <qresource prefix="/js/users">
+    <file>users.js</file>
+  </qresource>
   <qresource prefix="/plugins/users">
     <file>content.xml</file>
   </qresource>
-  <qresource prefix="/xml/users">
-    <file>forgot-password-form.xml</file>
-    <file>login-box-form.xml</file>
-    <file>login-form.xml</file>
-    <file>new-password-form.xml</file>
-    <file>password-form.xml</file>
-    <file>register-box-form.xml</file>
-    <file>register-form.xml</file>
-    <file>replace-password-form.xml</file>
-    <file>resend-email-form.xml</file>
-    <file>verify-credentials-form.xml</file>
-    <file>verify-form.xml</file>
-  </qresource>
   <qresource prefix="/images/users">
-    <file>default-user-image.png</file>
+    <file>users-logo-64x64.png</file>
   </qresource>
 </RCC>
 <!--

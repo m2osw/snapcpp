@@ -35,9 +35,9 @@
 ##
 set(CSSPP_VERSION_MAJOR 1)
 set(CSSPP_VERSION_MINOR 0)
-set(CSSPP_VERSION_PATCH 0)
+set(CSSPP_VERSION_PATCH 8)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.4)
 
 project( csspp_project )
 
@@ -58,8 +58,6 @@ endif()
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
 find_package( AdvGetOpt        REQUIRED )
-#find_package( ControlledVars   REQUIRED )
-#find_package( LibTLD           REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 
@@ -78,10 +76,7 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept" )
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/lib
     ${PROJECT_BINARY_DIR}/include
-    #${CONTROLLEDVARS_INCLUDE_DIRS}
-    #${LIBTLD_INCLUDE_DIRS}
 )
 
 ##

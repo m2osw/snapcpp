@@ -17,11 +17,11 @@
 
 #include "locale_widgets.h"
 
-#include "../editor/editor.h"
-#include "../output/output.h"
 #include "../locale/snap_locale.h"
 
+#include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -40,7 +40,7 @@ SNAP_PLUGIN_START(locale_widgets, 1, 0)
 // *
 // * \return A pointer to the name.
 // */
-//char const *get_name(name_t name)
+//char const * get_name(name_t name)
 //{
 //    switch(name)
 //    {
@@ -82,22 +82,6 @@ locale_widgets::~locale_widgets()
 }
 
 
-/** \brief Initialize the locale_widgets.
- *
- * This function terminates the initialization of the locale_widgets plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void locale_widgets::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(locale_widgets, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
-    SNAP_LISTEN(locale_widgets, "editor", editor::editor, prepare_editor_form, _1);
-}
-
-
 /** \brief Get a pointer to the locale plugin.
  *
  * This function returns an instance pointer to the locale plugin.
@@ -107,9 +91,31 @@ void locale_widgets::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the locale plugin.
  */
-locale_widgets *locale_widgets::instance()
+locale_widgets * locale_widgets::instance()
 {
     return g_plugin_locale_widgets_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString locale_widgets::settings_path() const
+{
+    return "/admin/settings/locale";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString locale_widgets::icon() const
+{
+    return "/images/locale/locale-logo-64x64.png";
 }
 
 
@@ -125,7 +131,42 @@ locale_widgets *locale_widgets::instance()
 QString locale_widgets::description() const
 {
     return "Define locale functions to be used throughout all the plugins."
-        " It handles time and date, timezone, numbers, currency, etc.";
+          " It handles time and date, timezone, numbers, currency, etc.";
+}
+
+
+/** \brief Change the help URI to the base plugin.
+ *
+ * This help_uri() function returns the URI to the base plugin URI
+ * since this plugin is just an extension and does not need to have
+ * a separate help page.
+ *
+ * \return The URI to the locale plugin help page.
+ */
+QString locale_widgets::help_uri() const
+{
+    // TBD: should we instead call the help_uri() of the locale plugin?
+    //
+    //      locale::locale::instance()->help_uri();
+    //
+    //      I am afraid that it would be a bad example because the pointer
+    //      may not be a good pointer anymore at this time (once we
+    //      properly remove plugins that we loaded just to get their info.)
+    //
+    return "http://snapwebsites.org/help/plugin/locale";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString locale_widgets::dependencies() const
+{
+    return "|editor|locale|";
 }
 
 
@@ -145,7 +186,7 @@ int64_t locale_widgets::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 20, 4, 16, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 4, 20, 49, 12, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -161,9 +202,27 @@ int64_t locale_widgets::do_update(int64_t last_updated)
  */
 void locale_widgets::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the locale_widgets.
+ *
+ * This function terminates the initialization of the locale_widgets plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void locale_widgets::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(locale_widgets, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(locale_widgets, "editor", editor::editor, prepare_editor_form, _1);
+    SNAP_LISTEN(locale_widgets, "editor", editor::editor, string_to_value, _1);
+    SNAP_LISTEN(locale_widgets, "editor", editor::editor, value_to_string, _1);
 }
 
 
@@ -174,7 +233,7 @@ void locale_widgets::content_update(int64_t variables_timestamp)
  *
  * \param[in] e  A pointer to the editor plugin.
  */
-void locale_widgets::on_prepare_editor_form(editor::editor *e)
+void locale_widgets::on_prepare_editor_form(editor::editor * e)
 {
     e->add_editor_widget_templates_from_file(":/xsl/locale_widgets/locale-form.xsl");
 }
@@ -191,10 +250,10 @@ void locale_widgets::on_prepare_editor_form(editor::editor *e)
  * \param[in] widget  The XML DOM widget.
  * \param[in] row  The row with the saved data.
  */
-void locale_widgets::on_init_editor_widget(content::path_info_t& ipath, QString const& field_id, QString const& field_type, QDomElement& widget, QtCassandra::QCassandraRow::pointer_t row)
+void locale_widgets::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row)
 {
-    static_cast<void>(field_id);
-    static_cast<void>(row);
+    NOTUSED(field_id);
+    NOTUSED(row);
 
     QString const cpath(ipath.get_cpath());
     if(field_type == "locale_timezone")
@@ -208,38 +267,24 @@ void locale_widgets::on_init_editor_widget(content::path_info_t& ipath, QString 
         //content::content::instance()->add_javascript(doc, "locale-timezone");
         //content::content::instance()->add_css(doc, "locale-timezone");
 
-        // setup the default values
-        QDomElement value(doc.createElement("value"));
-        widget.appendChild(value);
+        // Was a default or current value defined?
+        QString default_continent;
+        QString default_city;
 
-        // The default cannot be dealt with like this, it comes from the
-        // <file>-page.xml data and not the code!
-        // Although we may want to have a "dynamic" default so when a user
-        // edits his timezone he sees the website default timezone by
-        // default... but I think it is better to try to determine the user
-        // timezone instead and if you'd like to have a website specific
-        // timezone, define it as a <default> tag in the XML page file
-        //QString const current_timezone(row->cell(get_name(SNAP_NAME_LOCALE_TIMEZONE))->value().stringValue());
-        //QStringList current_timezone_segments(current_timezone.split('/'));
+        QDomElement value_tag;
+        value_tag = widget.firstChildElement("value");
+        if(!value_tag.isNull())
+        {
+            // no tags in a timezone value, so we can just use text()
+            QString const current_timezone(value_tag.text());
+            snap_string_list const current_timezone_segments(current_timezone.split('/'));
 
-        //// this is the widget result
-        //doc.getElementByTagName("default");
-        //QDomElement default_value(doc.createElement("default"));
-        //widget.appendChild(default_value);
-        //QDomText current_value(doc.createTextNode(current_timezone_segments[0]));
-        //default_value.appendChild(current_value);
-
-        //// this is the default for the continent
-        //current_timezone_segments[0].replace('_', ' ');
-        //QDomElement default_continent(doc.createElement("default_continent"));
-        //widget.appendChild(default_continent);
-        //QDomText current_continent_value(doc.createTextNode(current_timezone_segments[0]));
-        //default_continent.appendChild(current_continent_value);
-
-        //// this is the default for the timezone
-        //current_timezone_segments[1].replace('_', ' ');
-        //QDomText current_city_value(doc.createTextNode(current_timezone_segments[1]));
-        //value.appendChild(current_city_value);
+            if(current_timezone_segments.size() == 2)
+            {
+                default_continent = current_timezone_segments[0];
+                default_city = current_timezone_segments[1];
+            }
+        }
 
         // setup a dropdown preset list for continents and one for cities
         QDomElement preset_continent(doc.createElement("preset_continent"));
@@ -249,7 +294,7 @@ void locale_widgets::on_init_editor_widget(content::path_info_t& ipath, QString 
         widget.appendChild(preset_city);
 
         // get the complete list
-        locale::locale::timezone_list_t const& list(locale::locale::instance()->get_timezone_list());
+        locale::locale::timezone_list_t const & list(locale::locale::instance()->get_timezone_list());
 
         // extract the continents as we setup the cities
         QMap<QString, bool> continents;
@@ -271,6 +316,10 @@ void locale_widgets::on_init_editor_widget(content::path_info_t& ipath, QString 
             QDomElement item(doc.createElement("item"));
             preset_city.appendChild(item);
             QString const value_city(list[idx].f_city);
+            if(value_city == default_city)
+            {
+                item.setAttribute("default", "default");
+            }
             item.setAttribute("class", continent);
             QDomText text(doc.createTextNode(value_city));
             item.appendChild(text);
@@ -285,9 +334,62 @@ void locale_widgets::on_init_editor_widget(content::path_info_t& ipath, QString 
             QDomElement item(doc.createElement("item"));
             preset_continent.appendChild(item);
             QString const value_continent(it.key());
+            if(value_continent == default_continent)
+            {
+                item.setAttribute("default", "default");
+            }
             QDomText text(doc.createTextNode(value_continent));
             item.appendChild(text);
         }
+    }
+}
+
+
+/** \brief Transform data to a QCassandraValue.
+ *
+ * This function transforms a value received from a POST into a
+ * QCassandraValue to be saved in the database.
+ *
+ * \param[in] value_info  Information about the widget to be checked.
+ */
+void locale_widgets::on_string_to_value(editor::editor::string_to_value_info_t & value_info)
+{
+    if(!value_info.is_done()
+    && value_info.get_data_type() == "locale_timezone")
+    {
+        value_info.set_type_name("locale timezone");
+
+        value_info.result().setStringValue(value_info.get_data());
+        value_info.set_status(editor::editor::string_to_value_info_t::status_t::DONE);
+        return;
+    }
+}
+
+
+/** \brief Transform a database value to a string for display.
+ *
+ * This function transforms a database value back to a string as displayed
+ * to end users.
+ *
+ * The value must be valid. Invalid values do not make it in the result
+ * string. In other words, the result string remains unchanged if the
+ * input value is considered invalid.
+ *
+ * \param[in] value_info  A value_to_string_info_t object.
+ *
+ * \return true if the data_type is not known internally, false when the type
+ *         was managed by this very function
+ */
+void locale_widgets::on_value_to_string(editor::editor::value_to_string_info_t & value_info)
+{
+    if(!value_info.is_done()
+    && value_info.get_data_type() == "locale_timezone")
+    {
+        value_info.set_type_name("locale timezone");
+
+        value_info.result() = value_info.get_value().stringValue();
+        value_info.set_status(editor::editor::value_to_string_info_t::status_t::DONE);
+        return;
     }
 }
 

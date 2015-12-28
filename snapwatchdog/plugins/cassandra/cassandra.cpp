@@ -17,28 +17,7 @@
 
 #include "cassandra.h"
 
-//#include "../output/output.h"
-//#include "../attachment/attachment.h"
-//#include "../messages/messages.h"
-//#include "../permissions/permissions.h"
-//
-//#include "dbutils.h"
-//#include "mkgmtime.h"
-//#include "qdomreceiver.h"
-//#include "qdomxpath.h"
-//#include "qdomhelpers.h"
-//#include "qxmlmessagehandler.h"
-//#include "snap_image.h"
-//#include "not_reached.h"
-//#include "log.h"
-//
-//#include <QtCassandra/QCassandraLock.h>
-//
-//#include <iostream>
-//
-//#include <QXmlQuery>
-//#include <QFile>
-//#include <QFileInfo>
+#include "not_used.h"
 
 #include "poison.h"
 
@@ -55,11 +34,11 @@ SNAP_PLUGIN_START(cassandra, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_CASSANDRA_NAME:
+    case name_t::SNAP_NAME_WATCHDOG_CASSANDRA_NAME:
         return "name";
 
     default:
@@ -92,21 +71,6 @@ cassandra::~cassandra()
 }
 
 
-/** \brief Initialize cassandra.
- *
- * This function terminates the initialization of the cassandra plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void cassandra::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(apache, "server", server, process_watch, _1);
-}
-
-
 /** \brief Get a pointer to the cassandra plugin.
  *
  * This function returns an instance pointer to the cassandra plugin.
@@ -116,7 +80,7 @@ void cassandra::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the cassandra plugin.
  */
-cassandra *cassandra::instance()
+cassandra * cassandra::instance()
 {
     return g_plugin_cassandra_factory.instance();
 }
@@ -137,6 +101,19 @@ QString cassandra::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString cassandra::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function is ignored in the watchdog.
@@ -150,6 +127,21 @@ int64_t cassandra::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
     // no updating in watchdog
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize cassandra.
+ *
+ * This function terminates the initialization of the cassandra plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void cassandra::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(apache, "server", server, process_watch, _1);
 }
 
 

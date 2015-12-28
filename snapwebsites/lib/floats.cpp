@@ -77,12 +77,12 @@ bool almost_equal(T a, T b)
     fb.f_float = b;
 
     // retrieve the mantissa
-    I ia(fa.f_integer & (-1 >> (sizeof(I) * 8 - mantissa)));
-    I ib(fb.f_integer & (-1 >> (sizeof(I) * 8 - mantissa)));
+    I ia(fa.f_integer & (static_cast<I>(-1) >> (sizeof(I) * 8 - mantissa)));
+    I ib(fb.f_integer & (static_cast<I>(-1) >> (sizeof(I) * 8 - mantissa)));
 
     // retrieve the exponent
-    I ea((fa.f_integer >> mantissa) & (-1 >> (sizeof(I) * 8 - exponent)));
-    I eb((fb.f_integer >> mantissa) & (-1 >> (sizeof(I) * 8 - exponent)));
+    I ea((fa.f_integer >> mantissa) & (static_cast<I>(-1) >> (sizeof(I) * 8 - exponent)));
+    I eb((fb.f_integer >> mantissa) & (static_cast<I>(-1) >> (sizeof(I) * 8 - exponent)));
 
     // adjust the mantissa with the exponent
     // TBD: ameliorate to try to keep as many bits as possible?

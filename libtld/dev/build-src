@@ -8,4 +8,5 @@ dpkg-source \
 	--tar-ignore="*.gitignore*" \
 	--tar-ignore="*.so" \
 	--tar-ignore="*.o" \
+	--tar-ignore="*.out" \
 	-i -b .

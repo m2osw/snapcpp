@@ -17,9 +17,8 @@
 
 #include "mimetype.h"
 
-//#include "../messages/messages.h"
-
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -79,19 +78,6 @@ mimetype::~mimetype()
 }
 
 
-/** \brief Initialize the MIME type.
- *
- * This function terminates the initialization of the MIME type plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void mimetype::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-}
-
-
 /** \brief Get a pointer to the MIME type plugin.
  *
  * This function returns an instance pointer to the MIME type plugin.
@@ -101,7 +87,7 @@ void mimetype::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the MIME type plugin.
  */
-mimetype *mimetype::instance()
+mimetype * mimetype::instance()
 {
     return g_plugin_mimetype_factory.instance();
 }
@@ -122,6 +108,19 @@ QString mimetype::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString mimetype::dependencies() const
+{
+    return "|output|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -138,7 +137,7 @@ int64_t mimetype::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 27, 12, 3, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 9, 19, 2, 7, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -153,9 +152,22 @@ int64_t mimetype::do_update(int64_t last_updated)
  */
 void mimetype::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the MIME type.
+ *
+ * This function terminates the initialization of the MIME type plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void mimetype::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
 }
 
 

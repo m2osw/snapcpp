@@ -20,15 +20,16 @@
 #include "../content/content.h"
 #include "../messages/messages.h"
 
+#include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 #include "qdomreceiver.h"
 #include "qdomxpath.h"
-#include "qdomhelpers.h"
-#include "qxmlmessagehandler.h"
 #include "qstring_stream.h"
-#include "log.h"
+#include "qxmlmessagehandler.h"
+#include "xslt.h"
 
-#include <QXmlQuery>
 #include <QFile>
 #include <QFileInfo>
 
@@ -62,7 +63,7 @@ int64_t g_tabindex_base = 0;
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t const name)
+char const * get_name(name_t const name)
 {
     switch(name)
     {
@@ -121,7 +122,7 @@ form::~form()
  *
  * \return A pointer to the form plugin.
  */
-form *form::instance()
+form * form::instance()
 {
     return g_plugin_form_factory.instance();
 }
@@ -144,20 +145,16 @@ QString form::description() const
 }
 
 
-/** \brief Bootstrap the form.
+/** \brief Return our dependencies.
  *
- * This function adds the events the form plugin is listening for.
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
  *
- * \param[in] snap  The child handling this request.
+ * \return Our list of dependencies.
  */
-void form::on_bootstrap(::snap::snap_child *snap)
+QString form::dependencies() const
 {
-    f_snap = snap;
-
-    SNAP_LISTEN(form, "server", server, process_post, _1);
-    SNAP_LISTEN(form, "content", content::content, copy_branch_cells, _1, _2, _3);
-    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-    SNAP_LISTEN(form, "layout", layout::layout, filtered_content, _1, _2, _3);
+    return "|content|filter|messages|sessions|";
 }
 
 
@@ -178,7 +175,7 @@ int64_t form::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 6, 10, 18, 32, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 19, 2, 9, 8, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -195,9 +192,26 @@ int64_t form::do_update(int64_t last_updated)
  */
 void form::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Bootstrap the form.
+ *
+ * This function adds the events the form plugin is listening for.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void form::bootstrap(::snap::snap_child *snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(form, "server", server, process_post, _1);
+    SNAP_LISTEN(form, "content", content::content, copy_branch_cells, _1, _2, _3);
+    SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(form, "layout", layout::layout, filtered_content, _1, _2, _3);
 }
 
 
@@ -215,7 +229,7 @@ void form::content_update(int64_t variables_timestamp)
  *
  * \return The resulting HTML document.
  */
-QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocument& xml_form)
+QDomDocument form::form_to_html(sessions::sessions::session_info & info, QDomDocument & xml_form)
 {
     static int64_t g_unique_id(0);
 
@@ -292,27 +306,20 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     // properly save attachments if the form generates an error!)
     auto_fill_form(xml_form);
 
-    QXmlQuery q(QXmlQuery::XSLT20);
-    QMessageHandler msg;
-    q.setMessageHandler(&msg);
-    q.setFocus(xml_form.toString(-1));
-    // somehow the bind works here...
-    q.bindVariable("_form_session", QVariant(sessions::sessions::instance()->create_session(info)));
     ++g_unique_id;
-    q.bindVariable("action", QVariant(info.get_page_path()));
-    q.bindVariable("unique_id", QVariant(QString("%1").arg(g_unique_id)));
-    q.bindVariable("tabindex_base", QVariant(current_tab_id()));
-    //q.bindVariable("can_edit", QVariant(QString(can_edit.allowed() ? "yes" : "")));
-    q.setQuery(f_form_elements_string);
-    if(!q.isValid())
-    {
-        throw form_exception_invalid_xslt_data(QString("invalid XSLT query for FORM \"%1\" detected by Qt").arg(":/xsl/form/core-form.xsl"));
-    }
-    QDomReceiver receiver(q.namePool(), doc_output);
-    q.evaluateTo(&receiver);
+
+    xslt x;
+    x.add_variable("_form_session", QVariant(sessions::sessions::instance()->create_session(info)));
+    x.add_variable("action",        QVariant(info.get_page_path()));
+    x.add_variable("unique_id",     QVariant(QString("%1").arg(g_unique_id)));
+    x.add_variable("tabindex_base", QVariant(current_tab_id()));
+    //x.add_variable("can_edit",      QVariant(QString(can_edit.allowed() ? "yes" : "")));
+    x.set_xsl(f_form_elements_string);
+    x.set_document(xml_form);
+    x.evaluate_to_document(doc_output);
 
     // the count includes all the widgets even those that do not make
-    // use of the tab index so we'll get some gaps, but that's a very
+    // use of the tab index so we will get some gaps, but that is a very
     // small price to pay for this cool feature
     used_tab_id(xml_form.elementsByTagName("widget").size());
 
@@ -855,7 +862,7 @@ QDomDocument const form::load_form(content::path_info_t & ipath, QString const &
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void form::on_process_post(QString const& uri_path)
+void form::on_process_post(QString const & uri_path)
 {
     QString const form_session(f_snap->postenv("_form_session"));
     if(form_session.isEmpty())
@@ -1187,7 +1194,7 @@ void form::on_process_post(QString const& uri_path)
         // unlikely)
         if(cpath.startsWith("admin/layouts/"))
         {
-            QStringList const segments(cpath.split("/"));
+            snap_string_list const segments(cpath.split("/"));
             // TBD: I'm not totally sure that boxes will always have exactly
             //      5 segments, but this is the case at this point
             if(segments.size() == 5)
@@ -1490,11 +1497,11 @@ int form::count_html_lines(QString const& html)
  *
  * \return Always return true so other plugins have a chance to validate too.
  */
-bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info,
-                                         QDomElement const& widget, QString const& widget_name,
-                                         QString const& widget_type, bool const is_secret)
+bool form::validate_post_for_widget_impl(content::path_info_t & ipath, sessions::sessions::session_info & info,
+                                         QDomElement const & widget, QString const & widget_name,
+                                         QString const & widget_type, bool const is_secret)
 {
-    messages::messages *messages(messages::messages::instance());
+    messages::messages * messages(messages::messages::instance());
 
     // get the value we are going to validate
     QString const value(f_snap->postenv(widget_name));
@@ -1895,7 +1902,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
             if(!extensions_tag.isNull())
             {
                 QString extensions(extensions_tag.text());
-                QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
+                snap_string_list ext_list(extensions.split(",", QString::SkipEmptyParts));
                 int const max_strings(ext_list.size());
                 QFileInfo const file_info(value);
                 QString const file_ext(file_info.suffix());
@@ -2051,13 +2058,12 @@ void form::used_tab_id(int used)
  * \li [form::settings]
  *
  * \param[in,out] ipath  The path to the page being worked on.
- * \param[in] plugin_owner  The plugin owner of the ipath data.
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void form::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(xml);
+    NOTUSED(xml);
 
     // a form::... token?
     if(!token.is_namespace("form::"))
@@ -2065,6 +2071,7 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         return;
     }
 
+    QString const plugin_owner(ipath.get_parameter("token_owner"));
     QString const site_key(f_snap->get_site_key_with_slash());
     QDomDocument form_doc;
     QString source;
@@ -2220,21 +2227,46 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         return;
     }
 
-    // 3. Get form timeout
+    // 3. Get form auto-reset
     //
-    // The timeout defaults to 1h (in minutes)
-    int timeout(60);
+    // The auto-reset timeout defaults to 1h (in minutes)
+    //
+    // Note: we don't need this parameter for the session, we probably
+    // could remove the code although this verifies that if the
+    // auto-reset is defined that it is correct
+    int auto_reset_timeout(60);
     QDomElement auto_reset(form_doc.firstChildElement("auto-reset"));
     if(!auto_reset.isNull())
     {
         QString const minutes(auto_reset.attribute("minutes"));
         if(!minutes.isEmpty())
         {
-            timeout = minutes.toInt(&ok);
+            auto_reset_timeout = minutes.toInt(&ok);
             if(!ok)
             {
                 token.f_error = true;
                 token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session auto-reset minutes attribute (" + minutes + ") is not a valid decimal number.</span>";
+                SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + minutes + "\" as a auto-reset timeout in minutes.");
+                return;
+            }
+        }
+    }
+
+    // 4. Get form timeout
+    //
+    // The timeout defaults to 8h (in minutes)
+    int timeout(8 * 60);
+    QDomElement timeout_tag(form_doc.firstChildElement("timeout"));
+    if(!timeout_tag.isNull())
+    {
+        QString const minutes(timeout_tag.attribute("minutes"));
+        if(!minutes.isEmpty())
+        {
+            timeout = minutes.toInt(&ok);
+            if(!ok)
+            {
+                token.f_error = true;
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session timeout minutes attribute (" + minutes + ") is not a valid decimal number.</span>";
                 SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + minutes + "\" as a timeout in minutes.");
                 return;
             }
@@ -2242,7 +2274,7 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     }
     info.set_time_to_live(timeout * 60);  // time to live is in seconds, timeout is in minutes
 
-    // 4. Define the owner of the form
+    // 5. Define the owner of the form
     //
     // In many cases the owner is not defined in the form in which
     // case it comes from the page; however, if defined in the form
@@ -2252,13 +2284,13 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     // I think the owner in a form is authoritative, period.
     info.set_plugin_owner(owner);
 
-    // 5. Define the path of the form from the XML document
+    // 6. Define the path of the form from the XML document
     //
     // If not empty then it was already defined in the previous step
     // (when retrieving the form:: from the page)
     info.set_page_path(ipath);
 
-    // 6. Run the XSLT against the form and save the result
+    // 7. Run the XSLT against the form and save the result
     //
     QDomDocument result(form_to_html(info, form_doc));
     token.f_replacement = result.toString(-1);
@@ -2312,6 +2344,8 @@ QString form::get_source(QString const & owner, content::path_info_t & ipath)
         source = ":/xml/" + owner + "/" + source + ".xml";
     }
 
+    SNAP_LOG_TRACE("Form source filename: \"")(source)("\"");
+
     return source;
 }
 
@@ -2328,8 +2362,8 @@ QString form::get_source(QString const & owner, content::path_info_t & ipath)
  */
 void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc, QString const& xsl)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(xsl);
+    NOTUSED(ipath);
+    NOTUSED(xsl);
 
     if(f_form_initialized)
     {
@@ -2340,7 +2374,7 @@ void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc, Q
 
 void form::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
-    static_cast<void>(destination_branch);
+    NOTUSED(destination_branch);
 
     content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(name_t::SNAP_NAME_FORM_NAMESPACE));
 }

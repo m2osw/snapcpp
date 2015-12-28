@@ -49,15 +49,21 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     antivirus.qrc
 )
 
-snap_validate_xml( content.xml content/content.dtd )
-snap_validate_xml( settings-form.xml form/snap-form.dtd )
+snap_validate_xml( content.xml                      content/content.dtd )
+
+snap_validate_xml( antivirus-settings-page.xml      editor/editor-form.dtd )
+
+snap_validate_xml( antivirus-settings-parser.xsl    layout/simplified-xslt20.dtd )
+
 
 add_library(antivirus SHARED
     antivirus.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    settings-form.xml
+    antivirus-settings-page.xml
+    antivirus-settings-parser.xsl
+    antivirus-logo-64x64.png
 )
 
 target_link_libraries( antivirus ${QT_LIBRARIES} )

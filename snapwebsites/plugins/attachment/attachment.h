@@ -25,11 +25,11 @@ namespace attachment
 {
 
 
-//enum class name_t
-//{
-//    SNAP_NAME_ATTACHMENT_...
-//};
-//char const * get_name(name_t name) __attribute__ ((const));
+enum class name_t
+{
+    SNAP_NAME_ATTACHMENT_ACTION_EXTRACTFILE
+};
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class attachment_exception : public snap_exception
@@ -48,34 +48,69 @@ public:
     attachment_exception_invalid_content_xml(QString const &     what_msg) : attachment_exception(what_msg) {}
 };
 
+class attachment_exception_invalid_filename : public attachment_exception
+{
+public:
+    attachment_exception_invalid_filename(char const *        what_msg) : attachment_exception(what_msg) {}
+    attachment_exception_invalid_filename(std::string const & what_msg) : attachment_exception(what_msg) {}
+    attachment_exception_invalid_filename(QString const &     what_msg) : attachment_exception(what_msg) {}
+};
 
 
 
 
 
 
-class attachment : public plugins::plugin,
-                   public path::path_execute,
-                   public permission_error_callback::error_by_mime_type
+
+class attachment
+        : public plugins::plugin
+        , public path::path_execute
+        , public server::backend_action
+        , public permission_error_callback::error_by_mime_type
 {
 public:
                         attachment();
                         ~attachment();
 
     static attachment * instance();
-    virtual QString     description() const;
-    virtual int64_t     do_update(int64_t last_updated);
 
-    void                on_bootstrap(snap_child * snap);
+    // plugins::plugin implementation
+    virtual QString     icon() const;
+    virtual QString     description() const;
+    virtual QString     dependencies() const;
+    virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
+
+    // server signals
+    void                on_register_backend_action(server::backend_action_set & actions);
+
+    // server::backend_action implementation
+    virtual void        on_backend_action(QString const & action);
+
+    // path signals
     void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+
+    // path::path_execute
     virtual bool        on_path_execute(content::path_info_t & ipath);
+
+    // content signal
     void                on_page_cloned(content::content::cloned_tree_t const & tree);
     void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
-    virtual void        on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path);
+
+    // permissions signal
     void                on_permit_redirect_to_login_on_not_allowed(content::path_info_t & ipath, bool & redirect_to_login);
+
+    // permission_error_callback::error_by_mime_type
+    virtual void        on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path);
+
+    int                 delete_all_attachments(content::path_info_t & ipath);
 
 private:
     void                content_update(int64_t variables_timestamp);
+    void                backend_action_extract_file();
+
+    bool                check_for_uncompressed_file(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+    bool                check_for_minified_js_or_css(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info, QString const & extension);
 
     zpsnap_child_t      f_snap;
 };

@@ -24,8 +24,10 @@
 #include "../permissions/permissions.h"
 #include "../shorturl/shorturl.h"
 
-#include "qdomxpath.h"
+#include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
+#include "qdomxpath.h"
 
 #include <QtCassandra/QCassandraLock.h>
 
@@ -378,25 +380,6 @@ ecommerce::~ecommerce()
 }
 
 
-/** \brief Initialize the ecommerce.
- *
- * This function terminates the initialization of the ecommerce plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void ecommerce::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(ecommerce, "server", server, process_post, _1);
-    SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    SNAP_LISTEN(ecommerce, "epayment", epayment::epayment, generate_invoice, _1, _2, _3);
-    SNAP_LISTEN(ecommerce, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-    SNAP_LISTEN(ecommerce, "path", path::path, preprocess_path, _1, _2);
-}
-
-
 /** \brief Get a pointer to the ecommerce plugin.
  *
  * This function returns an instance pointer to the ecommerce plugin.
@@ -406,9 +389,31 @@ void ecommerce::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the ecommerce plugin.
  */
-ecommerce *ecommerce::instance()
+ecommerce * ecommerce::instance()
 {
     return g_plugin_ecommerce_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString ecommerce::settings_path() const
+{
+    return "/admin/settings/ecommerce";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString ecommerce::icon() const
+{
+    return "/images/ecommerce/ecommerce-logo-64x64.png";
 }
 
 
@@ -433,6 +438,19 @@ QString ecommerce::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString ecommerce::dependencies() const
+{
+    return "|filter|layout|output|permissions|shorturl|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -449,7 +467,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 6, 1, 17, 33, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 17, 45, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -465,9 +483,28 @@ int64_t ecommerce::do_update(int64_t last_updated)
  */
 void ecommerce::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the ecommerce.
+ *
+ * This function terminates the initialization of the ecommerce plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void ecommerce::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(ecommerce, "server", server, process_post, _1);
+    SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(ecommerce, "epayment", epayment::epayment, generate_invoice, _1, _2, _3);
+    SNAP_LISTEN(ecommerce, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(ecommerce, "path", path::path, preprocess_path, _1, _2);
 }
 
 
@@ -480,13 +517,11 @@ void ecommerce::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template in case path does not exist.
  */
-void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void ecommerce::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(metadata);
-    static_cast<void>(ctemplate);
+    NOTUSED(ipath);
+    NOTUSED(metadata);
 
     QDomDocument doc(header.ownerDocument());
 
@@ -717,8 +752,8 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
  */
 void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin *path_plugin)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(path_plugin);
+    NOTUSED(ipath);
+    NOTUSED(path_plugin);
 
     snap_uri const main_uri(f_snap->get_uri());
     if(main_uri.has_query_option("cart"))
@@ -748,10 +783,10 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
             typedef controlled_vars::limited_auto_init<uint32_t, 0, 0x10FFFF, '*'> operation_t;
             typedef controlled_vars::fauto_init<double> quantity_t; // always initialized to 0.0 because a template parameter cannot be a double
 
-            QStringList     f_attributes;
-            QString         f_product;
-            operation_t     f_operation;
-            quantity_t      f_quantity;
+            snap_string_list    f_attributes;
+            QString             f_product;
+            operation_t         f_operation;
+            quantity_t          f_quantity;
         };
         product_t product;
         std::vector<product_t> product_list;
@@ -794,13 +829,13 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
                     else
                     {
                         // this is the path to the product, it has to be
-                        // written between colons
+                        // written between exclamation marks
                         if(code->unicode() != '!')
                         {
                             messages::messages::instance()->set_error(
                                 "Invalid Product Path",
-                                QString("e-Commerce product paths in the cart=... option must be written between exclamation points (!)."),
-                                "invalid numbers are not accepted as quantities and no product gets added.",
+                                QString("e-Commerce product paths in the cart=... option must be written between exclamation marks (!)."),
+                                "unquoted names are not accepted as product paths.",
                                 false
                             );
                             valid = false;
@@ -818,7 +853,7 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
                                 messages::messages::instance()->set_error(
                                     "Invalid Product Path",
                                     QString("e-Commerce product paths in the cart=... option must be written between exclamation points (!)."),
-                                    "invalid numbers are not accepted as quantities and no product gets added.",
+                                    "unquoted names are not accepted as product paths.",
                                     false
                                 );
                                 valid = false;
@@ -1096,12 +1131,11 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void ecommerce::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void ecommerce::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // our pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -1178,7 +1212,7 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
         return;
     }
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
     // TODO: loop through all the products to allow for other plugins to
@@ -1381,7 +1415,7 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
     // was just saved in the invoice; in its place we put an invoice
     // URL so for users without an account we still have access
     users_plugin->attach_to_session(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_PATH), invoice_ipath.get_key());
-    static_cast<void>(users_plugin->detach_from_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
+    NOTUSED(users_plugin->detach_from_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
 
     // The "actual" generation of the invoice should be using an XSLT
     // file and not C++ code; that way we can easily extend the display.
@@ -1504,7 +1538,7 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
  *
  * \return true if the signal should be processed, false otherwise.
  */
-bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t product_ipath)
+bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t & product_ipath)
 {
     // Is this GUID pointing to a page which represents a product at least?
     links::link_info product_info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, product_ipath.get_key(), product_ipath.get_branch());
@@ -1596,11 +1630,10 @@ bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t p
 }
 
 
-void ecommerce::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void ecommerce::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(ipath);
+    NOTUSED(xml);
 
     if(!token.is_namespace("ecommerce::"))
     {

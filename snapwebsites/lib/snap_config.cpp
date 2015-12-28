@@ -21,11 +21,11 @@
 
 #include <QFile>
 
-#include <iostream>
 #include <memory>
 #include <sstream>
 
 #include <syslog.h>
+#include <unistd.h>
 
 #include "poison.h"
 
@@ -39,15 +39,20 @@ snap_config::snap_config()
 }
 
 
-QString& snap_config::operator []( const QString& name )
+QString & snap_config::operator [] ( QString const & name )
 {
     return f_parameters[name];
 }
 
 
-QString snap_config::operator []( const QString& name ) const
+QString snap_config::operator [] ( QString const & name ) const
 {
-    return f_parameters[name];
+    if(f_parameters.contains(name))
+    {
+        return f_parameters[name];
+    }
+
+    return QString();
 }
 
 
@@ -58,7 +63,7 @@ void snap_config::clear()
 }
 
 
-void snap_config::set_cmdline_params( const parameter_map_t& params )
+void snap_config::set_cmdline_params( parameter_map_t const & params )
 {
     f_cmdline_params = params;
 }
@@ -68,20 +73,19 @@ void snap_config::set_cmdline_params( const parameter_map_t& params )
  *
  * \param[in] filename  The name of the file to read the parameters from.
  */
-void snap_config::read_config_file( QString const& filename )
+void snap_config::read_config_file( QString const & filename )
 {
     // read the configuration file now
     QFile c;
     c.setFileName(filename);
-    c.open(QIODevice::ReadOnly);
-    if(!c.isOpen())
+    if(!c.open(QIODevice::ReadOnly))
     {
         // if for nothing else we need to have the list of plugins so we always
         // expect to have a configuration file... if we're here we could not
         // read it, unfortunately
         std::stringstream ss;
         ss << "cannot read configuration file \"" << filename.toUtf8().data() << "\"";
-        SNAP_LOG_FATAL() << ss.str() << ".";
+        SNAP_LOG_FATAL(ss.str())(".");
         syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
         exit(1);
     }
@@ -115,7 +119,7 @@ void snap_config::read_config_file( QString const& filename )
             // empty line
             continue;
         }
-        char *n(buf);
+        char * n(buf);
         while(isspace(*n))
         {
             ++n;
@@ -125,7 +129,7 @@ void snap_config::read_config_file( QString const& filename )
             // comment or empty line
             continue;
         }
-        char *v(n);
+        char * v(n);
         while(*v != '=' && *v != '\0')
         {
             // TODO verify that the name is only ASCII? (probably not too
@@ -138,11 +142,11 @@ void snap_config::read_config_file( QString const& filename )
         {
             std::stringstream ss;
             ss << "invalid variable on line " << line << " in \"" << filename.toUtf8().data() << "\", no equal sign found";
-            SNAP_LOG_ERROR() << ss.str() << ".";
+            SNAP_LOG_ERROR(ss.str())(".");
             syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
             exit(1);
         }
-        char *e;
+        char * e;
         for(e = v; e > n && isspace(e[-1]); --e);
         *e = '\0';
         do
@@ -158,7 +162,7 @@ void snap_config::read_config_file( QString const& filename )
             v++;
             e[-1] = '\0';
         }
-        // keep the command line defined parameters
+        // keep the command line defined parameters if defined
         if(!f_cmdline_params.contains(n))
         {
             f_parameters[n] = QString::fromUtf8(v);
@@ -173,12 +177,12 @@ void snap_config::read_config_file( QString const& filename )
 }
 
 
-bool snap_config::contains( const QString& name ) const
+bool snap_config::contains( QString const & name ) const
 {
     return f_parameters.contains( name );
 }
 
+
 }
 //namespace snap
-
-// vim: ts=4 sw=4 et syntax=cpp.doxygen
+// vim: ts=4 sw=4 et

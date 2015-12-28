@@ -32,6 +32,7 @@
 #include "plugins.h"
 #include "snap_version.h"
 #include "not_reached.h"
+#include "not_used.h"
 #include "log.h"
 
 #include <QScriptEngine>
@@ -75,8 +76,8 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED:
         return "javascript::minimized::compressed";
 
-    case name_t::SNAP_NAME_JAVASCRIPT_ROW:
-        return "javascripts";
+    //case name_t::SNAP_NAME_JAVASCRIPT_ROW: -- use SNAP_NAME_CONTENT_FILES_JAVASCRIPTS instead
+    //    return "javascripts";
 
     default:
         // invalid index
@@ -113,22 +114,6 @@ javascript::~javascript()
 }
 
 
-/** \brief Initialize the javascript.
- *
- * This function terminates the initialization of the javascript plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void javascript::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(javascript, "content", content::content, check_attachment_security, _1, _2, _3);
-    SNAP_LISTEN(javascript, "content", content::content, process_attachment, _1, _2);
-}
-
-
 /** \brief Get a pointer to the javascript plugin.
  *
  * This function returns an instance pointer to the javascript plugin.
@@ -160,6 +145,19 @@ QString javascript::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString javascript::dependencies() const
+{
+    return "|content|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -174,13 +172,29 @@ QString javascript::description() const
  */
 int64_t javascript::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
 
     SNAP_PLUGIN_UPDATE_INIT();
 
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- content depends on JavaScript so we cannot do a content update here
 
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize the javascript.
+ *
+ * This function terminates the initialization of the javascript plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void javascript::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(javascript, "content", content::content, check_attachment_security, _1, _2, _3);
+    SNAP_LISTEN(javascript, "content", content::content, process_attachment, _1, _2);
 }
 
 
@@ -569,7 +583,7 @@ private:
  *
  * \return The result in a QVariant.
  */
-QVariant javascript::evaluate_script(QString const& script)
+QVariant javascript::evaluate_script(QString const & script)
 {
 //SNAP_LOG_TRACE() << "evaluating JS [" << script << "]\n";
     QScriptProgram program(script);
@@ -582,13 +596,13 @@ QVariant javascript::evaluate_script(QString const& script)
     QVariant variant(value.toVariant());
     if(value.isError())
     {
-// this happens if the script is not correct and it cannot be executed
-SNAP_LOG_TRACE() << "javascript: value says it's an error!\n";
+        // this happens if the script is not correct and it cannot be executed
+        SNAP_LOG_ERROR("javascript: value says there is an error in \"")(script)("\"!");
     }
     if(engine.hasUncaughtException())
     {
-QScriptValue e(engine.uncaughtException());
-SNAP_LOG_TRACE() << "javascript: result = " << engine.hasUncaughtException() << ", e = " << e.isError() << ", s = \"" << e.toString() << "\"\n";
+        QScriptValue e(engine.uncaughtException());
+        SNAP_LOG_ERROR("javascript: result = ")(engine.hasUncaughtException())(", e = ")(e.isError())(", s = \"")(e.toString())("\"");
     }
     return value.toVariant();
 }
@@ -603,14 +617,14 @@ SNAP_LOG_TRACE() << "javascript: result = " << engine.hasUncaughtException() << 
  * The JavaScript plugin cannot depend on the content plugin (because
  * the layout depends on JavaScript and content depends on layout)
  *
- * \param[in] file_key  The row where the file is saved in \p files_table.
+ * \param[in] file_row  The row where the file is saved in \p files_table.
  * \param[in] file  The file to be processed.
  */
-void javascript::on_process_attachment(QByteArray const& file_key, content::attachment_file const& file)
+void javascript::on_process_attachment(QtCassandra::QCassandraRow::pointer_t file_row, content::attachment_file const& file)
 {
     // TODO: got to finish the as2js compiler...
-    (void)file_key;
-    (void)file;
+    NOTUSED(file_row);
+    NOTUSED(file);
 }
 
 

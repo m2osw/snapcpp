@@ -16,8 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../layout/layout.h"
-#include "../path/path.h"
+#include "../content/content.h"
 
 namespace snap
 {
@@ -32,25 +31,29 @@ enum class name_t
 const char * get_name(name_t name) __attribute__ ((const));
 
 
-class taxonomy : public plugins::plugin, public path::path_execute, public layout::layout_content
+class taxonomy
+        : public plugins::plugin
 {
 public:
                         taxonomy();
                         ~taxonomy();
 
+    // plugins::plugin implementation
     static taxonomy *   instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual int64_t     do_dynamic_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(::snap::snap_child *snap);
-    virtual bool        on_path_execute(content::path_info_t & ipath);
-    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, const QString & ctemplate);
+    // content signals implementation
     void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
     QtCassandra::QCassandraValue    find_type_with(content::path_info_t & cpath, const QString & taxonomy, const QString & col_name, const QString & limit_name);
 
 private:
     void                content_update(int64_t variables_timestamp);
+    void                owner_update(int64_t variables_timestamp);
 
     zpsnap_child_t      f_snap;
 };

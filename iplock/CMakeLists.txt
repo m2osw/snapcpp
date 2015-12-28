@@ -1,9 +1,9 @@
 #
-# File:		CMakeLists.txt
-# Object:	Definitions to create the build environment
+# File:         CMakeLists.txt
+# Object:       Definitions to create the build environment
 #
-# Copyright:	Copyright (c) 2012-2013 Made to Order Software Corp.
-#		All Rights Reserved.
+# Copyright:    Copyright (c) 2012-2015 Made to Order Software Corp.
+#               All Rights Reserved.
 #
 # http://snapwebsites.org/
 # contact@m2osw.com
@@ -28,14 +28,23 @@
 #
 cmake_minimum_required(VERSION 2.8)
 
+enable_language( CXX )
+
 ##
 ## IP Lock Version
 ##
 set(IPLOCK_MAJOR 2)
-set(IPLOCK_MINOR 0)
-set(IPLOCK_PATCH 1)
+set(IPLOCK_MINOR 1)
+set(IPLOCK_PATCH 2)
 
 project(iplock)
+
+include(GNUInstallDirs)
+
+# Put the version in the cpp file
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/iplock.h.in ${CMAKE_CURRENT_BINARY_DIR}/iplock.h )
+
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 ##
 ## Include common Snap! cmake modules
@@ -48,35 +57,33 @@ if( NOT CMAKE_MODULE_PATH )
     set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
     message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
 endif()
-find_package( SnapCMakeModules )
+
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
+
+
+# The documentation
+add_subdirectory(doc)
+
 
 ##
 ## IP Lock Tool
 ##
-add_executable(iplock
-	iplock.cpp
+add_executable(${PROJECT_NAME}
+    iplock.cpp
 )
 
-install( TARGETS iplock RUNTIME DESTINATION bin )
+install(
+    TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION sbin
+    #${CMAKE_INSTALL_SBINDIR}
+)
 
-##
-## To pack the source
-##
-set(CPACK_PACKAGE_NAME "iplock")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "iplock -- Tool to block (or release) an IP address in your iptables firewall")
-set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
-set(CPACK_RESOURCE_FILE_LICENSE "${iplock_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_GENERATOR "TGZ" "DEB")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;BUILD;Build;build")
-set(CPACK_PACKAGE_VERSION "${IPLOCK_MAJOR}.${IPLOCK_MINOR}.${IPLOCK_PATCH}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${IPLOCK_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${IPLOCK_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${IPLOCK_PATCH}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "iplock-${IPLOCK_MAJOR}.${IPLOCK_MINOR}.${IPLOCK_PATCH}")
-#set(CPACK_PACKAGE_EXECUTABLES "")
-set(CPACK_DEBIAN_PACKAGE_SECTION "admin")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/iplock")
-include(CPack)
+install(
+    FILES
+        iplock.conf
+    DESTINATION
+        share/iplock/conf
+)
 
+# vim: ts=4 sw=4 et

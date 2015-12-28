@@ -181,13 +181,13 @@ using namespace QtCassandra;
 /** \brief A class for easy access to all resources.
  *
  * This class is just so we use resource in an object oriented
- * manner rather than having globals, but that's clearly very
+ * manner rather than having globals, but that is clearly very
  * similar here!
  */
 class snapdb
 {
 public:
-    snapdb(int argc, char *argv[]);
+    snapdb(int argc, char * argv[]);
 
     void usage(advgetopt::getopt::status_t status);
     void info();
@@ -241,7 +241,7 @@ bool snapdb::confirm_drop_check() const
 }
 
 
-snapdb::snapdb(int argc, char *argv[])
+snapdb::snapdb(int argc, char * argv[])
     : f_cassandra( QCassandra::create() )
     , f_host("localhost") // default
     , f_port(9160) //default
@@ -358,11 +358,15 @@ void snapdb::drop_tables(bool all)
     // there are re-created when we connect and refilled when
     // we access a page; obviously this is VERY dangerous on
     // a live system!
+    context->dropTable("antihammering");
+    context->dropTable("backend");
     context->dropTable("branch");
+    context->dropTable("cache");
     context->dropTable("content");
     context->dropTable("emails");
     context->dropTable("epayment_paypal");
     context->dropTable("files");
+    context->dropTable("firewall");
     context->dropTable("layout");
     context->dropTable("libQtCassandraLockTable");
     context->dropTable("links");
@@ -371,10 +375,11 @@ void snapdb::drop_tables(bool all)
     context->dropTable("processing");
     context->dropTable("revision");
     context->dropTable("secret");
-    context->dropTable("serverstats");
     context->dropTable("sessions");
     context->dropTable("shorturl");
     context->dropTable("sites");
+    context->dropTable("test_results");
+    context->dropTable("tracker");
     context->dropTable("users");
 
     if(all)
@@ -382,7 +387,7 @@ void snapdb::drop_tables(bool all)
         // for those who also want to test the snapmanager work too
         context->dropTable("domains");
         context->dropTable("websites");
-        context->dropTable("serverstats");
+        context->dropTable("serverstats"); // from snapwatchdog
     }
 
     // wait until all the tables are 100% dropped

@@ -21,8 +21,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/plugins/antivirus">
     <file>content.xml</file>
   </qresource>
-  <qresource prefix="/xml/antivirus">
-    <file>settings-form.xml</file>
+  <qresource prefix="/xml/editor">
+    <file>antivirus-settings-page.xml</file>
+  </qresource>
+  <qresource prefix="/xsl/layout">
+    <file>antivirus-settings-parser.xsl</file>
+  </qresource>
+  <qresource prefix="/images/antivirus">
+    <file>antivirus-logo-64x64.png</file>
   </qresource>
 </RCC>
 <!--

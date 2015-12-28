@@ -1,0 +1,200 @@
+<?xml version="1.0"?>
+<snapservices>
+  <!--
+    This file defines a set of services that snapinit will start on
+    a server. The default snapinit.xml file lists all the services
+    available. The following documents the available tags and
+    attributes:
+
+      <service>   Define a service using sub-tags.
+
+        attributes: name      Define the name of the service, in general
+                              this is the same as the name of the executable.
+
+                    disabled  Define whether the service should be started
+                              or not. If disabled is present, ignore that
+                              entry. This makes it easier to keep all the
+                              entries and just disable those you do not
+                              want to run on a specific server.
+
+                    required  Says that this service is required. This means
+                              that if it fails to start, then snapinit as
+                              a whole fails (i.e. it cannot sensibly be
+                              removed from the list of running processes.)
+
+      <service>
+      <priority>  Define a service priority; this parameter must be a
+                  number between -100 and +100. The smaller the value,
+                  the higher the priority. Services with a higher priority
+                  get started first.
+
+        attributes: none
+
+      <service>
+      <wait>      Define the number of seconds to wait before
+                  attempting to start the next service. In case
+                  of a server with a <connect> tag, this
+                  wait is reused until a connection is made
+                  or the process ends. If not present, use
+                  the default of 1 (one second) or 3 when the service
+                  includes a <connect>.
+
+                  We use a minimum of 1 to avoid problems with starting
+                  too many executables all at once which often does not
+                  work that well on a small VPN server.
+
+      <service>
+      <config>    Define the path and filename of the configuration file
+                  for this service. Pretty much all services will load a
+                  default configuration file from /etc/snapwebsites if
+                  you do not specify this tag.
+
+        attributes: none
+
+      <service>
+      <connect>   Request that snapinit attempt a connection to this
+                  service once started. In this case snapinit blocks
+                  until the connection happens. It is assumed that
+                  without this connection, the start process fails.
+                  The parameter is an IP address and port separated
+                  by a colon as in: 127.0.0.1:4040 (snapcommunicator).
+
+                  At this time snapinit only supports snapcommunicator
+                  in this way.
+
+      <service>
+      <command>   Define the path and name of the command. The path is
+                  optional and if not specified the standard Unix PATH
+                  variable is used to find the command. You may also
+                  use the -.-binary-path option (without the '.') to
+                  specify a path. The command is particularly useful
+                  when the name of the service (see <service> name
+                  attribute above) is different from the name of the
+                  command we have to run to start the service.
+
+                  By default a command is expected to stick. You
+                  may run commands that exit and restart them at
+                  a given schedule using the <cron> tag.
+
+      <service>
+      <options>   Define static command line options to be added to
+                  the call. For example, you could add the -.-debug
+                  option (without the . but we are in an XML comment!)
+                  to get debug information while running that process.
+                  Please make sure to first check what options that
+                  service supports.
+
+      <service>
+      <cron>      Define an interval defining ticks when this service
+                  should run. The ticks are assumed to have started
+                  on Jan 1, 2012 at midnight (all balls.) This is used
+                  as a CRON system for Snap! to run certain processes
+                  regularly, but using snapinit so that way we can
+                  cleanly and safely stop the process if the user
+                  requests a shutdown or other similar actions that
+                  would require Snap! to stop. This feature makes
+                  use of a file under /var/spool/snap/snapinit to
+                  know when the last run happened. If more than one
+                  tick, then a run is started as soon as possible
+                  (although we give the other services some time to
+                  get started before we start the CRON process.)
+
+                  The value must be either "off" or a number between
+                  60 and 31708800 which represents the number of
+                  seconds between runs. The larger value represents
+                  about 1 year. The minimum is likely to not be very
+                  useful (i.e. if the process takes 10 minutes to run,
+                  trying to have it run every minute will not really
+                  make much of a difference.) The default is "off".
+                  The expected value for the snapback tool is 300
+                  (i.e. 5 min.)
+
+      <service>
+      <recovery>  The number of seconds to recover a failed
+                  process. In general, when a process crashes,
+                  we retry very quickly to restart it. If all
+                  those attempts fail, then we generally mark
+                  the service as failed and remove it from our
+                  list of services. If this parameter is defined,
+                  then we will try yet again after that many
+                  seconds. This is generally used for backends
+                  with a value of about 3600 seconds (1h.)
+
+      <service>
+      <coredump>  Define the size of the core dump file.
+      
+                  If set to "none" then the default behavior is preserved,
+                  which is also the default if the tag is not defined.
+                  The default behavior can be changed in your shell by
+                  using `ulimit -c <size>` in bash or an equivalent
+                  in another shell.
+
+                  Otherwise the OS will be setup so that the child
+                  process generate a core dump file on an error such
+                  as SEGV or BUS error. To get the entire program in
+                  the core dump file, use "infinity" as the size (as
+                  in <coredump>infinity</coredump>.)
+
+                  To the minimum, the core dump file must be one block
+                  of memory, which is 1Kb on Linux. You may use a two
+                  letter size instead of a number of bytes as in: 4Kb,
+                  10Mb, 1Gb.
+
+                  Remember that if the core dump is larger than this
+                  size, it will be completely discarded. (i.e. if the
+                  core dump file is going to be 6Mb and your limit
+                  is 1Mb, you are not going to get the first 1Mb of
+                  the dump. Instead, you get nothing.)
+
+                  Changing coredump filename? try `man 5 core`
+
+  -->
+  <service name="snapcommunicator" required="required">
+    <priority>-10</priority>
+    <config>/etc/snapwebsites/snapcommunicator.conf</config>
+    <connect>127.0.0.1:4040</connect>
+    <wait>1</wait>
+  </service>
+  <service name="snapfirewall" required="required">
+    <priority>-5</priority>
+    <config>/etc/snapwebsites/snapfirewall.conf</config>
+    <safe>firewall</safe>
+  </service>
+  <service name="snapserver" required="required">
+    <priority>0</priority>
+    <config>/etc/snapwebsites/snapserver.conf</config>
+    <options>--debug</options>
+  </service>
+  <service name="sendmail">
+    <command>/usr/bin/snapbackend</command>
+    <options>--cron-action sendmail::sendmail</options>
+    <config>/etc/snapwebsites/snapserver.conf</config>
+    <recovery>3600</recovery>
+  </service>
+  <service name="pagelist">
+    <command>/usr/bin/snapbackend</command>
+    <options>--cron-action list::pagelist</options>
+    <config>/etc/snapwebsites/snapserver.conf</config>
+    <recovery>3600</recovery>
+  </service>
+  <service name="images">
+    <command>/usr/bin/snapbackend</command>
+    <options>--cron-action images::images</options>
+    <config>/etc/snapwebsites/snapserver.conf</config>
+    <recovery>3600</recovery>
+  </service>
+  <service name="snapwatchdog" disabled="disabled">
+    <command>/usr/bin/snapwatchdogserver</command>
+    <priority>90</priority>
+    <config>/etc/snapwebsites/snapwatchdog.conf</config>
+    <recovery>600</recovery>
+  </service>
+  <service name="snapbackend">
+    <priority>75</priority>
+    <config>/etc/snapwebsites/snapserver.conf</config>
+    <cron>3600</cron>
+  </service>
+</snapservices>
+<!--
+vim: ts=2 sw=2 et
+-->

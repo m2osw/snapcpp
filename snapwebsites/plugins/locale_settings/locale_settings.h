@@ -58,19 +58,29 @@ char const * get_name(name_t name) __attribute__ ((const));
 
 
 
-class locale_settings : public plugins::plugin
+class locale_settings
+        : public plugins::plugin
 {
 public:
                                 locale_settings();
                                 ~locale_settings();
 
+    // plugins::plugin implementation
     static locale_settings *    instance();
+    virtual QString             settings_path() const;
+    virtual QString             icon() const;
     virtual QString             description() const;
+    virtual QString             help_uri() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
+    virtual void                bootstrap(snap_child * snap);
 
-    void                        on_bootstrap(snap_child * snap);
+    // locale signals
     void                        on_set_locale();
     void                        on_set_timezone();
+
+    // filter signals
+    void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
 private:
     void                        content_update(int64_t variables_timestamp);

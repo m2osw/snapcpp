@@ -17,6 +17,8 @@
 
 #include "avatar.h"
 
+#include "not_used.h"
+
 #include <openssl/md5.h>
 
 #include "poison.h"
@@ -69,21 +71,6 @@ avatar::~avatar()
 }
 
 
-/** \brief Initialize the avatar.
- *
- * This function terminates the initialization of the avatar plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void avatar::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(avatar, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-}
-
-
 /** \brief Get a pointer to the avatar plugin.
  *
  * This function returns an instance pointer to the avatar plugin.
@@ -93,9 +80,31 @@ void avatar::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the avatar plugin.
  */
-avatar *avatar::instance()
+avatar * avatar::instance()
 {
     return g_plugin_avatar_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString avatar::settings_path() const
+{
+    return "/admin/settings/avatar";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString avatar::icon() const
+{
+    return "/images/avatar/avatar-logo-64x64.png";
 }
 
 
@@ -115,6 +124,19 @@ QString avatar::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString avatar::dependencies() const
+{
+    return "|filter|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -131,7 +153,7 @@ int64_t avatar::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 2, 4, 30, 42, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 22, 42, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -148,17 +170,37 @@ int64_t avatar::do_update(int64_t last_updated)
  */
 void avatar::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
 
 
-void avatar::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+/** \brief Initialize the avatar.
+ *
+ * This function terminates the initialization of the avatar plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void avatar::bootstrap(snap_child * snap)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    f_snap = snap;
+
+    SNAP_LISTEN(avatar, "filter", filter::filter, replace_token, _1, _2, _3);
+}
+
+
+/** \brief Replace the [avatar::...] tokens.
+ *
+ * This function transforms avatar tokens to HTML.
+ *
+ * \li [avatar::avatar(email)] -- transforms the email address in an image.
+ */
+void avatar::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
+{
+    NOTUSED(ipath);
+    NOTUSED(xml);
 
     if(!token.is_namespace("avatar::"))
     {
@@ -175,6 +217,7 @@ void avatar::on_replace_token(content::path_info_t& ipath, QString const& plugin
             // TODO: verify everything (i.e. that the email is from one of
             //       our users, whether the user is from this website, whether
             //       to use the "local" (snap) image or external image, etc.)
+            //
             unsigned char md[MD5_DIGEST_LENGTH];
             std::string const utf8_email(email.f_value.toUtf8().data());
             MD5(reinterpret_cast<unsigned char const *>(utf8_email.c_str()), utf8_email.length(), md);

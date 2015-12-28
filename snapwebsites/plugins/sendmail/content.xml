@@ -25,6 +25,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/sendmail</link>
   </content>
+  <content path="/images/sendmail" owner="output">
+    <param name="content::title" revision="revision">Sendmail Images</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Default set of images related to the Sendmail system.</p>]]>
+    </param>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <attachment name="sendmail-logo" type="attachment/public">
+      <path>:/images/sendmail/sendmail-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
+  </content>
   <content path="/types/sendmail">
     <param name="content::title" revision="revision">Sendmail Statuses</param>
     <param name="content::body" revision="revision">
@@ -53,33 +65,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="layout::layout" revision="global">"sendmail";</param>
     <param name="layout::theme" revision="global">"sendmail";</param>
-  </content>
-  <content path="unsubscribe" owner="output">
-    <param name="content::title" revision="revision">Unsubscribe from this Snap! Websites Installation</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>Please enter your email address so we can avoid sending you any more emails.</p>]]>
-    </param>
-    <!-- by default we force our own theme and layout to avoid any potential
-         problems and prevent someone from unsubscribing -->
-    <param name="editor::layout" revision="global" overwrite="yes">"unsubscribe-page";</param>
-    <param name="layout::layout" revision="global" overwrite="yes">"unsubscribe-parser";</param>
-    <param name="layout::theme" revision="global" overwrite="yes">"unsubscribe-theme";</param>
-    <param name="permissions::dynamic" type="int8" revision="global">1</param>
-    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
-    <link name="permissions::direct::action::submit" to="permissions::link_back" mode="*:*">/types/permissions/rights/submit/application</link>
-    <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/shorturl/no_shorturl</link>
-  </content>
-  <content path="/js/sendmail">
-    <param name="content::title" revision="revision">Sendmail Dynamic Handling</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>JavaScript code for the sendmail extension.</p>]]>
-    </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
-    <attachment name="unsubscribe" type="attachment/public">
-      <path>qrc:/js/sendmail/unsubscribe.js</path>
-      <mime-type>text/javascript</mime-type>
-      <dependency>editor (&gt;= 0.0.3.333)</dependency>
-    </attachment>
   </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml

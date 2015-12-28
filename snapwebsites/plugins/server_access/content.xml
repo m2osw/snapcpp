@@ -31,6 +31,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <dependency>output (&gt;= 0.1.5.4)</dependency>
     </attachment>
   </content>
+  <content path="/images/server-access" owner="output">
+    <param name="content::title" revision="revision">Server Access Images</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Set of Server Access images.</p>]]>
+    </param>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <attachment name="server-access-logo" type="attachment/public">
+      <path>:/images/server_access/server-access-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

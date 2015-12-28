@@ -1,6 +1,6 @@
 /** @preserve
  * Name: form
- * Version: 0.0.2.29
+ * Version: 0.0.2.42
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -129,7 +129,7 @@ snapwebsites.Form = function()
             {
                 var w = jQuery(widget),
                     focus_id = w.attr("focus"),
-                    auto_reset = w.attr("auto-reset"),
+                    timeout = parseFloat(w.attr("timeout")),
                     timeout_id;
 
                 // this is very problematic, we can really only have one widget with
@@ -142,16 +142,33 @@ snapwebsites.Form = function()
                         .focus()
                         .select();
                 }
-
-                // the auto-reset is a number of minutes to wait before
-                // canceling the form completely
-                if(auto_reset > 0) // form times out?
+                else
                 {
+                    // the .focus() has the side effect of calling the
+                    // restartAutoReset_() function so this way we avoid
+                    // doing it twice
+                    that.restartAutoReset_(w.find("input,textarea").first());
+                }
+
+                // the timeout should always be set; it represents the
+                // amount of time until a session ends; it is a fixed
+                // time and therefore never gets reset once setup
+                if(timeout > 0) // form times out?
+                {
+                    // we remove a few minutes because the clocks may
+                    // not be properly synchronized
+                    //
+                    // (also we expect timeout to be at least 3 minutes)
+                    timeout -= 3;
+                    if(timeout < 3)
+                    {
+                        timeout = 3;
+                    }
                     timeout_id = setTimeout(function()
                         {
-                            that.autoReset_(w);
+                            that.timedOut_(w);
                         },
-                        auto_reset * 60000); // minutes to ms
+                        timeout * 60000); // minutes to ms
                     w.attr("timeout-id", timeout_id);
                 }
             });
@@ -362,7 +379,7 @@ snapwebsites.Form.prototype.setVal = function(widget, value)
  * the corresponding form timer has to be restarted (i.e. we extend the
  * timeout back to the full amount.)
  *
- * @param {Element} widget  The widget that just got activated.
+ * @param {Element|jQuery|null} widget  The widget that just got activated.
  *
  * @private
  */
@@ -370,25 +387,69 @@ snapwebsites.Form.prototype.restartAutoReset_ = function(widget)
 {
     var w = jQuery(widget),
         f = w.parents("form"),
-        timeout_id = parseFloat(f.attr("timeout-id")),
-        auto_reset = f.attr("auto-reset"),
+        auto_reset_id = parseFloat(f.attr("auto-reset-id")),
+        auto_reset = parseFloat(f.attr("auto-reset")),
         that = this;
 
     // clear the old one
-    if(!isNaN(timeout_id))
+    if(!isNaN(auto_reset_id))
     {
-        clearTimeout(timeout_id);
+        clearTimeout(auto_reset_id);
     }
 
-    // setup a new one
-    timeout_id = setTimeout(function()
-        {
-            that.autoReset_(f);
-        },
-        auto_reset * 60000); // minutes to ms
+    if(auto_reset > 0)
+    {
+        // setup a new one
+        auto_reset_id = setTimeout(function()
+            {
+                that.autoReset_(f);
+            },
+            auto_reset * 60000); // minutes to ms
 
-    // save the new id back in the form
-    w.attr("timeout-id", timeout_id);
+        // save the new id back in the form
+        f.attr("auto-reset-id", auto_reset_id);
+    }
+};
+
+
+/** \brief Function called once the auto-reset times out.
+ *
+ * After a certain amount of time, this function gets called to reset
+ * the form. This is quite important for forms that hold data such
+ * a user name, password, credit card number, etc.
+ *
+ * Note that the form does not time out in this case. That is, the user
+ * can continue to use the form for a while, only they will have to
+ * re-enter the information.
+ *
+ * @param {jQuery} w  The from which has to be reset.
+ *
+ * @private
+ */
+snapwebsites.Form.prototype.autoReset_ = function(w)
+{
+    var that = this,
+        form_auto_reset = jQuery.Event("form_auto_reset",
+        {
+            form: w,
+            minutes: w.attr("auto-reset")
+        });
+
+    // it triggered, so the ID is not valid anymore
+    w.removeAttr("auto-reset-id");
+
+    // TBD: should we send the existing data to a "draft" like
+    //      store, so we can restore it if the user logs back in?
+    //      (but not if the data is considered secret)
+
+    // reset so possibly secret data (user name, address, telephone,
+    // password, etc.) get removed
+    w[0].reset();
+
+    // finally give other scripts a chance to do something about
+    // the form such as hide it or put a button to reload the page
+    // and thus give the user a way to "restore" the form
+    w.trigger(form_auto_reset);
 };
 
 
@@ -398,17 +459,23 @@ snapwebsites.Form.prototype.restartAutoReset_ = function(widget)
  * the form. This is quite important for forms that hold data such
  * a user name, password, credit card number, etc.
  *
+ * \note
+ * Contrary to the auto-reset feature, the timeout counter is never
+ * reset since the time on a timeout is fixed. Also there should
+ * always be a timeout call for all forms since all forms have a
+ * timed session.
+ *
  * @param {jQuery} w  The from which timed out.
  *
  * @private
  */
-snapwebsites.Form.prototype.autoReset_ = function(w)
+snapwebsites.Form.prototype.timedOut_ = function(w)
 {
     var that = this,
         form_timeout = jQuery.Event("form_timeout",
         {
             form: w,
-            minutes: w.attr("auto-reset")
+            minutes: w.attr("timeout")
         });
 
     // TBD: should we send the existing data to a "draft" like
@@ -418,7 +485,7 @@ snapwebsites.Form.prototype.autoReset_ = function(w)
     // password, etc.) get removed
     w[0].reset();
 
-    // now disable the form so it cannot be submitted anymore
+    // now also disable the form so it cannot be submitted anymore
     jQuery(w).find(":input").attr("disabled", "disabled");
 
     jQuery(w)

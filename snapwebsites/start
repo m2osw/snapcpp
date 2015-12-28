@@ -1,6 +1,6 @@
 #!/bin/sh
-if ! test -d /var/lock/snapwebsites
+if test "$1" = "-r"
 then
-	mkdir /var/lock/snapwebsites
+	../BUILD/snapwebsites/src/snapinit --remove-lock
 fi
-../BUILD/snapwebsites/src/snapinit --debug --binary_path ../BUILD/snapwebsites/src start
+../BUILD/snapwebsites/src/snapinit --debug --binary-path ../BUILD/snapwebsites/src:../BUILD/snapwatchdog/src start

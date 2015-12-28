@@ -55,18 +55,20 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 snap_validate_xml( content.xml content/content.dtd )
-snap_validate_xml( editor/unsubscribe-page.xml editor/editor-form.dtd )
 snap_validate_xml( layout/sendmail-content.xml content/content.dtd )
 snap_validate_xml( layout/sendmail-theme-parser.xsl layout/simplified-xslt20.dtd )
 snap_validate_xml( layout/sendmail-body-parser.xsl layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/unsubscribe-theme-parser.xsl layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/unsubscribe-parser.xsl layout/simplified-xslt20.dtd )
 
 add_library(sendmail SHARED
     sendmail.cpp
+    tests.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    layout/sendmail-content.xml
+    layout/sendmail-theme-parser.xsl
+    layout/sendmail-body-parser.xsl
+    sendmail-logo-64x64.png
 )
 
 target_link_libraries( sendmail ${QT_LIBRARIES} )

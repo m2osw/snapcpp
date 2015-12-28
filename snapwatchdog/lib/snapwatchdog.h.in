@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap watchdog daemon
-// Copyright (C) 2011-2014  Made to Order Software Corp.
+// Copyright (C) 2011-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,43 +31,43 @@ namespace snap
 
 namespace watchdog
 {
-enum name_t
+enum class name_t
 {
     SNAP_NAME_WATCHDOG_DATA_PATH,
+    SNAP_NAME_WATCHDOG_SERVER_NAME,
     SNAP_NAME_WATCHDOG_SERVERSTATS,
-    SNAP_NAME_WATCHDOG_SIGNAL_NAME,
     SNAP_NAME_WATCHDOG_STATISTICS_FREQUENCY,
     SNAP_NAME_WATCHDOG_STATISTICS_PERIOD,
-    SNAP_NAME_WATCHDOG_STATISTICS_TTL,
-    SNAP_NAME_WATCHDOG_STOP
+    SNAP_NAME_WATCHDOG_STATISTICS_TTL
 };
-char const *get_name(name_t name) __attribute__ ((const));
-}
+char const * get_name(name_t name) __attribute__ ((const));
+} // watchdog namespace
 
 
 
 class snapwatchdog_exception : public snap_exception
 {
 public:
-    snapwatchdog_exception(char const *       whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
-    snapwatchdog_exception(std::string const& whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
-    snapwatchdog_exception(QString const&     whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    snapwatchdog_exception(char const *        whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    snapwatchdog_exception(std::string const & whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
+    snapwatchdog_exception(QString const &     whatmsg) : snap_exception("snapwatchdog", whatmsg) {}
 };
 
 class snapwatchdog_exception_invalid_parameters : public snapwatchdog_exception
 {
 public:
-    snapwatchdog_exception_invalid_parameters(char const *       whatmsg) : snapwatchdog_exception(whatmsg) {}
-    snapwatchdog_exception_invalid_parameters(std::string const& whatmsg) : snapwatchdog_exception(whatmsg) {}
-    snapwatchdog_exception_invalid_parameters(QString const&     whatmsg) : snapwatchdog_exception(whatmsg) {}
+    snapwatchdog_exception_invalid_parameters(char const *        whatmsg) : snapwatchdog_exception(whatmsg) {}
+    snapwatchdog_exception_invalid_parameters(std::string const & whatmsg) : snapwatchdog_exception(whatmsg) {}
+    snapwatchdog_exception_invalid_parameters(QString const &     whatmsg) : snapwatchdog_exception(whatmsg) {}
 };
 
 
+class watchdog_child;
 
 
 
-
-class watchdog_server : public server
+class watchdog_server
+        : public server
 {
 public:
     typedef std::shared_ptr<watchdog_server>         pointer_t;
@@ -78,11 +78,16 @@ public:
     void                watchdog();
 
     virtual void        show_version();
-    QString             get_server_name() const { return f_parameters["servername"]; } // TODO use getname() for "servername"
+    QString             get_server_name() const { return f_parameters[get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVER_NAME)]; }
     int64_t             get_statistics_period() const { return f_statistics_period; }
     int64_t             get_statistics_ttl() const { return f_statistics_ttl; }
 
     SNAP_SIGNAL_WITH_MODE(process_watch, (QDomDocument doc), (doc), NEITHER);
+
+    // internal functions
+    void                process_tick();
+    void                process_sigchld();
+    void                process_message(snap::snap_communicator_message const & message);
 
 private:
     void                define_server_name();
@@ -90,9 +95,11 @@ private:
     void                init_parameters();
     void                run_watchdog_process();
 
-    controlled_vars::zint64_t   f_statistics_frequency;
-    controlled_vars::zint64_t   f_statistics_period;
-    controlled_vars::zint64_t   f_statistics_ttl;
+    controlled_vars::zint64_t       f_statistics_frequency;
+    controlled_vars::zint64_t       f_statistics_period;
+    controlled_vars::zint64_t       f_statistics_ttl;
+    std::shared_ptr<watchdog_child> f_processes;
+    bool                            f_stopping = false;
 };
 
 
@@ -103,6 +110,11 @@ public:
     virtual             ~watchdog_child();
 
     void                run_watchdog_plugins();
+
+    pid_t               get_child_pid() const;
+
+private:
+    pid_t               f_child_pid = -1;
 };
 
 

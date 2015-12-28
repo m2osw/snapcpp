@@ -17,39 +17,31 @@
 
 #include "snap_child.h"
 
-#include "snap_uri.h"
-#include "not_reached.h"
-#include "snapwebsites.h"
-#include "plugins.h"
+#include "compression.h"
+#include "http_strings.h"
+#include "log.h"
+#include "mkgmtime.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
+#include "qlockfile.h"
 #include "snap_image.h"
 #include "snap_utf8.h"
-#include "snap_expr.h"
-#include "log.h"
-#include "qlockfile.h"
-#include "http_strings.h"
-#include "mkgmtime.h"
+#include "snapwebsites.h"
 #include "snap_magic.h"
-#include "compression.h"
-#include "qstring_stream.h"
-#include "snap_exception.h"
 
+#include <QtCassandra/QCassandraLock.h>
 #include <QtSerialization/QSerialization.h>
 #include <libtld/tld.h>
 
 #include <sstream>
-#include <memory>
 
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <wait.h>
 #include <sys/prctl.h>
-#include <sys/socket.h>
-#include <sys/time.h>
 
 #include <QDirIterator>
-#include <QDateTime>
-#include <QCoreApplication>
 
 #include "poison.h"
 
@@ -84,6 +76,13 @@ namespace snap
  *
  * This function returns the date, in micro seconds (seconds x 1,000,000)
  * when the child was forked from the server.
+ *
+ * In some situation, it may be useful to reset this time to the clock.
+ * In most cases this is done in backends. This is done by calling
+ * init_start_date().
+ *
+ * \sa init_start_date()
+ * \sa get_start_time()
  */
 
 /** \fn int64_t get_start_time() const
@@ -91,25 +90,31 @@ namespace snap
  *
  * This function returns the date in seconds (same as a Unix date)
  * when the child was forked from the server.
+ *
+ * This is the same date as get_start_date() would returned, divided
+ * by 1 million (rounded down).
+ *
+ * \sa get_start_date()
  */
 
 namespace
 {
 
 // list of plugins that we cannot do without
-char const *g_minimum_plugins[] =
+char const * g_minimum_plugins[] =
 {
     "attachment",
     "content",
     "editor",
     "filter",
-    "form",
+    "form", // this one will be removed completely (phased out)
     "info",
     "javascript",
     "layout",
     "links",
     "list",
     "listener",
+    "locale",
     "menu",
     "messages",
     "output",
@@ -119,15 +124,16 @@ char const *g_minimum_plugins[] =
     "server_access",
     "sessions",
     "taxonomy",
-    "users"
+    "users",
+    "users_ui"
 };
 
-char const *g_week_day_name[] =
+char const * g_week_day_name[] =
 {
     "Sunday", "Monday", "Tuesday", "Wedneday", "Thursday", "Friday", "Saturday"
 };
 int const g_week_day_length[] = { 6, 6, 7, 8, 8, 6, 8 }; // strlen() of g_week_day_name's
-char const *g_month_name[] =
+char const * g_month_name[] =
 {
     "January", "February", "Marsh", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -2441,8 +2447,9 @@ snap_child::~snap_child()
  *
  * This function does not modified the start date of the current process.
  *
- * \sa reset_start_date()
+ * \sa init_start_date()
  * \sa get_start_date()
+ * \sa get_start_time()
  */
 int64_t snap_child::get_current_date()
 {
@@ -2537,9 +2544,9 @@ void snap_child::set_timezone(QString const& timezone)
  *
  * \param[in] locale  Name of the locale as understood by setlocale(3).
  */
-void snap_child::set_locale(QString const& locale)
+void snap_child::set_locale(QString const & locale)
 {
-    static_cast<void>(locale);
+    NOTUSED(locale);
     // force new locale
     // Note: empty ("") is like using $LANG to setup the locale
 //std::cerr << "***\n*** set_locale(" << locale << ")\n***\n";
@@ -2593,7 +2600,7 @@ pid_t snap_child::fork_child()
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
-        throw snap_logic_exception("server pointer is nullptr");
+        throw snap_logic_exception("snap_child::fork_child(): server pointer is nullptr");
     }
 
 #ifdef SNAP_NO_FORK
@@ -2632,14 +2639,17 @@ pid_t snap_child::fork_child()
 
         if(count != 1)
         {
-            SNAP_LOG_WARNING("The number of thread before the fork() to create a snap_child is ")(count)(" when it should be 1.");
+            SNAP_LOG_WARNING("snap_child::fork_child(): The number of threads before the fork() to create a snap_child is ")(count)(" when it should be 1.");
         }
     }
     else
     {
         // auto-kill child if parent dies
         //
-        // TODO: ameliorate by using a SIGUSR1 or SIGUSR2 and implement
+        // TODO: ameliorate by using a "catch SIGHUP" in children via
+        //       the signal class of snapcommunicator
+        //
+        //       ameliorate by using a SIGUSR1 or SIGUSR2 and implement
         //       a way for a possible clean exit (i.e. if child is still
         //       working, give it a chance, then after X seconds, still
         //       force a kill)
@@ -2654,7 +2664,7 @@ pid_t snap_child::fork_child()
         //
         if(getppid() != parent_pid)
         {
-            SNAP_LOG_FATAL("snap_backend::process_backend_uri() lost parent too soon and did not receive SIGHUP; quit immediately.");
+            SNAP_LOG_FATAL("snap_child::fork_child() lost parent too soon and did not receive SIGHUP; quit immediately.");
             exit(1);
             NOTREACHED();
         }
@@ -2688,7 +2698,11 @@ bool snap_child::process(int socket)
     {
         // this is a bug! die() on the spot
         // (here we ARE in the child process!)
-        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "Server Bug", "Your Snap! server detected a serious problem. Please check your logs for more information.", "snap_child::process() was called from the child process.");
+        die(
+            http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE,
+            "Server Bug",
+            "Your Snap! server detected a serious problem. Please check your logs for more information.",
+            "snap_child::process() was called from a child process.");
         return false;
     }
 
@@ -2696,7 +2710,7 @@ bool snap_child::process(int socket)
     {
         // this is a bug!
         // WARNING: At this point we CANNOT call the die() function
-        //          (we're not the child and have the wrong socket)
+        //          (we are not the child and have the wrong socket)
         SNAP_LOG_FATAL("BUG: snap_child::process() called when the process is still in use.");
         return false;
     }
@@ -2710,7 +2724,7 @@ bool snap_child::process(int socket)
         if(p == -1)
         {
             // WARNING: At this point we CANNOT call the die() function
-            //          (we're not the child and have the wrong socket)
+            //          (we are not the child and have the wrong socket)
             SNAP_LOG_FATAL("snap_child::process() could not create child process, dropping connection.");
             return false;
         }
@@ -2723,6 +2737,8 @@ bool snap_child::process(int socket)
         return true;
     }
 
+    f_socket = socket;
+
     try
     {
         f_ready = false;
@@ -2731,7 +2747,6 @@ bool snap_child::process(int socket)
 
         // child process
         f_is_child = true;
-        f_socket = socket;
 
         read_environment();         // environment to QMap<>
         setup_uri();                // the raw URI
@@ -2739,9 +2754,10 @@ bool snap_child::process(int socket)
         // keep that one in release so we can at least know of all
         // the hits to the server
         {
-            QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+            QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
             QString const agent(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
-            SNAP_LOG_INFO("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
+            QString const ip(snapenv(get_name(name_t::SNAP_NAME_CORE_REMOTE_ADDR)));
+            SNAP_LOG_INFO("------------------------------------ ")(ip)(" new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
         }
 
         // now we connect to the DB
@@ -2757,7 +2773,7 @@ bool snap_child::process(int socket)
         site_redirect();
 
         // start the plugins and there initialization
-        QStringList list_of_plugins(init_plugins(true));
+        snap_string_list list_of_plugins(init_plugins(true));
 
         // run updates if any
         update_plugins(list_of_plugins);
@@ -2774,11 +2790,11 @@ bool snap_child::process(int socket)
         exit(0);
         NOTREACHED();
     }
-    catch( snap_exception const& except )
+    catch( snap_exception const & except )
     {
         SNAP_LOG_FATAL("snap_child::process(): snap_exception caught: ")(except.what());
     }
-    catch( std::exception const& std_except )
+    catch( std::exception const & std_except )
     {
         // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
@@ -2793,6 +2809,20 @@ bool snap_child::process(int socket)
     exit(1);
     NOTREACHED();
     return false;
+}
+
+
+/** \brief Retrieve the child process identifier.
+ *
+ * Once a child process started, it gets assigned a pid_t value. In
+ * the parent process, this value can be retrieved using this function.
+ * In the child process, just use getpid().
+ *
+ * \return This snap_child process identifier.
+ */
+pid_t snap_child::get_child_pid() const
+{
+    return f_child_pid;
 }
 
 
@@ -2853,11 +2883,11 @@ snap_child::status_t snap_child::check_status()
     if(f_child_pid != 0)
     {
         int status;
-        pid_t r = waitpid(f_child_pid, &status, WNOHANG);
+        pid_t const r = waitpid(f_child_pid, &status, WNOHANG);
         if(r == static_cast<pid_t>(-1))
         {
-            int e(errno);
-            SNAP_LOG_FATAL("a waitpid() returned an error (")(e)(")");
+            int const e(errno);
+            SNAP_LOG_FATAL("a waitpid() returned an error (")(e)(" -- ")(strerror(e))(")");
         }
         else if(r == f_child_pid)
         {
@@ -2867,16 +2897,16 @@ snap_child::status_t snap_child::check_status()
             if(WIFEXITED(status))
             {
                 // stopped with exit() or return in main()
-                f_child_pid = 0;
+                // TODO: log info if exit() != 0?
             }
             else if(WIFSIGNALED(status))
             {
                 // stopped because of a signal
                 SNAP_LOG_FATAL("child process ")(f_child_pid)(" exited after it received signal #")(WTERMSIG(status));
-                f_child_pid = 0;
             }
 #pragma GCC diagnostic pop
-            // other statuses are ignored
+            // other statuses are ignored for now
+            f_child_pid = 0;
         }
     }
 
@@ -2926,7 +2956,7 @@ void snap_child::read_environment()
     class read_env
     {
     public:
-        read_env(snap_child *snap, int socket, environment_map_t& env, environment_map_t& browser_cookies, environment_map_t& post, post_file_map_t& files)
+        read_env(snap_child * snap, int socket, environment_map_t & env, environment_map_t & browser_cookies, environment_map_t & post, post_file_map_t & files)
             : f_snap(snap)
             , f_socket(socket)
             //, f_unget('\0') -- auto-init
@@ -2950,7 +2980,7 @@ void snap_child::read_environment()
         {
         }
 
-        void die(QString const& details) const
+        void die(QString const & details) const
         {
             f_snap->die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Unstable network connection",
@@ -3054,7 +3084,7 @@ void snap_child::read_environment()
             //       but it looks like we would need to support the
             //       extended-value and extended-other-values as defined in
             //       http://tools.ietf.org/html/rfc2184
-            QStringList disposition(f_post_environment["CONTENT-DISPOSITION"].split(";"));
+            snap_string_list disposition(f_post_environment["CONTENT-DISPOSITION"].split(";"));
             if(disposition.size() < 2)
             {
                 die(QString("multipart posts Content-Disposition must at least include \"form-data\" and a name parameter, \"%1\" is not valid.")
@@ -3074,7 +3104,7 @@ void snap_child::read_environment()
             for(int i(1); i < max_strings; ++i)
             {
                 // each parameter is name=<value>
-                QStringList nv(disposition[i].split('='));
+                snap_string_list nv(disposition[i].split('='));
                 if(nv.size() != 2)
                 {
                     die(QString("parameter %1 in this multipart posts Content-Disposition does not include an equal character so \"%1\" is not valid.")
@@ -3337,7 +3367,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
             // http://www.w3.org/html/wg/drafts/html/master/forms.html#multipart-form-data
 
             // 1. Get the main boundary from the CONTENT_TYPE
-            QStringList content_info(f_env["CONTENT_TYPE"].split(';'));
+            snap_string_list content_info(f_env["CONTENT_TYPE"].split(';'));
             QString boundary;
             int const max_strings(content_info.size());
             for(int i(1); i < max_strings; ++i)
@@ -3414,28 +3444,39 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
             {
                 if(f_name == "HTTP_COOKIE")
                 {
-                    // special case
-                    QStringList cookies(f_value.split(';', QString::SkipEmptyParts));
+                    // special case for cookies
+                    snap_string_list cookies(f_value.split(';', QString::SkipEmptyParts));
+//std::cerr << " HTTP_COOKIE = [\"" << f_value << "\"]\n";
                     int const max_strings(cookies.size());
                     for(int i(0); i < max_strings; ++i)
                     {
-                        QString name_value(cookies[i]);
-                        QStringList nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
+                        QString const name_value(cookies[i]);
+                        snap_string_list nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
                         if(nv.size() == 2)
                         {
                             // XXX check with other systems to see
                             //     whether urldecode() is indeed
                             //     necessary here
-                            QString cookie_name(snap_uri::urldecode(nv[0], true));
-                            QString cookie_value(snap_uri::urldecode(nv[1], true));
+                            QString const cookie_name(snap_uri::urldecode(nv[0], true));
+                            QString const cookie_value(snap_uri::urldecode(nv[1], true));
+//std::cerr << " f_browser_cookies[\"" << cookie_name << "\"] = \"" << cookie_value << "\"; (\"" << cookies[i] << "\")\n";
                             if(f_browser_cookies.contains(cookie_name))
                             {
-                                die(QString("cookie \"%1\" defined twice")
+                                // This happens when you have a cookie with the
+                                // same name defined with multiple domains,
+                                // multiple paths, multiple expiration dates...
+                                //
+                                // Unfortunately, we are not told which one is
+                                // which when we reach this line of code, yet
+                                // the last one will be the most qualified one
+                                // according to most browsers and servers
+                                //
+                                // http://tools.ietf.org/html/rfc6265#section-5.4
+                                //
+                                SNAP_LOG_DEBUG(QString("cookie \"%1\" defined twice")
                                             .arg(cookie_name));
-                                NOTREACHED();
                             }
                             f_browser_cookies[cookie_name] = cookie_value;
-//std::cerr << " f_browser_cookies[\"" << cookie_name << "\"] = \"" << cookie_value << "\";\n";
                         }
                     }
                 }
@@ -3461,7 +3502,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 else if(c == '\n')
                 {
 #ifdef DEBUG
-                    //SNAP_LOG_DEBUG("f_name=")(f_name.toUtf8().data());
+                    //SNAP_LOG_DEBUG("f_name=")(f_name)(", f_value=\"")(f_value)("\"");
 #endif
                     process_line();
 
@@ -3518,14 +3559,14 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
         controlled_vars::tbool_t    f_running;
         controlled_vars::fbool_t    f_started;
 
-        environment_map_t&          f_env;
-        environment_map_t&          f_browser_cookies;
+        environment_map_t &         f_env;
+        environment_map_t &         f_browser_cookies;
         QString                     f_name;
         QString                     f_value;
 
         controlled_vars::fbool_t    f_has_post;
-        environment_map_t&          f_post;
-        post_file_map_t&            f_files;
+        environment_map_t &         f_post;
+        post_file_map_t &           f_files;
         controlled_vars::tbool_t    f_post_first;
         controlled_vars::tbool_t    f_post_header;
         QByteArray                  f_post_line;
@@ -3751,6 +3792,8 @@ void snap_child::setup_uri()
     // HOST (domain name including all sub-domains)
     if(f_env.count("HTTP_HOST") != 1)
     {
+        // this was tested in snap.cgi, but who knows who connected to us...
+        //
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                     "HTTP_HOST is required but not defined in your request.",
                     "HTTP_HOST was not defined in the user request");
@@ -3790,35 +3833,59 @@ void snap_child::setup_uri()
 
     // REQUEST URI
     // Although we ignore the URI, it MUST be there
-    if(f_env.count("REQUEST_URI") != 1)
+    if(f_env.count(snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI)) != 1)
     {
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                      "REQUEST_URI is required but not defined in your request.",
                      "REQUEST_URI was not defined in the user's request");
         NOTREACHED();
     }
-    // This is useless since the URI points to the CGI which
-    // we are not interested in
-    //int p = f_env["REQUEST_URI"].indexOf('?');
-    //if(p == -1)
-    //{
-    //    f_uri.set_path(f_env["REQUEST_URI"]);
-    //}
-    //else
-    //{
-    //    f_uri.set_path(f_env["REQUEST_URI"].mid(0, p));
-    //}
-
-    server::pointer_t server( f_server.lock() );
-    if(!server)
+    // For some reasons I was thinking that the q=... was necessary to
+    // find the correct REQUEST_URI -- it is only if you want to allow
+    // for snap.cgi?q=... syntax in the client's agent, otherwise it
+    // is totally useless; since we do not want the ugly snap.cgi syntax
+    // we completely removed the need for it
+    //
+    // Get the path from the REQUEST_URI
+    // note that it includes the query string when there is one so we must
+    // make sure to remove that part if defined
+    //
+    QString path;
     {
-        throw snap_logic_exception("server pointer is nullptr");
+        int const p = f_env[snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI)].indexOf('?');
+        if(p == -1)
+        {
+            path = f_env[snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI)];
+        }
+        else
+        {
+            path = f_env[snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI)].mid(0, p);
+        }
     }
-    QString const qs_path(server->get_parameter("qs_path"));
-    QString const path(f_uri.query_option(qs_path));
+
     QString extension;
     if(path != "." && path != "..")
     {
+        // TODO: make the size (2048) a variable? (parameter in
+        //       snapserver.conf)
+        //
+        // I'm not totally sure this test is really necessary,
+        // but it probably won't hurt for a while (Drupal was
+        // limiting to 128 in the database and that was way
+        // too small, but 2048 is the longest you can use
+        // with Internet Explorer)
+        //
+        if(path.length() > 2048)
+        {
+            // See SNAP-99 for more info about this limit
+            //
+            // TBD: maybe we should redirect instead of dying in this case?
+            //
+            die(http_code_t::HTTP_CODE_REQUEST_URI_TOO_LONG, "",
+                         "The path of this request is too long.",
+                         "We accept paths up to 2048 characters.");
+            NOTREACHED();
+        }
         f_uri.set_path(path);
         int limit(path.lastIndexOf('/'));
         if(limit == -1)
@@ -3857,7 +3924,7 @@ void snap_child::setup_uri()
     }
     f_uri.set_option("extension", extension);
 
-//std::cerr << "    set path to: [" << f_uri.query_option(qs_path) << "]\n";
+//std::cerr << "    set path to: [" << path << "]\n";
 //
 //std::cerr << "        original [" << f_uri.get_original_uri() << "]\n";
 //std::cerr << "             uri [" << f_uri.get_uri() << "] + #! [" << f_uri.get_uri(true) << "]\n";
@@ -3867,9 +3934,27 @@ void snap_child::setup_uri()
 //std::cerr << "          domain [" << f_uri.domain() << "]\n";
 //std::cerr << "     sub-domains [" << f_uri.sub_domains() << "]\n";
 //std::cerr << "            port [" << f_uri.get_port() << "]\n";
-//std::cerr << "            path [" << f_uri.path() << "] (" << qs_path << ")\n";
+//std::cerr << "            path [" << f_uri.path() << "] \n";
 //std::cerr << "    query string [" << f_uri.query_string() << "]\n";
-//std::cerr << "               q=[" << f_uri.query_option("q") << "]\n";
+}
+
+
+/** \brief Change the main path.
+ *
+ * This function allows a plugin to change the main path. This is very
+ * practical to allow one to redirect without changing the path the
+ * user sees in his browser. Such has to be done in the
+ * on_check_for_redirect() signal of your module, very early on before
+ * the path gets used (except in other redirect functions).
+ *
+ * The path change should not modified anything else in the URI (i.e.
+ * options, query string, etc.)
+ *
+ * \param[in] path  The new path to save in f_uri.
+ */
+void snap_child::set_uri_path(QString const & path)
+{
+    f_uri.set_path(path);
 }
 
 
@@ -3881,7 +3966,7 @@ void snap_child::setup_uri()
  *
  * \return The URI reference.
  */
-snap_uri const& snap_child::get_uri() const
+snap_uri const & snap_child::get_uri() const
 {
     return f_uri;
 }
@@ -3947,7 +4032,7 @@ void snap_child::set_action(QString const& action)
  * \param[in] email  The email to verify.
  * \param[in] max  The maximum number of emails supported. May be 0, usually 1.
  */
-void snap_child::verify_email(QString const& email, size_t const max)
+void snap_child::verify_email(QString const & email, size_t const max)
 {
     // is there an actual email?
     // (we may want to remove standalone and duplicated commas too)
@@ -4041,7 +4126,7 @@ void snap_child::connect_cassandra()
  * \param[in] table_name  The name of the table to create.
  * \param[in] comment  The comment to attach to the table.
  */
-QtCassandra::QCassandraTable::pointer_t snap_child::create_table(QString const& table_name, QString const& comment)
+QtCassandra::QCassandraTable::pointer_t snap_child::create_table(QString const & table_name, QString const & comment)
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
@@ -4134,7 +4219,7 @@ void snap_child::canonicalize_domain()
         if(regex.exactMatch(sub_domains))
         {
             // we found the domain!
-            QStringList captured(regex.capturedTexts());
+            snap_string_list captured(regex.capturedTexts());
             QString canonicalized;
 
             // note captured[0] is the full matching pattern, we ignore it
@@ -4308,7 +4393,7 @@ void snap_child::canonicalize_website()
                     matching = false;
                     break;
                 }
-                QStringList captured(regex.capturedTexts());
+                snap_string_list captured(regex.capturedTexts());
                 port = captured[1];
             }
                 break;
@@ -4326,7 +4411,7 @@ void snap_child::canonicalize_website()
                     matching = false;
                     break;
                 }
-                QStringList captured(regex.capturedTexts());
+                snap_string_list captured(regex.capturedTexts());
                 protocol = captured[1];
             }
                 break;
@@ -4345,7 +4430,7 @@ void snap_child::canonicalize_website()
                         matching = false;
                         break;
                     }
-                    QStringList captured(regex.capturedTexts());
+                    snap_string_list captured(regex.capturedTexts());
                     query[name] = captured[1];
                 }
                 else if(var->get_required())
@@ -4385,7 +4470,7 @@ void snap_child::canonicalize_website()
                 //       However, if the path is only used for options such
                 //       as languages, those options should be removed from
                 //       the original path.
-                QStringList captured(regex.capturedTexts());
+                snap_string_list captured(regex.capturedTexts());
 
                 // note captured[0] is the full matching pattern, we ignore it
                 for(int v = 0; v < vmax; ++v)
@@ -4519,7 +4604,7 @@ void snap_child::canonicalize_options()
 
     // transform the language specified by the browser in an array
     http_strings::WeightedHttpString languages(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE)));
-    http_strings::WeightedHttpString::part_vector_t browser_languages(languages.get_parts());
+    http_strings::WeightedHttpString::part_t::vector_t browser_languages(languages.get_parts());
     if(!browser_languages.isEmpty())
     {
         qStableSort(browser_languages);
@@ -4611,7 +4696,7 @@ void snap_child::canonicalize_options()
     {
         if(!rev.isEmpty())
         {
-            QStringList r(rev.split('.'));
+            snap_string_list r(rev.split('.'));
             branch = r[0];
             int const size(r.size());
             if(size != 1)
@@ -4679,8 +4764,8 @@ void snap_child::canonicalize_options()
 
     // server defined compression is named "*" (i.e. server chooses)
     // so first we check for gzip because we support that compression
-    // and that's our favorite for now (will change later with sdpy
-    // support...)
+    // and that is our favorite for now (will change later with sdpy
+    // support eventually...)
     compression_vector_t compressions;
     bool got_gzip(false);
     float const gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
@@ -4692,7 +4777,7 @@ void snap_child::canonicalize_options()
     }
 
     // now check all the other encodings and add them
-    http_strings::WeightedHttpString::part_vector_t browser_compressions(encodings.get_parts());
+    http_strings::WeightedHttpString::part_t::vector_t browser_compressions(encodings.get_parts());
     qStableSort(browser_compressions);
     int const max_compressions(browser_compressions.size());
     for(int i(0); i < max_compressions; ++i)
@@ -4747,6 +4832,9 @@ void snap_child::canonicalize_options()
         }
     }
 
+    // *** CACHE CONTROL ***
+    cache_control_settings cache_control(snapenv("HTTP_CACHE_CONTROL"), false);
+
     // *** SAVE RESULTS ***
     f_language = lang;
     f_country = country;
@@ -4763,6 +4851,7 @@ void snap_child::canonicalize_options()
     f_revision_key = QString("%1.%2").arg(f_branch).arg(f_revision);
 
     f_compressions.swap(compressions);
+    f_client_cache_control = cache_control;
 }
 
 
@@ -5041,6 +5130,26 @@ void snap_child::site_redirect()
     // TBD -- should we also redirect the f_domain_key and f_website_key?
 
     // the site table is the old one, we want to switch to the new one
+    reset_site_table();
+}
+
+
+/** \brief Reset the site table so one can make sure to use the latest version.
+ *
+ * In a backend that does not restart all the time, we may need to reset
+ * the site table.
+ *
+ * This function clears the memory cache of the existing site table, if
+ * one exists in memory, and then it resets the site table pointer.
+ * The next time a user calls the set_site_parameter() or get_site_parameter()
+ * a new site table object is created and filled as required.
+ */
+void snap_child::reset_site_table()
+{
+    if(f_site_table)
+    {
+        f_site_table->clearCache();
+    }
     f_site_table.reset();
 }
 
@@ -5082,7 +5191,7 @@ void snap_child::site_redirect()
  * \param[in] reason_brief  A brief explanation for the redirection.
  * \param[in] reason  The long version of the explanation for the redirection.
  */
-void snap_child::page_redirect(QString const& path, http_code_t http_code, QString const& reason_brief, QString const& reason)
+void snap_child::page_redirect(QString const & path, http_code_t http_code, QString const & reason_brief, QString const & reason)
 {
     if(f_site_key_with_slash.isEmpty())
     {
@@ -5091,7 +5200,7 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
                 "The server snap_child::page_redirect() function was called before the website got canonicalized.");
         NOTREACHED();
     }
-    QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+    QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
     if(method != "GET"
     && method != "POST"
     && method != "HEAD")
@@ -5100,6 +5209,23 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
                 QString("Prevented a redirect when using method %1.").arg(method),
                 "We do not currently support redirecting users for methods other than GET, POST, and HEAD.");
         NOTREACHED();
+    }
+
+    switch(http_code)
+    {
+    case http_code_t::HTTP_CODE_MOVED_PERMANENTLY:
+    case http_code_t::HTTP_CODE_FOUND:
+    case http_code_t::HTTP_CODE_SEE_OTHER:
+    case http_code_t::HTTP_CODE_TEMPORARY_REDIRECT:
+    case http_code_t::HTTP_CODE_PERMANENT_REDIRECT:
+        break;
+
+    default:
+        die(http_code_t::HTTP_CODE_FORBIDDEN, "Error Code Not Allowed For Redirect",
+                QString("Prevented a redirect using HTTP code %1.").arg(static_cast<int>(http_code)),
+                "We limit the redirect to using 301, 302, 303, 307, and 308.");
+        NOTREACHED();
+
     }
 
     if(path.contains('\n') || path.contains('\r'))
@@ -5143,31 +5269,91 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
                     .arg(static_cast<int>(http_code))
                     .arg(http_name), HEADER_MODE_REDIRECT);
 
-    // TODO the URI MUST be encoded
-    set_header("Location", uri.get_uri(), HEADER_MODE_REDIRECT);
+    snap_string_list const show_redirects(server->get_parameter("show_redirects").split(","));
+
+    if(!show_redirects.contains("refresh-only"))
+    {
+        // the get_uri() returns an HTTP encoded string
+        set_header("Location", uri.get_uri(), HEADER_MODE_REDIRECT);
+    }
 
     // also the default is already text/html we force it again in case this
     // function is called after someone changed this header
     set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
 
-    // compute the body ahead so we can get its size
-    // (should we support getting the content of a page? since 99.9999% of
+    // compute the body
+    // (TBD: should we support getting the content of a page? since 99.9999% of
     // the time this content is ignored, I would say no.)
     //
-    // TODO: we may want to us a DOM because that way all parameters are
-    //       automatically checked for validity for the place where they
-    //       are inserted!
-    QString const body(QString("<html><head>"
-            "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
-            "<title>%2</title>"
-            "<meta http-equiv=\"Refresh\" content=\"0; url=%4\"/>"
-            "<meta name=\"ROBOTS\" content=\"NOINDEX\"/>" // no need for the NOFOLLOW on this one
-            "</head><body><h1>%2</h1><p>%3. New location: "
-            "<a href=\"%4\">%4</a>.</p></body></html>")
-        .arg(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
-        .arg(reason_brief)
-        .arg(reason)
-        .arg(uri.get_uri()));
+    QString body;
+    {
+        QDomDocument doc;
+        // html
+        QDomElement html(doc.createElement("html"));
+        doc.appendChild(html);
+        // html/head
+        QDomElement head(doc.createElement("head"));
+        html.appendChild(head);
+        // html/head/meta[@http-equiv=...][@content=...]
+        QDomElement meta_locale(doc.createElement("meta"));
+        head.appendChild(meta_locale);
+        meta_locale.setAttribute("http-equiv", get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER));
+        meta_locale.setAttribute("content", "text/html; charset=utf-8");
+        // html/head/title/...
+        QDomElement title(doc.createElement("title"));
+        head.appendChild(title);
+        QDomText title_text(doc.createTextNode(reason_brief));
+        title.appendChild(title_text);
+        // html/head/meta[@http-equiv=...][@content=...]
+        if(show_redirects.contains("refresh-only")
+        || !show_redirects.contains("no-refresh"))
+        {
+            QDomElement meta_refresh(doc.createElement("meta"));
+            head.appendChild(meta_refresh);
+            meta_refresh.setAttribute("http-equiv", "Refresh");
+            int timeout(0);
+            if(show_redirects.contains("one-minute"))
+            {
+                timeout = 60;
+            }
+            meta_refresh.setAttribute("content", QString("%1; url=%2").arg(timeout).arg(uri.get_uri()));
+        }
+        // html/head/meta[@http-equiv=...][@content=...]
+        QDomElement meta_robots(doc.createElement("meta"));
+        head.appendChild(meta_robots);
+        meta_robots.setAttribute("name", "ROBOTS");
+        meta_robots.setAttribute("content", "NOINDEX");
+        // html/body
+        QDomElement body_tag(doc.createElement("body"));
+        html.appendChild(body_tag);
+
+        // include an actual body?
+        if(show_redirects.contains("include-body"))
+        {
+            // html/body/h1
+            QDomElement h1(doc.createElement("h1"));
+            body_tag.appendChild(h1);
+            QDomText h1_text(doc.createTextNode(reason_brief));
+            h1.appendChild(h1_text);
+            // html/body/p
+            QDomElement p(doc.createElement("p"));
+            body_tag.appendChild(p);
+            QDomText p_text1(doc.createTextNode(QString("%1 New location: ").arg(reason)));
+            p.appendChild(p_text1);
+            // html/body/a
+            QDomElement a(doc.createElement("a"));
+            a.setAttribute("href", uri.get_uri());
+            p.appendChild(a);
+            QDomText a_text(doc.createTextNode(uri.get_uri()));
+            a.appendChild(a_text);
+            // html/body/p (text after anchor)
+            QDomText p_text2(doc.createTextNode("."));
+            p.appendChild(p_text2);
+        }
+
+        // save the result
+        body = doc.toString(-1);
+    }
 
     output_result(HEADER_MODE_REDIRECT, body.toUtf8());
 
@@ -5207,14 +5393,14 @@ void snap_child::attach_to_session()
  *
  * \return true if the file was found, false otherwise.
  */
-bool snap_child::load_file(post_file_t& file)
+bool snap_child::load_file(post_file_t & file)
 {
-    bool found(false);
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
+    bool found(false);
     server->load_file(file, found);
     return found;
 }
@@ -5236,7 +5422,7 @@ bool snap_child::load_file(post_file_t& file)
  *
  * \return The value of the specified variable.
  */
-QString snap_child::snapenv(QString const& name) const
+QString snap_child::snapenv(QString const & name) const
 {
     if(name == get_name(name_t::SNAP_NAME_CORE_SERVER_PROTOCOL))
     {
@@ -5283,7 +5469,7 @@ QString snap_child::snapenv(QString const& name) const
  *
  * \return true if the value is defined, false otherwise.
  */
-bool snap_child::postenv_exists(const QString& name) const
+bool snap_child::postenv_exists(QString const & name) const
 {
     return f_post.contains(name);
 }
@@ -5304,7 +5490,7 @@ bool snap_child::postenv_exists(const QString& name) const
  *
  * \return The value of that POST variable or the \p default_value.
  */
-QString snap_child::postenv(QString const& name, QString const& default_value) const
+QString snap_child::postenv(QString const & name, QString const & default_value) const
 {
     return f_post.value(name, default_value);
 }
@@ -5320,7 +5506,7 @@ QString snap_child::postenv(QString const& name, QString const& default_value) c
  * \param[in] name  The name of the POST variable to fetch.
  * \param[in] value  The new value for this POST variable.
  */
-void snap_child::replace_postenv(const QString& name, const QString& value)
+void snap_child::replace_postenv(QString const & name, QString const & value)
 {
     f_post[name] = value;
 }
@@ -5338,7 +5524,7 @@ void snap_child::replace_postenv(const QString& name, const QString& value)
  *
  * \sa postfile()
  */
-bool snap_child::postfile_exists(QString const& name) const
+bool snap_child::postfile_exists(QString const & name) const
 {
     // the QMap only returns a reference if this is not constant
     return f_files.contains(name) && f_files[name].get_size() != 0;
@@ -5363,7 +5549,7 @@ bool snap_child::postfile_exists(QString const& name) const
  *
  * \sa postfile_exists()
  */
-const snap_child::post_file_t& snap_child::postfile(QString const& name) const
+const snap_child::post_file_t& snap_child::postfile(QString const & name) const
 {
     // the QMap only returns a reference if this is not constant
     return const_cast<snap_child *>(this)->f_files[name];
@@ -5384,7 +5570,7 @@ const snap_child::post_file_t& snap_child::postfile(QString const& name) const
  *
  * \return true if the cookie was sent to us, false otherwise.
  */
-bool snap_child::cookie_is_defined(const QString& name) const
+bool snap_child::cookie_is_defined(QString const & name) const
 {
     return f_browser_cookies.contains(name);
 }
@@ -5403,42 +5589,13 @@ bool snap_child::cookie_is_defined(const QString& name) const
  *
  * \return The content of the cookie, an empty string if the cookie is not defined.
  */
-QString snap_child::cookie(const QString& name) const
+QString snap_child::cookie(QString const & name) const
 {
     if(f_browser_cookies.contains(name))
     {
         return f_browser_cookies[name];
     }
     return QString();
-}
-
-
-/** \brief Get a proper URL for this access.
- *
- * This function transforms a local URL to a CGI URL if the site
- * was accessed that way.
- *
- * If the site was accessed without the /cgi-bin/snap.cgi then this function
- * returns the URL as is. If it was called with /cgi-bin/snap.cgi then the
- * URL is transformed to also be use the /cgi-bin/snap.cgi syntax.
- *
- * \param[in] url  The URL to transform.
- *
- * \return The URL matching the calling convention.
- */
-QString snap_child::snap_url(QString const& url) const
-{
-    if(snapenv("CLEAN_SNAP_URL") == "1")
-    {
-        return url;
-    }
-    // TODO: this should be coming from the database
-    if(url[0] == '/')
-    {
-        QString u(url);
-        return u.insert(1, "cgi-bin/snap.cgi?q=");
-    }
-    return "/cgi-bin/snap.cgi?q=" + url;
 }
 
 
@@ -5495,9 +5652,49 @@ bool snap_child::is_debug() const
  *
  * \return A pointer to the version of the running server library.
  */
-char const *snap_child::get_running_server_version()
+char const * snap_child::get_running_server_version()
 {
     return server::version();
+}
+
+
+/** \brief Check whether the plugin is considered a Core Plugin.
+ *
+ * Plugins can be forced defined by the administrator in the
+ * snapserver.conf under the name "plugins". In that case,
+ * only those specific plugins are loaded. This is quite practicle
+ * if a plugin is generating problems and you cannot otherwise
+ * check out your website.
+ *
+ * The list of plugins can be soft defined in the default_plugins
+ * variable. This variable is used by new websites until the
+ * user adds and removes plugins to his website by editing the
+ * list of plugins via the Plugin Selector ("/admin/plugin").
+ *
+ * However, in all cases, the system will not work if you do not
+ * have a certain number of low level plugins running such as the
+ * content and users plugins. These are considered Core Plugins.
+ * This function returns true whenever the specified \p name
+ * represents a Core Plugin.
+ *
+ * \param[in] name  The name of the plugin to check.
+ *
+ * \return true if the plugin is a Core Plugin.
+ */
+bool snap_child::is_core_plugin(QString const & name) const
+{
+    // TODO: make sure the table is sorted alphabetically and use
+    //       a binary search
+    //
+    for(size_t i(0); i < sizeof(g_minimum_plugins) / sizeof(g_minimum_plugins[0]); ++i)
+    {
+        if(name == g_minimum_plugins[i])
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
@@ -5531,16 +5728,17 @@ QString snap_child::get_server_parameter(QString const & name)
  * content are welcome to use it too.
  *
  * \param[in] path  The path to the page that is being generated.
- * \param[out] signature  The signature string, the result is saved here.
+ * \param[in] doc  The document holding the data.
+ * \param[in,out] signature_tag  The signature tag which is to be improved.
  */
-void snap_child::improve_signature(QString const& path, QString& signature)
+void snap_child::improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag)
 {
     server::pointer_t server(f_server.lock());
     if(!server)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
-    return server->improve_signature(path, signature);
+    return server->improve_signature(path, doc, signature_tag);
 }
 
 
@@ -5561,7 +5759,7 @@ void snap_child::improve_signature(QString const& path, QString& signature)
  *
  * \return The content of the row as a Cassandra value.
  */
-QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
+QtCassandra::QCassandraValue snap_child::get_site_parameter(QString const & name)
 {
     // retrieve site table if not there yet
     if(!f_site_table)
@@ -5609,7 +5807,7 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
  * \param[in] name  The name of the parameter to save.
  * \param[in] value  The new value for this parameter.
  */
-void snap_child::set_site_parameter(QString const& name, QtCassandra::QCassandraValue const& value)
+void snap_child::set_site_parameter(QString const & name, QtCassandra::QCassandraValue const & value)
 {
     // retrieve site table if not there yet
     if(!f_site_table)
@@ -5668,7 +5866,7 @@ QByteArray snap_child::get_output() const
  *
  * \param[in] data  The array of byte to append to the buffer.
  */
-void snap_child::output(QByteArray const& data)
+void snap_child::output(QByteArray const & data)
 {
     f_output.write(data);
 }
@@ -5684,7 +5882,7 @@ void snap_child::output(QByteArray const& data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(QString const& data)
+void snap_child::output(QString const & data)
 {
     f_output.write(data.toUtf8());
 }
@@ -5701,7 +5899,7 @@ void snap_child::output(QString const& data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(std::string const& data)
+void snap_child::output(std::string const & data)
 {
     f_output.write(data.c_str(), data.length());
 }
@@ -5718,7 +5916,7 @@ void snap_child::output(std::string const& data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(char const *data)
+void snap_child::output(char const * data)
 {
     f_output.write(data);
 }
@@ -5735,7 +5933,7 @@ void snap_child::output(char const *data)
  *
  * \param[in] data  The string data to append to the buffer.
  */
-void snap_child::output(wchar_t const *data)
+void snap_child::output(wchar_t const * data)
 {
     f_output.write(QString::fromWCharArray(data).toUtf8());
 }
@@ -5775,7 +5973,7 @@ void snap_child::trace(QString const & data)
  * \param[in] data  The data to send to the listener.
  *                  Generally a printable string.
  */
-void snap_child::trace(std::string const& data)
+void snap_child::trace(std::string const & data)
 {
     if(f_is_being_initialized)
     {
@@ -5792,7 +5990,7 @@ void snap_child::trace(std::string const& data)
  * \param[in] data  The data to send to the listener.
  *                  Generally a printable string.
  */
-void snap_child::trace(char const *data)
+void snap_child::trace(char const * data)
 {
     trace(std::string(data));
 }
@@ -5821,7 +6019,7 @@ void snap_child::trace(char const *data)
  * \note
  * You can trick the description paragraph by adding a closing
  * paragraph tag (</p>) at the start and an opening paragraph
- * tag (</p>) at the end of your description.
+ * tag (<p>) at the end of your description.
  *
  * \warning
  * This function does NOT return. It calls exit(1) once done.
@@ -5831,8 +6029,15 @@ void snap_child::trace(char const *data)
  * \param[in] err_description  HTML message about the problem.
  * \param[in] err_details  Server side text message with details that are logged only.
  */
-void snap_child::die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details)
+void snap_child::die(http_code_t err_code, QString err_name, QString const & err_description, QString const & err_details)
 {
+    if(f_died)
+    {
+        // avoid loops
+        return;
+    }
+    f_died = true;
+
     try
     {
         // define a default error name if undefined
@@ -5851,11 +6056,22 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
         {
             // On error we do not return the HTTP protocol, only the Status field
             // it just needs to be first to make sure it works right
-            set_header("Status",
-                       QString("%1 %2\n")
-                            .arg(static_cast<int>(err_code))
-                            .arg(err_name),
+            //
+            // IMPORTANT NOTE: we WANT the header to be set when we call
+            //                 the attach_to_session() function so someone
+            //                 can at least peruse it
+            //
+            set_header(get_name(name_t::SNAP_NAME_CORE_STATUS_HEADER),
+                       QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name),
                        HEADER_MODE_ERROR);
+
+            // Make sure that the session is re-attached
+            server::pointer_t server( f_server.lock() );
+            if(!server)
+            {
+                throw snap_logic_exception("server pointer is nullptr");
+            }
+            server->attach_to_session();
 
             // content type is HTML, we reset this header because it could have
             // been changed to something else and prevent the error from showing
@@ -5864,44 +6080,12 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
                        "text/html; charset=utf8",
                        HEADER_MODE_EVERYWHERE);
 
-            // Generate the signature
-            server::pointer_t server( f_server.lock() );
-            if(!server)
-            {
-                throw snap_logic_exception("server pointer is nullptr");
-            }
+            // TODO: the HTML could also come from a user defined
+            //       page so that way it can get a translated
+            //       message without us having to do anything
+            //       (but probably only for 403 and 404 pages?)
 
-            QString signature;
-            QString const site_key(get_site_key());
-            if(f_cassandra)
-            {
-                // TODO: the description could also come from a user defined
-                //       page so that way it can get a translated message
-                //       (only for some 4XX errors though)
-
-                QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
-                signature = QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue());
-                server->improve_signature(f_uri.path(), signature);
-            }
-            else if(!site_key.isEmpty())
-            {
-                signature = QString("<a href=\"%1\">%1</a>").arg(site_key);
-                server->improve_signature(f_uri.path(), signature);
-            }
-            // else -- no signature...
-
-            // HTML output
-            QString const html(QString("<html><head>"
-                            "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
-                            "<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\"/>"
-                            "<title>Snap Server Error</title>"
-                            "</head>"
-                            "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
-                    .arg(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
-                    .arg(static_cast<int>(err_code))
-                    .arg(err_name)
-                    .arg(err_description)
-                    .arg(signature));
+            QString const html(error_body(err_code, err_name, err_description));
 
             // in case there are any cookies, send them along too
             output_result(HEADER_MODE_ERROR, html.toUtf8());
@@ -5917,6 +6101,105 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
     exit(1);
 }
 
+
+/** \brief Create the body of an HTTP error.
+ *
+ * This function generates an error page for an HTTP error. Thus far,
+ * it is used by the die() function and an equivalent in the attachment
+ * plugin.
+ *
+ * \param[in] err_code  The error code such as 501 or 503.
+ * \param[in] err_name  The name of the error such as "Service Not Available".
+ * \param[in] err_description  HTML message about the problem.
+ */
+QString snap_child::error_body(http_code_t err_code, QString const & err_name, QString const & err_description)
+{
+    QString const title(QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name));
+
+    // html
+    QDomDocument doc;
+    QDomElement html(doc.createElement("html"));
+    doc.appendChild(html);
+
+    // html/head
+    QDomElement head(doc.createElement("head"));
+    html.appendChild(head);
+
+    // html/head/meta[@http-equiv=...][@content=...]
+    QDomElement meta_locale(doc.createElement("meta"));
+    head.appendChild(meta_locale);
+    meta_locale.setAttribute("http-equiv", get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER));
+    meta_locale.setAttribute("content", "text/html; charset=utf-8");
+
+    // html/head/meta[@name=...][@content=...]
+    QDomElement meta_robots(doc.createElement("meta"));
+    head.appendChild(meta_robots);
+    meta_robots.setAttribute("name", "ROBOTS");
+    meta_robots.setAttribute("content", "NOINDEX");
+
+    // html/head/title/...
+    QDomElement title_tag(doc.createElement("title"));
+    head.appendChild(title_tag);
+    snap_dom::append_plain_text_to_node(title_tag, title);
+
+    // html/head/style/...
+    QDomElement style_tag(doc.createElement("style"));
+    head.appendChild(style_tag);
+    snap_dom::append_plain_text_to_node(style_tag, "body{font-family:sans-serif}");
+
+    // html/body
+    QDomElement body_tag(doc.createElement("body"));
+    html.appendChild(body_tag);
+
+    // html/body/h1/...
+    QDomElement h1_tag(doc.createElement("h1"));
+    h1_tag.setAttribute("class", "error");
+    body_tag.appendChild(h1_tag);
+    snap_dom::append_plain_text_to_node(h1_tag, title);
+
+    // html/body/p[@class=description]/...
+    QDomElement description_tag(doc.createElement("p"));
+    description_tag.setAttribute("class", "description");
+    body_tag.appendChild(description_tag);
+    // the description may include HTML tags
+    snap_dom::insert_html_string_to_xml_doc(description_tag, err_description);
+
+    // html/body/p[@class=signature]/...
+    QDomElement signature_tag(doc.createElement("p"));
+    signature_tag.setAttribute("class", "signature");
+    body_tag.appendChild(signature_tag);
+
+    // now generate the signature tag anchors
+    QString const site_key(get_site_key());
+    if(f_cassandra)
+    {
+        QtCassandra::QCassandraValue const site_name(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
+        QDomElement a_tag(doc.createElement("a"));
+        a_tag.setAttribute("class", "home");
+        a_tag.setAttribute("target", "_top");
+        a_tag.setAttribute("href", site_key);
+        signature_tag.appendChild(a_tag);
+        snap_dom::append_plain_text_to_node(a_tag, site_name.stringValue());
+
+        improve_signature(f_uri.path(), doc, signature_tag);
+    }
+    else if(!site_key.isEmpty())
+    {
+        QDomElement a_tag(doc.createElement("a"));
+        a_tag.setAttribute("class", "home");
+        a_tag.setAttribute("target", "_top");
+        a_tag.setAttribute("href", site_key);
+        signature_tag.appendChild(a_tag);
+        snap_dom::append_plain_text_to_node(a_tag, site_key);
+
+        improve_signature(f_uri.path(), doc, signature_tag);
+    }
+    // else -- no signature...
+
+    return doc.toString(-1);
+}
+
+
 /** \brief Ensure that the http_name variable is not empty.
  *
  * This function sets the content of the \p http_name variable if empty. It
@@ -5927,7 +6210,7 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
  * \param[in] http_code  The code used to determine the http_name value.
  * \param[in,out] http_name  The http request name to set if not already defined.
  */
-void snap_child::define_http_name(http_code_t http_code, QString& http_name)
+void snap_child::define_http_name(http_code_t http_code, QString & http_name)
 {
     if(http_name.isEmpty())
     {
@@ -6094,7 +6377,7 @@ void snap_child::define_http_name(http_code_t http_code, QString& http_name)
  * \param[in] value  The value to assign to that header.
  * \param[in] modes  Where the header will be used.
  */
-void snap_child::set_header(QString const& name, QString const& value, header_mode_t modes)
+void snap_child::set_header(QString const & name, QString const & value, header_mode_t modes)
 {
     {
         // name cannot include controls or separators and only CHARs
@@ -6202,7 +6485,7 @@ void snap_child::set_header(QString const& name, QString const& value, header_mo
     else
     {
         // Note that even the Status needs to be a field
-        // because we're using Apache and they expect such
+        // because we are using Apache and they expect such
         http_header_t header;
         header.f_header = name + ": " + v;
         header.f_modes = modes;
@@ -6225,7 +6508,7 @@ void snap_child::set_header(QString const& name, QString const& value, header_mo
  *
  * \return false if the header was not defined yet, true otherwise.
  */
-bool snap_child::has_header(const QString& name) const
+bool snap_child::has_header(QString const & name) const
 {
     return f_header.find(name.toLower()) != f_header.end();
 }
@@ -6247,12 +6530,12 @@ bool snap_child::has_header(const QString& name) const
  *
  * \return The value of this header, "" if undefined.
  */
-QString snap_child::get_header(QString const& name) const
+QString snap_child::get_header(QString const & name) const
 {
     header_map_t::const_iterator it(f_header.find(name.toLower()));
     if(it == f_header.end())
     {
-        // it's not defined
+        // it is not defined
         return "";
     }
 
@@ -6272,7 +6555,7 @@ QString snap_child::get_header(QString const& name) const
  * Note that the Cookies headers are never printed by this function.
  *
  * \note
- * Headers are NOT encoding in UTF-8, we output them as Latin1, this is
+ * Headers are NOT encoded in UTF-8, we output them as Latin1, this is
  * VERY important; headers are checked at the time you do the set_header
  * to ensure that only Latin1 characters are used.
  *
@@ -6289,10 +6572,15 @@ QString snap_child::get_header(QString const& name) const
  */
 void snap_child::output_headers(header_mode_t modes)
 {
+    // The Cache-Control information are not output until here because
+    // we have a couple of settings (page and server) and it is just
+    // way to complicated to recompute the correct caches each time
+    set_cache_control();
+
     // Output the status first (we may want to order the HTTP header
     // fields by type and output them ordered by type as defined in
     // the HTTP reference chapter 4.2)
-    if(has_header("Status") && (f_header["status"].f_modes & modes) != 0)
+    if(has_header(get_name(name_t::SNAP_NAME_CORE_STATUS_HEADER)) && (f_header["status"].f_modes & modes) != 0)
     {
         // If status is defined, it should not be 200
         write((f_header["status"].f_header + "\n").toLatin1().data());
@@ -6338,13 +6626,16 @@ void snap_child::output_headers(header_mode_t modes)
  * \sa cookie_is_defined()
  * \sa output_cookies()
  */
-void snap_child::set_cookie(http_cookie const& cookie_info)
+void snap_child::set_cookie(http_cookie const & cookie_info)
 {
     f_cookies[cookie_info.get_name()] = cookie_info;
 
     // TODO: the privacy-policy URI should be locked if we want this to
-    //       continue to work forever
-    f_cookies[cookie_info.get_name()].set_comment_url(f_site_key_with_slash + "privacy-policy");
+    //       continue to work forever (or have a way to retrieve and
+    //       cache that value; the snapserver.conf is probably not a
+    //       good idea because you could have thousands of websites
+    //       all with a different path)
+    f_cookies[cookie_info.get_name()].set_comment_url(f_site_key_with_slash + "terms-and-conditions/privacy-policy");
 }
 
 
@@ -6477,7 +6768,7 @@ QString snap_child::get_unique_number()
  *                          the Snap! server itself, not so much for other
  *                          servers using plugins.)
  */
-QStringList snap_child::init_plugins(bool const add_defaults)
+snap_string_list snap_child::init_plugins(bool const add_defaults)
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
@@ -6486,6 +6777,7 @@ QStringList snap_child::init_plugins(bool const add_defaults)
     }
 
     // load the plugins for this website
+    bool need_cleanup(true);
     QString site_plugins(server->get_parameter("plugins")); // forced by .conf?
     if(site_plugins.isEmpty())
     {
@@ -6498,17 +6790,28 @@ QStringList snap_child::init_plugins(bool const add_defaults)
             // then get the default from the server configuration
             site_plugins = server->get_parameter("default_plugins");
         }
+        else
+        {
+            // we assume that the list of plugins in the database is already
+            // cleaned up and thus avoid an extra loop (see below)
+            //
+            need_cleanup = false;
+        }
     }
-    QStringList list_of_plugins(site_plugins.split(","));
+    snap_string_list list_of_plugins(site_plugins.split(',', QString::SkipEmptyParts));
 
     // clean up the list
-    for(int i(0); i < list_of_plugins.length(); ++i)
+    if(need_cleanup)
     {
-        list_of_plugins[i] = list_of_plugins[i].trimmed();
-        if(list_of_plugins.at(i).isEmpty())
+        for(int i(0); i < list_of_plugins.length(); ++i)
         {
-            list_of_plugins.removeAt(i);
-            --i;
+            list_of_plugins[i] = list_of_plugins[i].trimmed();
+            if(list_of_plugins.at(i).isEmpty())
+            {
+                // remove parts that the trimmed() rendered empty
+                list_of_plugins.removeAt(i);
+                --i;
+            }
         }
     }
 
@@ -6533,17 +6836,17 @@ QStringList snap_child::init_plugins(bool const add_defaults)
         die( http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE
            , "Plugin path not configured"
            , "Server cannot find any plugins because the path is not properly configured."
-           , "An error occured loading the server plugins."
+           , "An error occured loading the server plugins (plugins_path parameter in snapserver.conf is undefined)."
            );
         NOTREACHED();
     }
 
-    if(!snap::plugins::load(plugins_path, std::static_pointer_cast<snap::plugins::plugin>(server), list_of_plugins))
+    if(!snap::plugins::load(plugins_path, this, std::static_pointer_cast<snap::plugins::plugin>(server), list_of_plugins))
     {
         die( http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE
            , "Plugin Unavailable"
            , "Server encountered problems with its plugins."
-           , "An error occured loading the server plugins."
+           , "An error occurred while loading the server plugins. See other errors from the plugin implementation for details."
            );
         NOTREACHED();
     }
@@ -6551,11 +6854,11 @@ QStringList snap_child::init_plugins(bool const add_defaults)
     // but they are not really usable yet because we did not initialize them
 
     // now boot the plugin system (send signals)
-    server->bootstrap(this);
     server->init();
 
     return list_of_plugins;
 }
+
 
 /** \brief Run all the updates as required.
  *
@@ -6594,10 +6897,11 @@ QStringList snap_child::init_plugins(bool const add_defaults)
  * \param[in] list_of_plugins  The list of plugin names that were loaded
  *                             for this run.
  */
-void snap_child::update_plugins(QStringList const& list_of_plugins)
+void snap_child::update_plugins(snap_string_list const& list_of_plugins)
 {
     // system updates run at most once every 10 minutes
     QString const core_last_updated(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
+    QString const core_last_dynamic_update(get_name(name_t::SNAP_NAME_CORE_LAST_DYNAMIC_UPDATE));
     QString const param_name(core_last_updated);
     QtCassandra::QCassandraValue last_updated(get_site_parameter(param_name));
     if(last_updated.nullValue())
@@ -6610,6 +6914,14 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
     if(is_debug() // force update in debug mode so we don't have to wait 10 min.!
     || f_start_date - static_cast<int64_t>(last_update_timestamp) > static_cast<int64_t>(10 * 60 * 1000000))
     {
+        // this can be called more than once in debug mode whenever multiple
+        // files are being loaded for a page being accessed (i.e. the main
+        // page and then the .js, .css, .jpg, etc.)
+        //
+        // if is_debug() returns false, it should be useless unless the
+        // process takes over 10 minutes
+        QtCassandra::QCassandraLock lock(f_context, QString("%1#snap-child-updating").arg(get_site_key_with_slash()));
+
         // save that last time we checked for an update
         last_updated.setInt64Value(f_start_date);
         QString const core_plugin_threshold(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
@@ -6625,12 +6937,12 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
 
         // first run through the plugins to know whether one or more
         // has changed since the last website update
-        for(QStringList::const_iterator it(list_of_plugins.begin());
+        for(snap_string_list::const_iterator it(list_of_plugins.begin());
                 it != list_of_plugins.end();
                 ++it)
         {
-            QString plugin_name(*it);
-            plugins::plugin *p(plugins::get_plugin(plugin_name));
+            QString const plugin_name(*it);
+            plugins::plugin * p(plugins::get_plugin(plugin_name));
             // TODO: Verify whether I'm correct here, but the plugin_threshold
             //       is not actually a valid test here... The fact is that the
             //       last modification time of a plugin may end up being less
@@ -6670,15 +6982,53 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
                 {
                     specific_last_updated.setInt64Value(p->do_update(specific_last_updated.int64Value()));
                 }
-                catch(std::exception const &)
+                catch(std::exception const & e)
                 {
-                    SNAP_LOG_ERROR("Updating ")(plugin_name)(" failed with an exception.");
+                    SNAP_LOG_ERROR("Updating ")(plugin_name)(" failed with an exception: ")(e.what());
                 }
                 set_site_parameter(specific_param_name, specific_last_updated);
             }
         }
 
+        // this finishes the content.xml updates
         finish_update();
+
+        // now allow plugins to have a more dynamic set of updates
+        for(snap_string_list::const_iterator it(list_of_plugins.begin());
+                it != list_of_plugins.end();
+                ++it)
+        {
+            QString const plugin_name(*it);
+            plugins::plugin * p(plugins::get_plugin(plugin_name));
+            if(p != nullptr)
+            {
+                trace(QString("Dynamically update plugin \"%1\"\n").arg(plugin_name));
+
+                // run the updates as required
+                // we have a date/time for each plugin since each has
+                // its own list of date/time checks
+                QString const specific_param_name(QString("%1::%2").arg(core_last_dynamic_update).arg(plugin_name));
+                QtCassandra::QCassandraValue specific_last_updated(get_site_parameter(specific_param_name));
+                if(specific_last_updated.nullValue())
+                {
+                    // use an "old" date (631152000)
+                    specific_last_updated.setInt64Value(SNAP_UNIX_TIMESTAMP(1990, 1, 1, 0, 0, 0) * 1000000LL);
+                }
+                // IMPORTANT: Note that we save the newest date found in the
+                //            do_update() to make 100% sure we catch all the
+                //            updates every time (using "now" would often mean
+                //            missing many updates!)
+                try
+                {
+                    specific_last_updated.setInt64Value(p->do_dynamic_update(specific_last_updated.int64Value()));
+                }
+                catch(std::exception const & e)
+                {
+                    SNAP_LOG_ERROR("Dynamically updating ")(plugin_name)(" failed with an exception: ")(e.what());
+                }
+                set_site_parameter(specific_param_name, specific_last_updated);
+            }
+        }
 
         // avoid a write to the DB if the value did not change
         // (i.e. most of the time!)
@@ -6698,6 +7048,7 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
         }
     }
 }
+
 
 /** \brief After adding content, call this function to save it.
  *
@@ -6780,7 +7131,7 @@ void snap_child::new_content()
  *
  * \param[in,out] path  The path to canonicalize.
  */
-void snap_child::canonicalize_path(QString& path)
+void snap_child::canonicalize_path(QString & path)
 {
     // we get the length on every loop because it could be reduced!
     int i(0);
@@ -6904,21 +7255,22 @@ void snap_child::execute()
     // Normally Apache overwrites this information
     set_header("Server", "Snap! C++", HEADER_MODE_EVERYWHERE);
 
-    // By default all pages are to expire in 1 minute (TBD)
-    //QDateTime expires(QDateTime().toUTC());
-    //expires.setTime_t(f_start_date / 1000000); // micro-seconds
-    // TODO:
-    // WARNING: the ddd and MMM are localized, we probably need to "fix"
-    //          the locale before this call (?)
-    //expires.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
-    set_header("Expires", "Sat,  1 Jan 2000 00:00:00 GMT", HEADER_MODE_EVERYWHERE);
-
     // The Date field is added by Apache automatically
     // adding it here generates a 500 Internal Server Error
-    //set_header("Date", expires.toString("ddd, dd MMM yyyy hh:mm:ss") + " GMT");
+    //QDateTime date(QDateTime().toUTC());
+    //date.setTime_t(f_start_date / 1000000); // micro-seconds
+    //set_header("Date", date.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'"));
 
-    // XXX it feels like Apache2 adds another no-cache at the end of the list
-    set_header("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0", HEADER_MODE_EVERYWHERE);
+    // cache controls are now defined in f_server_cache_control
+    // and f_page_cache_control; the defaults are not exactly what
+    // we want, so we change them in the f_page_cache_control
+    //
+    //set_cache_control(0, false, true);
+    f_page_cache_control.set_no_store(true);
+    f_page_cache_control.set_must_revalidate(true);
+
+    // We are snapwebsites
+    set_header(get_name(name_t::SNAP_NAME_CORE_X_POWERED_BY_HEADER), "snapwebsites", HEADER_MODE_EVERYWHERE);
 
     // By default we expect [X]HTML in the output
     set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
@@ -6973,6 +7325,11 @@ void snap_child::execute()
     // primary owner
     server->execute(f_uri.path());
 
+    // TODO: look into moving this call to the exit() function since
+    //       it should be called no matter what (or maybe have some
+    //       form of RAII, but if exit() gets called, RAII will not
+    //       do us any good...)
+    //
     // now that execution is over, we want to re-attach whatever did
     // not make it in this session (i.e. a message that was posted
     // after messages were added to the current page, or this page
@@ -7046,75 +7403,87 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
     // TODO when downloading a file (an attachment) that's already
     //      compressed we need to specify the compression of the output
     //      buffer so that way here we can "adjust" the compression as
-    //      required
+    //      required -- some of that is already done/supported TBD
 
-    // TODO add compression capabilities with bz2, lzma and sdch as
-    //      may be supported by the browser (although sdch is not
-    //      possible here as long as we require/use Apache2)
-    http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
-
-    // TODO image file formats that are already compressed should not be
-    //      recompressed (i.e. JPEG, GIF, PNG...)
-
-    // it looks like some browsers use that one instead of plain "gzip"
-    // try both just in case
-    QString const content_type(get_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER)));
-    // at this point we only attempt to compress known text formats
-    // (should we instead have a list of mime types that we do not want to
-    // compress? before, attempting to compress the "wrong" files would
-    // make the browsers fail badly... but today not so much.)
-    if(content_type.startsWith("text/plain;")
-    || content_type.startsWith("text/html;")
-    || content_type.startsWith("text/xml;")
-    || content_type.startsWith("text/css;")
-    || content_type.startsWith("text/javascript;"))
+    // was the output buffer generated from an already compressed file?
+    // if so, then skip the encoding handling
+    QString const current_content_encoding(get_header("Content-Encoding"));
+    if(current_content_encoding.isEmpty())
     {
-        float const gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
-        float const deflate_level(encodings.get_level("deflate"));
-        if(gzip_level > 0.0f && gzip_level >= deflate_level)
+        // TODO image file formats that are already compressed should not be
+        //      recompressed (i.e. JPEG, GIF, PNG...)
+
+        // at this point we only attempt to compress known text formats
+        // (should we instead have a list of mime types that we do not want to
+        // compress? before, attempting to compress the "wrong" files would
+        // make the browsers fail badly... but today not so much.)
+        //
+        QString const content_type(get_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER)));
+        if(content_type.startsWith("text/plain;")
+        || content_type.startsWith("text/html;")
+        || content_type.startsWith("text/xml;")
+        || content_type.startsWith("text/css;")
+        || content_type.startsWith("text/javascript;"))
         {
-            // browser asked for gzip with higher preference
-            QString compressor("gzip");
-            output_data = compression::compress(compressor, output_data, 100, true);
-            if(compressor == "gzip")
+            // TODO add compression capabilities with bz2, lzma and sdch as
+            //      may be supported by the browser (although sdch is not
+            //      possible here as long as we require/use Apache2)
+            http_strings::WeightedHttpString encodings(snapenv("HTTP_ACCEPT_ENCODING"));
+
+            // it looks like some browsers use "x-gzip" instead of
+            // plain "gzip"; also our default (i.e. "*") is gzip so
+            // check that value here too
+            //
+            float const gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
+
+            // plain zlib data is named "deflate"
+            float const deflate_level(encodings.get_level("deflate"));
+
+            if(gzip_level > 0.0f && gzip_level >= deflate_level)
             {
-                // compression succeeded
-                set_header("Content-Encoding", "gzip", HEADER_MODE_EVERYWHERE);
+                // browser asked for gzip with higher preference
+                QString compressor("gzip");
+                output_data = compression::compress(compressor, output_data, 100, true);
+                if(compressor == "gzip")
+                {
+                    // compression succeeded
+                    set_header("Content-Encoding", "gzip", HEADER_MODE_EVERYWHERE);
+                }
             }
-        }
-        else if(deflate_level > 0.0f)
-        {
-            QString compressor("deflate");
-            output_data = compression::compress(compressor, output_data, 100, true);
-            if(compressor == "deflate")
+            else if(deflate_level > 0.0f)
             {
-                // compression succeeded
-                set_header("Content-Encoding", "deflate", HEADER_MODE_EVERYWHERE);
+                QString compressor("deflate");
+                output_data = compression::compress(compressor, output_data, 100, true);
+                if(compressor == "deflate")
+                {
+                    // compression succeeded
+                    set_header("Content-Encoding", "deflate", HEADER_MODE_EVERYWHERE);
+                }
+            }
+            else
+            {
+                // Code 406 is in the spec. (RFC2616) but frankly?!
+                float const identity_level(encodings.get_level("identity"));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(!f_died && identity_level == 0.0f)
+#pragma GCC diagnostic pop
+                {
+                    die(http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
+                        "Your client requested a compression that we do not offer and it does not accept content without compression.",
+                        "a client requested content with Accept-Encoding: identity;q=0 and no other compression we understand");
+                    NOTREACHED();
+                }
+                // The "identity" SHOULD NOT be used with the Content-Encoding
+                // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
+                //set_header("Content-Encoding", "identity", HEADER_MODE_EVERYWHERE);
             }
         }
         else
         {
-            // Code 406 is in the spec. (RFC2616) but frankly?!
-            float const identity_level(encodings.get_level("identity"));
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(identity_level == 0.0f)
-#pragma GCC diagnostic pop
-            {
-                die(http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
-                    "Your client requested a compression that we do not offer and it does not accept content without compression.",
-                    "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
-                NOTREACHED();
-            }
-            // The "identity" SHOULD NOT be used with the Content-Encoding
-            // (RFC 2616 -- https://tools.ietf.org/html/rfc2616)
-            //set_header("Content-Encoding", "identity", HEADER_MODE_EVERYWHERE);
+            // note that "html"-output is NOT html in this case!
+            // (most likely an image... but any document really)
         }
-    }
-    else
-    {
-        // note that "html"-output is NOT html in this case!
-        // (most likely an image... but any document really)
     }
 
     QString const size(QString("%1").arg(output_data.size()));
@@ -7128,7 +7497,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
     // IMPORTANT NOTE: it looks like Apache2 removes the body no matter what
     //                 which is probably sensible... if a HEAD is used it is
     //                 not a browser anyway
-    if(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)) != "HEAD"
+    if(snapenv(get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD)) != "HEAD"
     /*|| (modes & HEADER_MODE_NO_ERROR) == 0 -- not working... */)
     {
         write(output_data, output_data.size());
@@ -7312,7 +7681,7 @@ snap_child::locale_info_vector_t const& snap_child::get_plugins_locales()
         if(!locales.isEmpty())
         {
             http_strings::WeightedHttpString language_country(locales);
-            http_strings::WeightedHttpString::part_vector_t plugins_languages(language_country.get_parts());
+            http_strings::WeightedHttpString::part_t::vector_t plugins_languages(language_country.get_parts());
             if(!plugins_languages.isEmpty())
             {
                 qStableSort(plugins_languages);
@@ -7555,6 +7924,7 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
  * Formats that we support:
  *
  * \code
+ *      YYYY-MM-DD
  *      DD-MMM-YYYY HH:MM:SS TZ
  *      DD-MMM-YYYY HH:MM:SS TZ
  *      WWW DD-MMM-YYYY HH:MM:SS TZ
@@ -7574,11 +7944,11 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
  *
  * \return The date and time as a Unix time_t number, -1 if the convertion fails.
  */
-time_t snap_child::string_to_date(QString const& date)
+time_t snap_child::string_to_date(QString const & date)
 {
     struct parser_t
     {
-        parser_t(QString const& date)
+        parser_t(QString const & date)
             : f_date(date.simplified().toLower().toUtf8())
             , f_s(f_date.data())
             //, f_time_info() -- initialized below
@@ -7719,7 +8089,7 @@ time_t snap_child::string_to_date(QString const& date)
             return true;
         }
 
-        bool integer(unsigned int min_len, unsigned int max_len, unsigned int min_value, unsigned int max_value, int& result)
+        bool integer(unsigned int min_len, unsigned int max_len, unsigned int min_value, unsigned int max_value, int & result)
         {
             unsigned int u_result = 0;
             unsigned int count(0);
@@ -7931,6 +8301,37 @@ time_t snap_child::string_to_date(QString const& date)
                 skip_spaces();
             }
 
+            // support for YYYY-MM-DD
+            if(f_date.size() == 10
+            && f_s[4] == '-'
+            && f_s[7] == '-')
+            {
+                if(!integer(4, 4, 0, 3000, f_time_info.tm_year))
+                {
+                    return false;
+                }
+                if(*f_s != '-')
+                {
+                    return false;
+                }
+                ++f_s;
+                if(!integer(2, 2, 1, 12, f_time_info.tm_mon))
+                {
+                    return false;
+                }
+                --f_time_info.tm_mon; // expect 0 to 11 in final structure
+                if(*f_s != '-')
+                {
+                    return false;
+                }
+                ++f_s;
+                if(!integer(2, 2, 1, 31, f_time_info.tm_mday))
+                {
+                    return false;
+                }
+                return true;
+            }
+
             if(!integer(1, 2, 1, 31, f_time_info.tm_mday))
             {
                 return false;
@@ -8092,89 +8493,72 @@ snap_child::country_name_t const *snap_child::get_countries()
 }
 
 
-/** \brief Send a PING message to the specified UDP server.
+/** \brief Send the backend_process() signal to all plugins.
  *
- * This function sends a PING message (4 bytes) to the specified
- * UDP server. This is used after you saved data in the Cassandra
- * cluster to wake up a background process which can then "slowly"
- * process the data further.
+ * This function sends the server::backend_process() signal to all
+ * the currently registered plugins.
  *
- * Remember that UDP is not reliable so we do not in any way
- * guarantee that this goes anywhere. The function returns no
- * feedback at all. We do not wait for a reply since at the time
- * we send the message the listening server may be busy. The
- * idea of this ping is just to make sure that if the server is
- * sleeping at that time, it wakes up sooner rather than later
- * so it can immediately start processing the data we just added
- * to Cassandra.
+ * This is called by the content plugin whenever the action is set
+ * to "snapbackend" which is the default when no action was specified
+ * and someone started the snapbackend process:
  *
- * The \p message is expected to be a NUL terminated string. The
- * NUL is not sent across. At this point most of our servers
- * accept a PING message to wake up and start working on new
- * data.
- *
- * The \p name parameter is the name of a variable in the server
- * configuration file.
- *
- * \param[in] name  The name of the configuration variable used to read the IP and port
- * \param[in] message  The message to send, "PING" by default.
+ * \code
+ *      snapbackend
+ *        [or]
+ *      snapbackend --action snapbackend
+ * \endcode
  */
-void snap_child::udp_ping(char const *name, char const *message)
+void snap_child::backend_process()
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
-    server->udp_ping(name, message);
+    server->backend_process();
 }
 
 
-/** \brief Create a UDP server that receives udp_ping() messages.
+/** \brief Send a PING message to the specified service.
  *
- * This function is used to receive PING messages from the udp_ping()
- * function. Other messages can also be sent such as RSET and STOP.
+ * This function sends a PING message to the specified service.
+ * This is used to wake up a backend process after you saved
+ * data in the Cassandra cluster. That backend can then "slowly"
+ * process the data further.
  *
- * The server is expected to be used with the recv() or timed_recv()
- * functions to wait for a message and act accordingly. A server
- * that makes use of these pings is expected to be waiting for some
- * data which, once available requires additional processing. The
- * server that handles the row data sends the PING to the server.
- * For example, the sendmail plugin just saves the email data in
- * the Cassandra database, then it sends a PING to the sendmail
- * backend process. That backend process wakes up and actually
- * processes the email by sending it to the mail server.
+ * The message is sent using a UDP packet. It is sent to the
+ * Snap! Communicator running on the same server as this
+ * child.
  *
- * \param[in] name  The name of the configuration variable used to read the IP and port
+ * Remember that UDP is not reliable so we do not in any way
+ * guarantee that this goes anywhere. The function returns no
+ * feedback at all. We do not wait for a reply since at the time
+ * we send the message the listening server may be busy. The
+ * idea of this ping is just to make sure that if the backend is
+ * sleeping at the time, it wakes up sooner rather than later
+ * so it can immediately start processing the data we just added
+ * to Cassandra.
+ *
+ * The \p service_name is the name of the backend as it appears
+ * when you run the following command:
+ *
+ * \code
+ *      snapinit --list
+ * \endcode
+ *
+ * At time of writing, we have the following backends: "images::images",
+ * "list::pagelist", and "sendmail::sendmail".
+ *
+ * \param[in] service_name  The name of the backend (service) to ping.
  */
-snap_child::udp_server_t snap_child::udp_get_server( char const *name )
+void snap_child::udp_ping(char const * service_name)
 {
-    if(!name)
+    server::pointer_t server( f_server.lock() );
+    if(!server)
     {
-        throw snap_logic_exception("name pointer is nullptr");
+        throw snap_logic_exception("server pointer is nullptr");
     }
-
-    try
-    {
-        server::pointer_t server( f_server.lock() );
-        if(!server)
-        {
-            throw snap_logic_exception("server pointer is nullptr");
-        }
-        return server::udp_get_server( server->get_parameter(name) );
-    }
-    catch( const std::runtime_error& runtime_error )
-    {
-        SNAP_LOG_FATAL() << "Runtime error caught: '" << runtime_error.what() << "'. Cannot connect to server for name '" << name << "'!";
-    }
-    catch( ... )
-    {
-        SNAP_LOG_FATAL() << "Unknown error caught. Cannot connect to server for name '" << name << "'!";
-    }
-
-    exit(1);
-    NOTREACHED();
-    return snap_child::udp_server_t();
+    server->udp_ping_server(service_name, f_uri.get_uri());
 }
 
 
@@ -8194,7 +8578,7 @@ snap_child::udp_server_t snap_child::udp_get_server( char const *name )
  *
  * \return true if the tag is considered to be inline by default.
  */
-bool snap_child::tag_is_inline(char const *tag, int length)
+bool snap_child::tag_is_inline(char const * tag, int length)
 {
     if(tag == nullptr)
     {

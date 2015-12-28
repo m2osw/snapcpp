@@ -73,13 +73,21 @@ public:
                                 locale_widgets();
                                 ~locale_widgets();
 
+    // plugin.cpp implementation
     static locale_widgets *     instance();
+    virtual QString             settings_path() const;
+    virtual QString             icon() const;
     virtual QString             description() const;
+    virtual QString             help_uri() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
+    virtual void                bootstrap(snap_child * snap);
 
-    void                        on_bootstrap(snap_child * snap);
+    // editor signals
     void                        on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row);
-    void                        on_prepare_editor_form(editor::editor *e);
+    void                        on_prepare_editor_form(editor::editor * e);
+    void                        on_string_to_value(editor::editor::string_to_value_info_t & value_info);
+    void                        on_value_to_string(editor::editor::value_to_string_info_t & value_info);
 
 private:
     void                        content_update(int64_t variables_timestamp);

@@ -24,11 +24,10 @@
 
 #include "dbutils.h"
 #include "log.h"
-#include "not_reached.h"
+#include "not_used.h"
 #include "qhtmlserializer.h"
 #include "qxmlmessagehandler.h"
-
-#include <QXmlQuery>
+#include "xslt.h"
 
 #include "poison.h"
 
@@ -56,7 +55,7 @@ SNAP_PLUGIN_START(test_plugin, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -113,22 +112,6 @@ test_plugin::~test_plugin()
 {
 }
 
-/** \brief Initialize the test_plugin.
- *
- * This function terminates the initialization of the test_plugin plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void test_plugin::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(test_plugin, "server", server, process_post, _1);
-    SNAP_LISTEN(test_plugin, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-}
-
-
 /** \brief Get a pointer to the test_plugin plugin.
  *
  * This function returns an instance pointer to the test_plugin plugin.
@@ -138,9 +121,33 @@ void test_plugin::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the test_plugin plugin.
  */
-test_plugin *test_plugin::instance()
+test_plugin * test_plugin::instance()
 {
     return g_plugin_test_plugin_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin "settings". In case of the
+ * test plugin, this is really the page that allows one
+ * to run the tests.
+ */
+QString test_plugin::settings_path() const
+{
+    return "/admin/test-plugin";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString test_plugin::icon() const
+{
+    return "/images/test-plugin/test-plugin-logo-64x64.jpg";
 }
 
 
@@ -161,6 +168,41 @@ QString test_plugin::description() const
 }
 
 
+/** \brief Change the help URI to the base plugin.
+ *
+ * This help_uri() function returns the URI to the base plugin URI
+ * since this plugin is just an extension and does not need to have
+ * a separate help page.
+ *
+ * \return The URI to the test_plugin_suite plugin help page.
+ */
+QString test_plugin::help_uri() const
+{
+    // TBD: should we instead call the help_uri() of the test_plugin_suite plugin?
+    //
+    //      test_plugin_suite::test_plugin_suite::instance()->help_uri();
+    //
+    //      I'm afraid that it would be a bad example because the pointer
+    //      may not be a good pointer anymore at this time (once we
+    //      properly remove plugins that we loaded just to get their info.)
+    //
+    return "http://snapwebsites.org/help/plugin/test_plugin_suite";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString test_plugin::dependencies() const
+{
+    return "|filter|layout|messages|output|path|server_access|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -178,7 +220,7 @@ int64_t test_plugin::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 6, 1, 17, 33, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 23, 29, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -200,7 +242,7 @@ int64_t test_plugin::do_update(int64_t last_updated)
  */
 void test_plugin::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_test_results_table();
     f_test_results_table.reset();
@@ -216,9 +258,25 @@ void test_plugin::initial_update(int64_t variables_timestamp)
  */
 void test_plugin::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the test_plugin.
+ *
+ * This function terminates the initialization of the test_plugin plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void test_plugin::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(test_plugin, "server", server, process_post, _1);
+    SNAP_LISTEN(test_plugin, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 
@@ -255,10 +313,9 @@ QtCassandra::QCassandraTable::pointer_t test_plugin::get_test_results_table()
  * replaced by the version of this plugin. To get the version
  * of all the plugins, send the user to the /admin/versions page.
  */
-void test_plugin::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void test_plugin::on_replace_token(content::path_info_t& ipath, QDomDocument& xml, filter::filter::token_info_t& token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
+    NOTUSED(ipath);
 
     if(!token.is_namespace("test_plugin::"))
     {
@@ -281,12 +338,12 @@ void test_plugin::on_replace_token(content::path_info_t& ipath, QString const& p
         doc.appendChild(root_tag);
 
         QString group; // current group
-        QStringList group_segments;
+        snap_string_list group_segments;
         int const max_keys(keys.size());
         for(int idx(0), count(1); idx < max_keys; ++idx, ++count)
         {
             QString const name(keys.at(idx));
-            QStringList segments(name.split("::"));
+            snap_string_list segments(name.split("::"));
             QString const test_name(segments.last());
             segments.pop_back();
             QString const group_name(segments.join("::"));
@@ -372,12 +429,12 @@ void test_plugin::on_replace_token(content::path_info_t& ipath, QString const& p
                     // ignore the special name "all" (TBD)
                     existing_group_name = "";
                 }
-                QStringList const existing_segments(existing_group_name.split("::", QString::SkipEmptyParts));
+                snap_string_list const existing_segments(existing_group_name.split("::", QString::SkipEmptyParts));
 
                 int const max_count(segments.size());
                 for(int j(existing_segments.size()); j < max_count; ++j)
                 {
-                    QStringList const new_group(segments.mid(0, j + 1));
+                    snap_string_list const new_group(segments.mid(0, j + 1));
                     QString const new_name(new_group.join("::"));
                     QDomElement new_group_tag(doc.createElement("group"));
                     new_group_tag.setAttribute("name", new_name);
@@ -413,38 +470,10 @@ void test_plugin::on_replace_token(content::path_info_t& ipath, QString const& p
             group_tag.appendChild(new_test_tag);
         }
 
-        QString const doc_str(doc.toString(-1));
-        if(doc_str.isEmpty())
-        {
-            throw snap::snap_logic_exception("somehow the memory XML document for the body XSLT is empty");
-        }
-
-//std::cerr << "***\n*** test list = [" << doc.toString() << "]\n***\n";
-
-        snap::snap_child::post_file_t file;
-        file.set_filename("qrc://xsl/test-plugin/test-plugin-parser.xsl");
-        if(!f_snap->load_file(file))
-        {
-            throw snap::snap_logic_exception("somehow the test-plugin-parser.xsl file could not be loaded from our resources.");
-        }
-        QString const test_plugin_parser_xsl(QString::fromUtf8(file.get_data(), file.get_size()));
-
-        QXmlQuery q(QXmlQuery::XSLT20);
-        QMessageHandler msg;
-        msg.set_xsl(test_plugin_parser_xsl);
-        msg.set_doc(doc_str);
-        q.setMessageHandler(&msg);
-        q.setFocus(doc_str);
-        // set variables
-        //q.bindVariable("...", QVariant(...));
-        q.setQuery(test_plugin_parser_xsl);
-
-        QBuffer output;
-        output.open(QBuffer::ReadWrite);
-        QHtmlSerializer html(q.namePool(), &output);
-        q.evaluateTo(&html);
-
-        token.f_replacement = QString::fromUtf8(output.data());
+        xslt x;
+        x.set_xsl_from_file("qrc://xsl/test-plugin/test-plugin-parser.xsl");
+        x.set_document(doc);
+        token.f_replacement = x.evaluate_to_string();
 
         // the test plugin JavaScript takes over and generates the
         // client functionality
@@ -467,7 +496,7 @@ void test_plugin::on_replace_token(content::path_info_t& ipath, QString const& p
  */
 bool test_plugin::on_path_execute(content::path_info_t& ipath)
 {
-    static_cast<void>(ipath);
+    NOTUSED(ipath);
     //f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return false;
@@ -481,10 +510,10 @@ bool test_plugin::on_path_execute(content::path_info_t& ipath)
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void test_plugin::on_process_post(QString const& uri_path)
+void test_plugin::on_process_post(QString const & uri_path)
 {
     // make sure this is a cart post
-    char const *clicked_test_name_field(get_name(name_t::SNAP_NAME_TEST_PLUGIN_TEST_NAME_FIELD));
+    char const * clicked_test_name_field(get_name(name_t::SNAP_NAME_TEST_PLUGIN_TEST_NAME_FIELD));
     if(!f_snap->postenv_exists(clicked_test_name_field))
     {
         return;
@@ -516,6 +545,7 @@ void test_plugin::on_process_post(QString const& uri_path)
         }
         catch(test_plugin_suite::test_plugin_suite_assert_failed const& e)
         {
+            success = false;
             end_date = f_snap->get_current_date();
             messages::messages::instance()->set_error(
                 "Test Assertion Failed",
@@ -526,6 +556,7 @@ void test_plugin::on_process_post(QString const& uri_path)
         }
         catch(std::exception const& e)
         {
+            success = false;
             end_date = f_snap->get_current_date();
             messages::messages::instance()->set_error(
                 "Test Failed",
@@ -556,7 +587,7 @@ void test_plugin::on_process_post(QString const& uri_path)
     test_results_row->cell(get_name(name_t::SNAP_NAME_TEST_PLUGIN_SUCCESS))->setValue(success_char);
 
     // create the AJAX response
-    server_access::server_access *server_access_plugin(server_access::server_access::instance());
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
     server_access_plugin->create_ajax_result(ipath, success);
     server_access_plugin->ajax_append_data(get_name(name_t::SNAP_NAME_TEST_PLUGIN_RESULT_FIELD), result.toUtf8());
     QString const start_date_str(dbutils::microseconds_to_string(start_date, false));

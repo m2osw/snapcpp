@@ -23,7 +23,7 @@
  * our lexer as a reference to the outter selectors in order to write an
  * expression such as:
  *
- * \code
+ * \code{.scss}
  *      a {
  *          color: #00f;  // blue when not hovered
  *
@@ -33,30 +33,18 @@
  *      }
  * \endcode
  *
- * There are a few other extensions too such as support for C++ comments.
- *
- * Some tokens are also managed in a slightly different way. For example,
- * CSS 3 handles the '+' and '-' signs as being part of numbers. In our
- * lexer, these are separate operator so we can use them in operations
- * without too much trouble. In the following, -25px is a dimension with
- * value -25 in CSS 3. For us, it is a DASH followed by a DIMENSION.
- *
- * \code
- *      div.box {
- *          box: 1000px/3-25px;
- *      }
- * \endcode
+ * There are a few other extensions too, such as support for C++ comments.
  *
  * \sa \ref lexer_rules
  */
 
 #include "csspp/lexer.h"
 
-#include "csspp/error.h"
 #include "csspp/exceptions.h"
 #include "csspp/unicode_range.h"
 
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 
 namespace csspp
@@ -85,7 +73,22 @@ node::pointer_t lexer::next_token()
             return node::pointer_t(new node(node_type_t::EOF_TOKEN, f_start_position));
 
         case '=':
-            return node::pointer_t(new node(node_type_t::EQUAL, f_start_position));
+            {
+                wide_char_t const n(getc());
+                if(n != '=')
+                {
+                    ungetc(n);
+                }
+                else
+                {
+                    // really warn about it?
+                    error::instance() << f_position
+                            << "we accepted '==' instead of '=' in an expression, you probably want to change the operator to just '=', though."
+                            << error_mode_t::ERROR_WARNING;
+                }
+
+                return node::pointer_t(new node(node_type_t::EQUAL, f_start_position));
+            }
 
         case ',':
             return node::pointer_t(new node(node_type_t::COMMA, f_start_position));
@@ -433,6 +436,7 @@ node::pointer_t lexer::next_token()
                 }
                 ungetc(n);
             }
+            /*FALLTHROUGH*/
         case '\\':
         case '@':
             {
@@ -488,15 +492,15 @@ wide_char_t lexer::mbtowc(char const * s)
         // ASCII is the same in UTF-8
         return c;
     }
-    if(c >= 0xF8)
-    {
-        error::instance() << f_start_position << "byte U+" << error_mode_t::ERROR_HEX << c << " not valid in a UTF-8 stream." << error_mode_t::ERROR_ERROR;
-        return 0xFFFD;
-    }
     wide_char_t wc(0);
     size_t cnt(0);
     if(c >= 0xF0)
     {
+        if(c >= 0xF8)
+        {
+            error::instance() << f_start_position << "byte U+" << error_mode_t::ERROR_HEX << c << " not valid in a UTF-8 stream." << error_mode_t::ERROR_ERROR;
+            return 0xFFFD;
+        }
         wc = c & 0x07;
         cnt = 3;
     }
@@ -725,7 +729,7 @@ void lexer::ungetc(wide_char_t c)
     }
 
     // make sure we do not overflow the buffer
-    if(f_ungetc_pos >= sizeof(f_ungetc))
+    if(f_ungetc_pos >= sizeof(f_ungetc) / sizeof(f_ungetc[0]))
     {
         // this error should never happen
         throw csspp_exception_logic("lexer called ungetc() too many times and ran out of space"); // LCOV_EXCL_LINE
@@ -819,6 +823,7 @@ wide_char_t lexer::escape()
 node::pointer_t lexer::identifier(wide_char_t c)
 {
     std::string id;
+    std::string lowercase_id;
     node_type_t type(node_type_t::IDENTIFIER);
 
     if(c == '%')
@@ -835,6 +840,7 @@ node::pointer_t lexer::identifier(wide_char_t c)
     if(c == '-')
     {
         id += "-";
+        lowercase_id += "-";
         c = getc();
     }
 
@@ -843,12 +849,14 @@ node::pointer_t lexer::identifier(wide_char_t c)
         c = escape();
         if(c != 0xFFFD)
         {
-            id += wctomb(std::tolower(c));
+            id += wctomb(c);
+            lowercase_id += wctomb(std::tolower(c));
         }
     }
     else if(is_start_identifier(c))
     {
-        id += wctomb(std::tolower(c));
+        id += wctomb(c);
+        lowercase_id += wctomb(std::tolower(c));
     }
     else
     {
@@ -881,7 +889,8 @@ node::pointer_t lexer::identifier(wide_char_t c)
         {
             break;
         }
-        id += wctomb(std::tolower(c));
+        id += wctomb(c);
+        lowercase_id += wctomb(std::tolower(c));
     }
 
     // this can happen if the '\' was followed by EOF
@@ -898,7 +907,7 @@ node::pointer_t lexer::identifier(wide_char_t c)
 
     if(c == '(' && type != node_type_t::AT_KEYWORD)
     {
-        if(id == "url")
+        if(lowercase_id == "url")
         {
             // very special case of a URL
             // (this is nearly like a function except that the parameter
@@ -974,7 +983,9 @@ node::pointer_t lexer::identifier(wide_char_t c)
         {
             // special case of a function
             node::pointer_t n(new node(node_type_t::FUNCTION, f_start_position));
-            n->set_string(id);
+            // functions are always considered case insensitive
+            // (although some Microsoft old extensions were case sensitive...)
+            n->set_string(lowercase_id);
             return n;
         }
     }
@@ -984,6 +995,7 @@ node::pointer_t lexer::identifier(wide_char_t c)
     // we got an identifier
     node::pointer_t n(new node(type, f_start_position));
     n->set_string(id);
+    n->set_lowercase_string(lowercase_id);
     return n;
 }
 
@@ -1010,17 +1022,18 @@ node::pointer_t lexer::number(wide_char_t c)
             {
                 break;
             }
-            integer = integer * 10 + c - '0';
-            if(integer < 0)
+            uint64_t ni(static_cast<uint64_t>(integer) * 10 + c - '0');
+            if(ni >= 0x8000000000000000LL)
             {
                 // we accept all up to the time it goes negative
                 error::instance() << f_start_position << "integral part too large for a number." << error_mode_t::ERROR_ERROR;
             }
+            integer = static_cast<integer_t>(ni);
         }
     }
 
     // we can have a decimal part
-    integer_t decimal_part(0);
+    decimal_number_t decimal_part(0);
     decimal_number_t decimal_frac(1.0);
     if(c == '.')
     {
@@ -1031,12 +1044,9 @@ node::pointer_t lexer::number(wide_char_t c)
             {
                 break;
             }
-            decimal_part = decimal_part * 10 + c - '0';
             decimal_frac *= 10.0;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(decimal_frac == 100000000.0)
-#pragma GCC diagnostic pop
+            decimal_part += (c - '0') / decimal_frac;
+            if(decimal_frac >= 1e21 && decimal_frac < 1e22)
             {
                 error::instance() << f_start_position << "fraction too large for a decimal number." << error_mode_t::ERROR_ERROR;
             }
@@ -1177,8 +1187,7 @@ node::pointer_t lexer::number(wide_char_t c)
 //std::cerr << "+++ integer = [" << integer << "]\n"
 //          << "+++ decimal_part = [" << decimal_part << "] / [" << decimal_frac << "]\n"
 //          << "+++ exponent = [" << exponent << "]\n";
-        n->set_decimal_number(sign * (static_cast<decimal_number_t>(integer)
-                            + static_cast<decimal_number_t>(decimal_part) / decimal_frac)
+        n->set_decimal_number(sign * (static_cast<decimal_number_t>(integer) + decimal_part)
                             * pow(10.0, static_cast<decimal_number_t>(exponent)));
         if(c == '%')
         {
@@ -1296,19 +1305,19 @@ node::pointer_t lexer::comment(bool c_comment)
 {
     std::string str;
 
-    // skip leading spaces
-    for(;;)
-    {
-        wide_char_t c(getc());
-        if(!is_space(c))
-        {
-            ungetc(c);
-            break;
-        }
-    }
-
     if(c_comment)
     {
+        // skip leading spaces
+        for(;;)
+        {
+            wide_char_t const c(getc());
+            if(!is_space(c))
+            {
+                ungetc(c);
+                break;
+            }
+        }
+
         // read up to the next "*/" sequence
         for(;;)
         {
@@ -1334,6 +1343,18 @@ node::pointer_t lexer::comment(bool c_comment)
     }
     else
     {
+        // skip leading spaces, but not newlines!
+        for(;;)
+        {
+            wide_char_t const c(getc());
+            if(c != ' '
+            && c != '\t')
+            {
+                ungetc(c);
+                break;
+            }
+        }
+
         // read up to the next "\n" character, however, we also
         // save the following lines if these also are C++ like
         // comments because it certainly represents one block
@@ -1378,18 +1399,18 @@ node::pointer_t lexer::comment(bool c_comment)
         }
     }
 
-    // remove ending spaces
-    while(!str.empty() && is_space(str.back()))
-    {
-        str.pop_back();
-    }
-
     //
     // comments are kept only if marked with the special @-keyword:
     //   @preserve
     //
     if(str.find("@preserve") != std::string::npos)
     {
+        // remove ending spaces
+        while(!str.empty() && is_space(str.back()))
+        {
+            str.pop_back();
+        }
+
         node::pointer_t n(new node(node_type_t::COMMENT, f_start_position));
         n->set_string(str);
         n->set_integer(c_comment ? 1 : 0); // make sure to keep the type of comment

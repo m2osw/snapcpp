@@ -35,49 +35,27 @@ int main(int argc, char *argv[])
         //
         s->prepare_qtapp( argc, argv );
 
-        // get the proper message (Excuse the naming convension...)
-        QString msg(s->get_parameter("__BACKEND_URI"));
-        if(msg.isEmpty())
-        {
-            msg = "PING";
-        }
+        // get the message (Excuse the naming convension...)
+        //
+        QString const msg(s->get_parameter("__BACKEND_URI"));
 
-        // determine UDP server name
-        if(s->get_parameter("__BACKEND_ACTION") == "sendmail")
-        {
-            s->udp_ping("sendmail_udp_signal", msg.toUtf8().data());
-        }
-        else if(s->get_parameter("__BACKEND_ACTION") == "pagelist")
-        {
-            s->udp_ping("pagelist_udp_signal", msg.toUtf8().data());
-        }
-        else if(s->get_parameter("__BACKEND_ACTION") == "snapserver"
-             || s->get_parameter("__BACKEND_ACTION") == "server")
-        {
-            s->udp_ping("snapserver_udp_signal", msg.toUtf8().data());
-        }
-        else if(s->get_parameter("__BACKEND_ACTION") == "images")
-        {
-            s->udp_ping("images_udp_signal", msg.toUtf8().data());
-        }
-        else if(s->get_parameter("__BACKEND_ACTION") == "snapwatchdog")
-        {
-            // here is why we probably want to have one file with all the UDP info
-            snap::snap_config wc;
-            // TODO: hard coded path is totally WRONG!
-            wc.read_config_file( "/etc/snapwebsites/snapwatchdog.conf" );
-            if(wc.contains("snapwatchdog_udp_signal"))
-            {
-                s->set_parameter("snapwatchdog_udp_signal", wc["snapwatchdog_udp_signal"]);
-            }
-            s->udp_ping("snapwatchdog_udp_signal", msg.toUtf8().data());
-        }
-        else
-        {
-            std::cerr << "error: unknown/unsupported action \"" << s->get_parameter("__BACKEND_ACTION") << "\"." << std::endl;
-            s->exit(1);
-            snap::NOTREACHED();
-        }
+        // the message is expected to be a complete message as defined in
+        // our snap_communicator system, something like:
+        //
+        //    <service>/<COMMAND> param=value;...
+        //
+        snap::snap_communicator_message message;
+        message.from_message(msg);
+
+        // get the snap communicator signal IP and port (UDP)
+        //
+        QString addr("127.0.0.1");
+        int port(4041);
+        tcp_client_server::get_addr_port(s->get_parameter("snapcommunicator_signal"), addr, port, "udp");
+
+        // now send the message
+        //
+        snap::snap_communicator::snap_udp_server_message_connection::send_message(addr.toUtf8().data(), port, message);
 
         // exit via the server so the server can clean itself up properly
         s->exit(0);
@@ -85,7 +63,7 @@ int main(int argc, char *argv[])
 
         return 0;
     }
-    catch(std::exception const& e)
+    catch(std::exception const & e)
     {
         // clean error on exception
         std::cerr << "snapsignal: exception: " << e.what() << std::endl;

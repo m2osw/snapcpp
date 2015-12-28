@@ -20,8 +20,12 @@
 #include "../users/users.h"
 #include "../permissions/permissions.h"
 
+#include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
+#include "process.h"
 
+#include <csspp/csspp.h>
 #include <libtld/tld.h>
 #include <QtSerialization/QSerialization.h>
 
@@ -42,7 +46,7 @@ SNAP_PLUGIN_START(versions, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -84,21 +88,6 @@ versions::~versions()
 }
 
 
-/** \brief Initialize the versions.
- *
- * This function terminates the initialization of the versions plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void versions::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(versions, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-}
-
-
 /** \brief Get a pointer to the versions plugin.
  *
  * This function returns an instance pointer to the versions plugin.
@@ -108,9 +97,19 @@ void versions::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the versions plugin.
  */
-versions *versions::instance()
+versions * versions::instance()
 {
     return g_plugin_versions_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString versions::settings_path() const
+{
+    return "/admin/versions";
 }
 
 
@@ -126,6 +125,19 @@ versions *versions::instance()
 QString versions::description() const
 {
     return "Offers a filter of all the Snap parts Versions";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString versions::dependencies() const
+{
+    return "|content|filter|permissions|users|";
 }
 
 
@@ -161,30 +173,44 @@ int64_t versions::do_update(int64_t last_updated)
  */
 void versions::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
 
 
-
-void versions::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+/** \brief Initialize the versions.
+ *
+ * This function terminates the initialization of the versions plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void versions::bootstrap(snap_child * snap)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    f_snap = snap;
 
-    users::users *users_plugin(users::users::instance());
+    SNAP_LISTEN(versions, "filter", filter::filter, replace_token, _1, _2, _3);
+}
+
+
+
+void versions::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
+{
+    NOTUSED(ipath);
+    NOTUSED(xml);
+
+    users::users * users_plugin(users::users::instance());
     QString const user_path(users_plugin->get_user_path());
     if(token.is_token("versions::versions")
     && !user_path.isEmpty())
     {
         content::path_info_t page_ipath;
         page_ipath.set_path("admin/versions");
-        permissions::permissions *permissions_plugin(permissions::permissions::instance());
-        QString const& login_status(permissions_plugin->get_login_status());
+        permissions::permissions * permissions_plugin(permissions::permissions::instance());
+        QString const & login_status(permissions_plugin->get_login_status());
         content::permission_flag allowed;
-        path::path *path_plugin(path::path::instance());
+        path::path * path_plugin(path::path::instance());
         path_plugin->access_allowed
             ( user_path         // current user
             , page_ipath        // this page
@@ -201,8 +227,8 @@ void versions::on_replace_token(content::path_info_t& ipath, QString const& plug
 
             // Plugin Versions
             token.f_replacement += "<h3>Plugins</h3><ul>";
-            plugins::plugin_list_t const& list_of_plugins(plugins::get_plugin_list());
-            for(plugins::plugin_list_t::const_iterator it(list_of_plugins.begin());
+            plugins::plugin_map_t const & list_of_plugins(plugins::get_plugin_list());
+            for(plugins::plugin_map_t::const_iterator it(list_of_plugins.begin());
                                               it != list_of_plugins.end();
                                               ++it)
             {
@@ -224,10 +250,14 @@ bool versions::versions_libraries_impl(filter::filter::token_info_t& token)
 {
     token.f_replacement += "<h3>Libraries</h3><ul>";
 
-        // Server Version
+        // Snap! Server
     token.f_replacement += "<li>snapwebsite v";
     token.f_replacement += f_snap->get_running_server_version();
     token.f_replacement += " (compiled with " SNAPWEBSITES_VERSION_STRING ")</li>";
+        // CGI
+    token.f_replacement += "<li>Apache interface: ";
+    token.f_replacement += f_snap->snapenv("GATEWAY_INTERFACE");
+    token.f_replacement += "</li>";
         // Qt
     token.f_replacement += "<li>Qt v";
     token.f_replacement += qVersion();
@@ -248,26 +278,42 @@ bool versions::versions_libraries_impl(filter::filter::token_info_t& token)
     token.f_replacement += "<li>libtld v";
     token.f_replacement += tld_version();
     token.f_replacement += " (compiled with " LIBTLD_VERSION ")</li>";
+        // libcsspp (content is always included and cannot listen for on_versions_libraries())
+    token.f_replacement += "<li>libcsspp v";
+    token.f_replacement += csspp::csspp_library_version();
+    token.f_replacement += " (compiled with " CSSPP_VERSION ")</li>";
 
     return true;
 }
 
 
-void versions::versions_libraries_done(filter::filter::token_info_t& token)
+void versions::versions_libraries_done(filter::filter::token_info_t & token)
 {
     token.f_replacement += "</ul>";
 }
 
 
-bool versions::versions_tools_impl(filter::filter::token_info_t& token)
+bool versions::versions_tools_impl(filter::filter::token_info_t & token)
 {
     token.f_replacement += "<h3>Tools</h3><ul>";
+
+        // iplock
+    token.f_replacement += "<li>iplock ";
+    {
+        process p("check iplock version");
+        p.set_mode(p.mode_t::PROCESS_MODE_OUTPUT);
+        p.set_command("iplock");
+        p.add_argument("--version");
+        p.run();
+        token.f_replacement += p.get_output();
+    }
+    token.f_replacement += "</li>";
 
     return true;
 }
 
 
-void versions::versions_tools_done(filter::filter::token_info_t& token)
+void versions::versions_tools_done(filter::filter::token_info_t & token)
 {
     token.f_replacement += "</ul>";
 }

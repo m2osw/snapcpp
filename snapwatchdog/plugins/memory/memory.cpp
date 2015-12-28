@@ -20,6 +20,7 @@
 #include "snapwatchdog.h"
 
 #include <snapwebsites/qdomhelpers.h>
+#include <snapwebsites/not_used.h>
 
 #include <proc/sysinfo.h>
 
@@ -38,11 +39,11 @@ SNAP_PLUGIN_START(memory, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_MEMORY_NAME:
+    case name_t::SNAP_NAME_WATCHDOG_MEMORY_NAME:
         return "name";
 
     default:
@@ -75,21 +76,6 @@ memory::~memory()
 }
 
 
-/** \brief Initialize memory.
- *
- * This function terminates the initialization of the memory plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void memory::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(memory, "server", watchdog_server, process_watch, _1);
-}
-
-
 /** \brief Get a pointer to the memory plugin.
  *
  * This function returns an instance pointer to the memory plugin.
@@ -99,7 +85,7 @@ void memory::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the memory plugin.
  */
-memory *memory::instance()
+memory * memory::instance()
 {
     return g_plugin_memory_factory.instance();
 }
@@ -120,6 +106,19 @@ QString memory::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString memory::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function is ignored in the watchdog.
@@ -130,10 +129,25 @@ QString memory::description() const
  */
 int64_t memory::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
     SNAP_PLUGIN_UPDATE_INIT();
     // no updating in watchdog
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize memory.
+ *
+ * This function terminates the initialization of the memory plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void memory::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(memory, "server", watchdog_server, process_watch, _1);
 }
 
 
@@ -153,7 +167,7 @@ void memory::on_process_watch(QDomDocument doc)
     //
     // WARNING: many of the entries in /proc/meminfo do not get read
     //          by procps meminfo(); it changes quickly so many of
-    //          the entries just don't always make it in the library
+    //          the entries just do not always make it in the library
     meminfo();
 
     // simple memory data should always be available

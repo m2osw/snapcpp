@@ -39,7 +39,7 @@ namespace
 } // no name namespace
 
 
-TEST_CASE("Nth Child", "[nth-child] [constructors]")
+TEST_CASE("Nth child", "[nth-child] [constructors]")
 {
     {
         csspp::nth_child a((4LL << 32) + 3);
@@ -72,7 +72,7 @@ TEST_CASE("Nth Child", "[nth-child] [constructors]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple Nth Child", "[nth-child] [basics]")
+TEST_CASE("Simple nth child", "[nth-child] [basics]")
 {
     {
         csspp::nth_child a(-3, 9);
@@ -187,7 +187,7 @@ TEST_CASE("Simple Nth Child", "[nth-child] [basics]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Nth Child", "[nth-child] [invalid]")
+TEST_CASE("Invalid nth child", "[nth-child] [invalid]")
 {
     {
         csspp::nth_child a(5, 3);

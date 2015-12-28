@@ -21,20 +21,16 @@
 
 #include <unistd.h>
 
-#include <controlled_vars/controlled_vars.h>
-#include <QtCassandra/QCassandra.h>
-
-#include <QString>
-
 namespace snap
 {
 
 
-snap_cassandra::snap_cassandra( snap_config const& parameters )
+snap_cassandra::snap_cassandra( snap_config const & parameters )
     : f_parameters(parameters)
 {
     // empty
 }
+
 
 void snap_cassandra::connect()
 {
@@ -95,8 +91,8 @@ void snap_cassandra::connect()
         {
             if( --wait_max_tries <= 0 )
             {
-                SNAP_LOG_FATAL() << "TIMEOUT: Could not connect to remote Cassandra server at ("
-                    << f_cassandra_host << ":" << f_cassandra_port << ")!";
+                SNAP_LOG_FATAL("TIMEOUT: Could not connect to remote Cassandra server at ")
+                    (f_cassandra_host)(":")(f_cassandra_port)(".");
                 exit(1);
             }
         }
@@ -165,7 +161,7 @@ void snap_cassandra::init_context()
 
             // here each data center gets a replication factor
             QString const data_centers(f_parameters["cassandra_data_centers"]);
-            QStringList const names(data_centers.split(','));
+            snap_string_list const names(data_centers.split(','));
             bool found(false);
             int const max_names(names.size());
             for(int idx(0); idx < max_names; ++idx)
@@ -195,14 +191,15 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
 {
     if( !f_cassandra )
     {
-        SNAP_LOG_FATAL() << "Must connect to cassandra first!";
+        SNAP_LOG_FATAL("You must connect to cassandra first!");
         exit(1);
     }
 
     // we need to read all the contexts in order to make sure the
     // findContext() works
+    //
     f_cassandra->contexts();
-    const QString context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     return f_cassandra->findContext(context_name);
 }
 
@@ -225,7 +222,82 @@ bool snap_cassandra::is_connected() const
 }
 
 
+/** \brief Create a table in the snap context.
+ *
+ * The function checks whether the named table exists, if not it
+ * creates it with default parameters. The result is a shared pointer
+ * to the table in question.
+ *
+ * By default tables are just created in the Cassandra node you are
+ * connected with. In order to use the table, it has to have been
+ * propagated. This is done with a synchronization call. That call
+ * is performed by this very function the first time a table is
+ * queried if that table was created in an earlier call to this
+ * function, then the synchronization function gets called and blocks
+ * the process until the table was propagated. The current initialization
+ * process expects the create_table() to be called a first time when
+ * your plugin initial_update() is called, then called again once the
+ * table is necessary. Therefore, this create_table() uses a 'call me
+ * twice' scheme where the second call ensures the synchrony.
+ *
+ * \code
+ *      // first call creates the table
+ *      //
+ *      create_table("my_table", "This is my table");
+ *
+ *      // second call get the table pointer, if necessary, it synchronizes
+ *      //
+ *      QtCassandra::QCassandraTable::pointer_t tbl(create_table("my_table", "This is my table"));
+ * \endcode
+ *
+ * \todo
+ * Provide a structure that includes the different table parameters
+ * instead of using hard coded defaults.
+ *
+ * \param[in] table_name  The name of the new table, if it exists, nothing happens.
+ * \param[in] comment  A comment about the new table.
+ */
+QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString const & table_name, QString const & comment)
+{
+    QtCassandra::QCassandraContext::pointer_t context(get_snap_context());
+
+    // does table exist?
+    QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
+    if(!table)
+    {
+        // table is not there yet, create it
+        table = context->table(table_name);
+        table->setComment(comment);
+        table->setColumnType("Standard"); // Standard or Super
+        table->setKeyValidationClass("BytesType");
+        table->setDefaultValidationClass("BytesType");
+        table->setComparatorType("BytesType");
+        table->setKeyCacheSavePeriodInSeconds(14400);
+        table->setMemtableFlushAfterMins(60);
+        //table->setMemtableThroughputInMb(247);
+        //table->setMemtableOperationsInMillions(1.1578125);
+        table->setGcGraceSeconds(864000);
+        table->setMinCompactionThreshold(4);
+        table->setMaxCompactionThreshold(22);
+        table->setReplicateOnWrite(1);
+        table->create();
+
+        f_created_table[table_name] = true;
+    }
+    else if(f_created_table.contains(table_name))
+    {
+        // a single synchronization is enough for all created tables
+        //
+        f_created_table.clear();
+
+        // table(s) were created, we must wait for them to be synchronized
+        //
+        context->parentCassandra()->synchronizeSchemaVersions();
+    }
+    return table;
+}
+
+
 }
 // namespace snap
-
 // vim: ts=4 sw=4 et

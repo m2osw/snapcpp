@@ -19,8 +19,6 @@
 
 #include <csspp/csspp.h>
 
-#include <string>
-
 namespace csspp
 {
 

@@ -46,7 +46,6 @@
 
 #include "csspp/parser.h"
 
-#include "csspp/error.h"
 #include "csspp/exceptions.h"
 
 #include <iostream>
@@ -784,15 +783,29 @@ bool parser::is_nested_declaration(node::pointer_t n)
     }
 }
 
-bool parser::argify(node::pointer_t n)
+bool parser::argify(node::pointer_t n, node_type_t const separator)
 {
+    switch(separator)
+    {
+    case node_type_t::COMMA:
+    case node_type_t::DIVIDE:
+        break;
+
+    default:
+        throw csspp_exception_logic("argify only supports ',' and '/' as separators.");
+
+    }
+
+    // make sure there are items and these are not already arguments
     size_t const max_children(n->size());
-    if(max_children > 0)
+    if(max_children > 0
+    && !n->get_child(0)->is(node_type_t::ARG))
     {
         node::pointer_t temp(new node(node_type_t::LIST, n->get_position()));
         temp->take_over_children_of(n);
 
         node::pointer_t arg(new node(node_type_t::ARG, n->get_position()));
+        arg->set_integer(static_cast<integer_t>(separator));
         n->add_child(arg);
 
         for(size_t i(0); i < max_children; ++i)
@@ -807,7 +820,7 @@ bool parser::argify(node::pointer_t n)
                 n->add_child(child);
                 break;
             }
-            if(child->is(node_type_t::COMMA))
+            if(child->is(separator))
             {
                 // make sure to remove any WHITESPACE appearing just
                 // before a comma
@@ -841,6 +854,7 @@ bool parser::argify(node::pointer_t n)
                 }
                 // move to the next 'arg'
                 arg.reset(new node(node_type_t::ARG, n->get_position()));
+                arg->set_integer(static_cast<integer_t>(separator));
                 n->add_child(arg);
             }
             else if(!child->is(node_type_t::WHITESPACE) || !arg->empty())

@@ -21,6 +21,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "libtld/tld.h"
+#include <memory>
 #include <stdio.h>
 #include <string.h>
 
@@ -563,7 +564,7 @@ void tld_email_list::parse_all_emails()
             {
                 // comments may include other comments
                 int comment_count(1);
-                for(++s; *s != '\0' && comment_count > 0; ++s)
+                for(++s; *s != '\0'; ++s)
                 {
                     if(*s == '\\')
                     {
@@ -582,6 +583,10 @@ void tld_email_list::parse_all_emails()
                     else if(*s == ')')
                     {
                         --comment_count;
+                        if(comment_count <= 0)
+                        {
+                            break;
+                        }
                     }
                 }
                 if(*s == '\0')
@@ -935,6 +940,11 @@ tld_email_field_type tld_email_list::email_field_type(const std::string& name)
  * to make use of this function, you may find it more difficult to
  * use directly.
  *
+ * The canonicalized email address in the list of resulting emails
+ * has the domain canonicalized using the tld_domain_to_lowercase()
+ * function. This means it will be in lowercase and special characters
+ * (including UTF-8 characters) will be transformed to %XX notation.
+ *
  * \note
  * If the email is not valid, then the tld_email_t object remains
  * unchanged.
@@ -981,12 +991,19 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
             {
                 if(*s == '\0')
                 {
-                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked validity in tld_email_t::parse()");
                 }
                 if(*s == '\\')
                 {
                     // the backslash is not part of the result
                     ++s;
+                    if(*s == '\0')
+                    {
+                        // this cannot actually happen because we are
+                        // expected to capture those at the previous
+                        // level
+                        throw std::logic_error("somehow we found a \\0 in a quoted string after a backslash in tld_email_t which should not happen since it was already checked validity in tld_email_t::parse()"); // LCOV_EXCL_LINE
+                    }
                 }
                 if((static_cast<unsigned char>(*s) < ' ' && *s != '\t') || *s == 0x7F)
                 {
@@ -1008,7 +1025,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
                 switch(c)
                 {
                 case '\0':
-                    throw std::logic_error("somehow we found a \\0 in a comment in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                    throw std::logic_error("somehow we found a \\0 in a comment in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
 
                 case '(':
                     ++count;
@@ -1028,7 +1045,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
                     ++s;
                     if(!is_quoted_char(*s))
                     {
-                        throw std::logic_error("somehow we found a \\0 in a comment quoted pair in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                        throw std::logic_error("somehow we found a \\0 in a comment quoted pair in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
                     }
                     c = *s;
                     break;
@@ -1062,7 +1079,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
             {
                 if(*s == '\0')
                 {
-                    throw std::logic_error("somehow we found a \\0 in a literal domain in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                    throw std::logic_error("somehow we found a \\0 in a literal domain in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
                 }
                 if(static_cast<unsigned char>(*s) < ' ' || *s == 0x7F)
                 {
@@ -1216,7 +1233,7 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
     {
         if(!value.empty())
         {
-            // nothing can appear after the domain
+            // nothing of substance can appear after the domain
             return TLD_RESULT_INVALID;
         }
     }
@@ -1244,8 +1261,10 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
 
     // finally, verify that the domain is indeed valid
     // (i.e. proper characters, structure, and TLD)
+    // for that step we use the lowercase version
     struct tld_info info;
-    tld_result result(tld(domain.c_str(), &info));
+    std::unique_ptr<char, void(*)(char *)> lowercase_domain(tld_domain_to_lowercase(domain.c_str()), reinterpret_cast<void(*)(char *)>(&::free));
+    tld_result result(tld(lowercase_domain.get(), &info));
     if(result != TLD_RESULT_SUCCESS)
     {
         return result;
@@ -1256,13 +1275,16 @@ tld_result tld_email_list::tld_email_t::parse(const std::string& email)
     f_username = username;
     f_domain = domain;
     f_email_only = quote_string(username, '\'') + "@" + quote_string(domain, '[');  // TODO protect characters...
+
+    // the canonicalized version uses the domain name in lowercase
+    std::string canonicalized_email(quote_string(username, '\'') + "@" + quote_string(lowercase_domain.get(), '['));  // TODO protect characters...
     if(fullname.empty())
     {
-        f_canonicalized_email = f_email_only;
+        f_canonicalized_email = canonicalized_email;
     }
     else
     {
-        f_canonicalized_email = quote_string(fullname, '"') + " <" + f_email_only + ">";  // TODO protect characters...
+        f_canonicalized_email = quote_string(fullname, '"') + " <" + canonicalized_email + ">";  // TODO protect characters...
     }
 
     return TLD_RESULT_SUCCESS;
@@ -1319,7 +1341,7 @@ tld_result tld_email_list::tld_email_t::parse_group(const std::string& group)
             {
                 if(*s == '\0')
                 {
-                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                    throw std::logic_error("somehow we found a \\0 in a quoted string in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
                 }
                 switch(*s)
                 {
@@ -1334,7 +1356,7 @@ tld_result tld_email_list::tld_email_t::parse_group(const std::string& group)
                 case '\\':
                     if(!is_quoted_char(s[1]))
                     {
-                        throw std::logic_error("somehow we found a \\0 in a comment in tld_email_t which should not happen since it was already checked in tld_email_list::parse()");
+                        throw std::logic_error("somehow we found a \\0 in a comment in tld_email_t which should not happen since it was already checked in tld_email_t::parse()");
                     }
                     ++s;
                     break;
@@ -1524,6 +1546,60 @@ int tld_email_next(struct tld_email_list *list, struct tld_email *e)
  *
  * Please see the documentation of tld_email_list::tld_email_t::f_canonicalized_email
  * as this field is a pointer to that other field.
+ */
+
+/** \enum tld_email_field_type
+ * \brief Type of email as determined by the email_field_type() function.
+ *
+ * A string may represent various types of email data which are represented
+ * by the type in this enumeration.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_INVALID
+ * \brief The input of email_field_type() was not valid.
+ *
+ * An email field is expected to be valid ASCII characters. This
+ * error is returned if invalid characters are found.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_UNKNOWN
+ * \brief The input does not represent valid emails.
+ *
+ * The email_field_type() function returns this value if the input
+ * field does not represent what is considered a field with email
+ * addresses. If you are parsing many email fields, you probably
+ * want to see this as a soft error (i.e. an error saying that
+ * the field can be skip as far as the TLD library is concerned.)
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_MAILBOX_LIST
+ * \brief The input represents a mailbox list.
+ *
+ * The fields FROM and RESENT-FROM are viewed as mailbox lists.
+ * These fields may include a list of email addresses.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_MAILBOX
+ * \brief The input represents a mailbox.
+ *
+ * The fields SENDER and RESENT-SENDER are viewed as mailbox fields.
+ * These are expected to include only one email address.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST
+ * \brief The input represents a mandatory list of mailboxes.
+ *
+ * The fields TO, CC, REPLY-TO, RESENT-TO, and RESENT-CC are
+ * viewed as mailbox fields. These are expected to include
+ * any number of email addresses.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST_OPT
+ * \brief The input represents an optional list of email addresses.
+ *
+ * The fields BBC and RESENT-BBC are viewed as optional
+ * mailbox fields. These may not exist, be empty, or have
+ * one or more email addresses.
  */
 
 /** \class tld_email_list

@@ -63,63 +63,63 @@ enum class name_t
     SNAP_NAME_EPAYMENT_THANK_YOU_PATH,
     SNAP_NAME_EPAYMENT_THANK_YOU_SUBSCRIPTION_PATH
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class epayment_exception : public snap_exception
 {
 public:
-    epayment_exception(char const *        what_msg) : snap_exception("epayment", what_msg) {}
-    epayment_exception(std::string const & what_msg) : snap_exception("epayment", what_msg) {}
-    epayment_exception(QString const &     what_msg) : snap_exception("epayment", what_msg) {}
+    explicit epayment_exception(char const *        what_msg) : snap_exception("epayment", what_msg) {}
+    explicit epayment_exception(std::string const & what_msg) : snap_exception("epayment", what_msg) {}
+    explicit epayment_exception(QString const &     what_msg) : snap_exception("epayment", what_msg) {}
 };
 
 class epayment_invalid_type_exception : public epayment_exception
 {
 public:
-    epayment_invalid_type_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_invalid_type_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_invalid_type_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_type_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_type_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_type_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_cannot_set_exception : public epayment_exception
 {
 public:
-    epayment_cannot_set_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_set_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_set_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_set_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_set_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_set_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_cannot_unset_exception : public epayment_exception
 {
 public:
-    epayment_cannot_unset_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_unset_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_unset_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_unset_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_unset_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_unset_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_cannot_find_exception : public epayment_exception
 {
 public:
-    epayment_cannot_find_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_find_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_cannot_find_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_find_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_find_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_cannot_find_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_missing_product_exception : public epayment_exception
 {
 public:
-    epayment_missing_product_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_missing_product_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_missing_product_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_missing_product_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_missing_product_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_missing_product_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 class epayment_invalid_recurring_field_exception : public epayment_exception
 {
 public:
-    epayment_invalid_recurring_field_exception(char const *        what_msg) : epayment_exception(what_msg) {}
-    epayment_invalid_recurring_field_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
-    epayment_invalid_recurring_field_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_recurring_field_exception(char const *        what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_recurring_field_exception(std::string const & what_msg) : epayment_exception(what_msg) {}
+    explicit epayment_invalid_recurring_field_exception(QString const &     what_msg) : epayment_exception(what_msg) {}
 };
 
 
@@ -300,25 +300,31 @@ private:
 
 
 
-class epayment : public plugins::plugin
+class epayment
+        : public plugins::plugin
 {
 public:
                                 epayment();
                                 ~epayment();
 
+    // plugins::plugin implementation
     static epayment *           instance();
+    virtual QString             settings_path() const;
+    virtual QString             icon() const;
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
+    virtual void                bootstrap(snap_child * snap);
 
-    void                        on_bootstrap(snap_child *snap);
-    void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
-
-    name_t                      get_invoice_status(content::path_info_t & invoice_ipath);
+    // layout signals
+    void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
 
     SNAP_SIGNAL_WITH_MODE(generate_invoice, (content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment_product_list & plist), (invoice_ipath, invoice_number, plist), NEITHER);
     SNAP_SIGNAL_WITH_MODE(retrieve_invoice, (content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment_product_list & plist), (invoice_ipath, invoice_number, plist), NEITHER);
     SNAP_SIGNAL(set_invoice_status, (content::path_info_t & invoice_ipath, name_t const status), (invoice_ipath, status));
     SNAP_SIGNAL(repeat_payment, (content::path_info_t & first_invoice_url, content::path_info_t & previous_invoice_url, content::path_info_t & new_invoice_url), (first_invoice_url, previous_invoice_url, new_invoice_url));
+
+    name_t                      get_invoice_status(content::path_info_t & invoice_ipath);
 
     static recurring_t          parser_recurring_field(QString const & info);
 

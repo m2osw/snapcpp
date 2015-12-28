@@ -16,12 +16,31 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "snap_exception.h"
+
 #include <string>
 
 namespace snap
 {
 
-int levenshtein_distance(std::wstring s, std::wstring t);
+class fuzzy_string_compare_exception : public snap_exception
+{
+public:
+    explicit fuzzy_string_compare_exception(char const *        whatmsg) : snap_exception("snap_child", whatmsg) {}
+    explicit fuzzy_string_compare_exception(std::string const & whatmsg) : snap_exception("snap_child", whatmsg) {}
+    explicit fuzzy_string_compare_exception(QString const &     whatmsg) : snap_exception("snap_child", whatmsg) {}
+};
+
+class fuzzy_string_compare_exception_invalid_parameters : public fuzzy_string_compare_exception
+{
+public:
+    explicit fuzzy_string_compare_exception_invalid_parameters(char const *        whatmsg) : fuzzy_string_compare_exception(whatmsg) {}
+    explicit fuzzy_string_compare_exception_invalid_parameters(std::string const & whatmsg) : fuzzy_string_compare_exception(whatmsg) {}
+    explicit fuzzy_string_compare_exception_invalid_parameters(QString const &     whatmsg) : fuzzy_string_compare_exception(whatmsg) {}
+};
+
+int levenshtein_distance(std::wstring const & s, std::wstring const & t);
+bool strstr_with_levenshtein_distance(std::wstring const & haystack, std::wstring const & needle, int const distance);
 
 } // namespace snap
 // vim: ts=4 sw=4 et

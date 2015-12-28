@@ -26,6 +26,7 @@ namespace sessions
 enum class name_t
 {
     SNAP_NAME_SESSIONS_CHECK_FLAGS,
+    SNAP_NAME_SESSIONS_CREATION_DATE,
     SNAP_NAME_SESSIONS_DATE,
     SNAP_NAME_SESSIONS_ID,
     SNAP_NAME_SESSIONS_LOGIN_LIMIT,
@@ -78,7 +79,9 @@ public:
 
 
 
-class sessions : public plugins::plugin, public layout::layout_content
+class sessions
+        : public plugins::plugin
+        , public layout::layout_content
 {
 public:
     class session_info
@@ -105,41 +108,46 @@ public:
         // define with all the default CHECKs we want to run
         typedef controlled_vars::auto_init<check_flag_t, CHECK_HTTP_USER_AGENT> safe_check_flag_t;
 
-        session_info();
+                            session_info();
 
-        void set_session_type(session_info_type_t type);
-        void set_session_id(session_id_t session_id);
-        void set_session_key(QString const & session_key);
-        void set_session_random();
-        void set_session_random(int32_t random);
-        void set_plugin_owner(QString const & plugin_owner);
-        void set_page_path(QString const & page_path);
-        void set_page_path(content::path_info_t & page_ipath);
-        void set_object_path(QString const & object_path);
-        void set_user_agent(QString const & user_agent);
-        void set_time_to_live(int32_t time_to_live);
-        void set_time_limit(time_t time_limit);
-        void set_login_limit(time_t time_limit);
-        void set_date(int64_t date);
+        void                set_session_type(session_info_type_t type);
+        void                set_session_id(session_id_t session_id);
+        void                set_session_key(QString const & session_key);
+        void                set_session_random();
+        void                set_session_random(int32_t random);
+        void                set_plugin_owner(QString const & plugin_owner);
+        void                set_page_path(QString const & page_path);
+        void                set_page_path(content::path_info_t & page_ipath);
+        void                set_object_path(QString const & object_path);
+        void                set_user_agent(QString const & user_agent);
+        void                set_remote_addr(QString const & remote_addr);
+        void                set_time_to_live(int32_t time_to_live);
+        void                set_time_limit(time_t time_limit);
+        void                set_administrative_login_limit(time_t time_limit);
+        void                set_date(int64_t date);
+        void                set_creation_date(int64_t date);
 
-        void set_check_flags(check_flag_t flags);
-        check_flag_t add_check_flags(check_flag_t flags);
-        check_flag_t remove_check_flags(check_flag_t flags);
+        void                set_check_flags(check_flag_t flags);
+        check_flag_t        add_check_flags(check_flag_t flags);
+        check_flag_t        remove_check_flags(check_flag_t flags);
 
         session_info_type_t get_session_type() const;
-        session_id_t get_session_id() const;
-        QString const & get_session_key() const;
-        int32_t get_session_random() const;
-        QString const & get_plugin_owner() const;
-        QString const & get_page_path() const;
-        QString const & get_object_path() const;
-        QString const & get_user_agent() const;
-        int32_t get_time_to_live() const;
-        time_t get_time_limit() const;
-        time_t get_login_limit() const;
-        int64_t get_date() const;
+        session_id_t        get_session_id() const;
+        QString const &     get_session_key() const;
+        int32_t             get_session_random() const;
+        QString const &     get_plugin_owner() const;
+        QString const &     get_page_path() const;
+        QString const &     get_object_path() const;
+        QString const &     get_user_agent() const;
+        QString const &     get_remote_addr() const;
+        int32_t             get_time_to_live() const;
+        time_t              get_time_limit() const;
+        int32_t             get_ttl(int64_t now) const;
+        time_t              get_administrative_login_limit() const;
+        int64_t             get_date() const;
+        int64_t             get_creation_date() const;
 
-        static char const *session_type_to_string(session_info_type_t type);
+        static char const * session_type_to_string(session_info_type_t type);
 
     private:
         // default to SESSION_INFO_SECURE
@@ -156,29 +164,35 @@ public:
         QString                     f_page_path;
         QString                     f_object_path; // exact path to user, form, etc.
         QString                     f_user_agent;
+        QString                     f_remote_addr;
         time_to_live_t              f_time_to_live;
         ztime_t                     f_time_limit;
         ztime_t                     f_login_limit;
         controlled_vars::zint64_t   f_date;
+        controlled_vars::zint64_t   f_creation_date;
         safe_check_flag_t           f_check_flags;
     };
 
                             sessions();
                             ~sessions();
 
+    // plugins::plugin implementation
     static sessions *       instance();
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
+    virtual void            bootstrap(snap_child * snap);
 
-    void                    on_bootstrap(snap_child *snap);
-    void                    on_cell_is_secure(QString const & table, QString const & row, QString const & cell, server::secure_field_flag_t & secure);
-    void                    clean_session_table(int64_t variables_timestamp);
+    // server signals
+    void                    on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
 
-    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    // layout::layout_content implementation
+    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
 
     QString                 create_session(session_info & info);
     void                    save_session(session_info & info, bool const new_random);
     void                    load_session(QString const & session_id, session_info & info, bool use_once = true);
+    bool                    session_exists(QString const & website_key, QString const & session_key);
 
     void                    attach_to_session(session_info const & info, QString const & name, QString const & data);
     QString                 detach_from_session(session_info const & info, QString const & name);
@@ -187,6 +201,7 @@ public:
 private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
+    void                    clean_session_table(int64_t variables_timestamp);
 
     QtCassandra::QCassandraTable::pointer_t get_sessions_table();
 

@@ -17,15 +17,19 @@
 
 #include "attachment.h"
 
+#include "../content/content.h"
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 
+#include "http_strings.h"
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
 #include <QFile>
+#include <QLocale>
 
 #include "poison.h"
 
@@ -42,20 +46,20 @@ SNAP_PLUGIN_START(attachment, 1, 0)
  *
  * \return A pointer to the name.
  */
-//char const * get_name(name_t name)
-//{
-//    switch(name)
-//    {
-//    case name_t::SNAP_NAME_ATTACHMENT_...:
-//        return "attachment::...";
-//
-//    default:
-//        // invalid index
-//        throw snap_logic_exception("invalid name_t::SNAP_NAME_ATTACHMENT_...");
-//
-//    }
-//    NOTREACHED();
-//}
+char const * get_name(name_t name)
+{
+    switch(name)
+    {
+    case name_t::SNAP_NAME_ATTACHMENT_ACTION_EXTRACTFILE:
+        return "extractfile";
+
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_ATTACHMENT_...");
+
+    }
+    NOTREACHED();
+}
 
 
 
@@ -84,24 +88,6 @@ attachment::~attachment()
 }
 
 
-/** \brief Initialize the attachment.
- *
- * This function terminates the initialization of the attachment plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void attachment::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(attachment, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(attachment, "content", content::content, page_cloned, _1);
-    SNAP_LISTEN(attachment, "content", content::content, copy_branch_cells, _1, _2, _3);
-    SNAP_LISTEN(attachment, "permissions", permissions::permissions, permit_redirect_to_login_on_not_allowed, _1, _2);
-}
-
-
 /** \brief Get a pointer to the attachment plugin.
  *
  * This function returns an instance pointer to the attachment plugin.
@@ -111,9 +97,21 @@ void attachment::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the attachment plugin.
  */
-attachment *attachment::instance()
+attachment * attachment::instance()
 {
     return g_plugin_attachment_factory.instance();
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString attachment::icon() const
+{
+    return "/images/attachment/attachment-logo-64x64.png";
 }
 
 
@@ -135,6 +133,19 @@ QString attachment::description() const
 }
 
 
+/** \brief Return our dependencies
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString attachment::dependencies() const
+{
+    return "|content|message|path|permissions|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -151,7 +162,7 @@ int64_t attachment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 10, 26, 2, 58, 12, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 22, 50, 12, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -166,9 +177,28 @@ int64_t attachment::do_update(int64_t last_updated)
  */
 void attachment::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the attachment.
+ *
+ * This function terminates the initialization of the attachment plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void attachment::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(attachment, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(attachment, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(attachment, "content", content::content, page_cloned, _1);
+    SNAP_LISTEN(attachment, "content", content::content, copy_branch_cells, _1, _2, _3);
+    SNAP_LISTEN(attachment, "permissions", permissions::permissions, permit_redirect_to_login_on_not_allowed, _1, _2);
 }
 
 
@@ -189,10 +219,10 @@ void attachment::content_update(int64_t variables_timestamp)
  * \param[in] ipath  The path being checked.
  * \param[in] plugin_info  The current information about this path plugin.
  */
-void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+void attachment::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     // is that path already going to be handled by someone else?
-    // (avoid wasting time if that's the case)
+    // (avoid wasting time if that is the case)
     if(plugin_info.get_plugin()
     || plugin_info.get_plugin_if_renamed())
     {
@@ -201,13 +231,49 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
 
     // TODO: will other plugins check for their own extension schemes?
     //       (I would imagine that this plugin will support more than
-    //       just the .gz extension...)
-    QString cpath(ipath.get_cpath());
-    if(!cpath.endsWith(".gz") || cpath.endsWith("/.gz"))
+    //       just the .min.css/js and .gz extensions...)
+    //
+    QString const cpath(ipath.get_cpath());
+
+    if(cpath.endsWith(".min.css") || cpath.endsWith(".min.css.gz"))
     {
-        return;
+        if(check_for_minified_js_or_css(ipath, plugin_info, ".css"))
+        {
+            return;
+        }
     }
 
+    if(cpath.endsWith(".min.js") || cpath.endsWith(".min.js.gz"))
+    {
+        if(check_for_minified_js_or_css(ipath, plugin_info, ".js"))
+        {
+            return;
+        }
+    }
+
+    if(cpath.endsWith(".gz") && !cpath.endsWith("/.gz"))
+    {
+        if(check_for_uncompressed_file(ipath, plugin_info))
+        {
+            return;
+        }
+    }
+}
+
+
+/** \brief Check whether we have an uncompressed version of the file.
+ *
+ * This entry allows us to return an uncompressed version of the file
+ * if it exists.
+ *
+ * \param[in,out] ipath  The path being checked.
+ * \param[in,out] plugin_info  The dynamic plugin information.
+ *
+ * \return true if this was a match.
+ */
+bool attachment::check_for_uncompressed_file(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
+{
+    QString cpath(ipath.get_cpath());
     cpath = cpath.left(cpath.length() - 3);
     content::path_info_t attachment_ipath;
     attachment_ipath.set_path(cpath);
@@ -215,13 +281,13 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
     if(!revision_table->exists(attachment_ipath.get_revision_key())
     || !revision_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
-        return;
+        return false;
     }
 
     QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
-        return;
+        return false;
     }
 
     QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
@@ -232,12 +298,266 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
         //       file on the fly (but we wouldd have to save it and
         //       that could cause problems with the backend if we
         //       were to not use the maximum compression?)
-        return;
+        return false;
     }
 
     // tell the path plugin that we know how to handle this one
     plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
     ipath.set_parameter("attachment_field", content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED));
+
+    return true;
+}
+
+
+/** \brief Check whether we have a minified version of the file.
+ *
+ * This entry allows us to return a minified version of a file
+ * if it exists, or even a minified compressed version.
+ *
+ * \param[in] ipath  The path being checked.
+ * \param[in] plugin_info  The dynamic plugin information.
+ * \param[in] extension  The expected extension without the .gz, it MUST start
+ *                       with a period.
+ *
+ * \return true if this was a match.
+ */
+bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info, QString const & extension)
+{
+    // break up the full filename as a path and a versioned_filename
+    //
+    snap_string_list segments(ipath.get_segments());
+    if(segments.isEmpty())
+    {
+        // that should never occur
+        return false;
+    }
+    QString versioned_filename(segments.back());
+    segments.pop_back();
+    QString const path(segments.join("/") + "/");
+
+    // depending on whether we have the .gz, define which fields we want to
+    // check for the data of this file
+    bool must_be_compressed(false);
+    content::name_t name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED);
+    content::name_t fallback_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
+    if(versioned_filename.endsWith(".min" + extension))
+    {
+        versioned_filename = versioned_filename.left(versioned_filename.length() - extension.length() - 4);
+
+        // we can use the encoded version only if the client supports gzip
+        // (note that we are not going to be using the best possible
+        // compression in this case...)
+        snap_child::compression_vector_t compressions(f_snap->get_compression());
+        if(compressions.contains(snap_child::compression_t::COMPRESSION_GZIP))
+        {
+            name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED_GZIP_COMPRESSED;
+            fallback_name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED;
+        }
+        //http_strings::WeightedHttpString encodings(f_snap->snapenv("HTTP_ACCEPT_ENCODING"));
+        //float const gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
+        //if(gzip_level > 0.0)
+        //{
+        //    name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED_GZIP_COMPRESSED;
+        //    fallback_name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED;
+        //}
+    }
+    else //if(last_segment.endsWith(".min" + extension + ".gz"))
+    {
+        versioned_filename = versioned_filename.left(versioned_filename.length() - extension.length() - 7);
+
+        name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED_GZIP_COMPRESSED;
+        fallback_name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED;
+
+        // the user asked for the .gz version and if not available we have
+        // to fail...
+        must_be_compressed = true;
+    }
+
+    // We may have 2 or 3 segments in the basename:
+    //      <filename>_<version>
+    //      <filename>_<version>_<browser>
+    //
+    // We want to at least find the version for now
+    //
+    // TODO: handle the browser...
+    //
+    QString filename;
+    QString version;
+    QString browser;
+    snap_string_list version_segments(versioned_filename.split('_'));
+    if(version_segments.size() == 1)
+    {
+        // the version is missing... (keep for now because we still have
+        // old entries that do not include the version of the file...)
+        //
+        // TODO: once we reset the database another time, we can come back
+        //       to this one and transform it into an error (i.e. missing
+        //       version in JS/CSS filename)
+        //
+        filename = version_segments[0];
+    }
+    else if(version_segments.size() == 2)
+    {
+        // the version is specified, break it up accordingly
+        filename = version_segments[0];
+        version = version_segments[1];
+    }
+    else if(version_segments.size() == 3)
+    {
+        // the version is specified, break it up accordingly
+        filename = version_segments[0];
+        version = version_segments[1];
+        browser = version_segments[2];
+    }
+    else
+    {
+        // any other combo is considered invalid
+        throw attachment_exception_invalid_filename(QString("A JavaScript or CSS filename must include 2 to 3 segments: <name>_<version>[_<browser>], filename \"%1\"is invalid").arg(ipath.get_cpath()));
+    }
+
+    // check that the file exists
+    //
+    // filename now includes:
+    //
+    //      . the path
+    //      . the filename with:
+    //          . NO special extensions, and
+    //          . NO version, and
+    //          . NO browser
+    //      . the extension
+    //
+    content::path_info_t attachment_ipath;
+    attachment_ipath.set_path(path + filename + extension);
+
+    // verify the revision, if different, then we want to
+    // use the one that the user specified and not the most
+    // recent one
+    if(attachment_ipath.get_extended_revision() != version)
+    {
+        // 'filename' is used only in case of errors
+        attachment_ipath.force_extended_revision(version, filename);
+    }
+
+    content::content * content_plugin(content::content::instance());
+
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QString const revision_key(attachment_ipath.get_revision_key());
+    if(!revision_table->exists(revision_key)
+    || !revision_table->row(revision_key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
+    {
+        return false;
+    }
+
+    // retrieve the md5 which has to be exactly 16 bytes
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    if(attachment_key.size() != 16)
+    {
+        return false;
+    }
+
+    // check that this file exists in the "files" table
+    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    if(!files_table->exists(attachment_key.binaryValue()))
+    {
+        return false;
+    }
+
+    for(;;)
+    {
+        // check for the minified version
+        bool const field_name(files_table->row(attachment_key.binaryValue())->exists(content::get_name(name)));
+        bool field_fallback_name(false);
+        if(!field_name)
+        {
+            field_fallback_name = files_table->row(attachment_key.binaryValue())->exists(content::get_name(fallback_name));
+        }
+        if(field_name || field_fallback_name)
+        {
+            // this compression only applies if no errors occur later
+            if(name == content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED_GZIP_COMPRESSED
+            && !must_be_compressed)
+            {
+                f_snap->set_header("Content-Encoding", "gzip", snap_child::HEADER_MODE_NO_ERROR);
+            }
+
+            // retrieve the version which is a unique number
+            f_snap->set_header("ETag", version);
+
+            // user may mark a page with the "no-cache" type in which case
+            // we want to skip on setting up the cache
+            //
+            // this makes me think that we need a cache control defined in
+            // the content plugin
+            //
+            {
+                // this is considered a valid entry so we can setup the
+                // cache to last "forever"; a script with its version
+                // NEVER changes; you always have to bump the version
+                // to get the latest changes
+                //
+                cache_control_settings & server_cache_control(f_snap->server_cache_control());
+                server_cache_control.set_max_age(-1);
+                server_cache_control.set_must_revalidate(false); // default is true
+
+                // check whether this file is public (can be saved in proxy
+                // caches, i.e. is viewable by a visitor) or private (only
+                // cache on client's machine)
+                //
+                content::permission_flag result;
+                path::path::instance()->access_allowed("", attachment_ipath, "view", permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR), result);
+                server_cache_control.set_public(result.allowed());
+
+                // let the system check the various cache definitions
+                // found in the page being worked on
+                //
+                content_plugin->set_cache_control_page(attachment_ipath);
+
+                // cache control for the page
+                //
+                cache_control_settings & page_cache_control(f_snap->page_cache_control());
+                page_cache_control.set_must_revalidate(false); // default is true
+                page_cache_control.set_max_age(-1);  // TODO -- this is not too good...
+
+                // we set the ETag header and cache information so we can
+                // call the not_modified() function now;
+                //
+                // if the ETag did not change, the function does not return;
+                // instead it sends a 304 as the response to the client
+                //
+                f_snap->not_modified();
+            }
+
+            // Chrome and IE check this header for CSS and JS data
+            f_snap->set_header("X-Content-Type-Options", "nosniff");
+
+            // get the last modification time of this very version
+            QtCassandra::QCassandraValue revision_modification(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
+            QDateTime expires(QDateTime().toUTC());
+            expires.setTime_t(revision_modification.safeInt64Value() / 1000000);
+            QLocale us_locale(QLocale::English, QLocale::UnitedStates);
+            f_snap->set_header("Last-Modified", us_locale.toString(expires, "ddd, dd MMM yyyy hh:mm:ss' GMT'"), snap_child::HEADER_MODE_EVERYWHERE);
+
+            // tell the path plugin that we know how to handle this one
+            plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
+            ipath.set_parameter("attachment_field", content::get_name(field_name ? name : fallback_name));
+            ipath.set_parameter("attachment_version", version);
+            return true;
+        }
+
+        // TODO? offer an on the fly version minimized and compressed?
+
+        if(name == content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED
+        || must_be_compressed)
+        {
+            // compressed and uncompressed checked, nothing more we can do
+            break;
+        }
+
+        name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED;
+        fallback_name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA;
+    }
+
+    return false;
 }
 
 
@@ -254,24 +574,25 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool attachment::on_path_execute(content::path_info_t& ipath)
+bool attachment::on_path_execute(content::path_info_t & ipath)
 {
     // TODO: we probably do not want to check for attachments to send if the
     //       action is not "view"...
 
     // attachments should never be saved with a compression extension
     //
-    // HOWEVER, we'd like to offer a way for the system to allow extensions
+    // HOWEVER, we would like to offer a way for the system to allow extensions
     // but if we are here the system already found the page and thus found
     // it with[out] the extension as defined in the database...
     //
     QString field_name;
     content::path_info_t attachment_ipath;
     QString const renamed(ipath.get_parameter("renamed_path"));
+    char const * files_data(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA));
     if(renamed.isEmpty())
     {
         attachment_ipath = ipath;
-        field_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
+        field_name = files_data;
     }
     else
     {
@@ -279,22 +600,47 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
         //       needs to offer it... how do we do that?!
         attachment_ipath.set_path(renamed);
         field_name = ipath.get_parameter("attachment_field");
+
+        // the version may have been tweaked too?
+        QString const version(ipath.get_parameter("attachment_version"));
+        if(!version.isEmpty())
+        {
+            attachment_ipath.force_extended_revision(version, renamed);
+        }
+
+        // verify that this field is acceptable as a field name to access
+        // the data (ipath parameters can be somewhat tainted)
+        QString const starts_with(QString("%1::").arg(files_data));
+        if(field_name != files_data
+        && !field_name.startsWith(starts_with))
+        {
+            // field name not acceptable
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Unacceptable Attachment Field Name",
+                    QString("Field name \"%1\" is not acceptable to access the file data.").arg(field_name),
+                    QString("Field name is not \"%1\" and does not start with \"%2\".")
+                            .arg(field_name)
+                            .arg(starts_with));
+            NOTREACHED();
+        }
     }
 
+    // get the file MD5 which must be exactly 16 bytes
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
     QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
-    if(attachment_key.nullValue())
+    if(attachment_key.size() != 16)
     {
         // somehow the file key is not available
         f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
                 QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
-                QString("Could not find field \"%1\" of file \"%2\" (maybe renamed \"%3\").")
+                QString("Could not find field \"%2\" of file \"%3\" (maybe renamed \"%4\").")
+                        .arg(ipath.get_key())
                         .arg(field_name)
                         .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
                         .arg(renamed));
         NOTREACHED();
     }
 
+    // make sure that the data field exists
     QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
@@ -302,9 +648,11 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
         // somehow the file data is not available
         f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
                 QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
-                QString("Could not find field \"%1\" of file \"%2\".")
-                        .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA))
-                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+                QString("Could not find field \"%2\" of file \"%3\" (maybe renamed \"%4\").")
+                        .arg(ipath.get_key())
+                        .arg(field_name)
+                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
+                        .arg(renamed));
         NOTREACHED();
     }
 
@@ -351,16 +699,16 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
  */
 void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 
-    char const *attachment_reference(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
+    char const * attachment_reference(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
     QString const content_attachment_reference(QString("%1::").arg(attachment_reference));
     size_t const max_pages(tree.f_pages.size());
     for(size_t idx(0); idx < max_pages; ++idx)
     {
-        content::content::cloned_page_t const& page(tree.f_pages[idx]);
+        content::content::cloned_page_t const & page(tree.f_pages[idx]);
         size_t const max_branches(page.f_branches.size());
         for(size_t branch(0); branch < max_branches; ++branch)
         {
@@ -408,7 +756,7 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
 
 void attachment::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
-    static_cast<void>(destination_branch);
+    NOTUSED(destination_branch);
 
     QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
 
@@ -458,11 +806,11 @@ void attachment::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells
 }
 
 
-void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& path)
+void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path)
 {
     struct default_error_t
     {
-        default_error_t(snap_child *snap, snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& path)
+        default_error_t(snap_child * snap, snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path)
             : f_snap(snap)
             , f_err_code(err_code)
             , f_err_name(err_name)
@@ -471,7 +819,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         {
         }
 
-        void emit_error(QString const& more_details)
+        void emit_error(QString const & more_details)
         {
             // log the extract details, we do not need to re-log the error
             // info which the path plugin has already done
@@ -480,38 +828,21 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
                 SNAP_LOG_FATAL("attachment::on_handle_error_by_mime_type(): ")(more_details);
             }
 
-            // force header to text/html anywa
-            f_snap->set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", snap_child::HEADER_MODE_EVERYWHERE);
+            // force header to text/html anyway
+            f_snap->set_header(get_name(::snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", snap_child::HEADER_MODE_EVERYWHERE);
 
-            // get signature, if we are here, we have Cassandra so directly
-            // get that value
-            QString const site_key(f_snap->get_site_key());
-            QtCassandra::QCassandraValue site_name(f_snap->get_site_parameter(snap::get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
-            QString signature(QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue()));
-            f_snap->improve_signature(f_path, signature);
+            // generate the body
+            QString const html(f_snap->error_body(f_err_code, f_err_name, f_err_description));
 
-            // same error as in the snap_child::die() function
-            // (although with time it will certainly change...)
-            QString const html(QString("<html><head>"
-                            "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
-                            "<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\"/>"
-                            "<title>Snap Server Error</title>"
-                            "</head>"
-                            "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
-                    .arg(snap::get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
-                    .arg(static_cast<int>(f_err_code))
-                    .arg(f_err_name)
-                    .arg(f_err_description)
-                    .arg(signature));
             f_snap->output_result(snap_child::HEADER_MODE_ERROR, html.toUtf8());
         }
 
     private:
         zpsnap_child_t          f_snap;
         snap_child::http_code_t f_err_code;
-        QString const&          f_err_name;
-        QString const&          f_err_description;
-        QString const&          f_path;
+        QString const &         f_err_name;
+        QString const &         f_err_description;
+        QString const &         f_path;
     } default_err(f_snap, err_code, err_name, err_description, path);
 
     // in this case we want to return a file with the same format as the
@@ -651,7 +982,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
 
     // the actual file data now; this is defined using the MIME type
     // (and the error code?)
-    QStringList const mime_type_parts(content_type.split('/'));
+    snap_string_list const mime_type_parts(content_type.split('/'));
     if(mime_type_parts.size() != 2)
     {
         // no recovery on that one for now
@@ -736,6 +1067,92 @@ void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t
     }
 }
 
+
+/** \brief Delete all the attachments found under the specified path.
+ *
+ * This function checks all the children of the specified \p ipath and
+ * if any one of them is an attachment, it gets deleted. If the page
+ * was already marked as deleted, then nothing happens.
+ *
+ * The function returns the number of files deleted. If the page
+ * at \p ipath does not exist, then the function returns -1.
+ *
+ * \param[in,out] ipath  The path to the page of which attachments are
+ *                       to be deleted.
+ *
+ * \return -1 on errors, 0 or more representing the number of attachments
+ *         that got deleted.
+ */
+int attachment::delete_all_attachments(content::path_info_t & ipath)
+{
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+
+    // page exists at all?
+    if(!content_table->exists(ipath.get_key())
+    || !content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    {
+        // error: page does not exist
+        return -1;
+    }
+
+    int count(0);
+
+    // check each child, but remember that a child may not be an
+    // attachment, if may be a normal child (as in a book or
+    // a blog with various ways of defining when this and that gets
+    // posted.)
+    //
+    links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_CHILDREN), false, ipath.get_key(), ipath.get_branch());
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+    links::link_info child_info;
+    while(link_ctxt->next_link(child_info))
+    {
+        content::path_info_t child_ipath;
+        child_ipath.set_path(child_info.key());
+
+        // verify that the child exists
+        //
+        if(!content_table->exists(child_ipath.get_key())
+        || !content_table->row(child_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+        {
+            continue;
+        }
+
+        // ignore pages that are not currently normal or hidden
+        // (i.e. hidden pages can be deleted)
+        //
+        content::path_info_t::status_t const status(child_ipath.get_status());
+        if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL
+        && status.get_state() != content::path_info_t::status_t::state_t::HIDDEN)
+        {
+            continue;
+        }
+
+        // check whether we have an attachment key in the revision
+        // (it has to be there if this page represents an attachment)
+        //
+        // TBD: Should we check for other clues?
+        //      1. page owner could be anything, but if attachment, then
+        //         we know for sure that it is an attachment
+        //      2. the page is marked as being final (content::final == 1)
+        //      3. branch includes one or more back references
+        //
+        QtCassandra::QCassandraValue const attachment_key(revision_table->row(child_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+        if(attachment_key.nullValue())
+        {
+            // not considered an attachment, leave this one alone
+            continue;
+        }
+
+        // okay, we consider this child to be an attachment, delete!
+        content_plugin->trash_page(child_ipath);
+        ++count;
+    }
+
+    return count;
+}
 
 
 SNAP_PLUGIN_END()

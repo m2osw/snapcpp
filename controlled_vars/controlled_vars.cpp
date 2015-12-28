@@ -1401,6 +1401,8 @@ void print_header(const char *filename, const char *upper, int flags)
 	fprintf(out, "#elif defined(__GNUC__)\n");
 	fprintf(out, "#if (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || (__GNUC__ >= 4)\n");
 	fprintf(out, "#pragma once\n");
+	fprintf(out, "#pragma GCC diagnostic push\n");
+	fprintf(out, "#pragma GCC diagnostic ignored \"-Wsign-compare\"\n");
 	fprintf(out, "#endif\n");
 	fprintf(out, "#endif\n");
 	if((flags & PRINT_FLAG_NO_NAMESPACE) == 0) {
@@ -1435,6 +1437,8 @@ void print_footer(int flags)
 	}
 	fprintf(out, "#ifdef _MSC_VER\n");
 	fprintf(out, "#pragma warning(pop)\n");
+	fprintf(out, "#elif defined(__GNUC__)\n");
+	fprintf(out, "#pragma GCC diagnostic pop\n");
 	fprintf(out, "#endif\n");
 	fprintf(out, "#endif\n");
 }

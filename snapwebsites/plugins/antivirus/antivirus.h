@@ -16,8 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../content/content.h"
-#include "../form/form.h"
+#include "../layout/layout.h"
 #include "../versions/versions.h"
 
 namespace snap
@@ -28,9 +27,10 @@ namespace antivirus
 
 enum class name_t
 {
-    SNAP_NAME_ANTIVIRUS_SCAN_ARCHIVE
+    SNAP_NAME_ANTIVIRUS_ENABLE,
+    SNAP_NAME_ANTIVIRUS_SETTINGS_PATH
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class antivirus_exception : public snap_exception
@@ -43,23 +43,29 @@ public:
 
 
 
-class antivirus : public plugins::plugin, public layout::layout_content
+class antivirus
+        : public plugins::plugin
+        , public layout::layout_content
 {
 public:
-    static const sessions::sessions::session_info::session_id_t ANTIVIRUS_SESSION_ID_SETTINGS = 1;      // settings-form.xml
-
                             antivirus();
                             ~antivirus();
 
+    // plugins::plugin implementation
     static antivirus *      instance();
+    virtual QString         icon() const;
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
+    virtual void            bootstrap(snap_child * snap);
 
-    void                    on_bootstrap(snap_child * snap);
-    //virtual bool            on_path_execute(QString const & url);
-    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    //void                    on_generate_page_content(content::path_info_t & cpath, QDomElement& page, QDomElement& body, QString const & ctemplate);
+    // layout::layout_content implementation
+    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
+
+    // content signals
     void                    on_check_attachment_security(content::attachment_file const & file, content::permission_flag & secure, bool const fast);
+
+    // versions signals
     void                    on_versions_tools(filter::filter::token_info_t & token);
 
 private:

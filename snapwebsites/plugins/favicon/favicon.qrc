@@ -22,8 +22,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>content.xml</file>
     <file>snap-favicon.ico</file>
   </qresource>
-  <qresource prefix="/xml/favicon">
-    <file>settings-form.xml</file>
+  <qresource prefix="/xml/editor">
+    <file>favicon-settings-page.xml</file>
+  </qresource>
+  <qresource prefix="/xsl/layout">
+    <file>favicon-settings-parser.xsl</file>
+  </qresource>
+  <qresource prefix="/css/favicon">
+    <file>favicon.css</file>
   </qresource>
 </RCC>
 <!--

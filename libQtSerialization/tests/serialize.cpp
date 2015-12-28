@@ -9,7 +9,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2012 Made to Order Software Corp.
+ *      Copyright (c) 2012-2015 Made to Order Software Corp.
  *
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -43,6 +43,8 @@
 #include <QSharedPointer>
 
 #include <QDebug>
+
+#include <iostream>
 
 
 /*******************************************
@@ -190,7 +192,11 @@ void test1()
         T1C c;
         c.init_values();
         QFile out("serialize1.xml");
-        out.open(QIODevice::WriteOnly);
+        if(out.open(QIODevice::WriteOnly))
+        {
+            std::cerr << "error: could not open serialize1.xml output test file." << std::endl;
+            exit(1);
+        }
         QtSerialization::QWriter w(out, "serialize1", 2, 3);
         c.write(w);
     } // destruction of writer finishes the serialization
@@ -199,7 +205,11 @@ void test1()
         T1C c;
         // c.verify(); // here it fails with all "it is 0"
         QFile in("serialize1.xml");
-        in.open(QIODevice::ReadOnly);
+        if(!in.open(QIODevice::ReadOnly))
+        {
+            std::cerr << "error: could not open serialize1.xml input test file." << std::endl;
+            exit(1);
+        }
         QtSerialization::QReader r(in);
         QtSerialization::QComposite comp;
         QtSerialization::QFieldTag test1(comp, "test1", &c);
@@ -402,7 +412,11 @@ void test2()
         T2C1 c;
         c.init_values();
         QFile out("serialize2.xml");
-        out.open(QIODevice::WriteOnly);
+        if(!out.open(QIODevice::WriteOnly))
+        {
+            std::cerr << "error: could not open serialize2.xml output test file." << std::endl;
+            exit(1);
+        }
         QtSerialization::QWriter w(out, "serialize2", 5, 17);
         c.write(w);
     }
@@ -410,7 +424,11 @@ void test2()
         T2C1 c;
         // c.verify(); // here it fails with all "it is 0"
         QFile in("serialize2.xml");
-        in.open(QIODevice::ReadOnly);
+        if(!in.open(QIODevice::ReadOnly))
+        {
+            std::cerr << "error: could not open serialize2.xml input test file." << std::endl;
+            exit(1);
+        }
         QtSerialization::QReader r(in);
         QtSerialization::QComposite comp;
         QtSerialization::QFieldTag test2(comp, "test2.1", &c);
@@ -583,7 +601,11 @@ void test3()
         T3C1 c;
         c.init_values();
         QFile out("serialize3.xml");
-        out.open(QIODevice::WriteOnly);
+        if(!out.open(QIODevice::WriteOnly))
+        {
+            std::cerr << "error: could not open serialize3.xml output test file." << std::endl;
+            exit(1);
+        }
         QtSerialization::QWriter w(out, "serialize3", 3, 8723);
         c.write(w);
     }
@@ -591,7 +613,11 @@ void test3()
         T3C1 c;
         // c.verify(); // here it fails with all "it is 0"
         QFile in("serialize3.xml");
-        in.open(QIODevice::ReadOnly);
+        if(!in.open(QIODevice::ReadOnly))
+        {
+            std::cerr << "error: could not open serialize3.xml input test file." << std::endl;
+            exit(1);
+        }
         QtSerialization::QReader r(in);
         QtSerialization::QComposite comp;
         QtSerialization::QFieldTag test3(comp, "test3.1", &c);

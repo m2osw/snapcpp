@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.355
+ * Version: 0.0.3.471
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -248,6 +248,10 @@
  *                                          |                           |
  *                                          +---------------------------+
  * \endcode
+ *
+ * An interesting talk about what a good editor should be considered to be:
+ *
+ * https://medium.com/medium-eng/why-contenteditable-is-terrible-122d8a40e480#.qep2uqp7k
  */
 
 
@@ -747,6 +751,11 @@ snapwebsites.EditorSelection =
  *      virtual function saving(editor_widget: Object, data: EditorWidgetTypeBase.SaveData) : void;
  *      virtual function resetValue(editor_widget: Object) : void;
  *      virtual function setValue(editor_widget: Object, value: Object) : void;
+ *
+ *  private:
+ *      var ajaxReason_: string = "";
+ *      var ajaxWidget_: EditorWidget = "";
+ *      var serverAccess_: ServerAccess = null;
  *  };
  * \endcode
  *
@@ -790,6 +799,52 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeBase, snapwebsites.ServerAcce
  * @typedef {{html: string, result: string}}
  */
 snapwebsites.EditorWidgetTypeBase.SaveData;
+
+
+/** \brief Defines what the serverAccess_ object is used for.
+ *
+ * The ajaxReason_ is a string that represents this widget doing
+ * with the current AJAX request. This is used whenever we receive
+ * the serverAccessSuccess(), serverAccessError(), and
+ * serverAccessComplete() functions.
+ *
+ * By default, it is set to the empty string, meaning that no AJAX
+ * is going on.
+ *
+ * @type {string}
+ * @private
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.ajaxReason_ = "";
+
+
+/** \brief Hold a reference to the widget in link with the last AJAX request.
+ *
+ * Whenever the editor needs to send an AJAX request, it saves the
+ * reason in ajaxReason_ and the concerned width in ajaxWidget_.
+ *
+ * @type {snapwebsites.EditorWidget}
+ * @private
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.ajaxWidget_ = null;
+
+
+/** \brief A server access object.
+ *
+ * This object is used differently depending on the widget and user
+ * actions.
+ *
+ * For example, EditorWidgetTypeDroppedFileWithPreview makes use of this
+ * server to check on the validity, type, etc. of the dropped file.
+ *
+ * \note
+ * This serverAccess_ object is shared between all the drop widget.
+ * For this reason, we have another field, ajaxReason_, which tells
+ * us what the serverAccess_ is.
+ *
+ * @type {snapwebsites.ServerAccess}
+ * @private
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.serverAccess_ = null;
 
 
 /** \brief Retrieve the name of this widget type.
@@ -1188,6 +1243,8 @@ snapwebsites.EditorBase.prototype.getWidgetType = function(type_name)
  */
 snapwebsites.EditorLinkDialog = function(editor_base)
 {
+    var that = this;
+
     this.editorBase_ = editor_base;
 
     // TODO: add support for a close without saving the changes!
@@ -1207,7 +1264,7 @@ snapwebsites.EditorLinkDialog = function(editor_base)
     jQuery("#snap_editor_link_ok").click(function(e)
         {
             e.preventDefault();
-            this.close();
+            that.close();
         });
 
     return this;
@@ -1281,7 +1338,9 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
         focusItem,
         pos,
         height,
-        left;
+        left,
+        title,
+        z;
 
     if(links.length > 0)
     {
@@ -1289,7 +1348,15 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
         // it is already the anchor, we can use the text here
         // in this case we also have a URL and possibly a title
         jQuery("#snap_editor_link_url").val(snapwebsites.castToString(jtag.attr("href"), "href in #snap_editor_link_url"));
-        jQuery("#snap_editor_link_title").val(snapwebsites.castToString(jtag.attr("title"), "title in #snap_editor_link_title"));
+
+        // the title is not mandatory so we may get "undefined"
+        title = jtag.attr("title");
+        if(typeof title == "string")
+        {
+            jQuery("#snap_editor_link_title").val(snapwebsites.castToString(title, "title in #snap_editor_link_title"));
+        }
+
+        // the target is also optional
         new_window = jtag.attr("target") === "_blank";
     }
     else
@@ -1330,9 +1397,15 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
     {
         left = 10;
     }
+    snapwebsites.PopupInstance.darkenPage(150, false);
     this.linkDialogPopup_.css("left", left);
-    this.linkDialogPopup_.fadeIn(300,function(){jQuery(focusItem).focus();});
-    snapwebsites.PopupInstance.darkenPage(150, true);
+    this.linkDialogPopup_.css("z-index", 0);
+    z = jQuery("div.zordered").maxZIndex() + 1;
+    this.linkDialogPopup_.css("z-index", z);
+    this.linkDialogPopup_.fadeIn(300, function()
+        {
+            jQuery(focusItem).focus();
+        });
 };
 
 
@@ -1345,7 +1418,7 @@ snapwebsites.EditorLinkDialog.prototype.close = function()
 {
     var url, links, jtag, text, title, new_window;
 
-    snapwebsites.EditorInstance.linkDialogPopup_.fadeOut(150);
+    this.linkDialogPopup_.fadeOut(150);
     snapwebsites.PopupInstance.darkenPage(-150, false);
 
     this.editorBase_.refocus();
@@ -1497,7 +1570,7 @@ snapwebsites.EditorToolbar.toolbarButtons_ = // static const
     ["subscript", "Subscript (Ctrl-Shift-B)", 0x10042],
     ["superscript", "Superscript (Ctrl-Shift-P)", 0x10050],
     ["|", "|"],
-    ["createLink", "Manage Link (Ctrl-L)", 0x6004C, "http://snapwebsites.org/", snapwebsites.EditorToolbar.prototype.callbackLinkDialog_],
+    ["createLink", "Manage Link (Ctrl-L)", 0x6004C, "http://snapwebsites.org/" /*, snapwebsites.EditorToolbar.prototype.callbackLinkDialog_*/],
     ["unlink", "Remove Link (Ctrl-K)", 0x2004B],
     ["|", "-"],
     ["insertUnorderedList", "Bulleted List (Ctrl-Q)", 0x51],
@@ -1531,7 +1604,7 @@ snapwebsites.EditorToolbar.toolbarButtons_ = // static const
     ["fontName", null, 0x10046, "Arial"],       // Ctrl-Shift-F -- TODO add font selector
     ["foreColor", null, 0x52, "red"],           // Ctrl-R -- TODO add color selector
     ["hiliteColor", null, 0x10048, "#ffff00"],  // Ctrl-Shift-H -- TODO add color selector
-    ["*", null, 0x54, "", snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_]            // Ctrl-T
+    ["*", null, 0x54, "" /*, snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_*/]            // Ctrl-T
 ];
 
 
@@ -1642,7 +1715,7 @@ snapwebsites.EditorToolbar.prototype.height_ = -1;
  *
  * @private
  */
-snapwebsites.EditorToolbar.prototype.toolbarTimeoutID_ = -1;
+snapwebsites.EditorToolbar.prototype.toolbarTimeoutID_ = NaN;
 
 
 /** \brief Call this function whenever the toolbar is about to be accessed.
@@ -1668,6 +1741,16 @@ snapwebsites.EditorToolbar.prototype.createToolbar_ = function()
         {
             // the name of the image always uses the original name
             originalName = snapwebsites.EditorToolbar.toolbarButtons_[idx][0];
+
+            if(originalName == "createLink")
+            {
+                snapwebsites.EditorToolbar.toolbarButtons_[idx][4] = snapwebsites.EditorToolbar.prototype.callbackLinkDialog_;
+            }
+            else if(originalName == "*")
+            {
+                snapwebsites.EditorToolbar.toolbarButtons_[idx][4] = snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_;
+            }
+
             if(msie)
             {
                 if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "hiliteColor")
@@ -1719,26 +1802,31 @@ snapwebsites.EditorToolbar.prototype.createToolbar_ = function()
         this.toolbar_ = jQuery("#toolbar");
 
         this.toolbar_
-            .click(function(e){
-                that.editorBase_.refocus();
-                e.preventDefault();
-            })
-            .mousedown(function(e){
-                // XXX: this needs to be handled through a form of callback
-                snapwebsites.EditorInstance.cancelToolbarHide();
-                e.preventDefault();
-            })
-            .find(":any(.horizontal-separator .group)")
-                .click(function(){
+            .click(function(e)
+                {
                     that.editorBase_.refocus();
-                });
+                    e.preventDefault();
+                })
+            .mousedown(function(e)
+                {
+                    // XXX: this needs to be handled through a form of callback
+                    that.cancelToolbarHide();
+                    e.preventDefault();
+                })
+            .find(":any(.horizontal-separator .group)")
+                .click(function()
+                    {
+                        that.editorBase_.refocus();
+                    });
+
         this.toolbar_
             .find(".button")
-                .click(function(){
-                    var index = this.attr("button-id");
-                    that.editorBase_.refocus();
-                    that.command(index);
-                });
+                .click(function()
+                    {
+                        var index = parseInt(jQuery(this).attr("button-id"), 10);
+                        that.editorBase_.refocus();
+                        that.command(index);
+                    });
     }
 };
 
@@ -1790,7 +1878,7 @@ snapwebsites.EditorToolbar.prototype.command = function(idx)
 //#ifdef DEBUG
         if(typeof callback !== "function")
         {
-            throw new Error("snapwebsites.Editor.command() callback function \"" + callback + "\" is not a function.");
+            throw new Error("snapwebsites.Editor.command() callback #" + idx + " function \"" + callback + "\" is not a function.");
         }
 //#endif
         callback.apply(this, snapwebsites.EditorToolbar.toolbarButtons_[idx]);
@@ -2025,11 +2113,11 @@ snapwebsites.EditorToolbar.prototype.callbackLinkDialog_ = function(cmd, title, 
  */
 snapwebsites.EditorToolbar.prototype.cancelToolbarHide = function()
 {
-    if(this.toolbarTimeoutID_ != -1)
+    if(!isNaN(this.toolbarTimeoutID_))
     {
         // prevent hiding of the toolbar
         clearTimeout(this.toolbarTimeoutID_);
-        this.toolbarTimeoutID_ = -1;
+        this.toolbarTimeoutID_ = NaN;
     }
 };
 
@@ -2045,12 +2133,15 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
 {
     var that = this;
 
-    this.toolbarTimeoutID_ = setTimeout(
-        function()
-        {
-            that.toggleToolbar(false);
-        },
-        200);
+    if(isNaN(this.toolbarTimeoutID_))
+    {
+        this.toolbarTimeoutID_ = setTimeout(
+            function()
+            {
+                that.toggleToolbar(false);
+            },
+            200);
+    }
 };
 
 
@@ -2092,9 +2183,10 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      var editorBase_: EditorBase = null;
  *      var editorForm_: EditorForm = null;
  *      var widget_: jQuery = null;
- *      var widgetContent_ : jQuery = null;
+ *      var widgetContent_: jQuery = null;
  *      var name_: string;
  *      var originalData_: string = "";
+ *      var originalValue_: string = undefined;
  *      var modified_: boolean = false;
  *      var widgetType_: EditorWidgetTypeBase = null;
  * };
@@ -2208,7 +2300,7 @@ snapwebsites.EditorWidget.prototype.waitWidget_ = null;
  * @type {number}
  * @private
  */
-snapwebsites.EditorWidget.prototype.waitWidgetTimerID_ = -1;
+snapwebsites.EditorWidget.prototype.waitWidgetTimerID_ = NaN;
 
 
 /** \brief A jQuery wait widget current rotation position.
@@ -2257,6 +2349,24 @@ snapwebsites.EditorWidget.prototype.name_;
  * @private
  */
 snapwebsites.EditorWidget.prototype.originalData_ = "";
+
+
+/** \brief The original value of the widget.
+ *
+ * Some widgets use a value="..." parameter to save their value.
+ * For example, the dropdown widget shows a label to the user
+ * and uses a value for its result.
+ *
+ * By default, the original value is undefined.
+ *
+ * This is particularly important when you call the restoreValue()
+ * function which has to remove a value if present when the original
+ * was undefined.
+ *
+ * @type {!string}
+ * @private
+ */
+snapwebsites.EditorWidget.prototype.originalValue_;
 
 
 /** \brief Whether the system detected that the widget was modified.
@@ -2398,6 +2508,7 @@ snapwebsites.EditorWidget.prototype.saving = function()
 snapwebsites.EditorWidget.prototype.saved = function(data)
 {
     this.originalData_ = data.html;
+    this.originalValue_ = data.result;
     return this.wasModified(true);
 };
 
@@ -2413,6 +2524,11 @@ snapwebsites.EditorWidget.prototype.saved = function(data)
 snapwebsites.EditorWidget.prototype.discard = function()
 {
     this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
+
+    // we do NOT want a "real" castToString() call on the value attribute
+    // because we expect "undefined" to be returned in some cases
+    this.originalValue_ = /** @type {string} */ (this.widgetContent_.attr("value"));
+
     this.wasModified(true);
 };
 
@@ -2716,6 +2832,14 @@ snapwebsites.EditorWidget.prototype.restoreValue = function()
     // and then retrieve the resulting value and reapply that to
     // make sure we are on the right wave length.
     this.widgetContent_.html(this.originalData_);
+    if(typeof this.originalValue_ !== "undefined")
+    {
+        this.widgetContent_.attr("value", this.originalValue_);
+    }
+    else
+    {
+        this.widgetContent_.removeAttr("value");
+    }
 
     // generate a setValue() which handles all the necessary
     // special cases
@@ -2851,7 +2975,7 @@ snapwebsites.EditorWidget.prototype.showWaitImage = function()
         this.waitWidget_ = w.children(".widget-wait-image");
     }
 
-    if(this.waitWidgetTimerID_ === -1)
+    if(isNaN(this.waitWidgetTimerID_))
     {
         this.waitWidget_.fadeIn(1000);
         this.waitWidgetTimerID_ = setInterval(
@@ -2896,10 +3020,10 @@ snapwebsites.EditorWidget.prototype.showWaitImage = function()
  */
 snapwebsites.EditorWidget.prototype.hideWaitImage = function()
 {
-    if(this.waitWidgetTimerID_ !== -1)
+    if(!isNaN(this.waitWidgetTimerID_))
     {
         clearTimeout(this.waitWidgetTimerID_);
-        this.waitWidgetTimerID_ = -1;
+        this.waitWidgetTimerID_ = NaN;
         this.waitWidget_.fadeOut(200);
     }
 };
@@ -2946,8 +3070,8 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
  *      static const SAVE_MODE_SAVE_DRAFT: string;
  *
  * private:
- *      editorBase_: EditorBase;
- *      formWidget_: jQuery;
+ *      var editorBase_: EditorBase;
+ *      var formWidget_: jQuery;
  * };
  * \endcode
  *
@@ -3424,8 +3548,13 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function setSaving(new_status: boolean, will_redirect: boolean);
  *      function changed();
  *      function getSaveDialog() : EditorSaveDialog;
+ *      function getDefaultButton() : jQuery;
+ *      function resetTimeout();
  *      function formTimedout();
  *      function setTimedoutCallback(f: function(EditorForm));
+ *      function resetAutoReset(force: boolean);
+ *      function formAutoReset();
+ *      function setAutoResetCallback(f: function(EditorForm));
  *      function newTypeRegistered();
  *      function wasModified(recheck: boolean) : boolean;
  *      function earlyClose() : boolean;
@@ -3450,7 +3579,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      var saveFunctionOnError_: function(editor_form: EditorForm, result: snapwebsites.ServerAccessCallbacks.ResultData);
  *                                              // function called in case the save failed
  *      var savedData_: Object;                 // a set of objects to know whether things changed while saving
- *      var serverAccess_: ServerAccess;        // a ServerAccess object to send the AJAX
+ *      var serverAccess_: ServerAccess = null; // a ServerAccess object to send the AJAX
  * };
  * \endcode
  *
@@ -3707,14 +3836,50 @@ snapwebsites.EditorForm.prototype.formTimedoutCallback_ = null;
 /** \brief The identifier of the timeout used to listen to.
  *
  * This number represents the identifier of the timeout object
- * in use to timeout the form.
+ * in use to timeout the form. The function gets called once
+ * and only if it times out.
  *
  * If the timer is not setup, then the value is NaN.
+ *
+ * This number should always get set in the form initialization
+ * process since all form sessions time out at some point.
  *
  * @type {number}
  * @private
  */
 snapwebsites.EditorForm.prototype.formTimeoutId_ = NaN;
+
+
+/** \brief A callback to call when the auto-reset feature times out.
+ *
+ * This variable holds a reference to a function that the
+ * formAutoReset() function calls whenever the auto-reset times
+ * out. This may happen multiple times.
+ *
+ * The function called receives no parameters and returns nothing.
+ * You can only define one such function per form.
+ *
+ * @type {?function(snapwebsites.EditorForm)}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.formAutoResetCallback_ = null;
+
+
+/** \brief The identifier of the auto-reset used to listen to.
+ *
+ * This number represents the identifier of the auto-reset object
+ * (i.e. timer) in use to reset the form back to its default
+ * values.
+ *
+ * If the timer is not setup, then the value is NaN.
+ *
+ * Most forms should not define the auto-reset parameter, especially
+ * forms that require the user to be logged in to be accessible.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.formAutoResetId_ = NaN;
 
 
 /** \brief Retrieve the editor form name.
@@ -3867,8 +4032,8 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
 
     snapwebsites.EditorForm.superClass_.serverAccessSuccess.call(this, result);
 
-    // success! so it was saved and now that's the new original value
-    // and next "Save" doesn't do anything
+    // success! so it was saved and now that is the new original value
+    // and next "Save" does not do anything
     for(key in this.editorWidgets_)
     {
         if(this.editorWidgets_.hasOwnProperty(key))
@@ -3891,12 +4056,15 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
 
     // in case the manager of the form wants to know that a save was
     // successful (but only if we're not going to redirect the user)
-    if(!result.will_redirect && this.saveFunctionOnSuccess_)
+    if(this.saveFunctionOnSuccess_
+    && !snapwebsites.ServerAccess.willRedirect(result))
     {
         this.saveFunctionOnSuccess_(this, result);
     }
 
-    this.setSaving(false, result.will_redirect);
+    // WARNING: the result of willRedirect() CANNOT be cached since
+    //          the saveFunctionOnSuccess_() call may change it
+    this.setSaving(false, snapwebsites.ServerAccess.willRedirect(result));
 };
 
 
@@ -3997,9 +4165,14 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
             // so there is no need for us to save them again here (plus
             // in some cases it would be impossible like for file upload)
             w = this.editorWidgets_[key];
-            if((save_all || w.wasModified(true))
+            if((save_all || w.wasModified(true) || w.getWidget().hasClass("always-save"))
             && !w.getWidget().hasClass("immediate-save"))
             {
+                // once saved once in this round, make sure to always save
+                // until we get a successful save otherwise data saved in
+                // the draft may wrongly get used!
+                w.getWidget().addClass("always-save");
+
                 this.savedData_[key] = w.saving();
                 obj[key] = this.savedData_[key].result;
             }
@@ -4070,6 +4243,9 @@ snapwebsites.EditorForm.prototype.setSaving = function(new_status, will_redirect
     this.getFormWidget().toggleClass("editor-saving", new_status);
     this.saveDialog_.setStatus(!new_status);
 
+    // TODO: we already have an undarken feature in the ServerAccess object
+    //       which may very well be in conflict with this code...
+    //
     // TODO: add a condition coming from the DOM (i.e. we don't want
     //       to gray out the screen if the user is expected to be
     //       able to continue editing while saving)
@@ -4136,6 +4312,37 @@ snapwebsites.EditorForm.prototype.getSaveDialog = function()
 };
 
 
+/** \brief Retrieve the default button if there is one.
+ *
+ * This function searches for the DOM object that has class
+ * "editor-default-button". In most cases this is an anchor.
+ *
+ * The function may return an empty jQuery list.
+ *
+ * \note
+ * If the function finds more than one default button, then it
+ * returns the first that is not currently disabled.
+ *
+ * @return {jQuery}  The jQuery representation of the DOM object.
+ */
+snapwebsites.EditorForm.prototype.getDefaultButton = function()
+{
+    // search the list in default buttons for one that is not currently
+    // disabled or hidden
+    //
+    // TODO: in debug mode we should check to see whether we have more than
+    //       one answer because if so it is probably a bug (i.e. you cannot
+    //       have more than one visible default button at a time)
+    //
+    // TODO: I need to check for disabled items; but for that we need to
+    //       have an idea of how we mark an anchor as disabled and enforcing
+    //       that state... (we want to switch to using button widgets and
+    //       not direct anchors, but that is the next round.)
+    //
+    return this.getFormWidget().find(".editor-default-button").filter(":visible").first();
+};
+
+
 /** \brief Ready the widget for attachment.
  *
  * This function goes through the widgets and prepare them to be
@@ -4198,57 +4405,86 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
  * This function finishes up the global form initialization.
  * It includes the following:
  *
- * \li Setup the form auto-reset timeout feature.
+ * \li Setup a general timeout of the form. This timeout corresponds to
+ *     the timeout of the form session.
+ * \li Setup the form auto-reset feature. This is a timer that is used
+ *     to automatically reset the form after a timeout delay.
  *
  * @private
  */
 snapwebsites.EditorForm.prototype.readyForm_ = function()
 {
-    this.resetTimeout(true);
+    this.resetTimeout();
+    this.resetAutoReset(true);
 };
 
 
-/** \brief Reset the timer of this form.
+/** \brief Setup the timer to auto-disable this form.
  *
- * This function resets the timer of this form if one is setup.
- * If the \p force flag is set to true, the timer is setup
- * either way.
+ * This function setups the timer used to know when to form session
+ * times out. One the session of a form times out, sending the form
+ * to the server fails. So there is no real need to send said form.
  *
- * @param {boolean} force  Whether the timer should always be set.
+ * This timeout is set once since the session duration does not
+ * magically change. In other words, typing or moving things around
+ * will not extend the session time out.
+ *
+ * Calling this function more than once has no effect on the second
+ * call.
  */
-snapwebsites.EditorForm.prototype.resetTimeout = function(force)
+snapwebsites.EditorForm.prototype.resetTimeout = function()
 {
-    var minutes,
+    var minutes = parseFloat(this.formWidget_.attr("timeout")),
         that = this;
 
+    // already setup?
     if(!isNaN(this.formTimeoutId_))
     {
-        clearTimeout(this.formTimeoutId_);
-        this.formTimeoutId_ = NaN;
-        force = true;
+        return;
     }
 
-    if(force)
+    if(minutes <= 0 || isNaN(minutes))
     {
-        // check whether we have a widget named editor::auto_reset, if so, then
-        // setup the auto-reset feature of this form (by default we assume that
-        // the form does not timeout
-        minutes = parseFloat(this.formWidget_.attr("auto-reset"));
-        if(minutes > 0)
-        {
-            this.formTimeoutId_ = setTimeout(function()
-                {
-                    that.formTimedout();
-                },
-                minutes * 60000); // convert minutes to ms
-        }
+        // if undefined or invalid, use 24 hours, which is the
+        // default session time defined in editor.cpp
+        minutes = 1440;
     }
+
+    // reduce by 3 minutes because the timing is always a bit off
+    // between the client and the server
+    minutes -= 3;
+    if(minutes < 3)
+    {
+        // make sure we have a minimum
+        minutes = 3;
+    }
+
+    this.formTimeoutId_ = setTimeout(function()
+        {
+            that.formTimedout();
+        },
+        minutes * 60000); // convert minutes to ms
 };
 
 
-/** \brief The form just timed out.
+/** \brief The form timed out.
  *
- * This function is called whenever the form times out.
+ * This function is called whenever the form timer is triggered.
+ * The function makes sure to clear the timer (in case it gets
+ * called before the timer itself is triggered,) and then clears
+ * the contents and disable the widgets so end users cannot
+ * edit the form anymore. It would be useless to let the users
+ * still edit the content since the session timed out and
+ * sending that content to the server would fail with a
+ * session timed out error.
+ *
+ * You may call this function early to mark the form
+ * as timed out, whether or not the timer event was
+ * triggered.
+ *
+ * This function may be called more than once, although it
+ * probably should not. There is no logic within this function
+ * to know whether it was already called.
  */
 snapwebsites.EditorForm.prototype.formTimedout = function()
 {
@@ -4263,9 +4499,12 @@ snapwebsites.EditorForm.prototype.formTimedout = function()
         this.formTimeoutId_ = NaN;
     }
 
-    // first we disable all the widgets, although that does not
-    // disable buttons that the user may have created with
-    // an anchor outside of the editor supported widgets...
+    // disable and restore all the widgets
+    //
+    // Note: that does not disable buttons that the user may have
+    //       created with anchors outside of the editor supported
+    //       widgets... this can be done with the callback though
+    //
     for(key in this.editorWidgets_)
     {
         if(this.editorWidgets_.hasOwnProperty(key))
@@ -4274,6 +4513,10 @@ snapwebsites.EditorForm.prototype.formTimedout = function()
             this.editorWidgets_[key].restoreValue();
         }
     }
+
+    // make sure the form is marked as unmodified
+    // (since we just restored it all!)
+    this.wasModified(true);
 
     // then, if we have a user callback, call it
     if(this.formTimedoutCallback_)
@@ -4286,25 +4529,153 @@ snapwebsites.EditorForm.prototype.formTimedout = function()
 /** \brief Set the timed out callback for this form.
  *
  * This function is used to setup the timed out callback function.
- * This function gets called once whenever the form times out.
- * It gives you a chance to act on your form in a different way
- * than the default which is to just disable the widgets.
+ * Function which is called once whenever the form session times out.
+ * It gives you a chance to act on your form in an additional way
+ * since the default is just disabling and resetting the form widgets.
  *
  * This is particularly useful if you use buttons that are direct
  * anchors or if you want to close the popup in which you presented
  * the form to the end user.
  *
  * You may remove the current callback by setting this parameter to
- * null.
+ * \c null.
  *
- * If it is necessary to trigger more than on event, your function
- * can generate the necessary event.
+ * If it is necessary to trigger more than one event, your function
+ * is in charge of generating the necessary events.
+ *
+ * \note
+ * Your function may also want to redirect the user. But note that
+ * the form is still in memory and accessible via a tool such as
+ * FireBug. So you could use your callback to completely delete
+ * the form from your HTML tree. We may want to offer such a
+ * function here, at some point.
  *
  * @param {function(snapwebsites.EditorForm)} f  The function to be called.
  */
 snapwebsites.EditorForm.prototype.setTimedoutCallback = function(f)
 {
     this.formTimedoutCallback_ = f;
+};
+
+
+/** \brief Reset the timer to auto-reset this form.
+ *
+ * This function resets the timer used to know when to auto-reset
+ * this form. The auto-reset may not be setup in which case nothing
+ * happens.
+ *
+ * If the \p force flag is set to true, the timer is set. When
+ * set to false, it gets reset only if it was already set.
+ *
+ * \note
+ * If the form has no attribute named auto-reset with a value large
+ * than zero, then no auto-reset timer is setup by this function.
+ *
+ * @param {boolean} force  Whether the timer should be set if possible.
+ */
+snapwebsites.EditorForm.prototype.resetAutoReset = function(force)
+{
+    var minutes,
+        that = this;
+
+    if(!isNaN(this.formAutoResetId_))
+    {
+        clearTimeout(this.formAutoResetId_);
+        this.formAutoResetId_ = NaN;
+        force = true;
+    }
+
+    if(force)
+    {
+        // check whether we have an attribute named auto-reset, if so, then
+        // setup the auto-reset feature of this form (by default we assume
+        // that the form does not need to be auto-resetted)
+        minutes = parseFloat(this.formWidget_.attr("auto-reset"));
+        if(minutes > 0)
+        {
+            this.formAutoResetId_ = setTimeout(function()
+                {
+                    that.formAutoReset();
+                },
+                minutes * 60000); // convert minutes to ms
+        }
+    }
+};
+
+
+/** \brief The form auto-reset timer just timed out.
+ *
+ * This function is called whenever the form auto-reset timer
+ * times out. The function makes sure to clear the timer
+ * (in case it gets called before the auto-reset happens)
+ * and then clears any new content the user added.
+ *
+ * This function does not disable the widgets since these
+ * can still be used and submitted, if only the user can
+ * enter the data quickly enough and submit it as soon
+ * as one is done...
+ *
+ * \note
+ * This function does not setup another auto-reset timer
+ * since it would not be useful until the end user starts
+ * typing again. That's done then from the changed event.
+ */
+snapwebsites.EditorForm.prototype.formAutoReset = function()
+{
+    var key;
+
+    // reset the timer if it is still considered active
+    // (because this function is public and it may be called by a different
+    // mechanism than out internal timer)
+    if(!isNaN(this.formAutoResetId_))
+    {
+        clearTimeout(this.formAutoResetId_);
+        this.formAutoResetId_ = NaN;
+    }
+
+    // restore the value of each widget; note that in most cases
+    // only forms that come out empty should use this feature
+    // because using such a feature on a widget that was edited
+    // earlier is not useful (i.e. the content is not going to
+    // be secret...)
+    //
+    for(key in this.editorWidgets_)
+    {
+        if(this.editorWidgets_.hasOwnProperty(key))
+        {
+            this.editorWidgets_[key].restoreValue();
+        }
+    }
+
+    // then, if we have a user callback, call it
+    if(this.formAutoResetCallback_)
+    {
+        this.formAutoResetCallback_(this);
+    }
+};
+
+
+/** \brief Set the auto-reset callback for this form.
+ *
+ * This function is used to setup the auto-reset callback function.
+ * This function is called whenever the form auto-reset timer
+ * times out. It gives you a chance to act on your form in a different
+ * way than the default which is to reset the content of the form widgets.
+ *
+ * This is particularly useful if you have additional work that needs
+ * to happen when such a time out occurs.
+ *
+ * You may remove the current callback by setting this parameter to
+ * null.
+ *
+ * If it is necessary to trigger more than on event, it is your function
+ * responsibility to generate the necessary events.
+ *
+ * @param {function(snapwebsites.EditorForm)} f  The function to be called.
+ */
+snapwebsites.EditorForm.prototype.setAutoResetCallback = function(f)
+{
+    this.formAutoResetCallback_ = f;
 };
 
 
@@ -4380,7 +4751,7 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
                 name = widget_content.attr("field_name"),
                 widget = that.editorWidgets_[name];
 
-            // reset the originalData_ field
+            // reset the originalData_ & originalValue_ fields
             // TBD: we may want (need) to move this in another loop instead
             widget.discard();
         });
@@ -4454,6 +4825,7 @@ snapwebsites.EditorForm.prototype.wasModified = function(recheck)
         }
     }
 
+    this.modified_ = false;
     return false;
 };
 
@@ -4712,7 +5084,7 @@ snapwebsites.Editor.prototype.initUserActivity_ = function()
     jQuery("body")
         .on("keyup keydown cut paste", function()
             {
-                that.resetFormsTimeout();
+                that.resetFormsAutoReset();
             });
 };
 
@@ -4734,18 +5106,18 @@ snapwebsites.Editor.prototype.initUserActivity_ = function()
  * because the increment is 1 minute.
  *
  * \todo
- * The idea is that we have two timers: one is the total session lifetime
- * and the other is the form auto-reset, but this is not yet implemented
- * this way. At this time we just extend the lifetime of the form as if
- * the session was also being extended.
+ * This function resets all the forms. I wonder whether only the current
+ * form should be reset?
  */
-snapwebsites.Editor.prototype.resetFormsTimeout = function()
+snapwebsites.Editor.prototype.resetFormsAutoReset = function()
 {
+    var key = null;
+
     for(key in this.editorForms_)
     {
         if(this.editorForms_.hasOwnProperty(key))
         {
-            this.editorForms_[key].resetTimeout(false);
+            this.editorForms_[key].resetAutoReset(false);
         }
     }
 };
@@ -5091,7 +5463,8 @@ snapwebsites.Editor.prototype.registerWidgetType = function(widget_type) // virt
  *
  *  private:
  *      function droppedImageConvert_(e: ProgressEvent) : void;
- *      function droppedFile_(e: ProgressEvent) : void;
+ *      function droppedFiles_(e: ProgressEvent) : void;
+ *      function droppedFileLoaded_(e: ProgressEvent) : void;
  *  };
  * \endcode
  *
@@ -5245,7 +5618,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
     //       should only override the the droppedImage()
     //       and droppedAttachment() functions instead
     //
-    c.on("drop",function(e)
+    c.on("drop", function(e)
         {
             var i,                      // loop index
                 r,                      // file reader object
@@ -5284,51 +5657,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
             if(e.originalEvent.dataTransfer
             && e.originalEvent.dataTransfer.files.length)
             {
-                accept_images = that_element.hasClass("image");
-                accept_files = that_element.hasClass("attachment");
-                if(accept_images || accept_files)
-                {
-                    // TODO: add a test, in case length > 1 and the destination
-                    //       widget expects exactly 1 file, then generate an
-                    //       error because we cannot know which file the user
-                    //       really intended to drop (maybe we could offer a
-                    //       selection, assuming we do not lose the necessary
-                    //       info...) We could also just have a max. # of
-                    //       possible drops and if `length > max` then err.
-                    //
-                    file_loaded = function(e)
-                        {
-                            that.droppedFile_(e);
-                        };
-                    for(i = 0; i < e.originalEvent.dataTransfer.files.length; ++i)
-                    {
-                        // For images we do not really care about that info, for uploads we will
-                        // use it so I keep that here for now to not have to re-research it...
-                        //console.log("  filename = [" + e.originalEvent.dataTransfer.files[i].name
-                        //          + "] + size = " + e.originalEvent.dataTransfer.files[i].size
-                        //          + " + type = " + e.originalEvent.dataTransfer.files[i].type
-                        //          + "\n");
-
-                        // read the image so we can make sure it is indeed an
-                        // image and ignore any other type of files
-                        r = new FileReader();
-                        r.snapEditorWidget = editor_widget;
-                        r.snapEditorFile = e.originalEvent.dataTransfer.files[i];
-                        r.snapEditorIndex = i;
-                        r.snapEditorAcceptImages = accept_images;
-                        r.snapEditorAcceptFiles = accept_files;
-                        r.onload = file_loaded;
-
-                        //
-                        // TBD: right now we only check the first few bytes
-                        //      but we may want to increase that size later
-                        //      to allow for JPEG that have the width and
-                        //      height defined (much) further in the stream
-                        //      (at times at the end!?)
-                        //
-                        r.readAsArrayBuffer(r.snapEditorFile.slice(0, 64));
-                    }
-                }
+                that.droppedFiles_(editor_widget, e.originalEvent.dataTransfer.files, false);
             }
 
             return false;
@@ -5368,6 +5697,85 @@ snapwebsites.EditorWidgetType.prototype.setupEditButton = function(editor_widget
 /*jslint unparam: false */ // noempty: true -- not support in current version
 
 
+/** \brief Check all the files attached to an element.
+ *
+ * This function checks all the files that were either dragged and
+ * dropped on a DIV or selected with a Browse button (\<input type="file">).
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget that received
+ *                                                   the file.
+ * @param {FileList} files  An array of files as received by a Drag & Drop
+ *                          or an input file element.
+ * @param {boolean} display_image  Whether to display the image in the element
+ *                                 ('true' for the input file element only.)
+ *
+ * @return {boolean}  true if at least one file was added.
+ *
+ * @private
+ */
+snapwebsites.EditorWidgetType.prototype.droppedFiles_ = function(editor_widget, files, display_image)
+{
+    var that = this,
+        i,
+        r,
+        file_loaded,
+        accept_images,
+        accept_files,
+        c = editor_widget.getWidgetContent();
+
+    // make sure the element accepts something
+    accept_images = c.hasClass("image");
+    accept_files = c.hasClass("attachment");
+    if(!accept_images && !accept_files)
+    {
+        return false;
+    }
+
+    // we need 'that' so the function has to be dynamically created
+    file_loaded = function(e)
+        {
+            that.droppedFileLoaded_(e);
+        };
+
+    for(i = 0; i < files.length; ++i)
+    {
+        // TODO: ameliorate support of "plain" attachments
+        //
+        // For images we do not really care about that info, for uploads we
+        // will use it so I keep that here for now to not have to
+        // re-research it...
+        //console.log("  filename = [" + files[i].name
+        //          + "] + size = " + files[i].size
+        //          + " + type = " + files[i].type
+        //          + "\n");
+
+        // read the image so we can make sure it is indeed an
+        // image and ignore any other type of files
+        r = new FileReader();
+        r.snapEditorWidget = editor_widget;
+        r.snapEditorFile = files[i];
+        r.snapEditorIndex = i;
+        r.snapEditorAcceptImages = accept_images;
+        r.snapEditorAcceptFiles = accept_files;
+        r.snapEditorDisplayImage = display_image;
+        r.onload = file_loaded;
+
+        //
+        // TBD: right now we only check the first few bytes
+        //      but we may want to increase that size later
+        //      to allow for JPEG that have the width and
+        //      height defined (much) further in the stream
+        //      (at times at the end!?) TIFF is another format
+        //      that most often require accessing data near
+        //      the end of the file.
+        //
+        r.readAsArrayBuffer(r.snapEditorFile.slice(0, 64));
+    }
+
+    return i > 0;
+};
+
+
 /** \brief Got the content of a dropped file.
  *
  * This function analyze the dropped file content. If recognized then we
@@ -5378,7 +5786,7 @@ snapwebsites.EditorWidgetType.prototype.setupEditButton = function(editor_widget
  * @private
  * @final
  */
-snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
+snapwebsites.EditorWidgetType.prototype.droppedFileLoaded_ = function(e)
 {
     var that = this,
         r,
@@ -5419,13 +5827,9 @@ snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
     {
         // generate an error
         //
-        // TODO: we do not yet have code to dynamically generate errors
-        //       (we can show messages when created by the server, and
-        //       want the same thing with errors, but that's not yet
-        //       available...)
-        //       -- This is not correct anymore, we now do have a way to
-        //          dynamically generate errors!
-        //
+        snapwebsites.OutputInstance.displayOneMessage(
+                "File Format Not Known",
+                "We do not understand the file format of this file. As such we refuse it for security reasons.");
     }
 };
 
@@ -5452,7 +5856,7 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
     img.onload = function()
         {
             // keep this function here because it is a full closure (it
-            // uses 'img' 'that', and even 'e')
+            // uses 'img', 'that', and even 'e')
 
             var sizes,
                 limit_width = 0,
@@ -5532,12 +5936,13 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
                         h = limit_height;
                     }
                 }
+                jQuery(img)
+                    .css({top: (limit_height - h) / 2, left: (limit_width - w) / 2, position: "relative"});
             }
             jQuery(img)
                 .attr("width", w)
                 .attr("height", h)
-                .attr("filename", e.target.snapEditorFile.name)
-                .css({top: (limit_height - h) / 2, left: (limit_width - w) / 2, position: "relative"});
+                .attr("filename", e.target.snapEditorFile.name);
 
             that.droppedImage(e, img);
         };
@@ -5545,7 +5950,7 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
 
     // TBD: still a valid test? img.readyState is expected to be a string!
     //
-    // a fix for browsers that don't call onload() if the image is
+    // a fix for browsers that do not call onload() if the image is
     // already considered loaded by now
     if(img.complete || img.readyState == 4)
     {
@@ -5603,7 +6008,7 @@ snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // abstr
  *  public:
  *      function EditorWidgetTypeContentEditable();
  *      function setupEditButton(editor_widget: snapwebsites.EditorWidget) : void;
- *      function getEditButton() : string;
+ *      virtual function getEditButton() : string;
  *  };
  * \endcode
  *
@@ -5629,7 +6034,7 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeContentEditable, snapwebsites
 /** \brief Initialize an "Edit" button.
  *
  * This function adds an "Edit" button to the specified \p editor_widget.
- * By default most widgets don't get an edit button because they are
+ * By default most widgets do not get an edit button because they are
  * automatically editable (if not disabled or marked as read-only.)
  *
  * This is especially necessary on editable text areas where links would
@@ -5641,7 +6046,8 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeContentEditable, snapwebsites
  */
 snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = function(editor_widget)
 {
-    var w = editor_widget.getWidget(),
+    var that = this,
+        w = editor_widget.getWidget(),
         c = editor_widget.getWidgetContent(),
         html,
         edit_button_popup;
@@ -5665,6 +6071,12 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
 
     edit_button_popup = w.children(".editor-edit-button");
 
+    // correct the font size, unfortunately there does not seem to be
+    // a good way to do so in CSS without knowing the general document
+    // font size...
+    //
+    edit_button_popup.css("font-size", parseFloat($("html").css("font-size")));
+
     // user has to click Edit to activate the editor
     edit_button_popup.children(".activate-editor").click(function(e)
         {
@@ -5674,13 +6086,21 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
             // then remove the hover events
             w.mouseleave().off("mouseenter mouseleave");
 
-            // make the child editable
-            // TODO: either select all or at least place the cursor at the
-            //       end in some cases...
-            c.attr("contenteditable", "true");
-
-            // give the widget focus if not disabled
-            editor_widget.focus();
+            // request the original data which is about to be edited;
+            // this is important if it included any tokens or similar
+            // fields
+            that.ajaxReason_ = "request_original_data";
+            that.ajaxWidget_ = editor_widget;
+            if(!that.serverAccess_)
+            {
+                that.serverAccess_ = new snapwebsites.ServerAccess(that);
+            }
+            that.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorWidgetTypeContentEditable.setupEditButton()"));
+            that.serverAccess_.setData({
+                            _editor_request_original_data: 1,
+                            field_name: editor_widget.getName()
+                        });
+            that.serverAccess_.send(e);
         });
 
     // this adds the mouseenter and mouseleave events
@@ -5711,6 +6131,49 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
 snapwebsites.EditorWidgetTypeContentEditable.prototype.getEditButton = function() // virtual
 {
     return "<div class='editor-edit-button'><a class='activate-editor' href='#'>Edit</a></div>";
+};
+
+
+/** \brief Manage request to retrieve field original content.
+ *
+ * We just sent an AJAX request to retrieve the field original content.
+ * This content is to be shown in the widget in place of the final
+ * content (i.e. without all the tokens replaced, filters applied, etc.)
+ *
+ * The function makes sure that the AJAX reason is indeed
+ * "request_original_data" and if so, it starts the editing
+ * of the widget.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data.
+ */
+snapwebsites.EditorWidgetTypeContentEditable.prototype.serverAccessSuccess = function(result) // virtual
+{
+    var editor_widget,
+        w,
+        c,
+        xml_data,
+        attachment_path;
+
+    snapwebsites.EditorWidgetTypeContentEditable.superClass_.serverAccessSuccess.call(this, result);
+
+    if(this.ajaxReason_ == "request_original_data")
+    {
+        editor_widget = this.ajaxWidget_;
+        w = editor_widget.getWidget();
+        c = editor_widget.getWidgetContent();
+
+        xml_data = jQuery(result.jqxhr.responseXML);
+        c.html(snapwebsites.castToString(xml_data.find("data[name='field_data']").text(), "casting field_data to a string"));
+
+        // make the child editable
+        // TODO: either select all or at least place the cursor at the
+        //       end in some cases...
+        c.attr("contenteditable", "true");
+
+        // give the widget focus if not disabled
+        editor_widget.focus();
+    }
 };
 
 
@@ -5802,9 +6265,9 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeTextEdit, snapwebsites.Editor
 
 /** \brief Return "text-edit".
  *
- * Return the name of the text edit type.
+ * Return the name of the widget type.
  *
- * @return {string} The name of the text edit type.
+ * @return {string} The name of the widget type.
  * @override
  */
 snapwebsites.EditorWidgetTypeTextEdit.prototype.getType = function() // virtual
@@ -5839,10 +6302,34 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widg
                 return;
             }
 
-            // TBD: we may need to allow various keys when the widget is
-            //      marked as 'read-only' (i.e. Ctrl-C, arrows, etc.)
-            if(w.is(".read-only")
-            || w.is(".disabled"))
+            if(w.is(".read-only"))
+            {
+                switch(e.which)
+                {
+                case 33:    // page up
+                case 34:    // page down
+                case 35:    // end
+                case 36:    // home
+                case 37:    // arrow left
+                case 38:    // arrow up
+                case 39:    // arrow right
+                case 40:    // arrow down
+                    return;
+
+                case 67:    // Ctlr-C (copy text)
+                    if(e.ctrlKey)
+                    {
+                        return;
+                    }
+                    break;
+
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            if(w.is(".disabled"))
             {
                 // no typing allowed
                 e.preventDefault();
@@ -5887,8 +6374,8 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.setValue = function(widget, valu
 
 /** \brief Editor widget type for Text Edit widgets.
  *
- * This widget defines the full text edit in the editor forms. This is
- * an equivalent to the text area of a standard form.
+ * This widget defines the "line-edit" in the editor forms. This is
+ * an equivalent to the input tag of type text of a standard form.
  *
  * @return {!snapwebsites.EditorWidgetTypeLineEdit}
  *
@@ -5913,9 +6400,9 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeLineEdit, snapwebsites.Editor
 
 /** \brief Return "line-edit".
  *
- * Return the name of the line edit type.
+ * Return the name of the widget type.
  *
- * @return {string} The name of the line edit type.
+ * @return {string} The name of the widget type.
  * @override
  */
 snapwebsites.EditorWidgetTypeLineEdit.prototype.getType = function()
@@ -5941,14 +6428,18 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widg
 
     c.keydown(function(e)
         {
-            if(e.which === 13)
+            var editor_form;
+
+            if(e.which === 13 && that.acceptReturnAsDefaultButton())
             {
-                // prevent enter from doing anything here
-                //
-                // TODO: actually we want return to apply the submit if
-                //       there is one
+                // prevent enter default behavior
                 //
                 e.preventDefault();
+
+                // if editor has a default button, click it
+                //
+                editor_form = editor_widget.getEditorForm();
+                editor_form.getDefaultButton().click();
             }
         });
 
@@ -5960,6 +6451,21 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widg
                     that.verifyValue_(editor_widget);
                 }, 0);
         });
+};
+
+
+/** \brief Check whether Return is allowed to auto-send the form.
+ *
+ * This is a virtual function that can be used to prevent the default
+ * behavior of the Return key which auto-clicks the default button
+ * if this function returns true (which is the default.)
+ *
+ * @return {boolean}  true if the Return is allowed to auto-click the
+ *                    default button to auto-send the form to the server.
+ */
+snapwebsites.EditorWidgetTypeLineEdit.prototype.acceptReturnAsDefaultButton = function()
+{
+    return true;
 };
 
 
@@ -6105,7 +6611,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
     // we just closed.)
     w.click(function(e)
         {
-            var visible = w.is(".disabled") || d.is(":visible");
+            var visible = w.is(".disabled") || that.isDropdownOpen();
 
             // avoid default browser behavior
             e.preventDefault();
@@ -6145,7 +6651,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 // avoid default browser behavior
                 e.preventDefault();
 
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     that.selectItem(editor_widget, "down");
                 }
@@ -6160,7 +6666,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 // avoid default browser behavior
                 e.preventDefault();
 
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     that.selectItem(editor_widget, "up");
                 }
@@ -6172,7 +6678,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 37: // arrow left
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6181,7 +6687,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 39: // arrow right
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6190,7 +6696,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 36: // home
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6199,7 +6705,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 35: // end
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6208,7 +6714,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 33: // page up
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6217,7 +6723,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 34: // page down
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6226,7 +6732,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 27: // escape (close, no changes)
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
@@ -6235,14 +6741,15 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 break;
 
             case 13: // return (select)
-                if(d.is(":visible"))
+                if(that.isDropdownOpen())
                 {
                     // avoid default browser behavior
                     e.preventDefault();
                     e.stopPropagation();
-                    item = d.children(".dropdown-selection")
-                            .children(".dropdown-item")
-                            .filter(".active");
+
+                    item = that.openDropdown_.children(".dropdown-selection")
+                                             .children(".dropdown-item")
+                                             .filter(".active");
                     if(item.exists())
                     {
                         that.itemClicked(editor_widget, item);
@@ -6253,7 +6760,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
             default:
                 // not too sure how we could extend that to UTF-16...
                 // right now, A to Z works well
-                if(d.is(":visible") && e.which >= 65 && e.which <= 90)
+                if(that.isDropdownOpen() && e.which >= 65 && e.which <= 90)
                 {
                     that.selectItem(editor_widget, String.fromCharCode(e.which).toLowerCase());
                 }
@@ -6261,6 +6768,22 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
 
             }
         });
+};
+
+
+/** \brief Check whether the dropdown is open.
+ *
+ * This function returns true if the dropdown is currently open.
+ *
+ * Testing whether a widget is visible (":visible" in CSS/jQuery) is
+ * not going to work correctly if the dropdown opens using a cloned
+ * version of the dropdown list.
+ *
+ * @return {boolean}  true if the dropdown is currently opened.
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.isDropdownOpen = function()
+{
+    return !!this.openDropdown_;
 };
 
 
@@ -6450,7 +6973,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.selectItem = function(editor_wid
 {
     var w = editor_widget.getWidget(),
         //c = editor_widget.getWidgetContent(),
-        d = w.children(".dropdown-items"),
+        d = this.openDropdown_,
         item = d.children(".dropdown-selection").children(".dropdown-item").not(".hidden"),
         pos = item.index(item.filter(".active")),
         inc = 1,
@@ -6824,6 +7347,19 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, valu
 };
 
 
+/** \brief Check whether the dropdown is open, if so, prevent auto-send.
+ *
+ * This function checks whether the dropdown is currently open. If so,
+ * make sure that the default button does not get clicked.
+ *
+ * @return {boolean}  true if the dropdown is closed, false otherwise.
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.acceptReturnAsDefaultButton = function()
+{
+    return !this.isDropdownOpen();
+};
+
+
 
 /** \brief Editor widget type for Checkmark widgets.
  *
@@ -7098,18 +7634,81 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.getType = function() // virtual
  */
 snapwebsites.EditorWidgetTypeImageBox.prototype.initializeWidget = function(widget) // virtual
 {
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+    var that = this,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
         w = editor_widget.getWidget(),
-        background = w.children(".snap-editor-background");
+        c = editor_widget.getWidgetContent(),
+        snap_editor_element = c.parents('.snap-editor'),
+        background = w.children(".snap-editor-background"),
+        browse_button,
+        browse_input_file;
 
     snapwebsites.EditorWidgetTypeImageBox.superClass_.initializeWidget.call(this, widget);
 
     // backgrounds are positioned as "absolute" so their width
     // is "broken" and we cannot center them in their parent
     // which is something we want to do for image-box objects
-    background.css("width", snapwebsites.castToNumber(w.width(), "ImageBox widget width"))
-              .css("margin-top", (snapwebsites.castToNumber(w.height(), "ImageBox widget height")
+    if(background.exists())
+    {
+        background.css("width", snapwebsites.castToNumber(w.width(), "ImageBox widget width"))
+                  .css("margin-top", (snapwebsites.castToNumber(w.height(), "ImageBox widget height")
                                       - snapwebsites.castToNumber(background.height(), "ImageBox background height")) / 2);
+    }
+
+    // by default we offer the Drag & Drop area and also show a Browse
+    // button to let people browse their hard drive with the normal
+    // file manager instead of a drag & drop which can be annoying to some
+    //
+    if(snap_editor_element.hasClass("browse"))
+    {
+        // there is no browse button by default, we have to create it;
+        // also we do not want the Browser super ugly one to appear so
+        // we create that one and place it inside a div that is so
+        // small that no one can see it (but it needs to exist and
+        // be otherwise considered visible.)
+        jQuery(
+                "<div class='browse-block'>"
+                + "<div class='hidden file-input'>"
+                  + "<input type='file'/>"
+                + "</div>"
+                + "<a href='#' class='browse-button'>Browse</a>"
+              + "</div>"
+              )
+                .prependTo(snap_editor_element);
+
+        browse_button = snap_editor_element.find(".browse-block a.browse-button");
+        browse_input_file = snap_editor_element.find(".browse-block .hidden.file-input input");
+
+        // connect the new browse-button anchor
+        browse_button.click(function(e)
+            {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // simulate a click on the hidden file-input button
+                browse_input_file.click();
+            });
+
+        // when a file is selected, on OK you get a change()
+        browse_input_file.change(function(e)
+            {
+                if(this.files
+                && this.files.length)
+                {
+                    // TODO: add a test, in case length > 1 and the destination
+                    //       widget expects exactly 1 file, then generate an
+                    //       error because we cannot know which file the user
+                    //       really intended to drop (maybe we could offer a
+                    //       selection, assuming we do not lose the necessary
+                    //       info...) We could also just have a max. # of
+                    //       possible drops and if `length > max` then err.
+                    //
+                    that.droppedFiles_(editor_widget, this.files, true);
+                }
+
+                return false;
+            });
+    }
 };
 
 
@@ -7175,23 +7774,6 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview = function()
  * This call ensures proper inheritance between the two classes.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeDroppedFileWithPreview, snapwebsites.EditorWidgetTypeImageBox);
-
-
-/** \brief A server access object.
- *
- * Whenever the user drops a file, we use this object to send it to
- * the server. In turn the server sends us a reply to know whether
- * the file was accepted or not. Later we will be able to check on
- * the server to know whether it has a preview for us to display.
- *
- * \note
- * This serverAccess_ object is shared between all the drop widget
- * of this type of attachments.
- *
- * @type {snapwebsites.ServerAccess}
- * @private
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccess_ = null;
 
 
 /** \brief Return "dropped-file-with-preview".
@@ -7292,9 +7874,10 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
     // mark widget as processing (allows for CSS effects)
     w.addClass("processing-attachment");
 
-    // show a waiting rotating image
+    // show a "Please Wait" image
     editor_widget.showWaitImage();
 
+    this.ajaxReason_ = "dropped_file_with_preview";
     if(!this.serverAccess_)
     {
         this.serverAccess_ = new snapwebsites.ServerAccess(this);

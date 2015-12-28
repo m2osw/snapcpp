@@ -62,41 +62,46 @@ public:
 
 
 
-class robotstxt : public plugins::plugin
-                , public path::path_execute
-                , public layout::layout_content
+class robotstxt
+        : public plugins::plugin
+        , public path::path_execute
 {
 public:
-    static const char *ROBOT_NAME_ALL;
-    static const char *ROBOT_NAME_GLOBAL;
-    static const char *FIELD_NAME_DISALLOW;
+    static char const * ROBOT_NAME_ALL;
+    static char const * ROBOT_NAME_GLOBAL;
+    static char const * FIELD_NAME_DISALLOW;
 
-    robotstxt();
-    ~robotstxt();
+                        robotstxt();
+                        ~robotstxt();
 
+    // plugins::plugin
     static robotstxt *  instance();
+    virtual QString     settings_path() const;
+    virtual QString     icon() const;
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child * snap);
+    // path::path_execute implementation
     virtual bool        on_path_execute(content::path_info_t & url);
-    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, const QString & ctemplate);
-    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, const QString & ctemplate);
-    void                on_generate_page_content(content::path_info_t & path, QDomElement & page, QDomElement & body, const QString & ctemplate);
 
-    SNAP_SIGNAL(generate_robotstxt, (robotstxt *r), (r));
+    // layout signals
+    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
+    void                on_generate_page_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
 
-    void        add_robots_txt_field(const QString & value,
-                                     const QString & field = FIELD_NAME_DISALLOW,
-                                     const QString & robot = ROBOT_NAME_ALL,
+    SNAP_SIGNAL(generate_robotstxt, (robotstxt * r), (r));
+
+    void        add_robots_txt_field(QString const & value,
+                                     QString const & field = FIELD_NAME_DISALLOW,
+                                     QString const & robot = ROBOT_NAME_ALL,
                                      bool unique = false);
 
     void        output() const;
 
 private:
-    void initial_update(int64_t variables_timestamp);
-    void content_update(int64_t variables_timestamp);
-    void define_robots(content::path_info_t & path);
+    void        content_update(int64_t variables_timestamp);
+    void        define_robots(content::path_info_t & path);
 
     struct robots_field_t
     {

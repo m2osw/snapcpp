@@ -19,8 +19,6 @@
 
 #include "log.h"
 
-#include <sys/time.h>
-
 #include "poison.h"
 
 
@@ -838,7 +836,7 @@ snap_thread::~snap_thread()
  *
  * \return The name of the process.
  */
-const QString& snap_thread::get_name() const
+QString const & snap_thread::get_name() const
 {
     return f_name;
 }
@@ -847,6 +845,16 @@ const QString& snap_thread::get_name() const
 /** \brief Check whether the thread is considered to be running.
  *
  * This flag is used to know whether the thread is running.
+ *
+ * \todo
+ * We need to save the pid of the process that creates threads.
+ * This tells us whether the thread is running in this process.
+ * i.e. if a fork() happens, then the child process does not
+ * have any threads so is_running() has to return false. Also,
+ * any other function that checks whether a thread is running
+ * needs to also check the pid. We have to save the pid at
+ * the time we start the thread and then when we check whether
+ * the thread is running.
  *
  * \return true if the thread is still considered to be running.
  */
@@ -890,9 +898,9 @@ bool snap_thread::is_stopping() const
  * \return We return a null pointer, which we do not use because we do
  *         not call the pthread_join() function.
  */
-void *func_internal_start(void *thread)
+void * func_internal_start(void * thread)
 {
-    snap_thread *t = reinterpret_cast<snap_thread *>(thread);
+    snap_thread * t(reinterpret_cast<snap_thread *>(thread));
     t->internal_run();
     return nullptr; // == pthread_exit(nullptr);
 }
@@ -965,7 +973,7 @@ bool snap_thread::start()
 
     if(!f_runner->is_ready())
     {
-        SNAP_LOG_WARNING("the thread running is ready");
+        SNAP_LOG_WARNING("the thread runner is not ready");
         return false;
     }
 

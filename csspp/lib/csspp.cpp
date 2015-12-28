@@ -15,6 +15,16 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief Implementation of the CSS Preprocessor library.
+ *
+ * This file represents the main implementation of the CSS Preprocessor
+ * library. It has only a few functions handling code that's common
+ * to all the other classes. It also has the library version information.
+ *
+ * \sa \ref lexer_rules
+ */
+
 #include "csspp/csspp.h"
 
 #include "csspp/exceptions.h"
@@ -25,6 +35,13 @@
 #include <sstream>
 #include <iostream>
 
+/** \brief The namespace of all the classes in the CSS Preprocessor.
+ *
+ * All the classes and many definitions appear under 'csspp'. It
+ * is strongly advised that you do not do a 'using csspp;' because
+ * some of the definitions are likely to spoil your namespace in
+ * a way you do not want it to.
+ */
 namespace csspp
 {
 
@@ -55,7 +72,7 @@ void set_precision(int precision)
     g_precision = precision;
 }
 
-std::string decimal_number_to_string(decimal_number_t d)
+std::string decimal_number_to_string(decimal_number_t d, bool remove_leading_zero)
 {
     // the std::setprecision() is a total number of digits when we
     // want a specific number of digits after the decimal point so
@@ -68,13 +85,13 @@ std::string decimal_number_to_string(decimal_number_t d)
     ss << std::setprecision(3 + DBL_MANT_DIG - DBL_MIN_EXP);
 
     // make sure to round the value up first
-    if(d >= 0)
+    if(d >= 0.0)
     {
-        ss << d + 0.5 / pow(10, g_precision);
+        ss << d + 0.5 / pow(10.0, g_precision);
     }
     else
     {
-        ss << d - 0.5 / pow(10, g_precision);
+        ss << d - 0.5 / pow(10.0, g_precision);
     }
 
     std::string out(ss.str());
@@ -100,6 +117,34 @@ std::string decimal_number_to_string(decimal_number_t d)
         }
     }
 
+    // remove the leading zero when possible
+    if(remove_leading_zero)
+    {
+        if(out.length() >= 3
+        && out[0] == '0'
+        && out[1] == '.')
+        {
+            out.erase(out.begin());
+            // .33 is valid and equivalent to 0.33
+        }
+        else if(out.length() >= 4
+             && out[0] == '-'
+             && out[1] == '0'
+             && out[2] == '.')
+        {
+            out.erase(out.begin() + 1);
+            // -.33 is valid and equivalent to -0.33
+        }
+    }
+
+    if(out == "-0")
+    {
+        // this happens with really small numbers because we lose
+        // the precision and thus end up with zero even if the number
+        // was not really zero
+        return "0";
+    }
+
     return out;
 }
 
@@ -113,4 +158,3 @@ std::string decimal_number_to_string(decimal_number_t d)
 // End:
 
 // vim: ts=4 sw=4 et
-

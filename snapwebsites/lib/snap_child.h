@@ -16,11 +16,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snap_uri.h"
-#include "snap_signals.h"
-#include "snap_exception.h"
-#include "snap_version.h"
+#include "cache_control.h"
 #include "http_cookie.h"
+#include "snap_signals.h"
+#include "snap_uri.h"
+#include "snap_version.h"
 #include "udp_client_server.h"
 
 #include <controlled_vars/controlled_vars_need_init.h>
@@ -28,9 +28,8 @@
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
 
-#include <stdlib.h>
-
 #include <QBuffer>
+#include <QDomDocument>
 
 namespace snap
 {
@@ -38,49 +37,49 @@ namespace snap
 class snap_child_exception : public snap_exception
 {
 public:
-    snap_child_exception(char const *        whatmsg) : snap_exception("snap_child", whatmsg) {}
-    snap_child_exception(std::string const & whatmsg) : snap_exception("snap_child", whatmsg) {}
-    snap_child_exception(QString const &     whatmsg) : snap_exception("snap_child", whatmsg) {}
+    explicit snap_child_exception(char const *        whatmsg) : snap_exception("snap_child", whatmsg) {}
+    explicit snap_child_exception(std::string const & whatmsg) : snap_exception("snap_child", whatmsg) {}
+    explicit snap_child_exception(QString const &     whatmsg) : snap_exception("snap_child", whatmsg) {}
 };
 
 class snap_child_exception_unique_number_error : public snap_child_exception
 {
 public:
-    snap_child_exception_unique_number_error(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_unique_number_error(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_unique_number_error(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_unique_number_error(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_unique_number_error(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_unique_number_error(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_invalid_header_value : public snap_child_exception
 {
 public:
-    snap_child_exception_invalid_header_value(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_value(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_value(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_value(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_value(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_value(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_invalid_header_field_name : public snap_child_exception
 {
 public:
-    snap_child_exception_invalid_header_field_name(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_field_name(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_header_field_name(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_field_name(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_field_name(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_header_field_name(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_no_server : public snap_child_exception
 {
 public:
-    snap_child_exception_no_server(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_no_server(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_no_server(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_no_server(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_no_server(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_no_server(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 class snap_child_exception_invalid_email : public snap_child_exception
 {
 public:
-    snap_child_exception_invalid_email(char const *        whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_email(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
-    snap_child_exception_invalid_email(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_email(char const *        whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_email(std::string const & whatmsg) : snap_child_exception(whatmsg) {}
+    explicit snap_child_exception_invalid_email(QString const &     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
 
@@ -104,6 +103,7 @@ public:
         HTTP_CODE_CONTINUE = 100,
         HTTP_CODE_SWITCHING_PROTOCOLS = 101,
         HTTP_CODE_PROCESSING = 102,
+        HTTP_CODE_RESPONSE_IS_STALE = 110, // If we return a cached page
 
         HTTP_CODE_OK = 200,
         HTTP_CODE_CREATED = 201,
@@ -205,7 +205,7 @@ public:
     typedef QMap<QString, QString>  environment_map_t;
 
     // Note: the information saved in files come from the POST and
-    // is not to be trusted (especially the mime type)
+    //       is not to be trusted (especially the mime type)
     class post_file_t
     {
     public:
@@ -239,8 +239,8 @@ public:
         QString                     f_filename;
         QString                     f_original_mime_type;
         QString                     f_mime_type;
-        controlled_vars::zint64_t   f_creation_time;
-        controlled_vars::zint64_t   f_modification_time;
+        controlled_vars::zint64_t   f_creation_time;        // time_t
+        controlled_vars::zint64_t   f_modification_time;    // time_t
         QByteArray                  f_data;
         controlled_vars::zuint32_t  f_size;
         controlled_vars::zuint32_t  f_index;
@@ -302,10 +302,12 @@ public:
                                 virtual ~snap_child();
 
     bool                        process(int socket);
+    pid_t                       get_child_pid() const;
     void                        kill();
     status_t                    check_status();
 
     snap_uri const &            get_uri() const;
+    void                        set_uri_path(QString const & path);
     bool                        has_post() const { return f_has_post; }
     QString                     get_action() const;
     void                        set_action(QString const & action);
@@ -314,10 +316,13 @@ public:
     void                        exit(int code);
     bool                        is_debug() const;
     static char const *         get_running_server_version();
+    bool                        is_core_plugin(QString const & name) const;
     QString                     get_server_parameter(QString const & name);
+    void                        reset_site_table();
     QtCassandra::QCassandraValue get_site_parameter(QString const & name);
     void                        set_site_parameter(QString const & name, QtCassandra::QCassandraValue const & value);
-    void                        improve_signature(QString const & path, QString & signature);
+    void                        improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag);
+    QString                     error_body(http_code_t err_code, QString const & err_name, QString const & err_description);
     QtCassandra::QCassandraContext::pointer_t get_context() { return f_context; }
     QString const &             get_domain_key() const { return f_domain_key; }
     QString const &             get_website_key() const { return f_website_key; }
@@ -327,6 +332,10 @@ public:
     void                        init_start_date();
     int64_t                     get_start_date() const { return f_start_date; }
     time_t                      get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
+    cache_control_settings const & client_cache_control() const;
+    cache_control_settings &    server_cache_control();
+    cache_control_settings &    page_cache_control();
+    bool                        no_caching() const;
     void                        set_header(QString const & name, QString const & value, header_mode_t modes = HEADER_MODE_NO_ERROR);
     void                        set_cookie(http_cookie const & cookie);
     void                        set_ignore_cookies();
@@ -372,10 +381,10 @@ public:
     QString                     cookie(QString const & name) const;
     void                        attach_to_session();
     bool                        load_file(post_file_t & file);
-    QString                     snap_url(QString const & url) const;
     // TODO translations? (not too important though)
     void                        page_redirect(QString const & path, http_code_t http_code = http_code_t::HTTP_CODE_MOVED_PERMANENTLY, QString const & reason_brief = "Moved", QString const & reason = "This page has moved");
     void                        die(http_code_t err_code, QString err_name, QString const & err_description, QString const & err_details);
+    void                        not_modified();
     static void                 define_http_name(http_code_t http_code, QString & http_name);
     void                        finish_update();
 
@@ -392,10 +401,8 @@ public:
     void                        trace(char const * data);
     void                        show_resources(std::ostream & out);
 
-    void                        udp_ping(char const * name, char const * message = "PING");
-
-    typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
-    udp_server_t                udp_get_server( char const * name );
+    void                        backend_process();
+    void                        udp_ping(char const * name);
 
 protected:
     pid_t                       fork_child();
@@ -404,12 +411,13 @@ protected:
     void                        canonicalize_website();
     void                        canonicalize_options();
     void                        site_redirect();
-    QStringList                 init_plugins(bool const add_defaults);
+    snap_string_list            init_plugins(bool const add_defaults);
 
     server_pointer_t                            f_server;
     controlled_vars::flbool_t                   f_is_child;
     zpid_t                                      f_child_pid;
     zfile_descriptor_t                          f_socket;
+    QtCassandra::QCassandra::pointer_t          f_cassandra;
     QtCassandra::QCassandraContext::pointer_t   f_context;
     controlled_vars::mint64_t                   f_start_date; // time request arrived
     controlled_vars::flbool_t                   f_ready; // becomes true just before the server::execute() call
@@ -432,16 +440,16 @@ private:
     void                        setup_uri();
     void                        snap_info();
     void                        snap_statistics();
-    void                        update_plugins(QStringList const & list_of_plugins);
+    void                        update_plugins(snap_string_list const & list_of_plugins);
     void                        execute();
     void                        process_backend_uri(QString const & uri);
     void                        write(char const * data, ssize_t size);
     void                        write(char const * str);
     void                        write(QString const & str);
+    void                        set_cache_control();
     void                        output_headers(header_mode_t modes);
     void                        output_cookies();
 
-    QtCassandra::QCassandra::pointer_t          f_cassandra;
     QtCassandra::QCassandraTable::pointer_t     f_site_table;
     controlled_vars::flbool_t                   f_new_content;
     controlled_vars::flbool_t                   f_is_being_initialized;
@@ -457,6 +465,7 @@ private:
     header_map_t                                f_header;
     cookie_map_t                                f_cookies;
     controlled_vars::flbool_t                   f_ignore_cookies;
+    controlled_vars::flbool_t                   f_died; // die() was already called once
     QString                                     f_language;
     QString                                     f_country;
     QString                                     f_language_key;
@@ -470,6 +479,9 @@ private:
     snap_version::version_number_t              f_revision;
     QString                                     f_revision_key;
     compression_vector_t                        f_compressions;
+    cache_control_settings                      f_client_cache_control;
+    cache_control_settings                      f_server_cache_control;
+    cache_control_settings                      f_page_cache_control;
 };
 
 typedef std::vector<snap_child *> snap_child_vector_t;

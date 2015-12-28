@@ -18,14 +18,16 @@
 //
 
 #include "dbutils.h"
+
 #include "snap_exception.h"
 #include "qstring_stream.h"
 #include "log.h"
 #include "mkgmtime.h"
+#include "snap_string_list.h"
 
 #include <iostream>
 
-#include <QStringList>
+#include <uuid/uuid.h>
 
 #include "poison.h"
 
@@ -168,7 +170,7 @@ QString dbutils::byte_to_hex( char const byte )
  *
  * \return The resulting string.
  */
-QString dbutils::key_to_string( QByteArray const& key )
+QString dbutils::key_to_string( QByteArray const & key )
 {
     QString ret;
     int const max_length(key.size());
@@ -180,25 +182,45 @@ QString dbutils::key_to_string( QByteArray const& key )
 }
 
 
-QByteArray dbutils::string_to_key( const QString& str )
+QByteArray dbutils::string_to_key( QString const & str )
 {
     QByteArray ret;
-    QStringList numList( str.split(' ') );
+    snap_string_list numList( str.split(' ') );
 
-    for( auto str_num : numList )
+    // TODO: we may want to seperate functions to clearly know whether
+    //       we are checking an MD5 or not
+    //
+    if(numList.size() == 1 && str.length() == 32)
     {
-        bool ok( false );
-        ret.push_back( static_cast<char>( str_num.toInt( &ok, 16 ) ) );
-        if( !ok )
+        for(int i(0); i < 32; i += 2)
         {
-            throw snap_exception( "Cannot convert to num! Not base 16." );
+            QString val(str.mid(i, 2));
+            bool ok( false );
+            ret.push_back( static_cast<char>( val.toInt( &ok, 16 ) ) );
+            if( !ok )
+            {
+                throw snap_exception( "Cannot convert to number! Not base 16." );
+            }
         }
     }
+    else
+    {
+        for( auto str_num : numList )
+        {
+            bool ok( false );
+            ret.push_back( static_cast<char>( str_num.toInt( &ok, 16 ) ) );
+            if( !ok )
+            {
+                throw snap_exception( "Cannot convert to number! Not base 16 or too large." );
+            }
+        }
+    }
+
     return ret;
 }
 
 
-QString dbutils::microseconds_to_string ( int64_t const& time, bool const full )
+QString dbutils::microseconds_to_string ( int64_t const & time, bool const full )
 {
     char buf[64];
     struct tm t;
@@ -218,6 +240,42 @@ QString dbutils::microseconds_to_string ( int64_t const& time, bool const full )
                 .arg(buf)
                 .arg(time % 1000000, 6, 10, QChar('0'));
     }
+}
+
+uint64_t dbutils::string_to_microseconds ( QString const & time )
+{
+    // TODO: check whether we have the number between parenthesis...
+    //       The string may include the microseconds as one 64 bit number
+    //       between parenthesis; if present we may want to use that instead?
+
+    // String will be of the form: "%Y-%m-%d %H:%M:%S.%N"
+    //
+    snap_string_list const datetime_split ( time.split(' ') );
+    if(datetime_split.size() < 2)
+    {
+        return -1;
+    }
+    snap_string_list const date_split     ( datetime_split[0].split('-') );
+    snap_string_list const time_split     ( datetime_split[1].split(':') );
+    if(date_split.size() != 3
+    || time_split.size() != 3)
+    {
+        return -1;
+    }
+    //
+    tm to;
+    memset(&to, 0, sizeof(to));
+    to.tm_sec  = time_split[2].toInt();
+    to.tm_min  = time_split[1].toInt();
+    to.tm_hour = time_split[0].toInt();
+    to.tm_mday = date_split[2].toInt();
+    to.tm_mon  = date_split[1].toInt() - 1;
+    to.tm_year = date_split[0].toInt() - 1900;
+
+    int64_t ns((time_split[2].toDouble() - to.tm_sec) * 1000000.0);
+    //
+    time_t const tt( mkgmtime( &to ) );
+    return tt * 1000000 + ns;
 }
 
 
@@ -246,6 +304,9 @@ QString dbutils::get_row_name( QCassandraRow::pointer_t p_r ) const
         }
         else
         {
+            // except for a few special cases
+            // TODO: add tests to make sure only known keys do not get
+            //       defined as MD5 sums
             ret = key;
         }
     }
@@ -269,10 +330,18 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     {
         name = key_to_string( key );
     }
-    else if((f_tableName == "list" && f_rowName != "*standalone*")
-         || (f_tableName == "files" && f_rowName == "images"))
+    else if((f_tableName == "list" && f_rowName != "*standalone*"))
     {
-        QString const time(microseconds_to_string(QtCassandra::uint64Value(key, 0), true));
+        unsigned char priority(QtCassandra::safeUnsignedCharValue(key, 0));
+        QString const time(microseconds_to_string(QtCassandra::safeInt64Value(key, sizeof(unsigned char)), true));
+        name = QString("%1 %2 %3")
+                .arg(static_cast<int>(priority))
+                .arg(time)
+                .arg(QtCassandra::stringValue(key, sizeof(unsigned char) + sizeof(uint64_t)));
+    }
+    else if((f_tableName == "files" && f_rowName == "images"))
+    {
+        QString const time(microseconds_to_string(QtCassandra::safeInt64Value(key, 0), true));
         name = QString("%1 %4").arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
     }
     else if(f_tableName == "branch" && (key.startsWith(content_attachment_reference.toAscii())) )
@@ -307,16 +376,43 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
             {
                 name += ".";
             }
-            name += QString("%1").arg(QtCassandra::uint32Value(key, i));
+            name += QString("%1").arg(QtCassandra::safeUInt32Value(key, i));
         }
     }
     else if((f_tableName == "users"    && f_rowName == "*index_row*")
-         || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*")))
+         || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
+         || f_tableName == "serverstats")
     {
         // special case where the column key is a 64 bit integer
         //const QByteArray& name(c->columnKey());
         QtCassandra::QCassandraValue const identifier(c->columnKey());
-        name = QString("%1").arg(identifier.int64Value());
+        name = QString("%1").arg(identifier.safeInt64Value());
+    }
+    else if(f_tableName == "tracker"
+         || (f_tableName == "backend" && !f_rowName.startsWith("*"))
+         || f_tableName == "firewall")
+    {
+        QtCassandra::QCassandraValue const start_date(c->columnKey());
+        name = microseconds_to_string(start_date.safeInt64Value(), true);
+    }
+    else if(f_tableName == "emails" && f_rowName == "bounced_raw")
+    {
+        QtCassandra::QCassandraValue const start_date(c->columnKey());
+
+        // 64 bit value (microseconds)
+        name = microseconds_to_string(start_date.safeInt64Value(), true);
+
+        // 128 bit UUID
+        if( static_cast<size_t>(start_date.size()) >= sizeof(int64_t) + sizeof(uuid_t) )
+        {
+            QByteArray const bytes(QtCassandra::binaryValue( start_date.binaryValue(), sizeof(int64_t), sizeof(uuid_t) ));
+            uuid_t uuid;
+            memcpy( uuid, bytes.data(), sizeof(uuid) );
+            char unique_key[37];
+            uuid_unparse( uuid, unique_key );
+            name += " ";
+            name += unique_key;
+        }
     }
     else
     {
@@ -331,13 +427,24 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 {
     QString const n( get_column_name( c ) );
 
-    if(n == "content::prevent_delete"
+    if(n == "antivirus::enable"
+    || n == "content::breadcrumbs_show_current_page"
+    || n == "content::breadcrumbs_show_home"
+    || n == "content::prevent_delete"
     || n == "epayment_paypal::debug"
+    || n == "feed::allow_main_atom_xml"
+    || n == "feed::allow_main_rss_xml"
+    || n == "feed::publish_full_article"
     || n == "oauth2::enable"
+    || n == "password::check_blacklist"
+    || n == "password::exists_in_blacklist"
     || n == "permissions::dynamic"
     || n == "users::multiuser"
     || n == "users::long_sessions"
+    || n == "users::password::blocked"
+    || (f_tableName == "content" && f_rowName == "*index*")
     || (f_tableName == "list" && f_rowName != "*standalone*")
+    || n == "users::soft_administrative_session"
     || n == "finball::data_status" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::number_of_cashiers" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::plan" // TODO -- remove at some point since that is a cutomer's field
@@ -347,11 +454,9 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     )
     {
         // signed 8 bit value
-        // cast to integer so arg() doesn't take it as a character
         return column_type_t::CT_int8_value;
     }
     else if(n == "content::final"
-         || n == "content::files::compressor"
          || n.startsWith("content::files::reference::")
          || n == "epayment_paypal::maximum_repeat_failures"
          || n == "favicon::sitewide"
@@ -359,6 +464,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || (f_tableName == "files" && f_rowName == "new")
          || (f_tableName == "files" && f_rowName == "images")
          || (f_tableName == "test_results" && n == "test_plugin::success")
+         || (f_tableName == "processing" && n == "content::status_changed")
          )
     {
         // unsigned 8 bit value
@@ -377,6 +483,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "content::files::image_width"
          || n == "content::files::size"
          || n == "content::files::size::gzip_compressed"
+         || n == "content::files::size::minified"
+         || n == "content::files::size::minified::gzip_compressed"
          || n == "content::revision_control::attachment::current_branch"
          || n == "content::revision_control::attachment::current_working_branch"
          || n == "content::revision_control::current_branch"
@@ -397,7 +505,28 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         return column_type_t::CT_uint32_value;
     }
-    else if(n == "sessions::check_flags"
+    else if(n == "cookie_consent_silktide::javascript_version"
+         || n == "cookie_consent_silktide::consent_duration"
+         || n == "feed::teaser_tags"
+         || n == "feed::teaser_words"
+         || n == "feed::top_maximum_number_of_items_in_any_feed"
+         || n == "password::count_failures"
+         || n == "password::invalid_passwords_counter"
+         || n == "password::invalid_passwords_block_duration"
+         || n == "password::invalid_passwords_counter_lifetime"
+         || n == "password::invalid_passwords_slowdown"
+         || n == "password::minimum_length"
+         || n == "password::minimum_letters"
+         || n == "password::minimum_lowercase_letters"
+         || n == "password::minimum_spaces"
+         || n == "password::minimum_special"
+         || n == "password::minimum_unicode"
+         || n == "password::minimum_uppercase_letters"
+         || n == "password::minimum_digits"
+         || n == "sessions::check_flags"
+         || n == "users::administrative_session_duration"
+         || n == "users::total_session_duration"
+         || n == "users::user_session_duration"
          )
     {
         return column_type_t::CT_int64_value;
@@ -434,16 +563,17 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // 64 bit float
         return column_type_t::CT_float64_value;
     }
-    else if(n == "content::created"
+    else if((f_tableName == "backend" && f_rowName.startsWith("*"))
+         || (f_tableName == "antihammering" && n == "*blocked*")
+         || n == "content::created"
          || n == "content::cloned"
          || n == "content::files::created"
-         || n == "content::files::creation_time"
-         || n == "content::files::modification_time"
          || n == "content::files::secure::last_check"
          || n == "content::files::updated"
          || n == "content::modified"
          || n == "content::updated"
-         || n == "content::status_changed"
+         || (f_tableName == "content" && n == "content::status_changed")
+         || n.startsWith("core::last_dynamic_update")
          || n.startsWith("core::last_updated")
          || n == "core::plugin_threshold"
          || n == "core::site_ready"
@@ -451,19 +581,29 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "epayment_paypal::oauth2_expires"
          || n == "images::modified"
          || n == "list::last_updated"
+         || n == "permissions::last_updated"
+         || n == "sendmail::bounce_arrival_date0"
+         || n == "sendmail::bounce_arrival_date1"
+         || n == "sendmail::bounce_arrival_date2"
+         || n == "sendmail::bounce_arrival_date3"
+         || n == "sendmail::bounce_arrival_date4"
          || n.endsWith("::sendmail::created")
          || n == "sendmail::unsubscribe_on"
          || n == "sessions::date"
+         || n == "snap_software_description::last_update"
          || n == "shorturl::date"
          || n == "users::created_time"
          || n == "users::forgot_password_on"
          || n == "users::login_on"
          || n == "users::logout_on"
          || n == "users::modified"
+         || n == "users::password::modified"
+         || n.startsWith("users::password::modified_")
          || n == "users::previous_login_on"
          || n == "users::start_date"
          || n == "users::verified_on"
          || (f_tableName == "users" && n.startsWith("users::website_reference::"))
+         || n == "sessions::creation_date"
          || (f_tableName == "test_results" && n == "test_plugin::end_date")
          || (f_tableName == "test_results" && n == "test_plugin::start_date")
          || n == "finball::void_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
@@ -474,17 +614,23 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::business_type_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::connection_accepted_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::connection_declined_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
-         || n == "finball::invoice_start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::invoice_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::invoice_due_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::invoice_end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::invoice_paid_on" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::invoice_start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::payment_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::data_last_modified" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          )
     {
         // 64 bit value (microseconds)
         return column_type_t::CT_time_microseconds;
     }
-    else if(n == "sessions::login_limit"
+    else if(n == "content::files::creation_time"
+         || n == "content::files::modification_time"
+         || n == "sessions::login_limit"
          || n == "sessions::time_limit"
          )
     {
@@ -494,11 +640,13 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     else if(f_tableName == "listref"
          )
     {
-        return column_type_t::CT_time_microseconds_and_string;
+        return column_type_t::CT_priority_and_time_microseconds_and_string;
     }
     else if(n == "sessions::random"
          || n == "users::password::salt"
+         || n.startsWith("users::password::salt_")
          || n == "users::password"
+         || n.startsWith("users::password_")
          )
     {
         // n bit binary value
@@ -529,13 +677,18 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         return column_type_t::CT_status_value;
     }
+    else if(f_tableName == "cache"
+        && (n.startsWith("permissions::")))
+    {
+        return column_type_t::CT_rights_value;
+    }
 
     // all others viewed as strings
     return column_type_t::CT_string_value;
 }
 
 
-QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool display_only ) const
+QString dbutils::get_column_value( QCassandraCell::pointer_t c, bool const display_only ) const
 {
     QString v;
     try
@@ -604,7 +757,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             case column_type_t::CT_time_microseconds:
             {
                 // 64 bit value (microseconds)
-                uint64_t const time(c->value().uint64Value());
+                int64_t const time(c->value().safeInt64Value());
                 if(time == 0)
                 {
                     v = "time not set (0)";
@@ -620,8 +773,18 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             {
                 QByteArray value(c->value().binaryValue());
                 v = QString("%1 %2")
-                            .arg(microseconds_to_string(QtCassandra::uint64Value(value, 0), true))
-                            .arg(QtCassandra::stringValue(value, sizeof(uint64_t)));
+                            .arg(microseconds_to_string(QtCassandra::safeInt64Value(value, 0), true))
+                            .arg(QtCassandra::stringValue(value, sizeof(int64_t)));
+            }
+            break;
+
+            case column_type_t::CT_priority_and_time_microseconds_and_string:
+            {
+                QByteArray value(c->value().binaryValue());
+                v = QString("%1 %2 %3")
+                            .arg(static_cast<int>(QtCassandra::safeUnsignedCharValue(value, 0)))
+                            .arg(microseconds_to_string(QtCassandra::safeInt64Value(value, sizeof(unsigned char)), true))
+                            .arg(QtCassandra::stringValue(value, sizeof(unsigned char) + sizeof(int64_t)));
             }
             break;
 
@@ -629,14 +792,21 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             {
                 // 64 bit value (seconds)
                 uint64_t time(c->value().uint64Value());
-                char buf[64];
-                struct tm t;
-                time_t const seconds(time);
-                gmtime_r(&seconds, &t);
-                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                v = display_only
-                  ? QString("%1 (%2)").arg(buf).arg(time)
-                  : QString("%1").arg(buf);
+                if(time == 0)
+                {
+                    v = "time not set (0)";
+                }
+                else
+                {
+                    char buf[64];
+                    struct tm t;
+                    time_t const seconds(time);
+                    gmtime_r(&seconds, &t);
+                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                    v = display_only
+                            ? QString("%1 (%2)").arg(buf).arg(time)
+                            : QString("%1").arg(buf);
+                }
             }
             break;
 
@@ -666,15 +836,11 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             {
                 // md5 in binary
                 QByteArray const& buf(c->value().binaryValue());
-                int const max_length(buf.size());
                 if( display_only )
                 {
                     v += "(md5) ";
                 }
-                for(int i(0); i < max_length; ++i)
-                {
-                    v += byte_to_hex(buf[i]);
-                }
+                v += key_to_string(buf);
             }
             break;
 
@@ -783,6 +949,16 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
+            case column_type_t::CT_rights_value:
+            {
+                // save the time followed by the list of permissions separated
+                // by '\n'
+                v = QString("%1 %2")
+                        .arg(microseconds_to_string(c->value().safeInt64Value(), true))
+                        .arg(c->value().stringValue(sizeof(int64_t)).replace("\r", "\\r").replace("\n", "\\n"));
+            }
+            break;
+
         }
     }
     catch(std::runtime_error const& e)
@@ -797,7 +973,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
 }
 
 
-void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
+void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v )
 {
     QCassandraValue cvalue;
     //
@@ -853,70 +1029,7 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
 
         case column_type_t::CT_time_microseconds:
         {
-            // String will be of the form: "%Y-%m-%d %H:%M:%S.%N"
-            //
-            QStringList const datetime_split ( v.split(' ') );
-            if(datetime_split.size() < 2)
-            {
-                return;
-            }
-            QStringList const date_split     ( datetime_split[0].split('-') );
-            QStringList const time_split     ( datetime_split[1].split(':') );
-            if(date_split.size() != 3)
-            {
-                return;
-            }
-            if(time_split.size() != 3)
-            {
-                return;
-            }
-            //
-            tm to;
-            memset(&to, 0, sizeof(to));
-            to.tm_sec  = time_split[2].toInt();
-            to.tm_min  = time_split[1].toInt();
-            to.tm_hour = time_split[0].toInt();
-            to.tm_mday = date_split[2].toInt();
-            to.tm_mon  = date_split[1].toInt() - 1;
-            to.tm_year = date_split[0].toInt() - 1900; // TODO: handle the decimal part
-
-            int64_t ns((time_split[2].toDouble() - to.tm_sec) * 1000000.0);
-            //
-            time_t const tt( mkgmtime( &to ) );
-            cvalue.setUInt64Value( tt * 1000000 + ns );
-        }
-        break;
-
-        case column_type_t::CT_time_seconds:
-        {
-            // String will be of the form: "%Y-%m-%d %H:%M:%S"
-            //
-            QStringList const datetime_split ( v.split(' ') );
-            if(datetime_split.size() < 2)
-            {
-                return;
-            }
-            QStringList const date_split     ( datetime_split[0].split('-') );
-            QStringList const time_split     ( datetime_split[1].split(':') );
-            if(date_split.size() != 3)
-            {
-                return;
-            }
-            if(time_split.size() != 3)
-            {
-                return;
-            }
-            //
-            tm to;
-            to.tm_sec  = time_split[2].toInt();
-            to.tm_min  = time_split[1].toInt();
-            to.tm_hour = time_split[0].toInt();
-            to.tm_mday = date_split[2].toInt();
-            to.tm_mon  = date_split[1].toInt() - 1;
-            to.tm_year = date_split[0].toInt() - 1900;
-            //
-            time_t const tt( mkgmtime( &to ) );
-            cvalue.setUInt64Value( tt );
+            cvalue.setInt64Value( string_to_microseconds(v) );
         }
         break;
 
@@ -924,13 +1037,13 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S.%N string"
             //
-            QStringList datetime_split ( v.split(' ') );
+            snap_string_list datetime_split ( v.split(' ') );
             if(datetime_split.size() < 2)
             {
                 return;
             }
-            QStringList const date_split     ( datetime_split[0].split('-') );
-            QStringList const time_split     ( datetime_split[1].split(':') );
+            snap_string_list const date_split     ( datetime_split[0].split('-') );
+            snap_string_list const time_split     ( datetime_split[1].split(':') );
             if(date_split.size() != 3)
             {
                 return;
@@ -960,6 +1073,93 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
             appendInt64Value( tms, tt * 1000000 + ns );
             appendStringValue( tms, str );
             cvalue.setBinaryValue(tms);
+        }
+        break;
+
+        case column_type_t::CT_priority_and_time_microseconds_and_string:
+        {
+            // String will be of the form: "priority %Y-%m-%d %H:%M:%S.%N string"
+            //
+            snap_string_list datetime_split ( v.split(' ') );
+            if(datetime_split.size() < 3)
+            {
+                return;
+            }
+            QString          const priority_str   ( datetime_split[0] );
+            snap_string_list const date_split     ( datetime_split[1].split('-') );
+            snap_string_list const time_split     ( datetime_split[2].split(':') );
+
+            bool ok(false);
+            int priority(priority_str.toInt(&ok, 10));
+            if(!ok)
+            {
+                return;
+            }
+            if(date_split.size() != 3)
+            {
+                return;
+            }
+            if(time_split.size() != 3)
+            {
+                return;
+            }
+
+            datetime_split.removeFirst();
+            datetime_split.removeFirst();
+            datetime_split.removeFirst();
+            QString const str(datetime_split.join(" "));
+            //
+            tm to;
+            to.tm_sec  = time_split[2].toInt();
+            to.tm_min  = time_split[1].toInt();
+            to.tm_hour = time_split[0].toInt();
+            to.tm_mday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt() - 1;
+            to.tm_year = date_split[0].toInt() - 1900; // TODO handle the microseconds decimal number
+
+            int64_t ns((time_split[2].toDouble() - to.tm_sec) * 1000000.0);
+            //
+            time_t const tt( mkgmtime( &to ) );
+
+            // concatenate the result
+            QByteArray tms;
+            appendUnsignedCharValue( tms, static_cast<unsigned char>(priority) );
+            appendInt64Value( tms, tt * 1000000 + ns );
+            appendStringValue( tms, str );
+            cvalue.setBinaryValue(tms);
+        }
+        break;
+
+        case column_type_t::CT_time_seconds:
+        {
+            // String will be of the form: "%Y-%m-%d %H:%M:%S"
+            //
+            snap_string_list const datetime_split ( v.split(' ') );
+            if(datetime_split.size() < 2)
+            {
+                return;
+            }
+            snap_string_list const date_split     ( datetime_split[0].split('-') );
+            snap_string_list const time_split     ( datetime_split[1].split(':') );
+            if(date_split.size() != 3)
+            {
+                return;
+            }
+            if(time_split.size() != 3)
+            {
+                return;
+            }
+            //
+            tm to;
+            to.tm_sec  = time_split[2].toInt();
+            to.tm_min  = time_split[1].toInt();
+            to.tm_hour = time_split[0].toInt();
+            to.tm_mday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt() - 1;
+            to.tm_year = date_split[0].toInt() - 1900;
+            //
+            time_t const tt( mkgmtime( &to ) );
+            cvalue.setUInt64Value( tt );
         }
         break;
 
@@ -1079,6 +1279,27 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
             //v = c->value().stringValue().replace("\n", "\\n");
             QString convert( v );
             cvalue.setStringValue( convert.replace( "\\r", "\r" ).replace( "\\n", "\n" ) );
+        }
+        break;
+
+        case column_type_t::CT_rights_value:
+        {
+            // save the time followed by the list of permissions separated
+            // by '\n'
+            QString convert( v );
+            QByteArray buffer;
+            QtCassandra::setInt64Value( buffer, string_to_microseconds(v) );
+            int pos(v.indexOf(')'));
+            if(pos > 0)
+            {
+                ++pos;
+                while(v[pos].isSpace())
+                {
+                    ++pos;
+                }
+                QtCassandra::appendStringValue( buffer, v.mid(pos + 1) );
+            }
+            cvalue.setBinaryValue(buffer);
         }
         break;
     }

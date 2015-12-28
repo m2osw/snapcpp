@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
          public data anyway) -->
     <param name="list::original_test_script" overwrite="yes">
       <![CDATA[!strmatch("^admin/", path)
-            && linked_to("ecommerce::product", page, "types/taxonomy/system/content-types/epayment/product*", false)
+            && linked_to("content::page_type", page, "types/taxonomy/system/content-types/epayment/product*")
             && perms(path, "user", "view", "visitor")]]>
     </param>
     <param name="list::selector" overwrite="yes"><![CDATA[type=types/taxonomy/system/content-types/epayment/product]]></param>
@@ -52,7 +52,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>The perfect software you always dreamed about!</p>]]>
     </param>
     <param name="epayment::price" revision="revision" type="float64">128.50</param>
-    <param name="epayment::product_name" revision="revision" type="float64">test_01</param>
+    <param name="epayment::product_name" revision="revision">test_01</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
@@ -63,7 +63,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Version two of the perfect software which is even better than version 1 which means we cannot even describe it!</p>]]>
     </param>
     <param name="epayment::price" revision="revision" type="float64">200</param>
-    <param name="epayment::product_name" revision="revision" type="float64">test_02</param>
+    <param name="epayment::product_name" revision="revision">test_02</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
@@ -74,7 +74,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Turn Watcher online, the best tool for DMs and players alike.</p>]]>
     </param>
     <param name="epayment::price" revision="revision" type="float64">200</param>
-    <param name="epayment::product_name" revision="revision" type="float64">test_03</param>
+    <param name="epayment::product_name" revision="revision">test_03</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
@@ -85,7 +85,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Turn Watcher online, the best tool for DMs and players alike. This is the subscription that gives you access to all the features without the need for anything more.</p>]]>
     </param>
     <param name="epayment::price" revision="revision" type="float64">2</param>
-    <param name="epayment::product_name" revision="revision" type="float64">test_04</param>
+    <param name="epayment::product_name" revision="revision">test_04</param>
     <param name="epayment::recurring" revision="revision">
       <![CDATA[DAY]]>
     </param>
@@ -99,7 +99,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Turn Watcher online, the best tool for DMs and players alike. This is the subscription that gives you access to all the features without the need for anything more.</p>]]>
     </param>
     <param name="epayment::price" revision="revision" type="float64">2</param>
-    <param name="epayment::product_name" revision="revision" type="float64">test_05</param>
+    <param name="epayment::product_name" revision="revision">test_05</param>
     <param name="epayment::recurring" revision="revision">
       <![CDATA[WEEK]]>
     </param>
@@ -112,9 +112,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Snap! e-Commerce Invoices.</p>]]>
     </param>
-    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/ecommerce/invoice</link>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/system-page</link>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/administer/website</link>
+    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/shorturl/no_shorturl</link>
@@ -152,6 +152,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <attachment name="ecommerce-logo" type="attachment/public">
+      <path>:/images/ecommerce/ecommerce-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
     <attachment name="empty-shopping-cart" type="attachment/public">
       <path>:/images/ecommerce/empty-shopping-cart.png</path>
       <mime-type>image/png</mime-type>

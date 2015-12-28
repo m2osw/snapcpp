@@ -22,8 +22,6 @@
 
 #include <controlled_vars/controlled_vars_no_init.h>
 
-#include <iostream>
-
 #include <QList>
 #include <QPointer>
 
@@ -1572,9 +1570,9 @@ typedef QVector<parser_state *> state_array_t;
 typedef QMap<parser_state *, int> state_map_t;
 struct parser_state
 {
-    parser_state(parser_state *parent, choices& c, int r)
+    parser_state(parser_state * parent, choices & c, int r)
         //: f_lock(false) -- auto-init
-        //, f_line(<random>) -- auto-init
+        //, f_line(-1) -- auto-init
         : f_parent(parent)
         //, f_children() -- auto-init
         , f_choices(&c)
@@ -1626,7 +1624,7 @@ struct parser_state
         f_position = -1;
     }
 
-    void reset(parser_state *parent, choices& c, int const r)
+    void reset(parser_state * parent, choices & c, int const r)
     {
         f_parent = parent;
         if(parent != nullptr)
@@ -1640,9 +1638,9 @@ struct parser_state
         f_add_on_reduce.clear();
     }
 
-    static parser_state *alloc(state_array_t& free_states, parser_state *parent, choices& c, int const r)
+    static parser_state * alloc(state_array_t & free_states, parser_state * parent, choices & c, int const r)
     {
-        parser_state *state;
+        parser_state * state;
         if(free_states.empty())
         {
             state = new parser_state(parent, c, r);
@@ -1656,7 +1654,7 @@ struct parser_state
         return state;
     }
 
-    static void free(state_array_t& current, state_array_t& free_states, parser_state *s)
+    static void free(state_array_t & current, state_array_t & free_states, parser_state * s)
     {
 #ifdef DEBUG
         if(s->f_lock)
@@ -1680,9 +1678,9 @@ struct parser_state
         free_states.push_back(s);
     }
 
-    static parser_state *copy(state_array_t& free_states, parser_state *source)
+    static parser_state * copy(state_array_t& free_states, parser_state * source)
     {
-        parser_state *state(alloc(free_states, source->f_parent, *source->f_choices, source->f_rule));
+        parser_state * state(alloc(free_states, source->f_parent, *source->f_choices, source->f_rule));
         state->f_line = source->f_line;
         state->f_position = source->f_position;
         if(source->f_node != nullptr)
@@ -1693,7 +1691,7 @@ struct parser_state
         return state;
     }
 
-    void copy_reduce_states(state_array_t& free_states, state_array_t& add_on_reduce)
+    void copy_reduce_states(state_array_t & free_states, state_array_t & add_on_reduce)
     {
         int const max_reduce(add_on_reduce.size());
         for(int i(0); i < max_reduce; ++i)
@@ -1704,7 +1702,7 @@ struct parser_state
         }
     }
 
-    void add_token(token& t)
+    void add_token(token & t)
     {
         if(f_node == nullptr)
         {
@@ -1753,17 +1751,17 @@ struct parser_state
      * \param[in] a  The array to be displayed.
      */
 #ifdef DEBUG
-    static void display_array(const state_array_t& a)
+    static void display_array(const state_array_t & a)
     {
         SNAP_LOG_TRACE() << "+++ ARRAY (" << a.size() << " items)\n";
         for(state_array_t::const_iterator it(a.begin()); it != a.end(); ++it)
         {
-            parser_state *state(*it);
+            parser_state * state(*it);
             //std::cerr << "  state = " << state << "\n"; // for crash
             SNAP_LOG_TRACE() << "  current: " << state->toString() << "\n";
             for(state_array_t::const_iterator r(state->f_add_on_reduce.begin()); r != state->f_add_on_reduce.end(); ++r)
             {
-                parser_state *s(*r);
+                parser_state * s(*r);
                 SNAP_LOG_TRACE() << "      add on reduce: " << s->toString() << "\n";
             }
             while(state->f_parent != nullptr)
@@ -1789,7 +1787,7 @@ struct parser_state
 
     controlled_vars::flbool_t       f_lock;
 
-    controlled_vars::rint32_t       f_line;
+    int32_t                         f_line = -1;
     parser_state *                  f_parent;
     state_array_t                   f_children;
 

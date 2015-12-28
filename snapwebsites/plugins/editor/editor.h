@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "../form/form.h"
 #include "../users/users.h"
 #include "../server_access/server_access.h"
 #include "../javascript/javascript.h"
@@ -84,19 +85,21 @@ enum class name_t
     SNAP_NAME_EDITOR_PAGE,
     SNAP_NAME_EDITOR_PAGE_TYPE,
     SNAP_NAME_EDITOR_SESSION,
+    SNAP_NAME_EDITOR_TIMEOUT,
     SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH,
     SNAP_NAME_EDITOR_TYPE_FORMAT_PATH
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
-class editor : public plugins::plugin
-             , public links::links_cloned
-             , public path::path_execute
-             , public layout::layout_content
-             , public form::form_post
-             , public layout::layout_boxes
-             , public javascript::javascript_dynamic_plugin
+class editor
+        : public plugins::plugin
+        , public links::links_cloned
+        , public path::path_execute
+        , public layout::layout_content
+        , public form::form_post
+        , public layout::layout_boxes
+        , public javascript::javascript_dynamic_plugin
 {
 public:
     static int const    EDITOR_SESSION_ID_EDIT = 1;
@@ -211,42 +214,51 @@ public:
                         editor();
                         ~editor();
 
+    // plugins::plugin implementation
     static editor *     instance();
+    virtual QString     settings_path() const;
+    virtual QString     icon() const;
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_emails_table();
+    virtual void        bootstrap(snap_child * snap);
 
-    // signals
-    void                on_bootstrap(snap_child * snap);
-    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
-    void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
-    void                on_validate_post_for_widget(content::path_info_t & ipath, sessions::sessions::session_info & info,
-                                         QDomElement const & widget, QString const & widget_name,
-                                         QString const & widget_type, bool is_secret);
+    // server signals
     void                on_process_post(QString const & uri_path);
-    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    void                on_add_layout_from_resources(QString const & name);
-
-    // layout::layout_content
-    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
-
-    // layout::layout_boxes
-    virtual void        on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box, QString const & ctemplate);
-
-    // links::links_cloned
-    virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
 
     // path::path_execute
     virtual bool        on_path_execute(content::path_info_t & ipath);
 
+    // path signals
+    void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+
+    // layout::layout_content
+    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
+
+    // layout::layout_boxes
+    virtual void        on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box);
+
+    // layout signals
+    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
+    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+    void                on_add_layout_from_resources(QString const & name);
+
+    // links::links_cloned
+    virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
+
     // form::form_post
     virtual void        on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & info);
+
+    // form signals
+    void                on_validate_post_for_widget(content::path_info_t & ipath, sessions::sessions::session_info & info,
+                                         QDomElement const & widget, QString const & widget_name,
+                                         QString const & widget_type, bool is_secret);
 
     QString             format_uri(QString const & format, content::path_info_t & ipath, QString const & page_name, params_map_t const & params);
     static save_mode_t  string_to_save_mode(QString const & mode);
     static QString      clean_post_value(QString const & widget_type, QString value);
     void                parse_out_inline_img(content::path_info_t & ipath, QString & body, QDomElement widget);
-    QDomDocument        get_editor_widgets(content::path_info_t & ipath);
+    QDomDocument        get_editor_widgets(content::path_info_t & ipath, bool saving = false);
     void                add_editor_widget_templates(QDomDocument doc);
     void                add_editor_widget_templates(QString const & doc);
     void                add_editor_widget_templates_from_file(QString const & filename);
@@ -261,6 +273,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(finish_editor_form_processing, (content::path_info_t & ipath, bool & succeeded), (ipath, succeeded), NEITHER);
     SNAP_SIGNAL(string_to_value, (string_to_value_info_t & value_info), (value_info));
     SNAP_SIGNAL(value_to_string, (value_to_string_info_t & value_info), (value_info));
+    SNAP_SIGNAL(editor_widget_type_is_secret, (QDomElement widget, content::permission_flag & is_public), (widget, is_public));
 
     // dynamic javascript property support
     virtual int         js_property_count() const;
@@ -275,9 +288,12 @@ private:
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
     void                editor_save(content::path_info_t & ipath, sessions::sessions::session_info & info);
-    void                editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access *server_access_plugin);
+    void                editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access * server_access_plugin);
     void                editor_create_new_branch(content::path_info_t & ipath);
     bool                save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget);
+    QString             verify_html_validity(QString body);
+    bool                widget_is_secret(QDomElement widget);
+    void                retrieve_original_field(content::path_info_t ipath);
 
     zpsnap_child_t          f_snap;
     QDomDocument            f_editor_form;          // XSL from editor-form.xsl + other plugin extensions

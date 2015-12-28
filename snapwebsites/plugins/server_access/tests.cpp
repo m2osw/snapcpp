@@ -20,7 +20,6 @@
 #include "../content/content.h"
 
 #include "log.h"
-#include "not_reached.h"
 
 #include <iostream>
 

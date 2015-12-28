@@ -64,6 +64,7 @@ add_library(locale_settings SHARED
     content.xml
     locale-settings-page.xml
     locale-settings-parser.xsl
+    locale-logo-64x64.png
 )
 
 target_link_libraries( locale_settings

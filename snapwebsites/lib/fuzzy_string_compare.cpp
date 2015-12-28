@@ -45,7 +45,7 @@ namespace snap
  *
  * \return The Levenshtein distance between \p s and \p t.
  */
-int levenshtein_distance(std::wstring s, std::wstring t)
+int levenshtein_distance(std::wstring const & s, std::wstring const & t)
 {
     // degenerate cases
     if(s == t)
@@ -94,6 +94,62 @@ int levenshtein_distance(std::wstring s, std::wstring t)
     }
  
     return v0[t.length()];
+}
+
+/** \brief Search a string in another with a given Levenshtein distance.
+ *
+ * This function searches string \p needle in \p haystack using the
+ * specified Levenshtein distance.
+ *
+ * In other words, the function shortens \p haystack to a length
+ * equal to \p needle, then \p needle + 1, \p needle + 2, ...,
+ * \p needle + \p distance and check each such shorter version
+ * of \p haystack against \p needle. If any of these sub-haystack
+ * return a distance smaller or equal to the specified parameter
+ * named \p distance, then the function returns the position
+ * at which the match was found. The function stops as soon as
+ * a match is found, this means it may not find the smallest
+ * possible match.
+ *
+ * \exception
+ *
+ * \param[in] haystack  The haystack where the \p needle is searched.
+ * \param[in] needle  The needle to search in \p haystack.
+ * \param[in] distance  The distance which represents a match.
+ *
+ * \return The position where a match was found, -1 if no matches
+ *         were found.
+ */
+bool strstr_with_levenshtein_distance(std::wstring const & haystack, std::wstring const & needle, int const distance)
+{
+    if(distance <= 0)
+    {
+        throw fuzzy_string_compare_exception_invalid_parameters("Levenshtein distance in strstr_with_levenshtein_distance() needs to be > 0");
+    }
+
+    size_t const needle_length(needle.length());
+    if(needle_length >= haystack.length())
+    {
+        return levenshtein_distance(haystack, needle) <= distance;
+    }
+
+    // haystack is larger than needle, apply our loops
+    //
+    size_t const haystack_length(haystack.length());
+    for(size_t i(needle_length); i < haystack_length; ++i)
+    {
+        size_t const max_distance(std::min(i + distance, haystack_length) - i);
+        for(size_t j(0); j <= max_distance; ++j)
+        {
+            std::wstring const sub_haystack(haystack.substr(i - needle_length, i + j));
+            if(levenshtein_distance(sub_haystack, needle) <= distance)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 } // namespace snap

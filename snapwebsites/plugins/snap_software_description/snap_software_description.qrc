@@ -25,7 +25,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>snap_software_description-settings-page.xml</file>
   </qresource>
   <qresource prefix="/xsl/layout">
+    <file>padfile-parser.xsl</file>
+    <file>padlist-parser.xsl</file>
+    <file>snap-software-description-catalog-parser.xsl</file>
+    <file>snap-software-description-file-parser.xsl</file>
+    <file>snap-software-description-publisher-parser.xsl</file>
     <file>snap_software_description-settings-parser.xsl</file>
+    <file>snap-software-description-support-parser.xsl</file>
   </qresource>
 </RCC>
 <!--

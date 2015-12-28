@@ -25,14 +25,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Werror -Wall -Wextra -pedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-include-dirs -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=4 -Wundef -Wno-unused -Wunused-variable -Wno-variadic-macros -Wno-parentheses -Wno-unknown-pragmas -Wwrite-strings -Wswitch -fdiagnostics-show-option -fPIC -Wunused-parameter -Wfloat-equal" )
-set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -fPIC -Wunused-parameter -fwrapv" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Werror -Wall -Wextra -pedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-include-dirs -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=4 -Wundef -Wno-unused -Wunused-variable -Wno-variadic-macros -Wno-parentheses -Wno-unknown-pragmas -Wwrite-strings -Wswitch -fdiagnostics-show-option -Wunused-parameter -Wfloat-equal" )
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wunused-parameter -fwrapv" )
 
 set( CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -g -O0" )
 set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" )
 
 if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
     set( SNAP_LINUX TRUE )
+
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" )
+    set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC" )
 else()
     message( WARNING "You may have problems trying to compile this code on non-*nix platforms." )
 endif()
@@ -51,10 +54,10 @@ if( ${${PROJECT_NAME}_COVERAGE} )
 		message( FATAL_ERROR "Coverage requested, but Debug is not turned on! (i.e. -DCMAKE_BUILD_TYPE=Debug)" )
 	endif()
 	#
-	set( COV_C_FLAGS             "-fprofile-arcs -ftest-coverage" )
-	set( COV_CXX_FLAGS           "-fprofile-arcs -ftest-coverage" )
-	set( COV_SHARED_LINKER_FLAGS "-fprofile-arcs -ftest-coverage" )
-	set( COV_EXE_LINKER_FLAGS    "-fprofile-arcs -ftest-coverage" )
+	set( COV_C_FLAGS             "-fprofile-arcs -ftest-coverage -pg" )
+	set( COV_CXX_FLAGS           "-fprofile-arcs -ftest-coverage -pg" )
+	set( COV_SHARED_LINKER_FLAGS "-fprofile-arcs -ftest-coverage -pg" )
+	set( COV_EXE_LINKER_FLAGS    "-fprofile-arcs -ftest-coverage -pg" )
 	#
 	set( CMAKE_C_FLAGS             "${CMAKE_C_FLAGS} ${COV_C_FLAGS}"                         )
 	set( CMAKE_CXX_FLAGS           "${CMAKE_CXX_FLAGS} ${COV_CXX_FLAGS}"                     )

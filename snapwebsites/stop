@@ -8,5 +8,5 @@ then
 	../BUILD/snapwebsites/src/snapsignal --action snapserver STOP
 else
 	# stop all the snap services managed by snapinit on this computer
-	../BUILD/snapwebsites/src/snapinit stop
+	../BUILD/snapwebsites/src/snapinit --binary-path ../BUILD/snapwebsites/src:../BUILD/snapwatchdog/src stop
 fi

@@ -41,87 +41,110 @@
 <tld>
   <!-- international (for the whole world) -->
   <area category="international">
-    .academy .active .agency .airforce .allfinanz .aquarelle .archi .army
-    .associates .auction .audio .autos
+    .academy .active .adult .africamagic .agency .airforce .allfinanz
+    .analytics .apartments .app .aquarelle .arab .archi .are .army
+    .art .associates .auction .audible .audio .auto .autos
 
-    .band .bar .bargains .beer .best .bible .bid .bike .bio .biz .black
-    .blackfriday .blue .bond .boo .boutique .build .business .buzz
+    .baby .band .bank .bar .bargains .beer .best .bible .bid .bike
+    .bio .biz .black .blackfriday .blog .blue .boats .bond .boo .boots
+    .bot .boutique .build .business .buy .buzz
 
-    .cab .camera .camp .capital .caravan .cards .care .careers .casa .cash
-    .catering .center .cheap .christmas .church .claims .cleaning
-    .click .clinic .clothing .club .codes .coffee .com .community .company
-    .computer .condos .construction .consulting .cooking .cool .coop
-    .credit .creditcard .cruises
+    .cab .cafe .call .camera .camp .capital .car .cars .caravan .cards
+    .care .career .careers .casa .cash .casino .catering .center .channel
+    .chat .cheap .christmas .church .circle .cityeats .claims .cleaning
+    .click .clinic .clothing .cloud .club .coach .codes .coffee .college .com
+    .community .company .computer .condos .construction .consulting .contact
+    .cooking .cookingchannel .cool .coop .coupon .coupons .courses .credit
+    .creditcard .creditunion .cricket .crown .cruises
 
-    .dad .dance .dating .day .deals .degree .democrat .diamonds
-    .diet .digital .direct .directory .discount .domains
+    .dad .dance .date .dating .day .deal .deals .degree .delivery .democrat
+    .design .dev .diamonds .diet .digital .direct .directory .discount
+    .docs .dog .domains .dot .download .drive
 
-    .eat .edu .education .email .engineering .enterprises .equipment .estate
-    .eu.int .events .exchange .exposed
+    .earth .eat .edu .education .email .energy .engineering .enterprises
+    .equipment .estate .events .exchange .exposed .express
 
-    .fail .fan .fashion .feedback .finance .financial .fish .fishing
-    .fitness .flights .fly .foo .forsale .foundation .frogans .fund
-    .furniture .futbol
+    .fail .faith .family .fan .fans .fashion .fast .feedback .film .final
+    .finance .financial .fire .fish .fishing .fit .fitness .flights .flowers
+    .fly .foo .foodnetwork .football .forsale .forum
+    .foundation .frogans .frontdoor .fund .furniture .futbol .fyi
 
-    .gallery .garden .gbiz .gent .gift .gifts .gives .glass .gle .global
-    .globo .gop .graphics .green .gratis .gripe .group .guide .guitars .guru
+    .gallery .gallo .game .games .garden .gbiz .gent .gift .gifts .gives
+    .glass .global .globo .gold .golf .goo .got .graphics .gratis .green
+    .gripe .group .guide .guitars .guru
 
-    .haus .healthcare .help .here .hermes .hiphop .hiv .holdings .holiday
-    .homes .horse .host .hosting .house .how
+    .hangout .haus .health .healthcare .help .here .hermes .hiphop .hiv
+    .hockey .holdings .holiday .homes .horse .host .hosting
+    .house .how
 
-    .immo .immobilien .industries .info .ing .ink .institute .insure
-    .investments
+    .ice .immo .immobilien .industries .info .ing .ink .institute .insurance
+    .insure .investments
 
-    .jetzt .jobs .juegos
+    .jetzt .jewelry .jobs .joy .juegos
 
     .kaufen .kim .kitchen
 
-    .land .lease .life .lighting .limited .limo .link .loans
-    .lotto .luxe .luxury
+    .land .law .lease .legal .lgbt .life .lifeinsurance .lifestyle
+    .lighting .like .limited .limo .link .live .loan .loans .lol .lotto
+    .love .ltd .luxe .luxury
 
-    .maison .management .market .marketing .media .meet .meme .menu .mini
-    .mobi .moda .moe .monash .mormon .mortgage .motorcycles .mov
+    .maison .makeup .man .management .market .marketing .markets .mba
+    .media .meet .meme .memorial .men .menu .mini .mls .mobi .moda .moe
+    .moi .mom .money .mormon .mortgage .moto .motorcycles .mov .movie
+    .mutual .mutuelle
 
-    .name .navy .net .network .new .ninja
+    <!-- .ngo / .ong == Non Governmental Organizations / Organizations Non Governementales -->
+    .name .navy .net .network .new .news .now .ngo .ninja
 
-    .org .organic
+    .office .one .ong .onl .online .ooo .org .organic
 
-    .partners .parts .pharmacy .photo .photography .photos .physio
-    .pics .pictures .pink .pizza .place .poker .press .prod
-    .productions .properties .property .pub
+    .page .partners .parts .party .pet .pharmacy .photo .photography
+    .photos .physio .pics .pictures .ping .pink .pizza .place .play
+    .playstation .plus .poker .porn .press .prod .productions .promo
+    .properties .property .protection .pub
 
     .post <!-- Also the .post is defined as "having a complex second level
             domain name rules", technically, it has no second level domain -->
 
     .qpon <!-- "coupon" -->
 
-    .realtor .recipes .red .rehab .reise .reisen .rentals .repair .report
-    .republican .rest .restaurant .reviews .rich .rip .rocks .rodeo .rsvp
+    .racing .read .realtor .realty .recipes .red .rehab .reise .reisen
+    .rent .rentals .repair .report .republican .rest .restaurant .review
+    .reviews .rich .rip .rocks .rodeo .room .run .rsvp
 
-    .scholarships .schule .seat .services .sew .sexy .shiksha .shoes
-    .singles .social .software .solar .solutions .soy .space
-    .supplies .supply .support .surf .systems
+    .safe .safety .sale .salon .save .scholarships .school .schule .science
+    .seat .security .services .sew .sex .sexy .shiksha .shoes .show .silk
+    .singles .site .ski .skin .smile .soccer .social .software
+    .solar .solutions .song .soy .space .spot .storage .store .studio .study
+    .style .sucks .supplies .supply .support .surf .systems
 
-    .tattoo .tax .technology .tel .tienda .tips .today .tools .top .town
-    .toys .trade .training .travel
+    .talk .tattoo .tax .taxi .team .tech .technology .tel .tennis
+    .theater .theatre .tickets .tienda .tips .tires .today .tools
+    .top .tours .town .toys .trade .trading .training .travel
+    .travelers .trust .tube .tunes
 
     .university .uno
 
-    .vacations .ventures .vet .viajes .villas .vision .vodka .vote .voting
-    .voto .voyage
+    .vacations .ventures .vet .viajes .video .villas .vision .vodka
+    .vote .voting .voto .voyage
 
-    .wang .watch .webcam .website .wed .wedding .wiki .work .works .wtc .wtf
+    .wang .watch .watches .weather .webcam .website .wed .wedding
+    .whoswho .wiki .wine .work .works .wtc .wtf
 
     .xxx .xyz
 
-    .yachts .yoga
+    .yachts .yoga .you
 
     .zip .zone
 
+    .&#x03B5;&#x03BB; <!-- el (Greek) -->
+    .&#x0431;&#x0435;&#x043B; <!-- bel (Belarussian) -->
     .&#x0434;&#x0435;&#x0442;&#x0438; <!-- kids (Russian) -->
+    .&#x043C;&#x043A;&#x0434; <!-- mkd (Macedonian) -->
     .&#x043E;&#x043D;&#x043B;&#x0430;&#x0439;&#x043D; <!-- online (Russian) -->
     .&#x043E;&#x0440;&#x0433; <!-- organization (Russian) -->
     .&#x0441;&#x0430;&#x0439;&#x0442; <!-- site (Russian) -->
+    .&#x0570;&#x0561;&#x0575; <!-- hye (Armenian) -->
     .&#x0628;&#x0627;&#x0632;&#x0627;&#x0631; <!-- bazaar (Arabic) -->
     .&#x0634;&#x0628;&#x0643;&#x0629; <!-- web/network (Arabic) -->
     .&#x0938;&#x0902;&#x0917;&#x0920;&#x0928; <!-- organization (Hindi) -->
@@ -141,6 +164,8 @@
     .&#x7F51;&#x5740; <!-- network address (Chinese) -->
     .&#x7F51;&#x7EDC; <!-- network (Chinese) -->
     .&#x96C6;&#x56E2; <!-- group (Chinese) -->
+    .&#x26FB3;&#x29580; <!-- Macao (Chinese, Traditional) -->
+    .&#x26FB3;&#x295E8; <!-- Macao (Chinese, Simplified) -->
 
     <!-- yeah... .areo has gone crazy https://www.information.aero/ -->
     .aero .accident-investigation.aero .accident-prevention.aero
@@ -321,52 +346,128 @@
     .&#x0438;&#x043A;&#x043E;&#x043C;.museum
 
     <forbid reason="deprecated">.nato</forbid>
-    <forbid reason="proposed">.career .college .kosher .loan .mail .med
-    .shop .sport .web .wine</forbid>
+    <forbid reason="proposed">.kosher .mail .med
+    .shop .sport .web</forbid>
   </area>
 
   <!-- specialized TLDs -->
   <area category="brand">
-    .abbott .abogado .accenture .android .axa
-    .bauhaus .bcn .bharti .bloomberg .bmw .bnl .bnpparibas
-    .cal .cartier .cba .cbn .cern .cfa .channel .chrome .citic
-    .commbank .crs .cuisinella .dabur .datsun .desi .dnp .doosan
-    .durban .dvag .emerck .erni .eurovision .everbank .firmdale
-    .flsmidth .frl .gdn .ggee .gmail .gmo .gmx .google .guge .ibm
-    .ifm .iinet .infiniti .ipiranga .ist .iwc .java .krd
-    .kred .lacaixa .latrobe .ltda .mango .montblanc .netbank
-    .neustar .nexus .ngo .nhk .nissan .nra .nrw .ong .onl .ooo .oracle
-    .otsuka .ovh .pictet .pohl .praxi .ren .samsung .sap .sarl .sca
-    .scb .schmidt .sharp .shriram .sky .sohu .spiegel .suzuki .taipei
-    .tatar .temasek .toshiba .tui .uol .verm&#x00F6;gensberater
-    .verm&#x00F6;gensberatung .versicherung .vlaanderen
-    .whoswho .williamhill .wme .yandex .youtube
-    .&#x4E2D;&#x4FE1; <!-- Citic (Chinese) -->
-    .&#xC0BC;&#xC131; <!-- Samsung (Korean) -->
-    .&#x4F5B;&#x5C71; <!-- Guangzhou YU Wei Information Technology Co., Ltd. -->
-    .&#x6148;&#x5584; <!-- Excellent First Limited -->
-    .&#x516B;&#x5366; <!-- Zodiac Scorpio Limited -->
+    .aaa .aarp .abb .abbott .able .abogado .accenture .aco .ads .aeg
+    .aetna .afl .agakhan .aig .airtel .akdn .alibaba .alipay .ally
+    .amica .android .anquan .apple .aramco .arte
+    .asda .astrium .athleta .audi .auspost .avianca .aws
+    .axa .azure .baidu .barclaycard .barclays .barefoot .bauhaus
+    .bbc .bbva .bcg .bcn .beats .bentley .bet .bharti .bing .bingo
+    .bloomberg .bms .bmw .bnl .bnpparibas .bom .bosch .bostik
+    .bradesco .bridgestone .brother
+    .cal .canon .cartier .cba .cbn .cbre .ceb .cern .cfa .cfd .chanel
+    .chase .chintai .chloe .chrome .cipriani .cisco .citic .clubmed
+    .commbank .comsec .crs .csc .cuisinella .cyou .dabur .datsun .dclk
+    .dds .dell .delta .desi .dnp .doosan .dstv .dtv .dunlop .dupont
+    .durban .dvag .edeka .emerck .epson .erni .eurovision .everbank
+    .extraspace .fage .fairwinds .ferrero .firestone .firmdale .flickr
+    .flsmidth .ford .forex .frl .frontier .gallup .gdn .gea .genting
+    .ggee .giving .goodyear .gle .gmail .gmo .gmx .goldpoint .goog
+    .google .gop .gotv .grainger .gucci .guge .hdfcbank .hgtv .hitachi
+    .hkt .homedepot .honda .hoteles .hotmail .hsbc .htc .ibm .icbc .icu
+    .ifm .iinet .imdb .infiniti .ipiranga .iselect .ist .itau .iwc
+    .jaguar .java .jcb .jcp .jio .jlc .jll .jmp .jnj .jot .jpmorgan .jprs
+    .kddi .kerryhotels .kerrylogistics .kerryproperties .kfh .kinder
+    .kindle .komatsu .kpmg .kpn .krd .kred .kuokgroup .kyknet .kyoto
+    .lacaixa .lamborghini .lancaster .landrover .lasalle .latrobe .lexus
+    .liaison .lidl .lincoln .linde .lipsy .lixil .locker .locus .lotte
+    .ltda .lupin .maif .mango .marriott .meo .metlife .microsoft .mit
+    .mlb .mma .mnet .mobily .monash .montblanc .movistar .mtn .mtpc .mtr
+    .multichoice .mzansimagic .nadex .naspers .natura .nec
+    .netbank .netflix .neustar .next .nextdirect .nexus .nhk .nico .nikon
+    .nissan .nokia .northwesternmutual .norton .nowruz .nowtv .nra .ntt
+    .obi .observer .olayan .olayangroup .ollo .omega .oracle .orange
+    .orientexpress .osaka .otsuka .ott .ovh .pamperedchef .panerai .pars
+    .passagens .payu .pccw .philips .piaget .pictet .pid .pin .pnc
+    .pohl .praxi .prime .quest .redstone .redumbrella .ren .reit
+    .reliance .rexroth .richardli .ricoh .ril .rocher .rwe .sakura
+    .samsung .sandvik .sandvikcoromant .sanofi .sap .sapo .sarl .sas
+    .saxo .sbi .sbs .sca .scb .schmidt .schwarz .scor .seek .sener .sharp
+    .shaw .shia .shouji .shriram .sina .sky .skype .sncf .softbank
+    .sohu .sony .spiegel .spreadbetting .srl .stada .star .starhub .statebank
+    .statoil .stc .stcgroup .supersport .suzuki .swatch .swiss .sydney
+    .symantec .tab .taipei .taobao .tatamotors .tatar .tci .tdk .telecity
+    .telefonica .teva .temasek .thd .theguardian .tiffany .tmall .toray
+    .toshiba .toyota .travelchannel .travelersinsurance .trv .tui .tushu
+    .tvs .ubs .uol .ups .vana .verm&#x00F6;gensberater
+    .verm&#x00F6;gensberatung .versicherung .vig .viking .vin .vip .virgin
+    .vista .vistaprint .viva .vlaanderen .volkswagen .vuelos .walter
+    .wanggou .warman .weatherchannel .weber .weibo .weir
+    .williamhill .win .windows .wme .xbox .xerox .xihuan .xin .xperia
+    .yahoo .yamaxun .yandex .yodobashi .youtube .yun .zappos .zara
+    .zero .zippo
+    .&#x043A;&#x043E;&#x043C; <!-- VeriSign Sarl -->
+    .&#x0440;&#x0443;&#x0441; <!-- Rusnames Limited -->
+    .&#x05E7;&#x05D5;&#x05DD; <!-- VeriSign Sarl -->
+    .&#x0627;&#x0631;&#x0627;&#x0645;&#x0643;&#x0648; <!-- Aramco Services Company -->
+    .&#x0627;&#x0644;&#x0639;&#x0644;&#x064A;&#x0627;&#x0646; <!-- Crescent Holding GmbH -->
+    .&#x0628;&#x064A;&#x062A;&#x0643; <!-- Kuwait Finance House -->
+    .&#x0643;&#x0648;&#x0645; <!-- VeriSign Sarl -->
+    .&#x0645;&#x0648;&#x0628;&#x0627;&#x064A;&#x0644;&#x064A; <!-- GreenTech Consultancy Company W.L.L. -->
     .&#x0645;&#x0648;&#x0642;&#x0639; <!-- Suhub Electronic Establishment -->
-    .&#x65F6;&#x5C1A; <!-- RISE VICTORY LIMITED -->
-    .&#x6DE1;&#x9A6C;&#x9521; <!-- Temasek Holdings (Private) Limited -->
-    .&#x5546;&#x6807; <!-- HU YI GLOBAL INFORMATION RESOURCES(HOLDING) COMPANY.HONGKONG LIMITED -->
+    .&#x0647;&#x0645;&#x0631;&#x0627;&#x0647; <!-- Asia Green IT System Bilgisayar San. ve Tic. Ltd. Sti. -->
+    .&#x0928;&#x0947;&#x091F; <!-- VeriSign Sarl -->
+    .&#x30B0;&#x30FC;&#x30B0;&#x30EB; <!-- Charleston Road Registry Inc. -->
+    .&#x4E2D;&#x4FE1; <!-- Citic (Chinese) -->
+    .&#x4F01;&#x4E1A; <!-- Dash McCook, LLC -->
+    .&#x4F5B;&#x5C71; <!-- Guangzhou YU Wei Information Technology Co., Ltd. -->
+    .&#x516B;&#x5366; <!-- Zodiac Scorpio Limited -->
     .&#x5546;&#x5E97; <!-- Wild Island, LLC -->
-    .&#x65B0;&#x95FB; <!-- Xinhua News Agency Guangdong Branch -->
+    .&#x5546;&#x6807; <!-- HU YI GLOBAL INFORMATION RESOURCES (HOLDING) COMPANY.HONGKONG LIMITED -->
     .&#x5A31;&#x4E50; <!-- Will Bloom, LLC -->
-    .&#x8C37;&#x6B4C; <!-- Charleston Road Registry Inc. -->
-    .&#x7F51;&#x5E97; <!-- Zodiac Libra Limited -->
+    .&#x5E7F;&#x4E1C; <!-- Guangzhou YU Wei Information Technology Co., Ltd. -->
+    .&#x6148;&#x5584; <!-- Excellent First Limited -->
     .&#x624B;&#x673A; <!-- Beijing RITT-Net Technology Development Co., Ltd -->
     .&#x653F;&#x5E9C; <!-- Net-Chinese Co., Ltd. -->
-    .&#x0440;&#x0443;&#x0441; <!-- Rusnames Limited -->
-    .&#x30B0;&#x30FC;&#x30B0;&#x30EB; <!-- Charleston Road Registry Inc. -->
-    .&#x4F01;&#x4E1A; <!-- Dash McCook, LLC -->
-    .&#x5E7F;&#x4E1C; <!-- Guangzhou YU Wei Information Technology Co., Ltd. -->
+    .&#x65B0;&#x95FB; <!-- Xinhua News Agency Guangdong Branch -->
+    .&#x65F6;&#x5C1A; <!-- RISE VICTORY LIMITED -->
+    .&#x6DE1;&#x9A6C;&#x9521; <!-- Temasek Holdings (Private) Limited -->
+    .&#x7F51;&#x5E97; <!-- Zodiac Libra Limited -->
+    .&#x8C37;&#x6B4C; <!-- Charleston Road Registry Inc. -->
+    .&#x96FB;&#x8A0A;&#x76C8;&#x79D1; <!-- PCCW Enterprises Limited -->
+    .&#xC0BC;&#xC131; <!-- Samsung (Korean) -->
+    .&#x20915;&#x20949;&#x2092E; <!-- VeriSign Sarl -->
+    .&#x20928;&#x2091F; <!-- VeriSign Sarl -->
+    .&#x20E04;&#x20E2D;&#x20E21; <!-- VeriSign Sarl -->
+    .&#x230AF;&#x230E9;&#x230A6;&#x230C9; <!-- Amazon EU S.a.r.l. -->
+    .&#x230B3;&#x230E0; <!-- VeriSign Sarl -->
+    .&#x230B9;&#x230C8;&#x230A2; <!-- Amazon EU S.a.r.l -->
+    .&#x230BB;&#x230FC;&#x230EB; <!-- Amazon EU S.a.r.l -->
+    .&#x230DD;&#x230A4;&#x230F3;&#x230C8; <!-- Amazon EU S.a.r.l -->
+    .&#x230D5;&#x230A1;&#x230C3;&#x230B7;&#x230E7;&#x230F3; <!-- Amazon EU S.a.r.l -->
+    .&#x24FE1;&#x2606F; <!-- Beijing Tele-info Network Technology Co., Ltd. -->
+    .&#x25065;&#x25EB7; <!-- Stable Tone Limited -->
+    .&#x25609;&#x291CC;&#x25927;&#x29152;&#x25E97; <!-- Kerry Trading Co. Limited -->
+    .&#x25927;&#x24F17;&#x26C7D;&#x28F66; <!-- Volkswagen (China) Investment Co., Ltd. -->
+    .&#x25927;&#x262FF; <!-- VeriSign Sarl -->
+    .&#x25BB6;&#x296FB; <!-- Amazon EU S.a.r.l -->
+    .&#x25DE5;&#x2884C; <!-- Industrial and Commercial Bank of China Limited -->
+    .&#x25FAE;&#x2535A; <!-- China Uniter Network Communications Corporation Limited -->
+    .&#x2624B;&#x28868; <!-- Richemont DNS Inc. -->
+    .&#x266F8;&#x27C4D; <!-- Amazon EU S.a.r.l -->
+    .&#x270B9;&#x2770B; <!-- VeriSign Sarl -->
+    .&#x273E0;&#x25B9D; <!-- Richemont DNS Inc. -->
+    .&#x27F51;&#x27AD9; <!-- Global Website TLD Asia Limited -->
+    .&#x28054;&#x2901A; <!-- China Uniter Network Communications Corporation Limited -->
+    .&#x28BFA;&#x257FA;&#x24E9A; <!-- Nokia Corporation -->
+    .&#x28D2D;&#x27269; <!-- Minds + Machines Group Limited -->
+    .&#x296FB;&#x28A0A;&#x278C8;&#x279D1; <!-- PCCW Enterprises Limited -->
+    .&#x298DE;&#x25229;&#x26D66; <!-- Koninklijke Philips N.V. -->
+    .&#x298DF;&#x254C1; <!-- Amazon EU S.a.r.l -->
+    .&#x29910;&#x25385; <!-- HU YI GLOBAL INFORMATION RESOURCES (HOLDING) COMPANY. HONGKONG LIMITED -->
+    .&#x2B2F7;&#x2CEF4; <!-- VeriSign Sarl -->
+    .&#x2B2F7;&#x2B137; <!-- VeriSign Sarl -->
   </area>
   <area category="professionals">
-    .accountants .actor .attorney .builders .cancerresearch
-    .ceo .contractors .dental
+    .accountant .accountants .actor .attorney .author .broker .builders
+    .cancerresearch .ceo .contractors .dealer .dental
     .dentist .engineer .esq .expert .farm .florist .lawyer .lds
-    .leclerc .lgbt .plumbing .prof .surgery
+    .leclerc .plumbing .prof .surgery
 
     <!-- "old" .pro -->
     .pro .aaa.pro .aca.pro .acct.pro .avocat.pro .bar.pro .cpa.pro .eng.pro
@@ -380,18 +481,19 @@
     <forbid reason="proposed">.kids .nai .eco .gay .fc</forbid>
   </area>
   <area category="region">
-    .alsace .amsterdam .aq .asia .barcelona .bayern .berlin .brussels
-    .budapest .capetown .city .cologne
-    .country .eu .hamburg .int .international .istanbul .joburg .kiwi
-    .koeln .london .madrid .melbourne .miami
-    .moscow .nagoya .nyc .okinawa .paris .quebec .rio .ruhr .ryukyu .saarland
-    .tirol .tokyo .vegas .wales .wien .yokohama
+    .africa .alsace .amsterdam .aq .asia .barcelona .bayern .berlin
+    .broadway .brussels .budapest .capetown .city .cologne .corsica
+    .country .cymru .doha .dubai .eu .eu.int .hamburg .helsinki .int
+    .international .istanbul .joburg .kiwi .koeln .lat .london .madrid
+    .melbourne .miami .moscow .nagoya .nrw .nyc .okinawa .paris
+    .quebec .rio .ruhr .ryukyu .saarland .stockholm .tirol .tokyo
+    .vegas .wales .wien .world .yokohama .zuerich
     .&#x043C;&#x043E;&#x0441;&#x043A;&#x0432;&#x0430; <!-- moscow (Russian) -->
     <!-- the .cs and .yu were assigned to countries that are no more
          because of splits; as such it is difficult to place them in
          a specific country -->
     <forbid reason="unused">.cs .yu</forbid>
-    <forbid reason="proposed">.geo .lat .africa .eng .sci .world</forbid>
+    <forbid reason="proposed">.geo .eng .sci</forbid>
   </area>
   <area category="technical">
     <!-- .local is used by Mac OS/X as in computername.local
@@ -456,7 +558,7 @@
     .oz.au .telememo.au</forbid>
   </area>
   <area category="country" country="Austria">
-    .at .ac.at .biz.at .co.at .gv.at .info.at .or.at .priv.at
+    .at .ac.at .biz.at .co.at .gv.at .info.at .or.at
   </area>
   <area category="country" country="Azerbaijan">
     .az .com.az .net.az .int.az .gov.az .org.az .edu.az .info.az .pp.az .mil.az
@@ -503,7 +605,8 @@
     .bo .com.bo .net.bo .org.bo .tv.bo .mil.bo .int.bo .gob.bo .gov.bo .edu.bo
   </area>
   <area category="country" country="Bonaire, Sint Eustatius and Saba">
-    .bq
+    <!-- not yet assigned -->
+    <forbid reason="unused">.bq</forbid>
   </area>
   <area category="country" country="Bosnia and Herzegovina">
     .ba .web.ba .org.ba .net.ba .edu.ba .gov.ba .mil.ba .unsa.ba .untz.ba
@@ -618,8 +721,8 @@
     .cw .com.cw .edu.cw .net.cw .org.cw
   </area>
   <area category="country" country="Cyprus">
-    .ac.cy .net.cy .gov.cy .org.cy .pro.cy .name.cy .ekloges.cy .tm.cy
-    .ltd.cy .biz.cy .press.cy .parliament.cy .com.cy
+    .ac.cy .biz.cy .com.cy .ekloges.cy .gov.cy .ltd.cy .name.cy .net.cy
+    .org.cy .parliament.cy .press.cy .pro.cy .tm.cy
     <!-- nearly all websites are required to use a 3rd level name; the .cy
          is used by some companies such as nic.cy -->
     <forbid reason="reserved">.cy</forbid>
@@ -735,7 +838,7 @@
     .gr .co.gr .com.gr .edu.gr .net.gr .org.gr .gov.gr .mil.gr .mod.gr .sch.gr
   </area>
   <area category="country" country="Greenland">
-    .gl
+    .gl .co.gl .com.gl .edu.gl .net.gl .org.gl
   </area>
   <area category="country" country="Grenada">
     .gd
@@ -818,6 +921,7 @@
   </area>
   <area category="country" country="Iraq">
     .iq .gov.iq .edu.iq .com.iq .mil.iq .org.iq .net.iq
+    .&#x0639;&#x0631;&#x0627;&#x0642; <!-- "Iraq" (Arabic) -->
   </area>
   <area category="country" country="Isle of Man">
     .im .ac.im .co.im .com.im .ltd.co.im .net.im
@@ -1509,6 +1613,54 @@
 
     .&#x65E5;&#x672C;
 
+    .&#x6803;&#x6728;.jp
+    .&#x611B;&#x77E5;.jp
+    .&#x611B;&#x5A9B;.jp
+    .&#x5175;&#x5EAB;.jp
+    .&#x718A;&#x672C;.jp
+    .&#x8328;&#x57CE;.jp
+    .&#x5317;&#x6D77;&#x9053;.jp
+    .&#x5343;&#x8449;.jp
+    .&#x548C;&#x6B4C;&#x5C71;.jp
+    .&#x9577;&#x5D0E;.jp
+    .&#x9577;&#x91CE;.jp
+    .&#x65B0;&#x6F5F;.jp
+    .&#x9752;&#x68EE;.jp
+    .&#x9759;&#x5CA1;.jp
+    .&#x6771;&#x4EAC;.jp
+    .&#x77F3;&#x5DDD;.jp
+    .&#x57FC;&#x7389;.jp
+    .&#x4E09;&#x91CD;.jp
+    .&#x4EAC;&#x90FD;.jp
+    .&#x4F50;&#x8CC0;.jp
+    .&#x5927;&#x5206;.jp
+    .&#x5927;&#x962A;.jp
+    .&#x5948;&#x826F;.jp
+    .&#x5BAE;&#x57CE;.jp
+    .&#x5BAE;&#x5D0E;.jp
+    .&#x5BCC;&#x5C71;.jp
+    .&#x5C71;&#x53E3;.jp
+    .&#x5C71;&#x5F62;.jp
+    .&#x5C71;&#x68A8;.jp
+    .&#x5CA9;&#x624B;.jp
+    .&#x5C90;&#x961C;.jp
+    .&#x5CA1;&#x5C71;.jp
+    .&#x5CF6;&#x6839;.jp
+    .&#x5E83;&#x5CF6;.jp
+    .&#x5FB3;&#x5CF6;.jp
+    .&#x6C96;&#x7E04;.jp
+    .&#x6ECB;&#x8CC0;.jp
+    .&#x795E;&#x5948;&#x5DDD;.jp
+    .&#x798F;&#x4E95;.jp
+    .&#x798F;&#x5CA1;.jp
+    .&#x798F;&#x5CF6;.jp
+    .&#x79CB;&#x7530;.jp
+    .&#x7FA4;&#x99AC;.jp
+    .&#x9999;&#x5DDD;.jp
+    .&#x9AD8;&#x77E5;.jp
+    .&#x9CE5;&#x53D6;.jp
+    .&#x9E7F;&#x5150;&#x5CF6;.jp
+
     <forbid reason="deprecated">.nagakute.aichi.jp .takizawa.iwate.jp</forbid>
   </area>
   <area category="country" country="Jordan">
@@ -1851,6 +2003,8 @@
   <area category="country" country="Pakistan">
     .pk .com.pk .net.pk .edu.pk .org.pk .fam.pk .biz.pk .web.pk .gov.pk .gob.pk
     .gok.pk .gon.pk .gop.pk .gos.pk .gog.pk .info.pk
+    .&#x067E;&#x0627;&#x06A9;&#x0633;&#x062A;&#x0627;&#x0646; <!-- "Pakistan" Urdu/Arabic -->
+    .&#x067E;&#x0627;&#x0643;&#x0633;&#x062A;&#x0627;&#x0646; <!-- "Pakistan" Urdu/Arabic variant -->
   </area>
   <area category="country" country="Palau">
     .pw .co.pw .ne.pw .or.pw .ed.pw .go.pw .belau.pw
@@ -1892,17 +2046,25 @@
   </area>
   <area category="country" country="Poland">
     .pl .com.pl .biz.pl .sklep.pl .shop.pl .agro.pl .travel.pl .tourism.pl
-    .nieruchomosci.pl .realestate.pl .net.pl .art.pl .edu.pl .org.pl .ngo.pl
+    .nieruchomosci.pl .realestate.pl .net.pl .edu.pl .org.pl .ngo.pl
     .gov.pl .info.pl .mil.pl .bialystok.pl .bydgoszcz.pl .czest.pl .elk.pl
-    .gda.pl .gdansk.pl .gorzow.pl .kalisz.pl .katowice.pl .konin.pl .krakow.pl
+    .gorzow.pl .kalisz.pl .katowice.pl .konin.pl
     .lodz.pl .lublin.pl .malopolska.pl .olsztyn.pl .opole.pl .pila.pl
-    .poznan.pl .radom.pl .rzeszow.pl .slupsk.pl .szczecin.pl .slask.pl
-    .tychy.pl .torun.pl .wroc.pl .wroclaw.pl .waw.pl .warszawa.pl .zgora.pl
+    .radom.pl .rzeszow.pl .slupsk.pl .szczecin.pl .slask.pl
+    .tychy.pl .torun.pl .wroclaw.pl .waw.pl .warszawa.pl .zgora.pl
     .aid.pl .atm.pl .auto.pl .gmina.pl .gsm.pl .mail.pl .miasta.pl .media.pl
     .nom.pl .pc.pl .powiat.pl .priv.pl .rel.pl .sex.pl .sos.pl .szkola.pl
     .targi.pl .tm.pl .turystyka.pl .6bone.pl .mbone.pl .uw.gov.pl .um.gov.pl
     .ug.gov.pl .upow.gov.pl .starostwo.gov.pl .so.gov.pl .sr.gov.pl .po.gov.pl
-    .pa.gov.pl .irc.pl .usenet.pl .augustow.pl .babia-gora.pl .bedzin.pl
+    .pa.gov.pl .ac.gov.pl .ic.gov.pl .is.gov.pl .us.gov.pl .mw.gov.pl
+    .psp.gov.pl .ap.gov.pl
+    .kmpsp.gov.pl .kppsp.gov.pl .kwpsp.gov.pl .wskr.gov.pl .kwp.gov.pl
+    .uming.gov.pl .ugim.gov.pl .psse.gov.pl .pup.gov.pl .sa.gov.pl .wsa.gov.pl
+    .sko.gov.pl .uzs.gov.pl .wiih.gov.pl .winb.gov.pl .pinb.gov.pl .rzgw.gov.pl
+    .wios.gov.pl .witd.gov.pl .wzmiuw.gov.pl .piw.gov.pl .wiw.gov.pl
+    .griw.gov.pl .wif.gov.pl .oum.gov.pl .sdn.gov.pl .zp.gov.pl .uppo.gov.pl
+    .mup.gov.pl .wuoz.gov.pl .konsulat.gov.pl .oirm.gov.pl .umig.gov.pl
+    .irc.pl .usenet.pl .augustow.pl .babia-gora.pl .bedzin.pl
     .beskidy.pl .bialowieza.pl .bielawa.pl .bieszczady.pl .boleslawiec.pl
     .bytom.pl .cieszyn.pl .czeladz.pl .dlugoleka.pl .elblag.pl .glogow.pl
     .gniezno.pl .gorlice.pl .grajewo.pl .ilawa.pl .jaworzno.pl .jelenia-gora.pl
@@ -1914,13 +2076,14 @@
     .olecko.pl .olkusz.pl .opoczno.pl .ostroda.pl .ostroleka.pl .ostrowiec.pl
     .ostrowwlkp.pl .pisz.pl .podhale.pl .podlasie.pl .polkowice.pl .pomorze.pl
     .pomorskie.pl .prochowice.pl .pruszkow.pl .przeworsk.pl .pulawy.pl
-    .rawa-maz.pl .rybnik.pl .sanok.pl .sejny.pl .siedlce.pl .sosnowiec.pl
+    .rawa-maz.pl .rybnik.pl .sanok.pl .sejny.pl  .sosnowiec.pl
     .stalowa-wola.pl .skoczow.pl .starachowice.pl .stargard.pl .suwalki.pl
     .swidnica.pl .swiebodzin.pl .swinoujscie.pl .szczytno.pl .tarnobrzeg.pl
     .tgory.pl .turek.pl .ustka.pl .walbrzych.pl .warmia.pl .wegrow.pl .wielun.pl
     .wlocl.pl .wloclawek.pl .wodzislaw.pl .wolomin.pl .zachpomor.pl .zagan.pl
-    .zarow.pl .zgorzelec.pl .gdynia.pl .med.pl .sopot.pl .gliwice.pl
-    .zakopane.pl .co.pl
+    .zarow.pl .zgorzelec.pl
+    .co.pl
+    <forbid reason="deprecated">.siedlce.pl</forbid>
   </area>
   <area category="country" country="Portugal">
     .pt .com.pt .edu.pt .gov.pt .int.pt .net.pt .nome.pt .org.pt .publ.pt
@@ -1970,7 +2133,7 @@
   </area>
   <area category="country" country="Russia">
     .ru .ac.ru .com.ru .edu.ru .gov.ru .int.ru .mil.ru .net.ru .org.ru .pp.ru
-    .su .adygeya.ru .bashkiria.ru .buryatia.ru .ulan-ude.ru .grozny.ru .cap.ru
+    .adygeya.ru .bashkiria.ru .buryatia.ru .ulan-ude.ru .grozny.ru .cap.ru
     .dagestan.ru .nalchik.ru .kalmykia.ru .kchr.ru .karelia.ru .ptz.ru .test.ru
     .khakassia.ru .komi.ru .mari-el.ru .mari.ru .joshkar-ola.ru .mordovia.ru
     .yakutia.ru .vladikavkaz.ru .kazan.ru .tatarstan.ru .tuva.ru .izhevsk.ru
@@ -1990,6 +2153,14 @@
     .kustanai.ru .kuzbass.ru .magnitka.ru .mytis.ru .nakhodka.ru .nkz.ru
     .norilsk.ru .snz.ru .oskol.ru .pyatigorsk.ru .rubtsovsk.ru .syzran.ru
     .tlt.ru .vdonsk.ru .zgrad.ru .chuvashia.ru .dudinka.ru .krasnoyarsk.ru
+
+    .su .adygeya.su .arkhangelsk.su .balashov.su .bashkiria.su .bryansk.su
+    .dagestan.su .grozny.su .ivanovo.su .kalmykia.su .kaluga.su .karelia.su
+    .khakassia.su .krasnodar.su .kurgan.su .lenug.su .mordovia.su .msk.su
+    .murmansk.su .nalchik.su .nov.su .obninsk.su .penza.su .pokrovsk.su
+    .sochi.su .spb.su .togliatti.su .troitsk.su .tula.su .tuva.su
+    .vladikavkaz.su .vladimir.su .vologda.su
+
     .&#x0440;&#x0444;
     <forbid reason="deprecated">.pskov.ru</forbid>
   </area>
@@ -2069,12 +2240,14 @@
   </area>
   <area category="country" country="South Africa" nic="http://www.zadna.org.za/slds.html">
     <!-- 2nd level is forbidden -->
-    .ac.za .city.za .co.za .edu.za .gov.za .law.za .mil.za .nom.za .org.za
-    .school.za .ecape.school.za .fs.school.za .gp.school.za .kzn.school.za .mpm.za
-    .ncape.school.za .lp.school.za .nw.school.za .wcape.school.za
+    .ac.za .agrica.za .alt.za .city.za .co.za .edu.za .gov.za
+    .grondar.za .law.za .mil.za .net.za .ngo.za .nis.za .nom.za .org.za
+    .school.za .tm.za .ecape.school.za .fs.school.za .gp.school.za
+    .kzn.school.za .mpm.za .ncape.school.za .lp.school.za .nw.school.za
+    .wcape.school.za .web.za
     <forbid reason="unused">.za .work.za</forbid>
-    <forbid reason="reserved">.alt.za .net.work.za .ngo.za .tm.za .web.za
-    .bourse.za .agric.za .cybernet.za .grondar.za .iaccess.za .inca.za .nis.za
+    <forbid reason="reserved">.net.work.za
+    .bourse.za .cybernet.za .iaccess.za .inca.za
     .olivetti.za .pix.za .db.za .imt.za .landesign.za</forbid>
   </area>
   <area category="country" country="South Georgia and the South Sandwich Islands">
@@ -2094,8 +2267,8 @@
     .es .com.es .edu.es .nom.es .org.es .gob.es
   </area>
   <area category="country" country="Sri Lanka">
-    .lk .gov.lk .sch.lk .net.lk .int.lk .com.lk .org.lk .edu.lk .ngo.lk .soc.lk
-    .web.lk .ltd.lk .assn.lk .grp.lk .hotel.lk
+    .lk .ac.lk .assn.lk .com.lk .edu.lk .gov.lk .grp.lk .hotel.lk
+    .int.lk .ltd.lk .net.lk .ngo.lk .org.lk .sch.lk .soc.lk .web.lk
     .&#x0DBD;&#x0D82;&#x0D9A;&#x0DCF;
     .&#x0B87;&#x0BB2;&#x0B99;&#x0BCD;&#x0B95;&#x0BC8;
   </area>
@@ -2104,6 +2277,7 @@
   </area>
   <area category="country" country="Sudan">
     .sd .com.sd .net.sd .org.sd .edu.sd .med.sd .tv.sd .gov.sd .info.sd
+    .&#x0633;&#x0648;&#x062F;&#x0627;&#x0646; <!-- "Sudan" (Arabic) -->
   </area>
   <area category="country" country="Suriname">
     .sr
@@ -2214,9 +2388,10 @@
     .uk .ac.uk .bl.uk .british-library.uk .co.uk .gov.uk .jet.uk
     .ltd.uk .me.uk .mod.uk .national-library-scotland.uk .nel.uk
     .net.uk .nhs.uk .nic.uk .nls.uk .org.uk .parliament.uk .plc.uk .police.uk
+    .service.gov.uk
     <!-- for .sch.uk we need to know about the 3rd level -->
     <!-- there are a few .uk such as nic.uk but at this point we refuse it -->
-    <forbid reason="unused">.gb .sco .cymru .sch.uk</forbid>
+    <forbid reason="unused">.gb .sco .sch.uk</forbid>
     <forbid reason="deprecated">.icnet.uk .govt.uk .orgn.uk .lea.uk
     .mil.uk</forbid>
     <!--exceptions apply-to=".uk">.uk is now officially re-opened for
@@ -2423,42 +2598,69 @@
   <!-- entrepreneurial definitions which are not specific to a country
        nor were assigned by the IANA, often referenced as private domains -->
   <area category="entrepreneurial">
+    .1kapp.com
+    .4u.com
     .ae.org
     .africa.com
+    .al.eu.org
     .ap-northeast-1.compute.amazonaws.com
     .ap-southeast-1.compute.amazonaws.com
     .ap-southeast-2.compute.amazonaws.com
     .appspot.com
-    .ar.com
     .a.prod.fastly.net
+    .ar.com
+    .art.pl
     .a.ssl.fastly.net
+    .asso.eu.org
     .at-band-camp.net
+    .at.eu.org
     .ath.cx
+    .au.eu.org
     .azier-mobile.net
     .azurewebsites.net
     .azure-mobile.net
     .barrel-of-knowledge.info
     .barrell-of-knowledge.info
+    .be.eu.org
     .betainabox.com
     .better-than.tv
+    .bg.eu.org
     .blogdns.com
     .blogdns.net
     .blogdns.org
     .blogsite.org
+    .blogspot.ae
+    .blogspot.al
+    .blogspot.am
+    .blogspot.ba
     .blogspot.be
+    .blogspot.bg
     .blogspot.bj
     .blogspot.ca
     .blogspot.cf
     .blogspot.ch
+    .blogspot.cl
     .blogspot.co.at
+    .blogspot.co.id
     .blogspot.co.il
+    .blogspot.co.ke
     .blogspot.co.nz
     .blogspot.co.uk
+    .blogspot.co.za
     .blogspot.com
     .blogspot.com.ar
     .blogspot.com.au
     .blogspot.com.br
+    .blogspot.com.by
+    .blogspot.com.co
+    .blogspot.com.cy
+    .blogspot.com.ee
+    .blogspot.com.eg
     .blogspot.com.es
+    .blogspot.com.mt
+    .blogspot.com.ng
+    .blogspot.com.tr
+    .blogspot.com.uy
     .blogspot.cv
     .blogspot.cz
     .blogspot.de
@@ -2467,35 +2669,57 @@
     .blogspot.fr
     .blogspot.gr
     .blogspot.hk
+    .blogspot.hr
     .blogspot.hu
     .blogspot.ie
     .blogspot.in
+    .blogspot.is
     .blogspot.it
     .blogspot.jp
     .blogspot.kr
+    .blogspot.li
+    .blogspot.lt
+    .blogspot.lu
+    .blogspot.md
+    .blogspot.mk
     .blogspot.mr
     .blogspot.mx
+    .blogspot.my
     .blogspot.nl
     .blogspot.no
+    .blogspot.pe
     .blogspot.pt
+    .blogspot.qa
     .blogspot.re
     .blogspot.ro
+    .blogspot.rs
+    .blogspot.ru
     .blogspot.se
     .blogspot.sg
+    .blogspot.si
     .blogspot.sk
+    .blogspot.sn
     .blogspot.td
     .blogspot.tw
+    .blogspot.ug
+    .blogspot.vn
     .boldlygoingnowhere.org
     .br.com
     .broke-it.net
     .b.ssl.fastly.net
     .buyshouses.net
+    .ca.eu.org
+    .c.cdn77.org
+    .cd.eu.org
+    .cdn77-ssl.net
     .cechire.com
+    .ch.eu.org
     .cloudapp.net
     .cloudfront.net
     .cloudcontrolapp.com
     .cloudcontrolled.com
     .cn.com
+    .cn.eu.org
     .cn-north-1.compute.amazonaws.cn
     .co.ca
     .co.com
@@ -2506,7 +2730,11 @@
     .compute-1.amazonaws.com
     .com.se
     .cupcake.is
+    .cy.eu.org
+    .cz.eu.org
     .de.com
+    .de.eu.org
+    .dk.eu.org
     .dnsalias.com
     .dnsalias.net
     .dnsalias.org
@@ -2522,6 +2750,7 @@
     .doomdns.com
     .doomdns.org
     .dreamhosters.com
+    .duckdns.org
     .dvrdns.org
     .dyn-o-saur.com
     .dynalias.com
@@ -2547,17 +2776,23 @@
     .dyndns.org
     .dyndns.tv
     .dyndns.ws
+    .edu.eu.org
+    .ee.eu.org
     .elasticbeanstalk.com
     .elb.amazonaws.com
     .endofinternet.net
     .endofinternet.org
     .endoftheinternet.org
+    .es.eu.org
     .est-a-la-maison.com
     .est-a-la-masion.com
     .est-le-patron.com
     .est-mon-blogueur.com
     .eu.com
+    .eu.org
     .eu-west-1.compute.amazonaws.com
+    .eu-central-1.compute.amazonaws.com
+    .fi.eu.org
     .firebaseapp.com
     .flynnhub.com
     .for-better.biz
@@ -2567,6 +2802,7 @@
     .for-the.biz
     .forgot.her.name
     .forgot.his.name
+    .fr.eu.org
     .from-ak.com
     .from-al.com
     .from-ar.com
@@ -2627,8 +2863,12 @@
     .gb.net
     .getmyip.com
     .gets-it.net
+    .gda.pl
+    .gdansk.pl
+    .gdynia.pl
     .github.io
     .githubusercontent.com
+    .gliwice.pl
     .global.prod.fastly.net
     .global.ssl.fastly.net
     .go.dyndns.org
@@ -2637,12 +2877,15 @@
     .gotdns.com
     .gotdns.org
     .gr.com
+    .gr.eu.org
     .groks-the.info
     .groks-this.info
     .ham-radio-op.net
     .here-for-more.info
     .herokuapp.com
     .herokussl.com
+    .hk.com
+    .hk.org
     .hobby-site.com
     .hobby-site.org
     .home.dyndns.org
@@ -2656,11 +2899,18 @@
     .homeunix.com
     .homeunix.net
     .homeunix.org
+    .hr.eu.org
     .hu.com
+    .hu.eu.org
     .hu.net
     .iamallama.com
+    .ie.eu.org
     .iki.fi
+    .il.eu.org
+    .in.eu.org
     .in.net
+    .inc.hk
+    .int.eu.org
     .in-the-band.net
     .is-a-anarchist.com
     .is-a-blogger.com
@@ -2719,6 +2969,7 @@
     .is-an-entertainer.com
     .is-by.us
     .is-certified.com
+    .is.eu.org
     .is-found.org
     .is-gone.com
     .is-into-anime.com
@@ -2744,44 +2995,83 @@
     .issmarterthanyou.com
     .isteingeek.de
     .istmein.de
+    .it.eu.org
+    .jp.eu.org
     .jp.net
     .jpn.com
     .kicks-ass.net
     .kicks-ass.org
     .knowsitall.info
+    .krakow.pl
     .kr.com
+    .kr.eu.org
     .land-4-sale.us
     .lebtimnetz.de
     .leitungsen.de
     .likes-pie.com
     .likescandy.com
+    .ltd.hk
+    .lt.eu.org
+    .lu.eu.org
+    .lv.eu.org
+    .mc.eu.org
+    .me.eu.org
+    .med.pl
     .merseine.nu
     .mex.com
     .mine.nu
     .misconfused.org
+    .mk.eu.org
     .mypets.ws
     .myphotos.cc
+    .mt.eu.org
+    .my.eu.org
     .neat-url.com
     .nfshost.com
+    .net.eu.org
+    .ng.eu.org
+    .nl.eu.org
     .nid.io
     .no.com
+    .no.eu.org
     .nyc.mn
+    .nz.eu.org
     .office-on-the.net
     .on-the-web.tv
     .operaunite.com
     .outsystemscloud.com
+    .pagespeedmobilizer.com
+    .paris.eu.org
+    <!-- the correct naming convenstion requires a 3rd level domain
+         name (i.e. it is defined as *.platform.sh in the effective TLD list)
+    -->
+    .platform.sh
+    .pl.eu.org
     .podzone.net
     .podzone.org
+    .poznan.pl
+    .priv.at
+    .pt.eu.org
+    .q-a.eu.org
     .qc.com
+    .r.cdn77.net
     .readmyblog.org
     .rhcloud.com
     .ro.com
+    .ro.eu.org
+    .rsc.cdn77.org
     .ru.com
+    .ru.eu.org
     .s3.amazonaws.com
     .s3-ap-northeast-1.amazonaws.com
     .s3-ap-southeast-1.amazonaws.com
     .s3-ap-southeast-2.amazonaws.com
+    .s3.cn-north-1.amazonaws.com.cn
+    .s3.eu-central-1.amazonaws.com
+    .s3-eu-central-1.amazonaws.com
     .s3-eu-west-1.amazonaws.com
+    .s3-external-1.amazonaws.com
+    .s3-external-2.amazonaws.com
     .s3-fips-us-gov-west-1.amazonaws.com
     .s3-sa-east-1.amazonaws.com
     .s3-us-gov-west-1.amazonaws.com
@@ -2802,6 +3092,7 @@
     .scrapper-site.net
     .scrapping.cc
     .se.com
+    .se.eu.org
     .se.net
     .selfip.biz
     .selfip.com
@@ -2818,24 +3109,32 @@
     .serveftp.net
     .serveftp.org
     .servegame.org
-    .service.gov.uk
     .shacknet.nu
+    .si.eu.org
     .simple-url.com
+    .sinaapp.com
+    .sk.eu.org
+    .sopot.pl
     .space-to-rent.com
+    .ssl.origin.cdn77-secure.org
     .stuff-4-sale.org
     .stuff-4-sale.us
     .teaches-yoga.com
     .thruhere.net
     .traeumtgerade.de
+    .tr.eu.org
     .uk.com
+    .uk.eu.org
     .uk.net
     .us.com
     .us-east-1.amazonaws.com
+    .us.eu.org
     .us-gov-west-1.compute.amazonaws.com
     .us.org
     .us-west-1.compute.amazonaws.com
     .us-west-2.compute.amazonaws.com
     .uy.com
+    .vipsinaapp.com
     .webhop.biz
     .webhop.info
     .webhop.net
@@ -2843,19 +3142,28 @@
     .withgoogle.com
     .worse-than.tv
     .writesthisblog.com
+    .wroc.pl
     .yolasite.com
     .z-1.compute-1.amazonaws.com
     .z-2.compute-1.amazonaws.com
     .za.bz
     .za.com
+    .zakopane.pl
     .za.net
     .za.org
     <forbid reason="unused">
       .amazonaws.cn
       .amazonaws.com
+      .amazonaws.com.cn
+      .cdn77.net
+      .cdn77.org
+      .cdn77-secure.org
+      .cn-north-1.amazonaws.com.cn
+      .eu-central-1.amazonaws.com
       .fastly.net
       .her.name
       .his.name
+      .origin.cdn77-secure.org
       .prod.fastly.net
       .ssl.fastly.net
     </forbid>

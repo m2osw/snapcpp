@@ -68,7 +68,7 @@ public:
     void                set_delete();
     void                set_session();
     void                set_expire(QDateTime const & date_time);
-    void                set_expire_in(int seconds);
+    void                set_expire_in(int64_t seconds);
     void                set_secure(bool secure = true);
     void                set_http_only(bool http_only = true);
     void                set_comment(QString const & comment);

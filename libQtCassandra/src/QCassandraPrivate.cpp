@@ -1020,6 +1020,7 @@ int32_t QCassandraPrivate::getCellCount(const QString& table_name, const QByteAr
 
     org::apache::cassandra::SlicePredicate slice_predicate;
     column_predicate.toPredicate(&slice_predicate);
+    slice_predicate.slice_range.__set_count(0x7FFFFFFF);
 
     // our consistency level is 100% based on the Thrift consistency level
     // a cast is enough to get the value we want to get

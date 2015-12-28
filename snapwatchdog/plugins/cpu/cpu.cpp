@@ -17,6 +17,7 @@
 
 #include "cpu.h"
 
+#include "not_used.h"
 #include "snapwatchdog.h"
 
 #include <snapwebsites/qdomhelpers.h>
@@ -38,11 +39,11 @@ SNAP_PLUGIN_START(cpu, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_CPU_NAME:
+    case name_t::SNAP_NAME_WATCHDOG_CPU_NAME:
         return "name";
 
     default:
@@ -75,21 +76,6 @@ cpu::~cpu()
 }
 
 
-/** \brief Initialize cpu.
- *
- * This function terminates the initialization of the cpu plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void cpu::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(cpu, "server", watchdog_server, process_watch, _1);
-}
-
-
 /** \brief Get a pointer to the cpu plugin.
  *
  * This function returns an instance pointer to the cpu plugin.
@@ -99,7 +85,7 @@ void cpu::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the cpu plugin.
  */
-cpu *cpu::instance()
+cpu * cpu::instance()
 {
     return g_plugin_cpu_factory.instance();
 }
@@ -120,6 +106,19 @@ QString cpu::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString cpu::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function is ignored in the watchdog.
@@ -130,10 +129,26 @@ QString cpu::description() const
  */
 int64_t cpu::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
+
     SNAP_PLUGIN_UPDATE_INIT();
     // no updating in watchdog
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize cpu.
+ *
+ * This function terminates the initialization of the cpu plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void cpu::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(cpu, "server", watchdog_server, process_watch, _1);
 }
 
 

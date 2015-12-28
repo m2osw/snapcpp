@@ -19,6 +19,15 @@ then
 elif test "$1" = "-i"
 then
 	make -C ../BUILD/csspp install
+elif test "$1" = "-c"
+then
+	if test -z "$2"
+	then
+		echo "the -c option requires a second option with the name of the test to run"
+		exit 1
+	fi
+	make -C ../BUILD/csspp install
+	../BUILD/csspp/tests/csspp_tests --scripts ../BUILD/dist/lib/csspp/scripts --show-errors "[$2]" 2>&1 | less
 else
 	make -C ../BUILD/csspp
 fi

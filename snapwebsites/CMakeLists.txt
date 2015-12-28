@@ -71,6 +71,7 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
 find_package( AdvGetOpt        REQUIRED )
 find_package( Boost            REQUIRED )
+find_package( CSSPP            REQUIRED )
 find_package( ControlledVars   REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( LibXml2          REQUIRED )
@@ -84,7 +85,12 @@ find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( Thrift           REQUIRED )
 find_package( ZLIB             REQUIRED )
-find_package( ZipIos++         REQUIRED 0.1.5.9 )
+find_package( ZipIos           REQUIRED 2.1 )
+
+find_library( UUID uuid )
+if( ${UUID} STREQUAL "UUID-NOTFOUND" )
+    message( FATAL_ERROR "Cannot find uuid library!" )
+endif()
 
 find_program( ZIP zip               REQUIRED )
 find_program( CLOSURELINTER gjslint REQUIRED DOC "verify that Google JavaScript linter is installed: sudo apt-get install closure-linter" )
@@ -104,7 +110,10 @@ endif()
 # You can also play with -Weffc++ although we are definitively not compliant
 # (especially we do not define all the auto-initialized variables!)
 # -Wconversion -- would be nice, a few things are still not cooperating with that one
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit" )
+# -DUNISTR_FROM_STRING_EXPLICIT=explicit is for the Unicode library, to make sure it does not copy strings arounds automatically
+# -DMAGICKCORE_QUANTUM_DEPTH=16 is the default depth, newer versions of ImageMagick require that definition from you (no internal default)
+# -DMAGICKCORE_HDRI_ENABLE=0 is also the default for ImageMagick; I'm not too sure what HDRI stands for though...
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 include_directories(

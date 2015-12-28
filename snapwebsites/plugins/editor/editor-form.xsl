@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                               xmlns:fn="http://www.w3.org/2005/xpath-functions"
                               xmlns:snap="http://snapwebsites.info/snap-functions">
   <xsl:variable name="editor-name">editor</xsl:variable>
-  <xsl:variable name="editor-modified">2014-09-14 17:51:48</xsl:variable>
+  <xsl:variable name="editor-modified">2015-11-04 20:45:48</xsl:variable>
 
   <!-- COMMAND PARTS -->
   <xsl:template name="snap:common-parts">
@@ -43,9 +43,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="type"/>
     <div field_type="dropped-file-with-preview">
       <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
+      <!--
+        Note:
+        by default browse is expected to say yes, the programmer has to
+        add browse="no" to not get the browse button
+      -->
       <xsl:attribute name="class"><xsl:if
           test="$action = 'edit'">snap-editor </xsl:if>editable dropped-file-with-preview-box <xsl:value-of
           select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if
+          test="not(attachment[@browse='no'])"> browse</xsl:if><xsl:if
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
           select="concat(' ', classes)"/></xsl:attribute>
@@ -117,9 +123,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <xsl:attribute name="class"><xsl:if
           test="$action = 'edit'">snap-editor </xsl:if>editable image-box <xsl:value-of
           select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if
+          test="not(attachment[@browse='no'])"> browse</xsl:if><xsl:if
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of
           select="concat(' ', classes)"/></xsl:attribute>
+      <xsl:attribute name="style"><xsl:if
+          test="geometry/@width">width:<xsl:value-of select="geometry/@width"/>px;</xsl:if><xsl:if
+          test="geometry/@height">height:<xsl:value-of select="geometry/@height"/>px;</xsl:if></xsl:attribute>
       <xsl:if test="background-value">
         <!-- by default "snap-editor-background" objects have "display: none"
              a script shows them on load once ready AND if the value is empty
@@ -134,6 +144,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <div>
         <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class">editor-content image no-toolbar<xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <xsl:if test="geometry"><xsl:attribute name="style"><xsl:if
+            test="geometry/@width">width:<xsl:value-of select="geometry/@width"/>px;</xsl:if><xsl:if
+            test="geometry/@height">height:<xsl:value-of select="geometry/@height"/>px;</xsl:if></xsl:attribute></xsl:if>
         <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
           <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
         </xsl:if>
@@ -247,7 +260,60 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <!-- there are items, put them in a list for the dropdown -->
             <xsl:attribute name="class">dropdown-items zordered</xsl:attribute>
             <ul class="dropdown-selection">
-              <xsl:for-each select="preset/item">
+
+              <!-- WARNING: the order of this xsl:choose is VERY important -->
+              <xsl:choose>
+                <!-- search for one @value that matches $value, this is the preferred method of selection -->
+                <xsl:when test="$value != '' and preset/item[$value = @value]">
+                  <xsl:for-each select="preset/item">
+                    <li>
+                      <xsl:attribute name="class">dropdown-item<xsl:if
+                          test="$value = @value"> selected</xsl:if><xsl:if
+                          test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+                      <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+                      <xsl:copy-of select="./node()"/>
+                    </li>
+                  </xsl:for-each>
+                </xsl:when>
+                <!-- value is defined, use it... -->
+                <xsl:when test="$value != ''">
+                  <!-- if we did not match an @value, then we assume there are none (TBD?) -->
+                  <xsl:for-each select="preset/item">
+                    <li>
+                      <xsl:attribute name="class">dropdown-item<xsl:if
+                          test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+                      <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+                      <xsl:copy-of select="./node()"/>
+                    </li>
+                  </xsl:for-each>
+                </xsl:when>
+                <!-- programmer specified a default -->
+                <xsl:when test="preset/item[@default = 'default']">
+                  <xsl:for-each select="preset/item">
+                    <li>
+                      <xsl:attribute name="class">dropdown-item<xsl:if
+                          test="@default = 'default'"> selected</xsl:if><xsl:if
+                          test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+                      <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+                      <xsl:copy-of select="./node()"/>
+                    </li>
+                  </xsl:for-each>
+                </xsl:when>
+                <xsl:otherwise>
+                  <!-- otherwise use the default node -->
+                  <xsl:for-each select="preset/item">
+                    <li>
+                      <xsl:attribute name="class">dropdown-item<xsl:if
+                          test="$value = node() or ../../default/node() = node()"> selected</xsl:if><xsl:if
+                          test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+                      <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+                      <xsl:copy-of select="./node()"/>
+                    </li>
+                  </xsl:for-each>
+                </xsl:otherwise>
+              </xsl:choose>
+
+              <!--xsl:for-each select="preset/item">
                 <li>
                   <xsl:attribute name="class">dropdown-item<xsl:if
                       test="@default = 'default' or $value = @value or $value = node() or ../../default/node() = node()"> selected</xsl:if><xsl:if
@@ -255,7 +321,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                   <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
                   <xsl:copy-of select="./node()"/>
                 </li>
-              </xsl:for-each>
+              </xsl:for-each-->
             </ul>
           </xsl:when>
           <xsl:otherwise>
@@ -657,8 +723,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </widget>
   </xsl:template>
 
-  <!-- SILENT (a value such as the editor form auto-reset which
-              is not returned to the editor on a Save) -->
+  <!-- SILENT (a value such as the editor form timeout and auto-reset,
+              which is not returned to the editor on a Save) -->
   <!-- NOTE: we use a sub-template to allow for composite widgets -->
   <xsl:template name="snap:silent">
     <xsl:param name="path"/>

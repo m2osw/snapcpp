@@ -70,6 +70,7 @@ add_library(qrcode SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    qrcode-logo-64x64.png
     qrcode-not-available.png
     qrcode-settings-page.xml
     qrcode-settings-parser.xsl

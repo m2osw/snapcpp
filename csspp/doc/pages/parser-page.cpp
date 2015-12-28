@@ -70,7 +70,7 @@
  *
  * The parser is composed of the following rules:
  *
- * \section parser-input Parser Input (CSS Preprocessor Detail)
+ * \section parser_input Parser Input (CSS Preprocessor Detail)
  *
  * The parser input are nodes representing tokens as returned by a
  * lexer object.
@@ -188,7 +188,7 @@
  *                 | stylesheet-list stylesheet-list
  * \endcode
  *
- * \section rule-list Rule List "rule" and "rule-list" (CSS 3)
+ * \section rule_list Rule List "rule" and "rule-list" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -257,7 +257,7 @@
  *      | at-rule
  * \endcode
  *
- * \section at-rule At-Rule "at-rule" (CSS 3)
+ * \section at_rule At-Rule "at-rule" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -325,7 +325,7 @@
  *         | AT-KEYWORD-TOKEN component-value ';'
  * \endcode
  *
- * \section qualified-rule Qualified Rule "qualified-rule" (CSS 3)
+ * \section qualified_rule Qualified Rule "qualified-rule" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -400,7 +400,7 @@
  *                    | VARIABLE WHITESPACE ':' component-value-list
  * \endcode
  *
- * \section declaration-list Declaration List "declaration-list" (CSS 3)
+ * \section declaration_list Declaration List "declaration-list" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -479,9 +479,9 @@
  *  </div>
  * \endhtmlonly
  *
- * A <a href="declaration">declaration</a> list is a list of
+ * A <a href="#declaration">declaration</a> list is a list of
  * <a href="#declaration">declarations</a> separated by semi-colons.
- * Such a list can be started with an <a href="#at-rule">at-rule</a>
+ * Such a list can be started with an <a href="#at-rule">at-rule</a>.
  *
  * Whitespaces can appear to separate various elements in such a list.
  * 
@@ -497,7 +497,7 @@
  *
  * \htmlonly
  *  <div class="railroad">
- *   <svg class="railroad-diagram" height="126" viewbox="0 0 777 126" width="777">
+ *   <svg class="railroad-diagram" height="156" viewbox="0 0 737 156" width="737">
  *    <g transform="translate(.5 .5)">
  *     <path d="M 20 31 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
  *     <path d="M40 41h10"/>
@@ -561,6 +561,13 @@
  *      </g>
  *      <path d="M676.0 91a10 10 0 0 0 10 -10v-30a10 10 0 0 1 10 -10"/>
  *
+ *      <path d="M556.0 41a10 10 0 0 1 10 10v60a10 10 0 0 0 10 10"/>
+ *      <g>
+ *       <rect height="22" width="100" x="576" y="110"/>
+ *       <a xlink:href="#default"><text x="626.0" y="125">!default</text></a>
+ *      </g>
+ *      <path d="M676.0 121a10 10 0 0 0 10 -10v-60a10 10 0 0 1 10 -10"/>
+ *
  *     </g>
  *     <path d="M 696 41 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
  *    </g>
@@ -569,12 +576,20 @@
  * \endhtmlonly
  *
  * A declaration is a component value with the particularity of starting
- * with an <a href="#identifier">IDENTIFIER</a> which is followed by
+ * with an \ref identifier "IDENTIFIER" which is followed by
  * a colon (:).
  *
- * We also support a special extension named <a href="#global">!global</a>
- * which is used with variable declarations to mark a variable as a global
- * variable wherever it gets defined:
+ * To support variables, we also accept a \ref variable "VARIABLE"
+ * followed by a colon (:).
+ *
+ * And to support declarations of functions, we support
+ * \ref variable_function "VARIABLE_FUNCTION" followed by a colon (:).
+ *
+ * We also support two special extensions:
+ *
+ * * One named \ref global "!global" which is used with variable
+ * declarations to mark a variable as a global variable wherever
+ * it gets defined:
  *
  * \code
  *   a {
@@ -586,13 +601,35 @@
  *   }
  * \endcode
  *
+ * * The other named \ref default "!default" which is used with
+ * variable declarations to mark that specific declaration
+ * as a default value meaning that if the variable is already
+ * defined, it does not get modified:
+ *
+ * \code
+ *   $width: 5em;
+ *
+ *   a {
+ *     $width: 3em !default; // keeps 5em
+ *     width: $width;
+ *   }
+ *   span {
+ *     $width: 3em;
+ *     width: $width; // use the 3em
+ *   }
+ * \endcode
+ *
  * There is our corresponding YACC-like rule:
  *
  * \code
  * declaration: IDENTIFIER WHITESPACE ':' component-value-list
  *            | IDENTIFIER WHITESPACE ':' component-value-list !important
  *            | IDENTIFIER WHITESPACE ':' component-value-list !global
+ *            | IDENTIFIER WHITESPACE ':' component-value-list !default
  * \endcode
+ *
+ * However, we do not enforce the exclamation flag name until later when
+ * we know exactly how it is getting used.
  *
  * \section important !important "!important" (CSS 3)
  *
@@ -688,7 +725,56 @@
  *      !global: '!' WHITESPACE IDENTIFIER(=="global") WHITESPACE
  * \endcode
  *
- * \section component-value Component Value "component-value" and "component-value-list" (CSS 3)
+ * \section default !default "!default" (CSS Preprocessor Extension)
+ *
+ * \htmlonly
+ *  <div class="railroad">
+ *   <svg class="railroad-diagram" height="62" viewbox="0 0 617 62" width="617">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="28" x="50" y="20"/>
+ *      <text x="64.0" y="35">!</text>
+ *     </g>
+ *     <path d="M78 31h10"/>
+ *     <path d="M88 31h10"/>
+ *     <g>
+ *      <rect height="22" width="104" x="98" y="20"/>
+ *      <a xlink:href="lexer_rules.html#whitespace"><text x="150" y="35">WHITESPACE</text></a>
+ *     </g>
+ *     <path d="M202 31h20"/>
+ *     <g>
+ *      <rect height="22" width="220" x="222" y="20"/>
+ *      <a xlink:href="lexer_rules.html#identifier"><text x="332" y="35">IDENTIFIER "default"</text></a>
+ *     </g>
+ *     <path d="M442 31h10"/>
+ *     <path d="M452 31h10"/>
+ *     <g>
+ *      <rect height="22" width="104" x="462" y="20"/>
+ *      <a xlink:href="lexer_rules.html#whitespace"><text x="514" y="35">WHITESPACE</text></a>
+ *     </g>
+ *     <path d="M566 31h10"/>
+ *     <path d="M 576 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * The !default keyword can be used to mark a variable declaration as
+ * the default declaration. This means the existing value of the variable,
+ * if such exists, does not get modified.
+ *
+ * Note that when the !default keyword is used, it does not set the
+ * variable if it is defined in any block or globally.
+ *
+ * There is our corresponding YACC-like rule:
+ *
+ * \code
+ *      !default: '!' WHITESPACE IDENTIFIER(=="default") WHITESPACE
+ * \endcode
+ *
+ * \section component_value Component Value "component-value" and "component-value-list" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -701,39 +787,39 @@
  *       <rect height="22" width="140" x="60.0" y="20"/>
  *       <a xlink:href="#preserved-token"><text x="130.0" y="35">preserved-token</text></a>
  *      </g>
- *      <path d="M200.0 31h20"/>
- *      <path d="M40.0 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"/>
+ *      <path d="M200 31h20"/>
+ *      <path d="M40 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"/>
  *      <g>
  *       <path d="M60.0 61h28.0"/>
  *       <path d="M172.0 61h28.0"/>
  *       <rect height="22" width="84" x="88.0" y="50"/>
  *       <a xlink:href="#curlybracket-block"><text x="130.0" y="65">{}-block</text></a>
  *      </g>
- *      <path d="M200.0 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10"/>
- *      <path d="M40.0 31a10 10 0 0 1 10 10v40a10 10 0 0 0 10 10"/>
+ *      <path d="M200 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10"/>
+ *      <path d="M40 31a10 10 0 0 1 10 10v40a10 10 0 0 0 10 10"/>
  *      <g>
  *       <path d="M60 91h28"/>
  *       <path d="M172 91h28"/>
- *       <rect height="22" width="84" x="88.0" y="80"/>
+ *       <rect height="22" width="84" x="88" y="80"/>
  *       <a xlink:href="#parenthesis-block"><text x="130.0" y="95">()-block</text></a>
  *      </g>
  *      <path d="M200.0 91a10 10 0 0 0 10 -10v-40a10 10 0 0 1 10 -10"/>
  *      <path d="M40.0 31a10 10 0 0 1 10 10v70a10 10 0 0 0 10 10"/>
  *      <g>
  *       <path d="M60 121h28"/>
- *       <path d="M172.0 121h28.0"/>
+ *       <path d="M172 121h28"/>
  *       <rect height="22" width="84" x="88.0" y="110"/>
- *       <a xlink:href="#squarebracket-block"><text x="130.0" y="125">[]-block</text></a>
+ *       <a xlink:href="#squarebracket-block"><text x="130" y="125">[]-block</text></a>
  *      </g>
- *      <path d="M200.0 121a10 10 0 0 0 10 -10v-70a10 10 0 0 1 10 -10"/>
- *      <path d="M40.0 31a10 10 0 0 1 10 10v100a10 10 0 0 0 10 10"/>
+ *      <path d="M200 121a10 10 0 0 0 10 -10v-70a10 10 0 0 1 10 -10"/>
+ *      <path d="M40 31a10 10 0 0 1 10 10v100a10 10 0 0 0 10 10"/>
  *      <g>
  *       <path d="M60 151h4"/>
  *       <path d="M196 151h4"/>
  *       <rect height="22" width="132" x="64" y="140"/>
  *       <a xlink:href="#function-block"><text x="130" y="155">function-block</text></a>
  *      </g>
- *      <path d="M200.0 151a10 10 0 0 0 10 -10v-100a10 10 0 0 1 10 -10"/>
+ *      <path d="M200 151a10 10 0 0 0 10 -10v-100a10 10 0 0 1 10 -10"/>
  *     </g>
  *     <path d="M 220 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
  *    </g>
@@ -774,7 +860,7 @@
  * component-value to the letter. All the other grammar rules expect
  * a list of component-value which may also be empty. However, the
  * main difference not conveyed in the graphs is the fact that a
- * <a href="curlybracket-block">{}-block</a> can only be used at the end
+ * <a href="#curlybracket-block">{}-block</a> can only be used at the end
  * of a list of 'component-value' entries.
  * (see http://www.w3.org/TR/css-syntax-3/#consume-a-qualified-rule0).
  * In other words, the following are three 'component-value' entries
@@ -784,7 +870,7 @@
  *      a { b: c } { d: e } { f: g } ...
  * \endcode
  *
- * \section preserved-token Preserved Token "preserved-token" (CSS 3)
+ * \section preserved_token Preserved Token "preserved-token" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -820,13 +906,20 @@
  * This being said, we still attempt to keep as many tokens as we can
  * in our tree of nodes.
  *
+ * Note that "any token" does not include ';' which marks the end of
+ * the a declaration, an @-keyword, a variable set... Also, the
+ * closing '}', ')', ']' should match open '{', '(', and '[' and
+ * that's why they do not appear here either. Again, although this
+ * is \em correct the fact is that we save the opening in our list
+ * of preserved tokens.
+ *
  * There is our corresponding YACC-like rule:
  *
  * \code
  *      preserved-token: ANY-TOKEN except '{', '(', '[', and FUNCTION
  * \endcode
  *
- * \section curlybracket-block {}-block "{}-block" (CSS 3)
+ * \section curlybracket_block {}-block "{}-block" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -893,7 +986,7 @@
  *      {}-block: '{' component-value-list '}'
  * \endcode
  *
- * \section parenthesis-block ()-block "()-block" (CSS 3)
+ * \section parenthesis_block ()-block "()-block" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -950,7 +1043,7 @@
  *      ()-block: '(' component-value-list ')'
  * \endcode
  *
- * \section squarebracket-block []-block "[]-block" (CSS 3)
+ * \section squarebracket_block []-block "[]-block" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -1008,55 +1101,68 @@
  *      []-block: '[' component-value-list ']'
  * \endcode
  *
- * \section function-block Function Block "function-block" (CSS 3)
+ * \section function_block Function Block "function-block" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
- *   <svg class="railroad-diagram" height="81" viewbox="0 0 497 81" width="497">
+ *   <svg class="railroad-diagram" height="106" viewbox="0 0 547 106" width="547">
  *    <g transform="translate(.5 .5)">
  *     <path d="M 20 31 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
- *     <path d="M40 41h10"/>
+ *
+ *     <path d="M40 41h30"/>
  *     <g>
- *      <rect height="22" width="148" x="50.0" y="30"/>
- *      <a xlink:href="lexer_rules.html#function"><text x="124.0" y="45">FUNCTION</text></a>
+ *      <rect height="22" width="148" x="70" y="30"/>
+ *      <a xlink:href="lexer_rules.html#function"><text x="144" y="45">FUNCTION</text></a>
  *     </g>
- *     <path d="M198 41h10"/>
+ *     <path d="M218 41h70"/>
+ *
  *     <g>
- *      <path d="M208.0 41a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"/>
+ *      <path d="M40 41a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"/>
+ *      <path d="M60 71h10"/>
  *      <g>
- *       <path d="M228.0 21h160"/>
+ *       <rect height="22" width="148" x="70" y="60"/>
+ *       <a xlink:href="lexer_rules.html#variable_function"><text x="144" y="75">VARIABLE_FUNCTION</text></a>
  *      </g>
- *      <path d="M388.0 21a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"/>
- *      <path d="M208.0 41h20"/>
- *      <g>
- *       <path d="M228.0 41h10"/>
- *       <g>
- *        <rect height="22" width="140" x="238.0" y="30"/>
- *        <a xlink:href="#component-value"><text x="308.0" y="45">component-value</text></a>
- *       </g>
- *       <path d="M378.0 41h10"/>
- *       <path d="M238.0 41a10 10 0 0 0 -10 10v0a10 10 0 0 0 10 10"/>
- *       <g>
- *        <path d="M238.0 61h140"/>
- *       </g>
- *       <path d="M378.0 61a10 10 0 0 0 10 -10v0a10 10 0 0 0 -10 -10"/>
- *      </g>
- *      <path d="M388.0 41h20"/>
+ *      <path d="M220 71h10"/>
+ *      <path d="M230 71a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10"/>
  *     </g>
- *     <path d="M408 41h10"/>
+ *
  *     <g>
- *      <rect height="22" rx="10" ry="10" width="28" x="418" y="30"/>
- *      <text x="432.0" y="45">)</text>
+ *      <path d="M258 41a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"/>
+ *      <g>
+ *       <path d="M278 21h160"/>
+ *      </g>
+ *      <path d="M438 21a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"/>
+ *      <g>
+ *       <path d="M298 41h10"/>
+ *       <g>
+ *        <rect height="22" width="140" x="288" y="30"/>
+ *        <a xlink:href="#component-value"><text x="358" y="45">component-value</text></a>
+ *       </g>
+ *       <path d="M448 41h10"/>
+ *       <path d="M288 41a10 10 0 0 0 -10 10v0a10 10 0 0 0 10 10"/>
+ *       <g>
+ *        <path d="M288 61h140"/>
+ *       </g>
+ *       <path d="M428 61a10 10 0 0 0 10 -10v0a10 10 0 0 0 -10 -10"/>
+ *      </g>
+ *      <path d="M428 41h40"/>
  *     </g>
- *     <path d="M446 41h10"/>
- *     <path d="M 456 41 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="28" x="468" y="30"/>
+ *      <text x="482" y="45">)</text>
+ *     </g>
+ *     <path d="M496 41h10"/>
+ *     <path d="M 506 41 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
  *    </g>
  *   </svg>
  *  </div>
  * \endhtmlonly
  *
  * Functions are identifiers immediately followed by an open parenthesis,
- * a list of space or comma separated parameters, and a closing parenthesis.
+ * variable functions are variables immediately followed by an open
+ * parenthesis, either is then followed by a list of space or comma
+ * separated parameters, and a closing parenthesis.
  * Note that the parsing is very similar to a
  * <a href="#parenthesis-block">()-block</a>.
  *
@@ -1064,6 +1170,7 @@
  *
  * \code
  *      function-block: FUNCTION component-value-list ')'
+ *                    | VARIABLE_FUNCTION component-value-list ')'
  * \endcode
  */
 
@@ -1074,4 +1181,4 @@
 // tab-width: 4
 // End:
 
-// vim: ts=4 sw=4 et
+// vim: ts=4 sw=4 et syntax=doxygen

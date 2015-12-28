@@ -17,7 +17,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "csspp/node.h"
+#include "csspp/expression.h"
 
 namespace csspp
 {
@@ -27,10 +27,14 @@ class compiler
 public:
                             compiler(bool validating = false);
 
-    node::pointer_t         get_root() const;
     void                    set_root(node::pointer_t root);
+    node::pointer_t         get_root() const;
 
+    node::pointer_t         get_result() const;
+
+    void                    set_date_time_variables(time_t now);
     void                    set_empty_on_undefined_variable(bool const empty_on_undefined_variable);
+    void                    set_no_logo(bool no_logo = true);
 
     void                    clear_paths();
     void                    add_path(std::string const & path);
@@ -46,20 +50,33 @@ private:
     typedef std::vector<std::string>                string_vector_t;
     typedef std::map<std::string, node::pointer_t>  validator_script_vector_t;
 
-    class compiler_state_t
+    class compiler_state_t : public expression_variables_interface
     {
     public:
         void                        set_root(node::pointer_t root);
         node::pointer_t             get_root() const;
 
+        void                        clear_paths();
+        void                        add_path(std::string const & path);
+        void                        set_paths(compiler_state_t const & state);
+
         void                        push_parent(node::pointer_t parent);
         void                        pop_parent();
         bool                        empty_parents() const;
         node::pointer_t             get_previous_parent() const;
-        node::pointer_t             get_variable(std::string const & variable_name) const;
         void                        set_variable(node::pointer_t variable, node::pointer_t value, bool global) const;
 
+        // implement the expression_variables_interface
+        virtual node::pointer_t     get_variable(std::string const & variable_name, bool global_only = false) const;
+        virtual node::pointer_t     execute_user_function(node::pointer_t func);
+        void                        set_empty_on_undefined_variable(bool const empty_on_undefined_variable);
+        bool                        get_empty_on_undefined_variable() const;
+
+        std::string                 find_file(std::string const & script_name);
+
     private:
+        string_vector_t             f_paths;
+        bool                        f_empty_on_undefined_variable = false;
         node::pointer_t             f_root;
         node_vector_t               f_parents;
     };
@@ -92,7 +109,7 @@ private:
     void                    expand_nested_rules(node::pointer_t parent, node::pointer_t root, node::pointer_t & last, node::pointer_t n);
     void                    expand_nested_declarations(std::string const & name, node::pointer_t parent, node::pointer_t & root, node::pointer_t n);
 
-    bool                    selector_attribute_check(node::pointer_t n);
+    bool                    selector_attribute_check(node::pointer_t parent, size_t & parent_pos, node::pointer_t n);
     bool                    selector_simple_term(node::pointer_t n, size_t & pos);
     bool                    selector_term(node::pointer_t n, size_t & pos);
     bool                    selector_list(node::pointer_t n, size_t & pos);
@@ -102,14 +119,13 @@ private:
     void                    add_validation_variable(std::string const & variable_name, node::pointer_t value);
     bool                    run_validation(bool check_only);
 
-    string_vector_t             f_paths;
-
     compiler_state_t            f_state;
-    bool                        f_empty_on_undefined_variable = false;
 
     validator_script_vector_t   f_validator_scripts;            // caching scripts
     node::pointer_t             f_current_validation_script;    // last script selected by set_validator_script()
+    node::pointer_t             f_return_result;
     bool                        f_compiler_validating = false;
+    bool                        f_no_logo = false;
 };
 
 } // namespace csspp

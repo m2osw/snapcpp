@@ -20,8 +20,9 @@
 #include "../listener/listener.h"
 #include "../messages/messages.h"
 
-#include "log.h"
 #include "dbutils.h"
+#include "log.h"
+#include "not_used.h"
 #include "snap_image.h"
 
 #include <iostream>
@@ -48,7 +49,7 @@ SNAP_PLUGIN_START(images, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -57,6 +58,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_IMAGES_MODIFIED:
         return "images::modified";
+
+    case name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE:
+        return "processimage";
 
     case name_t::SNAP_NAME_IMAGES_ROW:
         return "images";
@@ -87,14 +91,109 @@ images::func_t const images::g_commands[] =
         &images::func_alpha
     },
     {
+        "background_color",
+        1, 1, 1,
+        &images::func_background_color
+    },
+    {
+        "blur",
+        0, 2, 1,
+        &images::func_blur
+    },
+    {
+        "border",
+        1, 1, 1,
+        &images::func_border
+    },
+    {
+        "border_color",
+        1, 1, 1,
+        &images::func_border_color
+    },
+    {
+        "charcoal",
+        0, 2, 1,
+        &images::func_charcoal
+    },
+    {
+        "composite",
+        1, 1, 1,
+        &images::func_composite
+    },
+    {
+        "contrast",
+        1, 1, 1,
+        &images::func_contrast
+    },
+    {
         "create",
         0, 0, 0,
         &images::func_create
     },
     {
+        "crop",
+        1, 1, 1,
+        &images::func_crop
+    },
+    {
         "density",
         1, 2, 1,
         &images::func_density
+    },
+    {
+        "emboss",
+        0, 2, 1,
+        &images::func_emboss
+    },
+    {
+        "erase",
+        0, 0, 1,
+        &images::func_erase
+    },
+    {
+        "flip",
+        0, 0, 1,
+        &images::func_flip
+    },
+    {
+        "flop",
+        0, 0, 1,
+        &images::func_flop
+    },
+    {
+        "hash",
+        5, 5, 1,
+        &images::func_hash
+    },
+    {
+        "matte_color",
+        1, 1, 1,
+        &images::func_matte_color
+    },
+    {
+        "modulate",
+        3, 3, 1,
+        &images::func_modulate
+    },
+    {
+        "negate",
+        0, 1, 1,
+        &images::func_negate
+    },
+    {
+        "normalize",
+        0, 0, 1,
+        &images::func_normalize
+    },
+    {
+        "oil_paint",
+        1, 1, 1,
+        &images::func_oil_paint
+    },
+    {
+        "on_error",
+        1, 1, 0,
+        &images::func_on_error
     },
     {
         "pop",
@@ -107,14 +206,54 @@ images::func_t const images::g_commands[] =
         &images::func_read
     },
     {
+        "reduce_noise",
+        0, 1, 1,
+        &images::func_reduce_noise
+    },
+    {
         "resize",
-        1, 2, 1,
+        1, 1, 1,
         &images::func_resize
+    },
+    {
+        "rotate",
+        1, 1, 1,
+        &images::func_rotate
+    },
+    {
+        "shade",
+        3, 3, 1,
+        &images::func_shade
+    },
+    {
+        "shadow",
+        4, 4, 1,
+        &images::func_shadow
+    },
+    {
+        "sharpen",
+        2, 2, 1,
+        &images::func_sharpen
+    },
+    {
+        "shear",
+        2, 2, 1,
+        &images::func_shear
+    },
+    {
+        "solarize",
+        1, 1, 1,
+        &images::func_solarize
     },
     {
         "swap",
         0, 0, 2,
         &images::func_swap
+    },
+    {
+        "trim",
+        0, 0, 1,
+        &images::func_trim
     },
     {
         "write",
@@ -182,12 +321,14 @@ images::~images()
  *
  * \param[in] snap  The child handling this request.
  */
-void images::on_bootstrap(snap_child *snap)
+void images::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
     SNAP_LISTEN0(images, "server", server, attach_to_session);
+    SNAP_LISTEN(images, "server", server, register_backend_cron, _1);
     SNAP_LISTEN(images, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(images, "links", links::links, modified_link, _1);
     SNAP_LISTEN(images, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(images, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(images, "content", content::content, modified_content, _1);
@@ -205,9 +346,19 @@ void images::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the images plugin.
  */
-images *images::instance()
+images * images::instance()
 {
     return g_plugin_images_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString images::settings_path() const
+{
+    return "/admin/images";
 }
 
 
@@ -227,6 +378,19 @@ QString images::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString images::dependencies() const
+{
+    return "|listener|messages|path|versions|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -243,7 +407,7 @@ int64_t images::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 28, 23, 16, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 2, 16, 17, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -258,7 +422,7 @@ int64_t images::do_update(int64_t last_updated)
  */
 void images::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 }
@@ -295,6 +459,7 @@ void images::content_update(int64_t variables_timestamp)
  * and generate a high quality image of 648x838 pixels called preview.jpg:
  *
  * \code
+ * on_error "create\nread /images/default-preview.jpg\nwrite ${INPUT} previous.jpg"
  * create
  * density 300
  * read ${INPUT} data
@@ -309,7 +474,7 @@ void images::content_update(int64_t variables_timestamp)
  * \param[in] ipath  The path being checked.
  * \param[in] plugin_info  The current information about this path plugin.
  */
-void images::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+void images::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     // in this case we ignore the result, all we are interested in is
     // whatever is put in the plugin info object
@@ -317,21 +482,21 @@ void images::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynam
 }
 
 
-images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     // is that path already going to be handled by someone else?
-    // (avoid wasting time if that's the case)
+    // (avoid wasting time if that is the case)
     if(plugin_info.get_plugin()
     || plugin_info.get_plugin_if_renamed())
     {
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     if(content_table->exists(ipath.get_key()))
     {
-        // if it exists, it's not dynamic so ignore it (this should
+        // if it exists, it is not dynamic so ignore it (this should
         // never happen because it is tested in the path plugin!)
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
@@ -357,7 +522,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
     }
 
     // is the parent an attachment?
-    QString owner(content_table->row(parent_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+    QString const owner(content_table->row(parent_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
     if(owner != content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN))
     {
         // something is dearly wrong if empty... and if not the attachment
@@ -374,24 +539,32 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
+    // make sure that the page is NORMAL
+    content::path_info_t::status_t status(parent_ipath.get_status());
+    if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
+    {
+        // this could be deleted or hidden...
+        return virtual_path_t::VIRTUAL_PATH_INVALID;
+    }
+
     // get the key of that attachment, it should be a file md5
     QtCassandra::QCassandraValue attachment_key(revision_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
-    if(attachment_key.nullValue())
+    if(attachment_key.size() != 16)
     {
-        // no key?!
+        // no or invalid key?!
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
     // the field name is the basename of the ipath preceeded by the
     // "content::attachment::data" default name
-    QString cpath(ipath.get_cpath());
+    QString const cpath(ipath.get_cpath());
     int const pos(cpath.lastIndexOf("/"));
     if(pos <= 0)
     {
         // what the heck happened?!
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
-    QString filename(cpath.mid(pos + 1));
+    QString const filename(cpath.mid(pos + 1));
     QString field_name(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA)).arg(filename));
 
     // Does the file exist at this point?
@@ -399,7 +572,30 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
     if(!files_table->exists(attachment_key.binaryValue())
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
-        return virtual_path_t::VIRTUAL_PATH_NOT_AVAILABLE;
+        // often, the original image can be used as is because the
+        // sub-image is just an "optimization"; this has to be asked
+        // by the end user by adding the fallback=ok query string
+        snap_uri const & uri(f_snap->get_uri());
+        if(!uri.has_query_option("fallback")
+        || uri.query_option("fallback") != "ok")
+        {
+            // no fallback
+            return virtual_path_t::VIRTUAL_PATH_NOT_AVAILABLE;
+        }
+
+        // the fallback option is set to "ok", check for the default
+        // field; check the default attachment key
+        field_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
+        if(!files_table->exists(attachment_key.binaryValue())
+        || !files_table->row(attachment_key.binaryValue())->exists(field_name))
+        {
+            return virtual_path_t::VIRTUAL_PATH_NOT_AVAILABLE;
+        }
+
+        // Note: the permissions will prevent this from happening
+        //       if the parent page does not include a field:
+        //         permissions::dynamic
+        //       of 1 or more
     }
 
     // tell the path plugin that we know how to handle this one
@@ -410,10 +606,9 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
 }
 
 
-void images::on_listener_check(snap_uri const& uri, content::path_info_t& page_ipath, QDomDocument doc, QDomElement result)
+void images::on_listener_check(snap_uri const & uri, content::path_info_t & page_ipath, QDomDocument doc, QDomElement result)
 {
-    static_cast<void>(uri);
-    static_cast<void>(doc);
+    NOTUSED(uri);
 
     path::dynamic_plugin_t info;
     switch(check_virtual_path(page_ipath, info))
@@ -445,7 +640,7 @@ void images::on_listener_check(snap_uri const& uri, content::path_info_t& page_i
 }
 
 
-bool images::on_path_execute(content::path_info_t& ipath)
+bool images::on_path_execute(content::path_info_t & ipath)
 {
     // TODO: we probably do not want to check for attachments to send if the
     //       action is not "view"...
@@ -552,10 +747,10 @@ bool images::on_path_execute(content::path_info_t& ipath)
  * \param[in] owner  The plugin owner of the page.
  * \param[in] type  The type of the page.
  */
-void images::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
+void images::on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type)
 {
-    static_cast<void>(owner);
-    static_cast<void>(type);
+    NOTUSED(owner);
+    NOTUSED(type);
 
     //
     // TODO: automate connections between new pages and image transformations
@@ -598,7 +793,7 @@ void images::on_create_content(content::path_info_t& ipath, QString const& owner
  *
  * \param[in,out] ipath  The path to the page being modified.
  */
-void images::on_modified_content(content::path_info_t& ipath)
+void images::on_modified_content(content::path_info_t & ipath)
 {
     // check whether an image script is linked to this object
     links::link_info info(get_name(name_t::SNAP_NAME_IMAGES_SCRIPT), false, ipath.get_key(), ipath.get_branch());
@@ -608,7 +803,7 @@ void images::on_modified_content(content::path_info_t& ipath)
     {
         // here we do not need to loop, if we find at least one link then
         // request the backend to regenerate these different views
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
         QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
 
@@ -663,6 +858,25 @@ void images::on_modified_content(content::path_info_t& ipath)
 }
 
 
+/** \brief When a link is created, we get this message!
+ *
+ * We now listen to the modified_link signal so we know any time the
+ * link is created.
+ *
+ * \todo
+ * Look into whether the modified_link signal is enough and the
+ * modified_content one could be removed (most certainly.)
+ *
+ * \param[in] info  The link that was just modified.
+ */
+void images::on_modified_link(links::link_info const & info)
+{
+    content::path_info_t ipath;
+    ipath.set_path(info.key());
+    on_modified_content(ipath);
+}
+
+
 /** \brief Capture this event which happens last.
  *
  * \note
@@ -673,8 +887,37 @@ void images::on_attach_to_session()
     if(f_ping_backend)
     {
         // send a PING to the backend
-        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_IMAGES_ACTION)));
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_IMAGES_ACTION));
     }
+}
+
+
+/** \brief Register the "images" action.
+ *
+ * This function registers this plugin as supporting the
+ * "images" CRON action.
+ *
+ * This action is used to apply a "script" against images and other
+ * attachment to generate a transformed image. The "script" support
+ * most of the features available in the convert tool of ImageMagick.
+ * So one can add transparency, borders, rotate, change colors, etc.
+ *
+ * The transformation includes the conversion of other attachments
+ * such as PDF files to a preview image (or even a full scale,
+ * printable version of the source image.)
+ *
+ * In most cases, the transformations are initiated when a client
+ * sends a PING signal. Others may be defined as scripts to run
+ * against specific types of data (i.e. always create a preview for
+ * a Word processor document, make it 350 wide and automatically
+ * compute the height, add a border, and a shadow.)
+ *
+ * \param[in,out] actions  The list of supported CRON actions where we add
+ *                         ourselves.
+ */
+void images::on_register_backend_cron(server::backend_action_set & actions)
+{
+    actions.add_action(get_name(name_t::SNAP_NAME_IMAGES_ACTION), this);
 }
 
 
@@ -700,9 +943,9 @@ void images::on_attach_to_session()
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void images::on_register_backend_action(server::backend_action_map_t& actions)
+void images::on_register_backend_action(server::backend_action_set & actions)
 {
-    actions[get_name(name_t::SNAP_NAME_IMAGES_ACTION)] = this;
+    actions.add_action(get_name(name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE), this);
 }
 
 
@@ -714,30 +957,12 @@ void images::on_register_backend_action(server::backend_action_map_t& actions)
  *
  * \param[in] token  The token being worked on.
  */
-void images::on_versions_libraries(filter::filter::token_info_t& token)
+void images::on_versions_libraries(filter::filter::token_info_t & token)
 {
     token.f_replacement += "<li>";
     size_t ignore;
     token.f_replacement += MagickCore::GetMagickVersion(&ignore);
     token.f_replacement += " (compiled with " MagickLibVersionText ")</li>";
-}
-
-
-/** \brief Return the name to use to create the UDP signal listener.
- *
- * This function returns the UDP signal listener name.
- *
- * \param[in] action  The concerned action.
- *
- * \return The name of the UDP signal for the image plugin.
- */
-char const *images::get_signal_name(QString const& action) const
-{
-    if(action == get_name(name_t::SNAP_NAME_IMAGES_ACTION))
-    {
-        return get_name(name_t::SNAP_NAME_IMAGES_SIGNAL_NAME);
-    }
-    return backend_action::get_signal_name(action);
 }
 
 
@@ -755,8 +980,11 @@ char const *images::get_signal_name(QString const& action) const
  *
  * \param[in] action  The action this function is being called with.
  */
-void images::on_backend_action(QString const& action)
+void images::on_backend_action(QString const & action)
 {
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+
     if(action == get_name(name_t::SNAP_NAME_IMAGES_ACTION))
     {
         f_backend = dynamic_cast<snap_backend *>(f_snap.get());
@@ -764,58 +992,20 @@ void images::on_backend_action(QString const& action)
         {
             throw images_exception_no_backend("could not determine the snap_backend pointer");
         }
-        f_backend->create_signal( get_signal_name(action) );
 
-        content::content *content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
-
-        QString const core_plugin_threshold(get_name(snap::name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
-        // loop until stopped
-        int64_t more_work(0);
-        for(;;)
-        {
-            // verify that the site is ready, if not, do not process images yet
-            QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
-            if(!threshold.nullValue())
-            {
-                more_work = transform_images();
-            }
-
-            // Stop on error
-            //
-            if( f_backend->get_error() )
-            {
-                SNAP_LOG_FATAL("images::on_backend_action(): caught a UDP server error");
-                exit(1);
-            }
-
-            // sleep till next PING (but max. 5 minutes)
-            // unless there is more work to be done in which case we wait
-            // just the necessary amount of time (note: more_work is in
-            // micro-seconds, pop_message() expects milli-seconds)
-            //
-            snap_backend::message_t message;
-            if( f_backend->pop_message( message, more_work ? (more_work + 999) / 1000 : 5 * 60 * 1000 ) )
-            {
-                // here handle messages other than PING
-                //if(message == "OTHR") ...
-            }
-            // else 5 min. time out or STOP received
-
-            // quickly end this process if the user requested a stop
-            if(f_backend->stop_received())
-            {
-                // clean STOP
-                // we have to exit otherwise we'd get called again with
-                // the next website!?
-                exit(0);
-            }
-        }
+        transform_images();
+    }
+    else if(action == get_name(name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE))
+    {
+        QString const url(f_snap->get_server_parameter("URL"));
+        content::path_info_t ipath;
+        ipath.set_path(url);
+        on_modified_content(ipath);
     }
     else
     {
         // unknown action (we should not have been called with that name!)
-        throw snap_logic_exception(QString("images::on_backend_action(\"%1\") called with an unknown action...").arg(action));
+        throw snap_logic_exception(QString("images.cpp: images::on_backend_action(\"%1\") called with an unknown action...").arg(action));
     }
 }
 
@@ -874,7 +1064,7 @@ int64_t images::transform_images()
             QtCassandra::QCassandraCell::pointer_t cell(*c);
             // the key starts with the "start date" and it is followed by a
             // string representing the row key in the content table
-            QByteArray const& key(cell->columnKey());
+            QByteArray const & key(cell->columnKey());
 
             int64_t const page_start_date(QtCassandra::int64Value(key, 0));
             if(page_start_date > start_date)
@@ -939,9 +1129,9 @@ int64_t images::transform_images()
  *
  * \return true if all the transformations were applied.
  */
-bool images::do_image_transformations(QString const& image_key)
+bool images::do_image_transformations(QString const & image_key)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     content_table->clearCache();
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
@@ -1029,157 +1219,239 @@ bool images::do_image_transformations(QString const& image_key)
  * \return The resulting image (whatever is current on the stack at the time
  *         the script ends.)
  */
-Magick::Image images::apply_image_script(QString const& script, content::path_info_t::map_path_info_t image_ipaths)
+Magick::Image images::apply_image_script(QString const & script, content::path_info_t::map_path_info_t image_ipaths)
 {
     QString s(script);
-    s.replace("\r", "\n");
-    QStringList commands(s.split("\n"));
 
     parameters_t params;
-    params.f_image_ipaths = image_ipaths;
-
-    int max_commands(commands.size());
-    for(int idx(0); idx < max_commands; ++idx)
+    bool repeat;
+    do
     {
-        params.f_command = commands[idx].simplified();
-        if(params.f_command.isEmpty())
-        {
-            // skip empty lines (could be many if script lines ended with \r\n)
-            continue;
-        }
-        if(params.f_command[0] == '#')
-        {
-            // line commented out are also skipped
-            continue;
-        }
+        repeat = false;
+        f_on_error.clear();
 
-        // find the first parameter
-        // (remember that we already simplified the string)
-        int pos(params.f_command.indexOf(" "));
-        if(pos < 0)
-        {
-            pos = params.f_command.length();
-        }
-        QString const cmd(params.f_command.mid(0, pos));
+        s.replace("\r", "\n");
+        snap_string_list commands(s.split("\n"));
 
-        // search for this command using a fast binary search
-        QByteArray const name(cmd.toUtf8());
-        char const *n(name.data());
+        params.f_image_ipaths = image_ipaths;
+        params.f_image_stack.clear();
 
-        size_t p(static_cast<size_t>(-1));
-        size_t i(0);
-        size_t j(g_commands_size);
-        while(i < j)
+        int max_commands(commands.size());
+        for(int idx(0); idx < max_commands; ++idx)
         {
-            // get the center position of the current range
-            p = i + (j - i) / 2;
-            int const r(strcmp(n, g_commands[p].f_command_name));
-            if(r == 0)
+            params.f_command = commands[idx].simplified();
+            if(params.f_command.isEmpty())
             {
-                break;
+                // skip empty lines (could be many if script lines ended with \r\n)
+                continue;
             }
-            if(r > 0)
+            if(params.f_command[0] == '#')
             {
-                // move the range up (we already checked p so use p + 1)
-                i = p + 1;
+                // line commented out are also skipped
+                continue;
             }
-            else
+
+            // find the first parameter
+            // (remember that we already simplified the string)
+            int pos(params.f_command.indexOf(" "));
+            if(pos < 0)
             {
-                // move the range down (we never check an item at position j)
-                j = p;
+                pos = params.f_command.length();
             }
-        }
+            QString const cmd(params.f_command.mid(0, pos));
 
-        // found?
-        if(i >= j)
-        {
-            messages::messages msg;
-            msg.set_error("Unknown Command",
-                    QString("Command \"%1\" is not known.").arg(cmd),
-                    QString("Command in \"%1\" was not found in our list of commands.").arg(params.f_command),
-                    false);
-            continue;
-        }
+            // search for this command using a fast binary search
+            QByteArray const name(cmd.toUtf8());
+            char const *n(name.data());
 
-        // found it! verify the number of arguments
-        if(params.f_command.length() <= static_cast<int>(pos + 1))
-        {
-            params.f_params.clear();
-        }
-        else
-        {
-            params.f_params = params.f_command.mid(pos + 1).split(" ");
-        }
-        size_t const max_params(params.f_params.size());
-        if(max_params < g_commands[p].f_min_params || max_params > g_commands[p].f_max_params)
-        {
-            // we create a message but this is run by a backend so
-            // the end users won't see those; we'll need to find
-            // a way, probably use the author of the script page
-            // to send that information to someone
-            messages::messages msg;
-            msg.set_error("Invalid Number of Parameters",
-                    QString("Invalid number of parameters for images.density (%1, expected 1 or 2)").arg(max_params),
-                    QString("Invalid number of parameters in \"%1\"").arg(params.f_command),
-                    false);
-            continue;
-        }
-
-        // verify the minimum stack size
-        if(params.f_image_stack.size() < g_commands[p].f_min_stack)
-        {
-            // we create a message but this is run by a backend so
-            // the end users won't see those; we'll need to find
-            // a way, probably use the author of the script page
-            // to send that information to someone
-            messages::messages msg;
-            msg.set_error("Invalid Number of Images",
-                    QString("Invalid number of images for %1 (expected %2, need %3)").arg(cmd).arg(static_cast<int>(g_commands[p].f_min_stack)).arg(params.f_image_stack.size()),
-                    QString("Invalid number of images in the stack at this point for \"%1\"").arg(params.f_command),
-                    false);
-            continue;
-        }
-
-        // transform variables (if any) to actual paths
-// for now keep a log to see what is happening
-SNAP_LOG_INFO() << " ++ [" << params.f_command << "]";
-        for(int k(0); k < params.f_params.size(); ++k)
-        {
-            int start_pos(0);
-            for(;;)
+            size_t p(static_cast<size_t>(-1));
+            size_t i(0);
+            size_t j(g_commands_size);
+            while(i < j)
             {
-                QString const param(params.f_params[k]);
-                start_pos = param.indexOf("${", start_pos);
-                if(start_pos < 0)
+                // get the center position of the current range
+                p = i + (j - i) / 2;
+                int const r(strcmp(n, g_commands[p].f_command_name));
+                if(r == 0)
                 {
                     break;
                 }
-                // there is a variable start point ("${")
-                start_pos += 2;
-                int const end_pos(param.indexOf("}", start_pos));
-                if(start_pos < end_pos )
+                if(r > 0)
                 {
-                    // variable name is not empty
-                    QString var_name(param.mid(start_pos, end_pos - start_pos));
-                    content::path_info_t::map_path_info_t::const_iterator var(params.f_image_ipaths.find(var_name.toUtf8().data()));
-                    if(var != params.f_image_ipaths.end())
-                    {
-                        start_pos -= 2;
-                        QString var_value(var->second->get_key());
-                        params.f_params[k].replace(start_pos, end_pos + 1 - start_pos, var_value);
-                    }
+                    // move the range up (we already checked p so use p + 1)
+                    i = p + 1;
+                }
+                else
+                {
+                    // move the range down (we never check an item at position j)
+                    j = p;
                 }
             }
-SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
-        }
 
-        // call the command
-        if(!(this->*g_commands[p].f_command)(params))
-        {
-            // the command failed, return a default image instead
-            return Magick::Image();
+            // found?
+            if(i >= j)
+            {
+                messages::messages msg;
+                msg.set_error("Unknown Command",
+                        QString("Command \"%1\" is not known.").arg(cmd),
+                        QString("Command in \"%1\" was not found in our list of commands.").arg(params.f_command),
+                        false);
+                continue;
+            }
+
+            // need to clear (previous command parameters are still
+            // defined in that array!)
+            params.f_params.clear();
+
+            // found it! verify the number of arguments
+            if(params.f_command.length() > static_cast<int>(pos + 1))
+            {
+                QString const cmd_params(params.f_command.mid(pos + 1));
+                QString ps;
+                int const cmd_params_max(cmd_params.length());
+                for(int pidx(0); pidx < cmd_params_max; ++pidx)
+                {
+                    if(cmd_params[pidx].unicode() == ' ')
+                    {
+                        // separator
+                        params.f_params << ps;
+                        ps.clear();
+                    }
+                    else if(cmd_params[pidx].unicode() == '"'
+                         || cmd_params[pidx].unicode() == '\'')
+                    {
+                        // this parameter is a string, parse up to the next
+                        // quote; quotes are not included in the result
+                        short const quote(cmd_params[pidx].unicode());
+                        bool found(false);
+                        for(++pidx; pidx < cmd_params_max; ++pidx)
+                        {
+                            if(cmd_params[pidx].unicode() == quote)
+                            {
+                                // skip the closing quote
+                                ++pidx;
+                                found = true;
+                                break;
+                            }
+                            ps += cmd_params[pidx];
+                        }
+                        if(!found)
+                        {
+                            messages::messages msg;
+                            msg.set_warning("Invalid String Parameter",
+                                    QString("String parameters must have matching opening and closing quotes."),
+                                    QString("Invalid string in \"%1\" (position %2).").arg(params.f_command).arg(params.f_params.size()));
+                        }
+
+                        // strings get auto added, only if followed by a space
+                        // we want to remove that space to avoid getting an
+                        // empty parameter added!
+                        for(; pidx < cmd_params_max && cmd_params[pidx].unicode() == ' '; ++pidx);
+
+                        // did we reach the end of the input string?
+                        // if so, then we're done and have to exit this
+                        // loop now without adding the last parameter here
+                        // (it is done after the for() loop we are in)
+                        if(pidx >= cmd_params_max)
+                        {
+                            break;
+                        }
+
+                        params.f_params << ps;
+                        ps.clear();
+                    }
+                    else
+                    {
+                        ps += cmd_params[pidx];
+                    }
+                }
+                // last part added here since we won't hit a ' ' before the end
+                params.f_params << ps;
+            }
+            size_t const max_params(params.f_params.size());
+            if(max_params < g_commands[p].f_min_params || max_params > g_commands[p].f_max_params)
+            {
+                // we create a message but this is run by a backend so
+                // the end users won't see those; we'll need to find
+                // a way, probably use the author of the script page
+                // to send that information to someone
+                messages::messages msg;
+                msg.set_error("Invalid Number of Parameters",
+                        QString("Invalid number of parameters for images.density (%1, expected 1 or 2)").arg(max_params),
+                        QString("Invalid number of parameters in \"%1\"").arg(params.f_command),
+                        false);
+                continue;
+            }
+
+            // verify the minimum stack size
+            if(params.f_image_stack.size() < g_commands[p].f_min_stack)
+            {
+                // we create a message but this is run by a backend so
+                // the end users won't see those; we'll need to find
+                // a way, probably use the author of the script page
+                // to send that information to someone
+                messages::messages msg;
+                msg.set_error("Invalid Number of Images",
+                        QString("Invalid number of images for %1 (expected %2, need %3)").arg(cmd).arg(static_cast<int>(g_commands[p].f_min_stack)).arg(params.f_image_stack.size()),
+                        QString("Invalid number of images in the stack at this point for \"%1\"").arg(params.f_command),
+                        false);
+                continue;
+            }
+
+            // transform variables (if any) to actual paths
+// for now keep a log to see what is happening
+SNAP_LOG_INFO(" ++ [")(params.f_command)("]");
+            for(int k(0); k < params.f_params.size(); ++k)
+            {
+                int start_pos(0);
+                for(;;)
+                {
+                    QString const param(params.f_params[k]);
+                    start_pos = param.indexOf("${", start_pos);
+                    if(start_pos < 0)
+                    {
+                        break;
+                    }
+                    // there is a variable start point ("${")
+                    start_pos += 2;
+                    int const end_pos(param.indexOf("}", start_pos));
+                    if(start_pos < end_pos )
+                    {
+                        // variable name is not empty
+                        QString var_name(param.mid(start_pos, end_pos - start_pos));
+                        content::path_info_t::map_path_info_t::const_iterator var(params.f_image_ipaths.find(var_name.toUtf8().data()));
+                        if(var != params.f_image_ipaths.end())
+                        {
+                            start_pos -= 2;
+                            QString const var_value(var->second->get_key());
+                            params.f_params[k].replace(start_pos, end_pos + 1 - start_pos, var_value);
+                        }
+                    }
+                }
+SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
+            }
+
+            // call the command
+            if(!(this->*g_commands[p].f_command)(params))
+            {
+                // the command failed, return a default image instead
+                if(f_on_error.isEmpty())
+                {
+                    return Magick::Image();
+                }
+
+                // the user defined a fallback on error, execute it
+                //
+                // the on error string cannot appear on multiple lines
+                // so we replace and escaped 'n' or 'r' (i.e. \n
+                // and \r in the input string) to actual '\n' and '\r'.
+                s = f_on_error.replace("\\n", "\n").replace("\\r", "\r");
+                repeat = true;
+                break;
+            }
         }
     }
+    while(repeat);
 
     if(params.f_image_stack.empty())
     {
@@ -1191,7 +1463,48 @@ SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
 }
 
 
-bool images::func_alpha(parameters_t& params)
+bool images::get_color(QString str, Magick::Color & color)
+{
+    // TODO: add support for rgb(), rgba(), hsl(), hsla(), yuv(), yuva()
+    if(str[0] == '#')
+    {
+        // '#' was specified, remove it before parsing the color
+        str = str.mid(1);
+    }
+
+    bool valid(false);
+    int const int_color(str.toInt(&valid, 16));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid RGB Color",
+                QString("Color \"%1\" is not valid.").arg(str),
+                "Specified color is not valid.",
+                false);
+        return false;
+    }
+
+    // internally we use an RGB color because we cannot be sure
+    // what the Quantum is (we could also pass the color directly
+    // to the constructor, but that would certainly prevent us
+    // from supporting a growing number of color definitions.)
+    //
+    Magick::ColorRGB rgb;
+
+    rgb.red  (((int_color >> 16) & 255) / 255.0);
+    rgb.green(((int_color >>  8) & 255) / 255.0);
+    rgb.blue (((int_color >>  0) & 255) / 255.0);
+
+    // also make sure it is 100% opaque
+    rgb.alphaQuantum(0.0);
+
+    color = rgb;
+
+    return true;
+}
+
+
+bool images::func_alpha(parameters_t & params)
 {
     QString const mode(params.f_params[0].toLower());
     if(mode == "off" || mode == "deactivate")
@@ -1218,7 +1531,176 @@ bool images::func_alpha(parameters_t& params)
 }
 
 
-bool images::func_create(parameters_t& params)
+bool images::func_background_color(parameters_t & params)
+{
+    // matte color is HTML like RGB (i.e. #123456)
+    //
+    Magick::Color color;
+    if(!get_color(params.f_params[0], color))
+    {
+        return false;
+    }
+    params.f_image_stack.back().backgroundColor(color);
+
+    return true;
+}
+
+
+bool images::func_blur(parameters_t & params)
+{
+    double radius(1.0);
+    double sigma(0.5);
+    bool valid(false);
+
+    size_t const size(params.f_params.size());
+    if(size >= 1)
+    {
+        radius = params.f_params[0].toDouble(&valid);
+        if(!valid
+        || radius < 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Radius",
+                    QString("blur() expects a positive double or null number, \"%1\" is not valid.").arg(params.f_params[0]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+    if(size >= 2)
+    {
+        sigma = params.f_params[1].toDouble(&valid);
+        if(!valid
+        || sigma <= 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Sigma",
+                    QString("blur() expects a positive double number, \"%1\" is not valid.").arg(params.f_params[1]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+
+    params.f_image_stack.back().blur(radius, sigma);
+    return true;
+}
+
+
+bool images::func_border(parameters_t & params)
+{
+    Magick::Geometry geometry(params.f_params[0].toUtf8().data());
+    params.f_image_stack.back().border(geometry);
+    return true;
+}
+
+
+bool images::func_border_color(parameters_t & params)
+{
+    // matte color is HTML like RGB (i.e. #123456)
+    //
+    Magick::Color color;
+    if(!get_color(params.f_params[0], color))
+    {
+        return false;
+    }
+    params.f_image_stack.back().borderColor(color);
+
+    return true;
+}
+
+
+bool images::func_charcoal(parameters_t & params)
+{
+    double radius(1.0);
+    double sigma(0.5);
+    bool valid(false);
+
+    size_t const size(params.f_params.size());
+    if(size >= 1)
+    {
+        radius = params.f_params[0].toDouble(&valid);
+        if(!valid
+        || radius < 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Radius",
+                    QString("charcoal() expects a positive double or null number, \"%1\" is not valid.").arg(params.f_params[0]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+    if(size >= 2)
+    {
+        sigma = params.f_params[1].toDouble(&valid);
+        if(!valid
+        || sigma <= 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Sigma",
+                    QString("charcoal() expects a positive double number, \"%1\" is not valid.").arg(params.f_params[1]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+
+    params.f_image_stack.back().charcoal(radius, sigma);
+    return true;
+}
+
+
+bool images::func_composite(parameters_t & params)
+{
+    QString const composite_str(params.f_params[0].toLower());
+    Magick::CompositeOperator composite_operator(Magick::UndefinedCompositeOp);
+
+    // TODO: add all composite operators
+    // file:///usr/share/doc/imagemagick/www/Magick++/Enumerations.html#CompositeOperator
+    //
+
+    if(composite_str == "over")
+    {
+        composite_operator = Magick::OverCompositeOp;
+    }
+    else if(composite_str == "copy")
+    {
+        composite_operator = Magick::CopyCompositeOp;
+    }
+    else
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Parameters",
+                QString("Unknown composite parameter \"%1\".").arg(composite_str),
+                QString("Invalid parameters in \"%1\"").arg(params.f_command),
+                false);
+        return false;
+    }
+    params.f_image_stack.back().compose(composite_operator);
+    return true;
+}
+
+
+bool images::func_contrast(parameters_t & params)
+{
+    bool valid(false);
+    int const contrast(params.f_params[0].toInt(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Parameters",
+                QString("contrast() expects an integer as parameter \"%1\".").arg(params.f_params[0]),
+                QString("Invalid parameters in \"%1\"").arg(params.f_command),
+                false);
+        return false;
+    }
+    params.f_image_stack.back().contrast(contrast);
+    return true;
+}
+
+
+bool images::func_create(parameters_t & params)
 {
     Magick::Image im;
     params.f_image_stack.push_back(im);
@@ -1226,7 +1708,15 @@ bool images::func_create(parameters_t& params)
 }
 
 
-bool images::func_density(parameters_t& params)
+bool images::func_crop(parameters_t & params)
+{
+    Magick::Geometry geometry(params.f_params[0].toUtf8().data());
+    params.f_image_stack.back().crop(geometry);
+    return true;
+}
+
+
+bool images::func_density(parameters_t & params)
 {
     bool valid(false);
     int const x(params.f_params[0].toInt(&valid));
@@ -1256,20 +1746,329 @@ bool images::func_density(parameters_t& params)
 }
 
 
-bool images::func_pop(parameters_t& params)
+bool images::func_emboss(parameters_t & params)
+{
+    double radius(1.0);
+    double sigma(0.5);
+    bool valid(false);
+
+    size_t const size(params.f_params.size());
+    if(size >= 1)
+    {
+        radius = params.f_params[0].toDouble(&valid);
+        if(!valid
+        || radius < 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Radius",
+                    QString("emboss() expects a positive or null double number, \"%1\" is not valid.").arg(params.f_params[0]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+    if(size >= 2)
+    {
+        sigma = params.f_params[1].toDouble(&valid);
+        if(!valid
+        || sigma <= 0.0)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Sigma",
+                    QString("emboss() expects a positive double number, \"%1\" is not valid.").arg(params.f_params[1]),
+                    "The parameter is not a valid double or it is negative or zero.",
+                    false);
+            return false;
+        }
+    }
+
+    params.f_image_stack.back().emboss(radius, sigma);
+    return true;
+}
+
+
+bool images::func_erase(parameters_t & params)
+{
+    params.f_image_stack.back().erase();
+    return true;
+}
+
+
+bool images::func_flip(parameters_t & params)
+{
+    params.f_image_stack.back().flip();
+    return true;
+}
+
+
+bool images::func_flop(parameters_t & params)
+{
+    params.f_image_stack.back().flop();
+    return true;
+}
+
+
+bool images::func_hash(parameters_t & params)
+{
+    bool valid(false);
+
+    double const start_offset(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for start offset, \"%1\" is not valid.").arg(params.f_params[0]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    double const thickness(params.f_params[1].toDouble(&valid));
+    if(!valid
+    || thickness <= 0.1)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for thickness, \"%1\" is not valid.").arg(params.f_params[1]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    double const space(params.f_params[2].toDouble(&valid));
+    if(!valid
+    || space <= 0.1)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for space, \"%1\" is not valid.").arg(params.f_params[2]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    double angle(params.f_params[3].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for space, \"%1\" is not valid.").arg(params.f_params[3]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    Magick::Color color;
+    if(!get_color(params.f_params[4], color))
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Start Offset",
+                QString("hash() expects a double number for space, \"%1\" is not valid.").arg(params.f_params[4]),
+                "Invalid parameter.",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().strokeColor(color);
+    params.f_image_stack.back().strokeWidth(thickness);
+
+    // if the hash is perfectly horizontal or vertical, then we only need
+    // one loop again the "opposite edge"; here we have two conditional
+    // loops to test those two special cases:
+    //
+    double x1(0.0);
+    double y1(0.0);
+    double x2(0.0);
+    double y2(0.0);
+
+    size_t width(params.f_image_stack.back().columns());
+    size_t height(params.f_image_stack.back().rows());
+
+    angle = fmod(angle, 360.0) * M_PI / 180.0;
+
+    double const increment(thickness + space);
+
+    // TODO: we want to have an integer as an index and multiply
+    //       the thickness + start position instead of incremental
+    //       position as doing now...
+    //
+    //           pos = start [+ offset] + increment * index
+    //
+    //       (the offset would be the moving backward by gap as we do
+    //       in the last case)
+    //
+    if(sin(fabs(angle)) < 0.000001)
+    {
+        // "perfectly" horizontal lines
+        // we could use splice unless some of the numbers were not integers...
+        x1 = 0.0;
+        x2 = width;
+        for(y1 = start_offset + thickness / 2.0; y1 < width + thickness; y1 += increment)
+        {
+            y2 = y1;
+            params.f_image_stack.back().draw(Magick::DrawableLine(x1, y1, x2, y2));
+        }
+    }
+    else if(cos(fabs(angle)) < 0.000001)
+    {
+        // "perfectly" vertical lines
+        y1 = 0.0;
+        y2 = height;
+        for(x1 = start_offset + thickness / 2.0; x1 < width; x1 += increment)
+        {
+            x2 = x1;
+            params.f_image_stack.back().draw(Magick::DrawableLine(x1, y1, x2, y2));
+        }
+    }
+    else
+    {
+        // we can go from left to right in the image and draw lines
+        x1 = start_offset + thickness / 2.0;
+        y1 = 0.0;
+        y2 = height;
+        double const gap(height / tan(angle));
+        if(gap > 0)
+        {
+            x1 -= ceil(gap / increment) * increment;
+        }
+        for(x2 = x1 + height / tan(angle); x1 < width + thickness || x2 < width + thickness; x1 += increment, x2 = x1 + gap)
+        {
+            params.f_image_stack.back().draw(Magick::DrawableLine(x1, y1, x2, y2));
+        }
+    }
+
+    return true;
+}
+
+
+bool images::func_matte_color(parameters_t & params)
+{
+    // matte color is HTML like RGB (i.e. #123456)
+    //
+    Magick::Color color;
+    if(!get_color(params.f_params[0], color))
+    {
+        return false;
+    }
+    params.f_image_stack.back().matteColor(color);
+
+    return true;
+}
+
+
+bool images::func_modulate(parameters_t & params)
+{
+    bool valid(false);
+
+    double const brightness(params.f_params[0].toDouble(&valid));
+    if(!valid
+    || brightness < 0.0
+    || brightness > 2.0)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Brightness",
+                QString("modulate() expects a double number between 0.0 and 2.0, \"%1\" is not valid.").arg(params.f_params[0]),
+                "Somehow the specified page has no image",
+                false);
+        return false;
+    }
+
+    double const saturation(params.f_params[1].toDouble(&valid));
+    if(!valid
+    || saturation < 0.0
+    || saturation > 2.0)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Saturation",
+                QString("modulate() expects a double number between 0.0 and 2.0, \"%1\" is not valid.").arg(params.f_params[1]),
+                "Somehow the specified page has no image",
+                false);
+        return false;
+    }
+
+    double const hue(params.f_params[2].toDouble(&valid));
+    if(!valid
+    || hue < 0.0
+    || hue > 2.0)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Hue",
+                QString("modulate() expects a double number between 0.0 and 2.0, \"%1\" is not valid.").arg(params.f_params[2]),
+                "Somehow the specified page has no image",
+                false);
+        return false;
+    }
+
+    // do not ask... ImageMagick likes percent values as values
+    // between 0 to 100...
+    //
+    params.f_image_stack.back().modulate(brightness * 100.0, saturation * 100.0, hue * 100.0);
+    return true;
+}
+
+
+bool images::func_negate(parameters_t & params)
+{
+    bool grayscale(false);
+    if(params.f_params.size() > 0)
+    {
+        grayscale = params.f_params[0] == "true";
+    }
+
+    params.f_image_stack.back().negate(grayscale);
+    return true;
+}
+
+
+bool images::func_normalize(parameters_t & params)
+{
+    params.f_image_stack.back().normalize();
+    return true;
+}
+
+
+bool images::func_oil_paint(parameters_t & params)
+{
+    bool valid(false);
+    double radius(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Radius",
+                QString("oil_paint() expects a double number representing a radius, \"%1\" is not valid.").arg(params.f_params[0]),
+                "Somehow the specified page has no image",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().oilPaint(radius);
+    return true;
+}
+
+
+bool images::func_on_error(parameters_t & params)
+{
+    // this is quite peculiar, it saves a string that becomes the script
+    // in the event an error occurs in another function
+    f_on_error = params.f_params[0];
+    return true;
+}
+
+
+bool images::func_pop(parameters_t & params)
 {
     params.f_image_stack.pop_back();
     return true;
 }
 
 
-bool images::func_read(parameters_t& params)
+bool images::func_read(parameters_t & params)
 {
     // param 1 is the ipath (key)
     // param 2 is the name used to load the file from the files table
     // param 3 is the image number, zero by default (optional -- currently unused)
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 
@@ -1281,7 +2080,7 @@ bool images::func_read(parameters_t& params)
         // there is no file in this page so we have to skip it
         messages::messages msg;
         msg.set_error("Missing Image File",
-                QString("Loading of image in \"%1\" failed (no md5 found).").arg(ipath.get_revision_key()),
+                QString("Loading of image in \"%1\" failed (no valid md5 found).").arg(ipath.get_revision_key()),
                 "Somehow the specified page has no image",
                 false);
         return false;
@@ -1309,13 +2108,51 @@ bool images::func_read(parameters_t& params)
     }
 
     Magick::Blob blob(image_data.data(), image_data.length());
-    params.f_image_stack.back().read(blob);
+    try
+    {
+        params.f_image_stack.back().read(blob);
+    }
+    catch(std::exception const & e)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Image File",
+                QString("Image in \"%1\" could not be read.").arg(ipath.get_revision_key()),
+                QString("Somehow loading this image file failed with an exception: %1").arg(e.what()),
+                false);
+        return false;
+    }
 
     return true;
 }
 
 
-bool images::func_resize(parameters_t& params)
+bool images::func_reduce_noise(parameters_t & params)
+{
+    if(params.f_params.size() > 0)
+    {
+        bool valid(false);
+        double order(params.f_params[0].toDouble(&valid));
+        if(!valid)
+        {
+            messages::messages msg;
+            msg.set_error("Invalid Order",
+                    QString("reduce_noise() expects a double number representing an order, \"%1\" is not valid.").arg(params.f_params[0]),
+                    "The parameter is not valid",
+                    false);
+            return false;
+        }
+        params.f_image_stack.back().reduceNoise(order);
+    }
+    else
+    {
+        params.f_image_stack.back().reduceNoise();
+    }
+
+    return true;
+}
+
+
+bool images::func_resize(parameters_t & params)
 {
     Magick::Geometry size(params.f_params[0].toUtf8().data());
     params.f_image_stack.back().resize(size);
@@ -1323,19 +2160,226 @@ bool images::func_resize(parameters_t& params)
 }
 
 
-bool images::func_swap(parameters_t& params)
+bool images::func_rotate(parameters_t & params)
+{
+    bool valid(false);
+    double const angle(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Angle",
+                QString("rotate() expects a double number representing an angle, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+    params.f_image_stack.back().rotate(angle);
+
+    return true;
+}
+
+
+bool images::func_shade(parameters_t & params)
+{
+    bool valid(false);
+
+    double const azimuth(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Azimuth",
+                QString("shade() expects a double number representing the azimuth, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    double const elevation(params.f_params[1].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Elevation",
+                QString("shade() expects a double number representing the elevation, \"%1\" is not valid.").arg(params.f_params[1]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    bool const color_shading(params.f_params[2] == "true");
+
+    params.f_image_stack.back().shade(azimuth, elevation, color_shading);
+
+    return true;
+}
+
+
+bool images::func_shadow(parameters_t & params)
+{
+    bool valid(false);
+
+    double const opacity(params.f_params[0].toDouble(&valid));
+    if(!valid
+    || opacity < 0.0)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Opacity",
+                QString("shadow() expects a positive or null double number representing the opacity, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    double const sigma(params.f_params[1].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Sigma",
+                QString("shadow() expects a double number representing sigma, \"%1\" is not valid.").arg(params.f_params[1]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    ssize_t const x(params.f_params[2].toInt(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Horizontal Position",
+                QString("shadow() expects an integer representing the horizontal position, \"%1\" is not valid.").arg(params.f_params[2]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    ssize_t const y(params.f_params[3].toInt(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Vertical Position",
+                QString("shadow() expects an integer representing the vertical position, \"%1\" is not valid.").arg(params.f_params[3]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    // The shadow() function generates a shadow from an existing image
+    // but it does not do the compositing work; also you want to set
+    // the background color to black (generally) first because by default
+    // your shadow will be white...
+    //
+    Magick::Image im(params.f_image_stack.back());
+    params.f_image_stack.back().shadow(opacity * 100.0, sigma, x, y);
+    params.f_image_stack.back().composite(im, x >= 0 ? 0 : -x, y >= 0 ? 0 : -y, Magick::OverCompositeOp);
+
+    return true;
+}
+
+
+bool images::func_sharpen(parameters_t & params)
+{
+    bool valid(false);
+
+    double const radius(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Radius",
+                QString("sharpen() expects a double number representing the radius, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    double const sigma(params.f_params[1].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Elevation",
+                QString("sharpen() expects a double number representing sigma, \"%1\" is not valid.").arg(params.f_params[1]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().sharpen(radius, sigma);
+
+    return true;
+}
+
+
+bool images::func_shear(parameters_t & params)
+{
+    bool valid(false);
+
+    double const x(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Horizontal Shear",
+                QString("shear() expects a double number representing the horizontal shear, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    double const y(params.f_params[1].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Vertizontal Shear",
+                QString("shear() expects a double number representing the vertizontal shear, \"%1\" is not valid.").arg(params.f_params[1]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().shear(x, y);
+
+    return true;
+}
+
+
+bool images::func_solarize(parameters_t & params)
+{
+    bool valid(false);
+
+    double const factor(params.f_params[0].toDouble(&valid));
+    if(!valid)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Factor",
+                QString("solirize() expects a double number representing the factor, \"%1\" is not valid.").arg(params.f_params[0]),
+                "The parameter is not valid",
+                false);
+        return false;
+    }
+
+    params.f_image_stack.back().solarize(factor);
+
+    return true;
+}
+
+
+bool images::func_swap(parameters_t & params)
 {
     std::iter_swap(params.f_image_stack.end() - 1, params.f_image_stack.end() - 2);
     return true;
 }
 
 
-bool images::func_write(parameters_t& params)
+bool images::func_trim(parameters_t & params)
+{
+    params.f_image_stack.back().trim();
+    return true;
+}
+
+
+bool images::func_write(parameters_t & params)
 {
     // param 1 is the ipath (key)
     // param 2 is the name used to save the file in the files table
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 
@@ -1356,12 +2400,12 @@ bool images::func_write(parameters_t& params)
     int const ext_pos(output_name.lastIndexOf("."));
     if(ext_pos > 0 && ext_pos + 1 < output_name.length())
     {
-        QString ext(output_name.mid(ext_pos + 1));
+        QString const ext(output_name.mid(ext_pos + 1));
         try
         {
             params.f_image_stack.back().magick(ext.toUtf8().data());
         }
-        catch(Magick::Exception const& e)
+        catch(Magick::Exception const e)
         {
             // TODO: ignore the error...
             //       we may need to force a default format or report the

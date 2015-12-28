@@ -16,17 +16,18 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snap_child.h"
-#include "snap_expr.h"
 #include "plugins.h"
-#include "snap_listen_thread.h"
+#include "snap_child.h"
+#include "snap_communicator.h"
 #include "snap_config.h"
+#include "snap_expr.h"
+#include "snap_listen_thread.h"
 
 #include <controlled_vars/controlled_vars_limited_need_enum_init.h>
 
 #include <advgetopt/advgetopt.h>
 
-#include <QDomDocument>
+#include <QTranslator>
 
 
 #define    SNAPWEBSITES_VERSION_MAJOR   @SNAPWEBSITES_VERSION_MAJOR@
@@ -46,29 +47,37 @@ enum class name_t
     SNAP_NAME_DOMAINS,          // Cassandra Table used for domains
     SNAP_NAME_WEBSITES,         // Cassandra Table used for websites
     SNAP_NAME_SITES,            // Cassandra Table used for sites (one site per row)
+    SNAP_NAME_BACKEND,          // Cassandra Table used to know where we are with backends
 
     // names used by core (server & snap_child)
-    SNAP_NAME_CORE_CONTENT_TYPE_HEADER,
     SNAP_NAME_CORE_ADMINISTRATOR_EMAIL,
+    SNAP_NAME_CORE_CONTENT_TYPE_HEADER,
     SNAP_NAME_CORE_COOKIE_DOMAIN,
     SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE,
-    SNAP_NAME_CORE_HTTP_REQUEST_METHOD,
     SNAP_NAME_CORE_HTTP_USER_AGENT,
+    SNAP_NAME_CORE_LAST_DYNAMIC_UPDATE,
     SNAP_NAME_CORE_LAST_UPDATED,
     SNAP_NAME_CORE_LOCATION_HEADER,
     SNAP_NAME_CORE_ORIGINAL_RULES,
     SNAP_NAME_CORE_PLUGINS,
     SNAP_NAME_CORE_PLUGIN_THRESHOLD,
     SNAP_NAME_CORE_REDIRECT,
+    SNAP_NAME_CORE_REMOTE_ADDR,
+    SNAP_NAME_CORE_REQUEST_METHOD,
+    SNAP_NAME_CORE_REQUEST_URI,
+    SNAP_NAME_CORE_RETRY_AFTER_HEADER,
     SNAP_NAME_CORE_RULES,
     SNAP_NAME_CORE_SERVER_PROTOCOL,
     SNAP_NAME_CORE_SITE_LONG_NAME,
     SNAP_NAME_CORE_SITE_NAME,
     SNAP_NAME_CORE_SITE_READY,
     SNAP_NAME_CORE_SITE_SHORT_NAME,
-    SNAP_NAME_CORE_USER_COOKIE_NAME
+    SNAP_NAME_CORE_SNAPBACKEND,
+    SNAP_NAME_CORE_STATUS_HEADER,
+    SNAP_NAME_CORE_USER_COOKIE_NAME,
+    SNAP_NAME_CORE_X_POWERED_BY_HEADER
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 
@@ -107,7 +116,7 @@ public:
     public:
         virtual                 ~error_by_mime_type() {}
 
-        virtual void            on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const& err_name, QString const & err_description, QString const & path) = 0;
+        virtual void            on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path) = 0;
     };
 
     virtual                 ~permission_error_callback() {}
@@ -119,7 +128,8 @@ public:
 // a simple specialization of the permission_error_callback that quiet
 // the errors so they don't get in the way (quiet as in: the end users don't
 // see them; it's going to be logged anyway)
-class quiet_error_callback : public permission_error_callback
+class quiet_error_callback
+        : public permission_error_callback
 {
 public:
                     quiet_error_callback(snap_child * snap, bool log);
@@ -137,52 +147,78 @@ private:
 };
 
 
+// implementation specific class
+class listener_impl;
 
-class server : public plugins::plugin
+
+class server
+        : public plugins::plugin
 {
 public:
+    typedef std::shared_ptr<server>             pointer_t;
+
+    // TODO: remove once snapcommunicator is used
+    typedef QSharedPointer<udp_client_server::udp_server>   udp_server_t;
+
     class backend_action
     {
     public:
         virtual                 ~backend_action() {}
-        virtual char const *    get_signal_name(QString const & action) const;
         virtual void            on_backend_action(QString const & action) = 0;
     };
 
-    class secure_field_flag_t
+    class backend_action_set
     {
     public:
-                        secure_field_flag_t()
-                            //: f_secure(false) -- auto-init
+        void                    add_action(QString const & action, plugins::plugin * p);
+        bool                    has_action(QString const & action) const;
+        void                    execute_action(QString const & action);
+        QString                 get_plugin_name(QString const & action);
+        void                    display();
+
+    private:
+        typedef QMap<QString, backend_action *> actions_map_t;
+        actions_map_t           f_actions;
+    };
+
+    class accessible_flag_t
+    {
+    public:
+                        accessible_flag_t()
+                            //: f_accessible(false) -- auto-init
+                            //, f_secure(false) -- auto-init
                         {
                         }
 
-        bool            is_secure() const { return f_secure; }
+        bool            is_accessible() const { return f_accessible && !f_secure; }
+        void            mark_as_accessible() { f_accessible = true; }
         void            mark_as_secure() { f_secure = true; }
 
     private:
         // prevent copies or a user could reset the flag!
-                        secure_field_flag_t(secure_field_flag_t const & rhs) = delete;
-                        secure_field_flag_t & operator = (secure_field_flag_t const & rhs) = delete;
+                        accessible_flag_t(accessible_flag_t const & rhs) = delete;
+                        accessible_flag_t & operator = (accessible_flag_t const & rhs) = delete;
 
+        controlled_vars::fbool_t    f_accessible;
         controlled_vars::fbool_t    f_secure;
     };
-
-    typedef QMap<QString, backend_action *>                 backend_action_map_t;
-    typedef std::shared_ptr<server>                         pointer_t;
-    typedef QSharedPointer<udp_client_server::udp_server>   udp_server_t;
 
     static pointer_t    instance();
     virtual             ~server();
 
-    static void         exit( const int code );
+    static void         exit( int const code );
 
     static char const * version();
     static int          version_major();
     static int          version_minor();
     static int          version_patch();
     virtual void        show_version();
+
+    // plugins::plugin implementation
+    virtual QString     icon() const;
     virtual QString     description() const;
+    virtual QString     dependencies() const;
+    virtual void        bootstrap(snap_child * snap);
     virtual int64_t     do_update(int64_t last_updated);
 
     void                usage();
@@ -194,9 +230,10 @@ public:
     static size_t       thread_count();
     void                set_default_config_filename(QString const & filename) { f_config_filename = filename; }
     void                config( int argc, char * argv[] );
+    void                set_translation(QString const xml_data);
     QString             get_parameter(QString const & param_name) const;
-    void                set_parameter( const QString & param_name, const QString& value );
-    void                prepare_qtapp( int argc, char *argv[] );
+    void                set_parameter( QString const & param_name, QString const & value );
+    void                prepare_qtapp( int argc, char * argv[] );
     void                prepare_cassandra();
     QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
     void                detach();
@@ -204,20 +241,20 @@ public:
     void                backend();
     int                 cassandra_port() const { return f_cassandra_port; }
     QString const &     cassandra_host() const { return f_cassandra_host; }
-    void                udp_ping(char const *name, char const *message = "PING");
+    void                capture_zombies(pid_t child_pid);
+    void                process_message(snap_communicator_message const & message);
 
     unsigned long       connections_count();
 
     std::string         servername() const;
 
-    static udp_server_t udp_get_server ( QString const & udp_addr_port );
-    static void         udp_ping_server( QString const & udp_addr_port, char const *message = "PING" );
+    void                udp_ping_server( QString const & service, QString const & uri );
+    static void         block_ip( QString const & ip, QString const & period = "" );
 
 #ifdef SNAP_NO_FORK
     bool nofork() const;
 #endif
 
-    SNAP_SIGNAL_WITH_MODE(bootstrap, (snap_child * snap), (snap), NEITHER);
     SNAP_SIGNAL_WITH_MODE(init, (), (), NEITHER);
     SNAP_SIGNAL_WITH_MODE(update, (int64_t last_updated), (last_updated), NEITHER);
     SNAP_SIGNAL_WITH_MODE(process_cookies, (), (), NEITHER);
@@ -226,17 +263,17 @@ public:
     SNAP_SIGNAL_WITH_MODE(define_locales, (QString & locales), (locales), NEITHER);
     SNAP_SIGNAL_WITH_MODE(process_post, (QString const & url), (url), NEITHER);
     SNAP_SIGNAL_WITH_MODE(execute, (QString const & url), (url), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(register_backend_action, (backend_action_map_t & actions), (actions), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(register_backend_cron, (backend_action_set & actions), (actions), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(register_backend_action, (backend_action_set & actions), (actions), NEITHER);
     SNAP_SIGNAL_WITH_MODE(backend_process, (), (), NEITHER);
     SNAP_SIGNAL_WITH_MODE(save_content, (), (), NEITHER);
     SNAP_SIGNAL_WITH_MODE(xss_filter, (QDomNode & node,
                              QString const & accepted_tags,
                              QString const & accepted_attributes),
                             (node, accepted_tags, accepted_attributes), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(improve_signature, (QString const & path, QString & signature),
-                                   (path, signature), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(improve_signature, (QString const & path, QDomDocument doc, QDomElement & signature_tag), (path, doc, signature_tag), NEITHER);
     SNAP_SIGNAL(load_file, (snap_child::post_file_t & file, bool & found), (file, found));
-    SNAP_SIGNAL_WITH_MODE(cell_is_secure, (QString const & table, QString const & row, QString const & cell, secure_field_flag_t & secure), (table, row, cell, secure), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(table_is_accessible, (QString const & table, accessible_flag_t & accessible), (table, accessible), NEITHER);
     SNAP_SIGNAL_WITH_MODE(add_snap_expr_functions, (snap_expr::functions_t & functions), (functions), NEITHER);
     SNAP_SIGNAL_WITH_MODE(output_result, (QString const & uri_path, QByteArray & output), (uri_path, output), NEITHER);
 
@@ -251,15 +288,19 @@ protected:
     snap_config                             f_parameters;
 
 private:
-    //typedef QMap<QString, QString>                parameter_map_t;
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
-    static void sighandler( int sig );
+    friend class listener_impl;
 
-    void process_connection(int socket);
-    void stop_thread_func();
+    static void                             sighandler( int sig );
+
+    void                                    process_connection(int socket);
+    void                                    stop_thread_func();
 
     static pointer_t                        g_instance;
+
+    QTranslator                             f_translator;
+    QByteArray                              f_translation_xml;
 
     std::string                             f_servername;
     controlled_vars::fbool_t                f_debug;

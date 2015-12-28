@@ -20,6 +20,7 @@
 #include "../output/output.h"
 
 #include "not_reached.h"
+#include "not_used.h"
 
 #include "poison.h"
 
@@ -70,19 +71,6 @@ header::~header()
 {
 }
 
-/** \brief Initialize the header.
- *
- * This function terminates the initialization of the header plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void header::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(header, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-}
 
 /** \brief Get a pointer to the header plugin.
  *
@@ -93,9 +81,19 @@ void header::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the header plugin.
  */
-header *header::instance()
+header * header::instance()
 {
     return g_plugin_header_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString header::settings_path() const
+{
+    return "/admin/settings/header";
 }
 
 
@@ -113,6 +111,19 @@ QString header::description() const
     return "Allows you to add/remove HTML and HTTP headers to your content."
           " Note that this module can, but should not be used to manage meta"
           " data for your page.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString header::dependencies() const
+{
+    return "|layout|output|path|";
 }
 
 
@@ -147,8 +158,23 @@ int64_t header::do_update(int64_t last_updated)
  */
 void header::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
     content::content::instance()->add_xml("header");
+}
+
+
+/** \brief Initialize the header.
+ *
+ * This function terminates the initialization of the header plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void header::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(header, "layout", layout::layout, generate_header_content, _1, _2, _3);
 }
 
 
@@ -173,10 +199,10 @@ bool header::on_path_execute(content::path_info_t& ipath)
 }
 
 
-void header::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void header::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // a type is just like a regular page
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -188,12 +214,9 @@ void header::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header_dom  The header being generated.
  * \param[in,out] metadata  The metada being generated.
- * \param[in] ctemplate  The template path if one was specified.
  */
-void header::on_generate_header_content(content::path_info_t& ipath, QDomElement& header_dom, QDomElement& metadata, QString const& ctemplate)
+void header::on_generate_header_content(content::path_info_t & ipath, QDomElement & header_dom, QDomElement & metadata)
 {
-    static_cast<void>(ctemplate);
-
     QDomDocument doc(header_dom.ownerDocument());
 
     content::content *content_plugin(content::content::instance());

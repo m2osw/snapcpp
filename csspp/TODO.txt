@@ -2,9 +2,10 @@
 To be closer to what SASS supports, we shall implement the following
 additional features:
 
-. variable named when calling a function (to allow any order):
 
-     $func($name: value, $arg2: value2, ...)
+. Variable named when calling a function (to allow any order):
+
+     $func(name: $var_name, arg2: value2, ...)
 
 
 . Implement @extend
@@ -13,11 +14,25 @@ additional features:
 . Support the placeholder in the assembler
 
 
-. Support for lists / maps in expressions
+. Change the expression implementation to do it in two steps to avoid
+  problems with ?: operator (and maybe others); the current version
+  forces us to calculate everything which means if something goes wrong
+  we may end up with what looks like an invalid expression even if it is
+  not. By first parsing everything and creating a tree, we could 100%
+  avoid calculating what is going to be simplified in the first place.
+  In the case of the ?: oeprator, that means only the true or false
+  tree is taken in account. The other tree is completely ignored.
 
 
-. Full coverage for expressions, also look into adding many still missing
-  operations (i.e. color + color, color * 3, int * flt, etc.)
+. @mixin functions have access to globals (read) but cannot modify globals
+  even with the !global flag as in:
+
+      @mixin func()
+      {
+        $var: 33 !global;
+      }
+
+  $var outside of func() is unchanged...
 
 
 . Add !important in variables, preventing further definitions of that variable
@@ -39,6 +54,7 @@ additional features:
         attribute-values: ???; -- would we really want to support that one?!
       }
 
+
 . Add proper support for -moz-, -ms-, etc. with selector (pseudo-classes, etc.)
 
     At this point I am thinking that a good way could be to test
@@ -54,8 +70,38 @@ additional features:
     other IE special features (many filters, expression() and probably more
     as time passes.)
 
+
 . Validations generate errors printing out their own position, we would
   need to show the position in the user source, not the validation SCSS file.
+
+
+. Implement the @import loop detection (i.e. if A imports itself through
+  other @imports or not)
+
+
+. Implement a better compression method by converting all the rules in
+  structures and then spiting out those structures back as CSS. For
+  example, the following:
+
+    {
+      margin-top: 5px;
+      margin-bottom: 5px;
+      margin-left: 3px;
+      margin-right: 3px;
+    }
+
+   will currently be optimized by removing the spaces and the last ';' as
+   in the following;
+
+    {margin-top:5px;margin-bottom:5px;margin-left:3px;margin-right:3px}
+
+   When we could compress this better by knowing that margin can be
+   optimized in this way:
+
+    {margin:5px 3px;}
+
+
+. Design a test which checks the csspp command line itself.
 
 
 vim: tw=2 sw=2 et

@@ -23,6 +23,7 @@
 #include "../users/users.h"
 
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -52,21 +53,6 @@ listener::~listener()
 }
 
 
-/** \brief Initialize the listener.
- *
- * This function terminates the initialization of the listener plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void listener::on_bootstrap(snap_child * snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(listener, "server", server, process_post, _1);
-}
-
-
 /** \brief Get a pointer to the listener plugin.
  *
  * This function returns an instance pointer to the listener plugin.
@@ -76,7 +62,7 @@ void listener::on_bootstrap(snap_child * snap)
  *
  * \return A pointer to the listener plugin.
  */
-listener *listener::instance()
+listener * listener::instance()
 {
     return g_plugin_listener_factory.instance();
 }
@@ -98,6 +84,19 @@ QString listener::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString listener::dependencies() const
+{
+    return "|messages|path|permissions|server_access|users|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -114,7 +113,7 @@ int64_t listener::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 6, 1, 17, 33, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 9, 19, 2, 7, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -131,9 +130,24 @@ int64_t listener::do_update(int64_t last_updated)
  */
 void listener::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the listener.
+ *
+ * This function terminates the initialization of the listener plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void listener::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(listener, "server", server, process_post, _1);
 }
 
 
@@ -268,10 +282,10 @@ void listener::on_process_post(QString const& uri_path)
 
 bool listener::listener_check_impl(snap_uri const& uri, content::path_info_t& page_ipath, QDomDocument doc, QDomElement result)
 {
-    static_cast<void>(uri);
-    static_cast<void>(page_ipath);
-    static_cast<void>(doc);
-    static_cast<void>(result);
+    NOTUSED(uri);
+    NOTUSED(page_ipath);
+    NOTUSED(doc);
+    NOTUSED(result);
 
     // TODO: add handling of all the plugins that cannot include the listener
     //       if any requires it (users? to test when we get logged out?)

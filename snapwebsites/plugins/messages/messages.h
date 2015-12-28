@@ -62,13 +62,17 @@ public:
 
 
 
-class messages : public plugins::plugin, public QtSerialization::QSerializationObject
+class messages
+        : public plugins::plugin
+        , public QtSerialization::QSerializationObject
 {
 public:
+    // version used in the message class (for serialization)
     static int const MESSAGES_MAJOR_VERSION = 1;
     static int const MESSAGES_MINOR_VERSION = 0;
 
-    class message : public QtSerialization::QSerializationObject
+    class message
+            : public QtSerialization::QSerializationObject
     {
     public:
         enum class message_type_enum_t
@@ -108,11 +112,13 @@ public:
                         messages();
                         ~messages();
 
+    // plugins::plugin implementation
     static messages *   instance();
+    virtual QString     settings_path() const;
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
-
-    void                on_bootstrap(snap_child *snap);
+    virtual void        bootstrap(snap_child * snap);
 
     message &           set_http_error(snap_child::http_code_t err_code, QString err_name, QString const & err_description, QString const & err_details, bool err_security);
     message &           set_error(QString err_name, QString const & err_description, QString const & err_details, bool err_security);

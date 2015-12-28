@@ -364,11 +364,11 @@ QCassandraCell::operator QCassandraValue () const
  */
 void QCassandraCell::add(int64_t val)
 {
-    // we update the value in memory as it is expected to be
-    int64_t r(0);
+    // if cached, we update the value in memory as it is expected to be
     if(!f_value.nullValue()) {
         // if the value is not defined, we'd have to read it before we can
         // increment it in memory; for this reason we don't do it at this point
+        int64_t r(0);
         switch(f_value.size()) {
         case 8:
             r = f_value.int64Value() + val;
@@ -387,8 +387,7 @@ void QCassandraCell::add(int64_t val)
             break;
 
         default:
-            throw std::runtime_error("a counter cell is expected to be a 64 bit value");
-            break;
+            throw std::runtime_error("a counter cell is expected to be an 8, 16, 32, or 64 bit value");
 
         }
         f_value.setInt64Value(r);

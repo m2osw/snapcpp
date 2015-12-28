@@ -19,6 +19,9 @@
 #include "../layout/layout.h"
 #include "../filter/filter.h"
 
+#include "../test_plugin_suite/test_plugin_suite.h"
+
+#include "snap_backend.h"
 #include "snap_expr.h"
 
 
@@ -43,6 +46,7 @@ enum class name_t
     SNAP_NAME_LIST_PAGE,
     SNAP_NAME_LIST_PAGELIST,
     SNAP_NAME_LIST_PAGE_SIZE,
+    SNAP_NAME_LIST_PROCESSALLLISTS,
     SNAP_NAME_LIST_PROCESSLIST,
     SNAP_NAME_LIST_RESETLISTS,
     SNAP_NAME_LIST_SELECTOR,
@@ -56,7 +60,7 @@ enum class name_t
     SNAP_NAME_LIST_THEME,
     SNAP_NAME_LIST_TYPE
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class list_exception : public snap_exception
@@ -116,7 +120,7 @@ class paging_t
 public:
     static int32_t const    DEFAULT_PAGE_SIZE = 20;
 
-                        paging_t(snap_child *snap, content::path_info_t & ipath);
+                        paging_t(snap_child * snap, content::path_info_t & ipath);
 
     list_item_vector_t  read_list();
 
@@ -177,50 +181,125 @@ private:
 
 
 
-class list : public plugins::plugin
-           , public server::backend_action
-           , public layout::layout_content
-           , public layout::layout_boxes
+class list
+        : public plugins::plugin
+        , public server::backend_action
+        , public layout::layout_content
+        , public layout::layout_boxes
 {
 public:
     static int const LIST_PROCESSING_LATENCY = 10 * 1000000; // 10 seconds in micro-seconds
     static int const LIST_MAXIMUM_ITEMS = 10000; // maximum number of items returned by read_list()
 
+    // pages given a smaller priority are processed earlier
+    typedef unsigned char       priority_t;
+
+    static priority_t const     LIST_PRIORITY_NOW       =   0;      // first page on the list
+    static priority_t const     LIST_PRIORITY_IMPORTANT =  10;      // user / developer says thiss page is really important and should be worked on ASAP
+    static priority_t const     LIST_PRIORITY_NEW_PAGE  =  20;      // a new page that was just created
+    static priority_t const     LIST_PRIORITY_RESET     =  50;      // user asked for a manual reset of (many) pages
+    static priority_t const     LIST_PRIORITY_UPDATES   = 180;      // updates from content.xml files
+    static priority_t const     LIST_PRIORITY_SLOW      = 200;      // from this number up, do not process if any other pages were processed
+    static priority_t const     LIST_PRIORITY_REVIEW    = 230;      // once in a while, review all the pages, just in case we missed something
+
+    class safe_priority_t
+    {
+    public:
+        safe_priority_t(priority_t priority)
+            : f_list_plugin(list::instance())
+            , f_priority(f_list_plugin->get_priority())
+        {
+            f_list_plugin->set_priority(priority);
+        }
+
+        ~safe_priority_t()
+        {
+            f_list_plugin->set_priority(f_priority);
+        }
+
+    private:
+        list *              f_list_plugin;
+        priority_t          f_priority;
+    };
+
+    class safe_start_date_offset_t
+    {
+    public:
+        safe_start_date_offset_t(int64_t start_date_offset)
+            : f_list_plugin(list::instance())
+            , f_start_date_offset(f_list_plugin->get_start_date_offset())
+        {
+            f_list_plugin->set_start_date_offset(start_date_offset);
+        }
+
+        ~safe_start_date_offset_t()
+        {
+            f_list_plugin->set_start_date_offset(f_start_date_offset);
+        }
+
+    private:
+        list *              f_list_plugin;
+        int64_t             f_start_date_offset;
+    };
+
                         list();
                         ~list();
 
+    // plugins::plugin implementation
     static list *       instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
+
     QtCassandra::QCassandraTable::pointer_t get_list_table();
     QtCassandra::QCassandraTable::pointer_t get_listref_table();
 
-    void                on_bootstrap(snap_child * snap);
-    void                on_register_backend_action(server::backend_action_map_t & actions);
-    virtual char const *get_signal_name(QString const & action) const;
+    // server::backend_action implementation
     virtual void        on_backend_action(QString const & action);
+
+    // server signals
     void                on_backend_process();
-    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                on_register_backend_cron(server::backend_action_set & actions);
+    void                on_register_backend_action(server::backend_action_set & actions);
+    void                on_attach_to_session();
+
+    // layout::layout_content implementation
+    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // layout::layout_boxes implementation
+    virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes);
+
+    // content signals
     void                on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
     void                on_modified_content(content::path_info_t & ipath);
-    void                on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
-    virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes, QString const & ctemplate);
-    void                on_attach_to_session();
     void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
     void                on_modified_link(links::link_info const & link, bool const created);
 
+    // filter signals
+    void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+
+    void                set_priority(priority_t priority);
+    priority_t          get_priority() const;
+
+    void                set_start_date_offset(int64_t offset_us);
+    int64_t             get_start_date_offset() const;
+
     list_item_vector_t  read_list(content::path_info_t & ipath, int start, int count);
+
+    // links test suite
+    SNAP_TEST_PLUGIN_SUITE_SIGNALS()
 
 private:
     void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
+    void                add_all_pages_to_list_table(QString const & f);
     int                 generate_all_lists(QString const & site_key);
-    int                 generate_all_lists_for_page(QString const & site_key, QString const & row_key);
-    int                 generate_list_for_page(content::path_info_t & page_key, content::path_info_t & list_ipath);
+    int                 generate_all_lists_for_page(QString const & site_key, QString const & row_key, int64_t update_request_time);
+    int                 generate_list_for_page(content::path_info_t & page_key, content::path_info_t & list_ipath, int64_t update_request_time);
     int                 generate_new_lists(QString const & site_key);
     int                 generate_new_list_for_all_pages(QString const & site_key, content::path_info_t & list_ipath);
-    int                 generate_new_list_for_descendant(QString const & site_key, content::path_info_t & list_ipath);
+    int                 generate_new_list_for_descendants(QString const & site_key, content::path_info_t & list_ipath);
     int                 generate_new_list_for_children(QString const & site_key, content::path_info_t & list_ipath);
     int                 generate_new_list_for_all_descendants(content::path_info_t & list_ipath, content::path_info_t & parent, bool const descendants);
     int                 generate_new_list_for_public(QString const & site_key, content::path_info_t & list_ipath);
@@ -229,12 +308,20 @@ private:
     bool                run_list_check(content::path_info_t & list_ipath, content::path_info_t & page_ipath);
     QString             run_list_item_key(content::path_info_t & list_ipath, content::path_info_t & page_ipath);
 
+    // tests
+    SNAP_TEST_PLUGIN_TEST_DECL(test_add_page_twice)
+
     zpsnap_child_t                          f_snap;
+    snap_backend::zpsnap_backend_t          f_backend;
     QtCassandra::QCassandraTable::pointer_t f_list_table;
     QtCassandra::QCassandraTable::pointer_t f_listref_table;
     snap_expr::expr::expr_map_t             f_check_expressions;
     snap_expr::expr::expr_map_t             f_item_key_expressions;
     controlled_vars::fbool_t                f_ping_backend;
+    controlled_vars::fbool_t                f_list_link;
+    priority_t                              f_priority = LIST_PRIORITY_NEW_PAGE;                // specific order in which pages should be worked on
+    int64_t                                 f_start_date_offset = LIST_PROCESSING_LATENCY;      // minimum amount of time to wait for the next data
+    int64_t                                 f_date_limit = 0;
 };
 
 

@@ -17,6 +17,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <csspp/color.h>
 #include <csspp/error.h>
 
 #include <map>
@@ -27,9 +28,9 @@ namespace csspp
 
 enum boolean_t
 {
-    INVALID = -1,
-    FALSE = 0,
-    TRUE = 1
+    BOOLEAN_INVALID = -1,
+    BOOLEAN_FALSE = 0,
+    BOOLEAN_TRUE = 1
 };
 
 enum class node_type_t
@@ -100,9 +101,11 @@ enum class node_type_t
     // composed tokens
     AN_PLUS_B,              // An+B for nth-child() functions
     ARG,                    // broken up comma separated elements end up in lists of arguments (for functions and qualified rule selectors)
+    ARRAY,                  // "value value value ...", like a map, only just indexed with integers
     COMPONENT_VALUE,        // "token token token ..." representing a component-value-list
     DECLARATION,            // <id> ':' ...
     LIST,                   // bare "token token token ..." until better qualified
+    MAP,                    // "index value index value ..." (a property list)
 
     max_type
 };
@@ -113,7 +116,7 @@ int32_t constexpr mix_node_types(node_type_t a, node_type_t b)
     return static_cast<int32_t>(a) * 65536 + static_cast<int32_t>(b);
 }
 
-class node
+class node : public std::enable_shared_from_this<node>
 {
 public:
     typedef std::shared_ptr<node>   pointer_t;
@@ -134,12 +137,16 @@ public:
     position const &    get_position() const;
     std::string const & get_string() const;
     void                set_string(std::string const & str);
+    std::string const & get_lowercase_string() const;
+    void                set_lowercase_string(std::string const & str);
     integer_t           get_integer() const;
     void                set_integer(integer_t integer);
     bool                get_boolean() const;
     void                set_boolean(bool integer);
     decimal_number_t    get_decimal_number() const;
     void                set_decimal_number(decimal_number_t decimal_number);
+    color               get_color() const;
+    void                set_color(color c);
     decimal_number_t    get_font_size() const;
     void                set_font_size(decimal_number_t font_size);
     decimal_number_t    get_line_height() const;
@@ -165,6 +172,7 @@ public:
     void                clear_variables();
     void                set_variable(std::string const & name, pointer_t value);
     pointer_t           get_variable(std::string const & name);
+    void                copy_variable(node::pointer_t source);
 
     void                clear_flags();
     void                set_flag(std::string const & name, bool value);
@@ -186,6 +194,7 @@ private:
     integer_t           f_integer = 0;
     decimal_number_t    f_decimal_number = 0.0;
     std::string         f_string;
+    std::string         f_lowercase_string;
     list_t              f_children;
     variable_table_t    f_variables;
     flag_table_t        f_flags;

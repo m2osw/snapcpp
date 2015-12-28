@@ -59,6 +59,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<div class="editor-block">
 						<xsl:copy-of select="page/body/qrcode/private_enable/node()"/>
 					</div>
+					<div class="editor-block">
+						<xsl:copy-of select="page/body/qrcode/shorturl_enable/node()"/>
+					</div>
+					<div class="editor-block">
+						<xsl:copy-of select="page/body/qrcode/track_usage_enable/node()"/>
+					</div>
 
 					<div class="settings-title">
 						<label for="qrcode_default_scale" class="company_plan">Scale</label>
@@ -66,7 +72,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					</div>
 
 					<div class="settings-title">
-						<label for="qrcode_default_edge" class="company_plan">Edge</label>
+						<label for="qrcode_default_edge" class="company_plan">Edge (space around the QR code)</label>
 						<xsl:copy-of select="page/body/qrcode/default_edge/node()"/>
 					</div>
 				</fieldset>

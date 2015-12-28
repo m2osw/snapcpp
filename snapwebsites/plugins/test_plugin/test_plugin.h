@@ -43,30 +43,41 @@ char const * get_name(name_t name) __attribute__ ((const));
 class test_plugin_exception : public snap_exception
 {
 public:
-    test_plugin_exception(char const *        what_msg) : snap_exception("Test Plugin", what_msg) {}
-    test_plugin_exception(std::string const & what_msg) : snap_exception("Test Plugin", what_msg) {}
-    test_plugin_exception(QString const &     what_msg) : snap_exception("Test Plugin", what_msg) {}
+    explicit test_plugin_exception(char const *        what_msg) : snap_exception("Test Plugin", what_msg) {}
+    explicit test_plugin_exception(std::string const & what_msg) : snap_exception("Test Plugin", what_msg) {}
+    explicit test_plugin_exception(QString const &     what_msg) : snap_exception("Test Plugin", what_msg) {}
 };
 
 
 
 
 
-class test_plugin : public plugins::plugin
-                  , public path::path_execute
+class test_plugin
+        : public plugins::plugin
+        , public path::path_execute
 {
 public:
                             test_plugin();
                             ~test_plugin();
 
+    // plugins::plugin implementation
     static test_plugin *    instance();
+    virtual QString         settings_path() const;
+    virtual QString         icon() const;
     virtual QString         description() const;
+    virtual QString         help_uri() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
+    virtual void            bootstrap(snap_child * snap);
 
-    void                    on_bootstrap(snap_child * snap);
-    void                    on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    // server signals
     void                    on_process_post(QString const & uri_path);
+
+    // path::path_execute implementation
     virtual bool            on_path_execute(content::path_info_t & ipath);
+
+    // filter signals
+    void                    on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 
     QtCassandra::QCassandraTable::pointer_t get_test_results_table();
 

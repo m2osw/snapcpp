@@ -18,44 +18,51 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <content path="/types">
+  <!--
+    Technically this data should be defined in the output/content.xml file
+    but it kind of makes sense to have it here... It will transparently be
+    displayed by the output plugin. That way the taxonomy plugin does not
+    depend on the layout plugin (and since the layout does depend on the
+    taxonomy, we are all good.)
+  -->
+  <content path="/types" owner="output">
     <param name="taxonomy::name">system_types</param>
     <param name="content::title" revision="revision">System Types</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This page represents the root of your entire website taxonomy tree.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/administer/taxonomy">
+  <content path="/types/permissions/rights/administer/taxonomy" owner="output">
     <param name="content::title" revision="revision">Administer Taxonomy Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Administer Taxonomy.</p><p>This right allows a user to manage the entire taxonomy. If you only want to offer tagging, make sure to only offer the Tag right.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/administer/taxonomy/vocabulary">
+  <content path="/types/permissions/rights/administer/taxonomy/vocabulary" owner="output">
     <param name="content::title" revision="revision">Administer Taxonomy Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Administer a Vocabulary.</p><p>Users with that right can edit an entire vocabulary to add, remove, and edit tags from it.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/administer/taxonomy/vocabulary/tag">
+  <content path="/types/permissions/rights/administer/taxonomy/vocabulary/tag" owner="output">
     <param name="content::title" revision="revision">Administer Tag Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Allow user to tag or categorize pages.</p><p>A user given this right is allowed to use tags on a page, in effect, categorizing the page with a set of tags. With this right, any tag can be assigned to any page.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/edit/taxonomy">
+  <content path="/types/permissions/rights/edit/taxonomy" owner="output">
     <param name="content::title" revision="revision">Administer Taxonomy Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Edit Taxonomy.</p><p>This right allows a user to manage the entire taxonomy. If you only want to offer tagging, make sure to only offer the Tag right.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/edit/taxonomy/vocabulary">
+  <content path="/types/permissions/rights/edit/taxonomy/vocabulary" owner="output">
     <param name="content::title" revision="revision">Edit Taxonomy Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Edit a Vocabulary.</p><p>Users with that right can edit an entire vocabulary to add, remove, and edit tags from it.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/rights/edit/taxonomy/vocabulary/tag">
+  <content path="/types/permissions/rights/edit/taxonomy/vocabulary/tag" owner="output">
     <param name="content::title" revision="revision">Edit Tag Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Allow user to edit a tag or categorize pages.</p><p>A user given this right is allowed to edit a tag page which means changing its name, definition and other parameters.</p>]]>
@@ -68,14 +75,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     /types/permissions/rights are two that are Snap! specific and not
     editable)
   -->
-  <content path="/types/taxonomy">
+  <content path="/types/taxonomy" owner="output">
     <!--param name="taxonomy::name">taxonomy::taxonomy</param-->
     <param name="content::title" revision="revision">Taxonomy</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This is the top of the taxonomy tree used to tag / categories your pages.</p>]]>
     </param>
   </content>
-  <content path="/types/taxonomy/system">
+  <content path="/types/taxonomy/system" owner="output">
     <!--param name="taxonomy::name">taxonomy::system</param-->
     <param name="content::title" revision="revision">System Taxonomy</param>
     <param name="content::body" revision="revision">

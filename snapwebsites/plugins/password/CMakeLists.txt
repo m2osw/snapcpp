@@ -1,0 +1,100 @@
+#
+# File:
+#      plugins/password/CMakeLists.txt
+#
+# Description:
+#      Handle various checks on passwords when registering users.
+#      It may also be used when changing passwords.
+#
+# Documentation:
+#      See the CMake documentation.
+#
+# License:
+#      Copyright (c) 2011-2015 Made to Order Software Corp.
+#
+#      http://snapwebsites.org/
+#      contact@m2osw.com
+#
+#      This program is free software; you can redistribute it and/or modify
+#      it under the terms of the GNU General Public License as published by
+#      the Free Software Foundation; either version 2 of the License, or
+#      (at your option) any later version.
+#     
+#      This program is distributed in the hope that it will be useful,
+#      but WITHOUT ANY WARRANTY; without even the implied warranty of
+#      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#      GNU General Public License for more details.
+#     
+#      You should have received a copy of the GNU General Public License
+#      along with this program; if not, write to the Free Software
+#      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+
+project(plugin_password)
+
+find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
+include( ${QT_USE_FILE} )
+add_definitions( ${QT_DEFINITIONS} )
+
+include_directories(
+    SYSTEM
+        ${QT_INCLUDES}
+)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+)
+
+QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+    password.qrc
+)
+
+
+
+snap_validate_xml( content.xml                          content/content.dtd )
+
+snap_validate_xml( editor/password-blacklist-page.xml   editor/editor-form.dtd )
+snap_validate_xml( editor/password-policy-page.xml      editor/editor-form.dtd )
+
+snap_validate_xml( layout/password-blacklist-parser.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/password-policy-parser.xsl    layout/simplified-xslt20.dtd )
+snap_validate_xml( password_widgets/password-form.xsl   layout/simplified-xslt20.dtd )
+
+snap_validate_js( password.js )
+
+
+add_library(password SHARED
+    password.cpp
+    password.h
+    blacklist.cpp
+    policy.cpp
+    ${SNAP_MANAGER_MOC_CXX}
+    ${SNAP_MANAGER_RESOURCES_RCC}
+    content.xml
+    editor/password-blacklist-page.xml
+    editor/password-policy-page.xml
+    layout/password-blacklist-parser.xsl
+    layout/password-policy-parser.xsl
+    password.css
+    password.js
+    password_widgets/password-form.xsl
+)
+
+target_link_libraries( password ${QT_LIBRARIES} )
+
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_dependencies( password make_controlled_vars_headers )
+endif()
+
+install(
+    TARGETS password LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+)
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include/snapwebsites/plugins/password
+    FILES_MATCHING PATTERN "*.h"
+)
+
+# vim: ts=4 sw=4 et

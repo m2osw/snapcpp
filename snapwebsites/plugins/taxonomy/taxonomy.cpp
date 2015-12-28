@@ -17,13 +17,8 @@
 
 #include "taxonomy.h"
 
-#include "../output/output.h"
-
 #include "not_reached.h"
-
-#include <iostream>
-
-#include <QtCore/QDebug>
+#include "not_used.h"
 
 #include "poison.h"
 
@@ -41,7 +36,7 @@ SNAP_PLUGIN_START(taxonomy, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -79,21 +74,6 @@ taxonomy::~taxonomy()
 }
 
 
-/** \brief Initialize the taxonomy plugin.
- *
- * This function terminates the initialization of the taxonomy plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void taxonomy::on_bootstrap(::snap::snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(taxonomy, "content", content::content, copy_branch_cells, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the taxonomy plugin.
  *
  * This function returns an instance pointer to the taxonomy plugin.
@@ -103,7 +83,7 @@ void taxonomy::on_bootstrap(::snap::snap_child *snap)
  *
  * \return A pointer to the taxonomy plugin.
  */
-taxonomy *taxonomy::instance()
+taxonomy * taxonomy::instance()
 {
     return g_plugin_taxonomy_factory.instance();
 }
@@ -124,6 +104,19 @@ QString taxonomy::description() const
         " Types include categories, tags, permissions, etc."
         " Some of these types are locked so the system continues to"
         " work, however, all can be edited by the user in some way.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString taxonomy::dependencies() const
+{
+    return "|content|";
 }
 
 
@@ -162,9 +155,92 @@ int64_t taxonomy::do_update(int64_t last_updated)
  */
 void taxonomy::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
-    content::content::instance()->add_xml("taxonomy");
+    content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Check whether dynamic updates are necessary.
+ *
+ * This function updates the database dynamically when we detect a
+ * blunder, which requires fixing.
+ *
+ * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
+ *
+ * \return The UTC Unix date of the last update of this plugin.
+ */
+int64_t taxonomy::do_dynamic_update(int64_t last_updated)
+{
+    SNAP_PLUGIN_UPDATE_INIT();
+
+    SNAP_PLUGIN_UPDATE(2015, 10, 9, 23, 27, 14, owner_update);
+
+    SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Fix the ownership of our old pages to "output".
+ *
+ * This function is a good example of how a dynamic update is performed.
+ * The old ownership of the types pages were "taxonomy". Now we do not
+ * want the taxonomy plugin to depend on the layout or output plugins
+ * and thus we need all its pages to be handled by the output plugin
+ * directly.
+ *
+ * This function checks each page and reassign the owner.
+ *
+ * The function can safely be re-run (although it is not expected to
+ * be.)
+ *
+ * \param[in] variables_timestamp  The time when this function is being
+ *            called (same as f_snap->start_date()).
+ */
+void taxonomy::owner_update(int64_t variables_timestamp)
+{
+    NOTUSED(variables_timestamp);
+
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+
+    // we cannot include the output plugin from the taxonomy plugin...
+    //QString const new_owner(output::output::instance()->get_plugin_name());
+    QString const new_owner("output");
+
+    snap_string_list paths;
+    paths << "types";
+    paths << "types/permissions/rights/administer/taxonomy";
+    paths << "types/permissions/rights/administer/taxonomy/vocabulary";
+    paths << "types/permissions/rights/administer/taxonomy/vocabulary/tag";
+    paths << "types/permissions/rights/edit/taxonomy";
+    paths << "types/permissions/rights/edit/taxonomy/vocabulary";
+    paths << "types/permissions/rights/edit/taxonomy/vocabulary/tag";
+    paths << "types/taxonomy";
+    paths << "types/taxonomy/system";
+    for(auto const p : paths)
+    {
+        content::path_info_t taxonomy_ipath;
+        taxonomy_ipath.set_path(p);
+        if(content_table->exists(taxonomy_ipath.get_key()))
+        {
+            // the page still exists, change the owner
+            content_table->row(taxonomy_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->setValue(new_owner);
+        }
+    }
+}
+
+
+/** \brief Initialize the taxonomy plugin.
+ *
+ * This function terminates the initialization of the taxonomy plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void taxonomy::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(taxonomy, "content", content::content, copy_branch_cells, _1, _2, _3);
 }
 
 
@@ -177,16 +253,16 @@ void taxonomy::content_update(int64_t variables_timestamp)
  * If the limit is not found, then an error is generated because it should
  * always exist (i.e. at least a system type that the user cannot edit.)
  *
- * \param[in] ipath  The content where we start.
+ * \param[in,out] ipath  The content where we start.
  * \param[in] taxonomy_name  The name of the link to the taxonomy to use for the search.
  * \param[in] col_name  The name of the column to search.
  * \param[in] limit_name  The title at which was stop the search.
  *
  * \return The value found in the Cassandra database.
  */
-QtCassandra::QCassandraValue taxonomy::find_type_with(content::path_info_t& ipath, const QString& taxonomy_name, const QString& col_name, const QString& limit_name)
+QtCassandra::QCassandraValue taxonomy::find_type_with(content::path_info_t & ipath, QString const & taxonomy_name, QString const & col_name, QString const & limit_name)
 {
-    QtCassandra::QCassandraValue not_found;
+    QtCassandra::QCassandraValue const not_found;
     // get link taxonomy_name from ipath
     links::link_info type_info(taxonomy_name, true, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> type_ctxt(links::links::instance()->new_link_context(type_info));
@@ -245,24 +321,26 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(content::path_info_t& ipat
 }
 
 
-bool taxonomy::on_path_execute(content::path_info_t& ipath)
+// Using the output::on_path_execute() instead
+//bool taxonomy::on_path_execute(content::path_info_t& ipath)
+//{
+//    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
+//
+//    return true;
+//}
+
+
+// no need, output will take over
+//void taxonomy::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
+//{
+//    // a type is just like a regular page
+//    output::output::instance()->on_generate_main_content(ipath, page, body);
+//}
+
+
+void taxonomy::on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
-    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
-
-    return true;
-}
-
-
-void taxonomy::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
-{
-    // a type is just like a regular page
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
-}
-
-
-void taxonomy::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
-{
-    static_cast<void>(destination_branch);
+    NOTUSED(destination_branch);
 
     content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(name_t::SNAP_NAME_TAXONOMY_NAMESPACE));
 }

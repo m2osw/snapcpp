@@ -154,13 +154,13 @@ void snap_initialize_website::snap_initialize_website_runner::send_init_command(
     ss << "SERVER_PROTOCOL=HTTP/1.1" << std::endl;
 
     // REQUEST_METHOD
-    ss << get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD) << "=GET" << std::endl;
+    ss << get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD) << "=GET" << std::endl;
 
     // QUERY_STRING
     ss << "QUERY_STRING=initialize_website=1&q=%2f%2f" << std::endl;
 
     // REQUEST_URI
-    ss << "REQUEST_URI=/" << std::endl;
+    ss << snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI) << "=/" << std::endl;
 
     // SCRIPT_NAME
     //ss << "SCRIPT_NAME=..." << std::endl;
@@ -194,7 +194,6 @@ std::cerr << "---ENV---\n" << env << "---ENV---\n";
     bool started(false);
     for(;;)
     {
-        // versions are expected to be relatively small so 256 chars per line is enough
         std::string buf;
         int const r(socket->read_line(buf));
         if(r <= 0)
@@ -222,7 +221,7 @@ std::cerr << "---ENV---\n" << env << "---ENV---\n";
         }
         else if(buf == "#END")
         {
-            // got the #END mark, we're done
+            // got the #END mark, we are done
             break;
         }
         else

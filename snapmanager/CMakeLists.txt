@@ -49,7 +49,7 @@ add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGER_VERSION_MAJOR}.${SNAPMANA
 ##
 find_package( AdvGetOpt        REQUIRED )
 find_package( LibTLD           REQUIRED )
-#find_package( log4cplus        REQUIRED )
+find_package( log4cplus        REQUIRED )
 find_package( Qt4 4.8.4 QUIET  REQUIRED QtCore QtNetwork QtGui QtWebKit)
 find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )

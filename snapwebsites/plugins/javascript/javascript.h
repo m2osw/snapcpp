@@ -26,10 +26,9 @@ namespace javascript
 enum class name_t
 {
     SNAP_NAME_JAVASCRIPT_MINIMIZED,
-    SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED,
-    SNAP_NAME_JAVASCRIPT_ROW
+    SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 //class javascript_exception : public snap_exception {};
@@ -47,22 +46,25 @@ public:
 
 
 
-class javascript : public plugins::plugin
+class javascript
+        : public plugins::plugin
 {
 public:
                         javascript();
                         ~javascript();
 
+    // plugins::plugin implementation
     static javascript * instance();
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child * snap);
-    void                on_process_attachment(QByteArray const & key, content::attachment_file const & file);
+    // content signals
+    void                on_process_attachment(QtCassandra::QCassandraRow::pointer_t file_row, content::attachment_file const & file);
     void                on_check_attachment_security(content::attachment_file const & file, content::permission_flag & secure, bool const fast);
 
     void                register_dynamic_plugin(javascript_dynamic_plugin *p);
-
     QVariant            evaluate_script(QString const & script);
 
 private:

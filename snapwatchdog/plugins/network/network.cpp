@@ -19,6 +19,7 @@
 
 #include "snapwatchdog.h"
 
+#include <snapwebsites/not_used.h>
 #include <snapwebsites/qdomhelpers.h>
 
 #include "poison.h"
@@ -40,11 +41,11 @@ SNAP_PLUGIN_START(network, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_NETWORK_NAME:
+    case name_t::SNAP_NAME_WATCHDOG_NETWORK_NAME:
         return "name";
 
     default:
@@ -63,7 +64,7 @@ char const *get_name(name_t name)
  * This function is used to initialize the network plugin object.
  */
 network::network()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -77,35 +78,6 @@ network::~network()
 }
 
 
-/** \brief Initialize network.
- *
- * This function terminates the initialization of the network plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void network::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN0(network, "server", watchdog_server, init);
-    SNAP_LISTEN(network, "server", watchdog_server, process_watch, _1);
-}
-
-
-/** \brief Initialize the network plugin.
- *
- * This function defines the filename to use to share the data between
- * the main network process and the background network process.
- */
-void network::on_init()
-{
-    // it is an XML file because the data varies quite a bit depending
-    // on the number of servers supported
-    f_network_data_path = QString("%1/network.xml").arg(f_snap->get_server_parameter(watchdog::get_name(watchdog::SNAP_NAME_WATCHDOG_DATA_PATH)));
-}
-
-
 /** \brief Get a pointer to the network plugin.
  *
  * This function returns an instance pointer to the network plugin.
@@ -115,7 +87,7 @@ void network::on_init()
  *
  * \return A pointer to the network plugin.
  */
-network *network::instance()
+network * network::instance()
 {
     return g_plugin_network_factory.instance();
 }
@@ -136,6 +108,19 @@ QString network::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString network::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function is ignored in the watchdog.
@@ -146,10 +131,36 @@ QString network::description() const
  */
 int64_t network::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
+
     SNAP_PLUGIN_UPDATE_INIT();
     // no updating in watchdog
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize network.
+ *
+ * This function terminates the initialization of the network plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void network::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN0(network, "server", watchdog_server, init);
+    SNAP_LISTEN(network, "server", watchdog_server, process_watch, _1);
+}
+
+
+/** \brief Initialize the network plugin.
+ *
+ * At this time there is nothing for us to initialize for the network.
+ */
+void network::on_init()
+{
 }
 
 
@@ -164,8 +175,9 @@ void network::on_process_watch(QDomDocument doc)
     QDomElement parent(snap_dom::create_element(doc, "watchdog"));
     QDomElement e(snap_dom::create_element(parent, "network"));
 
-    // check all the network connections defined in our setup file
-    // and auto-detect additional servers
+    // request status information from snapcommunicator which has all of
+    // the data we can dream of in regard to the network status
+    //
 
 }
 

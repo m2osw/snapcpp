@@ -17,7 +17,7 @@
 #pragma once
 
 #include "../content/content.h"
-#include "../test_plugin/test_plugin.h"
+#include "../test_plugin_suite/test_plugin_suite.h"
 
 namespace snap
 {
@@ -48,6 +48,22 @@ public:
     server_access_exception_create_called_twice(QString const &     what_msg) : server_access_exception(what_msg) {}
 };
 
+class server_access_exception_success_with_errors : public server_access_exception
+{
+public:
+    server_access_exception_success_with_errors(char const *        what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_success_with_errors(std::string const & what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_success_with_errors(QString const &     what_msg) : server_access_exception(what_msg) {}
+};
+
+class server_access_exception_invalid_uri : public server_access_exception
+{
+public:
+    server_access_exception_invalid_uri(char const *        what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_invalid_uri(std::string const & what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_invalid_uri(QString const &     what_msg) : server_access_exception(what_msg) {}
+};
+
 
 
 
@@ -62,11 +78,15 @@ public:
                                 server_access();
                                 ~server_access();
 
+    // plugins::plugin implementation
     static server_access *      instance();
+    virtual QString             icon() const;
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
+    virtual void                bootstrap(snap_child * snap);
 
-    void                        on_bootstrap(snap_child * snap);
+    // server signals
     void                        on_output_result(QString const & uri_path, QByteArray & result);
 
     bool                        is_ajax_request() const;

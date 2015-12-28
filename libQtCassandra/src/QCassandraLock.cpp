@@ -86,6 +86,46 @@ CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
  *   }
  * \endcode
  *
+ * By default the lock is for 60 seconds and it is given 5 seconds to hold.
+ * You may change these values by using an RAII class as this safe_timeout
+ * implementation:
+ *
+ * \code
+ *   void my_class::lock_database(lock_name)
+ *   {
+ *      class safe_timeout
+ *      {
+ *      public:
+ *          safe_timeout(QtCassandra::QCassandraContext::pointer_t context)
+ *              : f_context(context)
+ *              , f_old_timeout(context->lockTimeout())
+ *              , f_old_ttl(context->lockTtl())
+ *          {
+ *              // as short as possible
+ *              f_context->setLockTimeout(1);       // decrease wait to 1 second (minimum)
+ *              f_context->setLockTtl(4 * 60 * 60); // increase duration to 4 hours
+ *          }
+ *
+ *          ~safe_timeout()
+ *          {
+ *              f_context->setLockTimeout(f_old_timeout);
+ *              f_context->setLockTtl(f_old_ttl);
+ *          }
+ *
+ *      private:
+ *          QtCassandra::QCassandraContext::pointer_t   f_context;
+ *          int                                         f_old_timeout;
+ *          int                                         f_old_ttl;
+ *      };
+ *      safe_timeout st(f_context);
+ *
+ *      // we use a special name for the backend to avoid clashes with
+ *      // standard plugin locks
+ *      //
+ *      return f_lock.lock(lock_name);
+ *  }
+ * \endcode
+ *
  * The lock is implemented using the Cassandra database system itself
  * with the help of the Leslie Lamport's bakery algorithm (1974). You can
  * find detailed explanation of the code on Wikipedia:
@@ -722,7 +762,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     }
 
     // get the name of the row holding our hosts information
-    QString hosts_key(f_context->lockHostsKey());
+    const QString hosts_key(f_context->lockHostsKey());
     if(!f_table->exists(hosts_key)) {
         throw std::runtime_error(("the hosts row in the lock table does not exist, you must add your computer hosts to the table before you can use a lock. See the tests/cassandra_lock tools. This computer name is \"" + hosts_key + "\"").toStdString());
     }
@@ -734,15 +774,15 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     hosts_row->clearCache();
 
     // get our identifier
-    QString host_name(f_context->hostName());
+    const QString host_name(f_context->hostName());
     QCassandraCell::pointer_t cell_host_id(hosts_row->cell(host_name));
     cell_host_id->setConsistencyLevel(f_consistency);
     QCassandraValue my_host_id(cell_host_id->value());
     if(my_host_id.nullValue()) {
-        throw std::runtime_error("this host doesn't seem to be defined");
+        throw std::runtime_error("this host does not seem to be defined");
     }
-    uint32_t host_id(my_host_id.uint32Value());
-    pid_t pid(getpid());
+    const uint32_t host_id(my_host_id.uint32Value());
+    const pid_t pid(getpid());
 
     QByteArray my_id;
     appendUInt32Value(my_id, host_id);
@@ -817,7 +857,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     QCassandraValue ticket_value;
     ticket_value.setConsistencyLevel(f_consistency);
     ticket_value.setTtl(f_context->lockTtl());
-    ticket_value.setCharValue(1); // we put some "random" value so it doesn't match nullValue()
+    ticket_value.setCharValue(1); // we put some "random" value so it does not match nullValue()
     tickets_row->cell(f_ticket_id)->setValue(ticket_value);
 
     // mark us as done entering (entering[i] = false)

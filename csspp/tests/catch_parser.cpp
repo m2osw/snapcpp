@@ -46,7 +46,7 @@ namespace
 
 
 
-TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
+TEST_CASE("Simple stylesheets", "[parser] [stylesheet] [rules]")
 {
     {
         std::stringstream ss;
@@ -415,7 +415,7 @@ TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
     }
 }
 
-TEST_CASE("Invalid Stylesheets", "[parser] [stylesheet] [invalid]")
+TEST_CASE("Invalid stylesheets", "[parser] [stylesheet] [invalid]")
 {
     // closing '}' one too many times
     {
@@ -501,7 +501,7 @@ TEST_CASE("Invalid Stylesheets", "[parser] [stylesheet] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple Rules", "[parser] [rule-list]")
+TEST_CASE("Simple rules", "[parser] [rule-list]")
 {
     // a simple valid rule
     {
@@ -612,7 +612,7 @@ TEST_CASE("Simple Rules", "[parser] [rule-list]")
     }
 }
 
-TEST_CASE("Nested Rules", "[parser] [rule-list]")
+TEST_CASE("Nested rules", "[parser] [rule-list]")
 {
     // at rule inside another at rule
     {
@@ -646,7 +646,7 @@ TEST_CASE("Nested Rules", "[parser] [rule-list]")
     }
 }
 
-TEST_CASE("Invalid Rules", "[parser] [rule-list] [invalid]")
+TEST_CASE("Invalid rules", "[parser] [rule-list] [invalid]")
 {
     // breaks on the <!--
     {
@@ -808,7 +808,7 @@ TEST_CASE("Invalid Rules", "[parser] [rule-list] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("One Simple Rule", "[parser] [rule]")
+TEST_CASE("One simple rule", "[parser] [rule]")
 {
     // a simple valid rule
     {
@@ -932,7 +932,7 @@ TEST_CASE("One Simple Rule", "[parser] [rule]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid One Rule", "[parser] [rule] [invalid]")
+TEST_CASE("Invalid one rule", "[parser] [rule] [invalid]")
 {
     // breaks on the <!--
     {
@@ -1122,7 +1122,7 @@ TEST_CASE("Invalid One Rule", "[parser] [rule] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple Component Values", "[parser] [component-value]")
+TEST_CASE("Simple component values", "[parser] [component-value]")
 {
     // a simple valid rule
     {
@@ -1246,7 +1246,7 @@ TEST_CASE("Simple Component Values", "[parser] [component-value]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Component Values", "[parser] [component-value] [invalid]")
+TEST_CASE("Invalid component values", "[parser] [component-value] [invalid]")
 {
     // breaks on missing }
     {
@@ -1313,7 +1313,7 @@ TEST_CASE("Invalid Component Values", "[parser] [component-value] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple One Component Value", "[parser] [component-value]")
+TEST_CASE("Simple one component value", "[parser] [component-value]")
 {
     // a simple valid rule
     {
@@ -1394,7 +1394,7 @@ TEST_CASE("Simple One Component Value", "[parser] [component-value]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid One Component Value", "[parser] [component-value] [invalid]")
+TEST_CASE("Invalid one component value", "[parser] [component-value] [invalid]")
 {
     // breaks on missing }
     {
@@ -1514,7 +1514,7 @@ TEST_CASE("Invalid One Component Value", "[parser] [component-value] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple Declarations", "[parser] [declaration]")
+TEST_CASE("Simple declarations", "[parser] [declaration]")
 {
     // a simple valid declaration
     {
@@ -1690,7 +1690,7 @@ TEST_CASE("Simple Declarations", "[parser] [declaration]")
     }
 }
 
-TEST_CASE("Invalid Declarations", "[parser] [declaration] [invalid]")
+TEST_CASE("Invalid declarations", "[parser] [declaration] [invalid]")
 {
     // declarations must end with EOF
     {
@@ -1857,17 +1857,17 @@ TEST_CASE("Multi-line, multi-level stylesheet", "[parser] [rules]")
 "        WHITESPACE\n"
 "        GREATER_THAN\n"
 "        WHITESPACE\n"
-"        IDENTIFIER \"e\"\n"
+"        IDENTIFIER \"E\"\n"
 "        WHITESPACE\n"
 "        PRECEDED\n"
 "        WHITESPACE\n"
-"        IDENTIFIER \"f\"\n"
+"        IDENTIFIER \"F\"\n"
 "        WHITESPACE\n"
 "        ADD\n"
 "        WHITESPACE\n"
-"        IDENTIFIER \"g\"\n"
+"        IDENTIFIER \"G\"\n"
 "        WHITESPACE\n"
-"        IDENTIFIER \"h\"\n"
+"        IDENTIFIER \"H\"\n"
 "        OPEN_CURLYBRACKET B:false\n"
 "          COMPONENT_VALUE\n"
 "            IDENTIFIER \"font-style\"\n"
@@ -1882,7 +1882,7 @@ TEST_CASE("Multi-line, multi-level stylesheet", "[parser] [rules]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Is Variable Set", "[parser] [variable] [invalid]")
+TEST_CASE("Is variable set", "[parser] [variable] [invalid]")
 {
     // simple test with a value + value (SASS compatible)
     {
@@ -2823,7 +2823,7 @@ TEST_CASE("Rules defined inside an @-Keyword", "[parser] [variable] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Parse Argify", "[parser] [stylesheet]")
+TEST_CASE("Parse argify", "[parser] [stylesheet]")
 {
     {
         std::stringstream ss;
@@ -3018,7 +3018,7 @@ TEST_CASE("Parse Argify", "[parser] [stylesheet]")
     }
 }
 
-TEST_CASE("Invalid Argify", "[parser] [stylesheet]")
+TEST_CASE("Invalid argify", "[parser] [stylesheet]")
 {
     // A starting comma is illegal
     {
@@ -3203,6 +3203,70 @@ TEST_CASE("Invalid Argify", "[parser] [stylesheet]")
         }
 
         REQUIRE_ERRORS("test.css(1): error: dangling comma at the beginning of a list of arguments or selectors.\n");
+    }
+
+    // calling argify with the wrong separators
+    {
+        std::stringstream ss;
+        ss << "a,b{color:red}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    COMMA\n"
+"    IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        // Attempt to argify the list under each COMPONENT_VALUE using
+        // the wrong type
+        REQUIRE(n->is(csspp::node_type_t::LIST));
+
+        size_t const max_children(n->size());
+        for(size_t idx(0); idx < max_children; ++idx)
+        {
+            csspp::node::pointer_t component_value(n->get_child(idx));
+            REQUIRE(component_value->is(csspp::node_type_t::COMPONENT_VALUE));
+
+            for(csspp::node_type_t w(csspp::node_type_t::UNKNOWN);
+                w <= csspp::node_type_t::max_type;
+                w = static_cast<csspp::node_type_t>(static_cast<int>(w) + 1))
+            {
+                switch(w)
+                {
+                case csspp::node_type_t::COMMA:
+                case csspp::node_type_t::DIVIDE:
+                    continue;
+
+                default:
+                    break;
+
+                }
+                REQUIRE_THROWS_AS(csspp::parser::argify(component_value, w), csspp::csspp_exception_logic);
+            }
+        }
+
+        REQUIRE_ERRORS("");
     }
 
     // no error left over

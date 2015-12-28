@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <!-- some special variables to define the theme -->
 	<xsl:param name="layout-name">sendmail</xsl:param>
 	<xsl:param name="layout-area">sendmail-theme-parser</xsl:param>
-	<xsl:param name="layout-modified">2014-12-03 12:44:29</xsl:param>
+	<xsl:param name="layout-modified">2015-12-25 03:09:32</xsl:param>
 
 	<xsl:template match="snap">
 		<html>
@@ -36,15 +36,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<head>
         <xsl:call-template name="snap:html-header"/>
 				<style>
+					body
+					{
+						font-family: sans-serif;
+						background: white;
+					}
+
 					body, div
 					{
 						padding: 0;
 						margin: 0;
-					}
-
-					body
-					{
-						font-family: sans-serif;
 					}
 
 					h1

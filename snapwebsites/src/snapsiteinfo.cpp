@@ -257,20 +257,17 @@ snapdb::snapdb(int argc, char *argv[])
             std::cerr << "error: one to three parameters ([row [cell [value]]]) can be specified on the command line." << std::endl;
             usage(advgetopt::getopt::error);
         }
-        for( int idx = 0; idx < arg_count; ++idx )
+        if( arg_count >= 1 )
         {
-            if( idx == 0 )
-            {
-                f_row = f_opt->get_string( "--", idx ).c_str();
-            }
-            else if( idx == 1 )
-            {
-                f_cell = f_opt->get_string("--", idx).c_str();
-            }
-            else if( idx == 2 )
-            {
-                f_value = f_opt->get_string("--", idx).c_str();
-            }
+            f_row = f_opt->get_string( "--", 0 ).c_str();
+        }
+        if( arg_count >= 2 )
+        {
+            f_cell = f_opt->get_string("--", 1).c_str();
+        }
+        if( arg_count >= 3 )
+        {
+            f_value = f_opt->get_string("--", 2).c_str();
         }
     }
 
@@ -524,7 +521,7 @@ int main(int argc, char *argv[])
     }
     catch(std::exception const& e)
     {
-        std::cerr << "snapsiteinfo: expcetion: " << e.what() << std::endl;
+        std::cerr << "snapsiteinfo: exception: " << e.what() << std::endl;
         return 1;
     }
 }

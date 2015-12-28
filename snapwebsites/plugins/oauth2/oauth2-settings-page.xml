@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="oauth2_email"/>
     <tabindex refid="oauth2_identifier"/>
     <tabindex refid="oauth2_secret"/>
+    <tabindex refid="oauth2_user_enable"/>
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
@@ -37,7 +38,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>Help</help>
     <value>0</value>
   </widget>
-  <widget id="oauth2_email" type="line-edit" field="oauth2::email" path="oauth2/email" auto-save="plain">
+  <widget id="oauth2_email" type="line-edit" field="oauth2::email" path="oauth2/email" auto-save="plain" secret="secret" no-toolbar="no-toolbar">
     <tooltip>Enter the email address of the user who will be logged in for this application to work with private data.</tooltip>
     <help>When the OAuth2 tool logs an application in, it has to make use of a user. This is done by assigning the session identifier to the email address specified here. Note that the application will have all the rights that this user has.</help>
     <background-value>email</background-value>

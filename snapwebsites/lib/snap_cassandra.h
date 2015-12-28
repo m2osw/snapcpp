@@ -22,7 +22,6 @@
 #include <controlled_vars/controlled_vars.h>
 #include <QtCassandra/QCassandra.h>
 
-#include <QString>
 
 namespace snap
 {
@@ -31,21 +30,23 @@ namespace snap
 class snap_cassandra
 {
 public:
-                    snap_cassandra( snap_config const & parameters );
+                                                snap_cassandra( snap_config const & parameters );
 
-    void            connect();
-    void            init_context();
-    QtCassandra::QCassandraContext::pointer_t get_snap_context();
+    void                                        connect();
+    void                                        init_context();
+    QtCassandra::QCassandraContext::pointer_t   get_snap_context();
+    QtCassandra::QCassandraTable::pointer_t     create_table(QString const & table_name, QString const & comment);
 
-    QString         get_cassandra_host() const;
-    int32_t         get_cassandra_port() const;
-    bool            is_connected() const;
+    QString                                     get_cassandra_host() const;
+    int32_t                                     get_cassandra_port() const;
+    bool                                        is_connected() const;
 
 private:
-    QtCassandra::QCassandra::pointer_t  f_cassandra;
-    QString                             f_cassandra_host;
-    controlled_vars::zint32_t           f_cassandra_port;
-    snap_config const &                 f_parameters;
+    QtCassandra::QCassandra::pointer_t          f_cassandra;
+    QString                                     f_cassandra_host;
+    controlled_vars::zint32_t                   f_cassandra_port;
+    snap_config const &                         f_parameters;
+    QMap<QString, bool>                         f_created_table;
 };
 
 

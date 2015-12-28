@@ -19,6 +19,8 @@
 
 #include "../output/output.h"
 
+#include "not_used.h"
+
 #include <iostream>
 
 #include <QDebug>
@@ -35,7 +37,7 @@ SNAP_PLUGIN_START(char_chart, 1, 0)
  * This function is used to initialize the char_chart plugin object.
  */
 char_chart::char_chart()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -46,22 +48,6 @@ char_chart::char_chart()
  */
 char_chart::~char_chart()
 {
-}
-
-
-/** \brief Initialize the char_chart plugin.
- *
- * This function terminates the initialization of the char_chart plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void char_chart::on_bootstrap(::snap::snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(char_chart, "path", path::path, can_handle_dynamic_path, _1, _2);
-    SNAP_LISTEN(char_chart, "sitemapxml", sitemapxml::sitemapxml, generate_sitemapxml, _1);
 }
 
 
@@ -92,6 +78,19 @@ char_chart *char_chart::instance()
 QString char_chart::description() const
 {
     return "This dynamically generates tables of characters.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString char_chart::dependencies() const
+{
+    return "|output|sitemapxml|";
 }
 
 
@@ -130,9 +129,25 @@ int64_t char_chart::do_update(int64_t last_updated)
  */
 void char_chart::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml("char_chart");
+}
+
+
+/** \brief Initialize the char_chart plugin.
+ *
+ * This function terminates the initialization of the char_chart plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void char_chart::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(char_chart, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(char_chart, "sitemapxml", sitemapxml::sitemapxml, generate_sitemapxml, _1);
 }
 
 
@@ -175,7 +190,7 @@ bool char_chart::on_path_execute(content::path_info_t& ipath)
 }
 
 
-void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void char_chart::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     QDomDocument doc(page.ownerDocument());
 
@@ -185,7 +200,7 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
         // the top page?
         if(ipath.get_cpath() == "char-chart")
         {
-            output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+            output::output::instance()->on_generate_main_content(ipath, page, body);
         }
         return;
     }
@@ -611,7 +626,7 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
         //f_snap->output(QString("<p><a href='snap.cgi?q=/char-chart/%1'>Previous</a></p>").arg(chart_page - 1));
         QDomElement a_tag(doc.createElement("a"));
         p_tag.appendChild(a_tag);
-        a_tag.setAttribute("href", f_snap->snap_url(QString("/char-chart/%1").arg(chart_page - 1, 0, 16)));
+        a_tag.setAttribute("href", QString("/char-chart/%1").arg(chart_page - 1, 0, 16));
         QDomText text(doc.createTextNode("Previous"));
         a_tag.appendChild(text);
     }
@@ -627,7 +642,7 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
         //f_snap->output(QString("<p><a href='snap.cgi?q=/char-chart/%1'>Next</a></p>").arg(chart_page + 1));
         QDomElement a_tag(doc.createElement("a"));
         p_tag.appendChild(a_tag);
-        a_tag.setAttribute("href", f_snap->snap_url(QString("/char-chart/%1").arg(chart_page + 1, 0, 16)));
+        a_tag.setAttribute("href", QString("/char-chart/%1").arg(chart_page + 1, 0, 16));
         text = doc.createTextNode("Next");
         a_tag.appendChild(text);
     }

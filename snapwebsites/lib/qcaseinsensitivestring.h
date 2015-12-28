@@ -95,12 +95,20 @@ public:
     {
         return compare(rhs, Qt::CaseInsensitive) == 0;
     }
+    bool operator == (char const * rhs) const
+    {
+        return compare(rhs, Qt::CaseInsensitive) == 0;
+    }
 
     bool operator != (QString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) != 0;
     }
     bool operator != (QCaseInsensitiveString const & rhs) const
+    {
+        return compare(rhs, Qt::CaseInsensitive) != 0;
+    }
+    bool operator != (char const * rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) != 0;
     }

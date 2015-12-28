@@ -39,7 +39,7 @@ SNAP_TEST_PLUGIN_SUITE_END()
 
 SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create_delete)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());

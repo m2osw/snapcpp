@@ -61,7 +61,7 @@ endif()
 include_directories(
     SYSTEM
         ${MAGIC_INCLUDE_PATH}
-        ${LOG4CPLUS_INCLUDE_DIR}
+        ${LOG4CPLUS_INCLUDE_DIRS}
         ${QT_INCLUDES}
         ${LIBPROCPS_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
@@ -76,16 +76,19 @@ QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
 )
 
 add_library( ${PROJECT_NAME} SHARED
+    addr.cpp                                    # handling of host IP addresses (IPv4 and IPv6)
+    cache_control.cpp                           # Parse / handle Cache-Control settings
     compression.cpp                             # Compress/decompress data
     dbutils.h                                   # Utilities to help convert coded table and row names
     dbutils.cpp                                 # and column data.
-    dom_util.cpp                                # DOM utilities
     floats.cpp                                  # Floats helper functions
     fuzzy_string_compare.cpp                    # Compare strings in a fuzzy manner
     http_client_server.cpp                      # implementation of the HTTP protocol
     http_cookie.cpp                             # HTTP cookie, server side
     http_strings.cpp                            # parse HTTP strings (Accept strings in particular)
+    inet_helpers.cpp                            # helper functions in link with the network
     log.cpp                                     # log4cplus support
+    mkdir_p.cpp                                 # make directories so path is valid
     mkgmtime.c                                  # mktime() with a UTC time
     mounts.cpp                                  # read /proc/mounts or some other mount point file
     plugins.cpp                                 # plugins loader and list
@@ -101,8 +104,10 @@ add_library( ${PROJECT_NAME} SHARED
     row_model.cpp                               # libQtCassandra row model for use with a QTableView object.
     snap_backend.cpp                            # A type of snap_child, but for backends only
     snap_cassandra.cpp                          # Encapuslate initiating a connection to the database.
+    snap_communicator.cpp                       # handle any number of sockets with a single process.
     snap_config.cpp                             # class to read in configuration
     snap_child.cpp                              # requests processing
+    snap_child_cache_control.cpp                # Manage cache controls in the snap_child class
     snap_exception.cpp                          # exception stack backtrack
     snap_expr.cpp                               # snap C-like expression compiler and execution environment
     snap_image.cpp                              # image handling
@@ -121,11 +126,12 @@ add_library( ${PROJECT_NAME} SHARED
     tcp_client_server.cpp                       # low level TCP/IP that works
     table_model.cpp                             # libQtCassandra table model for use with a QListView object.
     udp_client_server.cpp                       # low level UDP/IP that works
+    xslt.cpp                                    # code to do XSLT transformations
 )
 
 target_link_libraries( ${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARY}
+    ${LOG4CPLUS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
@@ -134,6 +140,7 @@ target_link_libraries( ${PROJECT_NAME}
     ${LIBPROCPS_LIBRARIES}
     ${OPENSSL_LIBRARIES}
     ${THRIFT_LIBRARIES}
+    ${UUID}
     pthread
     dl
 )

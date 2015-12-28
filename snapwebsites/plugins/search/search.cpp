@@ -17,10 +17,9 @@
 
 #include "search.h"
 
-//#include "../content/content.h"
-
 #include "not_reached.h"
-#include "dom_util.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 
 #include "poison.h"
 
@@ -36,7 +35,7 @@ SNAP_PLUGIN_START(search, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+const char * get_name(name_t name)
 {
     switch(name) {
     case name_t::SNAP_NAME_SEARCH_STATUS:
@@ -60,6 +59,7 @@ search::search()
 {
 }
 
+
 /** \brief Destroy the search plugin.
  *
  * This function cleans up the search plugin.
@@ -68,19 +68,6 @@ search::~search()
 {
 }
 
-/** \brief Bootstrap the search.
- *
- * This function adds the events the search plugin is listening for.
- *
- * \param[in] snap  The child handling this request.
- */
-void search::on_bootstrap(::snap::snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(search, "server", server, improve_signature, _1, _2);
-    SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
-}
 
 /** \brief Get a pointer to the search plugin.
  *
@@ -91,9 +78,31 @@ void search::on_bootstrap(::snap::snap_child *snap)
  *
  * \return A pointer to the search plugin.
  */
-search *search::instance()
+search * search::instance()
 {
     return g_plugin_search_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString search::settings_path() const
+{
+    return "/admin/settings/search";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString search::icon() const
+{
+    return "/images/search/search-logo-64x64.png";
 }
 
 
@@ -113,6 +122,19 @@ QString search::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString search::dependencies() const
+{
+    return "|layout|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -129,7 +151,7 @@ int64_t search::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 11, 3, 3, 58, 54, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 18, 1, 54, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -143,9 +165,24 @@ int64_t search::do_update(int64_t last_updated)
  */
 void search::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml("search");
+}
+
+
+/** \brief Bootstrap the search.
+ *
+ * This function adds the events the search plugin is listening for.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void search::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(search, "server", server, improve_signature, _1, _2, _3);
+    SNAP_LISTEN(search, "layout", layout::layout, generate_page_content, _1, _2, _3);
 }
 
 
@@ -155,20 +192,30 @@ void search::content_update(int64_t variables_timestamp)
  * errors.
  *
  * \param[in] path  The path to the page that generated the error.
- * \param[in,out] signature  The HTML signature to improve.
+ * \param[in] doc  The DOM document.
+ * \param[in,out] signature_tag  The DOM element where signature anchors are added.
  */
-void search::on_improve_signature(QString const& path, QString& signature)
+void search::on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag)
 {
-    // TODO: we probably want translations? (in which case we
-    //       want the signature to be in an XML document.)
     QString query(path);
     query.replace('/', ' ');
     query = query.simplified();
     // the query should never be empty since the home page should always work...
     if(!query.isEmpty())
     {
-        query.replace(" ", "%20");
-        signature += " <a href=\"/search?search=" + query + "\">Search Our Website</a>";
+        // add a space between the previous link and this one
+        snap_dom::append_plain_text_to_node(signature_tag, " ");
+
+        // add a link to the user account
+        QDomElement a_tag(doc.createElement("a"));
+        a_tag.setAttribute("class", "search");
+        //a_tag.setAttribute("target", "_top"); -- I do not think _top makes sense in this case
+        // TODO: we may want the save the language and not force a /search like this...
+        a_tag.setAttribute("href", QString("/search?search=%1").arg(snap_uri::urlencode(query, "~")));
+        // TODO: translate
+        snap_dom::append_plain_text_to_node(a_tag, "Search Our Website");
+
+        signature_tag.appendChild(a_tag);
     }
 }
 
@@ -182,16 +229,15 @@ void search::on_improve_signature(QString const& path, QString& signature)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A path used in case ipath is not defined.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void search::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void search::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
+    NOTUSED(ipath);
+
     QDomDocument doc(page.ownerDocument());
 
     QDomElement bookmarks;
-    dom_util::get_tag("bookmarks", body, bookmarks);
+    snap_dom::get_tag("bookmarks", body, bookmarks);
 
     QDomElement link(doc.createElement("link"));
     link.setAttribute("rel", "search");
@@ -200,10 +246,7 @@ void search::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     link.setAttribute("href", f_snap->get_site_key_with_slash() + "search");
     bookmarks.appendChild(link);
 }
-#pragma GCC diagnostic pop
-
 
 
 SNAP_PLUGIN_END()
-
 // vim: ts=4 sw=4 et

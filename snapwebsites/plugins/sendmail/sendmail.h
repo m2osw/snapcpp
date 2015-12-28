@@ -16,9 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../sessions/sessions.h"
-#include "../filter/filter.h"
-#include "../path/path.h"
+#include "../users/users.h"
+
+#include "../test_plugin_suite/test_plugin_suite.h"
 
 #include "snap_backend.h"
 #include "qcaseinsensitivestring.h"
@@ -32,12 +32,23 @@ namespace sendmail
 enum class name_t
 {
     SNAP_NAME_SENDMAIL,
+    SNAP_NAME_SENDMAIL_BOUNCED,
+    SNAP_NAME_SENDMAIL_BOUNCED_ARRIVAL_DATE,
+    SNAP_NAME_SENDMAIL_BOUNCED_DIAGNOSTIC_CODE,
+    SNAP_NAME_SENDMAIL_BOUNCED_EMAIL,
+    SNAP_NAME_SENDMAIL_BOUNCED_FAILED,
+    SNAP_NAME_SENDMAIL_BOUNCED_NOTIFICATION,
+    SNAP_NAME_SENDMAIL_BOUNCED_RAW,
     SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST,
+    SNAP_NAME_SENDMAIL_CONTENT_DISPOSITION,
+    SNAP_NAME_SENDMAIL_CONTENT_LANGUAGE,
     SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING,
     SNAP_NAME_SENDMAIL_CONTENT_TYPE,
     SNAP_NAME_SENDMAIL_CREATED,
+    SNAP_NAME_SENDMAIL_DATE,
     SNAP_NAME_SENDMAIL_EMAIL,
     SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION,
+    SNAP_NAME_SENDMAIL_EMAIL_FREQUENCY,
     SNAP_NAME_SENDMAIL_EMAILS_TABLE,
     SNAP_NAME_SENDMAIL_FIELD_EMAIL,
     SNAP_NAME_SENDMAIL_FIELD_LEVEL,
@@ -56,7 +67,11 @@ enum class name_t
     SNAP_NAME_SENDMAIL_LEVEL_PURPLELIST,
     SNAP_NAME_SENDMAIL_LEVEL_WHITELIST,
     SNAP_NAME_SENDMAIL_LISTS,
+    SNAP_NAME_SENDMAIL_LIST_UNSUBSCRIBE,
+    SNAP_NAME_SENDMAIL_MAXIMUM_TIME,
+    SNAP_NAME_SENDMAIL_MESSAGE_ID,
     SNAP_NAME_SENDMAIL_MIME_VERSION,
+    SNAP_NAME_SENDMAIL_MINIMUM_TIME,
     SNAP_NAME_SENDMAIL_NEW,
     SNAP_NAME_SENDMAIL_PING,
     SNAP_NAME_SENDMAIL_PRECEDENCE,
@@ -65,6 +80,7 @@ enum class name_t
     SNAP_NAME_SENDMAIL_STATUS,
     SNAP_NAME_SENDMAIL_STATUS_DELETED,
     SNAP_NAME_SENDMAIL_STATUS_FAILED,
+    SNAP_NAME_SENDMAIL_STATUS_INVALID,
     SNAP_NAME_SENDMAIL_STATUS_LOADING,
     SNAP_NAME_SENDMAIL_STATUS_NEW,
     SNAP_NAME_SENDMAIL_STATUS_READ,
@@ -118,10 +134,12 @@ public:
 };
 
 
-class sendmail : public plugins::plugin
-               , public server::backend_action
-               , public path::path_execute
-               , public layout::layout_content
+
+
+class sendmail
+        : public plugins::plugin
+        , public server::backend_action
+        , public layout::layout_content
 {
 public:
     static const sessions::sessions::session_info::session_id_t SENDMAIL_SESSION_ID_MESSAGE = 1;
@@ -153,9 +171,10 @@ public:
 
             void                    set_data(QByteArray const & data, QString mime_type);
             QByteArray              get_data() const;
+            void                    set_content_disposition(QString const & filename, int64_t modification_date = 0, QString const & attachment_type = "attachment");
             void                    add_header(QString const & name, QString const & value);
             QString                 get_header(QString const & name) const;
-            const header_map_t &    get_all_headers() const;
+            header_map_t &          get_all_headers();
             void                    add_related(email_attachment const & data);
             int                     get_related_count() const;
             email_attachment &      get_related(int index) const;
@@ -214,38 +233,58 @@ public:
         parameter_map_t             f_parameter;
     };
 
-    sendmail();
-    ~sendmail();
+                            sendmail();
+                            ~sendmail();
 
-    static sendmail *                       instance();
-    virtual QString                         description() const;
-    virtual int64_t                         do_update(int64_t last_updated);
+    // plugins::plugin implementation
+    static sendmail *       instance();
+    virtual QString         icon() const;
+    virtual QString         description() const;
+    virtual QString         dependencies() const;
+    virtual int64_t         do_update(int64_t last_updated);
+    virtual void            bootstrap(snap_child * snap);
+
     QtCassandra::QCassandraTable::pointer_t get_emails_table();
 
-    void                    on_bootstrap(snap_child * snap);
-    void                    on_register_backend_action(server::backend_action_map_t & actions);
-    void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
-    void                    on_replace_token(content::path_info_t & cpath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
-    void                    on_init_editor_widget(content::path_info_t  & ipath, QString const  & field_id, QString const  & field_type, QDomElement  & widget, QtCassandra::QCassandraRow::pointer_t row);
-    void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
+    // server signals
+    void                    on_register_backend_cron(server::backend_action_set & actions);
+    void                    on_replace_token(content::path_info_t & cpath, QDomDocument & xml, filter::filter::token_info_t & token);
 
-    virtual char const *    get_signal_name(QString const & action) const;
+    // server::backend_action implementation
     virtual void            on_backend_action(QString const & action);
-    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    virtual bool            on_path_execute(content::path_info_t & ipath);
 
+    // layout::layout_content
+    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body);
+
+    // users signals
+    void                    on_check_user_security(users::users::user_security_t & security);
+
+    bool                    validate_email(QString const & user_email, email const * e);
     void                    post_email(email const & e);
     QString                 default_from() const;
+    bool                    parse_email(QString const & email_data, email & e, bool bounce_email);
 
     SNAP_SIGNAL_WITH_MODE(filter_email, (email & e), (e), NEITHER);
 
+    // links test suite
+    SNAP_TEST_PLUGIN_SUITE_SIGNALS()
+
 private:
     void                    content_update(int64_t variables_timestamp);
+    void                    check_bounced_emails();
+    void                    reorganize_bounce_email(QByteArray const & column_key, QString const & bounce_report);
+    void                    process_bounce_email(QByteArray const & column_key, QString const & bounce_report, email const * e);
     void                    process_emails();
     void                    attach_email(email const & e);
     void                    attach_user_email(email const & e);
     void                    run_emails();
     void                    sendemail(QString const & key, QString const & unique_key);
+    void                    copy_filename_to_content_type(email::header_map_t & attachment_headers);
+
+    // tests
+    SNAP_TEST_PLUGIN_TEST_DECL(test_parse_email_basic)
+    SNAP_TEST_PLUGIN_TEST_DECL(test_parse_email_mixed)
+    SNAP_TEST_PLUGIN_TEST_DECL(test_parse_email_report)
 
     zpsnap_child_t                  f_snap;
     snap_backend::zpsnap_backend_t  f_backend;

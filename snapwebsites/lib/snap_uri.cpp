@@ -19,13 +19,11 @@
 
 #include "qstring_stream.h"
 #include "log.h"
+#include "not_used.h"
 
 #include <QtSerialization/QSerializationComposite.h>
 #include <QtSerialization/QSerializationFieldBasicTypes.h>
 #include <QtSerialization/QSerializationFieldString.h>
-#include <QtSerialization/QSerializationFieldTag.h>
-
-#include <iostream>
 
 #include <libtld/tld.h>
 #include <netdb.h>
@@ -103,14 +101,20 @@ snap_uri::snap_uri()
  * This function sets the URI to the specified string. The parsing
  * is the same as in the set_uri() function.
  *
+ * \todo
+ * Should this function throw if the URI is considered invalid?
+ *
  * \param[in] uri  The URI to assign to this Snap URI object.
  *
  * \sa set_uri()
  */
-snap_uri::snap_uri(const QString& uri)
+snap_uri::snap_uri(QString const & uri)
 {
-    set_uri(uri);
-    // TBD: should we throw if set_uri() returns false?
+    if(!set_uri(uri))
+    {
+        // TBD: should we throw if set_uri() returns false?
+        SNAP_LOG_ERROR("URI \"")(uri)("\" is considered invalid.");
+    }
 }
 
 /** \brief Replace the URI of this Snap URI object.
@@ -128,7 +132,7 @@ snap_uri::snap_uri(const QString& uri)
  *
  * \return false if the URI could not be parsed (in which case nothing's changed in the object); true otherwise
  */
-bool snap_uri::set_uri(QString const& uri)
+bool snap_uri::set_uri(QString const & uri)
 {
     QChar const * u(uri.constData());
 
@@ -259,7 +263,7 @@ bool snap_uri::set_uri(QString const& uri)
     }
 
     // break-up the domain in sub-domains, base domain, and TLD
-    QStringList sub_domain_names;
+    snap_string_list sub_domain_names;
     QString domain_name;
     QString tld;
     if(!process_domain(full_domain_name, sub_domain_names, domain_name, tld))
@@ -268,7 +272,7 @@ bool snap_uri::set_uri(QString const& uri)
     }
 
     // now we're ready to parse further (i.e. path)
-    QStringList uri_path;
+    snap_string_list uri_path;
     if(!u->isNull())
     {
         // skip the '/'
@@ -277,9 +281,9 @@ bool snap_uri::set_uri(QString const& uri)
         {
             if(u->unicode() == '/')
             {
-                // encode right here since we have separate strings
                 if(s != u)
                 {
+                    // decode right here since we just separate one segment
                     uri_path << urldecode(QString(s, static_cast<int>(u - s)));
                 }
                 // skip the '/'
@@ -289,7 +293,7 @@ bool snap_uri::set_uri(QString const& uri)
         }
         if(s != u)
         {
-            // last path element when it does not end with '/'
+            // last segment when it does not end with '/'
             uri_path << urldecode(QString(s, static_cast<int>(u - s)));
         }
     }
@@ -297,13 +301,13 @@ bool snap_uri::set_uri(QString const& uri)
     snap_uri_options_t query_strings;
     if(!u->isNull() && u->unicode() == '?')
     {
-        // skip the '?' and then any introductory '&'
+        // skip the '?' and then any (invalid?) introductory '&'
         do
         {
             ++u;
         }
         while(!u->isNull() && u->unicode() == '&');
-        const QChar *e(nullptr);
+        QChar const * e(nullptr);
         for(s = u;; ++u)
         {
             if(u->isNull() || u->unicode() == '&' || u->unicode() == '#')
@@ -320,7 +324,7 @@ bool snap_uri::set_uri(QString const& uri)
                     // this is a very special case!!!
                     // ...&=value&...
                     // so we use a "special" name, also even that name could be
-                    // defined (with %2A=value)
+                    // defined in the query string (with %2A=value)
                     name = "*";
                 }
 
@@ -330,12 +334,16 @@ bool snap_uri::set_uri(QString const& uri)
                 QString value;
                 if(e != u)
                 {
+                    // note that we reach here if there is an equal sign,
+                    // the value may still be empty (i.e. u - e - 1 == 0 is
+                    // possible)
+                    //
                     value = QString::fromRawData(e + 1, static_cast<int>(u - e - 1));
                 }
                 name = urldecode(name);
                 if(query_strings.contains(name))
                 {
-                    // two strings with the same name refused
+                    // two parameters with the same name, refused
                     return false;
                 }
                 query_strings[name] = urldecode(value);
@@ -440,14 +448,10 @@ bool snap_uri::set_uri(QString const& uri)
     f_domain = domain_name;
     f_top_level_domain = tld;
     f_sub_domains = sub_domain_names;
-    //int max_sub_domains(sub_domains.size());
-    //for(int i(0); i < max_sub_domains; ++i) {
-    //    f_sub_domains << sub_domains[i];
-    //}
     f_path = uri_path;
 
     // options come from parsing the sub-domains, query strings and paths
-    // and at this point we don't have that information...
+    // and at this point we do not have that information...
     f_options.clear();
 
     f_query_strings = query_strings;
@@ -487,9 +491,12 @@ QString const& snap_uri::get_original_uri() const
  * This function concatenate all the URI parts in a fully qualified URI
  * and returns the result.
  *
- * This function does NOT take the rules in account (since it doesn't
+ * This function does NOT take the rules in account (since it does not
  * know anything about them.) So you may want to consider using the
  * snap_uri_rules::process_uri() function instead.
+ *
+ * \note
+ * The returned URI is already encoded as required by HTTP and such.
  *
  * \param[in] use_hash_bang  When this flag is set to true the URI is returned
  * as a hash bang (i.e. domain/path becomes domain/#!path).
@@ -527,7 +534,7 @@ QString snap_uri::get_uri(bool use_hash_bang) const
     uri += "/";
 
     // path if no hash bang
-    QString p(path());
+    QString const p(path());
     if(!use_hash_bang && p.length() > 0)
     {
         // avoid a double slash if possible
@@ -751,7 +758,7 @@ QString snap_uri::get_part(QString const& name, int part) const
  *
  * \param[in] uri_protocol  The name of the protocol.
  */
-void snap_uri::set_protocol(QString const& uri_protocol)
+void snap_uri::set_protocol(QString const & uri_protocol)
 {
     if(uri_protocol.isEmpty())
     {
@@ -796,7 +803,7 @@ QString const& snap_uri::protocol() const
  * \return true if the function succeeds, false otherwise
  */
 bool snap_uri::process_domain(QString const & full_domain_name,
-            QStringList & sub_domain_names, QString & domain_name, QString & tld)
+            snap_string_list & sub_domain_names, QString & domain_name, QString & tld)
 {
     // first we need to determine the TLD, we use the tld()
     // function from the libtld library for this purpose
@@ -889,6 +896,11 @@ bool snap_uri::process_domain(QString const & full_domain_name,
  * The only potential problem is when you get an out of memory error
  * while allocating a string.
  *
+ * \todo
+ * Check that the URL is not an IPv4 or IPv6 address. Such will always
+ * fail and we should look into avoiding the use of an exception in
+ * that circumstance.
+ *
  * \exception snap_uri_exception_invalid_uri
  * If the domain cannot properly be broken up in sub-domains,
  * the doman name and the tld, then this exception is raised.
@@ -896,9 +908,9 @@ bool snap_uri::process_domain(QString const & full_domain_name,
  * \param[in] full_domain_name  A full domain name, without protocol, path,
  *                              query string or anchor.
  */
-void snap_uri::set_domain(QString const& full_domain_name)
+void snap_uri::set_domain(QString const & full_domain_name)
 {
-    QStringList sub_domain_names;
+    snap_string_list sub_domain_names;
     QString domain_name;
     QString tld;
     if(!process_domain(full_domain_name, sub_domain_names, domain_name, tld))
@@ -1014,7 +1026,7 @@ QString snap_uri::sub_domain(int part) const
  *
  * \return A list of strings representing the sub-domains.
  */
-QStringList const& snap_uri::sub_domains_list() const
+snap_string_list const& snap_uri::sub_domains_list() const
 {
     return f_sub_domains;
 }
@@ -1092,51 +1104,70 @@ int snap_uri::get_port() const
  *
  * This function can be used to replace the entire path of
  * the URI by starting the new path with a slash (/something).
- * If the \p path parameter doesn't start with a slash, then
+ * If the \p path parameter does not start with a slash, then
  * it is used as a relative path from the existing path.
  *
- * A relative path can include one or more ".." to remove
- * one or more folders from the existing path. The ".." are
- * accepted in any path, however, it must be correct in that
- * it is not possible to use them without at least one folder
- * name just before them (i.e. "/this/one/../other/one" is
- * valid, but "/../that/one/is/not" since .. from / doesn't
+ * A path includes parts separated by one or more slashes (/).
+ * The function removes parts that are just "." since these
+ * mean "this directory" and they would not be valid in a
+ * canonicalized path.
+ *
+ * A path may include one or more ".." as a path part. These
+ * mean remove one part prior.
+ *
+ * The ".." are accepted in any path, however, it must be
+ * correct in that it is not possible to use ".." without at
+ * least one part just before that (i.e. "/this/one/../other/one" is
+ * valid, but "/../that/one/is/not" since ".." from / does not
  * exist. This is not how Unix usually manages paths since
  * in Unix / and /.. are one and the same folder.)
  *
  * Note that if you wanted to make use of the hash bang feature,
- * you'd still make use of this function to setup your path in
+ * you would still make use of this function to setup your path in
  * the Snap URI object. The hash bang feature determines how
  * the path is handled when you get the URI with get_uri().
  *
+ * \exception snap_uri_exception_invalid_path
+ * The function raises this exception if the path includes more
+ * ".." than there are "normal" parts on the left side of the "..".
+ *
  * \param[in] uri_path  The new path for this URI.
+ *
+ * \sa path()
  */
 void snap_uri::set_path(QString uri_path)
 {
-    bool append(true);
-    if(!uri_path.isEmpty())
-    {
-        if(uri_path[0] == '/')
-        {
-            // remove the first '/'
-            uri_path = uri_path.mid(1);
-            append = false;
-        }
-    }
-    if(append)
+    // check whether the path starts with a '/':
+    // if so, then we replace the existing path;
+    // if not, then we append uri_path to the existing path.
+    //
+    if((uri_path.isEmpty() || uri_path[0] != '/')
+    && !f_path.empty())
     {
         // append unless the user passed a path starting with "/"
         // or the current path is empty
-        if(!f_path.empty())
-        {
-            uri_path = f_path.join("/") + "/" + uri_path;
-        }
+        uri_path = f_path.join("/") + "/" + uri_path;
     }
-    QStringList p(uri_path.split('/'));
+
+    // if the path starts with a '/' or includes a double '/'
+    // within itself, it will be removed because of the SkipEmptyParts
+    snap_string_list p(uri_path.split('/', QString::SkipEmptyParts));
+
+    // next we remove all ".." (and the previous part); if ".." was
+    // at the start of the path, then an exception is raised
+    //
     int max_parts(p.size());
     for(int i(0); i < max_parts; ++i)
     {
-        if(p[i] == "..")
+        if(p[i] == ".")
+        {
+            // canonalization includes removing "." parts which are
+            // viewed exactly as empty parts
+            p.removeAt(i);
+            --i;
+            --max_parts;
+        }
+        else if(p[i] == "..")
         {
             // note: max should not be less than 2 if i != 0
             if(i == 0 || max_parts < 2)
@@ -1187,7 +1218,7 @@ QString snap_uri::path(bool encoded) const
     {
         QString output;
         controlled_vars::tlbool_t first;
-        for(QStringList::const_iterator it(f_path.begin());
+        for(snap_string_list::const_iterator it(f_path.begin());
                     it != f_path.end(); ++it)
         {
             if(first)
@@ -1266,7 +1297,7 @@ QString snap_uri::path_folder_name(int part) const
  *
  * \return A constant reference to the list of string forming the path.
  */
-QStringList const& snap_uri::path_list() const
+snap_string_list const& snap_uri::path_list() const
 {
     return f_path;
 }
@@ -1464,8 +1495,8 @@ void snap_uri::unset_query_option(QString const& name)
  */
 void snap_uri::set_query_string(QString const& uri_query_string)
 {
-    QStringList value_pairs(uri_query_string.split('&', QString::SkipEmptyParts));
-    for(QStringList::iterator it = value_pairs.begin();
+    snap_string_list value_pairs(uri_query_string.split('&', QString::SkipEmptyParts));
+    for(snap_string_list::iterator it = value_pairs.begin();
                             it != value_pairs.end();
                             ++it)
     {
@@ -1514,7 +1545,10 @@ QString snap_uri::query_string() const
         {
             // add the value only if not empty
             result += "=";
-            result += urlencode(it.value());
+            // we now support commas in URIs because... well... it is
+            // common and it won't break anything
+            //
+            result += urlencode(it.value(), ",");
         }
     }
     return result;
@@ -1787,7 +1821,7 @@ bool snap_uri::operator >= (const snap_uri& rhs) const
  *
  * \return The encoded URI, it may be equal to the input.
  */
-QString snap_uri::urlencode(const QString& uri, const char *accepted)
+QString snap_uri::urlencode(QString const & uri, char const * accepted)
 {
     QString encoded;
 
@@ -1920,13 +1954,42 @@ QString snap_uri::urldecode(QString const& uri, bool relax)
             utf8 += c;
         }
         else if(relax
+
+                // these are the only characters allowed by the RFC
                 || (*u >= 'A' && *u <= 'Z')
                 || (*u >= 'a' && *u <= 'z')
                 || (*u >= '0' && *u <= '9')
-                || *u == '.' || *u == '-' || *u == '/'
-                || *u == '_' || *u == '~' || *u == '!')
+                || *u == '.' || *u == '-'
+                || *u == '/' || *u == '_'
+
+                // not legal in a URI considered 100% valid but most
+                // systems accept the following as is so we do too
+                || *u == '~' || *u == '!'
+                || *u == '@' || *u == ','
+                || *u == ';' || *u == ':'
+                || *u == '(' || *u == ')'
+        )
         {
-            // here we accept the ~ and ! characters although it is "wrong"
+            // The tilde (~), when used, is often to indicate a user a la
+            // Unix (~<name>/... or just ~/... for the current user.)
+            //
+            // The exclamation point (!) is most often used with the hash
+            // bang; if that appears in a query string variable, then we
+            // need to accept at least the exclamation point (the hash has
+            // to be encoded no matter what.)
+            //
+            // The at sign (@) is used in email addresses.
+            //
+            // The comma (,) is often used to separate elements; for example
+            // the paging support uses "page=p3,s30" for show page 3 with
+            // 30 elements per page.
+            //
+            // The semi-colon (;) may appear if you have an HTML entity in
+            // a query string (i.e. "...?value=this+%26amp;+that".)
+            //
+            // The colon (:) can be used to separate values within a
+            // parameter when the comma is not appropriate.
+            //
             utf8 += *u;
         }
         else
@@ -2135,7 +2198,7 @@ using namespace parser;
  */
 void domain_set_qualified_name(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<parser::token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     (*t)[0]->set_value((*n)[0]->get_value().toString() + "::" + (*t)[2]->get_value().toString());
@@ -2154,7 +2217,7 @@ void domain_set_qualified_name(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_standard_var(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     // get the node where the qualified name is defined
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
@@ -2176,7 +2239,7 @@ void domain_set_standard_var(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_website_var(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<domain_variable> v(new domain_variable(domain_variable::DOMAIN_VARIABLE_TYPE_WEBSITE, (*n)[0]->get_value().toString(), (*t)[4]->get_value().toString()));
@@ -2202,7 +2265,7 @@ void domain_set_website_var(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_flag_var(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> o(qSharedPointerDynamicCast<token_node, token>((*t)[5]));
@@ -2235,7 +2298,7 @@ void domain_set_flag_var(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_var_required(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<domain_variable> v(qSharedPointerDynamicCast<domain_variable, parser_user_data>(n->get_user_data()));
@@ -2254,7 +2317,7 @@ void domain_set_var_required(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_var_optional(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<domain_variable> v(qSharedPointerDynamicCast<domain_variable, parser_user_data>(n->get_user_data()));
@@ -2274,7 +2337,7 @@ void domain_set_var_optional(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_new_domain_list(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<domain_variable> v(qSharedPointerDynamicCast<domain_variable, parser_user_data>(n->get_user_data()));
@@ -2295,7 +2358,7 @@ void domain_set_new_domain_list(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_add_domain_list(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> nl(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> nr(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
@@ -2317,7 +2380,7 @@ void domain_set_add_domain_list(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_rule(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[2]));
     QSharedPointer<domain_info> info(qSharedPointerDynamicCast<domain_info, parser_user_data>(n->get_user_data()));
@@ -2337,7 +2400,7 @@ void domain_set_rule(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_new_rule_list(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<domain_info> info(qSharedPointerDynamicCast<domain_info, parser_user_data>(n->get_user_data()));
@@ -2358,7 +2421,7 @@ void domain_set_new_rule_list(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_add_rule_list(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> nl(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> nr(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
@@ -2377,7 +2440,7 @@ void domain_set_add_rule_list(const rule& r, QSharedPointer<token_node>& t)
  */
 void domain_set_start_result(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     // we don't need the dynamic cast since we don't need to access the rules
@@ -2534,7 +2597,7 @@ bool snap_uri_rules::parse_domain_rules(const QString& script, QByteArray& resul
         {
             QSharedPointer<domain_variable> var((*info)[j]);
             const QString& var_name(var->get_name());
-            const QStringList var_qualified_names(var_name.split("::"));
+            const snap_string_list var_qualified_names(var_name.split("::"));
             if(var_names.contains(var_qualified_names.last()))
             {
                 // the same domain variable name was defined twice
@@ -2733,7 +2796,7 @@ void website_rules::write(QtSerialization::QWriter& w) const
  */
 void website_set_qualified_name(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<parser::token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     (*t)[0]->set_value((*n)[0]->get_value().toString() + "::" + (*t)[2]->get_value().toString());
@@ -2752,7 +2815,7 @@ void website_set_qualified_name(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_standard_var(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     // get the node where the qualified name is defined
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
@@ -2774,7 +2837,7 @@ void website_set_standard_var(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_website_var(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<website_variable> v(new website_variable(website_variable::WEBSITE_VARIABLE_TYPE_WEBSITE, (*n)[0]->get_value().toString(), (*t)[4]->get_value().toString()));
@@ -2800,7 +2863,7 @@ void website_set_website_var(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_flag_var(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> o(qSharedPointerDynamicCast<token_node, token>((*t)[5]));
@@ -2833,7 +2896,7 @@ void website_set_flag_var(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_var_required(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_variable> v(qSharedPointerDynamicCast<website_variable, parser_user_data>(n->get_user_data()));
@@ -2852,7 +2915,7 @@ void website_set_var_required(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_var_optional(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_variable> v(qSharedPointerDynamicCast<website_variable, parser_user_data>(n->get_user_data()));
@@ -2871,7 +2934,7 @@ void website_set_var_optional(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_var_path(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     if(t->size() == 1)
     {
@@ -2900,7 +2963,7 @@ void website_set_var_path(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_var_port(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<website_variable> v(new website_variable(website_variable::WEBSITE_VARIABLE_TYPE_STANDARD,
             "port", (*t)[2]->get_value().toString()));
@@ -2920,7 +2983,7 @@ void website_set_var_port(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_var_query(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_variable> v(qSharedPointerDynamicCast<website_variable, parser_user_data>(n->get_user_data()));
@@ -2939,7 +3002,7 @@ void website_set_var_query(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_var_protocol(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     //QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     QSharedPointer<website_variable> v(new website_variable(website_variable::WEBSITE_VARIABLE_TYPE_STANDARD,
@@ -2958,7 +3021,7 @@ void website_set_var_protocol(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_variable_rule(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     // we don't need the dynamic cast since we don't need to access the variables
@@ -2977,7 +3040,7 @@ void website_set_variable_rule(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_new_website_list(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<website_variable> v(qSharedPointerDynamicCast<website_variable, parser_user_data>(n->get_user_data()));
@@ -2998,7 +3061,7 @@ void website_set_new_website_list(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_add_website_list(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> nl(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> nr(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
@@ -3020,7 +3083,7 @@ void website_set_add_website_list(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_rule(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[2]));
     QSharedPointer<website_info> info(qSharedPointerDynamicCast<website_info, parser_user_data>(n->get_user_data()));
@@ -3040,7 +3103,7 @@ void website_set_rule(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_new_rule_list(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<website_info> info(qSharedPointerDynamicCast<website_info, parser_user_data>(n->get_user_data()));
@@ -3061,7 +3124,7 @@ void website_set_new_rule_list(const rule& r, QSharedPointer<token_node>& t)
  */
 void website_set_add_rule_list(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> nl(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     QSharedPointer<token_node> nr(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
@@ -3078,9 +3141,9 @@ void website_set_add_rule_list(const rule& r, QSharedPointer<token_node>& t)
  * \param[in] r  The rule that generated the callback.
  * \param[in] t  The token node holding the data parsed so far.
  */
-void website_set_start_result(const rule& r, QSharedPointer<token_node>& t)
+void website_set_start_result(rule const & r, QSharedPointer<token_node> & t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     // we don't need the dynamic cast since we don't need to access the rules
@@ -3286,7 +3349,7 @@ bool snap_uri_rules::parse_website_rules(QString const& script, QByteArray& resu
         for(int j = 0; j < info_max; ++j) {
             QSharedPointer<website_variable> var((*info)[j]);
             const QString& var_name(var->get_name());
-            const QStringList var_qualified_names(var_name.split("::"));
+            const snap_string_list var_qualified_names(var_name.split("::"));
             if(var_names.contains(var_qualified_names.last()))
             {
                 // the same website variable name was defined twice

@@ -36,6 +36,7 @@
 
 #include "libtld/tld.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 
 /** \brief Simple example of a call to the tld() function.
@@ -55,7 +56,8 @@
  */
 int main(int argc, char *argv[])
 {
-    char *uri = "www.example.co.uk";
+    const char *uri = "WWW.Example.Co.Uk";
+    char *uri_lowercase;
     struct tld_info info;
     enum tld_result r;
 
@@ -64,11 +66,16 @@ int main(int argc, char *argv[])
         uri = argv[1];
     }
 
-    r = tld(uri, &info);
+    // if your input may include uppercase characters and you
+    // do not have an easy way to compute the lowercase before
+    // calling tld(), call the tld_domain_to_lowercase() function
+    uri_lowercase = tld_domain_to_lowercase(uri);
+
+    r = tld(uri_lowercase, &info);
     if(r == TLD_RESULT_SUCCESS)
     {
-        const char *s = uri + info.f_offset - 1;
-        while(s > uri)
+        const char *s = uri_lowercase + info.f_offset - 1;
+        while(s > uri_lowercase)
         {
             if(*s == '.')
             {
@@ -77,20 +84,23 @@ int main(int argc, char *argv[])
             }
             --s;
         }
-        // here uri points to your sub-domains, the length is "s - uri"
-        // if uri == s then there are no sub-domains
+        // here uri_lowercase points to your sub-domains, the length is
+        // "s - uri_lowercase"
+        // if uri_lowercase == s then there are no sub-domains
         // s points to the domain name, the length is "info.f_tld - s"
         // and info.f_tld points to the TLD
         //
         // When TLD_RESULT_SUCCESS is returned the domain cannot be an
         // empty string; also the TLD cannot be empty, however, there
         // may be no sub-domains.
-        printf("Sub-domain(s): \"%.*s\"\n", (int)(s - uri), uri);
+        printf("Sub-domain(s): \"%.*s\"\n", (int)(s - uri_lowercase), uri_lowercase);
         printf("Domain: \"%.*s\"\n", (int)(info.f_tld - s), s);
         printf("TLD: \"%s\"\n", info.f_tld);
+        free(uri_lowercase);
         return 0;
     }
 
+    free(uri_lowercase);
     return 1;
 }
 

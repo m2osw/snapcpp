@@ -85,6 +85,34 @@
  *      div[book=red]        // matches  <div book="red">
  * \endcode
  *
+ * \section attribute_not_equal Element Does Not Have Attribute with Specific Value (E[attr!="value"])
+ *
+ * Test whether an element has a given attribute set to a specific value.
+ * If so, then refuse that element.
+ *
+ * The name of the element (E) is not required. Without it, any element
+ * that does not have the given attribute in the tree will match.
+ *
+ * \code
+ *      div[book!="red"]      // matches  <div book="blue">
+ * \endcode
+ *
+ * \note
+ * When "value" can be represented by one identifier, then the quotes are
+ * not required:
+ *
+ * \code
+ *      div[book!=red]        // matches  <div book="green">
+ * \endcode
+ *
+ * \warning
+ * Note that CSS 3 does not support the \b != operator. The CSS
+ * Preprocessor replaces this syntax with:
+ *
+ * \code
+ *      div:not([book=red])
+ * \endcode
+ *
  * \section include_match Include Match (E[attr~="value"])
  *
  * The include match, written tilde (~) and equal (=), no spaces in between,
@@ -576,6 +604,7 @@
  *                | qualified-name WHITESPACE attribute-operator WHITESPACE attribute-value
  *
  * attribute-operator: '='
+ *                   | '!='
  *                   | '~='
  *                   | '^='
  *                   | '$='

@@ -11,10 +11,24 @@
  * Just and only purpose: update our data.xml file with Unicode
  * characters (i.e. &#x????;).
  */
+
+/** \file
+ * \brief Tool used to output UTF-8 codes for the tld_data.xml file.
+ *
+ * When updating the tld_data.xml, I often get international
+ * TLDs that make use of Unicode characters. To enter those
+ * characters in the XML document, we use the &#x....; encoding
+ * which requires us to convert the data from UTF-8 (as given to
+ * us on the command line) to UTF-32.
+ *
+ * This tool is used for that purpose.
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+
 size_t
 from_utf8(char *in, int32_t *out)
 {

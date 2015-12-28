@@ -53,7 +53,6 @@ add_executable(${PROJECT_NAME}
     snapserver.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
@@ -78,7 +77,6 @@ add_executable(${PROJECT_NAME}
     snapbackend.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
@@ -103,7 +101,6 @@ add_executable(${PROJECT_NAME}
     snap_uuencode_basic_auth.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
@@ -151,7 +148,6 @@ add_executable(${PROJECT_NAME}
     snapsiteinfo.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${ADVGETOPT_LIBRARIES}
@@ -175,7 +171,6 @@ add_executable(${PROJECT_NAME}
     snapdb.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${ADVGETOPT_LIBRARIES}
@@ -183,6 +178,52 @@ target_link_libraries(${PROJECT_NAME}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+#################################################################################
+## Snap signal manager
+##
+project(snapcommunicator)
+
+add_executable(${PROJECT_NAME}
+    snapcommunicator.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+#################################################################################
+## Snap firewall manager
+##
+project(snapfirewall)
+
+add_executable(${PROJECT_NAME}
+    snapfirewall.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
 )
 
 install(
@@ -199,7 +240,6 @@ add_executable(${PROJECT_NAME}
     snapsignal.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
@@ -337,6 +377,8 @@ install(
 )
 
 
+
+
 ################################################################################
 # Snap Bounced Email Handler
 #
@@ -349,11 +391,6 @@ add_executable(${PROJECT_NAME}
     snapbounce.cpp
 )
 
-find_library( UUID uuid )
-if( ${UUID} STREQUAL "UUID-NOTFOUND" )
-    message( FATAL_ERROR "Cannot find uuid library!" )
-endif()
-
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${UUID}
@@ -364,6 +401,42 @@ target_link_libraries(${PROJECT_NAME}
     ${QTSERIALIZATION_LIBRARIES}
 )
 
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+#################################################################################
+## Build CGI
+##
+project(snapbuild)
+
+add_executable(${PROJECT_NAME}
+    build.cpp
+)
+
+set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME build.cgi )
+
+# We install the binary so that way the linking is finalized, but
+# we do not install that in a pacakage for now (maybe later if we
+# do a build system for snap, although I don't think we need such.)
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+#################################################################################
+## Build CGI
+##
+project(build-service)
+
+add_executable(${PROJECT_NAME}
+    build-service.cpp
+)
+
+# We install the binary so that way the linking is finalized, but
+# we do not install that in a pacakage for now (maybe later if we
+# do a build system for snap, although I don't think we need such.)
 install(
     TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )

@@ -19,6 +19,7 @@ DESC=snapinit
 NAME=snapserver
 USER=snapwebsites
 SNAPINIT=/usr/bin/snapinit
+PIDFILE=/run/lock/snapwebsites/snapinit-lock.pid
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -31,7 +32,7 @@ fi
 
 mkdir -p /var/lock/snapwebsites
 
-INIT_ARGS="--detach ${INIT_OPTS}"    					 # INIT_OPTS  comes from /etc/default/snapserver
+INIT_ARGS="--detach ${INIT_OPTS}"				# INIT_OPTS  comes from /etc/default/snapserver
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
@@ -43,9 +44,9 @@ INIT_ARGS="--detach ${INIT_OPTS}"    					 # INIT_OPTS  comes from /etc/default/
 
 case "$1" in
   start)
-    log_daemon_msg "Starting $DESC " "$NAME"
-    ${SNAPINIT} ${INIT_ARGS} start
-    case "$?" in
+	log_daemon_msg "Starting $DESC " "$NAME"
+	${SNAPINIT} ${INIT_ARGS} start
+	case "$?" in
 		0|1) log_end_msg 0 ;;
 		2)   log_end_msg 1 ;;
 	esac
@@ -58,9 +59,10 @@ case "$1" in
 		2)   log_end_msg 1 ;;
 	esac
 	;;
-  #status)
-       #do_status && exit 0 || exit $?
-       #;;
+  status)
+	status_of_proc -p $PIDFILE "snapserver" "$NAME"
+	exit $?
+	;;
   restart|force-reload)
 	#
 	# If the "reload" option is implemented then remove the

@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>qrcode-settings-parser.xsl</file>
   </qresource>
   <qresource prefix="/images/qrcode">
+    <file>qrcode-logo-64x64.png</file>
     <file>qrcode-not-available.png</file>
   </qresource>
 </RCC>

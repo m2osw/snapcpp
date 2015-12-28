@@ -17,11 +17,9 @@
 
 #include "process.h"
 
-#include "snap_thread.h"
 #include "log.h"
 
 #include <controlled_vars/controlled_vars_no_init.h>
-#include <controlled_vars/controlled_vars_ptr_need_init.h>
 #include <controlled_vars/controlled_vars_ptr_no_init.h>
 
 #include <stdio.h>
@@ -339,7 +337,7 @@ int process::run()
         //typedef controlled_vars::ptr_need_init<process> mpprocess_t;
         typedef controlled_vars::ptr_auto_init<FILE> zpfile_t;
 
-        raii_pipe(/*process *p,*/ const QString& command, const QStringList& arguments)
+        raii_pipe(/*process *p,*/ const QString& command, const snap_string_list& arguments)
             //: f_process(p)
             //, f_file(NULL) -- auto-init
         {

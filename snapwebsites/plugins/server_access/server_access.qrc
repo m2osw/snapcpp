@@ -24,6 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/js/server_access">
     <file>server-access.js</file>
   </qresource>
+  <qresource prefix="/images/server_access">
+    <file>server-access-logo-64x64.png</file>
+  </qresource>
 </RCC>
 <!--
 vim: ts=2 sw=2 et syntax=xml

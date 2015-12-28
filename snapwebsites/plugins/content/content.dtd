@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ENTITY % html-data "(#PCDATA|b|i|u|em|strong|a|img|div|p)*" >
 
-<!ELEMENT content (param|link|attachment)*>
+<!ELEMENT content (param|link|remove-link|attachment)*>
 <!ATTLIST content path CDATA #REQUIRED
                   owner CDATA #IMPLIED>
 
@@ -36,7 +36,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT link (#PCDATA)>
 <!ATTLIST link name CDATA #REQUIRED
                to CDATA #REQUIRED
-               mode CDATA "1:1">
+               mode CDATA "1:1"
+               branches CDATA "0:0">
+
+<!ELEMENT remove-link (#PCDATA)>
+<!ATTLIST remove-link name CDATA #REQUIRED
+                      to CDATA #REQUIRED
+                      mode CDATA "1:1"
+                      branches CDATA "0:0">
 
 <!-- path is mandatory -->
 <!ELEMENT attachment (path, mime-type?, dependency*)>

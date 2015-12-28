@@ -16,7 +16,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../form/form.h"
 #include "../layout/layout.h"
 #include "../path/path.h"
 
@@ -52,29 +51,50 @@ public:
 
 
 
-class oauth2 : public plugins::plugin
-             , public path::path_execute
+class oauth2
+    : public plugins::plugin
+    , public path::path_execute
 {
 public:
                             oauth2();
     virtual                 ~oauth2();
 
+    // plugins::plugin implementation
     static oauth2 *         instance();
+    virtual QString         settings_path() const;
+    virtual QString         icon() const;
     virtual QString         description() const;
+    virtual QString         dependencies() const;
     virtual int64_t         do_update(int64_t last_updated);
+    virtual void            bootstrap(snap_child * snap);
 
-    void                    on_bootstrap(::snap::snap_child *snap);
-    virtual bool            on_path_execute(content::path_info_t & ipath);
-    void                    on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
+    // server signals
     void                    on_process_cookies();
+
+    // content signals
+    void                    on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
+
+    // path::path_execute implementation
+    virtual bool            on_path_execute(content::path_info_t & ipath);
 
     SNAP_SIGNAL_WITH_MODE(oauth2_authorized, (QString const & application), (application), NEITHER);
     SNAP_SIGNAL_WITH_MODE(oauth2_authenticated, (QString const & application), (application), NEITHER);
 
 private:
+    enum class oauth2_error_t
+    {
+        OAUTH2_INVALID_REQUEST,
+        OAUTH2_INVALID_CLIENT,
+        OAUTH2_INVALID_GRANT,
+        OAUTH2_UNAUTHORIZED_CLIENT,
+        OAUTH2_UNAUTHORIZED_GRANT_TYPE,
+        OAUTH2_INVALID_SCOPE
+    };
+
     void                    content_update(int64_t variables_timestamp);
     void                    require_oauth2_login();
     void                    application_login();
+    void                    die(snap_child::http_code_t err_code, oauth2_error_t err_oauth2, QString err_name, QString const & err_description, QString const & err_details, QString const & err_help_uri);
 
     zpsnap_child_t          f_snap;
 };

@@ -39,12 +39,22 @@ if(CATCH_FOUND)
 
     add_executable( ${PROJECT_NAME}
         catch_tests.cpp
-
         catch_assembler.cpp
         catch_color.cpp
         catch_compiler.cpp
         catch_csspp.cpp
         catch_error.cpp
+        catch_expr_additive.cpp
+        catch_expr_conditional.cpp
+        catch_expr_equality.cpp
+        catch_expr_list.cpp
+        catch_expr_logical_and.cpp
+        catch_expr_logical_or.cpp
+        catch_expr_multiplicative.cpp
+        catch_expr_power.cpp
+        catch_expr_relational.cpp
+        catch_expr_unary.cpp
+        catch_internal_functions.cpp
         catch_lexer.cpp
         catch_node.cpp
         catch_nth_child.cpp
@@ -53,13 +63,7 @@ if(CATCH_FOUND)
         catch_unicode_range.cpp
     )
 
-    target_link_libraries( ${PROJECT_NAME}
-        csspp
-    )
-
-    #add_custom_target(run_csspp_tests
-    #    COMMAND ./csspp_tests
-    #)
+    target_link_libraries( ${PROJECT_NAME} csspp )
 
     # You can use the --success command line option to see all the tests
     # as they run; it is a LOT of output though, thus by default we don't
@@ -70,11 +74,6 @@ else(CATCH_FOUND)
 
     # You may use 'apt-get install catch' under Ubuntu
     message("No test will be created because you do not seem to have catch.hpp installed...")
-
-    ## For compatibility, just in case
-    #add_custom_target(run_csspp_tests
-    #    COMMAND echo "No tests were built because it looks like you are missing catch.hpp."
-    #)
 
 endif(CATCH_FOUND)
 

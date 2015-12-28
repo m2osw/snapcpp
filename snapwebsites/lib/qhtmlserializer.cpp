@@ -202,10 +202,10 @@ void QHtmlSerializer::namespaceBinding(const QXmlName& name)
             f_output->write(name.prefix(f_namepool).toUtf8());
         }
         f_output->write("=\"");
-        uri.replace('\"', "&quot;");
-        uri.replace('<', "&lt;");
-        uri.replace('>', "&gt;");
-        uri.replace('&', "&amp;");
+        uri.replace('\"', "&quot;")
+           .replace('<', "&lt;")
+           .replace('>', "&gt;")
+           .replace('&', "&amp;");
         f_output->write(uri.toUtf8());
         f_output->write("\"");
     }

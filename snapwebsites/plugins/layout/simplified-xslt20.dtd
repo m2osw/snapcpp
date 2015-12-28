@@ -29,6 +29,7 @@ DTD of the XSLT 2.0.
                          xmlns CDATA #IMPLIED
                          xmlns:fn CDATA #IMPLIED
                          xmlns:html CDATA #IMPLIED
+                         xmlns:image CDATA #IMPLIED
                          xmlns:sitemap CDATA #IMPLIED
                          xmlns:snap CDATA #IMPLIED
                          xmlns:xsl CDATA #IMPLIED
@@ -84,6 +85,7 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT xsl:value-of ANY>
 <!ATTLIST xsl:value-of select CDATA #REQUIRED>
+<!-- disable-output-escaping (yes|no) "no" / not supported by Qt implementation -->
 
 <!ELEMENT xsl:attribute ANY>
 <!ATTLIST xsl:attribute name CDATA #REQUIRED>
@@ -107,7 +109,8 @@ DTD of the XSLT 2.0.
 <!-- This is a tag we often use to generate our output
      and to avoid problems with xsl:output, we should change it -->
 <!ELEMENT output ANY>
-<!ATTLIST output lang CDATA #IMPLIED>
+<!ATTLIST output filter CDATA #IMPLIED
+                 lang CDATA #IMPLIED>
 
 <!ELEMENT css ANY>
 <!ATTLIST css name CDATA #REQUIRED>
@@ -121,10 +124,11 @@ DTD of the XSLT 2.0.
 <!ATTLIST a class CDATA #IMPLIED
             field_type CDATA #IMPLIED
             href CDATA #IMPLIED
-            rel (nofollow) #IMPLIED
+            rel (home|nofollow) #IMPLIED
             target CDATA #IMPLIED
             title CDATA ""
-            product-guid CDATA #IMPLIED>
+            product-guid CDATA #IMPLIED
+            tabindex CDATA #IMPLIED>
 
 <!-- product-guid is from ecommerce -->
 
@@ -319,16 +323,12 @@ DTD of the XSLT 2.0.
 <!ELEMENT item ANY>
 
 <!ELEMENT attachment ANY>
-<!ATTLIST attachment foo CDATA #REQUIRED>
 
 <!ELEMENT background-value ANY>
-<!ATTLIST background-value foo CDATA #REQUIRED>
 
 <!ELEMENT help ANY>
-<!ATTLIST help foo CDATA #REQUIRED>
 
 <!ELEMENT tooltip ANY>
-<!ATTLIST tooltip foo CDATA #REQUIRED>
 
 
 <!-- TODO: I'm not too sure how I can handle "special" tags used in
@@ -364,6 +364,7 @@ DTD of the XSLT 2.0.
 <!ELEMENT url ANY>
 <!ELEMENT author ANY>
 <!ELEMENT created ANY>
+<!ELEMENT created-long-date ANY>
 <!ELEMENT copyright ANY>
 <!ELEMENT description ANY>
 

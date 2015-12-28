@@ -61,7 +61,7 @@ namespace udp_client_server
  * \param[in] addr  The address to convert to a numeric IP.
  * \param[in] port  The port number.
  */
-udp_client::udp_client(const std::string& addr, int port)
+udp_client::udp_client(std::string const & addr, int port)
     : f_port(port)
     , f_addr(addr)
 {
@@ -161,7 +161,7 @@ std::string udp_client::get_addr() const
  * \return -1 if an error occurs, otherwise the number of bytes sent. errno
  * is set accordingly on error.
  */
-int udp_client::send(const char *msg, size_t size)
+int udp_client::send(char const * msg, size_t size)
 {
     return static_cast<int>(sendto(f_socket, msg, size, 0, f_addrinfo->ai_addr, f_addrinfo->ai_addrlen));
 }
@@ -202,7 +202,7 @@ int udp_client::send(const char *msg, size_t size)
  * \param[in] addr  The address we receive on.
  * \param[in] port  The port we receive from.
  */
-udp_server::udp_server(const std::string& addr, int port)
+udp_server::udp_server(std::string const & addr, int port)
     : f_port(port)
     , f_addr(addr)
 {
@@ -307,7 +307,7 @@ std::string udp_server::get_addr() const
  *
  * \return The number of bytes read or -1 if an error occurs.
  */
-int udp_server::recv(char *msg, size_t max_size)
+int udp_server::recv(char * msg, size_t max_size)
 {
     return static_cast<int>(::recv(f_socket, msg, max_size, 0));
 }
@@ -331,7 +331,7 @@ int udp_server::recv(char *msg, size_t max_size)
  *
  * \return -1 if an error occurs or the function timed out, the number of bytes received otherwise.
  */
-int udp_server::timed_recv(char *msg, size_t const max_size, int const max_wait_ms)
+int udp_server::timed_recv(char * msg, size_t const max_size, int const max_wait_ms)
 {
     fd_set s;
     FD_ZERO(&s);

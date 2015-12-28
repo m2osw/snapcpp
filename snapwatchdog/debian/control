@@ -4,7 +4,7 @@ Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: debhelper, cmake, zip, libqt4-dev (>= 4.8.3), libprocps3-dev, libboost-dev,
     snapcmakemodules (>= 1.0.23.36~trusty), libcontrolledvars-dev (>= 1.4.15.44~trusty),
     libadvgetopt-dev (>= 1.0.15.43~trusty), libqtserialization-dev (>= 0.1.16.43~trusty),
-    libqtcassandra-dev (>= 0.5.20.43~trusty), libsnapwebsites-dev (>= 0.1.71.26~trusty),
+    libqtcassandra-dev (>= 0.5.20.43~trusty), libsnapwebsites-dev (>= 0.1.71.243~trusty),
     libtld-dev (>= 1.4.21.92~trusty), liblog4cplus-dev (>= 1.2.0)
 Standards-Version: 3.9.4
 Section: libs
@@ -37,15 +37,28 @@ Description: Track status and health of any number of servers.
 Package: snapwatchdog
 Section: utils
 Architecture: any
-Depends: adduser, libsnapwatchdog (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: adduser, libsnapwatchdog (= ${binary:Version}),
+    snapwatchdog-core-plugins, ${shlibs:Depends}, ${misc:Depends}
 Recommends: cassandra (>= 2.0.3)
-Suggests: snapwebsites (= ${binary:Version})
+Suggests: snapserver (= ${binary:Version})
 Description: Track status and health of any number of servers.
  Snap! Watchdog is a tool that works on any number of servers to
  gather various information that let you know how your server is
  doing.
  .
- This package installs the server daemon that communicates with
- other watchdogs and a Cassandra server.
+ This package installs the server daemon that gathers the statistics
+ on one server.
+
+Package: snapwatchdog-core-plugins
+Section: utils
+Architecture: any
+Depends: libsnapwatchdog (= ${binary:Version}), ${shlibs:Depends},
+    ${misc:Depends}
+Description: Plugins used to gather various types of data from your
+ servers for the purpose of indicating the health of each computer
+ in your cluster. This includes processes, CPU, memory, disk,
+ number of network hits, connectivity.
+ .
+ This package contains required core plugins for the snapwatchdog daemon.
 
 # vim: ts=4 sw=4 et

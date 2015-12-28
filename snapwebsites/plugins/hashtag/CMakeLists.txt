@@ -64,6 +64,7 @@ add_library(hashtag SHARED
     hashtag.css
     hashtag-settings-page.xml
     hashtag-settings-parser.xsl
+    hashtag-logo-64x64.png
 )
 
 target_link_libraries( hashtag ${QT_LIBRARIES} )

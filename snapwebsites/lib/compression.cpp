@@ -18,13 +18,13 @@
 #include "compression.h"
 
 #include "log.h"
+#include "not_used.h"
 
-#include <controlled_vars/controlled_vars_auto_init.h>
+#include <QMap>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <zlib.h>
-#include <QMap>
 #pragma GCC diagnostic pop
 
 #include "poison.h"
@@ -140,9 +140,9 @@ compressor_t::~compressor_t()
  *
  * \return A list of all the available compressors.
  */
-QStringList compressor_list()
+snap_string_list compressor_list()
 {
-    QStringList list;
+    snap_string_list list;
     for(compressor_map_t::const_iterator
             it(g_compressors->begin());
             it != g_compressors->end();
@@ -443,7 +443,7 @@ public:
 
     virtual QByteArray compress(QByteArray const& input, level_t level, bool text)
     {
-        static_cast<void>(text);
+        NOTUSED(text);
 
         // transform the 0 to 100 level to the standard 1 to 9 in zlib
         int zlib_level(bound_level((level * 2 + 25) / 25, Z_BEST_SPEED, Z_BEST_COMPRESSION));
@@ -485,17 +485,17 @@ public:
         return result;
     }
 
-    virtual bool compatible(const QByteArray& input) const
+    virtual bool compatible(QByteArray const & input) const
     {
-        static_cast<void>(input);
+        NOTUSED(input);
 
         // there is no magic header in this one...
         return false;
     }
 
-    virtual QByteArray decompress(const QByteArray& input)
+    virtual QByteArray decompress(QByteArray const & input)
     {
-        static_cast<void>(input);
+        NOTUSED(input);
 
         throw compression_exception_not_implemented("the deflate decompress() function is not yet implemented, mainly because it is not accessible via the compression::decompress() function.");
     }

@@ -62,6 +62,7 @@ snap_validate_js( list/list.js )
 
 add_library(list SHARED
     list.cpp
+    tests.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     list/content.xml

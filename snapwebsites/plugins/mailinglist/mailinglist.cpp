@@ -1,4 +1,4 @@
-// Snap Websites Server -- manage mailing lists for other systems
+// Snap Websites Server -- manage mailing lists for other plugins
 // Copyright (C) 2013-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,7 @@
 #include "../content/content.h"
 
 #include "not_reached.h"
+#include "not_used.h"
 
 #include "poison.h"
 
@@ -36,7 +37,7 @@ SNAP_PLUGIN_START(mailinglist, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name) {
     case name_t::SNAP_NAME_MAILINGLIST_TABLE:
@@ -67,7 +68,7 @@ const char *get_name(name_t name)
  *
  * \sa get_mailinglist_table()
  */
-mailinglist::list::list(mailinglist *parent, QString const& list_name)
+mailinglist::list::list(mailinglist * parent, QString const & list_name)
     : f_parent(parent)
     , f_name(list_name)
     , f_table(f_parent->get_mailinglist_table())
@@ -81,6 +82,7 @@ mailinglist::list::list(mailinglist *parent, QString const& list_name)
     f_column_predicate.setIndex();
 }
 
+
 /** \brief Clean up the mailing list.
  *
  * This function cleans up the list object.
@@ -88,6 +90,7 @@ mailinglist::list::list(mailinglist *parent, QString const& list_name)
 mailinglist::list::~list()
 {
 }
+
 
 /** \brief Return the name of the mailing list being read.
  *
@@ -99,6 +102,7 @@ QString mailinglist::list::name() const
 {
     return f_name;
 }
+
 
 /** \brief Read the next email from a mailing list.
  *
@@ -143,9 +147,10 @@ QString mailinglist::list::next()
  * This function is used to initialize the mailinglist plugin object.
  */
 mailinglist::mailinglist()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
+
 
 /** \brief Clean up the mailinglist plugin.
  *
@@ -155,19 +160,6 @@ mailinglist::~mailinglist()
 {
 }
 
-/** \brief Initialize mailinglist.
- *
- * This function terminates the initialization of the mailinglist plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void mailinglist::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(mailinglist, "mailinglist", mailinglist::mailinglist, name_to_list, _1, _2);
-}
 
 /** \brief Get a pointer to the mailinglist plugin.
  *
@@ -178,9 +170,19 @@ void mailinglist::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the mailinglist plugin.
  */
-mailinglist *mailinglist::instance()
+mailinglist * mailinglist::instance()
 {
     return g_plugin_mailinglist_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString mailinglist::settings_path() const
+{
+    return "/admin/settings/mailinglist";
 }
 
 
@@ -203,6 +205,19 @@ QString mailinglist::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString mailinglist::dependencies() const
+{
+    return "|content|editor|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -217,42 +232,26 @@ QString mailinglist::description() const
  */
 int64_t mailinglist::do_update(int64_t last_updated)
 {
-    SNAP_PLUGIN_UPDATE_INIT();
+    NOTUSED(last_updated);
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2013, 3, 3, 22, 50, 0, content_update);
+    SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
-/** \brief First update to run for the content plugin.
- *
- * This function is the first update for the content plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void mailinglist::initial_update(int64_t variables_timestamp)
-{
-}
-#pragma GCC diagnostic pop
 
-/** \brief Update the database with our content references.
+/** \brief Initialize mailinglist.
  *
- * Send our content to the database so the system can find us when a
- * user references our pages.
+ * This function terminates the initialization of the mailinglist plugin
+ * by registering for different events.
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \param[in] snap  The child handling this request.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void mailinglist::content_update(int64_t variables_timestamp)
+void mailinglist::bootstrap(snap_child * snap)
 {
-    content::content::instance()->add_xml("mailinglist");
+    f_snap = snap;
 }
-#pragma GCC diagnostic pop
+
 
 /** \brief Initialize the emails table.
  *
@@ -272,6 +271,7 @@ QtCassandra::QCassandraTable::pointer_t mailinglist::get_mailinglist_table()
     return f_snap->create_table(get_name(name_t::SNAP_NAME_MAILINGLIST_TABLE), "Mailing list table.");
 }
 
+
 /** \fn void mailinglist::name_to_list(const QString& name, QSharedPointer<list>& emails)
  * \brief Prepare the email for the filter_email signal.
  *
@@ -288,7 +288,7 @@ QtCassandra::QCassandraTable::pointer_t mailinglist::get_mailinglist_table()
  * This function checks the parameters validity and returns true if it will be
  * possible to ready a list of emails from the name of a list.
  *
- * Note that if the input emails pointer is not NULL then the function does not
+ * Note that if the input emails pointer is not nullptr then the function does not
  * change the pointer. This allows any other plugin to define a mailing list
  * first. This means if you loop over a list of emails and check whether the
  * bane is a mailing list name, you'll want to clear the pointer before each
@@ -297,14 +297,14 @@ QtCassandra::QCassandraTable::pointer_t mailinglist::get_mailinglist_table()
  * \code
  *  for(;;)
  *  {
- *      QSharedPointer emails; // NULL by default
+ *      QSharedPointer emails; // nullptr by default
  *      mailinglist::name_to_list(name, emails);
  *      ...
  *  }
  * \endcode
  *
  * \code
- *  QSharedPointer emails; // NULL by default
+ *  QSharedPointer emails; // nullptr by default
  *  for(;;)
  *  {
  *      emails.clear(); // clear before call
@@ -318,23 +318,25 @@ QtCassandra::QCassandraTable::pointer_t mailinglist::get_mailinglist_table()
  *
  * The function does not set the emails shared pointer to anything if the
  * name does not name an existing mailing list. This means the function
- * returns a NULL pointer if no mailing list with that name exists.
+ * returns a nullptr pointer if no mailing list with that name exists.
  *
  * \param[in] name  The name of the list to access.
  * \param[in,out] emails  The resulting list of emails.
  */
-void mailinglist::on_name_to_list(const QString& name, QSharedPointer<list>& emails)
+bool mailinglist::name_to_list_impl(QString const & name, QSharedPointer<list> & emails)
 {
     // only set if not already set
     if(!emails)
     {
-        // first make sure that the row exists, if not that's not a maillist
+        // first make sure that the row exists, if not that is not a maillist
         QtCassandra::QCassandraTable::pointer_t table(get_mailinglist_table());
         if(table->exists(name))
         {
             emails = QSharedPointer<list>(new list(this, name));
         }
     }
+
+    return true;
 }
 
 

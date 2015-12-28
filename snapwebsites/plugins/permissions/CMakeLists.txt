@@ -53,8 +53,11 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content/content.dtd )
 
+snap_validate_js( remove-iframe-for-login.js )
+
 add_library(permissions SHARED
     permissions.cpp
+    remove-iframe-for-login.js
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     ${OPENSSL_LIBRARIES}

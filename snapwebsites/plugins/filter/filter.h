@@ -44,7 +44,8 @@ public:
 
 
 
-class filter : public plugins::plugin
+class filter
+        : public plugins::plugin
 {
 public:
     enum class token_t
@@ -93,7 +94,7 @@ public:
             return f_name < rhs.f_name;
         }
 
-        static char const *type_name(token_t type)
+        static char const * type_name(token_t type)
         {
             switch(type)
             {
@@ -139,7 +140,7 @@ public:
             return f_name.startsWith(name);
         }
 
-        bool is_token(char const *name)
+        bool is_token(char const * name)
         {
             // in a way, once marked as found a token is viewed as used up
             // and thus it does not match anymore; same with errors
@@ -248,7 +249,7 @@ public:
             return it != f_parameters.end();
         }
 
-        parameter_t get_arg(QString const& name, int position = -1, token_t type = token_t::TOK_UNDEFINED)
+        parameter_t get_arg(QString const & name, int position = -1, token_t type = token_t::TOK_UNDEFINED)
         {
             parameter_t const null;
             QVector<parameter_t>::const_iterator it(f_parameters.end());
@@ -311,23 +312,82 @@ public:
         }
     };
 
+    class filter_text_t
+    {
+    public:
+                                filter_text_t(content::path_info_t & ipath, QDomDocument & xml_document, QString const & text);
+
+        void                    set_support_edit(bool support_edit);
+        bool                    get_support_edit() const;
+
+        content::path_info_t &  get_ipath();
+
+        bool                    has_changed() const;
+
+        QDomDocument &          get_xml_document() const;
+
+        void                    set_text(QString const & text);
+        QString const &         get_text() const;
+
+    private:
+        content::path_info_t &  f_ipath;
+        QDomDocument &          f_xml_document;
+        QString                 f_text; // i.e. input and result
+        bool                    f_changed = false;
+        bool                    f_support_edit = true;
+    };
+
+    class filter_teaser_info_t
+    {
+    public:
+        void                        set_max_words(int words);
+        int                         get_max_words() const;
+
+        void                        set_max_tags(int tags);
+        int                         get_max_tags() const;
+
+        void                        set_end_marker(QString const & end_marker);
+        QString const &             get_end_marker() const;
+
+        void                        set_end_marker_uri(QString const & uri, QString const & title);
+        QString const &             get_end_marker_uri() const;
+        QString const &             get_end_marker_uri_title() const;
+
+    private:
+        controlled_vars::zint32_t   f_words;            // max. # of words
+        controlled_vars::zint32_t   f_tags;             // max. # of tags
+        QString                     f_end_marker;       // i.e. usually "..." or "[...]" or a "read more" link
+        QString                     f_end_marker_uri;   // main page URI
+        QString                     f_end_marker_uri_title;
+    };
+
                         filter();
                         ~filter();
 
+    // plugins::plugin implementation
     static filter *     instance();
+    virtual QString     settings_path() const;
     virtual QString     description() const;
-    static bool         filter_uri(QString & uri);
+    virtual QString     dependencies() const;
+    virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(::snap::snap_child * snap);
 
-    void                on_bootstrap(::snap::snap_child *snap);
+    // server signals
     void                on_xss_filter(QDomNode & node, QString const & accepted_tags, QString const & accepted_attributes);
+
+    // this is currently a filter function, the signal is on_replace_token()
     void                on_token_filter(content::path_info_t & ipath, QDomDocument & xml);
 
+    static bool         filter_uri(QString & uri);
     static QString      encode_text_for_html(QString const & text);
+    static bool         body_to_teaser(QDomElement body, filter_teaser_info_t const & info);
 
-    SNAP_SIGNAL(replace_token, (content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, token_info_t & token), (ipath, plugin_owner, xml, token));
-    SNAP_SIGNAL_WITH_MODE(filter_text, (content::path_info_t & ipath, QDomDocument & xml, QString & result, bool & changed), (ipath, xml, result, changed), NEITHER);
+    SNAP_SIGNAL(replace_token, (content::path_info_t & ipath, QDomDocument & xml, token_info_t & token), (ipath, xml, token));
+    SNAP_SIGNAL(filter_text, (filter_text_t & txt_filt), (txt_filt));
 
 private:
+    void                content_update(int64_t variables_timestamp);
+
     zpsnap_child_t      f_snap;
 };
 

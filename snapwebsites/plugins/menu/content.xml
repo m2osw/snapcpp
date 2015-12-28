@@ -18,12 +18,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <content path="/admin/menu">
+  <content path="/admin/menu" owner="output">
     <param name="content::title" revision="revision">Menu Manager</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>The global menu manager.</p>]]>
     </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/types/taxonomy/system/menu">
     <param name="content::title" revision="revision">Menu Type</param>

@@ -21,11 +21,22 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/* We want to directly test the library functions, including all the private
- * functions so we include the source directly.
+/** \file
+ * \brief Test the tld.c, tld_data.c, and tld_domain_to_lowercase.c functions.
+ *
+ * This file implements various tests that can directly access the internal
+ * functions of the tld.c, tld_data.c, and tld_domain_to_lowercase.c
+ * files.
+ *
+ * For that purpose we directly include those files in this test. This
+ * is why the test is not actually linked against the library, it
+ * includes it within itself.
  */
+
 #include "tld.c"
 #include "tld_data.c"
+#include "tld_domain_to_lowercase.c"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -71,6 +82,7 @@ void test_compare()
 		{ "uk333", "uk", 2, 1 },
 	};
 	int i, r, max;
+	char *s, *vd, *u;
 
 	max = sizeof(d) / sizeof(d[0]);
 	for(i = 0; i < max; ++i)
@@ -81,6 +93,25 @@ void test_compare()
 					d[i].a, d[i].b, d[i].r, r);
 			++err_count;
 		}
+
+		// create a version with uppercase and try again
+		s = strdup(d[i].b);
+		for(u = s; *u != '\0'; ++u)
+		{
+			if(*u >= 'a' && *u <= 'z')
+			{
+				*u &= 0x5F;
+			}
+		}
+		vd = tld_domain_to_lowercase(s);
+		r = cmp(d[i].a, d[i].b, d[i].n);
+		if(r != d[i].r) {
+			fprintf(stderr, "error: cmp() failed with \"%s\" / \"%s\", expected %d and got %d (with domain to lowercase)\n",
+					d[i].a, d[i].b, d[i].r, r);
+			++err_count;
+		}
+		free(vd);
+		free(s);
 	}
 }
 
@@ -102,67 +133,68 @@ void test_search()
 		 */
 
 		/* get the .uk offset */
-		{ 6914, 7748, "uk", 2, 7700 },
+		{ 7159, 8536, "uk", 2, 8430 },
 
 		/* get each offset of the .uk 2nd level domain */
-		{ 6717, 6742, "ac", 2,							6717 },
-		{ 6717, 6742, "bl", 2,							6718 },
-		{ 6717, 6742, "british-library", 15,			6719 },
-		{ 6717, 6742, "co", 2,							6720 },
-		{ 6717, 6742, "gov", 3,							6721 },
-		{ 6717, 6742, "govt", 4,						6722 },
-		{ 6717, 6742, "icnet", 5,						6723 },
-		{ 6717, 6742, "jet", 3,							6724 },
-		{ 6717, 6742, "lea", 3,							6725 },
-		{ 6717, 6742, "ltd", 3,							6726 },
-		{ 6717, 6742, "me", 2,							6727 },
-		{ 6717, 6742, "mil", 3,							6728 },
-		{ 6717, 6742, "mod", 3,							6729 },
-		{ 6717, 6742, "national-library-scotland", 25,	6730 },
-		{ 6717, 6742, "nel", 3,							6731 },
-		{ 6717, 6742, "net", 3,							6732 },
-		{ 6717, 6742, "nhs", 3,							6733 },
-		{ 6717, 6742, "nic", 3,							6734 },
-		{ 6717, 6742, "nls", 3,							6735 },
-		{ 6717, 6742, "org", 3,							6736 },
-		{ 6717, 6742, "orgn", 4,						6737 },
-		{ 6717, 6742, "parliament", 10,					6738 },
-		{ 6717, 6742, "plc", 3,							6739 },
-		{ 6717, 6742, "police", 6,						6740 },
-		{ 6717, 6742, "sch", 3,							6741 },
+		{ 6960, 6985, "ac", 2,							6960 },
+		{ 6960, 6985, "bl", 2,							6961 },
+		{ 6960, 6985, "british-library", 15,			6962 },
+		{ 6960, 6985, "co", 2,							6963 },
+		{ 6960, 6985, "gov", 3,							6964 },
+		{ 6960, 6985, "govt", 4,						6965 },
+		{ 6960, 6985, "icnet", 5,						6966 },
+		{ 6960, 6985, "jet", 3,							6967 },
+		{ 6960, 6985, "lea", 3,							6968 },
+		{ 6960, 6985, "ltd", 3,							6969 },
+		{ 6960, 6985, "me", 2,							6970 },
+		{ 6960, 6985, "mil", 3,							6971 },
+		{ 6960, 6985, "mod", 3,							6972 },
+		{ 6960, 6985, "national-library-scotland", 25,	6973 },
+		{ 6960, 6985, "nel", 3,							6974 },
+		{ 6960, 6985, "net", 3,							6975 },
+		{ 6960, 6985, "nhs", 3,							6976 },
+		{ 6960, 6985, "nic", 3,							6977 },
+		{ 6960, 6985, "nls", 3,							6978 },
+		{ 6960, 6985, "org", 3,							6979 },
+		{ 6960, 6985, "orgn", 4,						6980 },
+		{ 6960, 6985, "parliament", 10,					6981 },
+		{ 6960, 6985, "plc", 3,							6982 },
+		{ 6960, 6985, "police", 6,						6983 },
+		{ 6960, 6985, "sch", 3,							6984 },
 
 		/* test with a few invalid TLDs for .uk */
-		{ 6717, 6742, "com", 3, -1 },
-		{ 6717, 6742, "aca", 3, -1 },
-		{ 6717, 6742, "aac", 3, -1 },
-		{ 6717, 6742, "ca", 2, -1 },
-		{ 6717, 6742, "cn", 2, -1 },
-		{ 6717, 6742, "cp", 2, -1 },
-		{ 6717, 6742, "cz", 2, -1 },
+		{ 6960, 6985, "com", 3, -1 },
+		{ 6960, 6985, "aca", 3, -1 },
+		{ 6960, 6985, "aac", 3, -1 },
+		{ 6960, 6985, "ca", 2, -1 },
+		{ 6960, 6985, "cn", 2, -1 },
+		{ 6960, 6985, "cp", 2, -1 },
+		{ 6960, 6985, "cz", 2, -1 },
 
 		/* get the .vu offset */
-		{ 6914, 7748, "vu", 2, 7729 },
+		{ 7159, 8536, "vu", 2, 8471 },
 
-		/* get the .gov.vu offset */
-		{ 6855, 6860, "edu", 3, 6856 },
-		{ 6855, 6860, "gov", 3, 6857 },
-		{ 6855, 6860, "net", 3, 6858 },
+		/* get the 2nd level .vu offsets */
+		{ 7099, 7104, "edu", 3, 7100 },
+		{ 7099, 7104, "gov", 3, 7101 },
+		{ 7099, 7104, "net", 3, 7102 },
 
 		/* test with a few .vu 2nd level domains that do not exist */
-		{ 6855, 6860, "nom", 3, -1 },
-		{ 6855, 6860, "sch", 3, -1 },
+		{ 7099, 7104, "nom", 3, -1 },
+		{ 7099, 7104, "sch", 3, -1 },
 
 		/* verify ordering of mari, mari-el, and marine (from .ru) */
-		{ 6213, 6349, "mari",    4, 6275 },
-		{ 6213, 6349, "mari-el", 7, 6276 },
-		{ 6213, 6349, "marine",  6, 6277 },
+		{ 6419, 6556, "mari",    4, 6482 },
+		{ 6419, 6556, "mari-el", 7, 6483 },
+		{ 6419, 6556, "marine",  6, 6484 },
 	};
-	int i, r, max;
 
-	max = sizeof(d) / sizeof(d[0]);
+	size_t i;
+
+	size_t const max = sizeof(d) / sizeof(d[0]);
 	for(i = 0; i < max; ++i)
 	{
-		r = search(d[i].f_start, d[i].f_end, d[i].f_tld, d[i].f_length);
+		int const r = search(d[i].f_start, d[i].f_end, d[i].f_tld, d[i].f_length);
 		if(r != d[i].f_result)
 		{
 			fprintf(stderr, "error: test_search() failed with \"%s\", expected %d and got %d\n",

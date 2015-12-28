@@ -35,11 +35,12 @@ enum class name_t
 {
     SNAP_NAME_IMAGES_ACTION,
     SNAP_NAME_IMAGES_MODIFIED,
+    SNAP_NAME_IMAGES_PROCESS_IMAGE,
     SNAP_NAME_IMAGES_ROW,
     SNAP_NAME_IMAGES_SCRIPT,
     SNAP_NAME_IMAGES_SIGNAL_NAME
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class images_exception : public snap_exception
@@ -66,7 +67,10 @@ public:
 
 
 
-class images : public plugins::plugin, public server::backend_action, public path::path_execute
+class images
+        : public plugins::plugin
+        , public server::backend_action
+        , public path::path_execute
 {
 public:
     enum class virtual_path_t
@@ -79,21 +83,39 @@ public:
                         images();
                         ~images();
 
+    // plugins implementation
     static images *     instance();
+    virtual QString     settings_path() const;
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_register_backend_action(server::backend_action_map_t& actions);
-    void                on_versions_libraries(filter::filter::token_info_t & token);
-    virtual char const *get_signal_name(QString const & action) const;
+    // server::backend_action implementation
     virtual void        on_backend_action(QString const & action);
+
+    // server signals
+    void                on_attach_to_session();
+    void                on_register_backend_cron(server::backend_action_set & actions);
+    void                on_register_backend_action(server::backend_action_set & actions);
+
+    // links signals
+    void                on_modified_link(links::link_info const & src);
+
+    // path::path_execute implementation
     virtual bool        on_path_execute(content::path_info_t & ipath);
 
+    // path signals
     void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+
+    // versions signals
+    void                on_versions_libraries(filter::filter::token_info_t & token);
+
+    // content signals
     void                on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
     void                on_modified_content(content::path_info_t & ipath);
-    void                on_attach_to_session();
+
+    // listener signals
     void                on_listener_check(snap_uri const & uri, content::path_info_t & page_ipath, QDomDocument doc, QDomElement result);
 
     Magick::Image       apply_image_script(QString const & script, content::path_info_t::map_path_info_t image_ipaths);
@@ -105,7 +127,7 @@ private:
 
     struct parameters_t
     {
-        QStringList                             f_params;
+        snap_string_list                        f_params;
         images_t                                f_image_stack;
         content::path_info_t::map_path_info_t   f_image_ipaths;
         QString                                 f_command; // mainly for errors
@@ -124,19 +146,48 @@ private:
     void                content_update(int64_t variables_timestamp);
     int64_t             transform_images();
     bool                do_image_transformations(QString const & image_key);
+    bool                get_color(QString str, Magick::Color & color);
 
     bool                func_alpha(parameters_t & params);
+    bool                func_background_color(parameters_t & params);
+    bool                func_blur(parameters_t & params);
+    bool                func_border(parameters_t & params);
+    bool                func_border_color(parameters_t & params);
+    bool                func_charcoal(parameters_t & params);
+    bool                func_composite(parameters_t & params);
+    bool                func_contrast(parameters_t & params);
     bool                func_create(parameters_t & params);
+    bool                func_crop(parameters_t & params);
     bool                func_density(parameters_t & params);
+    bool                func_emboss(parameters_t & params);
+    bool                func_erase(parameters_t & params);
+    bool                func_flip(parameters_t & params);
+    bool                func_flop(parameters_t & params);
+    bool                func_hash(parameters_t & params);
+    bool                func_matte_color(parameters_t & params);
+    bool                func_modulate(parameters_t & params);
+    bool                func_negate(parameters_t & params);
+    bool                func_normalize(parameters_t & params);
+    bool                func_oil_paint(parameters_t & params);
+    bool                func_on_error(parameters_t & params);
     bool                func_pop(parameters_t & params);
     bool                func_read(parameters_t & params);
+    bool                func_reduce_noise(parameters_t & params);
     bool                func_resize(parameters_t & params);
+    bool                func_rotate(parameters_t & params);
+    bool                func_shade(parameters_t & params);
+    bool                func_shadow(parameters_t & params);
+    bool                func_sharpen(parameters_t & params);
+    bool                func_shear(parameters_t & params);
+    bool                func_solarize(parameters_t & params);
     bool                func_swap(parameters_t & params);
+    bool                func_trim(parameters_t & params);
     bool                func_write(parameters_t & params);
 
     zpsnap_child_t                  f_snap;
     snap_backend::zpsnap_backend_t  f_backend;
     controlled_vars::fbool_t        f_ping_backend;
+    QString                         f_on_error; // execute this script on errors
 
     static images::func_t const     g_commands[];
     static int const                g_commands_size;

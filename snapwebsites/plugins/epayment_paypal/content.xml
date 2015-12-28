@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="editor::layout" revision="global" overwrite="yes">"epayment-paypal-settings-page";</param>
     <param name="layout::layout" revision="global" overwrite="yes">"epayment-paypal-settings-parser";</param>
+    <param name="content::cache_control" revision="global" overwrite="yes">no-store</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/epayment/paypal" owner="epayment_paypal">
@@ -80,6 +81,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </attachment>
   </content>
   <content path="/images/epayment" owner="output">
+    <attachment name="paypal-logo" type="attachment/public">
+      <path>:/images/epayment/paypal-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
     <attachment name="paypal" type="attachment/public">
       <path>:/images/epayment/paypal.png</path>
       <mime-type>image/png</mime-type>

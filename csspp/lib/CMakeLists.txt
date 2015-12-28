@@ -45,7 +45,18 @@ add_library( ${PROJECT_NAME} SHARED
     color.cpp                                   # Manager RGBA colors
     compiler.cpp                                # Work on a tree of node to make it CSS compatible
     error.cpp                                   # Print out error messages
-    expression.cpp                              # Reduce expressions
+    expression.cpp                              # Reduce expressions, public functions
+    expr_additive.cpp                           # Reduce additivice expressions
+    expr_conditional.cpp                        # Reduce conditional expressions
+    expr_equality.cpp                           # Reduce equality expressions
+    expr_list.cpp                               # Reduce list expressions
+    expr_logical_and.cpp                        # Reduce logical and expressions
+    expr_logical_or.cpp                         # Reduce logical or expressions
+    expr_multiplicative.cpp                     # Reduce multiplicative expressions
+    expr_power.cpp                              # Reduce power expressions
+    expr_relational.cpp                         # Reduce relational expressions
+    expr_unary.cpp                              # Reduce unary expressions
+    internal_functions.cpp                      # Expression internal function handling
     lexer.cpp                                   # Transform input in tokens
     node.cpp                                    # Holds the data read
     nth_child.cpp                               # Manage An+B
@@ -64,7 +75,10 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 )
 
 install(
-    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
+    TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
 )
 
 install(

@@ -154,13 +154,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/types/permissions/rights/edit">
     <param name="content::title" revision="revision">Edit Right</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Edit content.</p><p>The main edit is only assigned to a root user. The edit allows the root user to edit anything that is not locked internally. Note that does not allow the root user to delete something without putting it in a trashcan first.</p>]]>
+      <![CDATA[<p>Edit content.</p><p>The main edit is only assigned to a root user. The edit allows the root user to edit anything that is not locked internally.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/delete">
     <param name="content::title" revision="revision">Delete Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Delete content.</p><p>The main delete is only assigned to a root user. The delete allows the root user to delete anything that is not locked internally. Note that does not allow the root user to delete something without putting it in a trashcan first.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/restore">
+    <param name="content::title" revision="revision">Restore Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Restore content.</p><p>The main restore is only assigned to a root user. The restore allows the root user to restore a page that was previously deleted.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view">
@@ -206,6 +212,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::title" revision="revision">Delete Action</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Delete content. Deletion requires rights by all the concerned plugins since that's a pretty dramatic action. For example, a scheduler plugin could prevent the deletion until the page was published for a while and automatically unpublished. Before then the deletion is forbidden.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions/restore">
+    <param name="content::title" revision="revision">Restore Action</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Restore content. Restore allows an administrator to restore a page that was previously deleted. Often an "Undelete Page" button appears in a deleted page to allow users to easily restore a page.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/actions/edit">
@@ -271,8 +283,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Group used by managers. Managers are linked to one specific website and they can do pretty much anything they want in that website except editing some top level system pages. In most cases, site owners are assigned the administrator group.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/administrator</link>
+    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
+    <link name="permissions::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
     <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
+    <link name="permissions::action::restore" to="permissions::link_back" mode="*:*">/types/permissions/rights/restore</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor">
     <param name="content::title" revision="revision">Editor Group</param>
@@ -307,20 +324,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/secure</link>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/secure</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
+    <remove-link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</remove-link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user">
-    <param name="content::title" revision="revision">Visitor Group</param>
+    <param name="content::title" revision="revision">Returning Registered User Group</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+      <![CDATA[<p>Groups that can be used to manager permissions on the set of users who are registered, came back, and are not currently logged in.</p>]]>
     </param>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/private</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor">
-    <param name="content::title" revision="revision">Visitor Group</param>
+    <param name="content::title" revision="revision">Returning Visitor Group</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
+      <![CDATA[<p>Groups that can be used to manager permissions on the set of users who came to your website before and came back for a visit.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor">
@@ -341,6 +358,56 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Spammers are blocked from nearly everything. We just show them our home page, privacy policy, and terms and conditions. It won't help them though.</p>]]>
     </param>
     <link name="permissions::action::view" to="permissions::link_action" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+  </content>
+  <!--
+    STATUS
+
+    The following list defines the basic content status because a user
+    must have enough permission to access a certain status other than
+    normal. The normal status is included for completeness, but it will
+    not be checked in the permissions.
+  -->
+  <content path="/types/permissions/status">
+    <param name="content::title" revision="revision">Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The status of a page defines a permission that a user must have to access a page having that status.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/unknown">
+    <param name="content::title" revision="revision">Unknown Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The unknown status should never happen. This generally means something went wrong so giving permission to this state is not safe in regard to your database stability.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/create">
+    <param name="content::title" revision="revision">Create Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The create status represents a page being created. The page is not complete yet and it should not be accessed until marked with another status. The backend will automatically change pages with invalid status, including the "create" status to another status if they stay in that state for more than 10 minutes.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/normal">
+    <param name="content::title" revision="revision">Normal Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The normal status is generally not used because anyone has access to the normal status, so to save time we do not give that permission and as a result we cannot require the user to have this permission.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/hidden">
+    <param name="content::title" revision="revision">Hidden Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The hidden status is normally offered to administrators so they can access their hidden pages. Other users will get a 404 instead.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/moved">
+    <param name="content::title" revision="revision">Moved Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The moved status is often given to all maintainers of a website. Other users get redirected from those pages so having a permission does not matter anyway.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/status/deleted">
+    <param name="content::title" revision="revision">Deleted Status</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The deleted status allows a user to access a deleted page. However, the system handles this pages differently, creating a 404 error and a signature with a link to allow administrators to restore such a page.</p>]]>
+    </param>
   </content>
 
   <!-- User specific entries (put here to avoid a loop between permissions and users plugins) -->
@@ -371,6 +438,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Each users gets a permission created under this permission path and that allows the system to give that very user specific rights instead of using the groups that give all users of that group those rights. Note that here we do not create sub-groups.</p>]]>
     </param>
+  </content>
+
+  <!-- Code to exit from an IFRAME when a login is required -->
+  <content path="/remove-iframe-for-login" owner="output">
+    <param name="content::title" revision="revision">Remove IFRAME for Login</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>This page is used to force the removal of the IFRAME before a login. The permission plugin detects such when a request is made with a query string defined as "iframe=true".</p>]]>
+    </param>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+  </content>
+  <content path="/js/permissions">
+    <param name="content::title" revision="revision">Permissions JavaScripts</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>JavaScripts for the permissions plugin.</p>]]>
+    </param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="remove-iframe-for-login" type="attachment/public">
+      <path>:/js/permissions/remove-iframe-for-login.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>output (&gt;= 0.1.5.70)</dependency>
+    </attachment>
   </content>
 
 </snap-tree>

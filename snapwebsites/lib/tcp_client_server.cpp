@@ -17,14 +17,19 @@
 
 #include "tcp_client_server.h"
 
+#include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
-#include <iostream>
 #include <sstream>
 
-#include <string.h>
-#include <unistd.h>
 #include <netdb.h>
+#include <netinet/tcp.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "poison.h"
 
@@ -119,14 +124,62 @@ void bio_initialize()
 }
 
 
-
-void bio_deleter(BIO *bio)
+/** \brief Free a BIO object.
+ *
+ * This deleter is used to make sure that the BIO object gets freed
+ * whenever the object holding it gets destroyed.
+ *
+ * Note that deleting a BIO connection calls shutdown() and close()
+ * on the socket. In other words, it hangs up.
+ *
+ * \param[in] bio  The BIO object to be freed.
+ */
+void bio_deleter(BIO * bio)
 {
+    // IMPORTANT NOTE:
+    //
+    //   The following is terribly ugly, unfortunately, the BIO_free_all()
+    //   function does this:
+    //
+    //      shutdown(s, SHUT_RDWR);
+    //      close(s);
+    //
+    //   instead of just the expected close(s). This means it destroys the
+    //   connection. In general, that's not the end of the world, but in our
+    //   case, since we often create a socket in a parent, then fork(),
+    //   the parent or child (whoever wants to close the socket on their
+    //   end) is likely to destroy the socket communication for both
+    //   parties.
+    //
+    //   Now, the good thing is that when applied in the following order,
+    //   the shutdown() does nothing:
+    //
+    //      close(s);
+    //      shutdown(s); // err, ignore
+    //      close(s);    // err, ignore
+    //
+    //   Therefore we force a close ahead of time.
+    //
+    int c;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+    BIO_get_fd(bio, &c);
+#pragma GCC diagnostic pop
+    if(c != -1)
+    {
+        close(c);
+    }
+
     BIO_free_all(bio);
 }
 
 
-void ssl_ctx_deleter(SSL_CTX *ssl_ctx)
+/** \brief Free an SSL_CTX object.
+ *
+ * This deleter is used to make sure that the SSL_CTX object gets
+ * freed whenever the object holding it gets destroyed.
+ */
+void ssl_ctx_deleter(SSL_CTX * ssl_ctx)
 {
     SSL_CTX_free(ssl_ctx);
 }
@@ -168,7 +221,7 @@ void ssl_ctx_deleter(SSL_CTX *ssl_ctx)
  * \param[in] addr  The address of the server to connect to. It must be valid.
  * \param[in] port  The port the server is listening on.
  */
-tcp_client::tcp_client(std::string const& addr, int port)
+tcp_client::tcp_client(std::string const & addr, int port)
     : f_socket(-1)
     , f_port(port)
     , f_addr(addr)
@@ -194,17 +247,23 @@ tcp_client::tcp_client(std::string const& addr, int port)
     int r(getaddrinfo(addr.c_str(), port_str.c_str(), &hints, &addr_info.f_addrinfo));
     if(r != 0 || addr_info.f_addrinfo == nullptr)
     {
+        int const e(errno);
+        SNAP_LOG_FATAL("getaddrinfo() failed to parse the address and port strings (errno: ")(e)(" -- ")(strerror(e))(")");
         throw tcp_client_server_runtime_error("invalid address or port: \"" + addr + ":" + port_str + "\"");
     }
 
     f_socket = socket(addr_info.f_addrinfo->ai_family, SOCK_STREAM, IPPROTO_TCP);
     if(f_socket < 0)
     {
+        int const e(errno);
+        SNAP_LOG_FATAL("socket() failed to create a socket descriptor (errno: ")(e)(" -- ")(strerror(e))(")");
         throw tcp_client_server_runtime_error("could not create socket for client");
     }
 
     if(connect(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)
     {
+        int const e(errno);
+        SNAP_LOG_FATAL("connect() failed to connect a socket (errno: ")(e)(" -- ")(strerror(e))(")");
         close(f_socket);
         throw tcp_client_server_runtime_error("could not connect client socket to \"" + f_addr + "\"");
     }
@@ -213,6 +272,10 @@ tcp_client::tcp_client(std::string const& addr, int port)
 /** \brief Clean up the TCP client object.
  *
  * This function cleans up the TCP client object by closing the attached socket.
+ *
+ * \note
+ * DO NOT use the shutdown() call since we may end up forking and using
+ * that connection in the child.
  */
 tcp_client::~tcp_client()
 {
@@ -443,15 +506,15 @@ int tcp_client::write(const char *buf, size_t size)
  * \param[in] port  The port to listen on.
  * \param[in] max_connections  The number of connections to keep in the listen queue.
  * \param[in] reuse_addr  Whether to mark the socket with the SO_REUSEADDR flag.
- * \param[in] auto_close  Automatically close the the client socket in accept and the destructor.
+ * \param[in] auto_close  Automatically close the client socket in accept and the destructor.
  */
-tcp_server::tcp_server(const std::string& addr, int port, int max_connections, bool reuse_addr, bool auto_close)
+tcp_server::tcp_server(std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
     : f_max_connections(max_connections < 1 ? MAX_CONNECTIONS : max_connections)
-    , f_socket(-1)
+    //, f_socket(-1) -- auto-init
     , f_port(port)
     , f_addr(addr)
-    , f_accepted_socket(-1)
-    , f_keepalive(true)
+    //, f_accepted_socket(-1) -- auto-init
+    //, f_keepalive(true) -- auto-init
     , f_auto_close(auto_close)
 {
     if(f_addr.empty())
@@ -484,6 +547,8 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
     f_socket = socket(addr_info.f_addrinfo->ai_family, SOCK_STREAM, IPPROTO_TCP);
     if(f_socket < 0)
     {
+        int const e(errno);
+        SNAP_LOG_FATAL("socket() failed to create a socket descriptor (errno: ")(e)(" -- ")(strerror(e))(")");
         throw tcp_client_server_runtime_error("could not create socket for client");
     }
 
@@ -494,11 +559,12 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
         // if this fails, we ignore the error (TODO log an INFO message)
         int optval(1);
         socklen_t const optlen(sizeof(optval));
-        static_cast<void>(setsockopt(f_socket, SOL_SOCKET, SO_REUSEADDR, &optval, optlen));
+        snap::NOTUSED(setsockopt(f_socket, SOL_SOCKET, SO_REUSEADDR, &optval, optlen));
     }
 
     if(bind(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)
     {
+        close(f_socket);
         throw tcp_client_server_runtime_error("could not bind the socket to \"" + f_addr + "\"");
     }
 
@@ -506,6 +572,7 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
     // acquire connections
     if(listen(f_socket, f_max_connections) < 0)
     {
+        close(f_socket);
         throw tcp_client_server_runtime_error("could not listen to the socket bound to \"" + f_addr + "\"");
     }
 }
@@ -517,6 +584,10 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
  *
  * If the \p auto_close parameter was set to true in the constructor, then
  * the last accepter socket gets closed by this function.
+ *
+ * \note
+ * DO NOT use the shutdown() call since we may end up forking and using
+ * that connection in the child.
  */
 tcp_server::~tcp_server()
 {
@@ -614,7 +685,7 @@ bool tcp_server::get_keepalive() const
  * \param[in] yes  Whether to keep new connections alive even when no traffic
  * goes through.
  */
-void tcp_server::keepalive(bool yes)
+void tcp_server::set_keepalive(bool yes)
 {
     f_keepalive = yes;
 }
@@ -657,7 +728,13 @@ void tcp_server::keepalive(bool yes)
  * information immediately, otherwise it is cleaner to always block those
  * signals.)
  *
- * \param[in] max_wait_ms  The maximum number of milliseconds to wait for a message. If set to -1 (the default), accept() will block indefintely.
+ * \note
+ * DO NOT use the shutdown() call since we may end up forking and using
+ * that connection in the child.
+ *
+ * \param[in] max_wait_ms  The maximum number of milliseconds to wait for
+ *            a message. If set to -1 (the default), accept() will block
+ *            indefintely.
  *
  * \return A client socket descriptor or -1 if an error occured, -2 if timeout and max_wait is set.
  */
@@ -717,10 +794,13 @@ int tcp_server::accept( int const max_wait_ms )
     // mark the new connection with the SO_KEEPALIVE flag
     if(f_accepted_socket != -1 && f_keepalive)
     {
-        // if this fails, we ignore the error (TODO log an INFO message)
+        // if this fails, we ignore the error, but still log the event
         int optval(1);
         socklen_t const optlen(sizeof(optval));
-        static_cast<void>(setsockopt(f_accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen));
+        if(setsockopt(f_accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
+        {
+            SNAP_LOG_WARNING("tcp_server::accept(): an error occurred trying to mark accepted socket with SO_KEEPALIVE.");
+        }
     }
 
     return f_accepted_socket;
@@ -775,6 +855,10 @@ int tcp_server::get_last_accepted_socket() const
  * the connection to the server can be obtained even if a secure
  * connection could not be made to work.
  *
+ * \todo
+ * Create another client with BIO_new_socket() so one can create an SSL
+ * connection with a socket retrieved from an accept() call.
+ *
  * \exception tcp_client_server_parameter_error
  * This exception is raised if the \p port parameter is out of range or the
  * IP address is an empty string or otherwise an invalid address.
@@ -787,11 +871,9 @@ int tcp_server::get_last_accepted_socket() const
  * \param[in] port  The port the server is listening on.
  * \param[in] mode  Whether to use SSL when connecting.
  */
-bio_client::bio_client(std::string const& addr, int port, mode_t mode)
+bio_client::bio_client(std::string const & addr, int port, mode_t mode)
     //: f_bio(nullptr) -- auto-init
     //, f_ssl_ctx(nullptr) -- auto-init
-    //, f_port(port)
-    //, f_addr(addr)
 {
     if(port < 0 || port >= 65536)
     {
@@ -833,7 +915,7 @@ bio_client::bio_client(std::string const& addr, int port, mode_t mode)
             }
 
             // verify that the connection worked
-            SSL *ssl(nullptr);
+            SSL * ssl(nullptr);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
             BIO_get_ssl(bio.get(), &ssl);
@@ -942,11 +1024,28 @@ bio_client::~bio_client()
 }
 
 
+/** \brief Close the connection.
+ *
+ * This function closes the connection by losing the f_bio object.
+ *
+ * As we are at it, we also lose the SSL context since we are not going
+ * to use it anymore either.
+ */
+void bio_client::close()
+{
+    f_bio.reset();
+    f_ssl_ctx.reset();
+}
+
+
 /** \brief Get the socket descriptor.
  *
  * This function returns the TCP client socket descriptor. This can be
  * used to change the descriptor behavior (i.e. make it non-blocking for
  * example.)
+ *
+ * \note
+ * If the socket was closed, then the function returns -1.
  *
  * \warning
  * This socket is generally managed by the BIO library and thus it may
@@ -957,12 +1056,17 @@ bio_client::~bio_client()
  */
 int bio_client::get_socket() const
 {
-    int c;
+    if(f_bio)
+    {
+        int c;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-    BIO_get_fd(f_bio.get(), &c);
+        BIO_get_fd(f_bio.get(), &c);
 #pragma GCC diagnostic pop
-    return c;
+        return c;
+    }
+
+    return -1;
 }
 
 
@@ -972,11 +1076,19 @@ int bio_client::get_socket() const
  * Note that this is the port the server is listening to and not the port
  * the TCP client is currently connected to.
  *
+ * \note
+ * If the connection was closed, return -1.
+ *
  * \return The TCP client port.
  */
 int bio_client::get_port() const
 {
-    return BIO_get_conn_int_port(f_bio.get());
+    if(f_bio)
+    {
+        return BIO_get_conn_int_port(f_bio.get());
+    }
+
+    return -1;
 }
 
 
@@ -989,11 +1101,19 @@ int bio_client::get_port() const
  *
  * Use the get_socket_name() function to retrieve the client's TCP address.
  *
+ * \note
+ * If the connection was closed, this function returns "".
+ *
  * \return The TCP client address.
  */
 std::string bio_client::get_addr() const
 {
-    return BIO_get_conn_hostname(f_bio.get());
+    if(f_bio)
+    {
+        return BIO_get_conn_hostname(f_bio.get());
+    }
+
+    return "";
 }
 
 
@@ -1006,9 +1126,17 @@ std::string bio_client::get_addr() const
  */
 int bio_client::get_client_port() const
 {
+    // get_socket() returns -1 if f_bio is nullptr
+    //
+    int const s(get_socket());
+    if(s < 0)
+    {
+        return -1;
+    }
+
     struct sockaddr addr;
     socklen_t len(sizeof(addr));
-    int const r(getsockname(get_socket(), &addr, &len));
+    int const r(getsockname(s, &addr, &len));
     if(r != 0)
     {
         return -1;
@@ -1038,13 +1166,25 @@ int bio_client::get_client_port() const
  * This function retrieve the IP address of the client (your computer).
  * This is retrieved from the socket using the getsockname() function.
  *
+ * \note
+ * The function returns an empty string if the connection was lost
+ * or purposefully closed.
+ *
  * \return The IP address as a string.
  */
 std::string bio_client::get_client_addr() const
 {
+    // the socket may be invalid, i.e. f_bio may have been deallocated.
+    //
+    int const s(get_socket());
+    if(s < 0)
+    {
+        return std::string();
+    }
+
     struct sockaddr addr;
     socklen_t len(sizeof(addr));
-    int const r(getsockname(get_socket(), &addr, &len));
+    int const r(getsockname(s, &addr, &len));
     if(r != 0)
     {
         throw tcp_client_server_runtime_error("failed reading address");
@@ -1053,10 +1193,12 @@ std::string bio_client::get_client_addr() const
     switch(addr.sa_family)
     {
     case AF_INET:
+        // TODO: verify that 'r' >= sizeof(something)
         inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in *>(&addr)->sin_addr, buf, sizeof(buf));
         break;
 
     case AF_INET6:
+        // TODO: verify that 'r' >= sizeof(something)
         inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 *>(&addr)->sin6_addr, buf, sizeof(buf));
         break;
 
@@ -1081,6 +1223,9 @@ std::string bio_client::get_client_addr() const
  * The function returns -1 if an error occurs. The error is available in
  * errno as expected in the POSIX interface.
  *
+ * \note
+ * If the connection was closed, this function returns -1.
+ *
  * \warning
  * When the function returns zero, it is likely that the server closed
  * the connection. It may also be that the buffer was empty and that
@@ -1100,9 +1245,14 @@ std::string bio_client::get_client_addr() const
  * \sa read_line()
  * \sa write()
  */
-int bio_client::read(char *buf, size_t size)
+int bio_client::read(char * buf, size_t size)
 {
-    int r(static_cast<int>(BIO_read(f_bio.get(), buf, size)));
+    if(!f_bio)
+    {
+        return -1;
+    }
+
+    int const r(static_cast<int>(BIO_read(f_bio.get(), buf, size)));
     if(r <= -2)
     {
         // the BIO is not implemented
@@ -1134,6 +1284,9 @@ int bio_client::read(char *buf, size_t size)
  * The function may return 0 (an empty string) when the server closes
  * the connection.
  *
+ * \note
+ * If the connection was closed then this function returns -1.
+ *
  * \warning
  * A return value of zero can mean "empty line" and not end of file. It
  * is up to you to know whether your protocol allows for empty lines or
@@ -1148,7 +1301,7 @@ int bio_client::read(char *buf, size_t size)
  *
  * \sa read()
  */
-int bio_client::read_line(std::string& line)
+int bio_client::read_line(std::string & line)
 {
     line.clear();
     int len(0);
@@ -1185,6 +1338,9 @@ int bio_client::read_line(std::string& line)
  * The function returns -1 if an error occurs. The error is available in
  * errno as expected in the POSIX interface.
  *
+ * \note
+ * If the connection was closed, return -1.
+ *
  * \todo
  * At this point, I do not know for sure whether errno is properly set
  * or not. It is not unlikely that the BIO library does not keep a clean
@@ -1198,9 +1354,14 @@ int bio_client::read_line(std::string& line)
  *
  * \sa read()
  */
-int bio_client::write(const char *buf, size_t size)
+int bio_client::write(char const * buf, size_t size)
 {
-    int r(static_cast<int>(BIO_write(f_bio.get(), buf, size)));
+    if(!f_bio)
+    {
+        return -1;
+    }
+
+    int const r(static_cast<int>(BIO_write(f_bio.get(), buf, size)));
     if(r <= -2)
     {
         // the BIO is not implemented
@@ -1219,6 +1380,453 @@ int bio_client::write(const char *buf, size_t size)
     }
     BIO_flush(f_bio.get());
     return r;
+}
+
+
+/** \brief Check wether a string represents an IPv4 address.
+ *
+ * This function quickly checks whether the specified string defines a
+ * valid IPv4 address. It supports all classes (a.b.c.d, a.b.c., a.b, a)
+ * and all numbers can be in decimal, hexadecimal, or octal.
+ *
+ * \note
+ * The function can be called with a null pointer in which case it
+ * immediate returns false.
+ *
+ * \param[in] ip  A pointer to a string holding an address.
+ *
+ * \return true if the \p ip string represents an IPv4 address.
+ *
+ * \sa snap_inet::inet_pton_v6()
+ */
+bool is_ipv4(char const * ip)
+{
+    if(ip == nullptr)
+    {
+        return false;
+    }
+
+    // we must have (1) a number then (2) a dot or end of string
+    // with a maximum of 4 numbers and 3 dots
+    //
+    int64_t addr[4];
+    size_t pos(0);
+    for(;; ++ip, ++pos)
+    {
+        if(*ip < '0' || *ip > '9' || pos >= sizeof(addr) / sizeof(addr[0]))
+        {
+            // not a valid number
+            return false;
+        }
+        int64_t value(0);
+
+        // number, may be decimal, octal, or hexadecimal
+        if(*ip == '0')
+        {
+            if(ip[1] == 'x' || ip[1] == 'X')
+            {
+                // expect hexadecimal
+                bool first(true);
+                for(ip += 2;; ++ip, first = false)
+                {
+                    if(*ip >= '0' && *ip <= '9')
+                    {
+                        value = value * 16 + *ip - '0';
+                    }
+                    else if(*ip >= 'a' && *ip <= 'f')
+                    {
+                        value = value * 16 + *ip - 'a' + 10;
+                    }
+                    else if(*ip >= 'A' && *ip <= 'F')
+                    {
+                        value = value * 16 + *ip - 'A' + 10;
+                    }
+                    else
+                    {
+                        if(first)
+                        {
+                            // not even one digit, not good
+                            return false;
+                        }
+                        // not valid hexadecimal, may be '.' or '\0' (tested below)
+                        break;
+                    }
+                    if(value >= 0x100000000)
+                    {
+                        // too large even if we have no dots
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                // expect octal
+                for(++ip; *ip >= '0' && *ip <= '8'; ++ip)
+                {
+                    value = value * 8 + *ip - '0';
+                    if(value >= 0x100000000)
+                    {
+                        // too large even if we have no dots
+                        return false;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // expect decimal
+            for(; *ip >= '0' && *ip <= '9'; ++ip)
+            {
+                value = value * 10 + *ip - '0';
+                if(value >= 0x100000000)
+                {
+                    // too large even if we have no dots
+                    return false;
+                }
+            }
+        }
+//std::cerr << "value[" << pos << "] = " << value << "\n";
+        addr[pos] = value;
+        if(*ip != '.')
+        {
+            if(*ip != '\0')
+            {
+                return false;
+            }
+            ++pos;
+            break;
+        }
+    }
+
+//std::cerr << "pos = " << pos << "\n";
+    switch(pos)
+    {
+    case 1:
+        // one large value is considered valid for IPv4
+        // max. was already checked
+        return true;
+
+    case 2:
+        return addr[0] < 256 && addr[1] < 0x1000000;
+
+    case 3:
+        return addr[0] < 256 && addr[1] < 256 && addr[2] < 0x10000;
+
+    case 4:
+        return addr[0] < 256 && addr[1] < 256 && addr[2] < 256 && addr[3] < 256;
+
+    //case 0: (can happen on empty string)
+    default:
+        // no values, that is incorrect!?
+        return false;
+
+    }
+
+    snap::NOTREACHED();
+}
+
+
+/** \brief Check wether a string represents an IPv6 address.
+ *
+ * This function quickly checks whether the specified string defines a
+ * valid IPv6 address. It supports the IPv4 notation at times used
+ * inside an IPv6 notation.
+ *
+ * \note
+ * The function can be called with a null pointer in which case it
+ * immediate returns false.
+ *
+ * \param[in] ip  A pointer to a string holding an address.
+ *
+ * \return true if the \p ip string represents an IPv6 address.
+ */
+bool is_ipv6(char const * ip)
+{
+    if(ip == nullptr)
+    {
+        return false;
+    }
+
+    // an IPv6 is a set of 16 bit numbers separated by colon
+    // the last two numbers can represented in dot notation (ipv4 class a)
+    //
+    bool found_colon_colon(false);
+    int count(0);
+    if(*ip == ':'
+    && ip[1] == ':')
+    {
+        found_colon_colon = true;
+        ip += 2;
+    }
+    for(; *ip != '\0'; ++ip)
+    {
+        if(count >= 8)
+        {
+            return false;
+        }
+
+        // all numbers are in hexadecimal
+        int value(0);
+        bool first(true);
+        for(;; ++ip, first = false)
+        {
+            if(*ip >= '0' && *ip <= '9')
+            {
+                value = value * 16 + *ip - '0';
+            }
+            else if(*ip >= 'a' && *ip <= 'f')
+            {
+                value = value * 16 + *ip - 'a' + 10;
+            }
+            else if(*ip >= 'A' && *ip <= 'F')
+            {
+                value = value * 16 + *ip - 'A' + 10;
+            }
+            else
+            {
+                if(first)
+                {
+                    // not even one digit, not good
+                    return false;
+                }
+                // not valid hexadecimal, may be ':' or '\0' (tested below)
+                break;
+            }
+            if(value >= 0x10000)
+            {
+                // too large, must be 16 bit numbers
+                return false;
+            }
+        }
+        ++count;
+//std::cerr << count << ". value=" << value << " -> " << static_cast<int>(*ip) << "\n";
+        if(*ip == '\0')
+        {
+            break;
+        }
+
+        // note: if we just found a '::' then here *ip == ':' still
+        if(*ip == '.')
+        {
+            // if we have a '.' we must end with an IPv4 and we either
+            // need found_colon_colon to be true or the count must be
+            // exactly 6 (1 "missing" colon)
+            //
+            if(!found_colon_colon
+            && count != 7)  // we test with 7 because the first IPv4 number was already read
+            {
+                return false;
+            }
+            // also the value is 0 to 255 or it's an error too, but the
+            // problem here is that we need a decimal number and we just
+            // checked it as an hexadecimal...
+            //
+            if((value & 0x00f) >= 0x00a
+            || (value & 0x0f0) >= 0x0a0
+            || (value & 0xf00) >= 0xa00)
+            {
+                return false;
+            }
+            // transform back to a decimal number to verify the max.
+            //
+            value = (value & 0x00f) + (value & 0x0f0) / 16 * 10 + (value & 0xf00) / 256 * 100;
+            if(value > 255)
+            {
+                return false;
+            }
+            // now check the other numbers
+            int pos(1); // start at 1 since we already have 1 number checked
+            for(++ip; *ip != '\0'; ++ip, ++pos)
+            {
+                if(*ip < '0' || *ip > '9' || pos >= 4)
+                {
+                    // not a valid number
+                    return false;
+                }
+
+                // only expect decimal in this case in class d (a.b.c.d)
+                value = 0;
+                for(; *ip >= '0' && *ip <= '9'; ++ip)
+                {
+                    value = value * 10 + *ip - '0';
+                    if(value > 255)
+                    {
+                        // too large
+                        return false;
+                    }
+                }
+
+                if(*ip != '.')
+                {
+                    if(*ip != '\0')
+                    {
+                        return false;
+                    }
+                    break;
+                }
+            }
+
+            // we got a valid IPv4 at the end of IPv6 and we
+            // found the '\0' so we are all good...
+            //
+            return true;
+        }
+
+        if(*ip != ':')
+        {
+            return false;
+        }
+
+        // double colon?
+        if(ip[1] == ':')
+        {
+            if(!found_colon_colon && count < 6)
+            {
+                // we can accept one '::'
+                ++ip;
+                found_colon_colon = true;
+            }
+            else
+            {
+                // a second :: is not valid for an IPv6
+                return false;
+            }
+        }
+    }
+
+    return count == 8 || (count >= 1 && found_colon_colon);
+}
+
+
+/** \brief Retrieve an address and a port from a string.
+ *
+ * This function breaks up an address and a port number from a string.
+ *
+ * The address can either be an IPv4 address followed by a colon and
+ * the port number, or an IPv6 address written between square brackets
+ * ([::1]) followed by a colon and the port number. We also support
+ * just a port specification as in ":4040".
+ *
+ * Port numbers are limited to a number between 1 and 65535 inclusive.
+ * They can only be specified in base 10.
+ *
+ * The port is optional only if a \p default_port is provided (by
+ * default the \p default_port parameter is set to zero meaning that
+ * it is not specified.)
+ *
+ * If the addr_port string is empty, then the addr and port parameters
+ * are not modified, which means you want to define them with defaults
+ * before calling this function.
+ *
+ * \exception snapwebsites_exception_invalid_parameters
+ * If any parameter is considered invalid (albeit the validity of the
+ * address is not checked since it could be a fully qualified domain
+ * name) then this exception is raised.
+ *
+ * \param[in] addr_port  The address and port pair.
+ * \param[in,out] addr  The address part, without the square brackets for
+ *                IPv6 addresses.
+ * \param[in,out] port  The port number (1 to 65535 inclusive.)
+ * \param[in] protocol  The protocol for the port (i.e. "tcp" or "udp")
+ */
+void get_addr_port(QString const & addr_port, QString & addr, int & port, char const * protocol)
+{
+    // if there is a colon, we may have a port or IPv6
+    //
+    int const p(addr_port.lastIndexOf(":"));
+    if(p != -1)
+    {
+        QString port_str;
+
+        // if there is a ']' then we have an IPv6
+        //
+        int const bracket(addr_port.lastIndexOf("]"));
+        if(bracket != -1)
+        {
+            // we must have a starting '[' otherwise it is wrong
+            //
+            if(addr_port[0] != '[')
+            {
+                SNAP_LOG_FATAL("invalid address/port specification in \"")(addr_port)("\" (missing '[' at the start.)");
+                throw tcp_client_server_parameter_error("get_addr_port(): invalid [IPv6]:port specification, '[' missing.");
+            }
+
+            // extract the address
+            //
+            addr = addr_port.mid(1, bracket - 1); // exclude the '[' and ']'
+
+            // is there a port?
+            //
+            if(p == bracket + 1)
+            {
+                // IPv6 port specification is just after the ']'
+                //
+                port_str = addr_port.mid(p + 1); // ignore the ':'
+            }
+            else if(bracket != addr_port.length() - 1)
+            {
+                // the ']' is not at the very end when no port specified
+                //
+                SNAP_LOG_FATAL("invalid address/port specification in \"")(addr_port)("\" (']' is not at the end)");
+                throw tcp_client_server_parameter_error("get_addr_port(): invalid [IPv6]:port specification, ']' not at the end.");
+            }
+        }
+        else
+        {
+            // IPv4 port specification
+            //
+            if(p > 0)
+            {
+                // if p is zero, then we just had a port (:4040)
+                //
+                addr = addr_port.mid(0, p); // ignore the ':'
+            }
+            port_str = addr_port.mid(p + 1); // ignore the ':'
+        }
+
+        // if port_str is still empty, we had an IPv6 without port
+        //
+        if(!port_str.isEmpty())
+        {
+            // first check whether the port is a number
+            //
+            bool ok(false);
+            port = port_str.toInt(&ok, 10); // force base 10
+            if(!ok)
+            {
+                // not a valid number, try to get it from /etc/services
+                //
+                struct servent const * s(getservbyname(port_str.toUtf8().data(), protocol));
+                if(s == nullptr)
+                {
+                    SNAP_LOG_FATAL("invalid port specification in \"")(addr_port)("\", port not a decimal number nor a known service name.");
+                    throw tcp_client_server_parameter_error("get_addr_port(): invalid addr:port specification, port number or name is not valid.");
+                }
+                port = s->s_port;
+            }
+        }
+    }
+    else if(!addr_port.isEmpty())
+    {
+        // just an IPv4 address specified, no port
+        //
+        addr = addr_port;
+    }
+
+    // the address could end up being the empty string here
+    if(addr.isEmpty())
+    {
+        SNAP_LOG_FATAL("invalid address/port specification in \"")(addr_port)("\", address is empty.");
+        throw tcp_client_server_parameter_error("get_addr_port(): invalid addr:port specification, address is empty (this generally happens when a request is done with no default address).");
+    }
+
+    // finally verify that the port is in range
+    if(port <= 0
+    || port > 65535)
+    {
+        SNAP_LOG_FATAL("invalid address/port specification in \"")(addr_port)("\", port out of bounds.");
+        throw tcp_client_server_parameter_error("get_addr_port(): invalid addr:port specification, port number is out of bounds (1 .. 65535).");
+    }
 }
 
 

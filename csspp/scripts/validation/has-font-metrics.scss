@@ -15,7 +15,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-@if $field_name != "font" {
+@if $field_name != "font"
+{
     @error $field_name + " never includes a font metric parameter.";
 }
 

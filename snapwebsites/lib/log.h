@@ -49,7 +49,7 @@ enum class log_security_t
 class logger
 {
 public:
-                    logger(log_level_t log_level, char const * file = nullptr, char const * func = nullptr, int line = -1);
+                    logger(log_level_t const log_level, char const * file = nullptr, char const * func = nullptr, int const line = -1);
                     logger(logger const & l);
                     ~logger();
 
@@ -78,6 +78,9 @@ public:
     logger &        operator () (double const v);
     logger &        operator () (bool const v);
 
+protected:
+    mutable controlled_vars::flbool_t   f_ignore;
+
 private:
     typedef controlled_vars::limited_need_enum_init<log_security_t, log_security_t::LOG_SECURITY_NONE, log_security_t::LOG_SECURITY_SECURE> mlog_security_t;
     typedef controlled_vars::limited_need_enum_init<log_level_t, log_level_t::LOG_LEVEL_OFF, log_level_t::LOG_LEVEL_TRACE> mlog_level_t;
@@ -89,19 +92,22 @@ private:
     controlled_vars::mint32_t           f_line;
     mlog_security_t                     f_security;
     QString                             f_message;
-    mutable controlled_vars::flbool_t   f_ignore;
 };
 
+void set_progname               ( std::string const & progname );
+std::string get_progname        ();
 void configure_console          ();
 void configure_logfile          ( QString const & logfile  );
-void configure_conffile         ( QString const & filename );
-void configure_sysLog           ();
+void configure_syslog           ();
 void configure_server           ();
+void configure_conffile         ( QString const & filename );
 void unconfigure                ();
 void reconfigure                ();
 bool is_configured              ();
 void set_log_output_level       ( log_level_t level );
+void reduce_log_output_level    ( log_level_t level );
 bool is_loggingserver_available ( QString const & logserver );
+bool is_enabled_for             ( log_level_t const log_level );
 
 logger & operator << ( logger & l, QString const &                    msg );
 logger & operator << ( logger & l, std::basic_string<char> const &    msg );

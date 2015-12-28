@@ -73,8 +73,12 @@ add_library(output SHARED
     content.xml
     output.css
     close-button.png
+    plugin-icon-64x64.png
     progress.gif
+    snap-logo-64x64.png
     wait.gif
+    wait-rotate.png
+    wait-rotate-64x64.png
     jquery.js
     jquery-extensions.js
     output.js

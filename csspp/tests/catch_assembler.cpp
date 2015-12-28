@@ -77,254 +77,875 @@ bool is_valid_char(csspp::wide_char_t c)
 
 } // no name namespace
 
-TEST_CASE("Assemble Two Rules", "[assembler]")
+TEST_CASE("Assemble rules", "[assembler]")
 {
-    // with many spaces
-    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
-        i <= static_cast<int>(csspp::output_mode_t::TIDY);
-        ++i)
+    SECTION("with many spaces")
     {
-        std::stringstream ss;
-        ss << "div { color: black; }"
-           << "span { border: 3px solid #f7d0cf; }";
-        csspp::position pos("test.css");
-        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "div { color: black; }"
+               << "span { border: 3px solid complement(#f7d0cf); }"
+               << "p { font: 13px/135% sans-serif; }"
+               << "section { width: calc(30px - 5%); }";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
-        csspp::parser p(l);
+            csspp::parser p(l);
 
-        csspp::node::pointer_t n(p.stylesheet());
+            csspp::node::pointer_t n(p.stylesheet());
 
-        csspp::compiler c;
-        c.set_root(n);
-        c.add_path(csspp_test::get_script_path());
-        c.add_path(csspp_test::get_version_script_path());
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
 
-        c.compile(false);
+            c.compile(false);
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-        std::stringstream out;
-        csspp::assembler a(out);
-        a.output(n, static_cast<csspp::output_mode_t>(i));
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
 
 //std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
 
-        switch(static_cast<csspp::output_mode_t>(i))
-        {
-        case csspp::output_mode_t::COMPACT:
-            REQUIRE(out.str() ==
-"div { color: black }\n"
-"span { border: 3px solid #f7d0cf }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"div { color: #000 }\n"
+"span { border: 3px solid #cff6f7 }\n"
+"p { font: 13px/135% sans-serif }\n"
+"section { width: calc(30px - 5%) }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
-        case csspp::output_mode_t::COMPRESSED:
-            REQUIRE(out.str() ==
-"div{color:black}span{border:3px solid #f7d0cf}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"div{color:#000}span{border:3px solid #cff6f7}p{font:13px/135% sans-serif}section{width:calc(30px - 5%)}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
-        case csspp::output_mode_t::EXPANDED:
-            REQUIRE(out.str() ==
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
 "div\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "span\n"
 "{\n"
-"  border: 3px solid #f7d0cf;\n"
+"  border: 3px solid #cff6f7;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+"p\n"
+"{\n"
+"  font: 13px/135% sans-serif;\n"
+"}\n"
+"section\n"
+"{\n"
+"  width: calc(30px - 5%);\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
-        case csspp::output_mode_t::TIDY:
-            REQUIRE(out.str() ==
-"div{color:black}\n"
-"span{border:3px solid #f7d0cf}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"div{color:#000}\n"
+"span{border:3px solid #cff6f7}\n"
+"p{font:13px/135% sans-serif}\n"
+"section{width:calc(30px - 5%)}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
+            }
+
+            REQUIRE(c.get_root() == n);
         }
-
-        REQUIRE(c.get_root() == n);
     }
 
-    // test multiple declarations in one rule
-    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
-        i <= static_cast<int>(csspp::output_mode_t::TIDY);
-        ++i)
+    SECTION("test multiple declarations in one rule")
     {
-        std::stringstream ss;
-        ss << "div\n"
-           << "{\n"
-           << "  color: black;\n"
-           << "  font-size: 1.3em;\n"
-           << "}\n"
-           << "\n"
-           << "span\n"
-           << "{\n"
-           << "  border: 3px solid #f7d0cf;\n"
-           << "\tborder-bottom-width: 1px;\n"
-           << "  font: 17.2px/1.35em\tArial;\n"
-           << "}\n"
-           << "\n";
-        csspp::position pos("test.css");
-        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "div\n"
+               << "{\n"
+               << "  color: invert(black);\n"
+               << "  font-size: 1.3em;\n"
+               << "}\n"
+               << "\n"
+               << "span\n"
+               << "{\n"
+               << "  border: 3px solid darken(#f7d0cf, 3%);\n"
+               << "\tborder-bottom-width: 1px;\n"
+               << "  font: 17.2px/1.35em\tArial;\n"
+               << "}\n"
+               << "\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
-        csspp::parser p(l);
+            csspp::parser p(l);
 
-        csspp::node::pointer_t n(p.stylesheet());
+            csspp::node::pointer_t n(p.stylesheet());
 
-        csspp::compiler c;
-        c.set_root(n);
-        c.add_path(csspp_test::get_script_path());
-        c.add_path(csspp_test::get_version_script_path());
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
 
-        c.compile(false);
+            c.compile(false);
 
 //std::cerr << "Compiler result is: [" << *n << "]\n";
 
-        std::stringstream out;
-        csspp::assembler a(out);
-        a.output(n, static_cast<csspp::output_mode_t>(i));
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
 
 //std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
 
-        switch(static_cast<csspp::output_mode_t>(i))
-        {
-        case csspp::output_mode_t::COMPACT:
-            REQUIRE(out.str() ==
-"div { color: black; font-size: 1.3em }\n"
-"span { border: 3px solid #f7d0cf; border-bottom-width: 1px; font: 17.2px/1.35em arial }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"div { color: #fff; font-size: 1.3em }\n"
+"span { border: 3px solid #f5c3c2; border-bottom-width: 1px; font: 17.2px/1.35em Arial }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
-        case csspp::output_mode_t::COMPRESSED:
-            REQUIRE(out.str() ==
-"div{color:black;font-size:1.3em}span{border:3px solid #f7d0cf;border-bottom-width:1px;font:17.2px/1.35em arial}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"div{color:#fff;font-size:1.3em}span{border:3px solid #f5c3c2;border-bottom-width:1px;font:17.2px/1.35em Arial}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
-        case csspp::output_mode_t::EXPANDED:
-            REQUIRE(out.str() ==
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
 "div\n"
 "{\n"
-"  color: black;\n"
+"  color: #fff;\n"
 "  font-size: 1.3em;\n"
 "}\n"
 "span\n"
 "{\n"
-"  border: 3px solid #f7d0cf;\n"
+"  border: 3px solid #f5c3c2;\n"
 "  border-bottom-width: 1px;\n"
-"  font: 17.2px/1.35em arial;\n"
+"  font: 17.2px/1.35em Arial;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
++ csspp_test::get_close_comment()
+                    );
+                break;
 
-        case csspp::output_mode_t::TIDY:
-            REQUIRE(out.str() ==
-"div{color:black;font-size:1.3em}\n"
-"span{border:3px solid #f7d0cf;border-bottom-width:1px;font:17.2px/1.35em arial}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"div{color:#fff;font-size:1.3em}\n"
+"span{border:3px solid #f5c3c2;border-bottom-width:1px;font:17.2px/1.35em Arial}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
+            }
+
+            REQUIRE(c.get_root() == n);
         }
-
-        REQUIRE(c.get_root() == n);
     }
 
-    // test multiple selector lists
-    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
-        i <= static_cast<int>(csspp::output_mode_t::TIDY);
-        ++i)
+    SECTION("test multiple selector lists")
     {
-        std::stringstream ss;
-        ss << "div a b,\n"
-           << "p span i\n"
-           << "{\n"
-           << "  color: black;\n"
-           << "\t  font-size: 1.3em;\n"
-           << " \n"
-           << "  border: 3px solid #f7d0cf;\n"
-           << "\tborder-bottom-width: 1px;\n"
-           << "}\n"
-           << "\n";
-        csspp::position pos("test.css");
-        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "div a b,\n"
+               << "p span i\n"
+               << "{\n"
+               << "  color: mix(black, white);\n"
+               << "\t  font-size: 1.3em;\n"
+               << " \n"
+               << "  border: 3px solid desaturate(#f7d0cf, 5%);\n"
+               << "\tborder-bottom-width: 1px;\n"
+               << "}\n"
+               << "\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
-        csspp::parser p(l);
+            csspp::parser p(l);
 
-        csspp::node::pointer_t n(p.stylesheet());
+            csspp::node::pointer_t n(p.stylesheet());
 
-        csspp::compiler c;
-        c.set_root(n);
-        c.add_path(csspp_test::get_script_path());
-        c.add_path(csspp_test::get_version_script_path());
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
 
-        c.compile(false);
+            c.compile(false);
 
 //std::cerr << "Compiler result is: [" << *n << "]\n";
 
-        std::stringstream out;
-        csspp::assembler a(out);
-        a.output(n, static_cast<csspp::output_mode_t>(i));
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
 
 //std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
 
-        switch(static_cast<csspp::output_mode_t>(i))
-        {
-        case csspp::output_mode_t::COMPACT:
-            REQUIRE(out.str() ==
-"div a b, p span i { color: black; font-size: 1.3em; border: 3px solid #f7d0cf; border-bottom-width: 1px }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"div a b, p span i { color: gray; font-size: 1.3em; border: 3px solid #f6d1d0; border-bottom-width: 1px }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
-        case csspp::output_mode_t::COMPRESSED:
-            REQUIRE(out.str() ==
-"div a b,p span i{color:black;font-size:1.3em;border:3px solid #f7d0cf;border-bottom-width:1px}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"div a b,p span i{color:gray;font-size:1.3em;border:3px solid #f6d1d0;border-bottom-width:1px}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
-        case csspp::output_mode_t::EXPANDED:
-            REQUIRE(out.str() ==
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
 "div a b, p span i\n"
 "{\n"
-"  color: black;\n"
+"  color: gray;\n"
 "  font-size: 1.3em;\n"
-"  border: 3px solid #f7d0cf;\n"
+"  border: 3px solid #f6d1d0;\n"
 "  border-bottom-width: 1px;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
++ csspp_test::get_close_comment()
+                    );
+                break;
 
-        case csspp::output_mode_t::TIDY:
-            REQUIRE(out.str() ==
-"div a b,p span i{color:black;font-size:1.3em;border:3px solid #f7d0cf;border-bottom-width:1px}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
-                );
-            break;
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"div a b,p span i{color:gray;font-size:1.3em;border:3px solid #f6d1d0;border-bottom-width:1px}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
 
+            }
+
+            REQUIRE(c.get_root() == n);
         }
+    }
 
-        REQUIRE(c.get_root() == n);
+    SECTION("test set_unit() to various numbers")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "div \n"
+               << "{\n"
+               << "  width: set_unit(33, px);\n"
+               << "  height: set_unit(3.3, em);\n"
+               << "  margin-left: set_unit(33px, 'cm');\n"
+               << "  margin-right: set_unit(3.3em, mm);\n"
+               //<< "  content: unit(123%);\n"
+               //<< "  z-index: remove_unit(12.3%);\n"
+               << "  margin-top: set_unit(123%, \"px\");\n"
+               << "  margin-bottom: set_unit(45, \"%\");\n"
+               << "  border-bottom-width: set_unit(4.5, \"%\");\n"
+               << "  border-top-width: set_unit(45cm, \"%\");\n"
+               << "  border-left-width: set_unit(.45vm, \"%\");\n"
+               << "  border-right-width: set_unit(68, \"\");\n"
+               << "  background-x: set_unit(68vm, \"\");\n"
+               << "  background-y: set_unit(6.8cm, \"\");\n"
+               << "  padding-left: set_unit(63.81%, \"\");\n"
+               << "}\n"
+               << "\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *n << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"div { width: 33px; height: 3.3em; margin-left: 33cm; margin-right: 3.3mm; margin-top: 1.23px; margin-bottom: 4500%; border-bottom-width: 450%; border-top-width: 4500%; border-left-width: 45%; border-right-width: 68; background-x: 68; background-y: 6.8; padding-left: .638 }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"div{width:33px;height:3.3em;margin-left:33cm;margin-right:3.3mm;margin-top:1.23px;margin-bottom:4500%;border-bottom-width:450%;border-top-width:4500%;border-left-width:45%;border-right-width:68;background-x:68;background-y:6.8;padding-left:.638}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"div\n"
+"{\n"
+"  width: 33px;\n"
+"  height: 3.3em;\n"
+"  margin-left: 33cm;\n"
+"  margin-right: 3.3mm;\n"
+"  margin-top: 1.23px;\n"
+"  margin-bottom: 4500%;\n"
+"  border-bottom-width: 450%;\n"
+"  border-top-width: 4500%;\n"
+"  border-left-width: 45%;\n"
+"  border-right-width: 68;\n"
+"  background-x: 68;\n"
+"  background-y: 6.8;\n"
+"  padding-left: .638;\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"div{width:33px;height:3.3em;margin-left:33cm;margin-right:3.3mm;margin-top:1.23px;margin-bottom:4500%;border-bottom-width:450%;border-top-width:4500%;border-left-width:45%;border-right-width:68;background-x:68;background-y:6.8;padding-left:.638}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
+
+    SECTION("test unitless() to various numbers")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "div \n"
+               << "{\n"
+               << "  width: unitless(33px) ? 15px : 3em;\n"
+               << "  height: unitless(3.3em) ? 5cm : 3mm;\n"
+               << "  content: unitless(123%) ? 'incorrect' : 'correct';\n"
+               << "  border-bottom-width: unitless(4.5) ? 30vm : 45%;\n"
+               << "  border-left-width: unitless(45) ? 131px : 4.15cm;\n"
+               << "}\n"
+               << "\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *n << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"div { width: 3em; height: 3mm; content: \"correct\"; border-bottom-width: 30vm; border-left-width: 131px }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"div{width:3em;height:3mm;content:\"correct\";border-bottom-width:30vm;border-left-width:131px}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"div\n"
+"{\n"
+"  width: 3em;\n"
+"  height: 3mm;\n"
+"  content: \"correct\";\n"
+"  border-bottom-width: 30vm;\n"
+"  border-left-width: 131px;\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"div{width:3em;height:3mm;content:\"correct\";border-bottom-width:30vm;border-left-width:131px}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
+
+    SECTION("test unique_id()")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "div\n"
+               << "{\n"
+               << "  content: string(unique_id());\n"
+               << "  border: 3px unique_id() lightsteelblue;\n"
+               << "}\n"
+               << "a.withColor\n"
+               << "{\n"
+               << "  padding: unique_id();\n"
+               << "}\n"
+               << "\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            // reset counter so we can compare with 1, 2, 3 each time
+            csspp::expression::set_unique_id_counter(0);
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *n << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"div { content: \"_csspp_unique1\"; border: 3px _csspp_unique2 #b0c4de }\n"
+"a.withColor { padding: _csspp_unique3 }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"div{content:\"_csspp_unique1\";border:3px _csspp_unique2 #b0c4de}a.withColor{padding:_csspp_unique3}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"div\n"
+"{\n"
+"  content: \"_csspp_unique1\";\n"
+"  border: 3px _csspp_unique2 #b0c4de;\n"
+"}\n"
+"a.withColor\n"
+"{\n"
+"  padding: _csspp_unique3;\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"div{content:\"_csspp_unique1\";border:3px _csspp_unique2 #b0c4de}\n"
+"a.withColor{padding:_csspp_unique3}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
+
+    SECTION("identifier with unicode characters and starting with a digit and including a period")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            // word "e'te'" (summer in French)
+            ss << "\xc3\xa9t\xc3\xa9 { color: fade_in(gold, 0.2); }\n"
+               << "\\33 21 { color: fade_out(tan, 0.2); }\n"
+               << "\\36 face { color: orchid; }\n"
+               << "\\30 BLUR { color: thistle; }\n"
+               << "this\\.and\\.that { color: honeydew; }\n"
+               << "\xe4\x96\x82 { color: dimgray; }\n"
+               << "\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb { color: darkred; }\n"
+               << "normal { color: mix(darkseagreen, lavender, 0.3); }\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"\xc3\xa9t\xc3\xa9 { color: #ffd700 }\n"
+"\\33 21 { color: rgba(210,180,140,.8) }\n"
+"\\36 face { color: #da70d6 }\n"
+"\\30 BLUR { color: #d8bfd8 }\n"
+"this\\.and\\.that { color: #f0fff0 }\n"
+"\xe4\x96\x82 { color: #696969 }\n"
+"\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb { color: #8b0000 }\n"
+"normal { color: #ccd9da }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"\xc3\xa9t\xc3\xa9{color:#ffd700}"
+"\\33 21{color:rgba(210,180,140,.8)}"
+"\\36 face{color:#da70d6}"
+"\\30 BLUR{color:#d8bfd8}"
+"this\\.and\\.that{color:#f0fff0}"
+"\xe4\x96\x82{color:#696969}"
+"\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb{color:#8b0000}"
+"normal{color:#ccd9da}"
+"\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"\xc3\xa9t\xc3\xa9\n"
+"{\n"
+"  color: #ffd700;\n"
+"}\n"
+"\\33 21\n"
+"{\n"
+"  color: rgba(210,180,140,.8);\n"
+"}\n"
+"\\36 face\n"
+"{\n"
+"  color: #da70d6;\n"
+"}\n"
+"\\30 BLUR\n"
+"{\n"
+"  color: #d8bfd8;\n"
+"}\n"
+"this\\.and\\.that\n"
+"{\n"
+"  color: #f0fff0;\n"
+"}\n"
+"\xe4\x96\x82\n"
+"{\n"
+"  color: #696969;\n"
+"}\n"
+"\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb\n"
+"{\n"
+"  color: #8b0000;\n"
+"}\n"
+"normal\n"
+"{\n"
+"  color: #ccd9da;\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"\xc3\xa9t\xc3\xa9{color:#ffd700}\n"
+"\\33 21{color:rgba(210,180,140,.8)}\n"
+"\\36 face{color:#da70d6}\n"
+"\\30 BLUR{color:#d8bfd8}\n"
+"this\\.and\\.that{color:#f0fff0}\n"
+"\xe4\x96\x82{color:#696969}\n"
+"\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb{color:#8b0000}\n"
+"normal{color:#ccd9da}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
+
+    SECTION("whitespace at the beginning of a rule")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "  // spaces before a comment will produce problems\n"
+               << "  // and such comments are not preserved as expected\n"
+               << "  // @preserve this comment\n"
+               << "\n"
+               << ".face { content: quote(\xe4\x96\x82); }\n"
+               << ".hair { color: fade_in(rgba(50, 100, 150, 0.14), 0.46); }\n"
+               << ".plan { opacity: opacity(fade_in(rgba(50, 100, 150, 0.14), 0.46)); }\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            REQUIRE_ERRORS("test.css(3): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n");
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"/* @preserve this comment */\n"
+".face { content: \"\xe4\x96\x82\" }\n"
+".hair { color: rgba(50,100,150,.6) }\n"
+".plan { opacity: .6 }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"/* @preserve this comment */\n"
+".face{content:\"\xe4\x96\x82\"}"
+".hair{color:rgba(50,100,150,.6)}"
+".plan{opacity:.6}"
+"\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"/* @preserve this comment */\n"
+".face\n"
+"{\n"
+"  content: \"\xe4\x96\x82\";\n"
+"}\n"
+".hair\n"
+"{\n"
+"  color: rgba(50,100,150,.6);\n"
+"}\n"
+".plan\n"
+"{\n"
+"  opacity: .6;\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"/* @preserve this comment */\n"
+".face{content:\"\xe4\x96\x82\"}\n"
+".hair{color:rgba(50,100,150,.6)}\n"
+".plan{opacity:.6}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
+
+    SECTION("whitespace at the beginning of a variable")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "  // an empty comment was creating trouble!\n"
+               << "  //\n"
+               << "\n"
+               << "$color: #329182;\n"
+               << "$image: url(\"images/ladybug.jpeg\");\n"
+               << "$width: 300px;\n"
+               << "\n"
+               << "  p\n"
+               << "  {\n"
+               << "    // background color defined in variable\n"
+               << "    background-color: grayscale($color);\n"
+               << "\n"
+               << "    // this is like \"body div.flowers\"\n"
+               << "    div.flowers\n"
+               << "    {\n"
+               << "      background-image: $image;\n"
+               << "      z-index: remove_unit($width);\n"
+               << "    }\n"
+               << "  }\n"
+               << "\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            REQUIRE_ERRORS("");
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"p { background-color: #626262 }\n"
+"p div.flowers { background-image: url( images/ladybug.jpeg ); z-index: 300 }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"p{background-color:#626262}"
+"p div.flowers{background-image:url(images/ladybug.jpeg);z-index:300}"
+"\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"p\n"
+"{\n"
+"  background-color: #626262;\n"
+"}\n"
+"p div.flowers\n"
+"{\n"
+"  background-image: url( images/ladybug.jpeg );\n"
+"  z-index: 300;\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"p{background-color:#626262}\n"
+"p div.flowers{background-image:url(images/ladybug.jpeg);z-index:300}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
     }
 
     // no error left over
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
+TEST_CASE("Assemble selectors", "[assembler] [selectors]")
 {
     // check various selectors without the operators
 
@@ -344,6 +965,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -361,15 +983,15 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div span a { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div span a { color: #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div span a{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div span a{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -377,16 +999,16 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div span a\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div span a{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div span a{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -411,6 +1033,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -428,15 +1051,15 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div[foo] { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div[foo] { color: #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div[foo]{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div[foo]{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -444,16 +1067,16 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div[foo]\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div[foo]{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div[foo]{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -478,6 +1101,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -495,15 +1119,15 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div.foo { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div.foo { color: #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div.foo{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div.foo{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -511,16 +1135,16 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div.foo\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div.foo{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div.foo{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -545,6 +1169,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -562,15 +1187,15 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"#foo div { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"#foo div { color: #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"#foo div{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"#foo div{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -578,16 +1203,16 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "#foo div\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"#foo div{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"#foo div{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -612,6 +1237,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -629,15 +1255,15 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div[foo = \"a b c\"] { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div[foo = \"a b c\"] { color: #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div[foo=\"a b c\"]{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div[foo=\"a b c\"]{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -645,16 +1271,16 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div[foo = \"a b c\"]\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div[foo=\"a b c\"]{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div[foo=\"a b c\"]{color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -679,6 +1305,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -696,15 +1323,15 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div:lang(fr) { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div:lang(fr) { color: #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div:lang(fr){color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div:lang(fr){color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -712,16 +1339,16 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div:lang(fr)\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div:lang(fr){color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div:lang(fr){color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -746,6 +1373,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -763,15 +1391,15 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div:not(:lang(fr)):not(:nth-child(odd)) { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div:not(:lang(fr)):not(:nth-child(odd)) { color: #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div:not(:lang(fr)):not(:nth-child(odd)){color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div:not(:lang(fr)):not(:nth-child(odd)){color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -779,16 +1407,16 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div:not(:lang(fr)):not(:nth-child(odd))\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div:not(:lang(fr)):not(:nth-child(odd)){color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"div:not(:lang(fr)):not(:nth-child(odd)){color:#000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -835,6 +1463,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
             csspp::compiler c;
             c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
             c.add_path(csspp_test::get_script_path());
             c.add_path(csspp_test::get_version_script_path());
 
@@ -852,26 +1481,26 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             switch(static_cast<csspp::output_mode_t>(i))
             {
             case csspp::output_mode_t::COMPACT:
-expected << "div:" << pseudo_classes[j] << " { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "div:" << pseudo_classes[j] << " { color: #000 }\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
-expected << "div:" << pseudo_classes[j] << "{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "div:" << pseudo_classes[j] << "{color:#000}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::EXPANDED:
 expected << "div:" << pseudo_classes[j] << "\n"
-"{\n"
-"  color: black;\n"
-"}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+            "{\n"
+            "  color: #000;\n"
+            "}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::TIDY:
-expected << "div:" << pseudo_classes[j] << "{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "div:" << pseudo_classes[j] << "{color:#000}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             }
@@ -906,6 +1535,7 @@ expected << "div:" << pseudo_classes[j] << "{color:black}\n"
 
             csspp::compiler c;
             c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
             c.add_path(csspp_test::get_script_path());
             c.add_path(csspp_test::get_version_script_path());
 
@@ -923,26 +1553,26 @@ expected << "div:" << pseudo_classes[j] << "{color:black}\n"
             switch(static_cast<csspp::output_mode_t>(i))
             {
             case csspp::output_mode_t::COMPACT:
-expected << "div::" << pseudo_elements[j] << " { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "div::" << pseudo_elements[j] << " { color: #000 }\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
-expected << "div::" << pseudo_elements[j] << "{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "div::" << pseudo_elements[j] << "{color:#000}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::EXPANDED:
 expected << "div::" << pseudo_elements[j] << "\n"
-"{\n"
-"  color: black;\n"
-"}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+            "{\n"
+            "  color: #000;\n"
+            "}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::TIDY:
-expected << "div::" << pseudo_elements[j] << "{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "div::" << pseudo_elements[j] << "{color:#000}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             }
@@ -977,6 +1607,7 @@ expected << "div::" << pseudo_elements[j] << "{color:black}\n"
 
             csspp::compiler c;
             c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
             c.add_path(csspp_test::get_script_path());
             c.add_path(csspp_test::get_version_script_path());
 
@@ -994,26 +1625,26 @@ expected << "div::" << pseudo_elements[j] << "{color:black}\n"
             switch(static_cast<csspp::output_mode_t>(i))
             {
             case csspp::output_mode_t::COMPACT:
-expected << "div:" << pseudo_functions[j] << "(5n+2) { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "div:" << pseudo_functions[j] << "(5n+2) { color: #000 }\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
-expected << "div:" << pseudo_functions[j] << "(5n+2){color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "div:" << pseudo_functions[j] << "(5n+2){color:#000}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::EXPANDED:
 expected << "div:" << pseudo_functions[j] << "(5n+2)\n"
-"{\n"
-"  color: black;\n"
-"}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+            "{\n"
+            "  color: #000;\n"
+            "}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::TIDY:
-expected << "div:" << pseudo_functions[j] << "(5n+2){color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "div:" << pseudo_functions[j] << "(5n+2){color:#000}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             }
@@ -1049,6 +1680,7 @@ expected << "div:" << pseudo_functions[j] << "(5n+2){color:black}\n"
 
             csspp::compiler c;
             c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
             c.add_path(csspp_test::get_script_path());
             c.add_path(csspp_test::get_version_script_path());
 
@@ -1066,26 +1698,26 @@ expected << "div:" << pseudo_functions[j] << "(5n+2){color:black}\n"
             switch(static_cast<csspp::output_mode_t>(i))
             {
             case csspp::output_mode_t::COMPACT:
-expected << "with " << scope[j] << " scope { color: black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "with " << scope[j] << " scope { color: #000 }\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
-expected << "with " << scope[j] << " scope{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "with " << scope[j] << " scope{color:#000}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::EXPANDED:
 expected << "with " << scope[j] << " scope\n"
-"{\n"
-"  color: black;\n"
-"}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+            "{\n"
+            "  color: #000;\n"
+            "}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             case csspp::output_mode_t::TIDY:
-expected << "with " << scope[j] << " scope{color:black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+expected << "with " << scope[j] << " scope{color:#000}\n"
+         << csspp_test::get_close_comment();
                 break;
 
             }
@@ -1099,7 +1731,7 @@ expected << "with " << scope[j] << " scope{color:black}\n"
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Numbers", "[assembler] [numbers]")
+TEST_CASE("Assemble numbers", "[assembler] [numbers]")
 {
     // create strings with more single quotes (')
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -1126,6 +1758,7 @@ TEST_CASE("Assemble Numbers", "[assembler] [numbers]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1139,44 +1772,64 @@ TEST_CASE("Assemble Numbers", "[assembler] [numbers]")
 
 //std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
 
+        std::stringstream percent_stream;
+        percent_stream << percent;
+        std::string percent_str(percent_stream.str());
+        if(percent_str.length() > 1
+        && percent_str[0] == '0'
+        && percent_str[1] == '.')
+        {
+            percent_str = percent_str.substr(1);
+        }
+
+        std::stringstream decimal_number_stream;
+        decimal_number_stream << decimal_number;
+        std::string decimal_number_str(decimal_number_stream.str());
+        if(decimal_number_str.length() > 1
+        && decimal_number_str[0] == '0'
+        && decimal_number_str[1] == '.')
+        {
+            decimal_number_str = decimal_number_str.substr(1);
+        }
+
         std::stringstream expected;
         switch(static_cast<csspp::output_mode_t>(i))
         {
         case csspp::output_mode_t::COMPACT:
 expected << "#wrapper div * span a:hover {"
          << " width: " << integer << ";"
-         << " height: " << decimal_number << ";"
-         << " font-size: " << percent << "%"
+         << " height: " << decimal_number_str << ";"
+         << " font-size: " << percent_str << "%"
          << " }\n"
-         << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+         << csspp_test::get_close_comment();
             break;
 
         case csspp::output_mode_t::COMPRESSED:
 expected << "#wrapper div * span a:hover{"
          << "width:" << integer << ";"
-         << "height:" << decimal_number << ";"
-         << "font-size:" << percent << "%"
+         << "height:" << decimal_number_str << ";"
+         << "font-size:" << percent_str << "%"
          << "}\n"
-         << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+         << csspp_test::get_close_comment();
             break;
 
         case csspp::output_mode_t::EXPANDED:
 expected << "#wrapper div * span a:hover\n"
          << "{\n"
          << "  width: " << integer << ";\n"
-         << "  height: " << decimal_number << ";\n"
-         << "  font-size: " << percent << "%;\n"
+         << "  height: " << decimal_number_str << ";\n"
+         << "  font-size: " << percent_str << "%;\n"
          << "}\n"
-         << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+         << csspp_test::get_close_comment();
             break;
 
         case csspp::output_mode_t::TIDY:
 expected << "#wrapper div * span a:hover{"
          << "width:" << integer << ";"
-         << "height:" << decimal_number << ";"
-         << "font-size:" << percent << "%"
+         << "height:" << decimal_number_str << ";"
+         << "font-size:" << percent_str << "%"
          << "}\n"
-         << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+         << csspp_test::get_close_comment();
             break;
 
         }
@@ -1189,7 +1842,7 @@ expected << "#wrapper div * span a:hover{"
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Unicode Range", "[assembler] [unicode-range] [at-keyword]")
+TEST_CASE("Assemble unicode range", "[assembler] [unicode-range-value] [at-keyword]")
 {
     // a valid @supports
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -1215,6 +1868,7 @@ TEST_CASE("Assemble Unicode Range", "[assembler] [unicode-range] [at-keyword]")
         csspp::compiler c;
         c.set_root(n);
         c.clear_paths();
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1242,14 +1896,14 @@ TEST_CASE("Assemble Unicode Range", "[assembler] [unicode-range] [at-keyword]")
 "font-style: italic"
 "}\n"
 "\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
 "@font-face {unicode-range:U+4??;font-style:italic}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1260,7 +1914,7 @@ TEST_CASE("Assemble Unicode Range", "[assembler] [unicode-range] [at-keyword]")
 "  unicode-range: U+4??;\n"
 "  font-style: italic}\n"
 "\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1270,7 +1924,7 @@ TEST_CASE("Assemble Unicode Range", "[assembler] [unicode-range] [at-keyword]")
 "{\n"
 "unicode-range:U+4??;font-style:italic}\n"
 "\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1283,7 +1937,7 @@ TEST_CASE("Assemble Unicode Range", "[assembler] [unicode-range] [at-keyword]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Strings", "[assembler] [strings]")
+TEST_CASE("Assemble strings", "[assembler] [strings]")
 {
     // create strings with more single quotes (')
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -1337,6 +1991,7 @@ TEST_CASE("Assemble Strings", "[assembler] [strings]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1355,14 +2010,14 @@ TEST_CASE("Assemble Strings", "[assembler] [strings]")
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
 "div::before { content: \"" + str + "\" }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
 "div::before{content:\"" + str + "\"}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1372,14 +2027,14 @@ TEST_CASE("Assemble Strings", "[assembler] [strings]")
 "{\n"
 "  content: \"" + str + "\";\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
 "div::before{content:\"" + str + "\"}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1440,6 +2095,7 @@ TEST_CASE("Assemble Strings", "[assembler] [strings]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1458,14 +2114,14 @@ TEST_CASE("Assemble Strings", "[assembler] [strings]")
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
 "div::after { content: '" + str + "' }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
 "div::after{content:'" + str + "'}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1475,14 +2131,14 @@ TEST_CASE("Assemble Strings", "[assembler] [strings]")
 "{\n"
 "  content: '" + str + "';\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
 "div::after{content:'" + str + "'}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1532,6 +2188,7 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1550,14 +2207,14 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
 "div { background-image: url( /images/" + name + ".png ) }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
 "div{background-image:url(/images/" + name + ".png)}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1567,14 +2224,14 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
 "{\n"
 "  background-image: url( /images/" + name + ".png );\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
 "div{background-image:url(/images/" + name + ".png)}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1593,13 +2250,15 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
         std::string name;
-        csspp::wide_char_t special;
+        csspp::wide_char_t special(L'\0');
         int const size(rand() % 20 + 1);
         for(int j(0); j < size; ++j)
         {
             csspp::wide_char_t c;
             if(j == size / 2)
             {
+                // this happens only once and is mandatory since 'size > 0'
+                // is always true
                 c = special = "'\"()"[rand() % 4];
             }
             else
@@ -1633,6 +2292,7 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1651,14 +2311,14 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
 "div { background-image: url( " + quote + "/images/" + name + ".png" + quote + " ) }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
 "div{background-image:url(" + quote + "/images/" + name + ".png" + quote + ")}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1668,14 +2328,14 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
 "{\n"
 "  background-image: url( " + quote + "/images/" + name + ".png" + quote + " );\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
 "div{background-image:url(" + quote + "/images/" + name + ".png" + quote + ")}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1688,7 +2348,7 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble C++ Comment", "[assembler] [comment]")
+TEST_CASE("Assemble C++ comment", "[assembler] [comment]")
 {
     // One line C++ comment
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -1709,6 +2369,7 @@ TEST_CASE("Assemble C++ Comment", "[assembler] [comment]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1726,36 +2387,36 @@ TEST_CASE("Assemble C++ Comment", "[assembler] [comment]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"/* Copyright (c) 2015  Made to Order Software Corp. -- Assembler Test Version 1.0.0 -- @preserve */\n"
+"/* Copyright (c) 2015  Made to Order Software Corp. -- Assembler Test Version " CSSPP_VERSION " -- @preserve */\n"
 "body.error { color: red }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"/* Copyright (c) 2015  Made to Order Software Corp. -- Assembler Test Version 1.0.0 -- @preserve */\n"
+"/* Copyright (c) 2015  Made to Order Software Corp. -- Assembler Test Version " CSSPP_VERSION " -- @preserve */\n"
 "body.error{color:red}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::EXPANDED:
             REQUIRE(out.str() ==
-"/* Copyright (c) 2015  Made to Order Software Corp. -- Assembler Test Version 1.0.0 -- @preserve */\n"
+"/* Copyright (c) 2015  Made to Order Software Corp. -- Assembler Test Version " CSSPP_VERSION " -- @preserve */\n"
 "body.error\n"
 "{\n"
 "  color: red;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"/* Copyright (c) 2015  Made to Order Software Corp. -- Assembler Test Version 1.0.0 -- @preserve */\n"
+"/* Copyright (c) 2015  Made to Order Software Corp. -- Assembler Test Version " CSSPP_VERSION " -- @preserve */\n"
 "body.error{color:red}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1785,6 +2446,7 @@ TEST_CASE("Assemble C++ Comment", "[assembler] [comment]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1807,7 +2469,7 @@ TEST_CASE("Assemble C++ Comment", "[assembler] [comment]")
 " * @preserve\n"
 " */\n"
 "body.error { color: red }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1818,7 +2480,7 @@ TEST_CASE("Assemble C++ Comment", "[assembler] [comment]")
 " * @preserve\n"
 " */\n"
 "body.error{color:red}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1832,7 +2494,7 @@ TEST_CASE("Assemble C++ Comment", "[assembler] [comment]")
 "{\n"
 "  color: red;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1843,7 +2505,7 @@ TEST_CASE("Assemble C++ Comment", "[assembler] [comment]")
 " * @preserve\n"
 " */\n"
 "body.error{color:red}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1867,9 +2529,9 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
         ss << "@document url(http://www.example.com/), regexp(\"https://.*\")\n"
            << "{\n"
            << "  body { width: 8.5in; height: 9in; }\n"
-           << "  div { border: 0.25in solid lightgray }\n"
+           << "  div { border: .25in unquote(\"solid\") lightgray }\n"
            << "}\n"
-           << "#edge { border: 1px solid black }\n";
+           << "#edge { border: 1px unquote('solid') black }\n";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -1879,6 +2541,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1899,18 +2562,18 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@document url( http://www.example.com/ ), regexp(\"https://.*\")\n"
 "{\n"
 "body { width: 8.5in; height: 9in }\n"
-"div { border: 0.25in solid lightgray }\n"
+"div { border: .25in solid #d3d3d3 }\n"
 "}\n"
 "\n"
-"#edge { border: 1px solid black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"#edge { border: 1px solid #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"@document url(http://www.example.com/),regexp(\"https://.*\"){body{width:8.5in;height:9in}div{border:0.25in solid lightgray}}#edge{border:1px solid black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"@document url(http://www.example.com/),regexp(\"https://.*\"){body{width:8.5in;height:9in}div{border:.25in solid #d3d3d3}}#edge{border:1px solid #000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1925,15 +2588,15 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "}\n"
 "div\n"
 "{\n"
-"  border: 0.25in solid lightgray;\n"
+"  border: .25in solid #d3d3d3;\n"
 "}\n"
 "}\n"
 "\n"
 "#edge\n"
 "{\n"
-"  border: 1px solid black;\n"
+"  border: 1px solid #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1942,11 +2605,11 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@document url(http://www.example.com/),regexp(\"https://.*\")\n"
 "{\n"
 "body{width:8.5in;height:9in}\n"
-"div{border:0.25in solid lightgray}\n"
+"div{border:.25in solid #d3d3d3}\n"
 "}\n"
 "\n"
-"#edge{border:1px solid black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"#edge{border:1px solid #000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -1972,6 +2635,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -1994,15 +2658,15 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "body { width: 8.5in; height: 9in }\n"
 "}\n"
 "\n"
-"#edge { border: 1px solid black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"#edge { border: 1px solid #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"@media screen or (printer and color){body{width:8.5in;height:9in}}#edge{border:1px solid black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"@media screen or (printer and color){body{width:8.5in;height:9in}}#edge{border:1px solid #000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -2019,9 +2683,9 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "\n"
 "#edge\n"
 "{\n"
-"  border: 1px solid black;\n"
+"  border: 1px solid #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -2032,8 +2696,8 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "body{width:8.5in;height:9in}\n"
 "}\n"
 "\n"
-"#edge{border:1px solid black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"#edge{border:1px solid #000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -2050,7 +2714,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
         std::stringstream ss;
         ss << "@media not (screen or ((laser or matrix or jet-printer) and color)) {\n"
            << "  body { width: 8.5in; height: 9in; }\n"
-           << "  div { margin: 0.15in; padding: 0.07in; }\n"
+           << "  div { margin: .15in; padding: .07in; }\n"
            << "  p { margin-bottom: 2em; }\n"
            << "}\n"
            << "#edge { border: 1px solid black }\n";
@@ -2063,6 +2727,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -2083,19 +2748,19 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@media not (screen or ((laser or matrix or jet-printer) and color)) \n"
 "{\n"
 "body { width: 8.5in; height: 9in }\n"
-"div { margin: 0.15in; padding: 0.07in }\n"
+"div { margin: .15in; padding: .07in }\n"
 "p { margin-bottom: 2em }\n"
 "}\n"
 "\n"
-"#edge { border: 1px solid black }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"#edge { border: 1px solid #000 }\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"@media not (screen or ((laser or matrix or jet-printer) and color)){body{width:8.5in;height:9in}div{margin:0.15in;padding:0.07in}p{margin-bottom:2em}}#edge{border:1px solid black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"@media not (screen or ((laser or matrix or jet-printer) and color)){body{width:8.5in;height:9in}div{margin:.15in;padding:.07in}p{margin-bottom:2em}}#edge{border:1px solid #000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -2110,8 +2775,8 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "}\n"
 "div\n"
 "{\n"
-"  margin: 0.15in;\n"
-"  padding: 0.07in;\n"
+"  margin: .15in;\n"
+"  padding: .07in;\n"
 "}\n"
 "p\n"
 "{\n"
@@ -2121,9 +2786,9 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "\n"
 "#edge\n"
 "{\n"
-"  border: 1px solid black;\n"
+"  border: 1px solid #000;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -2132,12 +2797,12 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@media not (screen or ((laser or matrix or jet-printer) and color))\n"
 "{\n"
 "body{width:8.5in;height:9in}\n"
-"div{margin:0.15in;padding:0.07in}\n"
+"div{margin:.15in;padding:.07in}\n"
 "p{margin-bottom:2em}\n"
 "}\n"
 "\n"
-"#edge{border:1px solid black}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
+"#edge{border:1px solid #000}\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -2162,6 +2827,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -2180,28 +2846,28 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
 "@import url( //css.m2osw.com/store/colors.css ) only screen or (printer and color) ;\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
 "@import url(//css.m2osw.com/store/colors.css) only screen or (printer and color);\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::EXPANDED:
             REQUIRE(out.str() ==
 "@import url( //css.m2osw.com/store/colors.css ) only screen or (printer and color) ;\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
 "@import url(//css.m2osw.com/store/colors.css) only screen or (printer and color);\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -2214,7 +2880,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Functions", "[assembler] [function]")
+TEST_CASE("Assemble functions", "[assembler] [function]")
 {
     // Test with gradient() function
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -2231,16 +2897,17 @@ TEST_CASE("Assemble Functions", "[assembler] [function]")
 
         csspp::node::pointer_t n(p.stylesheet());
 
-std::cerr << "Parser result is: [" << *n << "]\n";
+//std::cerr << "Parser result is: [" << *n << "]\n";
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
         c.compile(false);
 
-std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         std::stringstream out;
         csspp::assembler a(out);
@@ -2273,19 +2940,20 @@ expected << "a~b{border:3px solid #39458a;width:450px;height:200px}\n";
             break;
 
         }
-        expected << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+        expected << csspp_test::get_close_comment();
         REQUIRE(out.str() == expected.str());
 
         REQUIRE(c.get_root() == n);
     }
 
-    // CSS Function
+    // CSS Function which is an internal CSS Preprocess function
+    // (meaning that it gets interpreted and replaced by a value)
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
         i <= static_cast<int>(csspp::output_mode_t::TIDY);
         ++i)
     {
         std::stringstream ss;
-        ss << "a b { color: rgba(1 * 7, 2, 3, 0.5); }\n";
+        ss << "a b { color: rgba(1 * 7, 2, 3, .5); }\n";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -2297,6 +2965,7 @@ expected << "a~b{border:3px solid #39458a;width:450px;height:200px}\n";
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -2314,26 +2983,87 @@ expected << "a~b{border:3px solid #39458a;width:450px;height:200px}\n";
         switch(static_cast<csspp::output_mode_t>(i))
         {
         case csspp::output_mode_t::COMPACT:
-expected << "a b { color: rgba(7, 2, 3, 0.5) }\n";
+expected << "a b { color: rgba(7,2,3,.5) }\n";  // TODO: add support for spaces in the color::to_string() function?
             break;
 
         case csspp::output_mode_t::COMPRESSED:
-expected << "a b{color:rgba(7,2,3,0.5)}\n";
+expected << "a b{color:rgba(7,2,3,.5)}\n";
             break;
 
         case csspp::output_mode_t::EXPANDED:
 expected << "a b\n"
- << "{\n"
- << "  color: rgba(7, 2, 3, 0.5);\n"
- << "}\n";
+         << "{\n"
+         << "  color: rgba(7,2,3,.5);\n"  // TODO: add support for spaces in the color::to_string() function?
+         << "}\n";
             break;
 
         case csspp::output_mode_t::TIDY:
-expected << "a b{color:rgba(7,2,3,0.5)}\n";
+expected << "a b{color:rgba(7,2,3,.5)}\n";
             break;
 
         }
-        expected << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+        expected << csspp_test::get_close_comment();
+        REQUIRE(out.str() == expected.str());
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // CSS Function which is not replaced by CSS Proprocessor
+    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+        i <= static_cast<int>(csspp::output_mode_t::TIDY);
+        ++i)
+    {
+        std::stringstream ss;
+        ss << "a b { transform: translate(percentage(-.50px), 0); }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        std::stringstream expected;
+        switch(static_cast<csspp::output_mode_t>(i))
+        {
+        case csspp::output_mode_t::COMPACT:
+expected << "a b { transform: translate(-50%, 0) }\n";
+            break;
+
+        case csspp::output_mode_t::COMPRESSED:
+expected << "a b{transform:translate(-50%,0)}\n";
+            break;
+
+        case csspp::output_mode_t::EXPANDED:
+expected << "a b\n"
+         << "{\n"
+         << "  transform: translate(-50%, 0);\n"
+         << "}\n";
+            break;
+
+        case csspp::output_mode_t::TIDY:
+expected << "a b{transform:translate(-50%,0)}\n";
+            break;
+
+        }
+        expected << csspp_test::get_close_comment();
         REQUIRE(out.str() == expected.str());
 
         REQUIRE(c.get_root() == n);
@@ -2343,7 +3073,76 @@ expected << "a b{color:rgba(7,2,3,0.5)}\n";
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Operators", "[assembler] [operators]")
+TEST_CASE("Assemble placeholder", "[assembler] [placeholder]")
+{
+    // Test with gradient() function
+    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+        i <= static_cast<int>(csspp::output_mode_t::TIDY);
+        ++i)
+    {
+        std::stringstream ss;
+        ss << "$reddish: #e09756;\n"
+           << "#context a%extreme { color: blue; font-weight: bold; font-size: 2em }\n"
+           << ".error { color: $reddish }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        std::stringstream expected;
+        switch(static_cast<csspp::output_mode_t>(i))
+        {
+        case csspp::output_mode_t::COMPACT:
+expected << ".error { color: #e09756 }\n";
+            break;
+
+        case csspp::output_mode_t::COMPRESSED:
+expected << ".error{color:#e09756}\n";
+            break;
+
+        case csspp::output_mode_t::EXPANDED:
+expected << ".error\n"
+ << "{\n"
+ << "  color: #e09756;\n"
+ << "}\n";
+            break;
+
+        case csspp::output_mode_t::TIDY:
+expected << ".error{color:#e09756}\n";
+            break;
+
+        }
+        expected << csspp_test::get_close_comment();
+        REQUIRE(out.str() == expected.str());
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Assemble operators", "[assembler] [operators]")
 {
     // Selector unary operator
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -2361,6 +3160,7 @@ TEST_CASE("Assemble Operators", "[assembler] [operators]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -2397,7 +3197,7 @@ expected << "a * b{color:red}\n";
             break;
 
         }
-        expected << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+        expected << csspp_test::get_close_comment();
         REQUIRE(out.str() == expected.str());
 
         REQUIRE(c.get_root() == n);
@@ -2433,6 +3233,7 @@ expected << "a * b{color:red}\n";
 
                 csspp::compiler c;
                 c.set_root(n);
+                c.set_date_time_variables(csspp_test::get_now());
                 c.add_path(csspp_test::get_script_path());
                 c.add_path(csspp_test::get_version_script_path());
 
@@ -2469,7 +3270,7 @@ expected << "a" << selector_operator[op] << "b{color:red}\n";
                     break;
 
                 }
-                expected << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+                expected << csspp_test::get_close_comment();
                 REQUIRE(out.str() == expected.str());
 
                 REQUIRE(c.get_root() == n);
@@ -2524,6 +3325,7 @@ expected << "a" << selector_operator[op] << "b{color:red}\n";
 
                 csspp::compiler c;
                 c.set_root(n);
+                c.set_date_time_variables(csspp_test::get_now());
                 c.add_path(csspp_test::get_script_path());
                 c.add_path(csspp_test::get_version_script_path());
 
@@ -2560,7 +3362,7 @@ expected << "a[b" << attribute_operator[op] << "3]{color:red}\n";
                     break;
 
                 }
-                expected << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+                expected << csspp_test::get_close_comment();
                 REQUIRE(out.str() == expected.str());
 
                 REQUIRE(c.get_root() == n);
@@ -2586,6 +3388,7 @@ expected << "a[b" << attribute_operator[op] << "3]{color:red}\n";
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
@@ -2604,14 +3407,14 @@ expected << "a[b" << attribute_operator[op] << "3]{color:red}\n";
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
 "[b = 3] { color: red !important }\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
 "[b=3]{color:red!important}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -2621,14 +3424,14 @@ expected << "a[b" << attribute_operator[op] << "3]{color:red}\n";
 "{\n"
 "  color: red !important;\n"
 "}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
 "[b=3]{color:red!important}\n"
-"/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
++ csspp_test::get_close_comment()
                 );
             break;
 
@@ -2641,7 +3444,7 @@ expected << "a[b" << attribute_operator[op] << "3]{color:red}\n";
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assembler Modes", "[assembler] [mode]")
+TEST_CASE("Assembler modes", "[assembler] [mode]")
 {
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
         i <= static_cast<int>(csspp::output_mode_t::TIDY);
@@ -2675,7 +3478,7 @@ TEST_CASE("Assembler Modes", "[assembler] [mode]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Assembler Mode", "[assembler] [mode] [invalid]")
+TEST_CASE("Invalid assembler mode", "[assembler] [mode] [invalid]")
 {
     // with many spaces
     for(int i(0); i < 100; ++i)
@@ -2696,7 +3499,7 @@ TEST_CASE("Invalid Assembler Mode", "[assembler] [mode] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Inacceptable Nodes", "[assembler] [invalid]")
+TEST_CASE("Inacceptable nodes", "[assembler] [invalid]")
 {
     // list of "invalid" nodes in the assembler
     csspp::node_type_t node_types[] =
@@ -2727,7 +3530,6 @@ TEST_CASE("Inacceptable Nodes", "[assembler] [invalid]")
         csspp::node_type_t::POWER,
         csspp::node_type_t::REFERENCE,
         csspp::node_type_t::SEMICOLON,
-        csspp::node_type_t::SUBTRACT,
         csspp::node_type_t::VARIABLE,
         csspp::node_type_t::VARIABLE_FUNCTION,
         csspp::node_type_t::max_type
@@ -2749,6 +3551,49 @@ TEST_CASE("Inacceptable Nodes", "[assembler] [invalid]")
             REQUIRE_THROWS_AS(a.output(root, static_cast<csspp::output_mode_t>(i)), csspp::csspp_exception_logic);
         }
     }
+}
+
+TEST_CASE("CSS incompatible dimensions", "[assembler] [invalid] [dimension]")
+{
+    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+        i <= static_cast<int>(csspp::output_mode_t::TIDY);
+        ++i)
+    {
+        std::stringstream ss;
+        ss << "span { border: 3px * 5px solid #f7d0cf; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // no errors yet
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: \"px * px\" is not a valid CSS dimension.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
 }
 
 // Local Variables:

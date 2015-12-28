@@ -83,7 +83,7 @@ void snap_listen_thread::run()
             // clean STOP
             //
             snap_thread::snap_lock lock( f_mutex );
-            SNAP_LOG_TRACE("STOP");
+            SNAP_LOG_TRACE("STOP received");
             f_stop_received = true;
             break;
         }
@@ -92,7 +92,7 @@ void snap_listen_thread::run()
             // reset the logs
             //
             snap_thread::snap_lock lock( f_mutex );
-            SNAP_LOG_TRACE("NLOG");
+            SNAP_LOG_TRACE("NLOG received");
             f_word_list.push_back( word_t::WORD_LOG_RESET );
         }
         else

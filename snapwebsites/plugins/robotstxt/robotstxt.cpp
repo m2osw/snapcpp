@@ -17,7 +17,7 @@
 
 #include "robotstxt.h"
 
-//#include "../content/content.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -36,7 +36,7 @@ SNAP_PLUGIN_START(robotstxt, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -88,22 +88,6 @@ robotstxt::~robotstxt()
 }
 
 
-/** \brief Initialize the robotstxt.
- *
- * This function terminates the initialization of the robotstxt plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void robotstxt::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
-}
-
-
 /** \brief Get a pointer to the robotstxt plugin.
  *
  * This function returns an instance pointer to the robotstxt plugin.
@@ -113,9 +97,31 @@ void robotstxt::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the robotstxt plugin.
  */
-robotstxt *robotstxt::instance()
+robotstxt * robotstxt::instance()
 {
     return g_plugin_robotstxt_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString robotstxt::settings_path() const
+{
+    return "/admin/settings/robotstxt";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString robotstxt::icon() const
+{
+    return "/images/robotstxt/robotstxt-logo-64x64.png";
 }
 
 
@@ -136,6 +142,19 @@ QString robotstxt::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString robotstxt::dependencies() const
+{
+    return "|layout|path|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -152,27 +171,11 @@ int64_t robotstxt::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 1, 10, 20, 38, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 19, 58, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
 
-/** \brief First update to run for the robotstxt plugin.
- *
- * This function is the first update for the robotstxt plugin. It installs
- * the initial robots.txt page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-void robotstxt::initial_update(int64_t variables_timestamp)
-{
-    // this is now done by the install content process
-    //path::path::instance()->add_path("robotstxt", "robots.txt", variables_timestamp);
-}
-#pragma GCC diagnostic pop
 
 /** \brief Update the content with our references.
  *
@@ -181,13 +184,29 @@ void robotstxt::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void robotstxt::content_update(int64_t variables_timestamp)
 {
+    NOTUSED(variables_timestamp);
+
     content::content::instance()->add_xml("robotstxt");
 }
-#pragma GCC diagnostic pop
+
+
+/** \brief Initialize the robotstxt.
+ *
+ * This function terminates the initialization of the robotstxt plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void robotstxt::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(robotstxt, "layout", layout::layout, generate_page_content, _1, _2, _3);
+}
+
 
 /** \brief Check for the "robots.txt" path.
  *
@@ -347,9 +366,9 @@ bool robotstxt::generate_robotstxt_impl(robotstxt *r)
  * \param[in] robot  The name of the robot (default "*")
  * \param[in] unique  The field is unique, if already defined throw an error
  */
-void robotstxt::add_robots_txt_field(QString const& value,
-                                     QString const& field,
-                                     QString const& robot,
+void robotstxt::add_robots_txt_field(QString const & value,
+                                     QString const & field,
+                                     QString const & robot,
                                      bool unique)
 {
     if(field.isEmpty())
@@ -396,7 +415,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
     if(ipath.get_key() != f_robots_path)
     {
         // Define the X-Robots HTTP header
-        QStringList robots;
+        snap_string_list robots;
         {
 // linking [http://csnap.m2osw.com/] / [http://csnap.m2osw.com/types/taxonomy/system/robotstxt/noindex]
 // <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
@@ -447,13 +466,11 @@ void robotstxt::define_robots(content::path_info_t& ipath)
  * \param[in,out] ipath  The path concerned by this request.
  * \param[in,out] header  The HTML header element.
  * \param[in,out] metadata  The XML metadata used with the XSLT parser.
- * \param[in] ctemplate  Another path in case ipath is missing parameters.
  */
-void robotstxt::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
+void robotstxt::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(header);
-    static_cast<void>(metadata);
-    static_cast<void>(ctemplate);
+    NOTUSED(header);
+    NOTUSED(metadata);
 
     define_robots(ipath);
     if(!f_robots_cache.isEmpty())
@@ -461,32 +478,6 @@ void robotstxt::on_generate_header_content(content::path_info_t& ipath, QDomElem
         // Set the HTTP header
         f_snap->set_header("X-Robots", f_robots_cache);
     }
-}
-
-
-/** \brief Implement the main content for this class.
- *
- * If this object becomes the content object, the the layout will call this
- * function to generate the content.
- *
- * In case of the robots.txt file, we use a lower level function.
- *
- * \todo
- * Check whether this function is required (i.e. we may not need to derive
- * from the layout interface? do we?)
- *
- * \param[in,out] ipath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The default template in case the main data
- *                       doesn't exist yet.
- */
-void robotstxt::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(page);
-    static_cast<void>(body);
-    static_cast<void>(ctemplate);
 }
 
 
@@ -498,13 +489,9 @@ void robotstxt::on_generate_main_content(content::path_info_t& ipath, QDomElemen
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A default template in case the default is not
- *                       available.
  */
-void robotstxt::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void robotstxt::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    static_cast<void>(ctemplate);
-
     QDomDocument doc(page.ownerDocument());
 
     define_robots(ipath);

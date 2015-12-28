@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../content/content.h"
+#include "../filter/filter.h"
 
 namespace snap
 {
@@ -43,18 +43,24 @@ public:
 
 
 
-class hashtag : public plugins::plugin
+class hashtag
+        : public plugins::plugin
 {
 public:
                         hashtag();
                         ~hashtag();
 
+    // plugins::plugin implementation
     static hashtag *    instance();
+    virtual QString     settings_path() const;
+    virtual QString     icon() const;
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_filter_text(content::path_info_t & ipath, QDomDocument & xml, QString & result, bool & changed);
+    // filter signals
+    void                on_filter_text(filter::filter::filter_text_t & txt_filt);
 
 private:
     void                content_update(int64_t variables_timestamp);

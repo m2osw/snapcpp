@@ -67,6 +67,7 @@ add_library(ecommerce SHARED
     content.xml
     ecommerce.js
     ecommerce-cart.js
+    ecommerce-logo-64x64.png
     empty-shopping-cart.png
     shopping-cart.png
 )

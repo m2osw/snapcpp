@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include <QString>
+
 #include <stdexcept>
 #include <memory>
 
@@ -63,6 +65,8 @@ public:
     typedef std::shared_ptr<tcp_client>     pointer_t;
 
                         tcp_client(std::string const & addr, int port);
+                        tcp_client(tcp_client const & src) = delete;
+    tcp_client &        operator = (tcp_client const & rhs) = delete;
                         ~tcp_client();
 
     int                 get_socket() const;
@@ -101,19 +105,19 @@ public:
     int                 get_port() const;
     std::string         get_addr() const;
     bool                get_keepalive() const;
+    void                set_keepalive(bool yes = true);
 
-    void                keepalive(bool yes = true);
     int                 accept( int const max_wait_ms = -1 );
     int                 get_last_accepted_socket() const;
 
 private:
-    int                 f_max_connections;
-    int                 f_socket;
-    int                 f_port;
+    int                 f_max_connections = MAX_CONNECTIONS;
+    int                 f_socket = -1;
+    int                 f_port = -1;
     std::string         f_addr;
-    int                 f_accepted_socket;
-    bool                f_keepalive;
-    bool                f_auto_close;
+    int                 f_accepted_socket = -1;
+    bool                f_keepalive = true;
+    bool                f_auto_close = false;
 };
 
 
@@ -130,7 +134,11 @@ public:
     };
 
                         bio_client(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+                        bio_client(bio_client const & src) = delete;
+    bio_client &        operator = (bio_client const & rhs) = delete;
                         ~bio_client();
+
+    void                close();
 
     int                 get_socket() const;
     int                 get_port() const;
@@ -146,6 +154,11 @@ private:
     std::shared_ptr<BIO>        f_bio;
     std::shared_ptr<SSL_CTX>    f_ssl_ctx;
 };
+
+
+bool is_ipv4(char const * ip);
+bool is_ipv6(char const * ip);
+void get_addr_port(QString const & addr_port, QString & addr, int & port, char const * protocol);
 
 
 } // namespace tcp_client_server

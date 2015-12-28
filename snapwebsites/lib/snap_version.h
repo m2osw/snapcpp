@@ -60,6 +60,7 @@ enum class compare_t : signed int
 
 typedef uint32_t basic_version_number_t;
 
+static basic_version_number_t const SPECIAL_VERSION_ALL               = static_cast<basic_version_number_t>(-4); // apply to all branches
 static basic_version_number_t const SPECIAL_VERSION_EXTENDED          = static_cast<basic_version_number_t>(-3); // revision of .js/.css may be more than one number
 static basic_version_number_t const SPECIAL_VERSION_INVALID           = static_cast<basic_version_number_t>(-2);
 static basic_version_number_t const SPECIAL_VERSION_UNDEFINED         = static_cast<basic_version_number_t>(-1);
@@ -67,7 +68,7 @@ static basic_version_number_t const SPECIAL_VERSION_MIN               = 0;
 static basic_version_number_t const SPECIAL_VERSION_SYSTEM_BRANCH     = 0;
 static basic_version_number_t const SPECIAL_VERSION_USER_FIRST_BRANCH = 1;
 static basic_version_number_t const SPECIAL_VERSION_FIRST_REVISION    = 0;
-static basic_version_number_t const SPECIAL_VERSION_MAX_BRANCH_NUMBER = static_cast<basic_version_number_t>(-4);
+static basic_version_number_t const SPECIAL_VERSION_MAX_BRANCH_NUMBER = static_cast<basic_version_number_t>(-5);
 static basic_version_number_t const SPECIAL_VERSION_MAX               = static_cast<basic_version_number_t>(-1);
 
 typedef controlled_vars::limited_auto_init<basic_version_number_t, SPECIAL_VERSION_MIN, SPECIAL_VERSION_MAX, SPECIAL_VERSION_UNDEFINED> version_number_t;
@@ -87,7 +88,8 @@ typedef controlled_vars::limited_auto_enum_init<operator_t, operator_t::OPERATOR
 
 
 char const * find_extension(QString const & filename, char const ** extensions);
-bool validate_name(QString& name, QString & error, QString& namespace_string);
+bool validate_basic_name(QString const & name, QString & error);
+bool validate_name(QString & name, QString & error, QString & namespace_string);
 bool validate_version(QString const & version_string, version_numbers_vector_t & version, QString & error);
 bool validate_operator(QString const & operator_string, operator_t & op, QString & error);
 
@@ -95,8 +97,10 @@ bool validate_operator(QString const & operator_string, operator_t & op, QString
 class name
 {
 public:
+    typedef QVector<name>   vector_t;
+
     void                    clear() { f_name.clear(); f_error.clear(); }
-    bool                    set_name(QString const& name_string);
+    bool                    set_name(QString const & name_string);
     QString const &         get_name() const { return f_name; }
     QString const &         get_namespace() const { return f_namespace; }
     bool                    is_valid() const { return f_error.isEmpty(); }
@@ -109,7 +113,6 @@ private:
     QString                 f_namespace;
     QString                 f_error;
 };
-typedef QVector<name>       name_vector_t;
 
 
 class version_operator
@@ -131,6 +134,8 @@ private:
 class version
 {
 public:
+    typedef QVector<version>    vector_t;
+
     bool                        set_version_string(QString const & version_string);
     void                        set_version(version_numbers_vector_t const & version);
     void                        set_operator(version_operator const & op);
@@ -149,7 +154,6 @@ private:
     QString                     f_error;
     version_operator            f_operator;
 };
-typedef QVector<version>        version_vector_t;
 
 
 class versioned_filename
@@ -199,16 +203,16 @@ public:
     QString                     get_dependency_string() const;
     QString const &             get_name() const { return f_name.get_name(); }
     QString const &             get_namespace() const { return f_name.get_namespace(); }
-    version_vector_t const &    get_versions() const { return f_versions; }
-    name_vector_t const &       get_browsers() const { return f_browsers; }
+    version::vector_t const &   get_versions() const { return f_versions; }
+    name::vector_t const &      get_browsers() const { return f_browsers; }
     bool                        is_valid() const;
     QString const &             get_error() const { return f_error; }
 
 private:
     QString                     f_error;
     name                        f_name;
-    version_vector_t            f_versions;
-    name_vector_t               f_browsers;
+    version::vector_t           f_versions;
+    name::vector_t              f_browsers;
 };
 typedef QVector<dependency>     dependency_vector_t;
 
@@ -226,12 +230,12 @@ public:
     QString const &             get_version_string() const { return f_version.get_version_string(); } // this was canonicalized
     version_number_t            get_branch() const { if(f_version.get_version().empty()) return SPECIAL_VERSION_UNDEFINED; else return f_version.get_version()[0]; }
     version_numbers_vector_t const & get_version() const { return f_version.get_version(); }
-    name_vector_t const &       get_browsers() const { return f_browsers; }
+    name::vector_t const &      get_browsers() const { return f_browsers; }
     QString const &             get_description() const { return f_description; }
     dependency_vector_t const & get_depends() const { return f_depends; }
     bool                        is_defined() const { return f_data; }
     bool                        is_valid() const;
-    QString const&              get_error() const { return f_error; }
+    QString const &             get_error() const { return f_error; }
 
 private:
     typedef controlled_vars::ptr_auto_init<char const>    zpdata_t;
@@ -245,7 +249,7 @@ private:
     name                        f_name;
     name                        f_layout;
     version                     f_version;
-    name_vector_t               f_browsers;
+    name::vector_t              f_browsers;
     QString                     f_error;
     QString                     f_description;
     dependency_vector_t         f_depends;

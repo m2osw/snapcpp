@@ -809,7 +809,7 @@ int check_dependency(dependencies_t *d)
         {
             expected_versions = QString(d->f_versions).split(',');
         }
-        snap::snap_version::version_vector_t versions(dep.get_versions());
+        snap::snap_version::version::vector_t versions(dep.get_versions());
         int version_max(versions.size());
         if(version_max != expected_versions.size())
         {
@@ -834,7 +834,7 @@ int check_dependency(dependencies_t *d)
         {
             expected_browsers = QString(d->f_browsers).split(',');
         }
-        snap::snap_version::name_vector_t browsers(dep.get_browsers());
+        snap::snap_version::name::vector_t browsers(dep.get_browsers());
         int browser_max(browsers.size());
         if(browser_max != expected_browsers.size())
         {
@@ -897,7 +897,15 @@ int main(int argc, char *argv[])
         {
             std::cerr << "----- Filename #" << i << " -----" << std::endl;
         }
-        errcnt += check_version(g_versions + i);
+        try
+        {
+            errcnt += check_version(g_versions + i);
+        }
+        catch(snap::snap_logic_exception const & e)
+        {
+            ++errcnt;
+            std::cerr << "error: check_version() failed (" << e.what() << ")." << std::endl;
+        }
     }
 
     // check a long stack of name / versions / browsers dependencies
@@ -907,7 +915,16 @@ int main(int argc, char *argv[])
         {
             std::cerr << "----- Dependency #" << i << " -----" << std::endl;
         }
-        errcnt += check_dependency(g_dependencies + i);
+        try
+        {
+            errcnt += check_dependency(g_dependencies + i);
+        }
+        catch(snap::snap_logic_exception const & e)
+        {
+            // got an unexpected exception
+            ++errcnt;
+            std::cerr << "error: check_dependency() failed (" << e.what() << ")." << std::endl;
+        }
     }
 
     // display # of errors discovered (should always be zero)
@@ -919,7 +936,7 @@ int main(int argc, char *argv[])
                   << " tests)" << std::endl;
     }
 
-    return errcnt;
+    return errcnt > 0 ? 1 : 0;
 }
 
 // vim: ts=4 sw=4 et

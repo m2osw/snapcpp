@@ -18,11 +18,12 @@
 #include "links.h"
 
 // TODO: remove dependency on content (because content includes links...)
-//       it may be that content and links should be merged (yuck!) TBD
+//       it may be that content and links should be merged (oh well!) TBD
 #include "../content/content.h"
 
 #include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -42,20 +43,23 @@ SNAP_PLUGIN_START(links, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
+    case name_t::SNAP_NAME_LINKS_CLEANUPLINKS:
+        return "cleanuplinks";
+
     case name_t::SNAP_NAME_LINKS_CREATELINK:
         return "createlink";
 
     case name_t::SNAP_NAME_LINKS_DELETELINK:
         return "deletelink";
 
-    case name_t::SNAP_NAME_LINKS_TABLE: // sorted index of links
+    case name_t::SNAP_NAME_LINKS_NAMESPACE:
         return "links";
 
-    case name_t::SNAP_NAME_LINKS_NAMESPACE:
+    case name_t::SNAP_NAME_LINKS_TABLE: // sorted index of links
         return "links";
 
     default:
@@ -274,11 +278,11 @@ char const *get_name(name_t name)
  *
  * \param[in] vname  The name to be verified
  */
-void link_info::verify_name(QString const& vname)
+void link_info::verify_name(QString const & vname)
 {
     // the namespace is really only for debug purposes
     // but at this time we'll keep it for security
-    char const *links_namespace(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE));
+    char const * links_namespace(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE));
     QString ns;
     ns.reserve(64);
     bool has_namespace(false);
@@ -333,12 +337,12 @@ void link_info::verify_name(QString const& vname)
     if(!has_namespace)
     {
         // at least one namespace is mandatory
-        throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, at least one namespace is expected.");
+        throw links_exception_invalid_name(QString("name \"%1\" is not acceptable, at least one namespace is expected. (key: %2, branch: %3)").arg(vname).arg(f_key).arg(f_branch));
     }
 
     if(ns == links_namespace)
     {
-        throw links_exception_invalid_name("name \"" + vname + "\" is not acceptable, a link name cannot end with \"links\".");
+        throw links_exception_invalid_name(QString("name \"%1\" is not acceptable, a link name cannot end with \"links\". (key: %2, branch: %3)").arg(vname).arg(f_key).arg(f_branch));
     }
 }
 
@@ -395,15 +399,15 @@ QString link_info::data() const
  */
 void link_info::from_data(QString const& db_data)
 {
-    QStringList lines(db_data.split('\n'));
+    snap_string_list lines(db_data.split('\n'));
     if(lines.count() != 4)
     {
         throw links_exception_invalid_db_data(QString("db_data (%1) is not exactly 4 lines").arg(db_data));
     }
-    QStringList key_data(lines[0].split('='));
-    QStringList name_data(lines[1].split('='));
-    QStringList branch_data(lines[2].split('='));
-    QStringList unique_data(lines[3].split('='));
+    snap_string_list key_data(lines[0].split('='));
+    snap_string_list name_data(lines[1].split('='));
+    snap_string_list branch_data(lines[2].split('='));
+    snap_string_list unique_data(lines[3].split('='));
     if(key_data.count() != 2 || name_data.count() != 2 || branch_data.count() != 2 || unique_data.count() != 2
     || key_data[0] != "k" || name_data[0] != "n" || branch_data[0] != "b" || unique_data[0] != "u")
     {
@@ -418,6 +422,60 @@ void link_info::from_data(QString const& db_data)
 
 
 
+
+/** \brief Memorize two link_info structures.
+ *
+ * This class is used to memorize two link structures: a source and a
+ * destination.
+ *
+ * The source and destination structures must be complete when this
+ * constructor is called because once copied in, they cannot be
+ * modified anymore.
+ *
+ * \param[in] src  The source to memorize.
+ * \param[in] dst  The destination to memorize.
+ */
+link_info_pair::link_info_pair(link_info const & src, link_info const & dst)
+    : f_source(src)
+    , f_destination(dst)
+{
+}
+
+
+/** \brief Return the source information.
+ *
+ * This function returns a copy of the source branch.
+ *
+ * This information generally comes from the data gathered on our
+ * side of the tree.
+ *
+ * \return A reference to the link_info representing the source.
+ */
+link_info const & link_info_pair::source()
+{
+    return f_source;
+}
+
+
+/** \brief Return the destination information.
+ *
+ * This function returns a copy of the destination branch.
+ *
+ * This information generally comes from the data of the cell value
+ * used for a link.
+ *
+ * \return A reference to the link_info representing the destination.
+ */
+link_info const & link_info_pair::destination()
+{
+    return f_destination;
+}
+
+
+
+
+
+
 /** \brief Initialize a link context to read links.
  *
  * This object is used to read links from the database.
@@ -425,11 +483,17 @@ void link_info::from_data(QString const& db_data)
  * to call the function multiple times before you read all the
  * links.
  *
+ * \note
+ * The order in which links are returned is not always
+ * the order in which links were created. This is because the
+ * counter used to create links may get a new digit at which
+ * point the order should be considered quite random.
+ *
  * \param[in] snap  The snap_child object pointer.
  * \param[in] info  The link information about this link context.
  * \param[in] count  Row count to select from the row table.
  */
-link_context::link_context(snap_child *snap, link_info const& info, int const count)
+link_context::link_context(snap_child * snap, link_info const & info, int const count)
     : f_snap(snap)
     , f_info(info)
     //, f_row() -- auto-init
@@ -492,22 +556,29 @@ link_context::link_context(snap_child *snap, link_info const& info, int const co
  * If no more links are available, then the function returns false
  * and the info parameter is not modified.
  *
+ * \note
+ * The order in which links are returned is not always
+ * the order in which links were created. This is because the
+ * counter used to create links may get a new digit at which
+ * point the order should be considered quite random.
+ *
  * \todo
  * The result does not return the unique flag as defined in the database.
  * The unique flag is likely going to be set to false and stay false all
  * along whether or not the link on the other side is unique.
  *
- * \param[out] info  The structure where the result is saved if available.
+ * \param[in,out] info  The structure where the result is saved if available,
+ *                      unchanged otherwise.
  *
- * \return true if info is set with the next link, false if no more links are available.
+ * \return true if info is set with the next link, false if no more
+ *         links are available.
  */
 bool link_context::next_link(link_info& info)
 {
     // special case of a unique link
     if(f_info.is_unique())
     {
-        // return the f_link entry once, then an empty string
-        // if the link did not exist, the caller only gets an empty string
+        // return the f_link entry once, then return false (no more data)
         if(f_link.isEmpty())
         {
             return false;
@@ -653,7 +724,7 @@ links::~links()
  *
  * \param[in] snap  The child handling this request.
  */
-void links::on_bootstrap(snap_child *snap)
+void links::bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
@@ -697,6 +768,19 @@ QString links::description() const
 }
 
 
+/** \brief Say "content" is a dependency.
+ *
+ * Until we properly merge links and content together, we make links
+ * depend on content.
+ *
+ * \return Our list of dependencies.
+ */
+QString links::dependencies() const
+{
+    return "|content|test_plugin_suite|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -736,7 +820,7 @@ int64_t links::do_update(int64_t last_updated)
  */
 void links::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     // read the links table to create it
     get_links_table();
@@ -856,7 +940,7 @@ void links::init_tables()
  *
  * \sa snap_child::get_unique_number()
  */
-void links::create_link(const link_info& src, const link_info& dst)
+void links::create_link(link_info const & src, link_info const & dst)
 {
     // define the column names
     QString src_col, dst_col;
@@ -945,7 +1029,7 @@ void links::create_link(const link_info& src, const link_info& dst)
  * links.
  *
  * \param[in] info  The link key and name.
- * \param[in] count Row count to fetch.
+ * \param[in] count  Row count to fetch.
  *
  * \return A shared pointer to a link context, it will always exist.
  */
@@ -954,6 +1038,105 @@ QSharedPointer<link_context> links::new_link_context(const link_info& info, cons
     QSharedPointer<link_context> context(new link_context(f_snap, info, count));
     return context;
 }
+
+
+/** \brief Read the list of existing links on this page.
+ *
+ * This function reads the list of links defined on this page.
+ *
+ * In most cases, you should not need to call this function because you
+ * show already know what links are present on your page and thus be
+ * able to access them without first having to list them. Also this
+ * function is considered SLOW.
+ *
+ * \param[in] path  The path to the list to be read.
+ *
+ * \return An array of names with each one of the links.
+ */
+link_info_pair::vector_t links::list_of_links(QString const & path)
+{
+    link_info_pair::vector_t results;
+
+    content::path_info_t ipath;
+    ipath.set_path(path);
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+
+    QtCassandra::QCassandraRow::pointer_t row(branch_table->row(ipath.get_branch_key()));
+
+    QString const links_namespace_start(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+    QString const links_namespace_end(QString("%1:;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+    int const start_pos(links_namespace_start.length());
+
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setCount(100);
+    column_predicate.setIndex(); // behave like an index
+    column_predicate.setStartColumnName(links_namespace_start); // limit the loading to links at least
+    column_predicate.setEndColumnName(links_namespace_end);
+
+    // loop until all cells are handled
+    for(;;)
+    {
+        row->clearCache();
+        row->readCells(column_predicate);
+        QtCassandra::QCassandraCells const cells(row->cells());
+        if(cells.isEmpty())
+        {
+            // no more cells
+            break;
+        }
+
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                c != cells.end();
+                ++c)
+        {
+            QtCassandra::QCassandraCell::pointer_t cell(*c);
+
+            link_info src;
+            src.set_key(ipath.get_key());
+
+            QString const cell_name(cell->columnName());
+            int const hash(cell_name.indexOf('#'));
+            if(hash == -1)
+            {
+                throw links_exception_invalid_name("cell name includes no '-' and no '#' which is not valid for a link");
+            }
+            int pos(hash);
+            int const dash(cell_name.indexOf('-'));
+            if(dash != -1)
+            {
+                pos = dash;
+            }
+            QString const link_name(cell_name.mid(start_pos, pos - start_pos));
+            src.set_name(link_name, dash == -1);
+
+            // the multiple link number cannot be saved in the link_info
+            // at this point... so we ignore it. For what we need links
+            // for, it is fine.
+            //if(dash != -1)
+            //{
+            //    QString const unique_number(cell_name.mid(dash + 1, hash - dash - 1));
+            //    ... // nothing we can do with this one for now
+            //}
+
+            // the branch is defined after the '#'
+            QString const branch_number(cell_name.mid(hash + 1));
+            src.set_branch(branch_number.toLong());
+
+            // this one we have all the data in the cell's value
+            link_info dst;
+            dst.from_data(cell->value().stringValue());
+
+            link_info_pair pair(src, dst);
+            results.push_back(pair);
+        }
+    }
+
+    return results;
+}
+
 
 
 /** \brief Make sure that the specified link is deleted.
@@ -1242,7 +1425,7 @@ void links::delete_link(link_info const& info, int const delete_record_count)
  * \param[in] source  The source link.
  * \param[in] destination  The destination link.
  */
-void links::delete_this_link(link_info const& source, link_info const& destination)
+void links::delete_this_link(link_info const & source, link_info const & destination)
 {
     if(source.is_unique())
     {
@@ -1410,8 +1593,8 @@ void links::fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_c
             throw links_exception_invalid_name("invalid link field name, no namespace found");
         }
         QString const plugin_name(name.mid(0, namespace_end));
-        plugins::plugin *plugin_owner(plugins::get_plugin(plugin_name));
-        links_cloned *link_owner(dynamic_cast<links_cloned *>(plugin_owner));
+        plugins::plugin * plugin_owner(plugins::get_plugin(plugin_name));
+        links_cloned * link_owner(dynamic_cast<links_cloned *>(plugin_owner));
         if(link_owner != nullptr)
         {
             // the repair itself is exactly the same as for a cloned page,
@@ -1427,7 +1610,7 @@ namespace details
 
 // TBD maybe this should be a taxonomy function and not directly a links option?
 //     (it would remove some additional dependencies on the content plugin!)
-void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variable_vector_t const& sub_results)
+void call_linked_to(snap_expr::variable_t & result, snap_expr::variable_t::variable_vector_t const & sub_results)
 {
     if(sub_results.size() != 3
     && sub_results.size() != 4)
@@ -1517,203 +1700,6 @@ void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
 }
 
 
-/** \brief Register the links action.
- *
- * This function registers this plugin as supporting the "createlink"
- * and "deletelink" actions.
- *
- * This allows administrators to create and delete link between pages
- * using a command line tool instead of going on the website. Obviously,
- * the command line tool is not limited to pages the administrator can
- * edit on the website.
- *
- * To create a link use the following syntax. In this example, we are
- * creating a link from the front page to user 1 making user 1 the
- * author of the front page.
- *
- * \code
- * snapbackend [--config snapserver.conf] --action createlink \
- *      --param SOURCE_LINK_NAME=users::author \
- *              SOURCE_LINK=http://csnap.example.com/ \
- *              DESTINATION_LINK_NAME=users::authored_pages \
- *              DESTINATION_LINK=http://csnap.example.com/user/1 \
- *              'LINK_MODE=1,*'
- * \endcode
- *
- * In order to delete a link, use the deletelink action instead of createlink,
- * specify the name of the field, and one or two URLs as in:
- *
- * \code
- * snapbackend your-snap.website.ext \
- *      [--config snapserver.conf]
- *      --action deletelink \
- *      --param SOURCE_LINK_NAME=users::author \
- *              SOURCE_LINK=/ \
- *              DESTINATION_LINK_NAME=users::authored_pages \
- *              DESTINATION_LINK=/user/1 \
- *              'LINK_MODE=1,*'
- *
- * snapbackend your-snap.website.ext \
- *      [--config snapserver.conf]
- *      --action deletelink \
- *      --param SOURCE_LINK_NAME=users::author \
- *              SOURCE_LINK=/ \
- *              LINK_MODE=1
- * \endcode
- *
- * WARNING: If you do not specify the URI of the website you want to work
- * on, snapback runs the process against all the existing websites.
- *
- * If you have problems with this action (it does not seem to work,)
- * try with --debug and make sure to look in the syslog output.
- *
- * \note
- * This should be a user action, unfortunately that would add a permissions
- * dependency in the users plugin which we cannot have (i.e. permissions
- * need to know about users...)
- *
- * \param[in,out] actions  The list of supported actions where we add ourselves.
- */
-void links::on_register_backend_action(server::backend_action_map_t& actions)
-{
-    actions[get_name(name_t::SNAP_NAME_LINKS_CREATELINK)] = this;
-    actions[get_name(name_t::SNAP_NAME_LINKS_DELETELINK)] = this;
-}
-
-
-/** \brief Create or delete a link.
- *
- * This function creates or deletes a link.
- *
- * \param[in] action  The action the user wants to execute.
- */
-void links::on_backend_action(QString const& action)
-{
-    content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-
-//std::cerr << "   a: " << action << "\n";
-//std::cerr << "mode: " << f_snap->get_server_parameter("LINK_MODE") << "\n";
-//std::cerr << " src: " << f_snap->get_server_parameter("SOURCE_LINK") << "\n";
-//std::cerr << "  sn: " << f_snap->get_server_parameter("SOURCE_LINK_NAME") << "\n";
-//std::cerr << " dst: " << f_snap->get_server_parameter("DESTINATION_LINK") << "\n";
-//std::cerr << "  dn: " << f_snap->get_server_parameter("DESTINATION_LINK_NAME") << "\n";
-
-    if(action == get_name(name_t::SNAP_NAME_LINKS_CREATELINK))
-    {
-        // create a link
-        QString const mode(f_snap->get_server_parameter("LINK_MODE"));
-        QStringList unique(mode.split(","));
-        if(unique.size() != 2)
-        {
-            SNAP_LOG_FATAL("invalid mode \"")(mode)("\", missing comma or more than one comma.");
-            exit(1);
-        }
-        if((unique[0] != "*" && unique[0] != "1")
-        || (unique[1] != "*" && unique[1] != "1"))
-        {
-            SNAP_LOG_FATAL("invalid mode \"")(mode)("\", one of the repeat is not \"*\" or \"1\".");
-            exit(1);
-        }
-
-        content::path_info_t source_ipath;
-        source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
-        if(!content_table->exists(source_ipath.get_key()))
-        {
-            SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
-            exit(1);
-        }
-
-        QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
-        bool const source_unique(unique[0] == "1");
-        link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
-
-        content::path_info_t destination_ipath;
-        destination_ipath.set_path(f_snap->get_server_parameter("DESTINATION_LINK"));
-        if(!content_table->exists(destination_ipath.get_key()))
-        {
-            SNAP_LOG_FATAL("invalid destination URI \"")(destination_ipath.get_key())("\", page does not exist.");
-            exit(1);
-        }
-
-        QString const link_to(f_snap->get_server_parameter("DESTINATION_LINK_NAME"));
-        bool const destination_unique(unique[1] == "1");
-        link_info destination(link_to, destination_unique, destination_ipath.get_key(), destination_ipath.get_branch());
-
-        // everything looked good, attempt the feat
-        create_link(source, destination);
-    }
-    else if(action == get_name(name_t::SNAP_NAME_LINKS_DELETELINK))
-    {
-        // delete a link
-        QString const mode(f_snap->get_server_parameter("LINK_MODE"));
-        QStringList unique(mode.split(","));
-        if(unique.size() == 1)
-        {
-            if(unique[0] != "*" && unique[0] != "1")
-            {
-                SNAP_LOG_FATAL("invalid mode \"")(mode)("\", the repeat is not \"*\" or \"1\".");
-                exit(1);
-            }
-
-            content::path_info_t source_ipath;
-            source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
-            if(!content_table->exists(source_ipath.get_key()))
-            {
-                SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
-                exit(1);
-            }
-
-            QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
-            bool const source_unique(unique[0] == "1");
-            link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
-
-            // everything looked good, attempt the feat
-            delete_link(source);
-        }
-        else if(unique.size() == 2)
-        {
-            if((unique[0] != "*" && unique[0] != "1")
-            || (unique[1] != "*" && unique[1] != "1"))
-            {
-                SNAP_LOG_FATAL("invalid mode \"")(mode)("\", one of the repeat is not \"*\" or \"1\".");
-                exit(1);
-            }
-
-            content::path_info_t source_ipath;
-            source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
-            if(!content_table->exists(source_ipath.get_key()))
-            {
-                SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
-                exit(1);
-            }
-
-            QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
-            bool const source_unique(unique[0] == "1");
-            link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
-
-            content::path_info_t destination_ipath;
-            destination_ipath.set_path(f_snap->get_server_parameter("DESTINATION_LINK"));
-            if(!content_table->exists(destination_ipath.get_key()))
-            {
-                SNAP_LOG_FATAL("invalid destination URI \"")(destination_ipath.get_key())("\", page does not exist.");
-                exit(1);
-            }
-
-            QString const link_to(f_snap->get_server_parameter("DESTINATION_LINK_NAME"));
-            bool const destination_unique(unique[1] == "1");
-            link_info destination(link_to, destination_unique, destination_ipath.get_key(), destination_ipath.get_branch());
-
-            // everything looked good, attempt the feat
-            delete_this_link(source, destination);
-        }
-        else
-        {
-            SNAP_LOG_FATAL("invalid mode \"")(mode)("\", two or more commas.");
-            exit(1);
-        }
-    }
-}
 
 
 SNAP_PLUGIN_END()

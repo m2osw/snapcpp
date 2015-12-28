@@ -21,6 +21,14 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/** \file
+ * \brief Test the tld_domain_to_lowercase() function.
+ *
+ * This file implements various test to verify that the
+ * tld() function works as expected with valid and
+ * invalid names.
+ */
+
 // Qt headers make use of long long which is not considered a valid type
 #pragma GCC diagnostic ignored "-Wlong-long"
 
@@ -97,9 +105,10 @@ QString tld_encode(const QString& tld, int& level)
     }
     // at this time the maximum level we declared is 4 but there are cases
     // where countries defined 5 levels (which is definitively crazy!)
-    if(level < 0 || level > 5)
+    // there is also one Amazon server using 6 levels
+    if(level < 0 || level > 6)
     {
-        fprintf(stderr, "error: level out of range (%d) if larger than the maximum limit, you may want to increase the limit.\n", level);
+        fprintf(stderr, "error: level out of range (%d) in \"%s\"; if larger than the maximum limit, you may want to increase the limit.\n", level, p);
         exit(1);
     }
 
@@ -177,7 +186,7 @@ void test_tlds()
             {
                 // if it worked then we have a problem
                 fprintf(stderr, "error: tld(\"%s\", &info) accepted when 2nd level names are not accepted by effective_tld_names.dat.\n",
-                        it->c_str());
+                        url.c_str());
                 ++err_count;
             }
             else if(r != TLD_RESULT_INVALID)

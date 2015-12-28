@@ -18,6 +18,7 @@
 #include "qdomxpath.h"
 
 #include "floats.h"
+#include "not_used.h"
 #include "qstring_stream.h"
 
 #include <controlled_vars/controlled_vars_auto_init.h>
@@ -25,15 +26,8 @@
 #include <controlled_vars/controlled_vars_no_enum_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 
-#include <iostream>
 #include <iomanip>
 #include <limits>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#include <QVector>
-#include <QMap>
-#pragma GCC diagnostic pop
 
 #include "poison.h"
 
@@ -1396,7 +1390,7 @@ public:
             case type_t::ATOMIC_TYPE_DOUBLE:
             case type_t::ATOMIC_TYPE_STRING:
                 // ignore the result, we return *this below
-                static_cast<void>(atomic_value_t::operator = (rhs));
+                snap::NOTUSED(atomic_value_t::operator = (rhs));
                 break;
 
             case type_t::ATOMIC_TYPE_SET:
@@ -5053,7 +5047,8 @@ void inst_predicate()
     }
 
     context_vector_t::reference context(f_functions.back().f_contexts.back());
-    if(result)
+    if(context.f_position != -1
+    && result)
     {
         context.f_result.push_back(context.f_nodes[context.f_position]);
     }
@@ -8485,7 +8480,7 @@ const QDomXPath::program_t& getProgram() const
 
 private:
     QDomXPath *                 f_owner;
-    controlled_vars::rbool_t    f_show_commands;
+    bool                        f_show_commands = false;
 
     // parser parameters
     QString                     f_xpath;

@@ -23,8 +23,9 @@
 
 #include "log.h"
 #include "not_reached.h"
-#include "tcp_client_server.h"
+#include "not_used.h"
 #include "qdomhelpers.h"
+#include "tcp_client_server.h"
 
 #include <QtCassandra/QCassandraLock.h>
 
@@ -48,7 +49,7 @@ SNAP_PLUGIN_START(epayment_paypal, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -244,24 +245,6 @@ epayment_paypal::~epayment_paypal()
 }
 
 
-/** \brief Initialize the epayment_paypal.
- *
- * This function terminates the initialization of the epayment_paypal plugin
- * by registering for various events.
- *
- * \param[in] snap  The child handling this request.
- */
-void epayment_paypal::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(epayment_paypal, "server", server, process_post, _1);
-    SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-    SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-    SNAP_LISTEN(epayment_paypal, "epayment", epayment::epayment, repeat_payment, _1, _2, _3);
-}
-
-
 /** \brief Get a pointer to the epayment_paypal plugin.
  *
  * This function returns an instance pointer to the epayment_paypal plugin.
@@ -271,9 +254,31 @@ void epayment_paypal::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the epayment_paypal plugin.
  */
-epayment_paypal *epayment_paypal::instance()
+epayment_paypal * epayment_paypal::instance()
 {
     return g_plugin_epayment_paypal_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString epayment_paypal::settings_path() const
+{
+    return "/admin/settings/epayment/paypal";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString epayment_paypal::icon() const
+{
+    return "/images/epayment/paypal-logo-64x64.png";
 }
 
 
@@ -290,6 +295,19 @@ QString epayment_paypal::description() const
 {
     return "The PayPal e-Payment Facility plugin offers payment from the"
           " client's PayPal account.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString epayment_paypal::dependencies() const
+{
+    return "|editor|epayment|filter|messages|output|path|";
 }
 
 
@@ -310,7 +328,7 @@ int64_t epayment_paypal::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 6, 1, 17, 33, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 21, 53, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -331,7 +349,7 @@ int64_t epayment_paypal::do_update(int64_t last_updated)
  */
 void epayment_paypal::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_epayment_paypal_table();
     f_epayment_paypal_table.reset();
@@ -348,9 +366,28 @@ void epayment_paypal::initial_update(int64_t variables_timestamp)
  */
 void epayment_paypal::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the epayment_paypal.
+ *
+ * This function terminates the initialization of the epayment_paypal plugin
+ * by registering for various events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void epayment_paypal::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(epayment_paypal, "server", server, process_post, _1);
+    SNAP_LISTEN(epayment_paypal, "server", server, table_is_accessible, _1, _2);
+    SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(epayment_paypal, "epayment", epayment::epayment, repeat_payment, _1, _2, _3);
 }
 
 
@@ -405,13 +442,11 @@ QtCassandra::QCassandraTable::pointer_t epayment_paypal::get_epayment_paypal_tab
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template in case path does not exist.
  */
-void epayment_paypal::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void epayment_paypal::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(metadata);
-    static_cast<void>(ctemplate);
+    NOTUSED(ipath);
+    NOTUSED(metadata);
 
     QDomDocument doc(header.ownerDocument());
 
@@ -462,7 +497,7 @@ void epayment_paypal::on_generate_header_content(content::path_info_t& ipath, QD
     content::path_info_t settings_ipath;
     settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_SETTINGS_PATH));
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
     QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
 
@@ -511,12 +546,11 @@ void epayment_paypal::on_generate_header_content(content::path_info_t& ipath, QD
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void epayment_paypal::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+void epayment_paypal::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // our pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -531,7 +565,7 @@ void epayment_paypal::on_generate_main_content(content::path_info_t& ipath, QDom
  *
  * \return true if the path was properly displayed, false otherwise.
  */
-bool epayment_paypal::on_path_execute(content::path_info_t& ipath)
+bool epayment_paypal::on_path_execute(content::path_info_t & ipath)
 {
     QString const cpath(ipath.get_cpath());
 std::cerr << "***\n*** epayment_paypal::on_path_execute() cpath = [" << cpath << "]\n***\n";
@@ -716,7 +750,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             QString const execute_url(secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_PAYMENT))->value().stringValue());
 
             http_client_server::http_client http;
-            http.set_keep_alive(true);
+            //http.set_keep_alive(true); -- this is the default
 
             std::string token_type;
             std::string access_token;
@@ -943,7 +977,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             QtCassandra::QCassandraTable::pointer_t epayment_paypal_table(get_epayment_paypal_table());
 
             QString const token(main_uri.query_option("token"));
-std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\n";
+SNAP_LOG_WARNING("*** token is [")(token)("] [")(main_uri.full_domain())("]");
             QString const date_invoice(epayment_paypal_table->row(main_uri.full_domain())->cell("agreement/" + token)->value().stringValue());
             int const pos(date_invoice.indexOf(','));
             if(pos < 1)
@@ -973,7 +1007,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             content::path_info_t invoice_ipath;
             invoice_ipath.set_path(invoice);
 
-            epayment::epayment *epayment_plugin(epayment::epayment::instance());
+            epayment::epayment * epayment_plugin(epayment::epayment::instance());
 
             // TODO: add a test to see whether the invoice has already been
             //       accepted, if so running the remainder of the code here
@@ -995,7 +1029,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
                 break;
             }
 
-            content::content *content_plugin(content::content::instance());
+            content::content * content_plugin(content::content::instance());
             QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
             QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
             QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
@@ -1038,7 +1072,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             QString const execute_url(secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_AGREEMENT))->value().stringValue());
 
             http_client_server::http_client http;
-            http.set_keep_alive(true);
+            //http.set_keep_alive(true) -- this is the default;
 
             std::string token_type;
             std::string access_token;
@@ -1156,11 +1190,11 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
                 throw epayment_paypal_exception_io_error("agreement links missing");
             }
             QString agreement_url;
-            as2js::JSON::JSONValue::array_t const& links(object.at("links")->get_array());
+            as2js::JSON::JSONValue::array_t const & links(object.at("links")->get_array());
             size_t const max_links(links.size());
             for(size_t idx(0); idx < max_links; ++idx)
             {
-                as2js::JSON::JSONValue::object_t const& link_object(links[idx]->get_object());
+                as2js::JSON::JSONValue::object_t const & link_object(links[idx]->get_object());
                 if(link_object.find("rel") != link_object.end())
                 {
                     as2js::String const rel(link_object.at("rel")->get_string());
@@ -1349,12 +1383,10 @@ int8_t epayment_paypal::get_maximum_repeat_failures()
  * \param[in,out] http  The HTTP request handler.
  * \param[out] token_type  Returns the type of OAuth2 used (i.e. "Bearer").
  * \param[out] access_token  Returns the actual OAuth2 cookie.
- * \param[in,out] secret_row  The row were invoice related secret data
- *                            is to be saved.
  *
  * \return true if the OAuth2 token is valid; false in all other cases.
  */
-bool epayment_paypal::get_oauth2_token(http_client_server::http_client& http, std::string& token_type, std::string& access_token)
+bool epayment_paypal::get_oauth2_token(http_client_server::http_client & http, std::string & token_type, std::string & access_token)
 {
     // make sure token data is as expected by default
     token_type.clear();
@@ -1385,7 +1417,7 @@ bool epayment_paypal::get_oauth2_token(http_client_server::http_client& http, st
     && (secret_debug_value.signedCharValue() != 0) == debug) // if debug flag changed, it's toasted
     {
         QtCassandra::QCassandraValue expires_value(secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_EXPIRES))->value());
-        int64_t current_date(f_snap->get_current_date());
+        int64_t const current_date(f_snap->get_current_date());
         if(expires_value.size() == sizeof(int64_t)
         && expires_value.int64Value() > current_date) // we do not use 'start date' here because it could be wrong if the process was really slow
         {
@@ -1574,8 +1606,8 @@ bool epayment_paypal::get_oauth2_token(http_client_server::http_client& http, st
  *
  * \return The URL to the PayPal plan.
  */
-QString epayment_paypal::get_product_plan(http_client_server::http_client http, std::string const& token_type, std::string const& access_token,
-                                          epayment::epayment_product const& recurring_product, double const recurring_setup_fee, QString& plan_id)
+QString epayment_paypal::get_product_plan(http_client_server::http_client & http, std::string const & token_type, std::string const & access_token,
+                                          epayment::epayment_product const & recurring_product, double const recurring_setup_fee, QString & plan_id)
 {
     // if the product GUID was not defined, then the function throws
     QString const guid(recurring_product.get_string_property(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRODUCT)));
@@ -2152,10 +2184,10 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void epayment_paypal::on_process_post(QString const& uri_path)
+void epayment_paypal::on_process_post(QString const & uri_path)
 {
     // make sure this is a cart post
-    char const *clicked_post_field(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_CLICKED_POST_FIELD));
+    char const * clicked_post_field(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_CLICKED_POST_FIELD));
     if(!f_snap->postenv_exists(clicked_post_field))
     {
         return;
@@ -2175,7 +2207,7 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         //               we start a payment with PayPal
         uint64_t invoice_number(0);
         content::path_info_t invoice_ipath;
-        epayment::epayment *epayment_plugin(epayment::epayment::instance());
+        epayment::epayment * epayment_plugin(epayment::epayment::instance());
         epayment::epayment_product_list plist;
         epayment_plugin->generate_invoice(invoice_ipath, invoice_number, plist);
         success = invoice_number != 0;
@@ -2214,7 +2246,7 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         // first we need to "log in", which PayPal calls
         //     "an authorization token"
         http_client_server::http_client http;
-        http.set_keep_alive(true);
+        //http.set_keep_alive(true); -- this is the default
 
         std::string token_type;
         std::string access_token;
@@ -2241,7 +2273,7 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         bool recurring_defined(false);
         bool recurring_fee_defined(false);
         epayment::recurring_t recurring;
-        epayment::epayment_product const *recurring_product(nullptr);
+        epayment::epayment_product const * recurring_product(nullptr);
         bool other_items(false);
         double recurring_setup_fee(0.0);
         for(size_t idx(0); idx < max_products; ++idx)
@@ -3192,7 +3224,7 @@ std::cerr << "***\n*** JSON BODY: ["
     }
 
     // create the AJAX response
-    server_access::server_access *server_access_plugin(server_access::server_access::instance());
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
     server_access_plugin->create_ajax_result(ipath, success);
     server_access_plugin->ajax_append_data(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_TOKEN_POST_FIELD), click.toUtf8());
     server_access_plugin->ajax_redirect(redirect_url);
@@ -3200,11 +3232,10 @@ std::cerr << "***\n*** JSON BODY: ["
 }
 
 
-void epayment_paypal::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void epayment_paypal::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(ipath);
+    NOTUSED(xml);
 
     if(!token.is_namespace("epayment_paypal::"))
     {
@@ -3272,7 +3303,7 @@ void epayment_paypal::on_replace_token(content::path_info_t& ipath, QString cons
  */
 void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipath, content::path_info_t& previous_invoice_ipath, content::path_info_t& new_invoice_ipath)
 {
-    static_cast<void>(previous_invoice_ipath);
+    NOTUSED(previous_invoice_ipath);
 
     epayment::epayment *epayment_plugin(epayment::epayment::instance());
     epayment::name_t status(epayment_plugin->get_invoice_status(new_invoice_ipath));
@@ -3325,7 +3356,7 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
 
     // keep connection alive as long as possible
     http_client_server::http_client http;
-    http.set_keep_alive(true);
+    //http.set_keep_alive(true); -- this is the default
 
     // get an access token
     std::string token_type;
@@ -3736,6 +3767,36 @@ std::string epayment_paypal::create_unique_request_id(QString const & main_id)
     return main_id.toUtf8().data() + std::string(buf);
 }
 
+
+
+/** \brief Check whether the cell can securily be used in a script.
+ *
+ * This signal is sent by the cell() function of snap_expr objects.
+ * The plugin receiving the signal can check the table, row, and cell
+ * names and mark that specific cell as secure. This will prevent the
+ * script writer from accessing that specific cell.
+ *
+ * In case of the content plugin, this is used to protect all contents
+ * in the secret table.
+ *
+ * The \p secure flag is used to mark the cell as secure. Simply call
+ * the mark_as_secure() function to do so.
+ *
+ * \param[in] table  The table being accessed.
+ * \param[in] accessible  Whether the cell is secure.
+ *
+ * \return This function returns true in case the signal needs to proceed.
+ */
+void epayment_paypal::on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible)
+{
+    if(table_name == get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_TABLE))
+    {
+        // the paypal payment table includes all sorts of top-secret
+        // identifiers so we do not want anyone to share such
+        //
+        accessible.mark_as_secure();
+    }
+}
 
 
 

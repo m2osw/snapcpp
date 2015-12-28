@@ -38,7 +38,18 @@
 #include <sys/stat.h>
 
 
-TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
+void free_char(char * ptr)
+{
+    free(ptr);
+}
+
+TEST_CASE("Compile set_date_time_variables() called too soon", "[compiler] [invalid]")
+{
+        csspp::compiler c;
+        REQUIRE_THROWS_AS(c.set_date_time_variables(csspp_test::get_now()), csspp::csspp_exception_logic);
+}
+
+TEST_CASE("Compile simple stylesheets", "[compiler] [stylesheet] [attribute]")
 {
     // with many spaces
     {
@@ -58,6 +69,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -71,22 +83,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"body\"\n"
@@ -123,11 +120,11 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"background\"\n"
 "        ARG\n"
-"          IDENTIFIER \"white\"\n"
+"          COLOR H:ffffffff\n"
 "          WHITESPACE\n"
 "          URL \"/images/background.png\"\n"
 "  COMMENT \"@preserver test \"Compile Simple Stylesheet\"\" I:1\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -155,6 +152,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -168,22 +166,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"body\"\n"
@@ -220,11 +203,11 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"background\"\n"
 "        ARG\n"
-"          IDENTIFIER \"white\"\n"
+"          COLOR H:ffffffff\n"
 "          WHITESPACE\n"
 "          URL \"/images/background.png\"\n"
 "  COMMENT \"@preserver test \"Compile Simple Stylesheet\" with version 1.0\" I:1\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -250,6 +233,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -263,22 +247,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -287,8 +256,8 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
+"          COLOR H:ff0000ff\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -314,6 +283,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -327,22 +297,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -351,8 +306,8 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
+"          COLOR H:ff0000ff\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -378,6 +333,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -391,22 +347,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -415,8 +356,8 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
+"          COLOR H:ff0000ff\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -444,6 +385,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -457,23 +399,8 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_default_variables()
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -504,6 +431,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -511,7 +439,10 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         c.compile(false);
 
         // no error left over
-        REQUIRE_ERRORS("test.css(5): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n");
+        REQUIRE_ERRORS(
+                "test.css(4): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n"
+                "test.css(5): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n"
+            );
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -520,22 +451,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      PERIOD\n"
@@ -554,16 +470,74 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "              INTEGER \"\" I:4\n"
 "      LIST\n"
 "        DECLARATION \"filter\"\n"
-"          ARG\n"
-"            FUNCTION \"opacity\"\n"
-"              ARG\n"
-"                PERCENT D:0.2\n"
+"          FUNCTION \"opacity\"\n"
+"            PERCENT D:0.05\n"
+"            WHITESPACE\n"
+"            MULTIPLY\n"
+"            WHITESPACE\n"
+"            INTEGER \"\" I:4\n"
 "        DECLARATION \"filter\"\n"
 "          FUNCTION \"alpha\"\n"
 "            IDENTIFIER \"opacity\"\n"
 "            EQUAL\n"
 "            INTEGER \"\" I:20\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a simple test with '--no-logo' specified
+    {
+        std::stringstream ss;
+        ss << ".box\n"
+           << "{\n"
+           << "  color: $_csspp_no_logo ? red : blue;\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.set_no_logo();
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables(csspp_test::flag_no_logo_true) +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      PERIOD\n"
+"      IDENTIFIER \"box\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:ff0000ff\n"
+//+ csspp_test::get_close_comment(true) -- with --no-logo this is gone
 
             );
 
@@ -574,16 +548,466 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
     }
 }
 
-TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
+TEST_CASE("Compile user defined functions", "[compiler] [function]")
+{
+    SECTION("deg2rad() function and translate() CSS function")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "body { angle : deg2rad( 32deg ) }\n"
+           << "a b { transform: translate(12%, 0); }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"angle\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"rad\" D:0.559\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"transform\"\n"
+"        ARG\n"
+"          FUNCTION \"translate\"\n"
+"            ARG\n"
+"              PERCENT D:0.12\n"
+"            ARG\n"
+"              INTEGER \"\" I:0\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("define an $undefined variable but no undefined() function")
+    {
+        // this is not invalid, until we check for all the CSS function names
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "$zzzundefined: 12%;\n"
+           << "body { angle : zzzundefined( 3rad ) }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"    V:zzzundefined\n"
+"      LIST\n"
+"        VARIABLE \"zzzundefined\"\n"
+"        PERCENT D:0.12\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"angle\"\n"
+"        ARG\n"
+"          FUNCTION \"zzzundefined\"\n"
+"            ARG\n"
+"              INTEGER \"rad\" I:3\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("function with default parameters")
+    {
+        // this is not invalid, until we check for all the CSS function names
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "body { color : mix(lightgrey, moccasin) }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:ffc4dce9\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("function with *complex* default parameter")
+    {
+        // this is not invalid, until we check for all the CSS function names
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin zzz_my_func($normal, $complex: 3px 7% #ff39af) { @return 3; }\n"
+           << "body { z-index : zzz_my_func('fromage') }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"    V:zzz_my_func\n"
+"      LIST\n"
+"        FUNCTION \"zzz_my_func\"\n"
+"          ARG\n"
+"            VARIABLE \"normal\"\n"
+"          ARG\n"
+"            VARIABLE \"complex\"\n"
+"            INTEGER \"px\" I:3\n"
+"            WHITESPACE\n"
+"            PERCENT D:0.07\n"
+"            WHITESPACE\n"
+"            HASH \"ff39af\"\n"
+"        OPEN_CURLYBRACKET B:true\n"
+"          COMPONENT_VALUE\n"
+"            AT_KEYWORD \"return\" I:0\n"
+"              INTEGER \"\" I:3\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:3\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("function called with a *complex* parameter")
+    {
+        // this is not invalid, until we check for all the CSS function names
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin zzz_my_func($complex) { @return 3; }\n"
+           << "body { z-index : zzz_my_func('fromage' 3px rational) }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"    V:zzz_my_func\n"
+"      LIST\n"
+"        FUNCTION \"zzz_my_func\"\n"
+"          ARG\n"
+"            VARIABLE \"complex\"\n"
+"        OPEN_CURLYBRACKET B:true\n"
+"          COMPONENT_VALUE\n"
+"            AT_KEYWORD \"return\" I:0\n"
+"              INTEGER \"\" I:3\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:3\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+}
+
+TEST_CASE("Compile invalid declaration in link with user defined functions", "[compiler] [invalid] [function]")
+{
+    SECTION("attempt to call a function with an invalid definition")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin my_func($good, bad) { @return 3; }\n"
+           << "body { angle : my_func( 32deg, -3px ) }\n"
+           << "/* @preserver test \"Compile Invalid Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("test.css(2): error: function declarations expect variables for each of their arguments, not a IDENTIFIER.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("attempt to call a function with a missing argument")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "body { color : desaturate( white ) }\n"
+           << "/* @preserver test \"Compile Invalid Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("scripts/system/functions.scss(39): error: missing function variable named \"percent\" when calling desaturate();.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("@return is empty")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin zzz_my_func() { @return { nothing; } }\n"
+           << "body { color : zzz_my_func( ) }\n"
+           << "/* @preserver test \"Compile Invalid Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("test.css(2): error: @return must be followed by a valid expression.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("@return with an invalid expression")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin zzz_my_func() { @return -; }\n"
+           << "body { color : zzz_my_func( ) }\n"
+           << "/* @preserver test \"Compile Invalid Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("test.css(2): error: unsupported type EOF_TOKEN as a unary expression token.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Check all argify", "[compiler] [stylesheet]")
 {
     // valid argify with/without spaces
     {
         std::stringstream ss;
         ss << "a,b{color:red}\n"
-           << "a, b{color:red}\n"
-           << "a,b ,c{color:red}\n"
-           << "a , b,c{color:red}\n"
-           << "a{color:red}\n"
+           << "a, b{color:hsl(0,100%,50%)}\n"
+           << "a,b ,c{color:rgb(255,0,0)}\n"
+           << "a , b,c{color:hsla(0,100%,50%,1)}\n"
+           << "a{color:rgba(255,0,0,1)}\n"
            << "a {color:red}\n"
            << "a,b {color:red}\n"
            ;
@@ -620,7 +1044,7 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
@@ -629,18 +1053,7 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
-"  COMPONENT_VALUE\n"
-"    ARG\n"
-"      IDENTIFIER \"a\"\n"
-"    ARG\n"
-"      IDENTIFIER \"b\"\n"
-"    ARG\n"
-"      IDENTIFIER \"c\"\n"
-"    OPEN_CURLYBRACKET B:true\n"
-"      DECLARATION \"color\"\n"
-"        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
@@ -651,21 +1064,32 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    ARG\n"
+"      IDENTIFIER \"b\"\n"
+"    ARG\n"
+"      IDENTIFIER \"c\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
@@ -674,7 +1098,7 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -776,7 +1200,7 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
     }
 }
 
-TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
+TEST_CASE("Invalid arguments", "[compiler] [invalid]")
 {
     // A starting comma is illegal
     {
@@ -943,6 +1367,7 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -958,22 +1383,7 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -982,8 +1392,8 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
+"          COLOR H:ff0000ff\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -997,7 +1407,7 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
+TEST_CASE("Selector attribute tests", "[compiler] [stylesheet] [attribute]")
 {
     char const * op[] =
     {
@@ -1049,7 +1459,8 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
                    << (rand() % 2 == 0 ? " " : "")
                    << "{"
                    << (rand() % 2 == 0 ? " " : "")
-                   << "color:red"
+                   << "color:"
+                   << (rand() % 2 == 0 ? "rgb(255,0,0)" : "rgba(255,0,0,1.0)")
                    << (rand() % 2 == 0 ? " " : "")
                    << "}\n";
                 csspp::position pos("test.css");
@@ -1089,12 +1500,92 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
                         "    OPEN_CURLYBRACKET B:true\n"
                         "      DECLARATION \"color\"\n"
                         "        ARG\n"
-                        "          IDENTIFIER \"red\"\n"
+                        "          COLOR H:ff0000ff\n"
                     ;
                 REQUIRE_TREES(out.str(), expected.str());
 
                 REQUIRE(c.get_root() == n);
             }
+        }
+    }
+
+    // a[b!=c]
+    for(size_t j(0); j < sizeof(val) / sizeof(val[0]); j += 2)
+    {
+        for(size_t k(0); k < (1 << 4); ++k)
+        {
+            std::stringstream ss;
+            ss << "a[";
+            if((k & (1 << 0)) != 0)
+            {
+                ss << " ";
+            }
+            ss << "b";
+            if((k & (1 << 1)) != 0)
+            {
+                ss << " ";
+            }
+            ss << "!=";
+            if((k & (1 << 2)) != 0)
+            {
+                ss << " ";
+            }
+            ss << val[j];
+            if((k & (1 << 3)) != 0)
+            {
+                ss << " ";
+            }
+            ss << "]"
+               << (rand() % 2 == 0 ? " " : "")
+               << "{"
+               << (rand() % 2 == 0 ? " " : "")
+               << "color:red"
+               << (rand() % 2 == 0 ? " " : "")
+               << "}\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            // no errors so far
+            REQUIRE_ERRORS("");
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.clear_paths();
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+            REQUIRE_ERRORS("");
+
+            std::stringstream out;
+            out << *n;
+            std::stringstream expected;
+            expected <<
+                    "LIST\n"
+                    "  COMPONENT_VALUE\n"
+                    "    ARG\n"
+                    "      IDENTIFIER \"a\"\n"
+                    "      COLON\n"
+                    "      FUNCTION \"not\"\n"
+                    "        OPEN_SQUAREBRACKET\n"
+                    "          IDENTIFIER \"b\"\n"
+                    "          EQUAL\n"
+                    "          " << val[j + 1] << "\n"
+                    "    OPEN_CURLYBRACKET B:true\n"
+                    "      DECLARATION \"color\"\n"
+                    "        ARG\n"
+                    "          COLOR H:ff0000ff\n"
+                ;
+            REQUIRE_TREES(out.str(), expected.str());
+
+            REQUIRE(c.get_root() == n);
         }
     }
 
@@ -1155,7 +1646,7 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
                 "    OPEN_CURLYBRACKET B:true\n"
                 "      DECLARATION \"color\"\n"
                 "        ARG\n"
-                "          IDENTIFIER \"red\"\n"
+                "          COLOR H:ff0000ff\n"
             ;
         REQUIRE_TREES(out.str(), expected.str());
 
@@ -1163,10 +1654,11 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
     }
 }
 
-TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
+TEST_CASE("Invalid attributes", "[compiler] [invalid]")
 {
     // attribute name cannot be an integer, decimal number, opening
     // brackets or parenthesis, delimiter, etc. only an identifier
+    SECTION("Missing operator or value")
     {
         char const * invalid_value[] =
         {
@@ -1236,17 +1728,18 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
 
     // attribute only accept a very few binary operators: =, |=, ~=, $=, ^=, *=
     // anything else is an error (including another identifier)
+    SECTION("Not an attribute operator")
     {
         char const * invalid_value[] =
         {
-            "identifier-too"
+            "identifier-too",
             "123",
             "1.23",
             "'1.23'",
             "1.23%",
             "(b)",
             "[b]",
-            //"{b}", -- causes lexer problems at this time... not too sure whether that's normal though
+            //"{b}", -- causes parser/lexer problems at this time... not too sure whether that's normal though
             "+",
             ",",
             "/* @preserve this comment */",
@@ -1254,13 +1747,21 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             "$",
             "!",
             ">",
+            ">=",
+            "<=",
+            "<",
+            ":=",
+            "?",
+            "&&",
             "#123",
             "*",
+            "**",
             ".top",
             "%name",
             "~",
             "&",
             "|",
+            "||"
         };
 
         for(auto iv : invalid_value)
@@ -1285,7 +1786,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-            REQUIRE_ERRORS("test.css(1): error: expected attribute operator missing, supported operators are '=', '~=', '^=', '$=', '*=', and '|='.\n");
+            REQUIRE_ERRORS("test.css(1): error: expected attribute operator missing, supported operators are '=', '!=', '~=', '^=', '$=', '*=', and '|='.\n");
 
             REQUIRE(c.get_root() == n);
         }
@@ -1293,6 +1794,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
 
     // attribute and a binary operators: =, |=, ~=, $=, ^=, *=
     // not followed by any value
+    SECTION("Valid operators, missing right hand side value")
     {
         char const * invalid_value[] =
         {
@@ -1300,6 +1802,10 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             " =",
             "= ",
             " = ",
+            "!=",
+            " !=",
+            "!= ",
+            " != ",
             "|=",
             " |=",
             "|= ",
@@ -1352,6 +1858,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
 
     // attribute value can only be identifier, string, integer,
     // and decimal number
+    SECTION("Valid operators, invalid right hand side value")
     {
         char const * invalid_value[] =
         {
@@ -1370,7 +1877,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             "|=",
             "/",
             "$",
-            "=",
+            //"=",
             //"!",
             ">",
             "#123",
@@ -1563,6 +2070,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
     }
 
     // attribute value can only be one token
+    SECTION("Valid operators, right hand side value followed by something")
     {
         char const * invalid_value[] =
         {
@@ -1794,10 +2302,12 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
     }
 
     // attribute value can only be one token
+    SECTION("Valid operators, right hand side value missing, no spaces")
     {
         char const *op[] =
         {
             "=",
+            "!=",
             "|=",
             "~=",
             "$=",
@@ -1890,7 +2400,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Undefined Paths", "[compiler] [invalid]")
+TEST_CASE("Undefined paths", "[compiler] [invalid]")
 {
     // compile without defining the paths
     //
@@ -1939,7 +2449,7 @@ TEST_CASE("Undefined Paths", "[compiler] [invalid]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
                 );
 
@@ -1956,7 +2466,7 @@ TEST_CASE("Undefined Paths", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
+TEST_CASE("Simple terms", "[compiler] [stylesheet]")
 {
     // simple terms are:
     //      HASH
@@ -2066,7 +2576,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "      LIST\n"
 "        DECLARATION \"color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"red\"\n"
+"            COLOR H:ff0000ff\n"
 "        DECLARATION \"width\"\n"
 "          ARG\n"
 "            INTEGER \"px\" I:12\n"
@@ -2141,7 +2651,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -2214,7 +2724,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -2514,7 +3024,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"coral\"\n"
+"          COLOR H:ff507fff\n"
 
             );
 
@@ -2570,7 +3080,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"coral\"\n"
+"          COLOR H:ff507fff\n"
 
             );
 
@@ -2622,7 +3132,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"coral\"\n"
+"          COLOR H:ff507fff\n"
 
             );
 
@@ -2630,7 +3140,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
     }
 }
 
-TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
+TEST_CASE("Invalid simple terms", "[compiler] [invalid]")
 {
     // two terms in one :not(...)
     {
@@ -3375,7 +3885,7 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
+TEST_CASE("Complex terms", "[compiler] [stylesheet]")
 {
     // [complex] terms are:
     // term: simple-term
@@ -3384,7 +3894,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
     //     | ':' FUNCTION (="not") component-value-list ')'
     //     | ':' ':' IDENTIFIER
 
-    // test a placeholder
+    SECTION("test a placeholder")
     {
         std::stringstream ss;
         ss << "div p%image"
@@ -3431,7 +3941,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"blue\"\n"
+"          COLOR H:ffff0000\n"
 
             );
 
@@ -3441,7 +3951,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         REQUIRE(c.get_root() == n);
     }
 
-    // test a reference
+    SECTION("test a reference")
     {
         std::stringstream ss;
         ss << "div a"
@@ -3486,7 +3996,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "      LIST\n"
 "        DECLARATION \"color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"blue\"\n"
+"            COLOR H:ffff0000\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 // &:hover
@@ -3498,7 +4008,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -3508,7 +4018,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         REQUIRE(c.get_root() == n);
     }
 
-    // test the not() function
+    SECTION("test the not() function")
     {
         std::stringstream ss;
         ss << "div a:not(:hover)"
@@ -3566,7 +4076,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         REQUIRE(c.get_root() == n);
     }
 
-    // test the not() function + a sub-function
+    SECTION("test the not() function + a sub-function")
     {
         std::stringstream ss;
         ss << "div a:not(:nth-last-of-type(5n+3))"
@@ -3625,7 +4135,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         REQUIRE(c.get_root() == n);
     }
 
-    // check all pseudo-elements
+    SECTION("check all pseudo-elements")
     {
         char const * pseudo_name_table[] =
         {
@@ -3676,7 +4186,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"teal\"\n"
+"          COLOR H:ff808000\n"
 
             );
 
@@ -3687,7 +4197,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         REQUIRE_ERRORS("");
     }
 
-    // check pseudo-elements not at the end
+    SECTION("check filter with alpha() function")
     {
         std::stringstream ss;
         ss << "div {\n"
@@ -3745,7 +4255,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         REQUIRE_ERRORS("");
     }
 
-    // check pseudo-elements not at the end
+    SECTION("check \"-filter\" with alpha() function")
     {
         std::stringstream ss;
         ss << "div {\n"
@@ -3803,7 +4313,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         REQUIRE_ERRORS("");
     }
 
-    // check progid:...
+    SECTION("check progid:...")
     {
         std::stringstream ss;
         ss << "div {\n"
@@ -3845,11 +4355,11 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "        DECLARATION \"-filter\"\n"
 "          IDENTIFIER \"progid\"\n"
 "          COLON\n"
-"          IDENTIFIER \"dximagetransform\"\n"
+"          IDENTIFIER \"DXImageTransform\"\n"
 "          PERIOD\n"
-"          IDENTIFIER \"microsoft\"\n"
+"          IDENTIFIER \"Microsoft\"\n"
 "          PERIOD\n"
-"          FUNCTION \"alphaimageloader\"\n"
+"          FUNCTION \"alphaimageloader\"\n"  // functions names always in lowercase...
 "            IDENTIFIER \"opacity\"\n"
 "            EQUAL\n"
 "            INTEGER \"\" I:20\n"
@@ -3866,7 +4376,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
     }
 }
 
-TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
+TEST_CASE("Invalid complex terms", "[compiler] [invalid]")
 {
     // '::' must be followed by an IDENTIFIER
     {
@@ -4213,6 +4723,7 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         REQUIRE_ERRORS(
                 "test.css(2): warning: the '[*|.|!]<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks.\n"
                 "test.css(3): warning: the '[*|.|!]<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks.\n"
+                "test.css(3): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n"
                 "test.css(4): warning: the '#<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks.\n"
                 "test.css(5): warning: the '#<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks.\n"
             );
@@ -4235,13 +4746,11 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
 "            WHITESPACE\n"
 "            COLOR H:ffffffff\n"
 "        DECLARATION \"filter\"\n"
-"          ARG\n"
-"            FUNCTION \"opacity\"\n"
-"              ARG\n"
-"                DECIMAL_NUMBER \"\" D:0.2\n"
+"          FUNCTION \"opacity\"\n"
+"            DECIMAL_NUMBER \"\" D:0.2\n"
 "        DECLARATION \"color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"chocolate\"\n"
+"            COLOR H:ff1e69d2\n"
 "        DECLARATION \"exclamation\"\n"
 "          ARG\n"
 "            INTEGER \"px\" I:300\n"
@@ -4293,7 +4802,7 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Node", "[compiler] [invalid]")
+TEST_CASE("Invalid node", "[compiler] [invalid]")
 {
     // create a fake node tree with some invalid node types to
     // exercise the compile() switch default entry
@@ -4443,7 +4952,7 @@ TEST_CASE("Invalid Node", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Compile Font Metrics", "[compiler] [invalid]")
+TEST_CASE("Compile font metrics", "[compiler] [font-metrics]")
 {
     // define a sub-declaration inside a declaration
     {
@@ -4487,7 +4996,7 @@ TEST_CASE("Compile Font Metrics", "[compiler] [invalid]")
 "      LIST\n"
 "        DECLARATION \"background-color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"white\"\n"
+"            COLOR H:ffffffff\n"
 "        DECLARATION \"color\"\n"
 "          ARG\n"
 "            COLOR H:ff333333\n"
@@ -4497,13 +5006,13 @@ TEST_CASE("Compile Font Metrics", "[compiler] [invalid]")
 "            WHITESPACE\n"
 "            STRING \"Helvetica Neue\"\n"
 "          ARG\n"
-"            IDENTIFIER \"helvetica\"\n"
+"            IDENTIFIER \"Helvetica\"\n"
 "          ARG\n"
-"            IDENTIFIER \"verdana\"\n"
+"            IDENTIFIER \"Verdana\"\n"
 "          ARG\n"
-"            IDENTIFIER \"arial\"\n"
+"            IDENTIFIER \"Arial\"\n"
 "          ARG\n"
-"            IDENTIFIER \"freesans\"\n"
+"            IDENTIFIER \"FreeSans\"\n"
 "          ARG\n"
 "            STRING \"Liberation Sans\"\n"
 "          ARG\n"
@@ -4560,13 +5069,13 @@ TEST_CASE("Compile Font Metrics", "[compiler] [invalid]")
 "            WHITESPACE\n"
 "            STRING \"Helvetica Neue\"\n"
 "          ARG\n"
-"            IDENTIFIER \"helvetica\"\n"
+"            IDENTIFIER \"Helvetica\"\n"
 "          ARG\n"
-"            IDENTIFIER \"verdana\"\n"
+"            IDENTIFIER \"Verdana\"\n"
 "          ARG\n"
-"            IDENTIFIER \"arial\"\n"
+"            IDENTIFIER \"Arial\"\n"
 "          ARG\n"
-"            IDENTIFIER \"freesans\"\n"
+"            IDENTIFIER \"FreeSans\"\n"
 "          ARG\n"
 "            STRING \"Liberation Sans\"\n"
 "          ARG\n"
@@ -4576,7 +5085,7 @@ TEST_CASE("Compile Font Metrics", "[compiler] [invalid]")
 "            COLOR H:ff333333\n"
 "        DECLARATION \"background-color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"white\"\n"
+"            COLOR H:ffffffff\n"
 
             );
 
@@ -4647,12 +5156,12 @@ TEST_CASE("Nested declarations", "[compiler] [nested]")
 "      LIST\n"
 "        DECLARATION \"font-color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"red\"\n"
+"            COLOR H:ff0000ff\n"
 "        DECLARATION \"font-family\"\n"
 "          ARG\n"
 "            INTEGER \"px\" I:34\n"
 "            WHITESPACE\n"
-"            IDENTIFIER \"white\"\n"
+"            COLOR H:ffffffff\n"
 "        DECLARATION \"font-family-name\"\n"
 "          ARG\n"
 "            IDENTIFIER \"helvetica\"\n"
@@ -4745,6 +5254,52 @@ TEST_CASE("Nested declarations", "[compiler] [nested]")
 "          INTEGER \"px\" I:910\n"
 "          WHITESPACE\n"
 "          INTEGER \"px\" I:-875\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("just one sub-declaration inside a field definition")
+    {
+        std::stringstream ss;
+        ss << "p.boxed { border: { width: 25px + 5px; }; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"      PERIOD\n"
+"      IDENTIFIER \"boxed\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"border-width\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:30\n"
 
             );
 
@@ -4928,7 +5483,7 @@ TEST_CASE("Nested declarations", "[compiler] [nested]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"edge\"\n"
 "        ARG\n"
-"          IDENTIFIER \"white\"\n"
+"          COLOR H:ffffffff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"border\"\n"
@@ -4985,7 +5540,7 @@ TEST_CASE("Nested declarations", "[compiler] [nested]")
 
         c.compile(true);
 
-std::cerr << "Result is: [" << *c.get_root() << "]\n";
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS("");
 
@@ -5015,7 +5570,7 @@ std::cerr << "Result is: [" << *c.get_root() << "]\n";
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -5140,7 +5695,7 @@ TEST_CASE("Invalid nested declarations", "[compiler] [nested] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Advanced Variables", "[compiler] [variable]")
+TEST_CASE("Advanced variables", "[compiler] [variable]")
 {
     // define a variable function with a parameter
     {
@@ -6315,7 +6870,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): info: found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n");
+        REQUIRE_ERRORS("test.css(1): info: found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n");
 
         std::stringstream out;
         out << *n;
@@ -6340,7 +6895,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
 "        ARG\n"
-"          IDENTIFIER \"blue\"\n"
+"          COLOR H:ffff0000\n"
 
             );
 
@@ -6376,8 +6931,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS(
-                "test.css(1): info: found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n"
-                "test.css(1): info: found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n"
+                "test.css(1): info: found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n"
+                "test.css(1): info: found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n"
             );
 
         std::stringstream out;
@@ -6414,7 +6969,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
 "        ARG\n"
-"          IDENTIFIER \"blue\"\n"
+"          COLOR H:ffff0000\n"
 
             );
 
@@ -6449,7 +7004,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): info: found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n");
+        REQUIRE_ERRORS("test.css(1): info: found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n");
 
         std::stringstream out;
         out << *n;
@@ -6485,7 +7040,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
 "        ARG\n"
-"          IDENTIFIER \"blue\"\n"
+"          COLOR H:ffff0000\n"
 
             );
 
@@ -6651,7 +7206,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
                 {
                     f_variable.push_back(v1);
                 }
-                if(r1 && strcmp(r1, "WHITESPACE") != 0)
+                if(strcmp(r1, "WHITESPACE") != 0)
                 {
                     f_variable.push_back(r1);
                 }
@@ -6906,7 +7461,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
+TEST_CASE("Invalid variables", "[compiler] [variable] [invalid]")
 {
     // undefined variable with whitespace before
     {
@@ -7640,7 +8195,7 @@ TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("At-Keyword Ignored", "[compiler] [at-keyword]")
+TEST_CASE("At-Keyword ignored", "[compiler] [at-keyword]")
 {
     // make sure @<not supported> is left alone as expected by CSS 3
     {
@@ -7731,7 +8286,7 @@ TEST_CASE("At-Keyword Ignored", "[compiler] [at-keyword]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("At-Keyword Messages", "[compiler] [output]")
+TEST_CASE("At-Keyword messages", "[compiler] [output]")
 {
     // generate an error with @error
     {
@@ -7902,7 +8457,7 @@ TEST_CASE("At-Keyword Messages", "[compiler] [output]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
+TEST_CASE("At-Keyword with qualified rules", "[compiler] [at-keyword]")
 {
     // a valid @document
     {
@@ -8015,7 +8570,7 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 "              WHITESPACE\n"
 "              IDENTIFIER \"solid\"\n"
 "              WHITESPACE\n"
-"              IDENTIFIER \"white\"\n"
+"              COLOR H:ffffffff\n"
 
             );
 
@@ -8194,7 +8749,7 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid At-Keyword Expecting Qualified Rules", "[compiler] [at-keyword]")
+TEST_CASE("Invalid at-keyword expecting qualified rules", "[compiler] [at-keyword]")
 {
     // a @supports without a {}-block
     {
@@ -8245,7 +8800,7 @@ TEST_CASE("Invalid At-Keyword Expecting Qualified Rules", "[compiler] [at-keywor
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
+TEST_CASE("At-Keyword with declarations", "[compiler] [at-keyword]")
 {
     // a valid @page
     {
@@ -8351,7 +8906,7 @@ TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
 "                OPEN_CURLYBRACKET B:true\n"
 "                  DECLARATION \"color\"\n"
 "                    ARG\n"
-"                      IDENTIFIER \"grey\"\n"
+"                      COLOR H:ff808080\n"
 
             );
 
@@ -8594,7 +9149,7 @@ TEST_CASE("Charset", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
+TEST_CASE("Conditional compilation", "[compiler] [conditional]")
 {
     // script with @if / @else if / @else keywords
     {
@@ -8758,13 +9313,13 @@ TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
+TEST_CASE("Invalid conditional", "[compiler] [conditional] [invalid]")
 {
     // script with @if / @else if / @else keywords
     // invalid "@else if" which includes an expression
     {
         std::stringstream ss;
-        ss << "$var: false;\n"
+        ss << "$zzvar: false;\n"
            << "@if { @message \"Got here! (1)\" ; }\n"
            << "@else if { @message \"Got here! (2)\";}\n"
            << "@else{@message\"Got here! (3)\";}\n"
@@ -8776,18 +9331,21 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 
         csspp::node::pointer_t n(p.stylesheet());
 
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
         // no errors so far
         REQUIRE_ERRORS("");
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
 
         c.compile(false);
 
-//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS(
                 "test.css(2): error: @if is expected to have exactly 2 parameters: an expression and a block. This @if has 1 parameters.\n"
@@ -8801,25 +9359,10 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
++ csspp_test::get_default_variables() +
+"    V:zzvar\n"
 "      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
-"    V:var\n"
-"      LIST\n"
-"        VARIABLE \"var\"\n"
+"        VARIABLE \"zzvar\"\n"
 "        IDENTIFIER \"false\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
@@ -8828,7 +9371,7 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 "      DECLARATION \"list\"\n"
 "        ARG\n"
 "          IDENTIFIER \"cross\"\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -9025,9 +9568,12 @@ TEST_CASE("User @import", "[compiler] [at-keyword]")
             importing << "/* @preserve this worked! {$_csspp_version} */";
         }
         std::stringstream ss;
-        ss << "@import url(file://"
-           << get_current_dir_name()
-           << "/importing.scss);";
+        {
+            std::unique_ptr<char, void (*)(char *)> cwd(get_current_dir_name(), free_char);
+            ss << "@import url(file://"
+               << cwd.get()
+               << "/importing.scss);";
+        }
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -9040,6 +9586,7 @@ TEST_CASE("User @import", "[compiler] [at-keyword]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -9053,24 +9600,9 @@ TEST_CASE("User @import", "[compiler] [at-keyword]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
-"  COMMENT \"@preserve this worked! 1.0.0\" I:1\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_default_variables() +
+"  COMMENT \"@preserve this worked! " CSSPP_VERSION "\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -9348,7 +9880,7 @@ TEST_CASE("Invalid @import", "[compiler] [at-keyword] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
+TEST_CASE("Invalid variable in comment", "[compiler] [conditional] [invalid]")
 {
     // variable is not defined
     {
@@ -9366,6 +9898,7 @@ TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -9398,6 +9931,7 @@ TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -9430,6 +9964,7 @@ TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -9452,7 +9987,7 @@ TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
 // This does not work under Linux, the ifstream.open() accepts a
 // directory name as input without generating an error
 //
-//TEST_CASE("Cannot Open File", "[compiler] [invalid] [input]")
+//TEST_CASE("Cannot open file", "[compiler] [invalid] [input]")
 //{
 //    // generate an error with @error
 //    {

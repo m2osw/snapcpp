@@ -17,19 +17,15 @@
 
 #include "snapwebsites.h"
 
-#include "plugins.h"
-#include "signal.h"
 #include "log.h"
-#include "not_reached.h"
-#include "tcp_client_server.h"
+#include "not_used.h"
+#include "signal.h"
 #include "snap_backend.h"
 #include "snap_cassandra.h"
+#include "tcp_client_server.h"
 
-#include <iostream>
-#include <memory>
 #include <sstream>
 
-#include <QStringList>
 #include <QFile>
 #include <QDirIterator>
 #include <QHostAddress>
@@ -112,7 +108,7 @@ namespace snap
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -135,12 +131,15 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_SITES: // website global settings
         return "sites";
 
-    // names used by CORE (server and snap_child)
-    case name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER:
-        return "Content-Type";
+    case name_t::SNAP_NAME_BACKEND: // backend progress
+        return "backend";
 
+    // names used by CORE (server and snap_child)
     case name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
         return "core::administrator_email";
+
+    case name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER:
+        return "Content-Type";
 
     case name_t::SNAP_NAME_CORE_COOKIE_DOMAIN:
         return "core::cookie_domain";
@@ -148,11 +147,11 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE:
         return "HTTP_ACCEPT_LANGUAGE";
 
-    case name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD:
-        return "REQUEST_METHOD";
-
     case name_t::SNAP_NAME_CORE_HTTP_USER_AGENT:
         return "HTTP_USER_AGENT";
+
+    case name_t::SNAP_NAME_CORE_LAST_DYNAMIC_UPDATE:
+        return "core::last_dynamic_update";
 
     case name_t::SNAP_NAME_CORE_LAST_UPDATED:
         return "core::last_updated";
@@ -172,6 +171,18 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CORE_REDIRECT:
         return "core::redirect";
 
+    case name_t::SNAP_NAME_CORE_REMOTE_ADDR:
+        return "REMOTE_ADDR";
+
+    case name_t::SNAP_NAME_CORE_REQUEST_METHOD:
+        return "REQUEST_METHOD";
+
+    case name_t::SNAP_NAME_CORE_REQUEST_URI:
+        return "REQUEST_URI";
+
+    case name_t::SNAP_NAME_CORE_RETRY_AFTER_HEADER:
+        return "Retry-After";
+
     case name_t::SNAP_NAME_CORE_RULES:
         return "core::rules";
 
@@ -190,8 +201,17 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CORE_SITE_SHORT_NAME:
         return "core::site_short_name";
 
+    case name_t::SNAP_NAME_CORE_SNAPBACKEND:
+        return "snapbackend";
+
+    case name_t::SNAP_NAME_CORE_STATUS_HEADER:
+        return "Status";
+
     case name_t::SNAP_NAME_CORE_USER_COOKIE_NAME:
         return "core::user_cookie_name";
+
+    case name_t::SNAP_NAME_CORE_X_POWERED_BY_HEADER:
+        return "X-Powered-By";
 
     default:
         // invalid index
@@ -280,11 +300,19 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "cron-action",
+            nullptr,
+            "Specify a server CRON action.",
+            advgetopt::getopt::optional_argument
+        },
+        {
             'd',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "debug",
             nullptr,
-            "Outputs debug logs to the logfile/stdout.",
+            "Outputs debug logs. Perform additional checks in various places.",
             advgetopt::getopt::no_argument
         },
         {
@@ -362,6 +390,26 @@ namespace
             advgetopt::getopt::end_of_options
         }
     };
+
+    struct connection_t
+    {
+        snap_communicator::pointer_t                    f_communicator;
+        snap_communicator::snap_connection::pointer_t   f_listener;
+        snap_communicator::snap_connection::pointer_t   f_child_death_listener;
+        snap_communicator::snap_connection::pointer_t   f_messager;
+    };
+
+    /** \brief The pointers to communicator elements.
+     *
+     * The communicator we use to run the server events.
+     *
+     * \todo
+     * At some point we need to look into whether it would be possible
+     * for us to use a shared pointer. At this point the g_connection
+     * gets allocated and never deleted (not a big deal since it is
+     * ONE instance for the entire time the process is running.)
+     */
+    connection_t *          g_connection;
 }
 //namespace
 
@@ -391,7 +439,7 @@ std::shared_ptr<server> server::g_instance;
  *
  * \return A pointer to a constant string representing the server version.
  */
-char const *server::version()
+char const * server::version()
 {
     return SNAPWEBSITES_VERSION_STRING;
 }
@@ -534,6 +582,18 @@ server::pointer_t server::set_instance(pointer_t other_server)
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString server::icon() const
+{
+    return "/images/snap/snap-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -551,6 +611,33 @@ QString server::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * The server has no dependencies so this function returns an empty string.
+ *
+ * \return An empty string.
+ */
+QString server::dependencies() const
+{
+    return QString();
+}
+
+
+/** \brief Required bootstrap definition.
+ *
+ * This function does nothing as the server object is already properly
+ * initialized by the time this function gets called.
+ *
+ * However, since it is a pure virtual function, we suppose that it
+ * is required.
+ */
+void server::bootstrap(snap_child * snap)
+{
+    // virtual function stub
+    NOTUSED(snap);
+}
+
+
 /** \brief Update the server, the function is mandatory.
  *
  * This function is here because it is a pure virtual in the plug in. At this
@@ -562,7 +649,7 @@ QString server::description() const
  */
 int64_t server::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
 
     SNAP_PLUGIN_UPDATE_INIT();
     SNAP_PLUGIN_UPDATE_EXIT();
@@ -586,8 +673,8 @@ server::server()
     //                       maybe some clear separate variables?
     f_parameters["listen"]         = "0.0.0.0:4004";
     f_parameters["plugins_path"]   = "/usr/lib/snapwebsites/plugins";
-    f_parameters["qs_path"]        = "q";
     f_parameters["qs_action"]      = "a";
+    f_parameters["qs_hit"]         = "hit";
     f_parameters["server_name"]    = "";
     f_parameters["wait_interval"]  = "5";  // default: 1 second
     f_parameters["wait_max_tries"] = "-1"; // default: indefinite wait
@@ -633,7 +720,7 @@ server::~server()
  *
  * \param[in] code  The exit code, generally 0 or 1.
  */
-void server::exit( const int code )
+void server::exit( int const code )
 {
     // Destroy the snapwebsites server instance.
     //
@@ -738,7 +825,7 @@ void server::show_version()
  * \param[in] argc  The number of arguments in argv.
  * \param[in] argv  The array of argument strings.
  */
-void server::config(int argc, char *argv[])
+void server::config(int argc, char * argv[])
 {
     // Stop on these signals, log them, then terminate.
     //
@@ -759,10 +846,10 @@ void server::config(int argc, char *argv[])
     // Users may change their locale settings so a child may change
     // the locale for display formatting needs.
     //
-    char const *default_locale(std::setlocale(LC_ALL, "C.UTF-8"));
+    char const * default_locale(std::setlocale(LC_ALL, "C.UTF-8"));
     if(default_locale == nullptr)
     {
-        std::locale const& loc(std::locale("C"));
+        std::locale const & loc(std::locale("C"));
         std::locale::global(loc);  // default depends on LC_... vars
         std::cin.imbue(loc);
         std::cout.imbue(loc);
@@ -771,7 +858,7 @@ void server::config(int argc, char *argv[])
     else
     {
         // if we can use UTF-8, do so rather than just plain C
-        std::locale const& loc(std::locale("C.UTF-8"));
+        std::locale const & loc(std::locale("C.UTF-8"));
         std::locale::global(loc);  // default depends on LC_... vars
         std::cin.imbue(loc);
         std::cout.imbue(loc);
@@ -779,7 +866,8 @@ void server::config(int argc, char *argv[])
     }
     // TBD: we initialize the Qt library later, I do not think it will
     //      change the locale on us, but this is a TBD until otherwise
-    //      proven to be safe... (see QLocale)
+    //      proven to be safe... (see QLocale) -- and that could change
+    //      when we start using Qt 5.x
 
     // Parse command-line options...
     //
@@ -807,7 +895,7 @@ void server::config(int argc, char *argv[])
     f_debug = f_opt->is_defined( "debug" );
 
     // initialize the syslog() interface
-    openlog("snapserver", LOG_NDELAY | LOG_PID, LOG_DAEMON);
+    openlog(f_servername.c_str(), LOG_NDELAY | LOG_PID, LOG_DAEMON);
 
     bool help(false);
 
@@ -861,10 +949,35 @@ void server::config(int argc, char *argv[])
         }
         else
         {
-            // If not backend, "--action" doesn't make sense.
+            // If not backend, "--action" does not make sense.
             //
-            SNAP_LOG_FATAL() << "fatal error: unexpected command line option \"--action " << action << "\", server not started. (in server::config())";
-            syslog( LOG_CRIT, "unexpected command line option \"--action %s\", server not started. (in server::config())", action.c_str() );
+            SNAP_LOG_FATAL("unexpected command line option \"--action ")(action)("\", server not started as backend. (in server::config())");
+            syslog( LOG_CRIT, "unexpected command line option \"--action %s\", server not started as backend. (in server::config())", action.c_str() );
+            help = true;
+        }
+        if( f_opt->is_defined( "cron-action" ) )
+        {
+            // --action and --cron-action are mutually exclusive
+            //
+            SNAP_LOG_FATAL("command line options \"--action\" and \"--cron-action\" are mutually exclusive, server not started as backend. (in server::config())");
+            syslog( LOG_CRIT, "command line options \"--action\" and \"--cron-action\" are mutually exclusive, server not started as backend. (in server::config())" );
+            help = true;
+        }
+    }
+
+    if( f_opt->is_defined( "cron-action" ) )
+    {
+        std::string const cron_action(f_opt->get_string("cron-action"));
+        if( f_backend )
+        {
+            f_parameters["__BACKEND_CRON_ACTION"] = cron_action.c_str();
+        }
+        else
+        {
+            // If not backend, "--cron-action" does not make sense.
+            //
+            SNAP_LOG_FATAL("fatal error: unexpected command line option \"--cron-action ")(cron_action)("\", server not started as backend. (in server::config())");
+            syslog( LOG_CRIT, "unexpected command line option \"--cron-action %s\", server not started as backend. (in server::config())", cron_action.c_str() );
             help = true;
         }
     }
@@ -953,9 +1066,9 @@ void server::config(int argc, char *argv[])
 
     if( f_debug )
     {
-        // Override output level and force it to be debug
+        // Force the logger level to DEBUG or TRACE
         //
-        logging::set_log_output_level( logging::log_level_t::LOG_LEVEL_DEBUG );
+        logging::reduce_log_output_level( logging::log_level_t::LOG_LEVEL_DEBUG );
     }
 }
 
@@ -998,13 +1111,14 @@ size_t server::thread_count()
  * function in the snap_child class as a better alternative
  * for plugins.)
  *
+ * \li backend_nice -- the nice value to use with backends; if undefined, keep
+ *     the default nice value (i.e. 0)
  * \li cassandra_host -- the IP address or server name to Cassandra; default is localhost
  * \li cassandra_port -- the port to use to connect to Cassandra; default is 9160
  * \li data_path -- path to the directory holding the system data (images, js, css, counters, etc.)
  * \li default_plugins -- list of default plugins to initialize a new website
  * \li listen -- address:port to listen to (default 0.0.0.0:4004)
  * \li plugins -- path to the list of plugins
- * \li qs_path -- the variable holding the path in the URL; defaults to "q"
  * \li qs_action -- the variable holding the action over this path ("view" if not specified)
  * \li max_pending_connections -- the number of connections that can wait in
  *     the server queue, there is Snap default (i.e. the Qt TCP server default
@@ -1019,7 +1133,7 @@ size_t server::thread_count()
  *
  * \return The value of the specified parameter.
  */
-QString server::get_parameter(QString const& param_name) const
+QString server::get_parameter(QString const & param_name) const
 {
     if(f_parameters.contains(param_name))
     {
@@ -1056,8 +1170,43 @@ void server::prepare_qtapp( int argc, char *argv[] )
 
     if(!g_application)
     {
+        // We install a translator early, but language files are only
+        // loaded if the user is logged in or a website specified a
+        // locale which is not "en" or "en_US".
+        //
         g_application = QPointer<QCoreApplication>( new QCoreApplication(argc, argv) );
+        g_application->installTranslator(&f_translator);
     }
+}
+
+
+/** \brief Change the current translation.
+ *
+ * This function is called whenever a new translation becomes available.
+ * In most cases this happens whenever a user is logged in the system.
+ *
+ * At some point we may want to provide a translation capability from
+ * the server settings so one can have most error messages translated
+ * in their main country language instead of the default English.
+ *
+ * The \p xml_data buffer is XML as output by Qt Linguist. We actually
+ * make use of our own translation tool in Snap! and have a backend
+ * process which gathers all the translations and generates one XML
+ * file for each given language.
+ *
+ * \param[in] xml_data  The XML data representing the translation as
+ *                      expected by QTranslator.
+ */
+void server::set_translation(QString const xml_data)
+{
+    // WARNING: the translation must not disappear when installed from
+    //          using the load(char const *, int) overload function so
+    //          we keep a copy in f_translation_xml
+    //
+    f_translation_xml = xml_data.toUtf8();
+
+    // we use a cast because .data() returns a 'char *'
+    f_translator.load(reinterpret_cast<uchar const *>(f_translation_xml.data()), f_translation_xml.size());
 }
 
 
@@ -1066,17 +1215,21 @@ void server::prepare_qtapp( int argc, char *argv[] )
  * This function ensures that the Cassandra database includes the default
  * context and tables (domain, website, contents.)
  *
- * This is called once each time the server is started. It doesn't matter
- * too much as it is quite fast. Only the core tables are checked. Plug-ins
- * can create new tables on the fly so it doesn't matter as much. We may
+ * This is called once each time the server is started. It does npt matter
+ * too much as it is quite fast. Only the core tables are checked. We may
  * later provide a way for plugins to create different contexts but at
  * this point we expect all of them to only make use of the Core provided
  * context.
  *
+ * Currently, plugins create new tables on the fly, although in a large
+ * cluster that is not a valid strategy because the creation of a table
+ * has to be synchronized throughout the entire cluster and that is very
+ * slow on large cluster.
+ *
  * \todo
- * If we do not call this function, the f_cassandra_host and f_cassandra_port
- * do not get defined. This is a problem that should be addressed at some
- * point.
+ * If this function does not get called, the f_cassandra_host and
+ * f_cassandra_port do not get defined. This is a problem that should
+ * be addressed at some point.
  */
 void server::prepare_cassandra()
 {
@@ -1084,10 +1237,9 @@ void server::prepare_cassandra()
     cassandra.connect();
     cassandra.init_context();
     QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
-    Q_ASSERT( context );
     if( !context )
     {
-        SNAP_LOG_FATAL() << "snap_websites context does not exist! Exiting.";
+        SNAP_LOG_FATAL("snap_websites context does not exist! Exiting.");
         exit(1);
     }
     //
@@ -1181,6 +1333,7 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
     return table;
 }
 
+
 /** \brief Detach the server unless in foreground mode.
  *
  * This function detaches the server unless it is in foreground mode.
@@ -1222,68 +1375,6 @@ void server::detach()
 }
 
 
-/** \brief Create a UDP server that receives udp_ping() messages.
- *
- * This static function is used to receive PING messages from the udp_ping()
- * function. Other messages can also be sent such as RSET and STOP.
- *
- * The server is expected to be used with the recv() or timed_recv()
- * functions to wait for a message and act accordingly. A server
- * that makes use of these pings is expected to be waiting for some
- * data which, once available requires additional processing. The
- * server that handles the row data sends the PING to the server.
- * For example, the sendmail plugin just saves the email data in
- * the Cassandra database, then it sends a PING to the sendmail
- * backend process. That backend process wakes up and actually
- * processes the email by sending it to the mail server.
- *
- * \param[in] udp_addr_port  The IP addr and port ("addr:port") of the UDP server.
- *
- * \return A UDP server smart pointer.
- */
-server::udp_server_t server::udp_get_server( QString const& udp_addr_port )
-{
-    // TODO: we should have a common function to read and transform the
-    //       parameter to a valid IP/Port pair (see above)
-    //
-    QString addr, port;
-    int const bracket( udp_addr_port.lastIndexOf("]") );
-    int const p( udp_addr_port.lastIndexOf(":") );
-    if( (bracket != -1) && (p != -1) )
-    {
-        if(p > bracket)
-        {
-            // IPv6 port specification
-            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
-            port = udp_addr_port.mid(p + 1); // ignore the ':'
-        }
-        else
-        {
-            throw snap_exception("invalid [IPv6]:port specification, port missing for UDP listener");
-        }
-    }
-    else if(p != -1)
-    {
-        // IPv4 port specification
-        addr = udp_addr_port.mid(0, p); // ignore the ':'
-        port = udp_addr_port.mid(p + 1); // ignore the ':'
-    }
-    else
-    {
-        throw snap_exception("invalid IPv4:port specification, port missing for UDP listener");
-    }
-    //
-    udp_server_t server( new udp_client_server::udp_server(addr.toUtf8().data(), port.toInt()) );
-    if(server.isNull())
-    {
-        // this should not happen since std::badalloc is raised when allocation fails
-        // and the new operator will rethrow any exception that the constructor throws
-        throw snap_exception("server for the UDP listener could not be allocated");
-    }
-    return server;
-}
-
-
 /** \brief Send a PING message to the specified UDP server.
  *
  * This function sends a PING message (4 bytes) to the specified
@@ -1308,44 +1399,73 @@ server::udp_server_t server::udp_get_server( QString const& udp_addr_port )
  * The \p upd_addr_port parameter is an IP address (IPv4 or IPv6)
  * which must be followed by a colon and a port number.
  *
- * \param[in] udp_addr_port  The server:port string to connect to.
- * \param[in] message        The message to send, "PING" by default.
+ * \param[in] service  The name of the service to ping.
+ * \param[in] uri  The website generating the ping.
  */
-void server::udp_ping_server( const QString& udp_addr_port, char const *message )
+void server::udp_ping_server( QString const & service, QString const & uri )
 {
-    QString addr, port;
-    int const bracket(udp_addr_port.lastIndexOf("]"));
-    int const p(udp_addr_port.lastIndexOf(":"));
-    if(bracket != -1 && p != -1)
+    snap::snap_communicator_message ping;
+    ping.set_command("PING");
+    ping.set_service(service);
+    ping.add_parameter("uri", uri);
+
+    // TBD: we may want to cache that information in case we call
+    //      this function more than once
+    //
+    QString addr("127.0.0.1");
+    int port(4041);
+    QString const communicator_addr_port( get_parameter("snapcommunicator_signal") );
+    tcp_client_server::get_addr_port(communicator_addr_port, addr, port, "udp");
+
+    snap_communicator::snap_udp_server_message_connection::send_message(addr.toUtf8().data(), port, ping);
+}
+
+
+/** \brief Block an IP address at the firewall level.
+ *
+ * This function sends a BLOCK message to the snapfirewall service in
+ * order to have the specified \p ip blocked for the specified \p period.
+ *
+ * The \p period parameter is not required. If not specified, the default
+ * will apply. At this time, the snapfirewall tool uses "day" as its default.
+ * The supported periods are:
+ *
+ * \li "hour" -- block the IP address for one hour.
+ * \li "day" -- block the IP address for 24h.
+ * \li "week" -- block the IP address for 7 days.
+ * \li "month" -- block the IP address for 31 days.
+ * \li "year" -- block the IP address for 366 days.
+ * \li "forever" -- block the IP address for 5 years.
+ *
+ * \param[in] ip  The IP address of to ban.
+ * \param[in] period  The duration for which the ban applies.
+ */
+void server::block_ip( QString const & ip, QString const & period )
+{
+    // create a server object (we are a static function!)
+    //
+    snap::server::pointer_t s( snap::server::instance() );
+
+    // retrieve the IP and port to the snapcommunicator
+    //
+    QString addr("127.0.0.1");
+    int port(4041);
+    tcp_client_server::get_addr_port(s->get_parameter("snapcommunicator_signal"), addr, port, "udp");
+
+    // create a BLOCK message
+    //
+    snap::snap_communicator_message message;
+    message.set_command("BLOCK");
+    message.set_service("snapfirewall");
+    message.add_parameter("ip", ip);
+    if(!period.isEmpty())
     {
-        if(p > bracket)
-        {
-            // IPv6 port specification
-            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
-            port = udp_addr_port.mid(p + 1); // ignore the ':'
-        }
-        else
-        {
-            throw snapwebsites_exception_invalid_parameters("invalid [IPv6]:port specification, port missing for UDP ping");
-        }
+        message.add_parameter("period", period);
     }
-    else if(p != -1)
-    {
-        // IPv4 port specification
-        addr = udp_addr_port.mid(0, p); // ignore the ':'
-        port = udp_addr_port.mid(p + 1); // ignore the ':'
-    }
-    else
-    {
-        throw snapwebsites_exception_invalid_parameters("invalid IPv4:port specification, port missing for UDP ping");
-    }
-    udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
-    size_t const len(strlen(message));
-    if(static_cast<size_t>(client.send(message, len)) != len) // we do not send the '\0'
-    {
-        // XXX: we need to determine whether we want to throw here
-        throw snapwebsites_exception_io_error("send failed sending all the data");
-    }
+
+    // send the message using a UDP signal
+    //
+    snap::snap_communicator::snap_udp_server_message_connection::send_message(addr.toUtf8().data(), port, message);
 }
 
 
@@ -1363,20 +1483,414 @@ bool server::nofork() const
 #endif
 
 
+
+/** \brief Check which child died.
+ *
+ * This function is used to find children that died and remove them
+ * from the list of zombies.
+ *
+ * \param[in] child_pid  The process identification of the child that died.
+ */
+void server::capture_zombies(pid_t child_pid)
+{
+    // capture zombies first
+    snap_child_vector_t::size_type max_children(f_children_running.size());
+    for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
+    {
+        if(f_children_running[idx]->get_child_pid() == child_pid)
+        {
+            if(f_children_running[idx]->check_status() != snap_child::status_t::SNAP_CHILD_STATUS_READY)
+            {
+                throw snapwebsites_exception_invalid_parameters("somehow capture_zombies() was called with a pid_t that did not represent a dead child.");
+            }
+
+            // it is ready, so it can be reused now
+            f_children_waiting.push_back(f_children_running[idx]);
+            f_children_running.erase(f_children_running.begin() + idx);
+            return;
+        }
+        //if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
+        //{
+        //    // it is ready, so it can be reused now
+        //    f_children_waiting.push_back(f_children_running[idx]);
+        //    f_children_running.erase(f_children_running.begin() + idx);
+
+        //    // removed one child so decrement index:
+        //    --idx;
+        //    --max_children;
+        //}
+    }
+}
+
+
+/** \brief Capture children death.
+ *
+ * This class used used to create a connection on started that allows
+ * us to know when a child dies. Whenever that happens, we get a call
+ * to the process_signal() callback.
+ */
+class signal_child_death
+        : public snap_communicator::snap_signal
+{
+public:
+    typedef std::shared_ptr<signal_child_death>     pointer_t;
+
+                            signal_child_death(server * s);
+
+    // snap_communicator::snap_signal implementation
+    virtual void            process_signal();
+
+private:
+    // TBD: should this be a weak pointer?
+    server *                f_server;
+};
+
+
+/** \brief Initialize the child death signal.
+ *
+ * The function initializes the snap_signal to listen on the SIGCHLD
+ * Unix signal. It also saves the pointer \p s to the server so
+ * it can be used to call various functions in the server whenever
+ * the signal occurs.
+ *
+ * \param[in] s  The server pointer.
+ */
+signal_child_death::signal_child_death(server * s)
+    : snap_signal(SIGCHLD)
+    , f_server(s)
+{
+}
+
+
+/** \brief Callback called each time the SIGCHLD signal occurs.
+ *
+ * This function gets called each time a child dies.
+ *
+ * The function checks all the children and removes zombies.
+ */
+void signal_child_death::process_signal()
+{
+    // check all our children and remove zombies
+    //
+    f_server->capture_zombies(get_child_pid());
+}
+
+
+
+
+/** \brief Listen and send messages with other services.
+ *
+ * This class is used to listen for incoming messages from
+ * snapcommunicator and also to send messages
+ *
+ * \note
+ * At this time we do not really send anything to anyone... but we may
+ * start doing so to snapwatchdog to have an overall count of the child
+ * processes that we create and other similar statistics. (i.e. we have
+ * to think about the time when we create listening children and in
+ * that case we do not want to count those children until they get
+ * a new connection; before that they do not count.)
+ */
+class messager
+        : public snap_communicator::snap_tcp_client_permanent_message_connection
+{
+public:
+    typedef std::shared_ptr<messager>    pointer_t;
+
+                        messager(server * s, std::string const & addr, int port);
+
+    // snap_communicator::snap_tcp_client_permanent_message_connection implementation
+    virtual void        process_message(snap_communicator_message const & message);
+    virtual void        process_connected();
+
+private:
+    server *            f_server;
+};
+
+
+/** \brief Initialize the messager connection.
+ *
+ * This function initializes the messager connection. It saves
+ * a pointer to the main Snap! server so it can react appropriately
+ * whenever a message is received.
+ *
+ * \param[in] s  A pointer to the server so we can send messages there.
+ * \param[in] addr  The address of the snapcommunicator server.
+ * \param[in] port  The port of the snapcommunicator server.
+ */
+messager::messager(server * s, std::string const & addr, int port)
+    : snap_tcp_client_permanent_message_connection(addr, port, tcp_client_server::bio_client::mode_t::MODE_PLAIN, snap_communicator::snap_tcp_client_permanent_message_connection::DEFAULT_PAUSE_BEFORE_RECONNECTING, false)
+    , f_server(s)
+{
+}
+
+
+/** \brief Process a message we just received.
+ *
+ * This function is called whenever the snapcommunicator received and
+ * decided to forward a message to us.
+ *
+ * \param[in] message  The message we just recieved.
+ */
+void messager::process_message(snap_communicator_message const & message)
+{
+    f_server->process_message(message);
+}
+
+
+/** \brief Process was just connected.
+ *
+ * This callback happens whenever a new connection is established.
+ * It sends a REGISTER command to the snapcommunicator. The READY
+ * reply will be received when process_message() gets called. At
+ * that point we are fully registered.
+ *
+ * This callback happens first so if we lose our connection to
+ * the snapcommunicator server, it will re-register the snapserver
+ * again as expected.
+ */
+void messager::process_connected()
+{
+    snap_tcp_client_permanent_message_connection::process_connected();
+
+    snap::snap_communicator_message register_snapserver;
+    register_snapserver.set_command("REGISTER");
+    register_snapserver.add_parameter("service", "snapserver");
+    register_snapserver.add_parameter("version", snap::snap_communicator::VERSION);
+    send_message(register_snapserver);
+}
+
+
+/** \brief Process a message received from Snap! Communicator.
+ *
+ * This function gets called whenever a message from snapcommunicator
+ * is received.
+ *
+ * The function reacts according to the message command:
+ *
+ * \li HELP -- reply with the COMMANDS message and the few commands we
+ *             understand
+ * \li LOG -- reset the log
+ * \li READY -- ignored, this means Snap Communicator acknowledge that we
+ *              registered with it
+ * \li STOP or QUITTING -- stop the server
+ * \li UNKNOWN -- ignored command, we log the fact that we sent an unknown
+ *                message to someone
+ *
+ * If another command is received, the function replies with the UNKNOWN
+ * command to make sure the sender is aware that the command was ignored.
+ *
+ * \param[in] message  The message to process.
+ */
+void server::process_message(snap_communicator_message const & message)
+{
+    if(!g_connection || !g_connection->f_communicator)
+    {
+        SNAP_LOG_WARNING("received message after the g_connection or g_connection->f_communicator variables were cleared.");
+        return;
+    }
+
+    SNAP_LOG_TRACE("received message [")(message.to_message())("]");
+
+    QString const command(message.get_command());
+
+    if(command == "STOP"
+    || command == "QUITTING")  // QUITTING happens when we send a message to snapcommunicator after it received a STOP
+    {
+        SNAP_LOG_INFO("Stopping server.");
+
+        if(g_connection->f_messager)
+        {
+            std::static_pointer_cast<messager>(g_connection->f_messager)->mark_done();
+
+            if(command != "QUITTING")
+            {
+                snap::snap_communicator_message cmd;
+                cmd.set_command("UNREGISTER");
+                cmd.add_parameter("service", "snapserver");
+                std::static_pointer_cast<messager>(g_connection->f_messager)->send_message(cmd);
+            }
+        }
+
+        {
+            g_connection->f_communicator->remove_connection(g_connection->f_listener);
+            g_connection->f_communicator->remove_connection(g_connection->f_child_death_listener);
+            //g_connection->f_communicator->remove_connection(g_connection->f_messager); -- will HUP once done
+        }
+        return;
+    }
+
+    if(command == "LOG")
+    {
+        SNAP_LOG_INFO("Logging reconfiguration.");
+        logging::reconfigure();
+        return;
+    }
+
+    if(command == "READY")
+    {
+        // TBD: should we start the listener here instead?
+        //
+        //      the fact is... if we lose the connection to
+        //      snapcommunicator we would start the listener
+        //      at another time anyway
+        //
+        return;
+    }
+
+    if(command == "HELP")
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("COMMANDS");
+
+        // list of commands understood by server
+        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+
+        std::dynamic_pointer_cast<messager>(g_connection->f_messager)->send_message(reply);
+        return;
+    }
+
+    if(command == "UNKNOWN")
+    {
+        SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+        return;
+    }
+
+    // unknown command is reported and process goes on
+    //
+    SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received on the TCP connection.");
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("UNKNOWN");
+        reply.add_parameter("command", command);
+        std::dynamic_pointer_cast<messager>(g_connection->f_messager)->send_message(reply);
+    }
+    return;
+}
+
+
+
+
+
+
+/** \brief Handle new connections from clients.
+ *
+ * This function is an implementation of the snap server so we can
+ * handle new connections from various clients.
+ */
+class listener_impl : public snap_communicator::snap_tcp_server_connection
+{
+public:
+                                listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close);
+
+    // snap_communicator::snap_tcp_server_connection implementation
+    virtual void                process_accept();
+
+private:
+    // this is owned by a server function so no need for a smart pointer
+    server *            f_server;
+};
+
+
+
+/** \brief The listener initialization.
+ *
+ * The listener receives a pointer back to the snap::server object and
+ * information on how to generate the new network connection to listen
+ * on incoming connections from clients.
+ *
+ * The server listens to two types of messages:
+ *
+ * \li accept() -- a new connection is accepted from a client
+ * \li recv() -- a UDP message was received
+ *
+ * \param[in] s  The server we are listening for.
+ * \param[in] addr  The address to listen on. Most often it is 0.0.0.0.
+ * \param[in] port  The port to listen on.
+ * \param[in] max_connections  The maximum number of connections to keep
+ *            waiting; if more arrive, refuse them until we are done with
+ *            some existing connections.
+ * \param[in] reuse_addr  Whether to let the OS reuse that socket immediately.
+ * \param[in] auto_close  Whether to automatically close the socket once more
+ *            needed anymore.
+ */
+listener_impl::listener_impl(server * s, std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
+    : snap_tcp_server_connection(addr, port, max_connections, reuse_addr, auto_close)
+    , f_server(s)
+{
+    non_blocking();
+}
+
+
+/** \brief This callback is called whenever a client tries to connect.
+ *
+ * This callback function is called whenever a new client tries to connect
+ * to the server.
+ *
+ * The function retrieves the new connection socket, makes the socket
+ * "keep alive" and then calls the process_connection() function of
+ * the server.
+ */
+void listener_impl::process_accept()
+{
+    // a new client just connected
+    //
+    int const new_socket(accept());
+    if(new_socket < 0)
+    {
+        // TBD: should we call process_error() instead? problem is this
+        //      listener would be removed from the list of connections...
+        //
+        int const e(errno);
+        SNAP_LOG_ERROR("accept() returned an error. (errno: ")(e)(" -- ")(strerror(e))("). No new connection will be created.");
+        return;
+    }
+
+    // we just have a socket and the keepalive() function in the
+    // snap_connection requires... a snap_connection object.
+    //
+    int optval(1);
+    socklen_t const optlen(sizeof(optval));
+    if(setsockopt(new_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
+    {
+        SNAP_LOG_WARNING("listener_impl::process_accept(): an error occurred trying to mark socket with SO_KEEPALIVE.");
+    }
+
+    // process the new connection, which means create a child process
+    // and run the necessary code to return an HTML page, a document,
+    // robots.txt, etc.
+    //
+    f_server->process_connection(new_socket);
+}
+
+
+
+
+
 /** \brief Listen to incoming connections.
  *
- * This function loops over a listen waiting for connections to this
- * server. The listen is made blocking since there is nothing else
- * we have to do than wait for events from the Apache server and
- * our snap.cgi tool.
+ * This function initializes various connections which get added to
+ * the snap_communicator object. These connections are:
  *
- * This function never returns.
+ * \li A listener, which opens a port to listen to new incoming connections.
+ * \li A signal handler, also via a connection, which listens to the SIGCHLD
+ *     Unix signal. This allows us to immediately manage zombie processes.
+ * \li A messager, which is a permanent connection to the Snap Communicator
+ *     server. Permanent because if the connection is lost, it will be
+ *     reinstantiated as soon as possible.
+ *
+ * Our snap.cgi process is the one that connects to our listener, since at
+ * this time we do not directly listen to port 80 or 443.
+ *
+ * The messager receives messages such as the STOP and LOG messages. The
+ * STOP message actually requests that this very function returns as soon
+ * as the server is done with anything it is currently doing.
  *
  * If the function finds an error in one of the parameters used from the
- * configuration file, then it prints an error and calls exit(1).
+ * configuration file, then it logs an error and calls exit(1).
  *
- * If the server cannot start listening, then it simply prints an error
- * and calls exit(1).
+ * Other errors may occur in which case it is likely that the process
+ * will throw an error.
  */
 void server::listen()
 {
@@ -1400,30 +1914,15 @@ void server::listen()
     }
 
     // get the address/port info
-    QString listen_info(f_parameters["listen"]);
-    if(listen_info.isEmpty())
-    {
-        listen_info = "0.0.0.0:4004";
-    }
-    QStringList host(listen_info.split(":"));
-    if(host.count() == 1)
-    {
-        host[1] = "4004";
-    }
+    QString addr("0.0.0.0");
+    int port(4004);
+    tcp_client_server::get_addr_port(f_parameters["listen"], addr, port, "tcp");
 
     // convert the address information
-    QHostAddress a(host[0]);
+    QHostAddress const a(addr);
     if(a.isNull())
     {
-        SNAP_LOG_FATAL("invalid address specification in \"")(host[0])(":")(host[1])("\".");
-        exit(1);
-    }
-
-    // convert the port information
-    long p = host[1].toLong(&ok);
-    if(!ok || p < 0 || p > 65535)
-    {
-        SNAP_LOG_FATAL("invalid port specification in \"")(host[0])(":")(host[1])("\".");
+        SNAP_LOG_FATAL("invalid address specification in \"")(addr)(":")(port)("\".");
         exit(1);
     }
 
@@ -1445,109 +1944,48 @@ void server::listen()
         }
     }
 
-    // Listener thread
-    //
-    udp_server_t udp_signals( udp_get_server( get_parameter("snapserver_udp_signal") ) );
-    f_listen_runner.reset( new snap_listen_thread( udp_signals ) );
-    f_listen_thread.reset( new snap_thread("server::listen::thread", f_listen_runner.get() ) );
-    if( !f_listen_thread->start() )
-    {
-        SNAP_LOG_FATAL("cannot start listener thread!");
-        exit(1);
-    }
+    // get the snapcommunicator IP and port
+    QString communicator_addr("127.0.0.1");
+    int communicator_port(4040);
+    tcp_client_server::get_addr_port(get_parameter("snapcommunicator_listen"), communicator_addr, communicator_port, "tcp");
 
-    // initialize the server
-    tcp_client_server::tcp_server s(host[0].toUtf8().data(), static_cast<int>(p), static_cast<int>(max_pending_connections), true, true);
+    // create a communicator
+    //
+    // only we use a bare pointer because otherwise the child processes
+    // attempt to destroy these objects and that does not work right
+    //
+    g_connection = new connection_t;
+    g_connection->f_communicator = snap_communicator::instance();
+
+    // create a listener, for new arriving client connections
+    //
+    // auto-close is set to false because the accept() is not directly used
+    // on the tcp_server object
+    //
+    g_connection->f_listener.reset(new listener_impl(this, addr.toUtf8().data(), port, max_pending_connections, true, false));
+    g_connection->f_listener->set_name("server listener");
+    g_connection->f_listener->set_priority(30);
+    g_connection->f_communicator->add_connection(g_connection->f_listener);
+
+    g_connection->f_child_death_listener.reset(new signal_child_death(this));
+    g_connection->f_child_death_listener->set_name("child death listener");
+    g_connection->f_child_death_listener->set_priority(75);
+    g_connection->f_communicator->add_connection(g_connection->f_child_death_listener);
+
+    g_connection->f_messager.reset(new messager(this, communicator_addr.toUtf8().data(), communicator_port));
+    g_connection->f_messager->set_name("messager");
+    g_connection->f_messager->set_priority(50);
+    g_connection->f_communicator->add_connection(g_connection->f_messager);
 
     // the server was successfully started
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"" + f_parameters["server_name"] + "\" started.");
 
-    // wait until we get killed
-    {
-        sigset_t set;
-        sigemptyset(&set);
-        sigaddset(&set, SIGCHLD);
-        sigprocmask(SIG_BLOCK, &set, nullptr);
-    }
-    for(;;)
-    {
-        // capture zombies first
-        snap_child_vector_t::size_type max_children(f_children_running.size());
-        for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
-        {
-            if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
-            {
-                // it's ready, so it can be reused now
-                f_children_waiting.push_back(f_children_running[idx]);
-                f_children_running.erase(f_children_running.begin() + idx);
+    // run until we get killed
+    g_connection->f_communicator->run();
 
-                // removed one child so decrement index:
-                --idx;
-                --max_children;
-            }
-        }
-
-        // retrieve all the connections and process them
-        // timeout so we can check the listen thread runner
-        //
-        //const int socket( s.accept( 500 /*1/2 sec*/ ) );
-        int socket = -1;
-        while( (socket = s.accept( 1000 /*1 sec*/ )) == -2 )
-        {
-            switch( f_listen_runner->get_word() )
-            {
-            case snap_listen_thread::word_t::WORD_SERVER_STOP:
-                SNAP_LOG_INFO("Stopping server.");
-                return;
-                break;
-
-            case snap_listen_thread::word_t::WORD_LOG_RESET:
-                SNAP_LOG_INFO("Logging reconfiguration.");
-                logging::reconfigure();
-                break;
-
-            case snap_listen_thread::word_t::WORD_WAITING:
-                // go back and listen some more
-                break;
-
-            }
-        }
-
-        if( socket != -1 )
-        {
-            // callee becomes the owner of socket
-            process_connection( socket );
-        }
-    }
-}
-
-
-/** \brief Handle caught signals
- *
- * Catch the signal, then log the signal, then terminate with 1 status.
- */
-void server::sighandler( int sig )
-{
-    QString signame;
-    bool output_stack_trace = true;
-    switch( sig )
-    {
-        case SIGSEGV : signame = "SIGSEGV"; break;
-        case SIGBUS  : signame = "SIGBUS";  break;
-        case SIGFPE  : signame = "SIGFPE";  break;
-        case SIGILL  : signame = "SIGILL";  break;
-        case SIGTERM : signame = "SIGTERM"; output_stack_trace = false; break;
-        case SIGINT  : signame = "SIGINT";  output_stack_trace = false; break;
-        default      : signame = "UNKNOWN";
-    }
-
-    if( output_stack_trace )
-    {
-        snap_exception_base::output_stack_trace();
-    }
-    //
-    SNAP_LOG_FATAL("signal caught: ")(signame);
-    g_instance->exit(1);
+    // if we are returning that is because the signals were removed from
+    // the communicator so we can now destroy the communicator
+    g_connection->f_communicator.reset();
 }
 
 
@@ -1560,9 +1998,9 @@ void server::sighandler( int sig )
  */
 void server::process_connection(int socket)
 {
-    snap_child *child;
+    snap_child * child;
 
-    // we're handling one more connection, whether it works or
+    // we are handling one more connection, whether it works or
     // not we increase our internal counter
     ++f_connections_count;
 
@@ -1599,8 +2037,48 @@ void server::process_connection(int socket)
 #pragma GCC diagnostic ignored "-Wunused-result"
         write(socket, err.c_str(), err.size());
 #pragma GCC diagnostic pop
-        // socket will be closed by the next accept() call
     }
+
+    // since we do not create any object holding this socket, we have
+    // to close it here...
+    close(socket);
+}
+
+
+/** \brief Handle caught signals
+ *
+ * Catch the signal, then log the signal, then terminate with 1 status.
+ */
+void server::sighandler( int sig )
+{
+    QString signame;
+    bool output_stack_trace(true);
+    switch( sig )
+    {
+        case SIGSEGV : signame = "SIGSEGV"; break;
+        case SIGBUS  : signame = "SIGBUS";  break;
+        case SIGFPE  : signame = "SIGFPE";  break;
+        case SIGILL  : signame = "SIGILL";  break;
+        case SIGTERM : signame = "SIGTERM"; output_stack_trace = false; break;
+        case SIGINT  : signame = "SIGINT";  output_stack_trace = false; break;
+        default      : signame = "UNKNOWN"; break;
+    }
+
+    if( output_stack_trace )
+    {
+        snap_exception_base::output_stack_trace();
+    }
+    //
+    SNAP_LOG_FATAL("signal caught: ")(signame);
+
+    // is server available?
+    if(g_instance)
+    {
+        g_instance->exit(1);
+    }
+
+    // server not available, exit directly
+    ::exit(1);
 }
 
 
@@ -1640,17 +2118,6 @@ std::string server::servername() const
 {
     return f_servername;
 }
-
-/** \fn void server::bootstrap(snap_child *snap)
- * \brief Handle of the bootstrap signal.
- *
- * The bootstrap signal is used to initialize the plugins. At this point all the plugins
- * are loaded, however, they are not yet ready to receive signals because all plugins are
- * not yet connected. The bootstrap() function is actually used to get all the listeners
- * registered.
- *
- * \param[in,out] snap  The snap child process.
- */
 
 
 /** \fn void server::init()
@@ -1697,7 +2164,7 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::define_locales(QString& locales)
+/** \fn void server::define_locales(QString & locales)
  * \brief Give plugins a chance to define the acceptable page locales.
  *
  * This signal is used whenever the user tries to access a page and
@@ -1712,7 +2179,7 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::process_post(QString const& url)
+/** \fn void server::process_post(QString const & url)
  * \brief Process a POST request at the specified URL.
  *
  * This signal is sent when the server is called with a POST instead of a GET.
@@ -1721,7 +2188,7 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::execute(QString const& url)
+/** \fn void server::execute(QString const & url)
  * \brief Execute the URL.
  *
  * This signal is called once the plugins were fully initialized. At this point
@@ -1731,12 +2198,45 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::register_backend_action(backend_action_map_t& actions)
+/** \fn void server::register_backend_cron(backend_action_set & actions)
+ * \brief Execute the specified backend action every 5 minutes.
+ *
+ * This signal is called when the backend server is asked to run a backend
+ * service as a CRON server. By default the service runs once every five
+ * minutes. It can also be awaken with a PING message and ended with a STOP
+ * message.
+ *
+ * Plugins that handle backend work that happens on a regular schedule and
+ * has to be available quickly through a PING are registered using this
+ * signal.
+ *
+ * If you are writing a one time signal process, use the
+ * register_backend_action() instead. And if you are writing a backend
+ * process that does not need to be quickly awaken via a PING, use the
+ * regular process_backend() signal.
+ *
+ * The actions are run through the on_backend_action() virtual function
+ * of the backend_action structure.
+ *
+ * \param[in,out] actions  A map where plugins can register the actions they support.
+ */
+
+
+/** \fn void server::register_backend_action(backend_action_set & actions)
  * \brief Execute the specified backend action.
  *
  * This signal is called when the server is run as a backend service.
  * Plugins that handle backend work can register when this signal is
  * triggered.
+ *
+ * If you want to register a backend that executes every five minutes
+ * and can quickly be awaken using a PING event, then use the
+ * register_backend_cron() function instead. For actions that are to
+ * run over and over again instead of once in a while on an explicit
+ * call, implement the backend_process() instead.
+ *
+ * The actions are run through the on_backend_action() virtual function
+ * of the backend_action structure.
  *
  * \param[in,out] actions  A map where plugins can register the actions they support.
  */
@@ -1745,12 +2245,20 @@ std::string server::servername() const
 /** \fn void server::backend_process()
  * \brief Execute the backend processes.
  *
- * This signal runs the backend processes that registered when they received
- * the register_backend_action() call.
+ * This signal runs backend processes that do not need to be run immediately
+ * when something changes in the database. For example, the RSS feeds are
+ * updated when this signal calls the feed on_backend_process()
+ * implementation.
  *
- * Backends that do not return (run forever) must make use of a specific
- * action name to not block the other backends when running the period
- * processes.
+ * The signal is sent to all plugins that registered with the standard
+ * SNAP_LISTEN() macro. The function is expected to do some work and then
+ * return. The function should not take too long or it has to verify
+ * whether the STOP event was sent to the backend.
+ *
+ * This implementation is different from the backend actions which are
+ * either permanent (register_backend_cron) or a one time call
+ * (register_backend_action). The CRON actions stay and run forever and
+ * can be awaken by a PING event.
  */
 
 
@@ -1763,7 +2271,7 @@ std::string server::servername() const
  */
 
 
-/** \fn void server::xss_filter(QDomNode& node, QString const& acceptable_tags, QString const& acceptable_attributes)
+/** \fn void server::xss_filter(QDomNode & node, QString const & acceptable_tags, QString const & acceptable_attributes)
  * \brief Implementation of the XSS filter signal.
  *
  * This signal is used to clean any possible XSS potential problems in the specified
@@ -1872,7 +2380,7 @@ std::string server::servername() const
  *
  * \return true if the signal is to be propagated to all the plugins.
  */
-bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
+bool server::load_file_impl(snap_child::post_file_t & file, bool & found)
 {
     QString filename(file.get_filename());
 
@@ -1914,26 +2422,50 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
 
 
 
-/** \fn void server::cell_is_secure(QString const& table, QString const& row, QString const& cell, secure_field_flag_t& secure)
- * \brief Check whether the cell can securily be used in a script.
+/** \fn void server::table_is_accessible(QString const & table_name, accessible_flag_t & accessible)
+ * \brief Check whether a table can securily be used in a script.
  *
  * This signal is sent by the cell() function of snap_expr objects.
- * The plugin receiving the signal can check the table, row, and cell
- * names and mark that specific cell as secure. This will prevent the
- * script writer from accessing that specific cell.
+ * The plugins receiving the signal can check the table name
+ * and mark it as accessible or secure.
  *
- * This is used, for example, to protect the user password. Even though
- * the password is encrypted, allowing an end user to get a copy of
- * the encrypted password would dearly simplify the work of a hacker in
+ * A table only marked as accessible can be accessed safely.
+ *
+ * \code
+ *   void my_plugin::on_table_isaccessible(QString const & table_name, accessible_flag_t & accessible)
+ *   {
+ *      if(table_name == get_name(name_t::SNAP_NAME_MYPLUGIN_TABLE_NAME))
+ *      {
+ *          accessible.mark_as_accessible();
+ *      }
+ *   }
+ * \endcode
+ *
+ * It is possible for a plugin to mark certain tables as not accessible,
+ * whether or not a plugin mark them as accessible. For example:
+ *
+ * \code
+ *   void content::on_table_isaccessible(QString const & table_name, accessible_flag_t & accessible)
+ *   {
+ *      if(table_name == get_name(name_t::SNAP_NAME_CONTENT_SECRET_TABLE))
+ *      {
+ *          // explicitly mark this table as a secure table
+ *          accessible.mark_as_secure();
+ *      }
+ *   }
+ * \endcode
+ *
+ * This is used, for example, to protect the users and secret tables.
+ * Even though passwords are encrypted, allowing an end user to get a copy
+ * of the encrypted password would dearly simplify the work of a hacker in
  * finding the unencrypted password.
  *
  * The \p secure flag is used to mark the cell as secure. Simply call
- * the mark_as_secure() function to do so.
+ * the mark_as_secure() function to do so. This means the table cannot
+ * be accessed and the cell() function fails.
  *
  * \param[in] table  The table being accessed.
- * \param[in] row  The row being accessed.
- * \param[in] cell  The cell being accessed.
- * \param[in] secure  Whether the cell is secure.
+ * \param[in] accessible  Whether the cell is secure.
  */
 
 
@@ -1967,42 +2499,6 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
 
 
 
-/** \brief Send a PING message to the specified UDP server.
- *
- * This function sends a PING message (4 bytes) to the specified
- * UDP server. This is used after you saved data in the Cassandra
- * cluster to wake up a background process which can then "slowly"
- * process the data further.
- *
- * Remember that UDP is not reliable so we do not in any way
- * guarantee that this goes anywhere. The function returns no
- * feedback at all. We do not wait for a reply since at the time
- * we send the message the listening server may be busy. The
- * idea of this ping is just to make sure that if the server is
- * sleeping at that time, it wakes up sooner rather than later
- * so it can immediately start processing the data we just added
- * to Cassandra.
- *
- * The \p message is expected to be a NUL terminated string. The
- * NUL is not sent across. At this point most of our servers
- * accept a PING message to wake up and start working on new
- * data.
- *
- * The \p name parameter is the name of a variable in the server
- * configuration file.
- *
- * \param[in] name  The name of the configuration variable used to read
- *                  the IP and port from the server configuration file.
- * \param[in] message  The message to send, "PING" by default.
- *
- * \sa udp_ping_server()
- */
-void server::udp_ping(char const *name, char const *message)
-{
-    udp_ping_server( get_parameter(name), message );
-}
-
-
 /** \brief Initializes a quiet error callback object.
  *
  * This function initializes an error callback object. It expects a pointer
@@ -2012,10 +2508,10 @@ void server::udp_ping(char const *name, char const *message)
  * should be logged or not. In most cases it probably will be set to
  * false to avoid large amounts of logs.
  *
- * \param[in] snap  The snap pointer.
+ * \param[in,out] snap  The snap pointer.
  * \param[in] log  The log flag, if true send all errors to the loggers.
  */
-quiet_error_callback::quiet_error_callback(snap_child *snap, bool log)
+quiet_error_callback::quiet_error_callback(snap_child * snap, bool log)
     : f_snap(snap)
     , f_log(log)
     //, f_error(false) -- auto-init
@@ -2041,10 +2537,10 @@ quiet_error_callback::quiet_error_callback(snap_child *snap, bool log)
  * \param[in] err_details  The internal details about the error (for system administrators only).
  * \param[in] err_by_mime_type  If returning an error, do not return HTML when this element MIME type is something else, instead send a file of that type, but still with the HTTP error code supplied.
  */
-void quiet_error_callback::on_error(snap_child::http_code_t const err_code, QString const& err_name, QString const& err_description, QString const& err_details, bool const err_by_mime_type)
+void quiet_error_callback::on_error(snap_child::http_code_t const err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
 {
     // since we ignore the error here anyway we can ignore this flag...
-    static_cast<void>(err_by_mime_type);
+    NOTUSED(err_by_mime_type);
 
     f_error = true;
 
@@ -2075,10 +2571,10 @@ void quiet_error_callback::on_error(snap_child::http_code_t const err_code, QStr
  * \param[in] http_code  The HTTP code to be returned to the user.
  */
 void quiet_error_callback::on_redirect(
-        /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
-        /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t const http_code)
+        /* message::set_error() */ QString const & err_name, QString const & err_description, QString const & err_details, bool err_security,
+        /* snap_child::page_redirect() */ QString const & path, snap_child::http_code_t const http_code)
 {
-    static_cast<void>(err_security);
+    NOTUSED(err_security);
 
     f_error = true;
     if(f_log)
@@ -2125,30 +2621,153 @@ bool quiet_error_callback::has_error() const
 }
 
 
-/** \brief Retrieve the name of the signal used by this backend.
+/** \brief Add an action to the specified action set.
  *
- * The default get_signal_name() function returns a null pointer meaning
- * that this action does not support signals. In most cases this means
- * these actions are run by the CRON based backend calls.
+ * This function adds an action to this action set.
  *
- * Plugins that loop until stopped have a signal name. This name can be
- * used to send signals such as PING and STOP to that backend. The PING
- * is expected to be used to run the process ASAP (i.e. another process
- * made a change that this backend may be interested in checking out.)
+ * The action name must be unique within a plugin. The function
+ * forces the name of the plugin as a namespace so the name ends
+ * up looking something like this (for the "reset" action of
+ * the "list" plugin):
  *
- * If the func returns the null pointer, no UDP listener is created.
+ * \code
+ *      list::reset
+ * \endcode
  *
- * \param[in] action  The name of the action.
+ * \exception snapwebsites_exception_invalid_parameters
+ * If the plugin does not implement the backend_action, then this
+ * exception is raised. It should happen rarely since without
+ * implementing that interface you end up never receiving the
+ * event. That being said, if you implement a function and forget
+ * to add the derivation, it will compile and raise this exception.
  *
- * \return nullptr or a pointer to a signal name.
+ * \param[in] action  The action to be added.
+ * \param[in] p  The plugin that is registering this \p action.
  */
-char const *server::backend_action::get_signal_name(QString const& action) const
+void server::backend_action_set::add_action(QString const & action, plugin * p)
 {
-    static_cast<void>(action);
-    return nullptr;
+    // make sure that this plugin implements the backend action
+    //
+    backend_action * ba(dynamic_cast<backend_action *>(p));
+    if(ba == nullptr)
+    {
+        throw snapwebsites_exception_invalid_parameters("snapwebsites.cpp: server::backend_action_set::add_action() was called with \"%1\" twice.");
+    }
+
+    // calculate the full name of this action
+    //
+    QString const name(QString("%1::%2").arg(p->get_plugin_name()).arg(action));
+
+    // make sure we do not get duplicates
+    //
+    if(f_actions.contains(name))
+    {
+        throw snapwebsites_exception_invalid_parameters("snapwebsites.cpp: server::backend_action_set::add_action() was called with \"%1\" twice.");
+    }
+
+    f_actions[name] = ba;
+}
+
+
+/** \brief Check whether a named action is defined in this set.
+ *
+ * Note that various websites may have various actions registered
+ * depending on which plugin is installed. This function is used
+ * to know whether an action is defined for that website.
+ *
+ * \note
+ * The backend processing function exits with an error when an
+ * action is not defined. This does not prevent the process from
+ * moving forward (since the same action is generally run against
+ * all the installed websites.)
+ *
+ * \param[in] action  The action to check the existance of.
+ *
+ * \return true if a plugin defines that specific action.
+ */
+bool server::backend_action_set::has_action(QString const & action) const
+{
+    return f_actions.contains(action);
+}
+
+
+/** \brief Actually call the backend action function.
+ *
+ * This function calls the plugin implementation of the on_backend_action()
+ * function.
+ *
+ * The function is passed the \p action parameter since the same function
+ * may get called for any number of actions (depending on how many where
+ * recorded.)
+ *
+ * \warning
+ * Note that CRON and non-CRON actions are both executed the same way.
+ * The plugin is aware of which action was registered as a CRON action
+ * and which was registered as a non-CRON action.
+ *
+ * \param[in] action  The action being executed.
+ */
+void server::backend_action_set::execute_action(QString const & action)
+{
+    if(has_action(action))
+    {
+        // the plugin itself expects the action name without the namespace
+        // so we remove it here before we run the callback
+        //
+        plugins::plugin * p(dynamic_cast<plugins::plugin *>(f_actions[action]));
+        if(p) // always expected to be defined
+        {
+            QString const namespace_name(p->get_plugin_name());
+            // the +2 is to skip the '::'
+            f_actions[action]->on_backend_action(action.mid(namespace_name.length() + 2));
+        }
+    }
+}
+
+
+/** \brief Retrieve the name of the plugin of a given action.
+ *
+ * This function retrieves the name of the plugin linked to a certain
+ * action.
+ *
+ * \param[in] action  The action of which we are interested by the plugin.
+ *
+ * \return The name of the plugin, if the action is defined, otherwise "".
+ */
+QString server::backend_action_set::get_plugin_name(QString const & action)
+{
+    if(has_action(action))
+    {
+        plugins::plugin * p(dynamic_cast<plugins::plugin *>(f_actions[action]));
+        if(p) // always expected to be defined
+        {
+            return p->get_plugin_name();
+        }
+    }
+
+    return QString();
+}
+
+
+/** \brief Display the list of actions.
+ *
+ * This function can be used to display a list of actions.
+ *
+ * \warning
+ * This function is definitely not re-entrant (although it can
+ * be called any number of times by the same thread with the
+ * same result.)
+ */
+void server::backend_action_set::display()
+{
+    f_actions["list"] = nullptr;
+    for(actions_map_t::const_iterator it(f_actions.begin()); it != f_actions.end(); ++it)
+    {
+        std::cout << "  " << it.key() << std::endl;
+    }
+    f_actions.remove("list");
 }
 
 
 } // namespace snap
-
 // vim: ts=4 sw=4 et

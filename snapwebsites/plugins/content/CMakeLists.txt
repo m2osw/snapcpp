@@ -53,11 +53,30 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 add_library(content SHARED
     content.cpp
+
+    # various parts of the content plugin
+    backend.cpp
+    cache_control.cpp
+    clone.cpp
+    destroy.cpp
+    expr_functions.cpp
+    revision.cpp
+
+    # sub-classes offered by the content plugin
+    attachment_file.cpp
+    field_search.cpp
+    path_info.cpp
+    permission_flag.cpp
+    status.cpp
+
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-target_link_libraries( content ${QT_LIBRARIES} )
+target_link_libraries(content
+    ${QT_LIBRARIES}
+    ${CSSPP_LIBRARIES}
+)
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )

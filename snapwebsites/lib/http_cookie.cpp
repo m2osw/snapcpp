@@ -17,6 +17,7 @@
 
 #include "http_cookie.h"
 
+#include "log.h"
 #include "snapwebsites.h"
 
 #include <QtCassandra/QCassandra.h>
@@ -199,7 +200,7 @@ http_cookie::http_cookie()
  * \sa set_comment()
  * \sa set_comment_url()
  */
-http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& value)
+http_cookie::http_cookie(snap_child * snap, QString const & name, QString const & value)
     : f_snap(snap)
     , f_name(name)
     //, f_domain("") -- auto-init
@@ -259,7 +260,7 @@ http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& v
  *
  * \param[in] value  The new value of the cookie.
  */
-void http_cookie::set_value(const QString& value)
+void http_cookie::set_value(QString const & value)
 {
     set_value(value.toUtf8());
 }
@@ -279,7 +280,7 @@ void http_cookie::set_value(const QString& value)
  *
  * \param[in] value  The new value of the cookie.
  */
-void http_cookie::set_value(const QByteArray& value)
+void http_cookie::set_value(QByteArray const & value)
 {
     f_value = value;
 }
@@ -303,7 +304,7 @@ void http_cookie::set_value(const QByteArray& value)
  *
  * \sa get_domain();
  */
-void http_cookie::set_domain(const QString& domain)
+void http_cookie::set_domain(QString const & domain)
 {
     f_domain = domain;
 
@@ -356,7 +357,7 @@ void http_cookie::set_domain(const QString& domain)
  *
  * \sa get_path();
  */
-void http_cookie::set_path(const QString& path)
+void http_cookie::set_path(QString const & path)
 {
     // TODO:
     // TBD -- How is that supporting Unicode characters in paths?
@@ -434,6 +435,10 @@ void http_cookie::set_session()
  * To delete a cookie, you can set the expiration date to a date in the past.
  * This is also achieved by calling the set_delete() function.
  *
+ * \note
+ * If the date represents a date more than 1 year in the future, then it
+ * gets clamped.
+ *
  * \param[in] date_time  The new expiration date and time.
  *
  * \sa set_session();
@@ -441,9 +446,21 @@ void http_cookie::set_session()
  * \sa get_expire();
  * \sa get_type();
  */
-void http_cookie::set_expire(const QDateTime& date_time)
+void http_cookie::set_expire(QDateTime const & date_time)
 {
-    f_expire = date_time;
+    time_t const seconds(date_time.toTime_t() - (f_snap ? f_snap->get_start_time() : time(nullptr)));
+    if(seconds > 86400LL * 365LL)
+    {
+        // save 'now + 1 year' instead of date_time which is further in
+        // the future and thus not HTTP 1.1 compatible
+        //
+        int64_t const start_date(f_snap ? f_snap->get_start_date() : snap_child::get_current_date());
+        f_expire = QDateTime::fromMSecsSinceEpoch(start_date / 1000LL + 86400LL * 1000LL);
+    }
+    else
+    {
+        f_expire = date_time;
+    }
 }
 
 
@@ -469,20 +486,16 @@ void http_cookie::set_expire(const QDateTime& date_time)
  * \sa set_delete();
  * \sa set_session();
  */
-void http_cookie::set_expire_in(int seconds)
+void http_cookie::set_expire_in(int64_t seconds)
 {
-    if(f_snap)
+    // clamp to 1 year (max. allowed by HTTP 1.1)
+    if(seconds > 86400LL * 365LL)
     {
-        f_expire = QDateTime::fromMSecsSinceEpoch(f_snap->get_start_date() / 1000 + seconds * 1000);
+        seconds = 86400LL * 365LL;
     }
-    else
-    {
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        int64_t start_date(static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
-                         + static_cast<int64_t>(tv.tv_usec));
-        f_expire = QDateTime::fromMSecsSinceEpoch(start_date / 1000 + seconds * 1000);
-    }
+
+    int64_t const start_date(f_snap ? f_snap->get_start_date() : snap_child::get_current_date());
+    f_expire = QDateTime::fromMSecsSinceEpoch(start_date / 1000LL + seconds * 1000LL);
 }
 
 
@@ -543,7 +556,7 @@ void http_cookie::set_http_only(bool http_only)
  *
  * \sa get_comment();
  */
-void http_cookie::set_comment(QString const& comment)
+void http_cookie::set_comment(QString const & comment)
 {
     f_comment = comment;
 }
@@ -558,7 +571,7 @@ void http_cookie::set_comment(QString const& comment)
  *
  * \sa get_comment_url();
  */
-void http_cookie::set_comment_url(QString const& comment_url)
+void http_cookie::set_comment_url(QString const & comment_url)
 {
     f_comment_url = comment_url;
 }
@@ -787,7 +800,26 @@ QString http_cookie::to_http_header() const
         // compute date/time
         // HTTP format generates: Sun, 06 Nov 1994 08:49:37 GMT
         // (see http://tools.ietf.org/html/rfc2616#section-3.3.1)
-        result += "; Expires=" + f_expire.toString("ddd, dd MMM yyyy hh:mm:ss GMT");
+        //
+        result += "; Expires=" + f_expire.toString("ddd, dd MMM yyyy hh:mm:ss' GMT'");
+
+        // Modern browsers are expected to use the Max-Age=... field
+        // instead of the Expires to avoid potential date synchronization
+        // problems between our server and the client
+        // (see http://tools.ietf.org/html/rfc6265#section-4.1.2.2)
+        //
+        // TBD: although this works, we may want to know the exact
+        //      intend of the person setting the expiration time and
+        //      maybe use that amount (or even change our current
+        //      expire to a max-age and calculate the date in Expires=...
+        //      and not the one in Max-Age.)
+        {
+            time_t const max_age(f_expire.toTime_t() - time(nullptr));
+            if(max_age > 0)
+            {
+                result += QString("; Max-Age=%1").arg(max_age);
+            }
+        }
         break;
 
     case http_cookie_type_t::HTTP_COOKIE_TYPE_SESSION:

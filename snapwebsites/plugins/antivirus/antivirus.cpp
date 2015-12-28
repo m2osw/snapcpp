@@ -19,8 +19,13 @@
 
 #include "../output/output.h"
 
-#include "process.h"
+#include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
+#include "process.h"
+
+#include <QFile>
+#include <QDateTime>
 
 #include "poison.h"
 
@@ -41,8 +46,11 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
-    case name_t::SNAP_NAME_ANTIVIRUS_SCAN_ARCHIVE:
-        return "antivirus::scan_archive";
+    case name_t::SNAP_NAME_ANTIVIRUS_ENABLE:
+        return "antivirus::enable";
+
+    case name_t::SNAP_NAME_ANTIVIRUS_SETTINGS_PATH:
+        return "admin/settings/antivirus";
 
     default:
         // invalid index
@@ -67,9 +75,10 @@ char const * get_name(name_t name)
  * This function is used to initialize the antivirus plugin object.
  */
 antivirus::antivirus()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
+
 
 /** \brief Clean up the antivirus plugin.
  *
@@ -79,20 +88,6 @@ antivirus::~antivirus()
 {
 }
 
-/** \brief Initialize the antivirus.
- *
- * This function terminates the initialization of the antivirus plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void antivirus::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(antivirus, "content", content::content, check_attachment_security, _1, _2, _3);
-    SNAP_LISTEN(antivirus, "versions", versions::versions, versions_tools, _1);
-}
 
 /** \brief Get a pointer to the antivirus plugin.
  *
@@ -103,9 +98,21 @@ void antivirus::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the antivirus plugin.
  */
-antivirus *antivirus::instance()
+antivirus * antivirus::instance()
 {
     return g_plugin_antivirus_factory.instance();
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString antivirus::icon() const
+{
+    return "/images/antivirus/antivirus-logo-64x64.png";
 }
 
 
@@ -127,6 +134,19 @@ QString antivirus::description() const
 }
 
 
+/** \brief Return our dependencies
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString antivirus::dependencies() const
+{
+    return "|content|editor|output|versions|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -143,7 +163,7 @@ int64_t antivirus::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 17, 15, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -158,8 +178,24 @@ int64_t antivirus::do_update(int64_t last_updated)
  */
 void antivirus::content_update(int64_t variables_timestamp)
 {
-    (void)variables_timestamp;
+    NOTUSED(variables_timestamp);
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the antivirus.
+ *
+ * This function terminates the initialization of the antivirus plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void antivirus::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(antivirus, "content", content::content, check_attachment_security, _1, _2, _3);
+    SNAP_LISTEN(antivirus, "versions", versions::versions, versions_tools, _1);
 }
 
 
@@ -179,22 +215,49 @@ void antivirus::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template page in case cpath is not defined.
  */
-void antivirus::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void antivirus::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body)
 {
     // our settings pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
-void antivirus::on_check_attachment_security(content::attachment_file const& file, content::permission_flag& secure, bool const fast)
+/** \brief Check whether the specified file is safe.
+ *
+ * The content plugin generates this signals twice:
+ *
+ * 1) once when the attachment is first uploaded and we should test quickly
+ *    (fast is set to true)
+ *
+ * 2) a second time when the backend runs, in this case we can check the
+ *    security taking as much time as required (fast is set to false)
+ *
+ * \param[in] file  The file to check.
+ * \param[in] secure  Tells the content plugin whether the file is
+ *                    considered safe or not.
+ * \param[in] fast  Whether we can take our time (false) or not (true) to
+ *                  verify the file.
+ */
+void antivirus::on_check_attachment_security(content::attachment_file const & file, content::permission_flag & secure, bool const fast)
 {
     if(fast)
     {
         // TODO: add support to check some extensions / MIME types that we
         //       do not want (for example we could easily forbid .exe files
         //       from being uploaded)
+        return;
+    }
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    content::path_info_t settings_ipath;
+    settings_ipath.set_path(get_name(name_t::SNAP_NAME_ANTIVIRUS_SETTINGS_PATH));
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+    QtCassandra::QCassandraValue const enable_value(revision_row->cell(get_name(name_t::SNAP_NAME_ANTIVIRUS_ENABLE))->value());
+    int8_t const enable(enable_value.nullValue() || enable_value.safeSignedCharValue());
+    if(!enable)
+    {
         return;
     }
 
@@ -216,6 +279,14 @@ void antivirus::on_check_attachment_security(content::attachment_file const& fil
         log_path = "/var/log/snapwebsites";
     }
 
+    SNAP_LOG_INFO("check filename \"")(file.get_file().get_filename())("\" for viruses.");
+
+    // make sure the reset the temporary log file
+    //
+    QString const temporary_log(QString("%1/antivirus.log").arg(data_path));
+    QFile in(temporary_log);
+    in.remove();
+
     process p("antivirus::clamscan");
     p.set_mode(process::mode_t::PROCESS_MODE_INOUT);
     p.set_command("clamscan");
@@ -224,7 +295,7 @@ void antivirus::on_check_attachment_security(content::attachment_file const& fil
     p.add_argument("--stdout");
     p.add_argument("--no-summary");
     p.add_argument("--infected");
-    p.add_argument("--log=" + log_path + "/antivirus.log");
+    p.add_argument("--log=" + temporary_log);
     p.add_argument("-");
     p.set_input(file.get_file().get_data()); // pipe data in
     p.run();
@@ -233,11 +304,54 @@ void antivirus::on_check_attachment_security(content::attachment_file const& fil
     if(!output.isEmpty())
     {
         secure.not_permitted("anti-virus: " + output);
+
+        // if an error occurred, also convert the logs
+        //
+        if(in.open(QIODevice::ReadOnly))
+        {
+            QFile out(QString("%1/antivirus.log").arg(log_path));
+            if(out.open(QIODevice::Append))
+            {
+                // TODO: convert to use our logger?
+                QString const timestamp(QDateTime::currentDateTimeUtc().toString("MM/dd/yyyy hh:mm:ss' antivirus: '"));
+                QByteArray const timestamp_buf(timestamp.toUtf8());
+                char buf[1024];
+                for(;;)
+                {
+                    int const r(in.readLine(buf, sizeof(buf)));
+                    if(r <= 0)
+                    {
+                        break;
+                    }
+                    if(strcmp(buf, "\n") == 0)
+                    {
+                        continue;
+                    }
+                    for(char const * s(buf); *s == '-'; ++s)
+                    {
+                        if(*s != '\n' && *s != '-')
+                        {
+                            // write lines that are not just '-'
+                            out.write(timestamp_buf.data(), timestamp_buf.size());
+                            out.write(buf, r);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
 
-void antivirus::on_versions_tools(filter::filter::token_info_t& token)
+/** \brief Show the version of clamscan.
+ *
+ * The antivirus currently makes use of clamscan. This signal
+ * adds the version of that tool to the specified token.
+ *
+ * \param[in] token  The token where the version is added.
+ */
+void antivirus::on_versions_tools(filter::filter::token_info_t & token)
 {
     process p("antivirus::clamscan-version");
     p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);

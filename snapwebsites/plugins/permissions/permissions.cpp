@@ -23,10 +23,11 @@
 #include "../users/users.h"
 #include "../messages/messages.h"
 
-#include "plugins.h"
-#include "not_reached.h"
-#include "qstring_stream.h"
 #include "log.h"
+#include "not_reached.h"
+#include "not_used.h"
+#include "plugins.h"
+#include "qstring_stream.h"
 
 #include <QtCassandra/QCassandraValue.h>
 
@@ -35,6 +36,45 @@
 #include "poison.h"
 
 SNAP_PLUGIN_START(permissions, 1, 0)
+
+
+
+namespace details
+{
+
+// cache table from the content plugin
+QtCassandra::QCassandraTable::pointer_t     g_cache_table;
+
+
+name_t login_status_from_string(QString const & status)
+{
+    if(status == "spammer")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER;
+    }
+    else if(status == "visitor")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR;
+    }
+    else if(status == "returning_visitor")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR;
+    }
+    else if(status == "returning_registered")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED;
+    }
+    else if(status == "registered")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED;
+    }
+    else
+    {
+        throw snap_expr::snap_expr_exception_invalid_parameter_value("invalid parameter value to for status expected one of: spammer, visitory, returning_visitor, returning_registered, or registered");
+    }
+}
+
+}
 
 
 /** \enum name_t
@@ -54,12 +94,15 @@ SNAP_PLUGIN_START(permissions, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
     case name_t::SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER:
         return "permissions::action::administer";
+
+    case name_t::SNAP_NAME_PERMISSIONS_ACTION_DELETE:
+        return "permissions::action::delete";
 
     case name_t::SNAP_NAME_PERMISSIONS_ACTION_EDIT:
         return "permissions::action::edit";
@@ -76,8 +119,14 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_PERMISSIONS_ADMINISTER_NAMESPACE:
         return "administer";
 
+    case name_t::SNAP_NAME_PERMISSIONS_CHECK_PERMISSIONS:
+        return "checkpermissions";
+
     case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER:
         return "permissions::direct::action::administer";
+
+    case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_DELETE:
+        return "permissions::direct::action::delete";
 
     case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_EDIT:
         return "permissions::direct::action::edit";
@@ -106,8 +155,14 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_PERMISSIONS_GROUPS_PATH:
         return "types/permissions/groups";
 
+    case name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED:
+        return "permissions::last_updated";
+
     case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER:
         return "permissions::link_back::administer";
+
+    case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_DELETE:
+        return "permissions::link_back::delete";
 
     case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT:
         return "permissions::link_back::edit";
@@ -148,8 +203,14 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_PERMISSIONS_PATH:
         return "types/permissions";
 
+    case name_t::SNAP_NAME_PERMISSIONS_PLUGIN:
+        return "plugin";
+
     case name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH:
         return "types/permissions/rights";
+
+    case name_t::SNAP_NAME_PERMISSIONS_STATUS_PATH:
+        return "types/permissions/status";
 
     case name_t::SNAP_NAME_PERMISSIONS_USERS_PATH:
         return "types/permissions/users";
@@ -252,19 +313,37 @@ char const *get_name(name_t name)
  * The constructor saves the path and action in the object. These two
  * parameters are read-only parameters.
  *
+ * \param[in] snap  The snap child pointer.
  * \param[in] user_path  The path to the user.
  * \param[in,out] ipath  The path being queried.
  * \param[in] action  The action being used in this query.
  * \param[in] login_status  The state of the log in of this user.
  */
-permissions::sets_t::sets_t(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status)
-    : f_user_path(user_path)
+permissions::sets_t::sets_t(snap_child * snap, QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status)
+    : f_snap(snap)
+    , f_user_path(user_path)
     , f_ipath(ipath)
     , f_action(action)
     , f_login_status(login_status)
     //, f_user_rights() -- auto-init
+    //, f_user_cache_key("") -- auto-init
     //, f_plugin_permissions() -- auto-init
+    //, f_plugin_cache_key() -- auto-init
+    //, f_using_user_cache() -- auto-init
+    //, f_using_plugin_cache() -- auto-init
 {
+}
+
+
+/** \brief Clean up sets_t objects.
+ *
+ * This function cleans up the sets_t object. Mainly, it determines whether
+ * the user and page permissions should be saved to the cache table.
+ */
+permissions::sets_t::~sets_t()
+{
+    save_to_user_cache();
+    save_to_plugin_cache();
 }
 
 
@@ -297,6 +376,7 @@ permissions::sets_t::sets_t(QString const & user_path, content::path_info_t & ip
 void permissions::sets_t::set_login_status(QString const & login_status)
 {
     f_login_status = login_status;
+    f_user_cache_key.clear();
 }
 
 
@@ -362,6 +442,354 @@ content::path_info_t & permissions::sets_t::get_ipath() const
 const QString & permissions::sets_t::get_action() const
 {
     return f_action;
+}
+
+
+/** \brief Make sure the cache table pointer is defined.
+ *
+ * This function makes sure we have the pointer to the cache table defined
+ * so that our functions can access the g_cache_table variable.
+ */
+void permissions::sets_t::get_cache_table()
+{
+    if(!details::g_cache_table)
+    {
+        details::g_cache_table = content::content::instance()->get_cache_table();
+    }
+}
+
+
+/** \brief The key used to read and write the cache data for this user.
+ *
+ * This function calculates the cache key for a user. This key is used
+ * to access the cached data for a given user.
+ *
+ * \code
+ *     Name                 Comments
+ *
+ *     <status>             User login status, this includes the
+ *                          "permissions" and "login_status" namespaces
+ *
+ *     <action>             The specific action being applied (this may
+ *                          feel like a waste for users that are not
+ *                          registered, but a plugin could have specific
+ *                          need in that regard...)
+ * \endcode
+ *
+ * \note
+ * The user does NOT need to be specified in the cache key itself since
+ * that data is saved under the user row (i.e. for user with id 3, the
+ * cache data is saved in cache."<domain>/user/3")
+ *
+ * \return The cache key.
+ */
+QString const & permissions::sets_t::get_user_cache_key()
+{
+    if(f_user_cache_key.isEmpty())
+    {
+        f_user_cache_key = QString("%1::%2")
+                            .arg(f_login_status)
+                            .arg(f_action);
+    }
+
+    return f_user_cache_key;
+}
+
+
+/** \brief Check whether that user has his rights cached.
+ *
+ * The user rights are cached in the cache table. The cached data is
+ * considered invalid if the users permissions get modified at any
+ * one time.
+ *
+ * The function returns false when the data was invalidated or if
+ * no cached data is found.
+ *
+ * At this time the cached data is defined as follow:
+ *
+ * \li 64 bit of timestamp (see snap_child::get_start_date())
+ * \li lines of URIs representing user rights (lines are separated by '\n')
+ *
+ * The action and login status are used in the user cache key and thus
+ * are not required in the cache (also they have to be known at time
+ * of call.)
+ *
+ * \return true if the cached data was read and considered valid.
+ */
+bool permissions::sets_t::read_from_user_cache()
+{
+// to avoid the user cache, always return false here
+//return false;
+
+    // already read that cacne data?
+    if(f_using_user_cache)
+    {
+        return true;
+    }
+
+    QString const & cache_key(get_user_cache_key());
+
+    // TODO: look into why I decided to use "" for the anonymous user
+    //       because in the end here we may want to use the original
+    //       string everywhere?
+    //
+    content::path_info_t cache_ipath;
+    cache_ipath.set_path(f_user_path.isEmpty() ? users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH) : f_user_path);
+
+    get_cache_table();
+
+    if(!details::g_cache_table->exists(cache_ipath.get_key())
+    || !details::g_cache_table->row(cache_ipath.get_key())->exists(cache_key))
+    {
+        return false;
+    }
+
+    // cache entry exists, read it
+    QtCassandra::QCassandraValue cache_value(details::g_cache_table->row(cache_ipath.get_key())->cell(cache_key)->value());
+
+    // check the timestamp
+    int64_t const timestamp(cache_value.safeInt64Value());
+    QtCassandra::QCassandraValue const last_updated_value(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED)));
+    int64_t const last_updated(last_updated_value.safeInt64Value());
+    if(timestamp < last_updated)
+    {
+        // the cache is present but out of date, let the caller compute
+        // a new version
+        return false;
+    }
+
+    // convert the cached value in what the caller expects
+    QString const all_user_rights(cache_value.stringValue(sizeof(int64_t)));
+    int start(0);
+    int pos(all_user_rights.indexOf('\n'));
+    while(pos != -1)
+    {
+        f_user_rights.push_back(all_user_rights.mid(start, pos - start));
+        start = pos + 1;
+        pos = all_user_rights.indexOf('\n', start);
+    }
+    // there is no left over in that string unless the save_to_user_cache()
+    // fails somehow (i.e. all lines end with '\n')
+
+    f_using_user_cache = true;
+
+    // success, data came from cache
+    return true;
+}
+
+
+/** \brief Write the current user rights to the cache.
+ *
+ * This function saves the current user rights to the cache. This is
+ * the opposite function to the read_from_user_cache() function.
+ *
+ * The write is automatically called when the sets_t destructor is
+ * called. That way we are sure that the cache is updated appropriately.
+ *
+ * The function does nothing if the user data came from reading the cache
+ * since obviously in that case the data is the exact same.
+ */
+void permissions::sets_t::save_to_user_cache()
+{
+    // if we are using the cache, no need to save anything
+    if(f_using_user_cache)
+    {
+        return;
+    }
+
+    // this should have been called in the read, but we cannot assume the
+    // read function was called...
+    get_cache_table();
+
+    QString const & cache_key(get_user_cache_key());
+
+    content::path_info_t cache_ipath;
+    cache_ipath.set_path(f_user_path.isEmpty() ? users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH) : f_user_path);
+
+    QByteArray value;
+    uint64_t const start_date(f_snap->get_start_date());
+    QtCassandra::setInt64Value(value, start_date);
+    for(auto right : f_user_rights)
+    {
+        QtCassandra::appendStringValue(value, QString("%1\n").arg(right));
+    }
+
+    details::g_cache_table->row(cache_ipath.get_key())->cell(cache_key)->setValue(value);
+}
+
+
+/** \brief The key used to read and write the cache data for this page.
+ *
+ * This function calculates the cache key for a page. This key is used
+ * to access the cached data for a given page.
+ *
+ * \code
+ *     Name                 Comments
+ *
+ *     <namespace>          To clearly distinguish this entry in the cache
+ *                          we use a namespace which is:
+ *
+ *                              permissions::plugin::action
+ *
+ *     <action>             The specific action being applied (this may
+ *                          feel like a waste for users that are not
+ *                          registered, but a plugin could have specific
+ *                          need in that regard...)
+ * \endcode
+ *
+ * \note
+ * The page does NOT need to be specified in the cache key itself since
+ * that data is saved under the page row (i.e. for page with path /example,
+ * the cache data is saved in cache."<domain>/example")
+ *
+ * \return The cache key.
+ */
+QString const & permissions::sets_t::get_plugin_cache_key()
+{
+    if(f_plugin_cache_key.isEmpty())
+    {
+        f_plugin_cache_key = QString("%1::%2::%3::%4")
+                                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_PLUGIN))
+                                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                                .arg(f_action);
+    }
+
+    return f_plugin_cache_key;
+}
+
+
+/** \brief Check whether that user has his rights cached.
+ *
+ * The user rights are cached in the cache table. The cached data is
+ * considered invalid if the users permissions get modified at any
+ * one time.
+ *
+ * The function returns false when the data was invalidated or if
+ * no cached data is found.
+ *
+ * At this time the cached data is defined as follow:
+ *
+ * \li 64 bit of timestamp (see snap_child::get_start_date())
+ * \li lines of URIs representing user rights (lines are separated by '\n')
+ *
+ * The action and login status are used in the user cache key and thus
+ * are not required in the cache (also they have to be known at time
+ * of call.)
+ *
+ * \return true if the cached data was read and considered valid.
+ */
+bool permissions::sets_t::read_from_plugin_cache()
+{
+// to avoid the page cache, always return false here
+//return false;
+
+    // already read that cacne data?
+    if(f_using_plugin_cache)
+    {
+        // cache already read
+        return true;
+    }
+
+    QString const & cache_key(get_plugin_cache_key());
+
+    get_cache_table();
+
+    if(!details::g_cache_table->exists(f_ipath.get_key())
+    || !details::g_cache_table->row(f_ipath.get_key())->exists(cache_key))
+    {
+        // no cache available, let the caller compute this one
+        return false;
+    }
+
+    // cache entry exists, read it
+    QtCassandra::QCassandraValue cache_value(details::g_cache_table->row(f_ipath.get_key())->cell(cache_key)->value());
+
+    // check the timestamp
+    int64_t const timestamp(cache_value.safeInt64Value());
+    QtCassandra::QCassandraValue const last_updated_value(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED)));
+    int64_t const last_updated(last_updated_value.safeInt64Value());
+    if(timestamp < last_updated)
+    {
+        // the cache is present but out of date, let the caller compute
+        // a new version
+        return false;
+    }
+
+    // convert the cached value in what the caller expects
+    QString const all_plugin_permissions(cache_value.stringValue(sizeof(int64_t)));
+    QString plugin_name;
+    int start(0);
+    int pos(all_plugin_permissions.indexOf('\n'));
+    while(pos != -1)
+    {
+        // plugin names start with a '*' since a URI cannot it is safe
+        if(all_plugin_permissions[start] == '*')
+        {
+            ++start;
+            plugin_name = all_plugin_permissions.mid(start, pos - start);
+        }
+        else
+        {
+            if(plugin_name.isEmpty())
+            {
+                // by returning true the cache will be rebuilt and hopefully
+                // correctly so we don't get an empty string here!
+                return true;
+            }
+            f_plugin_permissions[plugin_name].push_back(all_plugin_permissions.mid(start, pos - start));
+        }
+        start = pos + 1;
+        pos = all_plugin_permissions.indexOf('\n', start);
+    }
+    // there is no left over in that string unless the save_to_user_cache()
+    // fails somehow (i.e. all lines end with '\n')
+
+    f_using_plugin_cache = true;
+
+    // success, data came from cache
+    return true;
+}
+
+
+/** \brief Write the current user rights to the cache.
+ *
+ * This function saves the current user rights to the cache. This is
+ * the opposite function to the read_from_user_cache() function.
+ *
+ * The write is automatically called when the sets_t destructor is
+ * called. That way we are sure that the cache is updated appropriately.
+ *
+ * The function does nothing if the user data came from reading the cache
+ * since obviously in that case the data is the exact same.
+ */
+void permissions::sets_t::save_to_plugin_cache()
+{
+    // if we are using the cache, no need to save anything
+    if(f_using_plugin_cache)
+    {
+        return;
+    }
+
+    // this should have been called in the read, but we cannot assume the
+    // read function was called...
+    get_cache_table();
+
+    QString const & cache_key(get_plugin_cache_key());
+
+    QByteArray value;
+    uint64_t const start_date(f_snap->get_start_date());
+    QtCassandra::setInt64Value(value, start_date);
+    for(req_sets_t::const_iterator it(f_plugin_permissions.begin()); it != f_plugin_permissions.end(); ++it)
+    {
+        QtCassandra::appendStringValue(value, QString("*%1\n").arg(it.key()));
+        for(auto right : it.value())
+        {
+            QtCassandra::appendStringValue(value, QString("%1\n").arg(right));
+        }
+    }
+
+    details::g_cache_table->row(f_ipath.get_key())->cell(cache_key)->setValue(value);
 }
 
 
@@ -462,7 +890,7 @@ void permissions::sets_t::add_user_right(QString right)
         {
             if(f_user_rights[i] == right)
             {
-                // that's exactly the same, no need to have it twice
+                // that is exactly the same, no need to have it twice
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
                 std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (already present)" << std::endl;
@@ -501,6 +929,54 @@ int permissions::sets_t::get_user_rights_count() const
 }
 
 
+/** \brief Retrieve the vector of user rights.
+ *
+ * This function lets you check out the list of user rights. This is
+ * used by the check_permission() function to display the list of user
+ * rights to the administrator.
+ *
+ * The returned value is a vector to the user rights.
+ *
+ * \return The right at the specified index.
+ */
+permissions::sets_t::set_t const & permissions::sets_t::get_user_rights() const
+{
+    return f_user_rights;
+}
+
+
+/** \brief Return the number of plugin rights.
+ *
+ * This function returns the number of rights plugins offer. Note that
+ * plugin rights are added only if those rights match the specified
+ * action. So for example we do not add "view" rights for a plugin if
+ * the action is "delete". This means the number of a plugin rights
+ * represents the intersection between all the plugin rights and the
+ * action specified in this sets_t object. If empty, then the plugins
+ * do not even offer that very permission at all.
+ *
+ * \return The number of rights the plugins have for this action.
+ */
+int permissions::sets_t::get_plugin_rights_count() const
+{
+    return f_plugin_permissions.size();
+}
+
+
+/** \brief Retrieve the plugin rights.
+ *
+ * This function lets you check out the list of plugin rights. This is
+ * used by the check_permission() function to display the list of plugin
+ * rights to the administrator.
+ *
+ * \return The permissions added by the plugins.
+ */
+permissions::sets_t::req_sets_t const & permissions::sets_t::get_plugin_rights() const
+{
+    return f_plugin_permissions;
+}
+
+
 /** \brief Add a permission from the specified plugin.
  *
  * This function adds a right for the specified plugin. In most cases this
@@ -535,7 +1011,7 @@ int permissions::sets_t::get_user_rights_count() const
  * \param[in] plugin  The plugin adding this permission.
  * \param[in] right  The right the plugin offers.
  */
-void permissions::sets_t::add_plugin_permission(const QString & plugin, QString right)
+void permissions::sets_t::add_plugin_permission(QString const & plugin, QString right)
 {
     // so the startsWith() works as is:
     if(right.right(1) != "/")
@@ -755,26 +1231,6 @@ permissions::~permissions()
 }
 
 
-/** \brief Initialize the permissions.
- *
- * This function terminates the initialization of the permissions plugin
- * by registering for different events it supports.
- *
- * \param[in] snap  The child handling this request.
- */
-void permissions::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(permissions, "server", server, add_snap_expr_functions, _1);
-    SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
-    SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
-    SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
-    SNAP_LISTEN(permissions, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
-}
-
-
 /** \brief Get a pointer to the permissions plugin.
  *
  * This function returns an instance pointer to the permissions plugin.
@@ -784,7 +1240,7 @@ void permissions::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the permissions plugin.
  */
-permissions *permissions::instance()
+permissions * permissions::instance()
 {
     return g_plugin_permissions_factory.instance();
 }
@@ -807,6 +1263,19 @@ QString permissions::description() const
 }
 
 
+/** \brief Return our dependencies
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString permissions::dependencies() const
+{
+    return "|layout|messages|output|users|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -823,7 +1292,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 5, 22, 21, 25, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 20, 17, 1, 26, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -838,9 +1307,30 @@ int64_t permissions::do_update(int64_t last_updated)
  */
 void permissions::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the permissions.
+ *
+ * This function terminates the initialization of the permissions plugin
+ * by registering for different events it supports.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void permissions::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(permissions, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(permissions, "server", server, add_snap_expr_functions, _1);
+    SNAP_LISTEN(permissions, "path", path::path, validate_action, _1, _2, _3);
+    SNAP_LISTEN(permissions, "path", path::path, access_allowed, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(permissions, "users", users::users, user_verified, _1, _2);
+    SNAP_LISTEN(permissions, "layout", layout::layout, generate_header_content, _1, _2, _3);
+    SNAP_LISTEN(permissions, "links", links::links, modified_link, _1, _2);
 }
 
 
@@ -881,11 +1371,27 @@ void permissions::content_update(int64_t variables_timestamp)
  */
 bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
 {
+    // if the user data was cached and is still valid, then we are done here
+    //
+    // TBD: is this the correct location for that call?
+    //
+    //      (it could be done before call get_user_rights() although since
+    //      this very first impl function is a direct call, we don't really
+    //      waste much time at all.)
+    //
+    if(sets.read_from_user_cache())
+    {
+        // no need for other plugins to run since we got the user rights
+        // from the cache
+        //
+        return false;
+    }
+
     QString const & login_status(sets.get_login_status());
 
     // if spammers are logged in they don't get access to anything anyway
     // (i.e. they are UNDER visitors!)
-    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const & site_key(f_snap->get_site_key_with_slash());
     if(login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER))
     {
         perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer", sets);
@@ -901,7 +1407,7 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
             // unfortunately, whatever the login status, if we were not given
             // a valid user path, we just cannot test anything else than
             // some kind of visitor
-            QString const user_key(sets.get_user_path());
+            QString const & user_key(sets.get_user_path());
 //#ifdef DEBUG
 //std::cout << "  +-> user key = [" << user_key << "]" << std::endl;
 //#endif
@@ -922,6 +1428,9 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
                 if(!content_table->exists(user_ipath.get_key()))
                 {
                     // that user is gone, this will generate a 500 by Apache
+                    // (that should not happen, otherwise we may want to
+                    // look into a way to change the user in a plain
+                    // returning visitor)
                     throw permissions_exception_invalid_path("could not access user \"" + user_ipath.get_key() + "\"");
                 }
 
@@ -968,7 +1477,7 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
                         {
                             QString const right_key(right_info.key());
 
-                            // user -> permissions::action::...
+                            // user -> permissions::direct::action::...
                             perms->add_user_rights(right_key, sets);
                         }
                     }
@@ -999,6 +1508,8 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
             }
         }
     }
+
+    // give other plugins a chance to add their own links
     return true;
 }
 
@@ -1044,17 +1555,32 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
  */
 bool permissions::get_plugin_permissions_impl(permissions * perms, sets_t & sets)
 {
-    static_cast<void>(perms);
+    NOTUSED(perms);
 
-    // the user plugin cannot include the permissions (since the
-    // permissions includes the user plugin) so we implement this
+    // if the user data was cached and is still valid, then we are done here
+    //
+    // TBD: is this the correct location for that call?
+    //
+    //      (it could be done before call get_user_rights() although since
+    //      this very first impl function is a direct call, we don't really
+    //      waste much time at all.)
+    //
+    if(sets.read_from_plugin_cache())
+    {
+        return false;
+    }
+
+    // the user plugin cannot include the permissions plugin (since the
+    // permissions plugin includes the user plugin) so we implement this
     // user plugin feature in the permissions
     content::path_info_t & ipath(sets.get_ipath());
     if(ipath.get_cpath().left(5) == "user/")
     {
+        // user/### cannot be a dynamic path so we do not need to check
+        // for a possibly renamed ipath at this level
         QString const user_id(ipath.get_cpath().mid(5));
         QByteArray id_str(user_id.toUtf8());
-        char const *s;
+        char const * s;
         for(s = id_str.data(); *s != '\0'; ++s)
         {
             if(*s < '0' || *s > '9')
@@ -1063,9 +1589,6 @@ bool permissions::get_plugin_permissions_impl(permissions * perms, sets_t & sets
                 break;
             }
         }
-        // XXX: I changed "*s != '\0'" with '==', I think I made a mistake
-        //      before and used '!=' when I only wanted to add that page
-        //      if we are on it (i.e. add "user/123" to the permissions)
         if(*s == '\0')
         {
 #ifdef DEBUG
@@ -1085,55 +1608,95 @@ std::cerr << "from " << user_id << " -> ";
     // this very page may be assigned direct permissions
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
-    QString key(ipath.get_key());
-    if(!content_table->exists(key)
-    || !content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+    QString key(ipath.get_parameter("renamed_path"));
+    if(!key.isEmpty())
     {
-        // if that page does not exist, it may be dynamic, try to go up
-        // until we have one name in the path then check that the page
-        // allows such, if so, we have a chance, otherwise no rights
-        // from here... (as an example see /verify in plugins/users/content.xml)
-        QStringList parts(ipath.get_cpath().split('/'));
-        int depth(0);
-        for(;;)
+        content::path_info_t renamed_ipath;
+        renamed_ipath.set_path(key);
+        key = renamed_ipath.get_key();
+        if(!content_table->exists(key)
+        || !content_table->row(key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
         {
-            parts.pop_back();
-            if(parts.isEmpty())
+            // we always immediately expect a valid path when a plugin
+            // marks a path calling the (see plugin/path/path.h):
+            //
+            //     dynamic_plugin_t::set_plugin_if_renamed()
+            //
+            // although really we let other plugins choose what to do next
+            return true;
+        }
+        ipath.set_real_path(key);
+    }
+    else
+    {
+        key = ipath.get_key();
+        if(!content_table->exists(key)
+        || !content_table->row(key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+        {
+            // if that page does not exist, it may be dynamic, try to go up
+            // until we have one name in the path then check that the page
+            // allows such, if so, we have a chance, otherwise no rights
+            // from here... (as an example see /verify in plugins/users/content.xml)
+            snap_string_list parts(ipath.get_cpath().split('/'));
+            int depth(0);
+            for(;;)
             {
-                // let other modules take over, we are done here
+                parts.pop_back();
+                if(parts.isEmpty())
+                {
+                    // let other modules take over, we are done here
+                    return true;
+                }
+                ++depth;
+                QString const parent_path(parts.join("/"));
+                key = site_key + parent_path;
+                if(content_table->exists(key))
+                {
+                    break;
+                }
+            }
+            QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
+            char const * dynamic(get_name(name_t::SNAP_NAME_PERMISSIONS_DYNAMIC));
+            if(!row->exists(dynamic))
+            {
+                // well, there is a page, but it does not authorize sub-pages
                 return true;
             }
-            ++depth;
-            QString const parent_path(parts.join("/"));
-            key = site_key + parent_path;
-            if(content_table->exists(key))
+            QtCassandra::QCassandraValue value(row->cell(dynamic)->value());
+            if(depth > value.signedCharValue())
             {
-                break;
+                // there is a page, it gives permissions, but this very
+                // page is too deep to be allowed
+                return true;
             }
+            // IMPORTANT NOTE: the ipath here is a reference to the ipath
+            //                 we used to call the permission function in
+            //                 the path plugin so it will get the real
+            //                 path info on return!
+            ipath.set_real_path(key);
         }
-        QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
-        char const *dynamic(get_name(name_t::SNAP_NAME_PERMISSIONS_DYNAMIC));
-        if(!row->exists(dynamic))
-        {
-            // well, there is a page, but it does not authorize sub-pages
-            return true;
-        }
-        QtCassandra::QCassandraValue value(row->cell(dynamic)->value());
-        if(depth > value.signedCharValue())
-        {
-            // there is a page, it gives permissions, but this very
-            // page is too deep to be allowed
-            return true;
-        }
-        // TODO: here we get the real path in an ipath that ephemerous
-        //       somehow we would need that real path to make it back
-        //       to the ipath we use in the path plugin when calling the
-        //       verify permission function
-        ipath.set_real_path(key);
     }
 
     content::path_info_t page_ipath;
     page_ipath.set_path(key);
+
+    // if the state is normal, no additional or out of the ordinary
+    // permissions are required; otherwise the user needs to have
+    // enough permissions (additional group) to access the page
+    //
+    content::path_info_t::status_t const status(page_ipath.get_status());
+    if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
+    {
+        std::string const status_name(content::path_info_t::status_t::status_name_to_string(status.get_state()));
+        content::path_info_t status_ipath;
+        status_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_PERMISSIONS_STATUS_PATH)).arg(status_name.c_str()));
+
+        // here we use the permissions plugin name because the content
+        // plugin is already used by the "normal" permissions
+        //
+        sets.add_plugin_permission(get_plugin_name(), status_ipath.get_key());
+    }
+
     {
         // check local links for this action
         QString const direct_link_start_name(
@@ -1241,12 +1804,11 @@ std::cerr << "page group: ";
  * \param[in,out] ipath  The path to this page.
  * \param[in,out] page  The page element being generated.
  * \param[in,out] body  The body element being generated.
- * \param[in] ctemplate  Template used for parameters that are otherwise missing.
  */
-void permissions::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
+void permissions::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // show the permission pages as information (many of these are read-only)
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -1283,17 +1845,18 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
     QString const & login_status(get_login_status());
     QString const & user_path(get_user_path());
     content::permission_flag allowed;
-    path::path::instance()->access_allowed(user_path, ipath, action, login_status, allowed);
+    path::path * path_plugin(path::path::instance());
+    path_plugin->access_allowed(user_path, ipath, action, login_status, allowed);
     if(!allowed.allowed())
     {
         // by default we allow redirects to the login page;
         // the signal may set the flag to false to prevent such redirects
         bool redirect_to_login(true);
         permit_redirect_to_login_on_not_allowed(ipath, redirect_to_login);
-        QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+        QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_METHOD)));
         bool const redirect_method(method == "GET" || method == "POST");
 
-        users::users *users_plugin(users::users::instance());
+        users::users * users_plugin(users::users::instance());
         if(users_plugin->get_user_key().isEmpty())
         {
             // special case of spammers
@@ -1320,7 +1883,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                     err_callback.on_error(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                             "Access Denied",
                             "You are not authorized to access our website.",
-                            QString("spammer trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()),
+                            QString("Spammer trying to \"%1\" on page \"%2\" with insufficient rights.").arg(action).arg(ipath.get_cpath()),
                             false);
                 }
                 return;
@@ -1334,7 +1897,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                         action != "view"
                             ? QString("You are not authorized to access the login page with action \"%1\".").arg(action)
                             : "Somehow you are not authorized to access the login page.",
-                        QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()),
+                        QString("User trying to \"%1\" on page \"%2\" with insufficient rights.").arg(action).arg(ipath.get_cpath()),
                         true);
                 return;
             }
@@ -1347,9 +1910,35 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                         action != "view"
                             ? QString("You are not authorized to access this document with action \"%1\".").arg(action)
                             : "Somehow you are not authorized to view this page.",
-                        QString("User trying to \"%1\" on page \"%2\" with unsufficient rights. Not redirecting to /login either since submit is expected to work for visitors.").arg(action).arg(ipath.get_cpath()),
+                        QString("User trying to \"%1\" on page \"%2\" with insufficient rights. Not redirecting to /login either since submit is expected to work for visitors.").arg(action).arg(ipath.get_cpath()),
                         true);
                 return;
+            }
+
+            // if the page is to appear in an IFRAME then we want to
+            // remove the frame before showing the login screen, for
+            // that purpose we have a special page which does all that
+            // work for us; note that if you still want to open a login
+            // screen in an IFRAME, you will want to make sure to NOT
+            // put the iframe=true parameter in the URL query string
+            //
+            snap_uri const & main_uri(f_snap->get_uri());
+            if(main_uri.has_query_option("iframe"))
+            {
+                if(main_uri.query_option("iframe") == "true")
+                {
+                    err_callback.on_redirect(
+                        // message
+                        "Unauthorized",
+                        QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(ipath.get_cpath()),
+                        QString("User trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
+                        false,
+                        // redirect
+                        "remove-iframe-for-login",
+                        snap_child::http_code_t::HTTP_CODE_FOUND);
+                    // not reached if path checking
+                    return;
+                }
             }
 
             // user is anonymous, there is hope, he may have access once
@@ -1363,12 +1952,32 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             {
                 users_plugin->set_referrer( ipath.get_cpath() );
             }
+
+            // the title of public pages can be show in the error message;
+            // the title should be more helpful to end users, especially
+            // for the home page that would otherwise be shown as ""
+            //
+            // by default show the user the path to the page
+            //
+            QString page_title(QString("/%1").arg(ipath.get_cpath()));
+            content::permission_flag public_page;
+            path_plugin->access_allowed("", ipath, "view", get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR), public_page);
+            if(public_page.allowed())
+            {
+                // the page is public, get the title instead
+                //
+                content::content * content_plugin(content::content::instance());
+                QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+                page_title = revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue();
+            }
+
+            // if the page is inside an IFRAME we want to remove the iframe
             //
             err_callback.on_redirect(
                 // message
                 "Unauthorized",
-                QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(ipath.get_cpath()),
-                QString("user trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
+                QString("The page you were trying to access (%1) requires more privileges. If you think you have such, try to log in first.").arg(page_title),
+                QString("User trying to \"%1\" on page \"%2\" when not logged in.").arg(action).arg(ipath.get_cpath()),
                 false,
                 // redirect
                 "login",
@@ -1381,7 +1990,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             {
                 // allowed if logged in?
                 content::permission_flag allowed_if_logged_in;
-                path::path::instance()->access_allowed(user_path, ipath, action, get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
+                path_plugin->access_allowed(user_path, ipath, action, get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
                 if(allowed_if_logged_in.allowed())
                 {
                     // TODO: find a way to save the data that is about
@@ -1400,7 +2009,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                         // message
                         "Unauthorized",
                         QString("The page you were trying to access (%1) requires you to verify your credentials. Please log in again and the system will send you back there.").arg(ipath.get_cpath()),
-                        QString("user trying to \"%1\" on page \"%2\" when not recently logged in.").arg(action).arg(ipath.get_cpath()),
+                        QString("User trying to \"%1\" on page \"%2\" when not recently logged in.").arg(action).arg(ipath.get_cpath()),
                         false,
                         // redirect
                         "verify-credentials",
@@ -1414,7 +2023,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             err_callback.on_error(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                     "Access Denied",
                     QString("You are not authorized to apply this action (%1) to this page (%2).").arg(action).arg(ipath.get_key()),
-                    QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_key()),
+                    QString("User trying to \"%1\" on page \"%2\" with insufficient rights.").arg(action).arg(ipath.get_key()),
                     true);
         }
         return;
@@ -1470,20 +2079,27 @@ QString const & permissions::get_login_status()
 {
     if(f_login_status.isEmpty())
     {
-        users::users *users_plugin(users::users::instance());
+        users::users * users_plugin(users::users::instance());
         f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
         if(!users_plugin->user_is_a_spammer())
         {
             QString const user_path(get_user_path());
             if(user_path.isEmpty())
             {
-                f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
-                // TODO: determine, once possible, whether the user came on the
-                //       website before (i.e. returning visitor)
-                //       (it is already possible since we have a cookie, just
-                //       need to take the time to do it!)
+                // no user attached, if the session is considered old we
+                // considered the user as a returning user
+                //
+                if(users_plugin->user_session_is_old())
+                {
+                    f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR);
+                }
+                else
+                {
+                    f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
+                }
             }
             else if(users_plugin->user_is_logged_in())
+               /* || users_plugin->user_has_administrative_rights() -- not required since user_is_logged_in() is always true if user_has_administrative_rights() is true */
             {
                 f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED);
             }
@@ -1509,7 +2125,7 @@ QString const & permissions::get_user_path()
     if(!f_has_user_path)
     {
         f_has_user_path = true;
-        users::users *users_plugin(users::users::instance());
+        users::users * users_plugin(users::users::instance());
         f_user_path = users_plugin->get_user_path();
         if(f_user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
         {
@@ -1553,23 +2169,27 @@ QString const & permissions::get_user_path()
  */
 void permissions::on_access_allowed(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result)
 {
-    // check that the action is defined in the database (i.e. valid)
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
-    if(!content_table->exists(key))
+    if(f_valid_actions.find(action) == f_valid_actions.end())
     {
-        // TODO it is rather easy to get here so we need to test whether
-        //      the same IP does it over and over again and block them if so
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
-                "Unknown Action",
-                "The action you are trying to performed is not known by Snap!",
-                QString("permissions::on_access_allowed() was used with action \"%1\".").arg(action));
-        NOTREACHED();
+        // check that the action is defined in the database (i.e. valid)
+        QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+        QString const site_key(f_snap->get_site_key_with_slash());
+        QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
+        if(!content_table->exists(key))
+        {
+            // TODO it is rather easy to get here so we need to test whether
+            //      the same IP does it over and over again and block them if so
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
+                    "Unknown Action",
+                    "The action you are trying to performed is not known by Snap!",
+                    QString("permissions::on_access_allowed() was used with action \"%1\".").arg(action));
+            NOTREACHED();
+        }
+        f_valid_actions[action] = true;
     }
 
     // setup a 'sets' object
-    sets_t sets(user_path, ipath, action, login_status);
+    sets_t sets(f_snap, user_path, ipath, action, login_status);
 
     // first we get the user rights for that action because in most cases
     // that's a lot smaller and if empty we do not have to get anything else
@@ -1591,13 +2211,16 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
         }
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "[" << getpid() << "] retrieving PLUGIN permissions... [" << sets.get_action() << "]" << std::endl;
+        std::cout << "[" << getpid() << "]: retrieving PLUGIN permissions... ["
+                  << sets.get_action() << "] / ["
+                  << sets.get_ipath().get_key() << "]"
+                  << std::endl;
 #endif
 #endif
         get_plugin_permissions(this, sets);
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "[" << getpid() << "] now compute the intersection!" << std::endl;
+        std::cout << "[" << getpid() << "]: now compute the intersection!" << std::endl;
 #endif
 #endif
         if(sets.allowed())
@@ -1629,6 +2252,7 @@ void permissions::add_user_rights(QString const & group, sets_t & sets)
     // TODO: we probably want to change that "contains()" call with
     //       a "startsWith()" but we need to know whether "group"
     //       may include the protocol, domain name, port...
+    //
     if(group.contains(get_name(name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH)))
     {
         throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use sets.add_user_right() directly");
@@ -1791,30 +2415,39 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
 }
 
 
-/** \brief Register the permissions action.
+/** \brief Register the permissions actions.
  *
- * This function registers this plugin as supporting the "makeadministrator"
- * and the "makeroot" actions.
+ * This function registers this plugin as supporting the following
+ * actions:
+ *
+ * \li "makeroot" and "makeadministrator"
  *
  * After an installation and a user was created on the website, the server
  * is ready to create a root user. The "makeroot" action is used for that
  * purpose. The root user can do pretty much anything he wants on the
  * entire cluster of websites defined in a Snap database.
  *
- * Once a website is created and an administrator user is created on that
+ * Once a website is created and an administrator user is registered on that
  * website, one can use the "makeadministrator" action to mark that user
  * as a Snap administrator. An administrator is limited to working on a
- * specific website.
+ * specific website, but he can generally change anything that appears on
+ * that website.
+ *
+ * The user is specified by his email address defined with a parameter.
+ * The parameter name is ROOT_USER_EMAIL.
  *
  * The backend command line looks something like one of these:
  *
  * \code
- * snapbackend [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeadministrator
- * snapbackend [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeroot
+ * # For an administrator, make sure to specify the website
+ * snapbackend http://www.example.com [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeadministrator
+ * # For a root user, you do not need to specify the website, but probably should too
+ * snapbackend [http://www.example.com] [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeroot
  * \endcode
  *
- * If you have problems with it (it does not seem to work,) try with --debug
- * and make sure to look in the snapserver.log and syslog output files.
+ * If you have problems with it (it does not seem to work,) try with
+ * --debug and make sure to look in the snapserver.log and syslog
+ * output files.
  *
  * \note
  * These should be user actions, unfortunately that would add a 
@@ -1822,29 +2455,66 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
  * which we cannot have (i.e. "permissions" need to know about
  * "users"... so we would end up with a looping dependency.)
  *
+ * \li "checkpermissions"
+ *
+ * Once a user created an account on a website, it can be difficult to
+ * know what permissions that user has. The snapbackend can be used for
+ * the purpose to verify whether a user has or does not have access to
+ * a page given a certain action.
+ *
+ * The "checkpermission" action expects four parameters to be
+ * defined. If one of these is not defined, it is likely that the
+ * function will generate an error.
+ *
+ * ** USER_EMAIL -- the email address of the user whom the permissions
+ * are ot be checked;
+ * ** PAGE_URI -- the URI to the page being checked for that user;
+ * ** CHECK_ACTION -- the action being checked (view, administer, edit,
+ * delete, etc.);
+ * ** LOGIN_STATUS -- run the check assuming this user status (one of:
+ * "spammer", "visitor", "returning_visitor", "returning_registered",
+ * "registered").
+ *
+ * The USER_EMAIL parameter can be set to an empty string in which case
+ * it is viewed as the anonymous visitor. In that case the status should
+ * not be set to "returning_registered" or "registered" since those two
+ * statuses do not make sense for an anonymous (unregistered) visitor.
+ *
+ * \code
+ * snapbackend http://www.example.com \
+ *          -p USER_EMAIL=john@example.com \
+ *          -p PAGE_URI=http://www.example.com/journal/2015/08/13/beautiful-weather \
+ *          -p CHECK_ACTION=view \
+ *          -p LOGIN_STATUS=registered \
+ *          -a checkpermissions
+ * \endcode
+ *
+ * \note
+ * The login status names are the same as when you write a script
+ * for a list in need of a permissions check.
+ *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void permissions::on_register_backend_action(server::backend_action_map_t & actions)
+void permissions::on_register_backend_action(server::backend_action_set & actions)
 {
-    actions[get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR)] = this;
-    actions[get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ROOT)] = this;
+    actions.add_action(get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR), this);
+    actions.add_action(get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ROOT),          this);
+    actions.add_action(get_name(name_t::SNAP_NAME_PERMISSIONS_CHECK_PERMISSIONS),  this);
 }
 
 
-/** \brief Create a root or administrator user.
+/** \brief Execute a permission action.
  *
- * This function marks a user as a root or an administrator user.
- * The user email address has to be specified on the command line.
+ * Mark a user as a root or administrator user;
  *
- * The root user has access to the entire database (i.e. ALL websites.)
- * An administrator has access to an entire website, but he is cutoff from
- * editing system pages.
+ * Check permissions for a user.
  *
- * \note
- * This should be a users plugin callback, but it requires access to the
- * permissions plugin so it has to be here instead.
+ * See the on_register_backend_action() function for details about the
+ * parameters and available actions.
  *
  * \param[in] action  The action the user wants to execute.
+ *
+ * \sa on_register_backend_action()
  */
 void permissions::on_backend_action(QString const & action)
 {
@@ -1852,23 +2522,25 @@ void permissions::on_backend_action(QString const & action)
     || action == get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ROOT))
     {
         // make specified user root
-        QtCassandra::QCassandraTable::pointer_t user_table(users::users::instance()->get_users_table());
+        users::users * users_plugin(users::users::instance());
+        QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
         QString const email(f_snap->get_server_parameter("ROOT_USER_EMAIL"));
-        if(!user_table->exists(email))
+        QString const user_key(users_plugin->email_to_user_key(email));
+        if(!users_table->exists(user_key))
         {
-            SNAP_LOG_FATAL() << "error: user \"" << email << "\" not found.";
+            SNAP_LOG_FATAL("User \"")(email)("\" not found. Cannot make user the root or administrator user.");
             exit(1);
         }
-        QtCassandra::QCassandraRow::pointer_t user_row(user_table->row(email));
+        QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(user_key));
         if(!user_row->exists(users::get_name(users::name_t::SNAP_NAME_USERS_IDENTIFIER)))
         {
-            SNAP_LOG_FATAL() << "error: user \"" << email << "\" was not given an identifier.";
+            SNAP_LOG_FATAL("error: user \"")(email)("\" was not given an identifier.");
             exit(1);
         }
         QtCassandra::QCassandraValue identifier_value(user_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(identifier_value.nullValue() || identifier_value.size() != sizeof(int64_t))
         {
-            SNAP_LOG_FATAL() << "error: user \"" << email << "\" identifier could not be read.";
+            SNAP_LOG_FATAL("error: user \"")(email)("\" identifier could not be read.");
             exit(1);
         }
         int64_t const identifier(identifier_value.int64Value());
@@ -1893,6 +2565,203 @@ void permissions::on_backend_action(QString const & action)
         links::link_info destination(link_name, destination_multi, dpath.get_key(), dpath.get_branch());
         links::links::instance()->create_link(source, destination);
     }
+    else if(action == get_name(name_t::SNAP_NAME_PERMISSIONS_CHECK_PERMISSIONS))
+    {
+        // used to debug permissions from a console (later we may want to
+        // allow for such a check in a GUI tool as well)
+        QString const email(f_snap->get_server_parameter("USER_EMAIL"));
+        QString const page(f_snap->get_server_parameter("PAGE_URI"));
+        QString const permission_action(f_snap->get_server_parameter("CHECK_ACTION"));
+        QString const status(f_snap->get_server_parameter("LOGIN_STATUS"));
+        check_permissions(email, page, permission_action, status);
+    }
+    else
+    {
+        // unknown action (we should not have been called with that name!)
+        throw snap_logic_exception(QString("permissions.cpp:on_backend_action(): permissions::on_backend_action(\"%1\") called with an unknown action...").arg(action));
+    }
+}
+
+
+/** \brief Check what the user permissions are (show the sets).
+ *
+ * This function gathers the list of URLs that the user has access to
+ * and the list of URLs for the specified page. Both lists are shown
+ * in full. This is what is used in the on_access_allowed() function.
+ *
+ * Process:
+ *
+ * \li Calculate all the URIs for the user and prints those.
+ * \li Calculate all the URIs for the page and prints those.
+ * \li Calculate the intersection and print the result.
+ *
+ * \param[in] email  The email to the user being checked.
+ * \param[in] page  The URI to the page being checked.
+ * \param[in] action  The action being applied.
+ */
+void permissions::check_permissions(QString const & email, QString const & page, QString const & action, QString const & status)
+{
+    // Note that this check is about determining the list of pages
+    // attached to a user and a page in regard to a given action
+    // so it can be slow
+    //
+    // it is otherwise similar to the 
+
+    if(f_valid_actions.find(action) == f_valid_actions.end())
+    {
+        // check that the action is defined in the database (i.e. valid)
+        QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+        QString const site_key(f_snap->get_site_key_with_slash());
+        QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
+        if(!content_table->exists(key))
+        {
+            // TODO it is rather easy to get here so we need to test whether
+            //      the same IP does it over and over again and block them if so
+            std::cerr << "error: " << action << " is not a known action.\n";
+            return;
+        }
+        f_valid_actions[action] = true;
+    }
+
+    // define the path to the user data from his email
+    QString user_path(users::users::instance()->get_user_path(email));
+    if(user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
+    {
+        user_path.clear();
+    }
+
+    // define the path to the page as a content::path_info_t
+    content::path_info_t ipath;
+    ipath.set_path(page);
+
+    char const * login_status(get_name(details::login_status_from_string(status)));
+
+    // setup a 'sets' object
+    sets_t sets(f_snap, user_path, ipath, action, login_status);
+
+    // first we get the user rights for that action because in most cases
+    // that's a lot smaller and if empty we do not have to get anything else
+    // (intersection of an empty set with anything else is the empty set)
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+    std::cout << std::endl << "[" << getpid() << "]: permissions::check_permissions(): retrieving USER rights from all plugins... ["
+            << sets.get_action() << "] [" << login_status << "] ["
+            << ipath.get_cpath() << "]" << std::endl;
+#endif
+#endif
+    // get all of user's rights
+    get_user_rights(this, sets);
+
+    // present user rights to administrator
+    int const user_right_count(sets.get_user_rights_count());
+    if(user_right_count == 0)
+    {
+        std::cout << "user \""
+                  << email
+                  << "\" has no rights for action \""
+                  << action
+                  << "\"."
+                  << std::endl;
+    }
+    else
+    {
+        std::cout << "user \""
+                  << email
+                  << "\""
+                  << (sets.is_root() ? " is considered a root user and" : "")
+                  << " has "
+                  << user_right_count
+                  << " rights:"
+                  << std::endl;
+        permissions::sets_t::set_t const & rights(sets.get_user_rights());
+        for(int idx(0); idx < user_right_count; ++idx)
+        {
+            std::cout << "  "
+                      << idx + 1
+                      << ". "
+                      << rights[idx]
+                      << std::endl;
+        }
+    }
+    std::cout << std::endl;
+
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+    std::cout << "[" << getpid() << "]: permissions::check_permissions(): retrieving PLUGIN permissions... ["
+              << sets.get_action() << "] / ["
+              << sets.get_ipath().get_key() << "]"
+              << std::endl;
+#endif
+#endif
+    get_plugin_permissions(this, sets);
+
+    // present user rights to administrator
+    int const plugin_right_count(sets.get_plugin_rights_count());
+    if(plugin_right_count == 0)
+    {
+        std::cout << "page \""
+                  << page
+                  << "\" has no rights for action \""
+                  << action
+                  << "\"."
+                  << std::endl;
+    }
+    else
+    {
+        std::cout << "page \""
+                  << page
+                  << "\" has "
+                  << plugin_right_count
+                  << " rights:"
+                  << std::endl;
+        permissions::sets_t::req_sets_t const & plugins(sets.get_plugin_rights());
+        int count(0);
+        // auto does not work here because we want to have access to the
+        // key which QMap does not give us when using auto
+        for(permissions::sets_t::req_sets_t::const_iterator it(plugins.begin());
+                it != plugins.end();
+                ++it)
+        {
+            ++count;
+            std::cout << "  "
+                      << count
+                      << ". Permissions offered by plugin: "
+                      << it.key()
+                      << std::endl;
+            permissions::sets_t::set_t const & plugin_permissions(it.value());
+            int const max_rights(plugin_permissions.size());
+            for(int idx(0); idx < max_rights; ++idx)
+            {
+                std::cout << "    "
+                          << count
+                          << "."
+                          << idx + 1
+                          << ". "
+                          << plugin_permissions[idx]
+                          << std::endl;
+            }
+        }
+    }
+    std::cout << std::endl;
+
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+    std::cout << "[" << getpid() << "]: now compute the intersection!" << std::endl;
+#endif
+#endif
+
+    std::cout << "The result is that "
+              << (sets.is_root() ? "root " : "")
+              << "user \""
+              << email
+              << "\" "
+              << (sets.allowed() ? "can" : "CANNOT")
+              << " access page \""
+              << page
+              << "\" with action \""
+              << action
+              << "\"."
+              << std::endl;
 }
 
 
@@ -1907,7 +2776,7 @@ void permissions::on_backend_action(QString const & action)
  */
 void permissions::on_user_verified(content::path_info_t & ipath, int64_t identifier)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     uint64_t const created_date(f_snap->get_start_date());
 
@@ -2051,7 +2920,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
         // permissions for anonymous users is done with an empty user path
         user_path.clear();
     }
-    QString const action(sub_results[2].get_string("perms(3)"));
+    QString action(sub_results[2].get_string("perms(3)"));
     QString status;
     if(sub_results.size() == 4)
     {
@@ -2063,42 +2932,21 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
         // though...
         status = "returning_registered";
     }
-//std::cerr << "perms(\"" << path << "\", \"" << user_path << "\", \"" << action << "\", \"" << status << "\")\n";
+    //SNAP_LOG_WARNING("perms(\"")(path)("\", \"")(user_path)("\", \"")(action)("\", \"")(status)("\")");
 
     // setup the parameters to the access_allowed() signal
     content::path_info_t ipath;
     ipath.set_path(path);
+    if(ipath.get_cpath() == "admin"
+    || ipath.get_cpath().startsWith("admin/"))
+    {
+        action = "administer";
+    }
     ipath.set_parameter("action", action);
     quiet_error_callback err_callback(content::content::instance()->get_snap(), false);
     path::path::instance()->validate_action(ipath, action, err_callback);
 
-    name_t status_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
-    if(status == "spammer")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER;
-    }
-    else if(status == "visitor")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR;
-    }
-    else if(status == "returning_visitor")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR;
-    }
-    else if(status == "returning_registered")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED;
-    }
-    else if(status == "registered")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED;
-    }
-    else
-    {
-        throw snap_expr::snap_expr_exception_invalid_parameter_value("invalid parameter value to for status expected one of: spammer, visitory, returning_visitor, returning_registered, or registered");
-    }
-
-    char const *login_status(get_name(status_name));
+    char const * login_status(get_name(login_status_from_string(status)));
 
     // check whether that user is allowed that action with that path and given status
     content::permission_flag allowed;
@@ -2108,7 +2956,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
     QtCassandra::QCassandraValue value;
     value.setBoolValue(allowed.allowed());
     result.set_value(snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
-//std::cerr << "\n***\n*** exit call perms " << (allowed.allowed() ? "allowed!" : "forbidden") << "\n***\n";
+    //SNAP_LOG_WARNING("exit call perms \"")(allowed.allowed() ? "allowed!" : "forbidden")("\"");
 }
 
 
@@ -2134,10 +2982,15 @@ void permissions::on_add_snap_expr_functions(snap_expr::functions_t & functions)
 }
 
 
-void permissions::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
+void permissions::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(header);
-    static_cast<void>(ctemplate);
+    NOTUSED(header);
+
+    if(ipath.get_cpath() == "remove-iframe-for-login")
+    {
+        QDomDocument doc(header.ownerDocument());
+        content::content::instance()->add_javascript(doc, "remove-iframe-for-login");
+    }
 
     // check whether the user has edit rights
     content::permission_flag can_edit;
@@ -2166,6 +3019,64 @@ void permissions::on_generate_header_content(content::path_info_t & ipath, QDomE
 }
 
 
+/** \brief Whenever a permissions link changes we reset the caches.
+ *
+ * To make sure that the permissions caches are up to date we have
+ * to update the cache time stamp. This signal let us know whether
+ * a permissions link was modified and if so we update the
+ * timestamp. To make sure that we get the correct date we get
+ * the real current date here (opposed to the usual get_start_time()
+ * call.) This means that the cache will remain invalid throughout
+ * this request...
+ *
+ * \param[in] link  The link information being modified.
+ * \param[in] created  Whether this was a new link (true) or not.
+ */
+void permissions::on_modified_link(links::link_info const & link, bool const created)
+{
+    NOTUSED(created);
+
+    if(!link.name().startsWith(QString("%1::").arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))))
+    {
+        // not a permission link, who cares
+        return;
+    }
+
+    // a permissions link got modified, reset the timestamp date and time
+    // so any existing caches are reset
+    //
+    reset_permissions_cache();
+}
+
+
+/** \brief Reset last updated time for permissions cache.
+ *
+ * This function saves 'now' as the current permission time threshold.
+ * This is important because certain things (such as changing a link)
+ * requires the permissions currently cached to be ignored. This
+ * function updates that threshold.
+ */
+void permissions::reset_permissions_cache()
+{
+    // we use 'last_updated + EXPECTED_TIME_ACCURACY_EPSILON' so that all
+    // caches in this session will be ignored which is important; it will
+    // also re-generate the permissions the next time the user access the
+    // website; this also affects backend processes for that long (10ms
+    // at time of writing)
+    //
+    // TODO: if the accuracy epsilon is too small, we get problems...
+    //       if it is "too large", we get slowness which people should
+    //       be able to survive... we would need to have a strong PTP
+    //       service running and see what kind of accuracy we can get
+    //       on a "large" network
+    //
+    int64_t const last_updated(f_snap->get_current_date());
+    QtCassandra::QCassandraValue value;
+    value.setInt64Value(last_updated + EXPECTED_TIME_ACCURACY_EPSILON);
+    f_snap->set_site_parameter(get_name(name_t::SNAP_NAME_PERMISSIONS_LAST_UPDATED), value);
+}
+
+
 /** \brief Repair the permission links.
  *
  * When cloning a page, permissions will disappear. This function restores
@@ -2176,7 +3087,7 @@ void permissions::on_generate_header_content(content::path_info_t & ipath, QDomE
  */
 void permissions::repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning)
 {
-    static_cast<void>(cloning);
+    NOTUSED(cloning);
 
     // permission links are never unique
     links::link_info src(source.name(), false, clone, branch_number);

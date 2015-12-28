@@ -59,6 +59,7 @@ add_library(test_plugin SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
     test-plugin-parser.xsl
+    test-plugin-logo-64x64.jpg
 )
 
 target_link_libraries( test_plugin ${QT_LIBRARIES} )

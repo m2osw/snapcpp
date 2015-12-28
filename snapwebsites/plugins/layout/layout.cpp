@@ -20,6 +20,7 @@
 #include "../filter/filter.h"
 #include "../javascript/javascript.h"
 #include "../taxonomy/taxonomy.h"
+#include "../path/path.h"
 
 #include "log.h"
 #include "qdomreceiver.h"
@@ -30,14 +31,13 @@
 #include "qdomxpath.h"
 //#include "qdomnodemodel.h" -- at this point the DOM Node Model seems bogus.
 #include "not_reached.h"
+#include "not_used.h"
+#include "xslt.h"
 
 #include <iostream>
 #include <fstream>
 
-#include <QXmlQuery>
-#include <QDomDocument>
 #include <QFile>
-#include <QXmlResultItems>
 
 #include "poison.h"
 
@@ -54,7 +54,7 @@ SNAP_PLUGIN_START(layout, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -126,11 +126,12 @@ layout::~layout()
  *
  * \param[in] snap  The child handling this request.
  */
-void layout::on_bootstrap(snap_child *snap)
+void layout::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
     SNAP_LISTEN(layout, "server", server, load_file, _1, _2);
+    SNAP_LISTEN(layout, "server", server, improve_signature, _1, _2, _3);
     SNAP_LISTEN(layout, "content", content::content, copy_branch_cells, _1, _2, _3);
 }
 
@@ -144,7 +145,7 @@ void layout::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the layout plugin.
  */
-layout *layout::instance()
+layout * layout::instance()
 {
     return g_plugin_layout_factory.instance();
 }
@@ -163,6 +164,19 @@ QString layout::description() const
 {
     return "Determine the layout for a given content and generate the output"
           " for that layout.";
+}
+
+
+/** \brief Return our dependencies
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString layout::dependencies() const
+{
+    return "|content|filter|javascript|links|path|server_access|taxonomy|";
 }
 
 
@@ -251,6 +265,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
                 // TODO: change the algorithm to use one last_updated time
                 //       per layout (just like plugins, having a single
                 //       time definition is actually bogus)
+                //
                 int64_t const limit(install_layout(name, last_updated));
                 if(limit > new_last_updated)
                 {
@@ -292,7 +307,7 @@ QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
  *
  * \return The name of the layout, may be "default" if no other name was found.
  */
-QString layout::get_layout(content::path_info_t& ipath, QString const& column_name, bool use_qs_theme)
+QString layout::get_layout(content::path_info_t & ipath, QString const & column_name, bool use_qs_theme)
 {
     QString layout_name;
 
@@ -310,7 +325,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
         {
             // although query_option("") works as expected by returning ""
             // we avoid the call to the get_uri() by testing early
-            snap_uri const& uri(f_snap->get_uri());
+            snap_uri const & uri(f_snap->get_uri());
             layout_name = uri.query_option(qs_layout);
         }
     }
@@ -332,27 +347,38 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
             {
                 // no layout, check the .conf
                 layout_value = f_snap->get_server_parameter(column_name);
-            }
-            if(layout_value.nullValue())
-            {
-                // user did not define any layout, set the value to "default"
-                layout_value = QString("\"default\"");
+                if(layout_value.nullValue())
+                {
+                    // user did not define any layout, set the value to "default"
+                    layout_value = QString("\"default\"");
+                }
+                else
+                {
+                    // the name coming from the server .conf file will
+                    // not be JavaScript, only a name, change it so it
+                    // is compatible with the rest of the code below
+                    layout_value.setStringValue(QString("\"%1\"").arg(layout_value.stringValue()));
+                }
             }
         }
 
         QString const layout_script(layout_value.stringValue());
 
         bool run_script(true);
+        bool const ends_with_quote_colon(layout_script.endsWith("\";"));
         if(layout_script.startsWith("\"")
-        && (layout_script.endsWith("\"") || layout_script.endsWith("\";")))
+        && (layout_script.endsWith("\"") || ends_with_quote_colon)
+        && layout_script.length() >= 3)
         {
             run_script = false;
-            QByteArray const utf8(layout_script.toUtf8());
-            for(char const *s(utf8.data() + 1); *s != '\0'; ++s)
+            QString const check_name(layout_script.mid(1, layout_script.length() - (ends_with_quote_colon ? 3 : 2)));
+            QByteArray const utf8(check_name.toUtf8());
+            for(char const *s(utf8.data()); *s != '\0'; ++s)
             {
                 if((*s < 'a' || *s > 'z')
                 && (*s < 'A' || *s > 'Z')
                 && (*s < '0' || *s > '9')
+                && *s != '-'
                 && *s != '_')
                 {
                     run_script = true;
@@ -360,26 +386,19 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
                 }
             }
         }
-//std::cerr << "Layout selection with [" << layout_script << "] or " << run_script << " for " << ipath.get_key() << "\n";
+//SNAP_LOG_INFO("Layout selection with [")(layout_script)("] run_script = ")(run_script)(" for ")(ipath.get_key());
 
         if(run_script)
         {
             // TODO: remove dependency on JS with an event on this one!
             //       (TBD: as far as I know this is okay now)
-            QVariant v(javascript::javascript::instance()->evaluate_script(layout_script));
+            QVariant const v(javascript::javascript::instance()->evaluate_script(layout_script));
             layout_name = v.toString();
         }
         else
         {
             // remove the quotes really quick, we avoid the whole JS deal!
-            if(layout_script.endsWith("\";"))
-            {
-                layout_name = layout_script.mid(1, layout_script.length() - 3);
-            }
-            else
-            {
-                layout_name = layout_script.mid(1, layout_script.length() - 2);
-            }
+            layout_name = layout_script.mid(1, layout_script.length() - (ends_with_quote_colon ? 3 : 2));
         }
 
         // does it look like the script failed? if so get a default
@@ -402,6 +421,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
             if((*s < 'a' || *s > 'z')
             && (*s < 'A' || *s > 'Z')
             && (*s < '0' || *s > '9')
+            && *s != '-'
             && *s != '_')
             {
                 // tainted layout/theme name
@@ -420,9 +440,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
 
 /** \brief Apply the layout to the content defined at \p cpath.
  *
- * This function defines a page content using the data as defined by \p cpath
- * and \p ctemplate. \p ctemplate data is used only if data that is generally
- * required is not currently available in \p cpath.
+ * This function defines a page content using the data as defined by \p cpath.
  *
  * First it looks for a JavaScript under the column key "layout::theme".
  * If such doesn't exist at cpath, then the function checks the \p cpath
@@ -440,11 +458,10 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
  *
  * \param[in,out] ipath  The canonicalized path of content to be laid out.
  * \param[in] content_plugin  The plugin that will generate the content of the page.
- * \param[in] ctemplate  The path to the template is used to get default data.
  *
  * \return The result is the output of the layout applied to the data in cpath.
  */
-QString layout::apply_layout(content::path_info_t& ipath, layout_content *content_plugin, QString const& ctemplate)
+QString layout::apply_layout(content::path_info_t & ipath, layout_content * content_plugin)
 {
     // First generate the body content (a large XML document)
     QString layout_name;
@@ -469,7 +486,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
     }
 
     QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
-    create_body(doc, ipath, xsl, content_plugin, ctemplate, true, layout_name);
+    create_body(doc, ipath, xsl, content_plugin, true, layout_name);
 
     // Then apply a theme to it
     xsl = define_layout(ipath, get_name(name_t::SNAP_NAME_LAYOUT_THEME), get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL), ":/xsl/layout/default-theme-parser.xsl", layout_name);
@@ -513,16 +530,15 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
  *
  * \return The XSL code in a string.
  */
-QString layout::define_layout(content::path_info_t& ipath, QString const& name, QString const& key, QString const& default_filename, QString& layout_name)
+QString layout::define_layout(content::path_info_t & ipath, QString const & name, QString const & key, QString const & default_filename, QString & layout_name)
 {
     // result variable
     QString xsl;
 
     // Retrieve the name of the layout for this path
-    // XXX should the ctemplate ever be used to retrieve the layout?
     layout_name = get_layout(ipath, name, true);
 
-//SNAP_LOG_TRACE() << "Got theme / layout name = [" << layout_name << "] (key=" << ipath.get_key() << ")";
+//SNAP_LOG_TRACE("Got theme / layout name = [")(layout_name)("] (key=")(ipath.get_key())(")");
 
     // If layout_name is not default, attempt to obtain the selected
     // theme from the layout table.
@@ -531,7 +547,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
     {
         // the layout name may have two entries: "row/cell" so we check
         // that first and cut the name in half if required
-        QStringList const names(layout_name.split("/"));
+        snap_string_list const names(layout_name.split("/"));
         if(names.size() > 2)
         {
             // can be one or two workds, no more
@@ -586,6 +602,12 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
             if(!data.isEmpty())
             {
                 xsl = QString::fromUtf8(data.data(), data.size());
+            }
+            else
+            {
+                // this warning will help at least me to debug a problem
+                // with loading a layout
+                SNAP_LOG_WARNING("layout data named \"")(names.join("/"))("\" could not be loaded. We will be using the \"default\" layout instead.");
             }
             layout_name = "default";
         }
@@ -652,12 +674,12 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
  *
  * \return A DOM document with the basic layout tree.
  */
-QDomDocument layout::create_document(content::path_info_t& ipath, plugin *content_plugin)
+QDomDocument layout::create_document(content::path_info_t & ipath, plugin * content_plugin)
 {
     // Initialize the XML document tree
     // More is done in the generate_header_content_impl() function
-    QDomDocument doc("snap");
-    QDomElement root = doc.createElement("snap");
+    QDomDocument doc;
+    QDomElement root(doc.createElement("snap"));
     root.setAttribute("path", ipath.get_cpath());
 
     if(content_plugin != nullptr)
@@ -701,10 +723,6 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *conten
  * appear in the header, then it should create it in the header of
  * the main page.
  *
- * The system can now make use of a ctemplate to gather data which are
- * not otherwise defined in the cpath cell. By default ctemplate is set
- * to the empty string which means it does not get used.
- *
  * \note
  * You may want to call the replace_includes() function on your XSLT
  * document before calling this function.
@@ -713,13 +731,12 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *conten
  * \param[in,out] ipath  The path being dealt with.
  * \param[in] xsl  The XSL of this body layout.
  * \param[in] content_plugin  The plugin handling the content (body/title in general.)
- * \param[in] ctemplate  The path to the template is used to get default data.
  * \param[in] handle_boxes  Whether the boxes of this theme are to be handled.
  * \param[in] layout_name  The name of the layout (only necessary if handle_boxes is true.)
  *
  * \return The resulting body in an XML document.
  */
-void layout::create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, QString const& ctemplate, bool handle_boxes, QString const& layout_name)
+void layout::create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, bool const handle_boxes, QString const & layout_name)
 {
 #ifdef DEBUG
 SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() << "] name = [" << layout_name << "]";
@@ -735,11 +752,11 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
 
     // other plugins generate defaults
 //std::cerr << "*** Generate header...\n" << doc.toString() << "-------------------------\n";
-    generate_header_content(ipath, head, metadata, ctemplate);
+    generate_header_content(ipath, head, metadata);
 
     // concerned (owner) plugin generates content
 //std::cerr << "*** Generate main content...\n";
-    content_plugin->on_generate_main_content(ipath, page, body, ctemplate);
+    content_plugin->on_generate_main_content(ipath, page, body);
 //std::cout << "Header + Main XML is [" << doc.toString(-1) << "]\n";
 
     // add boxes content
@@ -755,7 +772,7 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
 
     // other plugins are allowed to modify the content if so they wish
 //std::cerr << "*** Generate page content...\n";
-    generate_page_content(ipath, page, body, ctemplate);
+    generate_page_content(ipath, page, body);
 //std::cout << "Prepared XML is [" << doc.toString(-1) << "]\n";
 
     // TODO: the filtering needs to be a lot more generic!
@@ -763,15 +780,58 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     //       filters he wants to apply agains the page content
     //       (i.e. ultimately we want to have some sort of filter
     //       tagging capability)
+    QString filtered_xsl(xsl);
     if(plugins::exists("filter"))
     {
-//std::cerr << "*** Filter all of that...\n";
+//SNAP_LOG_WARNING("*** Filter all of that...: [")(doc.toString())("]");
         // replace all tokens when filtering is available
         filter::filter::instance()->on_token_filter(ipath, doc);
+
+        // XSLT parser may also request a pre-filtering
+        //
+        int const output_pos(filtered_xsl.indexOf("<output"));
+        if(output_pos > 0)
+        {
+            for(QChar const * s(filtered_xsl.data() + output_pos + 7); !s->isNull(); ++s)
+            {
+                ushort c(s->unicode());
+                if(c == '>')
+                {
+                    // found end of tag, exit loop now
+                    break;
+                }
+                if(c == 'f')
+                {
+                    // filter="token" or filter='token'
+                    if(s[1].unicode() == 'i'
+                    && s[2].unicode() == 'l'
+                    && s[3].unicode() == 't'
+                    && s[4].unicode() == 'e'
+                    && s[5].unicode() == 'r'
+                    && s[6].unicode() == '='
+                    && (s[7].unicode() == '"' || s[7].unicode() == '\'')
+                    && s[8].unicode() == 't'
+                    && s[9].unicode() == 'o'
+                    && s[10].unicode() == 'k'
+                    && s[11].unicode() == 'e'
+                    && s[12].unicode() == 'n'
+                    && (s[7].unicode() == s[13].unicode())) // closing must be the same as opening
+                    {
+                        QDomDocument xsl_doc;
+                        if(xsl_doc.setContent(filtered_xsl))
+                        {
+                            filter::filter::instance()->on_token_filter(ipath, xsl_doc);
+                            filtered_xsl = xsl_doc.toString(-1);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
     }
 
 //std::cerr << "*** Filtered content...\n";
-    filtered_content(ipath, doc, xsl);
+    filtered_content(ipath, doc, filtered_xsl);
 
 #if 0
 std::cout << "Generated XML is [" << doc.toString(-1) << "]\n";
@@ -786,71 +846,16 @@ out.write(doc.toString(-1).toUtf8());
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
 //std::cerr << "*** Generate output...\n";
-    QString doc_str(doc.toString(-1));
-    if(doc_str.isEmpty())
-    {
-        throw snap_logic_exception("somehow the memory XML document for the body XSLT is empty");
-    }
-    QXmlQuery q(QXmlQuery::XSLT20);
-    QMessageHandler msg;
-    msg.set_xsl(xsl);
-    msg.set_doc(doc_str);
-    q.setMessageHandler(&msg);
-#if 0
-    QDomNodeModel m(q.namePool(), doc);
-    QXmlNodeModelIndex x(m.fromDomNode(doc.documentElement()));
-    QXmlItem i(x);
-    q.setFocus(i);
-#else
-    q.setFocus(doc_str);
-#endif
-    q.setQuery(xsl);
-    if(!q.isValid())
-    {
-        throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for BODY \"%1\" detected by Qt").arg(ipath.get_key()));
-    }
-#if 0
-    QXmlResultItems results;
-    q.evaluateTo(&results);
-    
-    QXmlItem item(results.next());
-    while(!item.isNull())
-    {
-        if(item.isNode())
-        {
-            //printf("Got a node!\n");
-            QXmlNodeModelIndex node_index(item.toNodeModelIndex());
-            QDomNode node(m.toDomNode(node_index));
-            printf("Got a node! [%s]\n", node.localName()/*ownerDocument().toString(-1)*/.toUtf8().data());
-        }
-        item = results.next();
-    }
-#elif 1
-    // this should be faster since we keep the data in a DOM
-    QDomDocument doc_output("body");
-    QDomReceiver receiver(q.namePool(), doc_output);
-    q.evaluateTo(&receiver);
+
+    QDomDocument doc_output("output");
+
+    xslt x;
+    x.set_xsl(filtered_xsl);
+    x.set_document(doc);
+    x.evaluate_to_document(doc_output);
+
     extract_js_and_css(doc, doc_output);
     body.appendChild(doc.importNode(doc_output.documentElement(), true));
-//std::cout << "Body HTML is [" << doc_output.toString(-1) << "]\n";
-#else
-    //QDomDocument doc_body("body");
-    //doc_body.setContent(get_content_parameter(path, get_name(name_t::SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, nullptr, nullptr, nullptr);
-    //QDomElement content_tag(doc.createElement("content"));
-    //body.appendChild(content_tag);
-    //content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
-
-    // TODO: look into getting XML as output
-    QString out;
-    q.evaluateTo(&out);
-    //QDomElement output(doc.createElement("output"));
-    //body.appendChild(output);
-    //QDomText text(doc.createTextNode(out));
-    //output.appendChild(text);
-    QDomDocument doc_output("body");
-    doc_output.setContent(out, true, nullptr, nullptr, nullptr);
-    body.appendChild(doc.importNode(doc_output.documentElement(), true));
-#endif
 }
 
 
@@ -873,9 +878,9 @@ out.write(doc.toString(-1).toUtf8());
  * \param[in,out] doc  Main document where the JavaScript and CSS are added.
  * \param[in,out] doc_output  The document where the defines are taken from.
  */
-void layout::extract_js_and_css(QDomDocument& doc, QDomDocument& doc_output)
+void layout::extract_js_and_css(QDomDocument & doc, QDomDocument & doc_output)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
 
     // javascripts can be added in any order because we have
     // proper dependencies thus they automatically get sorted
@@ -955,7 +960,7 @@ void layout::extract_js_and_css(QDomDocument& doc, QDomDocument& doc_output)
  * \param[in] doc  The document we're working on.
  * \param[in] layout_name  The name of the layout being worked on.
  */
-void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_name, QDomDocument doc)
+void layout::generate_boxes(content::path_info_t & ipath, QString const & layout_name, QDomDocument doc)
 {
     // the list of boxes is defined in the database under (GLOBAL)
     //    admin/layouts/<layout_name>[layout::boxes]
@@ -1016,9 +1021,9 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
         (content::field_search::command_t::COMMAND_PATH_ELEMENT, "/snap/head/metadata/boxes")
         // if boxes exist in doc then that is our result
         (content::field_search::command_t::COMMAND_IF_ELEMENT_NULL, 1)
-        (content::field_search::command_t::COMMAND_ELEMENT_TEXT)
-        (content::field_search::command_t::COMMAND_RESULT, box_names)
-        (content::field_search::command_t::COMMAND_GOTO, 100)
+            (content::field_search::command_t::COMMAND_ELEMENT_TEXT)
+            (content::field_search::command_t::COMMAND_RESULT, box_names)
+            (content::field_search::command_t::COMMAND_GOTO, 100)
 
         // no boxes in source document
         (content::field_search::command_t::COMMAND_LABEL, 1)
@@ -1059,7 +1064,7 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
 
         if(!box_list.isEmpty() && box_list != ".")
         {
-            QStringList names(box_list.split(","));
+            snap_string_list names(box_list.split(","));
             QVector<QDomElement> dom_boxes;
             int const max_boxes(names.size());
             for(int i(0); i < max_boxes; ++i)
@@ -1094,9 +1099,9 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
                         box_error_callback.clear_error();
                         content::path_info_t box_ipath;
                         box_ipath.set_path(child_info.key());
-                        box_ipath.set_parameter("action", "view"); // we're always only viewing those blocks from here
-SNAP_LOG_TRACE() << "box_ipath key = " << box_ipath.get_key() << ", branch_key=" << box_ipath.get_branch_key();
-                        plugin *box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
+                        box_ipath.set_parameter("action", "view"); // we are always only viewing those boxes from here
+SNAP_LOG_TRACE("box_ipath key = ")(box_ipath.get_key())(", branch_key=")(box_ipath.get_branch_key());
+                        plugin * box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
                         if(!box_error_callback.has_error() && box_plugin)
                         {
                             layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
@@ -1108,7 +1113,7 @@ SNAP_LOG_TRACE() << "box_ipath key = " << box_ipath.get_key() << ", branch_key="
                                 filter_box.setAttribute("path", box_ipath.get_cpath()); // not the full key
                                 filter_box.setAttribute("owner", box_plugin->get_plugin_name());
                                 dom_boxes[i].appendChild(filter_box);
-SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
+SNAP_LOG_TRACE("handle box for ")(box_plugin->get_plugin_name())(" with owner \"")(box_plugin->get_plugin_name())("\"");
 
                                 // Unfortunately running the full header content
                                 // signal would overwrite the main data... not good!
@@ -1116,7 +1121,7 @@ SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
                                 //QDomElement metadata(snap_dom::get_element(doc, "metadata"));
                                 //generate_header_content(ipath, head, metadata, "");
 
-                                lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box, "");
+                                lb->on_generate_boxes_content(ipath, box_ipath, page, filter_box);
 
                                 // Unfortunately running the full page content
                                 // signal would overwrite the main data... not good!
@@ -1190,32 +1195,37 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
     //    }
     //}
 
+    xslt x;
+    x.set_xsl(xsl);
+    x.set_document(doc);
+    return x.evaluate_to_string();
+
     // finally apply the theme XSLT to the final XML
     // the output is what we want to return
-    QXmlQuery q(QXmlQuery::XSLT20);
-    if(doc_str.isEmpty())
-    {
-        throw snap_logic_exception("somehow the memory XML document for the theme XSLT is empty");
-    }
-    QMessageHandler msg;
-    msg.set_xsl(xsl);
-    msg.set_doc(doc_str);
-    q.setMessageHandler(&msg);
-    q.setFocus(doc_str);
-    q.setQuery(xsl);
-    if(!q.isValid())
-    {
-        throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for THEME \"%1\" detected by Qt").arg(theme_name));
-    }
+    //QXmlQuery q(QXmlQuery::XSLT20);
+    //if(doc_str.isEmpty())
+    //{
+    //    throw snap_logic_exception("somehow the memory XML document for the theme XSLT is empty");
+    //}
+    //QMessageHandler msg;
+    //msg.set_xsl(xsl);
+    //msg.set_doc(doc_str);
+    //q.setMessageHandler(&msg);
+    //q.setFocus(doc_str);
+    //q.setQuery(xsl);
+    //if(!q.isValid())
+    //{
+    //    throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for THEME \"%1\" detected by Qt").arg(theme_name));
+    //}
 
-    QBuffer output;
-    output.open(QBuffer::ReadWrite);
-    QHtmlSerializer html(q.namePool(), &output);
-    q.evaluateTo(&html);
+    //QBuffer output;
+    //output.open(QBuffer::ReadWrite);
+    //QHtmlSerializer html(q.namePool(), &output);
+    //q.evaluateTo(&html);
 
-    QString const out(QString::fromUtf8(output.data()));
+    //QString const out(QString::fromUtf8(output.data()));
 
-    return out;
+    //return out;
 }
 
 
@@ -1407,8 +1417,9 @@ void layout::replace_includes(QString& xsl)
  */
 int64_t layout::install_layout(QString const & layout_name, int64_t const last_updated)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
     QtCassandra::QCassandraValue last_updated_value;
@@ -1457,11 +1468,14 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
         }
     }
 
-    // make sure the layout is valid
-    content::path_info_t::status_t const status(layout_ipath.get_status());
-    if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
+    // make sure the layout is valid if it exists
+    if(content_table->exists(layout_ipath.get_key()))
     {
-        return 0;
+        content::path_info_t::status_t const status(layout_ipath.get_status());
+        if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
+        {
+            return 0;
+        }
     }
 
     // this layout is missing, create necessary basic info
@@ -1579,13 +1593,12 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.
  * \param[in,out] metadata  The metadata being generated.
- * \param[in] ctemplate  The template used to generate the page or "".
  *
  * \return true if the signal should go on to all the other plugins.
  */
-bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
+bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    static_cast<void>(header);
+    NOTUSED(header);
 
     content::path_info_t main_ipath;
     main_ipath.set_path(f_snap->get_uri().path());
@@ -1596,6 +1609,26 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
     QString const qs_action(f_snap->get_server_parameter("qs_action"));
     snap_uri const& uri(f_snap->get_uri());
     QString const action(uri.query_option(qs_action));
+
+    QString site_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)).stringValue().trimmed());
+    QString site_short_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME)).stringValue().trimmed());
+    QString site_long_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME)).stringValue().trimmed());
+
+    if(site_name.isEmpty())
+    {
+        if(!site_long_name.isEmpty())
+        {
+            site_name = site_long_name;
+        }
+        else if(!site_short_name.isEmpty())
+        {
+            site_name = site_short_name;
+        }
+        else
+        {
+            site_name = "Your Website Name";
+        }
+    }
 
     FIELD_SEARCH
         (content::field_search::command_t::COMMAND_ELEMENT, metadata)
@@ -1621,18 +1654,14 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
         (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=real_uri]/data")
 
-        // snap/head/metadata/desc[@type="template_uri"]/data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, ctemplate.isEmpty() ? "" : f_snap->get_site_key_with_slash() + ctemplate)
-        (content::field_search::command_t::COMMAND_SAVE, "desc[type=template_uri]/data")
-
         // snap/head/metadata/desc[@type="name"]/data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)))
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, site_name)
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/data")
         // snap/head/metadata/desc[@type="name"]/short-data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME)))
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, site_short_name)
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/short-data")
         // snap/head/metadata/desc[@type="name"]/long-data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME)))
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, site_long_name)
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/long-data")
 
         // snap/head/metadata/desc[@type="email"]/data
@@ -1640,7 +1669,7 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=email]/data")
 
         // snap/head/metadata/desc[@type="remote_ip"]/data
-        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->snapenv("REMOTE_ADDR"))
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REMOTE_ADDR)))
         (content::field_search::command_t::COMMAND_SAVE, "desc[type=remote_ip]/data")
 
         // snap/head/metadata/desc[@type="action"]/data
@@ -1655,10 +1684,10 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
 }
 
 
-/** \fn void layout::generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+/** \fn void layout::generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
  * \brief Generate the page main content.
  *
- * This function generates the main content of the page. Other
+ * This signal generates the main content of the page. Other
  * plugins will also have the event called if they subscribed and
  * thus will be given a chance to add their own content to the
  * main page. This part is the one that (in most cases) appears
@@ -1673,24 +1702,17 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
  * \param[in] page_content  The main content of the page.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The template used in case some parameters do not
- *                       exist in the specified path
  */
 
 
-/** \fn void layout::filtered_content(content::path_info_t& ipath, QDomDocument& doc, QString const& xsl)
- * \brief Generate the page main content.
+/** \fn void layout::filtered_content(content::path_info_t & ipath, QDomDocument & doc, QString const & xsl)
+ * \brief Signals that the content in the DOM document was filtered.
  *
- * This function generates the main content of the page. Other
- * plugins will also have the event called if they subscribed and
- * thus will be given a chance to add their own content to the
- * main page. This part is the one that (in most cases) appears
- * as the main content on the page although the content of some
- * areas may be interleaved with this content.
+ * This signal is called once all the filters for that page were applied
+ * on the DOM document.
  *
- * Note that this is NOT the HTML output. It is the <page> tag of
- * the snap XML file format. The theme layout XSLT will be used
- * to generate the intermediate and final output.
+ * This allows your plugin to do further processing of the content after
+ * all the filters were applied.
  *
  * \param[in] ipath  The path being managed.
  * \param[in,out] doc  The document that was just generated.
@@ -1714,7 +1736,7 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
  * \param[in,out] file  The file name and content.
  * \param[in,out] found  Whether the file was found.
  */
-void layout::on_load_file(snap_child::post_file_t& file, bool& found)
+void layout::on_load_file(snap_child::post_file_t & file, bool & found)
 {
     if(!found)
     {
@@ -1725,7 +1747,7 @@ void layout::on_load_file(snap_child::post_file_t& file, bool& found)
             int i(7);
             for(; i < filename.length() && filename[i] == '/'; ++i);
             filename = filename.mid(i);
-            QStringList const parts(filename.split('/'));
+            snap_string_list const parts(filename.split('/'));
             if(parts.size() != 2)
             {
                 // wrong number of parts...
@@ -1821,16 +1843,51 @@ void layout::add_layout_from_resources_done(QString const & name)
 {
     QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
 
-    int64_t updated(f_snap->get_start_date());
+    int64_t const updated(f_snap->get_start_date());
     layout_table->row(name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
 }
 
 
-void layout::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void layout::on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
-    static_cast<void>(destination_branch);
+    NOTUSED(destination_branch);
 
     content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(name_t::SNAP_NAME_LAYOUT_NAMESPACE));
+}
+
+
+bool layout::on_improve_signature(QString const & path, QDomDocument doc, QDomElement & signature_tag)
+{
+    NOTUSED(path);
+    NOTUSED(signature_tag);
+
+    QDomElement head;
+    QDomElement root(doc.documentElement());
+    if(snap_dom::get_tag("head", root, head, false))
+    {
+        QDomElement generator(doc.createElement("link"));
+        generator.setAttribute("rel", "bookmark");
+        generator.setAttribute("type", "text/html");
+        // TODO: translate
+        generator.setAttribute("title", "Generator");
+        generator.setAttribute("href", "http://snapwebsites.org/");
+        head.appendChild(generator);
+
+        QDomElement top(doc.createElement("link"));
+        top.setAttribute("rel", "top");
+        top.setAttribute("type", "text/html");
+        // TODO: translate
+        top.setAttribute("title", "Index");
+        top.setAttribute("href", f_snap->get_site_key());
+        head.appendChild(top);
+
+        QDomElement meta_tag(doc.createElement("meta"));
+        meta_tag.setAttribute("name", "generator");
+        meta_tag.setAttribute("content", "Snap! Websites");
+        head.appendChild(meta_tag);
+    }
+
+    return true;
 }
 
 
@@ -1913,7 +1970,7 @@ void layout::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, Qt
   </body>
   <boxes>
    <left>
-    <filter path="admin/layouts/bare/left/login" owner="users">
+    <filter path="admin/layouts/bare/left/login" owner="users_ui">
      <titles>
       <title>User Login</title>
      </titles>

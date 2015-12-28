@@ -19,6 +19,7 @@
 
 #include "snapwatchdog.h"
 
+#include <snapwebsites/not_used.h>
 #include <snapwebsites/process.h>
 #include <snapwebsites/qdomhelpers.h>
 
@@ -41,11 +42,11 @@ SNAP_PLUGIN_START(processes, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_WATCHDOG_PROCESSES:
+    case name_t::SNAP_NAME_WATCHDOG_PROCESSES:
         return "watchdog_processes";
 
     default:
@@ -64,7 +65,7 @@ char const *get_name(name_t name)
  * This function is used to initialize the processes plugin object.
  */
 processes::processes()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -78,21 +79,6 @@ processes::~processes()
 }
 
 
-/** \brief Initialize processes.
- *
- * This function terminates the initialization of the processes plugin
- * by registering for various events.
- *
- * \param[in] snap  The child handling this request.
- */
-void processes::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(processes, "server", watchdog_server, process_watch, _1);
-}
-
-
 /** \brief Get a pointer to the processes plugin.
  *
  * This function returns an instance pointer to the processes plugin.
@@ -102,7 +88,7 @@ void processes::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the processes plugin.
  */
-processes *processes::instance()
+processes * processes::instance()
 {
     return g_plugin_processes_factory.instance();
 }
@@ -123,6 +109,19 @@ QString processes::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString processes::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function is ignored in the watchdog.
@@ -133,10 +132,25 @@ QString processes::description() const
  */
 int64_t processes::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
     SNAP_PLUGIN_UPDATE_INIT();
     // no updating in watchdog
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize processes.
+ *
+ * This function terminates the initialization of the processes plugin
+ * by registering for various events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void processes::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(processes, "server", watchdog_server, process_watch, _1);
 }
 
 
@@ -148,8 +162,8 @@ int64_t processes::do_update(int64_t last_updated)
  */
 void processes::on_process_watch(QDomDocument doc)
 {
-std::cerr << "starting on processes...\n";
-    QString process_names(f_snap->get_server_parameter(get_name(SNAP_NAME_WATCHDOG_PROCESSES)));
+//std::cerr << "starting on processes...\n";
+    QString process_names(f_snap->get_server_parameter(get_name(name_t::SNAP_NAME_WATCHDOG_PROCESSES)));
     if(process_names.isEmpty())
     {
         return;
@@ -215,10 +229,10 @@ std::cerr << "starting on processes...\n";
         QString utf8_name(QString::fromUtf8(name.c_str()));
 
         QString cmdline(utf8_name);
-        int count_max(info->get_args_size());
+        int const count_max(info->get_args_size());
         for(int c(0); c < count_max; ++c)
         {
-            // is it Cassandra?
+            // skip empty arguments
             if(info->get_arg(c) != "")
             {
                 cmdline += " ";

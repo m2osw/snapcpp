@@ -120,26 +120,41 @@ public:
 
 
 
-class epayment_paypal : public plugins::plugin
-                      , public path::path_execute
-                      , public layout::layout_content
+class epayment_paypal
+        : public plugins::plugin
+        , public path::path_execute
+        , public layout::layout_content
 {
 public:
                                 epayment_paypal();
                                 ~epayment_paypal();
 
+    // plugins::plugin implementation
     static epayment_paypal *    instance();
+    virtual QString             settings_path() const;
+    virtual QString             icon() const;
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
+    virtual void                bootstrap(snap_child * snap);
 
     QtCassandra::QCassandraTable::pointer_t     get_epayment_paypal_table();
 
-    void                        on_bootstrap(snap_child *snap);
-    void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
+    // server signals
+    void                        on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
     void                        on_process_post(QString const & uri_path);
+
+    // path::path_execute implementation
     virtual bool                on_path_execute(content::path_info_t & ipath);
-    virtual void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, const QString & ctemplate);
-    void                        on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+
+    // layout signals
+    void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
+    virtual void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // filter signals
+    void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+
+    // epayment signals
     void                        on_repeat_payment(content::path_info_t & first_invoice_ipath, content::path_info_t & previous_invoice_ipath, content::path_info_t & new_invoice_ipath);
 
 private:
@@ -147,7 +162,7 @@ private:
     void                        content_update(int64_t variables_timestamp);
     void                        cancel_invoice(QString const & token);
     bool                        get_oauth2_token(http_client_server::http_client & http, std::string & token_type, std::string & access_token);
-    QString                     get_product_plan(http_client_server::http_client http, std::string const & token_type, std::string const & access_token, epayment::epayment_product const & recurring_product, double const recurring_fee, QString & plan_id);
+    QString                     get_product_plan(http_client_server::http_client & http, std::string const & token_type, std::string const & access_token, epayment::epayment_product const & recurring_product, double const recurring_fee, QString & plan_id);
     bool                        get_debug();
     int8_t                      get_maximum_repeat_failures();
     std::string                 create_unique_request_id(QString const  & main_id);

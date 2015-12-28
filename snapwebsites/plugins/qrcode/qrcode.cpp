@@ -21,7 +21,8 @@
 #include "../permissions/permissions.h"
 #include "../shorturl/shorturl.h"
 
-//#include "not_reached.h"
+#include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -54,6 +55,12 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_QRCODE_PRIVATE_ENABLE:
         return "qrcode::private_enable";
+
+    case name_t::SNAP_NAME_QRCODE_SHORTURL_ENABLE:
+        return "qrcode::shorturl_enable";
+
+    case name_t::SNAP_NAME_QRCODE_TRACK_USAGE_ENABLE:
+        return "qrcode::track_usage_enable";
 
     default:
         // invalid index
@@ -98,13 +105,13 @@ char const *get_name(name_t name)
 namespace
 {
 
-void qrcode_deleter(QRcode *code)
+void qrcode_deleter(QRcode * code)
 {
     QRcode_free(code);
 }
 
 
-void data_deleter(unsigned char *data)
+void data_deleter(unsigned char * data)
 {
     delete [] data;
 }
@@ -136,21 +143,6 @@ qrcode::~qrcode()
 }
 
 
-/** \brief Initialize the qrcode.
- *
- * This function terminates the initialization of the qrcode plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void qrcode::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(qrcode, "path", path::path, can_handle_dynamic_path, _1, _2);
-}
-
-
 /** \brief Get a pointer to the qrcode plugin.
  *
  * This function returns an instance pointer to the qrcode plugin.
@@ -160,9 +152,31 @@ void qrcode::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the qrcode plugin.
  */
-qrcode *qrcode::instance()
+qrcode * qrcode::instance()
 {
     return g_plugin_qrcode_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString qrcode::settings_path() const
+{
+    return "/admin/settings/qrcode";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString qrcode::icon() const
+{
+    return "/images/qrcode/qrcode-logo-64x64.png";
 }
 
 
@@ -178,6 +192,19 @@ qrcode *qrcode::instance()
 QString qrcode::description() const
 {
     return "Generate the QR Code of the website public pages.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString qrcode::dependencies() const
+{
+    return "|attachment|editor|path|permissions|shorturl|";
 }
 
 
@@ -197,7 +224,7 @@ int64_t qrcode::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 5, 21, 4, 52, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 20, 20, 1, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -212,9 +239,24 @@ int64_t qrcode::do_update(int64_t last_updated)
  */
 void qrcode::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the qrcode.
+ *
+ * This function terminates the initialization of the qrcode plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void qrcode::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(qrcode, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
 
 
@@ -226,7 +268,7 @@ void qrcode::content_update(int64_t variables_timestamp)
  * \param[in,out] ipath  The path being checked.
  * \param[in,out] plugin_info  The info of the plugin to handle this path.
  */
-void qrcode::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+void qrcode::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     if(ipath.get_cpath().startsWith("images/qrcode/"))
     {
@@ -244,8 +286,12 @@ void qrcode::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynam
  *
  * At this time the system limits the number of elements in the path to
  * 20 under /images/qrcode.
+ *
+ * \param[in,out] ipath  The to the page to transfer.
+ *
+ * \return true if the QR code was created successfully.
  */
-bool qrcode::on_path_execute(content::path_info_t& ipath)
+bool qrcode::on_path_execute(content::path_info_t & ipath)
 {
     // we should be called only if the path starts with "images/qrcode/"
     // but double checking is always a good idea
@@ -258,6 +304,10 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
 
     // retrieve the path we are after
     QString qrcode_path(cpath.mid(14));
+
+    // TBD: I think this is useless since the path has to be have
+    //      been canonicalized, right?
+    //
     while(!qrcode_path.isEmpty() && qrcode_path[0] == '/')
     {
         qrcode_path.remove(0, 1);
@@ -265,13 +315,14 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
 
     // is that a path to a QR Code image? if so, totally ignore
     // and show the "not available" image instead
-    if(!qrcode_path.startsWith("images/qrcode"))
+    if(!qrcode_path.startsWith("images/qrcode")
+    && qrcode_path != "qrcode-not-available.png")
     {
         // make it a standard path to something
         content::path_info_t page_ipath;
         page_ipath.set_path(qrcode_path == "index" || qrcode_path == "index.html" ? "" : qrcode_path);
 
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         content::path_info_t settings_ipath;
         settings_ipath.set_path("admin/settings/qrcode");
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
@@ -279,27 +330,69 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
 
         // verify that at least this user has permission to that page
         //
-        // TBD: should we check whether an anonymous user has permission?
-        //      (the settings should tell us about that)
-        permissions::permissions *permissions_plugin(permissions::permissions::instance());
-        QString const& login_status(permissions_plugin->get_login_status());
+        permissions::permissions * permissions_plugin(permissions::permissions::instance());
+        QString const & login_status(permissions_plugin->get_login_status());
         bool const accept_private_pages(settings_row->cell(get_name(name_t::SNAP_NAME_QRCODE_PRIVATE_ENABLE))->value().safeSignedCharValue() != 0);
-        QString const& user_path(accept_private_pages ? permissions_plugin->get_user_path() : "");
+        QString const & user_path(accept_private_pages ? permissions_plugin->get_user_path() : "");
         content::permission_flag allowed;
         path::path::instance()->access_allowed(user_path, page_ipath, "view", login_status, allowed);
         if(allowed.allowed())
         {
             QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-            // TODO: check settings to know whether we use the Short URL
-            //       also we may want to first test with the full URL...
-            if(content_table->exists(page_ipath.get_key())
-            && content_table->row(page_ipath.get_key())->exists(shorturl::get_name(shorturl::name_t::SNAP_NAME_SHORTURL_URL)))
+            if(content_table->exists(page_ipath.get_key()))
             {
-                // use the Short URL
-                QString const shorturl(content_table->row(page_ipath.get_key())->cell(shorturl::get_name(shorturl::name_t::SNAP_NAME_SHORTURL_URL))->value().stringValue());
-                std::string shorturl_utf8(shorturl.toUtf8().data());
+                // by default we expect the normal page URL to be used,
+                // only it may be too long or the user may setup the
+                // system to use the short URLs instead
+                //
+                std::string url_utf8(page_ipath.get_key().toUtf8().data());
+
+                // we switch to the Short URL if:
+                //   1) the user decided to use Short URLs (which happens to
+                //      also be the default)
+                //   2) the URL of the page to create a QR code for is
+                //      longer than 2900 characters (because the maximum
+                //      in binary is 2953 and we may add a "...?qrcode=true")
+                //   3) there is a short URL to use
+                //
+                // Note that the QR code will fail if the page has a URL
+                // that is too long (~2950) and no short URL is available.
+                //
+                bool const use_short_url(settings_row->cell(get_name(name_t::SNAP_NAME_QRCODE_SHORTURL_ENABLE))->value().safeSignedCharValue(0, 1) != 0);
+                if((use_short_url || url_utf8.length() > 2900)
+                && content_table->row(page_ipath.get_key())->exists(shorturl::get_name(shorturl::name_t::SNAP_NAME_SHORTURL_URL)))
+                {
+                    // use the Short URL instead
+                    //
+                    // TODO: use a Short URL interface instead of directly
+                    //       poking the data ourselves
+                    //
+                    QString const shorturl(content_table->row(page_ipath.get_key())->cell(shorturl::get_name(shorturl::name_t::SNAP_NAME_SHORTURL_URL))->value().stringValue());
+                    url_utf8 = shorturl.toUtf8().data();
+                }
+
+                // track QR code usage (i.e. add a query string "qrcode=true"
+                // to the URL)
+                //
+                // TBD: we may want to give the user a way to choose
+                //      the name of the variable.
+                //
+                // TBD: this very simply trick can easily be used to "falsify"
+                //      the data; we could instead use a random session number
+                //      only our sessions are viewed as "temporary" data
+                //      whereas our QR code are permanent; also once someone
+                //      has access to that code, we have the same problem
+                //      again anyway...
+                //
+                bool const track_qrcode(settings_row->cell(get_name(name_t::SNAP_NAME_QRCODE_TRACK_USAGE_ENABLE))->value().safeSignedCharValue() != 0);
+                if(track_qrcode)
+                {
+                    url_utf8 += "?qrcode=true";
+                }
+
                 // let administrator choose version, level?
-                std::shared_ptr<QRcode> code(QRcode_encodeString(shorturl_utf8.c_str(), 0, QR_ECLEVEL_H, QR_MODE_8, 1), qrcode_deleter);
+                //
+                std::shared_ptr<QRcode> code(QRcode_encodeString(url_utf8.c_str(), 0, QR_ECLEVEL_H, QR_MODE_8, 1), qrcode_deleter);
                 if(code)
                 {
                     // convert resulting QR Code to a black and white blob
@@ -318,7 +411,7 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
                     }
                     if(!scale_ok)
                     {
-                        int8_t s(settings_row->cell(get_name(name_t::SNAP_NAME_QRCODE_DEFAULT_SCALE))->value().safeSignedCharValue());
+                        int8_t const s(settings_row->cell(get_name(name_t::SNAP_NAME_QRCODE_DEFAULT_SCALE))->value().safeSignedCharValue());
                         if(s > 0)
                         {
                             scale = s;
@@ -383,13 +476,24 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
                     image.magick("GRAY");
                     image.read(blob);
 
+                    // put a comment so you do not need a full decoder to
+                    // know what the QR code corresponds to
+                    //
+                    std::string const comment(
+                        QString("QR code for %1\nGenerated by http://snapwebsites.org/")
+                                .arg(page_ipath.get_key())
+                                .toUtf8().data());
+                    image.comment(comment);
+
                     // convert the image to an in-memory PNG file
+                    //
                     Magick::Blob output;
                     image.write(&output, "PNG");
                     QByteArray array(static_cast<char const *>(output.data()), static_cast<int>(output.length()));
                     f_snap->output(array);
 
                     // tell the browser it is a PNG
+                    //
                     f_snap->set_header("Content-Type", "image/png");
                     return true;
                 }

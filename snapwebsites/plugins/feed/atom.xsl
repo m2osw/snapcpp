@@ -49,14 +49,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<uri>.../user/...</uri>
 				<email>abc@example.com</email>
 			</author-->
-			<id><xsl:copy-of select="url/node()"/></id>
-			<published><xsl:copy-of select="created/node()"/></published>
+			<id><xsl:value-of select="url/node()"/></id>
+			<published><xsl:value-of select="created/node()"/></published>
 			<xsl:choose>
 				<xsl:when test="modified/node()">
-					<updated><xsl:copy-of select="modified/node()"/></updated>
+					<updated><xsl:value-of select="modified/node()"/></updated>
 				</xsl:when>
 				<xsl:otherwise>
-					<updated><xsl:copy-of select="created/node()"/></updated>
+					<updated><xsl:value-of select="created/node()"/></updated>
 				</xsl:otherwise>
 			</xsl:choose>
 			<!--source url="{/snap/head/metadata/desc[@type='website_uri']/data/node()}"><xsl:copy-of select="/snap/head/metadata/desc[@type='name']/data/node()"/></source-->
@@ -75,7 +75,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<link href="{head/metadata/desc[@type='website_uri']/data/node()}" rel="via" type="text/html" title="Atom Source"/>
 			<link href="{head/metadata/desc[@type='feed::uri']/data/node()}/{head/metadata/desc[@type='feed::name']/data/node()}.atom" rel="self" type="application/rss+xml" title="Atom Data"/>
 			<!-- TODO: once we manage languages properly, add one alternate link per
-			     language except the language being managed here -->
+					 language except the language being managed here -->
 			<xsl:if test="page/body/owner != ''">
 				<rights>Copyright &#xA9; <xsl:copy-of select="$year_range"/> by <xsl:copy-of select="page/body/owner"/></rights>
 			</xsl:if>
@@ -88,7 +88,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<generator uri="http://snapwebsites.org/"><xsl:attribute
 					name="version"><xsl:value-of
 					select="head/metadata/desc[@type='version']/data/node()"/></xsl:attribute>Snap! Websites</generator>
-			<!--logo>...url...</logo-->
+			<xsl:if test="head/metadata/desc[@type='feed::default_logo']/data">
+				<logo><xsl:value-of select="head/metadata/desc[@type='feed::default_logo']/data/img/@src"/></logo>
+			</xsl:if>
 
 			<xsl:apply-templates select="page/body/output"/>
 		</feed>

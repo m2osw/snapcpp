@@ -49,8 +49,7 @@ optimization_match_t const g_optimizer_relational_match_a_match_b[] =
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_match),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
-        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -59,8 +58,7 @@ optimization_match_t const g_optimizer_relational_match_a_match_b[] =
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
-            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -69,8 +67,7 @@ optimization_match_t const g_optimizer_relational_match_a_match_b[] =
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_regular_expression),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
-            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -83,8 +80,7 @@ optimization_match_t const g_optimizer_relational_match_a_not_match_b[] =
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_not_match),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
-        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -93,8 +89,7 @@ optimization_match_t const g_optimizer_relational_match_a_not_match_b[] =
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
-            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -103,8 +98,7 @@ optimization_match_t const g_optimizer_relational_match_a_not_match_b[] =
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_regular_expression),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
-            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 

@@ -216,7 +216,7 @@ void expr(std::string const& expr)
 
     if(!g_opt->is_defined("quiet"))
     {
-        std::cout << "result is ";
+        std::cout << "result of type " << static_cast<int>(result.get_type()) << " is " << result.get_value().size() << " bytes = ";
     }
     switch(result.get_type())
     {

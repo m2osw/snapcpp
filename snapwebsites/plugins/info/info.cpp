@@ -17,12 +17,15 @@
 
 #include "info.h"
 
-#include "../messages/messages.h"
-#include "../users/users.h"
 #include "../output/output.h"
+#include "../permissions/permissions.h"
+#include "../sendmail/sendmail.h"
+#include "../users/users.h"
 
-#include "not_reached.h"
 #include "log.h"
+#include "not_reached.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 
 #include "poison.h"
 
@@ -65,6 +68,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_INFO_NAME:
         return "name";
 
+    case name_t::SNAP_NAME_INFO_PLUGIN_SELECTION:
+        return "admin/plugins";
+
     case name_t::SNAP_NAME_INFO_SHORT_NAME:
         return "short_name";
 
@@ -95,23 +101,6 @@ info::~info()
 {
 }
 
-/** \brief Initialize the info.
- *
- * This function terminates the initialization of the info plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void info::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(info, "server", server, improve_signature, _1, _2);
-    //SNAP_LISTEN(info, "layout", layout::layout, generate_header_content, _1, _2, _3, _4, _5);
-    //SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3, _4, _5);
-}
-
-
 /** \brief Get a pointer to the info plugin.
  *
  * This function returns an instance pointer to the info plugin.
@@ -121,9 +110,31 @@ void info::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the info plugin.
  */
-info *info::instance()
+info * info::instance()
 {
     return g_plugin_info_factory.instance();
+}
+
+
+/** \brief Send users to the info settings.
+ *
+ * This path represents the info settings.
+ */
+QString info::settings_path() const
+{
+    return "/admin/settings/info";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString info::icon() const
+{
+    return "/images/info/info-logo-64x64.png";
 }
 
 
@@ -144,6 +155,19 @@ QString info::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString info::dependencies() const
+{
+    return "|editor|messages|output|path|permissions|sendmail|users|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -160,7 +184,7 @@ int64_t info::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 10, 22, 47, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 21, 0, 12, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -175,8 +199,28 @@ int64_t info::do_update(int64_t last_updated)
  */
 void info::content_update(int64_t variables_timestamp)
 {
-    (void) variables_timestamp;
+    NOTUSED(variables_timestamp);
+
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the info.
+ *
+ * This function terminates the initialization of the info plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void info::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(info, "server", server, improve_signature, _1, _2, _3);
+    SNAP_LISTEN(info, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3);
+    SNAP_LISTEN(info, "editor", editor::editor, finish_editor_form_processing, _1, _2);
+    SNAP_LISTEN(info, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
 }
 
 
@@ -193,11 +237,71 @@ void info::content_update(int64_t variables_timestamp)
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool info::on_path_execute(content::path_info_t& ipath)
+bool info::on_path_execute(content::path_info_t & ipath)
 {
+    // first check whether the unsubscribe implementation understands this path
+    if(unsubscribe_on_path_execute(ipath))
+    {
+        return true;
+    }
+
+    // then check whether the plugin selection wants to deal with this hit
+    if(plugin_selection_on_path_execute(ipath))
+    {
+        return true;
+    }
+
     f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 
     return true;
+}
+
+
+/** \brief Generate a link to the administration page.
+ *
+ * This function generates a link to the main administration page
+ * (i.e. /admin) so users with advanced browsers such as SeaMonkey
+ * can go to their administration page without having to search
+ * for it.
+ *
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] page  The page being generated.
+ * \param[in,out] body  The body being generated.
+ */
+void info::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
+{
+    NOTUSED(ipath);
+
+    // only check if user is logged in
+    // (if user is not administratively logged in at the moment, try to
+    // go to the administration page will require a relogin which is fine)
+    //
+    // XXX: we may want to show the bookmarks to returning users?
+    //
+    if(users::users::instance()->user_is_logged_in())
+    {
+        // only show the /admin link if the user can go there
+        permissions::permissions * permissions_plugin(permissions::permissions::instance());
+        QString const & login_status(permissions_plugin->get_login_status());
+        content::path_info_t page_ipath;
+        page_ipath.set_path("/admin");
+        content::permission_flag allowed;
+        path::path::instance()->access_allowed(permissions_plugin->get_user_path(), page_ipath, "administer", login_status, allowed);
+        if(allowed.allowed())
+        {
+            QDomDocument doc(page.ownerDocument());
+
+            QDomElement bookmarks;
+            snap_dom::get_tag("bookmarks", body, bookmarks);
+
+            QDomElement link(doc.createElement("link"));
+            link.setAttribute("rel", "bookmark");
+            link.setAttribute("title", "Administer Site"); // TODO: translate
+            link.setAttribute("type", "text/html");
+            link.setAttribute("href", f_snap->get_site_key_with_slash() + "admin");
+            bookmarks.appendChild(link);
+        }
+    }
 }
 
 
@@ -217,125 +321,123 @@ bool info::on_path_execute(content::path_info_t& ipath)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A template used when the other parameters are
- *                       not available.
  */
-void info::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void info::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     // our settings pages are like any standard pages
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
-/* \brief Generate the header common content.
- *
- * This function generates some content that is expected in a page
- * by default.
- *
- * \param[in] l  The layout pointer.
- * \param[in] cpath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The path to a template if cpath does not exist.
- */
-//void favicon::on_generate_page_content(layout::layout *l, QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate)
-//{
-//    content::field_search::search_result_t result;
-//
-//    get_icon(cpath, result, false);
-//
-//    // add the favicon.ico name at the end of the path we've found
-//    QString icon_path;
-//    if(result.isEmpty())
-//    {
-//        icon_path = f_snap->get_site_key_with_slash() + "favicon.ico";
-//    }
-//    else
-//    {
-//        icon_path = result[0].stringValue();
-//        if(!icon_path.endsWith("/"))
-//        {
-//            icon_path += "/";
-//        }
-//        icon_path += "favicon.ico";
-//    }
-//
-//    FIELD_SEARCH
-//        (content::field_search::COMMAND_ELEMENT, body)
-//        (content::field_search::COMMAND_CHILD_ELEMENT, "image")
-//        (content::field_search::COMMAND_CHILD_ELEMENT, "shortcut")
-//        (content::field_search::COMMAND_ELEMENT_ATTR, "type=image/vnd.microsoft.icon")
-//        (content::field_search::COMMAND_ELEMENT_ATTR, "href=" + icon_path)
-//        // TODO get the image sizes when saving the image in the database
-//        //      so that way we can retrieve them around here
-//        (content::field_search::COMMAND_ELEMENT_ATTR, "width=16")
-//        (content::field_search::COMMAND_ELEMENT_ATTR, "height=16")
-//
-//        // generate
-//        ;
-//}
-
-
-
-/** \brief Process a post from the info settings form.
- *
- * This function processes the post of the info settings form.
- *
- * This function is defined because some of the parameters in the form
- * cannot be auto-saved (although they kind of could, some parameters
- * are expected in the site information table instead.)
- *
- * \param[in] ipath  The path the user is accessing now.
- * \param[in] session_info  The user session being processed.
- */
-void info::on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info)
+void info::on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded)
 {
-    static_cast<void>(session_info);
+    if(!succeeded)
+    {
+        return;
+    }
 
     if(ipath.get_cpath() != "admin/settings/info")
     {
-        // this should not happen because invalid paths will not pass the
-        // session validation process
-        throw info_exception_invalid_path("info::on_process_form_post() was called with an unsupported path: \"" + ipath.get_cpath() + "\"");
+        unsubscribe_on_finish_editor_form_processing(ipath);
+
+        return;
     }
 
-    QtCassandra::QCassandraValue value;
-    QString name;
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(ipath.get_revision_key()));
 
-    name = f_snap->postenv(get_name(name_t::SNAP_NAME_INFO_NAME));
-    value = name;
+    QtCassandra::QCassandraValue value;
+
+    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME))->value();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME), value);
 
-    name = f_snap->postenv(get_name(name_t::SNAP_NAME_INFO_LONG_NAME));
-    value = name;
+    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME))->value();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME), value);
 
-    name = f_snap->postenv(get_name(name_t::SNAP_NAME_INFO_SHORT_NAME));
-    value = name;
+    value = settings_row->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME))->value();
     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME), value);
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Improves the error signature.
  *
  * This function adds a link to the administration page to the signature of
- * die() errors. This is done only if the user is logged in.
+ * die() errors. This is done only if the user is logged in and has enough
+ * rights to access administrative pages.
  *
  * \param[in] path  The path on which the error occurs.
- * \param[in,out] signature  The HTML signature to improve.
+ * \param[in] doc  The DOMDocument object.
+ * \param[in,out] signature_tag  The signature tag to improve.
  */
-void info::on_improve_signature(QString const& path, QString& signature)
+void info::on_improve_signature(QString const & path, QDomDocument doc, QDomElement signature_tag)
 {
-    (void)path;
-    if(!users::users::instance()->get_user_key().isEmpty())
+    NOTUSED(path);
+
+    // only check if user is logged in
+    // (if user is not administratively logged in at the moment, try to
+    // go to the administration page will require a relogin which is fine)
+    //
+    // XXX: we may want to show the Administration link to returning users?
+    //      (i.e. just !f_user_key.isEmpty() instead of user_is_logged_in())
+    //
+    if(users::users::instance()->user_is_logged_in())
     {
-        // TODO: translate
-        signature += " <a href=\"/admin\">Administration</a>";
+        // only show the /admin link if the user can go there
+        permissions::permissions * permissions_plugin(permissions::permissions::instance());
+        QString const & login_status(permissions_plugin->get_login_status());
+        content::path_info_t page_ipath;
+        page_ipath.set_path("/admin");
+        content::permission_flag allowed;
+        path::path::instance()->access_allowed(permissions_plugin->get_user_path(), page_ipath, "administer", login_status, allowed);
+        if(allowed.allowed())
+        {
+            // add a space between the previous link and this one
+            snap_dom::append_plain_text_to_node(signature_tag, " ");
+
+            // add a link to the user account
+            QDomElement a_tag(doc.createElement("a"));
+            a_tag.setAttribute("class", "administration");
+            a_tag.setAttribute("target", "_top");
+            a_tag.setAttribute("href", "/admin");
+            // TODO: translate
+            snap_dom::append_plain_text_to_node(a_tag, "Administration");
+
+            signature_tag.appendChild(a_tag);
+        }
     }
 }
 
 
+void info::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
+{
+    QString const cpath(ipath.get_cpath());
+    if(cpath.startsWith(QString("%1/").arg(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH)))
+    || cpath.startsWith(QString("%1/install/").arg(get_name(name_t::SNAP_NAME_INFO_PLUGIN_SELECTION)))
+    || cpath.startsWith(QString("%1/remove/").arg(get_name(name_t::SNAP_NAME_INFO_PLUGIN_SELECTION))))
+    {
+        // tell the path plugin that this is ours
+        plugin_info.set_plugin(this);
+        return;
+    }
+}
+
+
+void info::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row)
+{
+    NOTUSED(field_type);
+    NOTUSED(row);
+
+    QString const cpath(ipath.get_cpath());
+    if(cpath == "unsubscribe")
+    {
+        init_unsubscribe_editor_widgets(ipath, field_id, widget);
+    }
+    else if(cpath == "admin/plugins")
+    {
+        init_plugin_selection_editor_widgets(ipath, field_id, widget);
+    }
+}
 
 
 

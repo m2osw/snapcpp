@@ -46,17 +46,21 @@ public:
 
 
 
-class listener : public plugins::plugin
+class listener
+        : public plugins::plugin
 {
 public:
                                 listener();
                                 ~listener();
 
+    // plugins::plugin implementation
     static listener *           instance();
     virtual QString             description() const;
+    virtual QString             dependencies() const;
     virtual int64_t             do_update(int64_t last_updated);
+    virtual void                bootstrap(snap_child * snap);
 
-    void                        on_bootstrap(snap_child * snap);
+    // server signals
     void                        on_process_post(QString const & uri_path);
 
     SNAP_SIGNAL(listener_check, (snap_uri const & uri, content::path_info_t & page_ipath, QDomDocument doc, QDomElement result), (uri, page_ipath, doc, result));

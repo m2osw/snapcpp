@@ -27,7 +27,6 @@
 #include "csspp/compiler.h"
 
 #include "csspp/exceptions.h"
-#include "csspp/expression.h"
 #include "csspp/nth_child.h"
 #include "csspp/parser.h"
 
@@ -97,6 +96,22 @@ node::pointer_t compiler::compiler_state_t::get_root() const
     return f_root;
 }
 
+void compiler::compiler_state_t::clear_paths()
+{
+    f_paths.clear();
+}
+
+void compiler::compiler_state_t::add_path(std::string const & path)
+{
+    f_paths.push_back(path);
+}
+
+void compiler::compiler_state_t::set_paths(compiler_state_t const & state)
+{
+    // replace out paths with another set
+    f_paths = state.f_paths;
+}
+
 void compiler::compiler_state_t::push_parent(node::pointer_t parent)
 {
     f_parents.push_back(parent);
@@ -121,35 +136,6 @@ node::pointer_t compiler::compiler_state_t::get_previous_parent() const
 
     // return the parent before last
     return f_parents[f_parents.size() - 2];
-}
-
-node::pointer_t compiler::compiler_state_t::get_variable(std::string const & variable_name) const
-{
-    size_t pos(f_parents.size());
-    while(pos > 0)
-    {
-        --pos;
-        node::pointer_t s(f_parents[pos]);
-        switch(s->get_type())
-        {
-        case node_type_t::OPEN_CURLYBRACKET:
-            if(s->get_boolean())
-            {
-                node::pointer_t value(s->get_variable(variable_name));
-                if(value)
-                {
-                    return value;
-                }
-            }
-            break;
-
-        default:
-            break;
-
-        }
-    }
-
-    return f_root->get_variable(variable_name);
 }
 
 void compiler::compiler_state_t::set_variable(node::pointer_t name, node::pointer_t value, bool global) const
@@ -182,15 +168,238 @@ void compiler::compiler_state_t::set_variable(node::pointer_t name, node::pointe
     f_root->set_variable(variable_name, v);
 }
 
+node::pointer_t compiler::compiler_state_t::get_variable(std::string const & variable_name, bool global_only) const
+{
+    if(!global_only)
+    {
+        size_t pos(f_parents.size());
+        while(pos > 0)
+        {
+            --pos;
+            node::pointer_t s(f_parents[pos]);
+            switch(s->get_type())
+            {
+            case node_type_t::OPEN_CURLYBRACKET:
+                if(s->get_boolean())
+                {
+                    node::pointer_t value(s->get_variable(variable_name));
+                    if(value)
+                    {
+                        return value;
+                    }
+                }
+                break;
+
+            default:
+                break;
+
+            }
+        }
+    }
+
+    return f_root->get_variable(variable_name);
+}
+
+node::pointer_t compiler::compiler_state_t::execute_user_function(node::pointer_t func)
+{
+    // search the parents for the node where the function will be set
+    node::pointer_t value(get_variable(func->get_string()));
+    if(!value)
+    {
+        // no function (or variables) with that name found, return the
+        // input function as is
+        return func;
+    }
+
+    // internal validity check
+    if(!value->is(node_type_t::LIST)
+    || value->size() != 2)
+    {
+        throw csspp_exception_logic("compiler.cpp:compiler::compiler_state_t::execute_user_function(): all functions must be two sub-values in a LIST, the first item being the variable."); // LCOV_EXCL_LINE
+    }
+
+    node::pointer_t var(value->get_child(0));
+    node::pointer_t val(value->get_child(1));
+
+    if(!var->is(node_type_t::FUNCTION))
+    //&& !var->is(node_type_t::VARIABLE_FUNCTION)) -- TBD
+    {
+        // found something, but that is not a @mixin function...
+        return func;
+    }
+
+    // the function was already argified in expression::unary()
+    //parser::argify(func);
+
+    // define value of each argument
+    node::pointer_t root(new node(node_type_t::LIST, val->get_position()));
+    if(!val->is(node_type_t::OPEN_CURLYBRACKET))
+    {
+        throw csspp_exception_logic("compiler.cpp:compiler::compiler_state_t::execute_user_function(): @mixin function is not defined inside a {}-block."); // LCOV_EXCL_LINE
+    }
+
+    // make sure we get a copy of the current global variables
+    root->copy_variable(f_root);
+
+    size_t max_val_children(val->size());
+    for(size_t j(0); j < max_val_children; ++j)
+    {
+        root->add_child(val->get_child(j)->clone());
+    }
+
+    size_t const max_children(var->size());
+    size_t const max_input(func->size());
+    for(size_t i(0); i < max_children; ++i)
+    {
+        node::pointer_t arg(var->get_child(i));
+        if(!arg->is(node_type_t::ARG))
+        {
+            // function declaration is invalid!
+            throw csspp_exception_logic("compiler.cpp:compiler::compiler_state_t::execute_user_function(): FUNCTION children are not all ARG nodes."); // LCOV_EXCL_LINE
+        }
+        if(arg->empty())
+        {
+            throw csspp_exception_logic("compiler.cpp:compiler::compiler_state_t::execute_user_function(): ARG is empty."); // LCOV_EXCL_LINE
+        }
+        node::pointer_t arg_name(arg->get_child(0));
+        if(!arg_name->is(node_type_t::VARIABLE))
+        {
+            // this was already erred when we created the variable
+            //error::instance() << val->get_position()
+            //        << "function declaration requires all parameters to be variables, "
+            //        << arg_name->get_type()
+            //        << " is not acceptable."
+            //        << error_mode_t::ERROR_ERROR;
+            return func;
+        }
+        if(i >= max_input)
+        {
+            // user did not specify this value, check whether we have
+            // an optional value
+            if(arg->size() > 1)
+            {
+                // use default value
+                node::pointer_t default_param(arg->clone());
+                default_param->remove_child(0);  // remove the variable name
+                if(default_param->size() == 1)
+                {
+                    default_param = default_param->get_child(0);
+                }
+                else
+                {
+                    node::pointer_t value_list(new node(node_type_t::LIST, arg->get_position()));
+                    value_list->take_over_children_of(default_param);
+                    default_param = value_list;
+                }
+                node::pointer_t param_value(new node(node_type_t::LIST, arg->get_position()));
+                param_value->add_child(arg_name);
+                param_value->add_child(default_param);
+                root->set_variable(arg_name->get_string(), param_value);
+            }
+            else
+            {
+                // value is missing
+                error::instance() << val->get_position()
+                        << "missing function variable named \""
+                        << arg_name->get_string()
+                        << "\" when calling "
+                        << func->get_string()
+                        << "();."
+                        << error_mode_t::ERROR_ERROR;
+                return func;
+            }
+        }
+        else
+        {
+            // copy user provided value
+            node::pointer_t user_param(func->get_child(i));
+            if(!user_param->is(node_type_t::ARG))
+            {
+                throw csspp_exception_logic("compiler.cpp:compiler::replace_variable(): user parameter is not an ARG."); // LCOV_EXCL_LINE
+            }
+            if(user_param->size() == 1)
+            {
+                user_param = user_param->get_child(0);
+            }
+            else
+            {
+                // is that really correct?
+                // we may need a component_value instead...
+                node::pointer_t list(new node(node_type_t::LIST, user_param->get_position()));
+                list->take_over_children_of(user_param);
+                user_param = list;
+            }
+            node::pointer_t param_value(new node(node_type_t::LIST, user_param->get_position()));
+            param_value->add_child(arg_name);
+            param_value->add_child(user_param->clone());
+            root->set_variable(arg_name->get_string(), param_value);
+        }
+    }
+
+    compiler c(true);
+    c.set_root(root);
+    c.f_state.f_paths = f_paths;
+    c.f_state.f_empty_on_undefined_variable = f_empty_on_undefined_variable;
+    // use 'true' here otherwise it would reload the header/footer each time!
+    c.compile(true);
+
+    return c.get_result();
+}
+
+void compiler::compiler_state_t::set_empty_on_undefined_variable(bool empty_on_undefined_variable)
+{
+    f_empty_on_undefined_variable = empty_on_undefined_variable;
+}
+
+bool compiler::compiler_state_t::get_empty_on_undefined_variable() const
+{
+    return f_empty_on_undefined_variable;
+}
+
+std::string compiler::compiler_state_t::find_file(std::string const & script_name)
+{
+    // no name?!
+    if(script_name.empty())
+    {
+        return std::string();
+    }
+
+    // an absolute path?
+    if(script_name[0] == '/')
+    {
+        if(access(script_name.c_str(), R_OK) == 0)
+        {
+            return script_name;
+        }
+        // absolute does not mean we can find the file
+        return std::string();
+    }
+
+    // no paths at all???
+    if(f_paths.empty())
+    {
+        // should this be "." here instead of the default?
+        f_paths.push_back("/usr/lib/csspp/scripts");
+    }
+
+    // check with each path and return the first match
+    for(auto it : f_paths)
+    {
+        std::string const name(it == "" ? script_name : it + "/" + script_name);
+        if(access(name.c_str(), R_OK) == 0)
+        {
+            return name;
+        }
+    }
+
+    // in case we cannot find a file
+    return std::string();
+}
+
 compiler::compiler(bool validating)
     : f_compiler_validating(validating)
 {
-    f_paths.push_back("/usr/lib/csspp/scripts");
-}
-
-node::pointer_t compiler::get_root() const
-{
-    return f_state.get_root();
+    f_state.add_path("/usr/lib/csspp/scripts");
 }
 
 void compiler::set_root(node::pointer_t root)
@@ -198,19 +407,108 @@ void compiler::set_root(node::pointer_t root)
     f_state.set_root(root);
 }
 
+node::pointer_t compiler::get_root() const
+{
+    return f_state.get_root();
+}
+
+node::pointer_t compiler::get_result() const
+{
+    return f_return_result;
+}
+
+void compiler::set_date_time_variables(time_t now)
+{
+    // make sure we're ready to setup the date and time
+    node::pointer_t root(get_root());
+    if(!root)
+    {
+        throw csspp_exception_logic("compiler.cpp: compiler::set_date_time_variables(): function called too soon, root not set yet.");
+    }
+
+    // convert date/time in a string
+    struct tm t;
+    localtime_r(&now, &t);
+    char buf[20];
+    strftime(buf, sizeof(buf), "%m/%d/%Y%T", &t);
+
+    // save the result in variables
+
+    // usdate
+    csspp::node::pointer_t var(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_usdate");
+    csspp::node::pointer_t arg(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf, 10));
+    f_state.set_variable(var, arg, true);
+
+    // month
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_month");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf, 2));
+    f_state.set_variable(var, arg, true);
+
+    // day
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_day");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 3, 2));
+    f_state.set_variable(var, arg, true);
+
+    // year
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_year");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 6, 4));
+    f_state.set_variable(var, arg, true);
+
+    // time
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_time");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 10, 8));
+    f_state.set_variable(var, arg, true);
+
+    // hour
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_hour");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 10, 2));
+    f_state.set_variable(var, arg, true);
+
+    // minute
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_minute");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 13, 2));
+    f_state.set_variable(var, arg, true);
+
+    // second
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_second");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 16, 2));
+    f_state.set_variable(var, arg, true);
+}
+
 void compiler::set_empty_on_undefined_variable(bool empty_on_undefined_variable)
 {
-    f_empty_on_undefined_variable = empty_on_undefined_variable;
+    f_state.set_empty_on_undefined_variable(empty_on_undefined_variable);
+}
+
+void compiler::set_no_logo(bool no_logo)
+{
+    f_no_logo = no_logo;
 }
 
 void compiler::clear_paths()
 {
-    f_paths.clear();
+    f_state.clear_paths();
 }
 
 void compiler::add_path(std::string const & path)
 {
-    f_paths.push_back(path);
+    f_state.add_path(path);
 }
 
 void compiler::compile(bool bare)
@@ -290,6 +588,17 @@ void compiler::add_header_and_footer()
         footer->add_child(footer_string);
         f_state.get_root()->add_child(footer);
     }
+
+    // the close.scss checks this flag
+    //
+    {
+        position pos("close.scss");
+        node::pointer_t no_logo(new node(node_type_t::VARIABLE, pos));
+        no_logo->set_string("_csspp_no_logo");
+        node::pointer_t value(new node(node_type_t::BOOLEAN, pos));
+        value->set_boolean(f_no_logo);
+        f_state.set_variable(no_logo, value, true);
+    }
 }
 
 void compiler::compile(node::pointer_t n)
@@ -302,7 +611,7 @@ void compiler::compile(node::pointer_t n)
         // transparent item, just compile all the children
         {
             size_t idx(0);
-            while(idx < n->size())
+            while(idx < n->size() && !f_return_result)
             {
                 node::pointer_t child(n->get_child(idx));
                 compile(child);
@@ -375,6 +684,23 @@ void compiler::compile_component_value(node::pointer_t n)
         return;     // LCOV_EXCL_LINE
     }
 
+    if(n->get_child(0)->is(node_type_t::COMMENT))
+    {
+        // XXX: verify that this is the right location to chek this
+        //      special case, we may want to do it only in the loop
+        //      that also accepts plain comments instead of here
+        //      which is a function that can get called from deep
+        //      inside...
+
+        // get parent of n, remove n from there, replace it by
+        // the comment
+        node::pointer_t parent(f_state.get_previous_parent());
+        size_t pos(parent->child_position(n));
+        parent->remove_child(pos);
+        parent->insert_child(pos, n->get_child(0));
+        return;
+    }
+
     // was that COMPONENT_VALUE already compiled?
     if(n->get_child(0)->is(node_type_t::ARG))
     {
@@ -399,7 +725,7 @@ void compiler::compile_component_value(node::pointer_t n)
         // this happens when we add elements from a sub {}-block
         // for example, a verbatim:
         //
-        //     @if (true) { foo { a: b; } blah { c: d; }
+        //     @if (true) { foo { a: b; } blah { c: d; } }
         //
         node::pointer_t parent(f_state.get_previous_parent());
         size_t pos(parent->child_position(n));
@@ -702,7 +1028,7 @@ void compiler::compile_declaration(node::pointer_t n)
 
         bool const ignore(
                   (child->is(node_type_t::FUNCTION)
-                && (child->get_string() == "alpha" || child->get_string() == "chroma" || child->get_string() == "gray")
+                && (child->get_string() == "alpha" || child->get_string() == "chroma" || child->get_string() == "gray" || child->get_string() == "opacity")
                 && (declaration->get_string() == "filter" || declaration->get_string() == "-filter"))
             ||
                   (child->is(node_type_t::IDENTIFIER)
@@ -728,15 +1054,26 @@ void compiler::compile_declaration(node::pointer_t n)
         if(!ignore)
         {
             // ':' IDENTIFIER
-            // validate the identifier as only a small number can be used
+
+            node::pointer_t declaration_name(new node(node_type_t::STRING, declaration->get_position()));
+            declaration_name->set_string(declaration->get_string());
+
+            // check the identifier, if "has-font-metrics" is true, then
+            // slashes are viewed as the font metrics separator
+            //
             set_validation_script("validation/has-font-metrics");
-            node::pointer_t str(new node(node_type_t::STRING, declaration->get_position()));
-            str->set_string(declaration->get_string());
-            add_validation_variable("field_name", str);
+            add_validation_variable("field_name", declaration_name);
             bool const divide_font_metrics(run_validation(true));
 
-            parser::argify(declaration);
-            expression args_expr(declaration, true);
+            // if slash-separator returns true then slash (if present)
+            // is a separator like a comma in a list of arguments
+            set_validation_script("validation/slash-separator");
+            add_validation_variable("field_name", declaration_name);
+            bool const slash_separators(run_validation(true));
+
+            parser::argify(declaration, slash_separators ? node_type_t::DIVIDE : node_type_t::COMMA);
+            expression args_expr(declaration);
+            args_expr.set_variable_handler(&f_state);
             args_expr.compile_args(divide_font_metrics);
         }
     }
@@ -770,11 +1107,22 @@ void compiler::compile_declaration_values(node::pointer_t declaration)
                 {
                     compile_declaration_values(component);
                 }
+                else if(component->is(node_type_t::COMPONENT_VALUE))
+                {
+                    compile_component_value(component);
+                }
+                else if(component->is(node_type_t::DECLARATION))
+                {
+                    // this was compiled, ignore
+                }
                 else
                 {
                     // it looks like I cannot get here anymore
-                    throw csspp_exception_logic("compiler.cpp: found an unexpected node type, expected a LIST."); // LCOV_EXCL_LINE
-                    //compile_component_value(component);
+                    std::stringstream errmsg;                               // LCOV_EXCL_LINE
+                    errmsg << "compiler.cpp: found unexpected node type "   // LCOV_EXCL_LINE
+                           << component->get_type()                         // LCOV_EXCL_LINE
+                           << ", expected a LIST.";                         // LCOV_EXCL_LINE
+                    throw csspp_exception_logic(errmsg.str());              // LCOV_EXCL_LINE
                 }
                 if(j < item->size()
                 && component == item->get_child(j))
@@ -969,6 +1317,33 @@ void compiler::compile_at_keyword(node::pointer_t n)
                 }
             }
         }
+        return;
+    }
+
+    if(at == "return")
+    {
+        if(!expr)
+        {
+            error::instance() << n->get_position()
+                    << "@return must be followed by a valid expression."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+
+        // transform the @return <expr> in a one node result
+        expression return_expr(n);
+        return_expr.set_variable_handler(&f_state);
+        f_return_result = return_expr.compile();
+        if(!f_return_result)
+        {
+            // the expression was erroneous but we cannot return
+            // without a valid node otherwise we could end up
+            // returning another value "legally"
+            //
+            // return a NULL as the result
+            f_return_result.reset(new node(node_type_t::NULL_TOKEN, n->get_position()));
+        }
+
         return;
     }
 }
@@ -1277,6 +1652,7 @@ void compiler::remove_empty_rules(node::pointer_t n)
             f_state.get_previous_parent()->remove_child(n);
             return;
         }
+        /*FALLTHROUGH*/
     case node_type_t::AT_KEYWORD:
     //case node_type_t::ARG:
     case node_type_t::DECLARATION:
@@ -1432,7 +1808,7 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
     if(!value)
     {
         // no variable with that name found, generate an error?
-        if(!f_empty_on_undefined_variable)
+        if(!f_state.get_empty_on_undefined_variable())
         {
             error::instance() << n->get_position()
                     << "variable named \""
@@ -1562,10 +1938,10 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
             }
         }
 
-        compiler c;
+        compiler c(&c.f_state);
         c.set_root(root);
-        c.f_paths = f_paths;
-        c.f_empty_on_undefined_variable = f_empty_on_undefined_variable;
+        c.f_state.set_paths(f_state);
+        c.f_state.set_empty_on_undefined_variable(f_state.get_empty_on_undefined_variable());
         c.mark_selectors(root);
         c.replace_variables(root);
 
@@ -1716,6 +2092,9 @@ void compiler::set_variable(node::pointer_t n)
     // a variable gets removed from the tree and its current value
     // saved in a parent node that is an OPEN_CURLYBRACKET or the
     // root node if no OPEN_CURLYBRACKET is found in the parents
+    // (note also that only OPEN_CURLYBRACKET marked with 'true'
+    // are used, those are the only valid '{' for variables, for
+    // example, an @-keyword '{' does not count...)
 
     f_state.get_previous_parent()->remove_child(n);
 
@@ -2013,7 +2392,8 @@ node::pointer_t compiler::at_keyword_expression(node::pointer_t n)
     // calculate the expression if present
     if(!n->empty() && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET))
     {
-        expression expr(n, true);
+        expression expr(n);
+        expr.set_variable_handler(&f_state);
         return expr.compile();
     }
 
@@ -2051,10 +2431,10 @@ void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
         return;
     }
 
-    boolean_t const r(expression::boolean(expr));
-    if(r == boolean_t::TRUE)
+    bool const r(expression::boolean(expr));
+    if(r)
     {
-        // TRUE, we need the data which we put in the stream
+        // BOOLEAN_TRUE, we need the data which we put in the stream
         // at the position of the @if as if the @if and
         // expression never existed
         node::pointer_t block(n->get_child(1));
@@ -2064,8 +2444,7 @@ void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
             parent->insert_child(idx, block->get_child(j));
         }
     }
-
-    if(next && r == boolean_t::FALSE)
+    else if(next)
     {
         // mark the else as not executed if r is false
         next->set_integer(g_if_or_else_false_so_far);
@@ -2076,7 +2455,7 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, size_t id
 {
     node::pointer_t next;
 
-    // FALSE or INVALID, we remove the block to avoid
+    // BOOLEAN_FALSE or BOOLEAN_INVALID, we remove the block to avoid
     // executing it since we do not know whether it should
     // be executed or not; also we mark the next block as
     // "true" if it is an '@else' or '@else if'
@@ -2154,7 +2533,7 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, size_t id
     // we are 'true' here; once one of the '@if' / '@else if' is 'true'
     // then we start with 'r = false'
     //
-    boolean_t r(status == g_if_or_else_false_so_far ? boolean_t::TRUE : boolean_t::FALSE);
+    bool r(status == g_if_or_else_false_so_far);
     if(n->size() != 1)
     {
         if(n->size() != 2 || !expr)
@@ -2171,19 +2550,19 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, size_t id
         // not yet found a match (i.e. the starting '@if' was false
         // and any '@else if' were all false so far) so we check the
         // expression of this very '@else if' to know whether to go
-        // on or not; r is TRUE when the status allows us to check
+        // on or not; r is BOOLEAN_TRUE when the status allows us to check
         // the next expression
-        if(r == boolean_t::TRUE)
+        if(r)
         {
             r = expression::boolean(expr);
         }
     }
 
-    if(r == boolean_t::TRUE)
+    if(r)
     {
         status = g_if_or_else_executed;
 
-        // TRUE, we need the data which we put in the stream
+        // BOOLEAN_TRUE, we need the data which we put in the stream
         // at the position of the @if as if the @if and
         // expression never existed
         node::pointer_t block(n->get_child(n->size() == 1 ? 0 : 1));
@@ -2284,7 +2663,7 @@ void compiler::replace_variables_in_comment(node::pointer_t n)
                 }
                 else
                 {
-                    if(!f_empty_on_undefined_variable)
+                    if(!f_state.get_empty_on_undefined_variable())
                     {
                         error::instance() << n->get_position()
                                 << "variable named \""
@@ -2302,7 +2681,7 @@ void compiler::replace_variables_in_comment(node::pointer_t n)
     n->set_string(comment);
 }
 
-bool compiler::selector_attribute_check(node::pointer_t n)
+bool compiler::selector_attribute_check(node::pointer_t parent, size_t & parent_pos, node::pointer_t n)
 {
     // use a for() as a 'goto exit;' on a 'break'
     for(;;)
@@ -2333,6 +2712,7 @@ bool compiler::selector_attribute_check(node::pointer_t n)
         if(pos >= n->size())
         {
             // just IDENTIFIER is valid
+            ++parent_pos;
             return true;
         }
 
@@ -2345,12 +2725,14 @@ bool compiler::selector_attribute_check(node::pointer_t n)
                 // just IDENTIFIER is valid, although we should never
                 // reach this line because WHITESPACE are removed from
                 // the end of lists
-                return true;  // LCOV_EXCL_LINE
+                ++parent_pos;   // LCOV_EXCL_LINE
+                return true;    // LCOV_EXCL_LINE
             }
             term = n->get_child(pos);
         }
 
         if(!term->is(node_type_t::EQUAL)                // '='
+        && !term->is(node_type_t::NOT_EQUAL)            // '!=' -- extension
         && !term->is(node_type_t::INCLUDE_MATCH)        // '~='
         && !term->is(node_type_t::PREFIX_MATCH)         // '^='
         && !term->is(node_type_t::SUFFIX_MATCH)         // '$='
@@ -2358,10 +2740,11 @@ bool compiler::selector_attribute_check(node::pointer_t n)
         && !term->is(node_type_t::DASH_MATCH))          // '|='
         {
             error::instance() << n->get_position()
-                    << "expected attribute operator missing, supported operators are '=', '~=', '^=', '$=', '*=', and '|='."
+                    << "expected attribute operator missing, supported operators are '=', '!=', '~=', '^=', '$=', '*=', and '|='."
                     << error_mode_t::ERROR_ERROR;
             return false;
         }
+        node::pointer_t op(term);
 
         ++pos;
         if(pos >= n->size())
@@ -2404,6 +2787,38 @@ bool compiler::selector_attribute_check(node::pointer_t n)
                     << error_mode_t::ERROR_ERROR;
             return false;
         }
+
+        // if the operator was '!=', we have to make changes from:
+        //      [a!=b]
+        // to
+        //      :not([a=b])
+        if(op->is(node_type_t::NOT_EQUAL))
+        {
+            // remove the [a!=b] from parent
+            parent->remove_child(parent_pos);
+
+            // add the ':'
+            node::pointer_t colon(new node(node_type_t::COLON, n->get_position()));
+            parent->insert_child(parent_pos, colon);
+            ++parent_pos;
+
+            // add the not()
+            node::pointer_t not_func(new node(node_type_t::FUNCTION, n->get_position()));
+            not_func->set_string("not");
+            parent->insert_child(parent_pos, not_func);
+
+            // in the not() add the [a!=b]
+            not_func->add_child(n);
+
+            // remove the '!='
+            n->remove_child(1);
+
+            // replace with the '='
+            node::pointer_t equal(new node(node_type_t::EQUAL, n->get_position()));
+            n->insert_child(1, equal);
+        }
+
+        ++parent_pos;
 
         return true;
     }
@@ -2668,8 +3083,7 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
 
     case node_type_t::OPEN_SQUAREBRACKET:
         // '[' WHITESPACE attribute-check WHITESPACE ']' -- attributes check
-        ++pos;
-        return selector_attribute_check(term);
+        return selector_attribute_check(n, pos, term);
 
     case node_type_t::GREATER_THAN:
     case node_type_t::ADD:
@@ -3008,7 +3422,7 @@ bool compiler::parse_selector(node::pointer_t n)
             else if(hash.size() == 1 && !arg->get_child(0)->is(node_type_t::HASH))
             {
                 error::instance() << arg->get_position()
-                        << "found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only."
+                        << "found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only."
                         << error_mode_t::ERROR_INFO;
             }
         }
@@ -3019,42 +3433,7 @@ bool compiler::parse_selector(node::pointer_t n)
 
 std::string compiler::find_file(std::string const & script_name)
 {
-    // no name?!
-    if(script_name.empty())
-    {
-        return std::string();
-    }
-
-    // an absolute path?
-    if(script_name[0] == '/')
-    {
-        if(access(script_name.c_str(), R_OK) == 0)
-        {
-            return script_name;
-        }
-        // absolute does not mean we can find the file
-        return std::string();
-    }
-
-    // no paths at all???
-    if(f_paths.empty())
-    {
-        // should this be "." here instead of the default?
-        f_paths.push_back("/usr/lib/csspp/scripts");
-    }
-
-    // check with each path and return the first match
-    for(auto it : f_paths)
-    {
-        std::string const name(it == "" ? script_name : it + "/" + script_name);
-        if(access(name.c_str(), R_OK) == 0)
-        {
-            return name;
-        }
-    }
-
-    // in case we cannot find a file
-    return std::string();
+    return f_state.find_file(script_name);
 }
 
 void compiler::set_validation_script(std::string const & script_name)

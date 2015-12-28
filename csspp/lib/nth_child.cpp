@@ -47,9 +47,7 @@
 
 #include "csspp/nth_child.h"
 
-//#include "csspp/error.h"
-//#include "csspp/exceptions.h"
-
+#include <cstdio>
 #include <iostream>
 
 namespace csspp

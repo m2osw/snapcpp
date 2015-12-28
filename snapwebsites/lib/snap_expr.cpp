@@ -19,26 +19,19 @@
 
 #include "snap_expr.h"
 
-#include "snap_parser.h"
 #include "snapwebsites.h"
-#include "qstring_stream.h"
 #include "not_reached.h"
+#include "not_used.h"
 #include "log.h"
 
 #include <controlled_vars/controlled_vars_limited_need_init.h>
 
 #include <QtSerialization/QSerializationComposite.h>
-#include <QtSerialization/QSerializationFieldTag.h>
 #include <QtSerialization/QSerializationFieldString.h>
 #include <QtSerialization/QSerializationFieldBasicTypes.h>
-#include <QtSerialization/QSerializationWriter.h>
-
-#include <iostream>
-
-//#include <QList>
-#include <QBuffer>
 
 #include "poison.h"
+
 
 namespace snap
 {
@@ -60,7 +53,7 @@ namespace
  * static function and should only be called once.
  */
 QtCassandra::QCassandraContext::pointer_t   g_context;
-}
+} // no name namespace
 
 
 
@@ -91,7 +84,7 @@ QtCassandra::QCassandraValue const& variable_t::get_value() const
 }
 
 
-void variable_t::set_value(variable_type_t type, QtCassandra::QCassandraValue const& value)
+void variable_t::set_value(variable_type_t type, QtCassandra::QCassandraValue const & value)
 {
     f_type = type;
     f_value = value;
@@ -190,28 +183,28 @@ void variable_t::set_value(double value)
 }
 
 
-void variable_t::set_value(char const *value)
+void variable_t::set_value(char const * value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
     f_value = QString::fromUtf8(value);
 }
 
 
-void variable_t::set_value(wchar_t const *value)
+void variable_t::set_value(wchar_t const * value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
     f_value = QString::fromWCharArray(value);
 }
 
 
-void variable_t::set_value(QString const& value)
+void variable_t::set_value(QString const & value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
     f_value = value;
 }
 
 
-void variable_t::set_value(QByteArray const& value)
+void variable_t::set_value(QByteArray const & value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_BINARY;
     f_value = value;
@@ -366,7 +359,7 @@ double variable_t::get_floating_point(QString const& name) const
 }
 
 
-QString variable_t::get_string(QString const& name) const
+QString variable_t::get_string(QString const & name) const
 {
     switch(get_type())
     {
@@ -799,7 +792,7 @@ public:
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t& result, double a, double b)
+    typename enable_if<has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t & result, double a, double b)
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::floating_points(a, b));
@@ -809,13 +802,13 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
-    typename enable_if<!has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t& result, double a, double b)
+    typename enable_if<!has_function<F>::has_bool_floating_points>::type do_double_to_bool(variable_t & result, double a, double b)
     {
     }
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_string_integer>::type do_string_integer(variable_t& result, QString const& a, int64_t b)
+    typename enable_if<has_function<F>::has_string_integer>::type do_string_integer(variable_t & result, QString const & a, int64_t b)
     {
         QtCassandra::QCassandraValue value;
         value.setStringValue(F::string_integer(a, b));
@@ -825,13 +818,13 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
-    typename enable_if<!has_function<F>::has_string_integer>::type do_string_integer(variable_t& result, QString const& a, int64_t b)
+    typename enable_if<!has_function<F>::has_string_integer>::type do_string_integer(variable_t & result, QString const & a, int64_t b)
     {
     }
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t& result, QString const& a, int64_t b)
+    typename enable_if<has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t & result, QString const & a, int64_t b)
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::string_integer(a, b));
@@ -841,13 +834,13 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
-    typename enable_if<!has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t& result, QString const& a, int64_t b)
+    typename enable_if<!has_function<F>::has_bool_string_integer>::type do_string_integer_to_bool(variable_t & result, QString const & a, int64_t b)
     {
     }
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_strings>::type do_strings(variable_t& result, QString const& a, QString const& b)
+    typename enable_if<has_function<F>::has_strings>::type do_strings(variable_t & result, QString const & a, QString const & b)
     {
         QtCassandra::QCassandraValue value;
         value.setStringValue(F::strings(a, b));
@@ -863,7 +856,7 @@ public:
 #pragma GCC diagnostic pop
 
     template<typename F>
-    typename enable_if<has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t& result, QString const& a, QString const& b)
+    typename enable_if<has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t & result, QString const & a, QString const & b)
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::strings(a, b));
@@ -873,7 +866,7 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
-    typename enable_if<!has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t& result, QString const& a, QString const& b)
+    typename enable_if<!has_function<F>::has_bool_strings>::type do_strings_to_bool(variable_t & result, QString const & a, QString const & b)
     {
     }
 #pragma GCC diagnostic pop
@@ -1553,26 +1546,27 @@ public:
     {
         if(!g_context)
         {
-            throw snap_expr_exception_not_ready("cell() function not available, g_context is NULL");
+            throw snap_expr_exception_not_ready("cell() function not available, g_context is NULL.");
         }
         if(sub_results.size() != 3)
         {
-            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell() expected exactly 3");
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell() expected exactly 3.");
         }
         QString const table_name(sub_results[0].get_string("cell(1)"));
         QString const row_name(sub_results[1].get_string("cell(2)"));
         QString const cell_name(sub_results[2].get_string("cell(3)"));
-//std::cerr << "cell(\"" << table_name << "\", \"" << row_name << "\", \"" << cell_name << "\")\n";
+//SNAP_LOG_WARNING("cell(")(table_name)(", ")(row_name)(", ")(cell_name)(") -> ...");
 
         // verify whether reading the content is considered secure
-        server::secure_field_flag_t secure;
-        server::instance()->cell_is_secure(table_name, row_name, cell_name, secure);
-        if(secure.is_secure())
+        server::accessible_flag_t accessible;
+        server::instance()->table_is_accessible(table_name, accessible);
+        if(!accessible.is_accessible())
         {
             // TBD: should we just return a string with an error in it
             //      instead of throwing?
+            //
             throw snap_expr_exception_not_accessible(
-                    QString("cell() called with a set of parameters specifying a secure cell (table \"%1\", row \"%2\", cell \"%3\"); no data will be returned")
+                    QString("cell() called with a set of parameters specifying access to a secure table (table \"%1\", row \"%2\", cell \"%3\"); no data will be returned.")
                             .arg(table_name).arg(row_name).arg(cell_name));
         }
 
@@ -1581,7 +1575,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY, value);
     }
 
-    static void call_cell_exists(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_cell_exists(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(!g_context)
         {
@@ -1589,17 +1583,45 @@ public:
         }
         if(sub_results.size() != 3)
         {
-            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell_exists() expected exactly 3");
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call cell_exists(), expected exactly 3");
         }
         QString const table_name(sub_results[0].get_string("cell_exist(1)"));
         QString const row_name(sub_results[1].get_string("cell_exist(2)"));
         QString const cell_name(sub_results[2].get_string("cell_exist(3)"));
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->table(table_name)->row(row_name)->exists(cell_name));
+//SNAP_LOG_WARNING("cell_exists(")(table_name)(", ")(row_name)(", ")(cell_name)(") -> ")(value.boolValue() ? "true" : "false");
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
-    static void call_format(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    // This cannot work right in an international website
+    // The dates should be saved as int64_t values in the database instead
+    //static void call_date_to_us(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    //{
+    //    if(!g_context)
+    //    {
+    //        throw snap_expr_exception_not_ready("date_to_us() function not available, g_context is NULL");
+    //    }
+    //    if(sub_results.size() != 1)
+    //    {
+    //        throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call date_to_us(), expected exactly 1");
+    //    }
+    //    QString const date_str(sub_results[0].get_string("date_to_us(1)"));
+
+    //    // we only support MM/DD/YYYY
+    //    struct tm time_info;
+    //    memset(&time_info, 0, sizeof(time_info));
+    //    time_info.tm_mon = date_str.mid(0, 2).toInt() - 1;
+    //    time_info.tm_mday = date_str.mid(3, 2).toInt();
+    //    time_info.tm_year = date_str.mid(6, 4).toInt() - 1900;
+    //    time_t t(mkgmtime(&time_info));
+
+    //    QtCassandra::QCassandraValue value;
+    //    value.setInt64Value(t * 1000000);
+    //    result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    //}
+
+    static void call_format(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() < 1)
         {
@@ -1697,14 +1719,14 @@ public:
                 return number;
             }
 
-            variable_t const& get_next_variable()
+            variable_t const & get_next_variable()
             {
                 if(f_index >= f_sub_results.size())
                 {
                     throw snap_expr_exception_invalid_data("invalid number of parameters to call format(), your format requires more parameters than is currently allowed");
                 }
-                variable_t const& r(f_sub_results[f_index]);
-                ++f_position;
+                variable_t const & r(f_sub_results[f_index]);
+                ++f_index;
                 return r;
             }
 
@@ -2093,7 +2115,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32, value);
     }
 
-    static void call_int64(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_int64(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 1)
         {
@@ -2165,14 +2187,14 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64, value);
     }
 
-    static void call_int8(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_int8(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 1)
         {
             throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call int8() expected exactly 1");
         }
         int8_t r(0);
-        QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
+        QtCassandra::QCassandraValue const & v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
         case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
@@ -2237,6 +2259,45 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8, value);
     }
 
+    static void call_is_integer(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call is_integer() expected exactly 1");
+        }
+        bool r(false);
+        QtCassandra::QCassandraValue const & v(sub_results[0].get_value());
+        switch(sub_results[0].get_type())
+        {
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
+            break;
+
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
+            r = true;
+            break;
+
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
+            // make sure it is a valid integer
+            v.stringValue().toLongLong(&r, 10);
+            break;
+
+        }
+        QtCassandra::QCassandraValue value;
+        value.setBoolValue(r);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
     static void call_parent(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         if(sub_results.size() != 1)
@@ -2262,6 +2323,42 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
+    static void call_preg_replace(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    {
+        int const size(sub_results.size());
+        if(size != 3)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call preg_replace() expected exactly 3");
+        }
+        QString pattern(sub_results[0].get_string("preg_replace(1)"));
+        QString const replacement(sub_results[1].get_string("preg_replace(2)"));
+        QString str(sub_results[2].get_string("preg_replace(3)"));
+        QString flags;
+
+        // pattern may include a set of flags after the ending '/'
+        Qt::CaseSensitivity cs(Qt::CaseSensitive);
+        if(pattern.length() >= 2
+        && pattern[0] == '/')
+        {
+            int const end(pattern.lastIndexOf('/'));
+            if(end <= 0)
+            {
+                throw snap_expr_exception_invalid_number_of_parameters("invalid pattern for preg_replace() if it starts with a '/' it must end with another '/'");
+            }
+            flags = pattern.mid(end + 1);
+            pattern = pattern.mid(1, end - 2);
+        }
+        if(flags.contains("i"))
+        {
+            cs = Qt::CaseInsensitive;
+        }
+        QRegExp re(pattern, cs, QRegExp::RegExp2);
+        str.replace(re, replacement); // this does the replacement in place
+        QtCassandra::QCassandraValue value;
+        value.setStringValue(str);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
+    }
+
     static void call_row_exists(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         if(!g_context)
@@ -2279,7 +2376,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
-    static void call_segment(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_segment(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 3)
         {
@@ -2288,7 +2385,7 @@ public:
         QString const str(sub_results[0].get_string("segment(1)"));
         QString const sep(sub_results[1].get_string("segment(2)"));
         int64_t const idx(sub_results[2].get_integer("segment(3)"));
-        QStringList list(str.split(sep));
+        snap_string_list list(str.split(sep));
         if(idx >= 0 && idx < list.size())
         {
             result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, list[idx]);
@@ -2299,7 +2396,7 @@ public:
         }
     }
 
-    static void call_string(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_string(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 1)
         {
@@ -2371,7 +2468,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
-    static void call_strlen(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_strlen(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         if(sub_results.size() != 1)
         {
@@ -2383,7 +2480,7 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64, value);
     }
 
-    static void call_strmatch(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    static void call_strmatch(variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         int const size(sub_results.size());
         if(size < 2 || size > 3)
@@ -2404,6 +2501,7 @@ public:
         }
         QRegExp re(pattern, cs, QRegExp::RegExp2);
         QtCassandra::QCassandraValue value;
+//SNAP_LOG_WARNING("exact match pattern: \"")(pattern)("\", str \"")(str)("\".");
         value.setBoolValue(re.exactMatch(str));
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
@@ -2444,6 +2542,30 @@ public:
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->findTable(table_name) != nullptr);
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    }
+
+    static void call_tolower(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call tolower() expected exactly 1");
+        }
+        QString const str(sub_results[0].get_string("tolower(1)"));
+        QtCassandra::QCassandraValue value;
+        value.setStringValue(str.toLower());
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
+    }
+
+    static void call_toupper(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    {
+        if(sub_results.size() != 1)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call toupper() expected exactly 1");
+        }
+        QString const str(sub_results[0].get_string("tolower(1)"));
+        QtCassandra::QCassandraValue value;
+        value.setStringValue(str.toUpper());
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
     static void call_uint16(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2959,7 +3081,7 @@ public:
     }
 
     template<typename F>
-    void bool_binary_operation(char const *op, variable_t& result, variable_t::variable_vector_t const& sub_results)
+    void bool_binary_operation(char const * op, variable_t & result, variable_t::variable_vector_t const & sub_results)
     {
         verify_binary(sub_results);
 
@@ -2982,47 +3104,47 @@ public:
             {
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
                 value.setBoolValue(F::integers(li, ri));
-                result.set_value(type, value);
+                result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
                 return;
 
             case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
@@ -3188,7 +3310,7 @@ public:
         }
     }
 
-    void assignment(variable_t& result, variable_t::variable_vector_t const& sub_results, variable_t::variable_map_t& variables)
+    void assignment(variable_t & result, variable_t::variable_vector_t const & sub_results, variable_t::variable_map_t & variables)
     {
 #ifdef DEBUG
         if(sub_results.size() != 1)
@@ -3201,7 +3323,7 @@ public:
         result = variables[f_name];
     }
 
-    void load_variable(variable_t& result, variable_t::variable_map_t& variables)
+    void load_variable(variable_t & result, variable_t::variable_map_t & variables)
     {
         if(variables.contains(f_name))
         {
@@ -3382,7 +3504,7 @@ private:
                     .arg(static_cast<int>(static_cast<node_type_t>(f_type))).arg(sub_results.size()));
         }
 #else
-        static_cast<void>(sub_results);
+        NOTUSED(sub_results);
 #endif
     }
 
@@ -3395,7 +3517,7 @@ private:
                     .arg(static_cast<int>(static_cast<node_type_t>(f_type))).arg(sub_results.size()));
         }
 #else
-        static_cast<void>(sub_results);
+        NOTUSED(sub_results);
 #endif
     }
 
@@ -3418,6 +3540,10 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
         "cell_exists",
         expr_node::call_cell_exists
     },
+    //{ // converts a date to microseconds
+    //    "date_to_us",
+    //    expr_node::call_date_to_us
+    //},
     { // cast to format
         "format",
         expr_node::call_format
@@ -3438,9 +3564,17 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
         "int8",
         expr_node::call_int8
     },
+    { // check whether parameter is an integer
+        "is_integer",
+        expr_node::call_is_integer
+    },
     { // retrieve the parent of a path (remove the last /foo name)
         "parent",
         expr_node::call_parent
+    },
+    { // replace parts of a string
+        "preg_replace",
+        expr_node::call_preg_replace
     },
     { // check whether a row exists in a table
         "row_exists",
@@ -3469,6 +3603,14 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
     { // check whether a named table exists
         "table_exists",
         expr_node::call_table_exists
+    },
+    { // convert string to lowercase
+        "tolower",
+        expr_node::call_tolower
+    },
+    { // convert string to uppercase
+        "toupper",
+        expr_node::call_tolower
     },
     { // cast to uint16
         "uint16",
@@ -3552,7 +3694,7 @@ char const *expr_node::type_names[static_cast<size_t>(node_type_t::NODE_TYPE_VAR
  */
 void list_qualified_name(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<parser::token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     (*t)[0]->set_value((*n)[0]->get_value().toString() + "::" + (*t)[2]->get_value().toString());
@@ -3576,7 +3718,7 @@ void list_expr_binary_operation(QSharedPointer<token_node>& t, expr_node::node_t
 #define LIST_EXPR_BINARY_OPERATION(a, b) \
     void list_expr_##a(rule const& r, QSharedPointer<token_node>& t) \
     { \
-        static_cast<void>(r); \
+        NOTUSED(r); \
         list_expr_binary_operation(t, expr_node::node_type_t::NODE_TYPE_OPERATION_##b); \
     }
 
@@ -3617,7 +3759,7 @@ void list_expr_unary_operation(QSharedPointer<token_node>& t, expr_node::node_ty
 #define LIST_EXPR_UNARY_OPERATION(a, b) \
     void list_expr_##a(rule const& r, QSharedPointer<token_node>& t) \
     { \
-        static_cast<void>(r); \
+        NOTUSED(r); \
         list_expr_unary_operation(t, expr_node::node_type_t::NODE_TYPE_OPERATION_##b); \
     }
 
@@ -3628,7 +3770,7 @@ LIST_EXPR_UNARY_OPERATION(negate, NEGATE)
 
 void list_expr_conditional(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     expr_node::expr_node_pointer_t c(qSharedPointerDynamicCast<expr_node, parser_user_data>(n0->get_user_data()));
@@ -3675,7 +3817,7 @@ void list_expr_level_child(expr_node::expr_node_pointer_t n)
 
 void list_expr_list(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     expr_node::expr_node_pointer_t l(qSharedPointerDynamicCast<expr_node, parser_user_data>(n0->get_user_data()));
@@ -3706,7 +3848,7 @@ void list_expr_list(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_identity(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     expr_node::expr_node_pointer_t i(qSharedPointerDynamicCast<expr_node, parser_user_data>(n->get_user_data()));
@@ -3718,7 +3860,7 @@ void list_expr_identity(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_function(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     // the function name is a string
     QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
@@ -3753,7 +3895,7 @@ void list_expr_function(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_true(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_LITERAL_BOOLEAN));
     QtCassandra::QCassandraValue value;
@@ -3767,7 +3909,7 @@ void list_expr_true(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_false(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_LITERAL_BOOLEAN));
     QtCassandra::QCassandraValue value;
@@ -3781,7 +3923,7 @@ void list_expr_false(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_string(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QString const str((*t)[0]->get_value().toString());
 
@@ -3797,7 +3939,7 @@ void list_expr_string(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_integer(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     int64_t const integer((*t)[0]->get_value().toLongLong());
 
@@ -3813,7 +3955,7 @@ void list_expr_integer(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_float(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     double const floating_point((*t)[0]->get_value().toDouble());
 
@@ -3829,7 +3971,7 @@ void list_expr_float(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_level_list(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n0(qSharedPointerDynamicCast<token_node, token>((*t)[1]));
     expr_node::expr_node_pointer_t n(qSharedPointerDynamicCast<expr_node, parser_user_data>(n0->get_user_data()));
@@ -3843,7 +3985,7 @@ void list_expr_level_list(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_variable(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QString const name((*t)[0]->get_value().toString());
 
@@ -3855,7 +3997,7 @@ void list_expr_variable(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_assignment(rule const& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QString const name((*t)[0]->get_value().toString());
 
@@ -3871,7 +4013,7 @@ void list_expr_assignment(rule const& r, QSharedPointer<token_node>& t)
 
 void list_expr_copy_result(const rule& r, QSharedPointer<token_node>& t)
 {
-    static_cast<void>(r);
+    NOTUSED(r);
 
     QSharedPointer<token_node> n(qSharedPointerDynamicCast<token_node, token>((*t)[0]));
     // we don't need the dynamic cast since we don't need to access the data

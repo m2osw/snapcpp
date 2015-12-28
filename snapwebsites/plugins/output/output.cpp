@@ -19,8 +19,11 @@
 
 #include "../locale/snap_locale.h"
 #include "../messages/messages.h"
+#include "../server_access/server_access.h"
 
+#include "log.h"
 #include "not_reached.h"
+#include "not_used.h"
 
 #include <iostream>
 
@@ -39,7 +42,7 @@ SNAP_PLUGIN_START(output, 1, 0)
  *
  * \return A pointer to the name.
  */
-//char const *get_name(name_t name)
+//char const * get_name(name_t name)
 //{
 //    switch(name)
 //    {
@@ -81,22 +84,6 @@ output::~output()
 }
 
 
-/** \brief Initialize the output.
- *
- * This function terminates the initialization of the output plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void output::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
-    SNAP_LISTEN(output, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-}
-
-
 /** \brief Get a pointer to the output plugin.
  *
  * This function returns an instance pointer to the output plugin.
@@ -106,9 +93,31 @@ void output::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the output plugin.
  */
-output *output::instance()
+output * output::instance()
 {
     return g_plugin_output_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString output::settings_path() const
+{
+    return "/admin/settings/info";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString output::icon() const
+{
+    return "/images/snap/snap-logo-64x64.png";
 }
 
 
@@ -128,6 +137,19 @@ QString output::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString output::dependencies() const
+{
+    return "|content|filter|javascript|layout|locale|path|server_access|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -144,7 +166,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 2, 23, 14, 30, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 22, 2, 28, 44, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -160,11 +182,27 @@ int64_t output::do_update(int64_t last_updated)
  */
 void output::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
 
     layout::layout::instance()->add_layout_from_resources(content::get_name(content::name_t::SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME));
+}
+
+
+/** \brief Initialize the output.
+ *
+ * This function terminates the initialization of the output plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void output::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3);
+    SNAP_LISTEN(output, "filter", filter::filter, replace_token, _1, _2, _3);
 }
 
 
@@ -181,11 +219,65 @@ void output::content_update(int64_t variables_timestamp)
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool output::on_path_execute(content::path_info_t& ipath)
+bool output::on_path_execute(content::path_info_t & ipath)
 {
-    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
+    QString const action(ipath.get_parameter("action"));
 
-    return true;
+    if(action == "view"
+    || action == "edit"
+    || action == "administer")
+    {
+        f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
+        return true;
+    }
+    else if(action == "delete")
+    {
+        // actually delete the page
+        //
+        // TODO: put that in the background and return a 202
+        //       (this is especially important if someone wants to delete
+        //       a large tree!)
+        //
+        content::content::instance()->trash_page(ipath);
+
+        // if the command was sent with AJAX, make sure to answer
+        // using AJAX
+        server_access::server_access * server_access_plugin(server_access::server_access::instance());
+        if(server_access_plugin->is_ajax_request())
+        {
+//f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
+//                    "Page Deleted",
+//                    "This page was deleted.",
+//                    QString("User accessed already deleted page \"%1\" with action \"delete\".")
+//                            .arg(ipath.get_key()));
+//NOTREACHED();
+            messages::messages::instance()->set_info(
+                "Page Deleted",
+                QString("Page \"%1\" was successfully deleted.").arg(ipath.get_key())
+            );
+
+            server_access_plugin->create_ajax_result(ipath, true);
+            server_access_plugin->ajax_output();
+            return true;
+        }
+
+        // TBD: should we NOT use the die() function? (Especially with the OK
+        //      "error" code.)
+        //
+        // no AJAX, use the die() function because there is no content to
+        // return (unless we decide to use HTTP_CODE_NO_CONTENT? but then
+        // we cannot get the "restore page" link)
+        path::path::instance()->add_restore_link_to_signature_for(ipath.get_cpath());
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_OK,
+                    "Page Deleted",
+                    "This page was deleted.",
+                    QString("User accessed already deleted page \"%1\" with action \"delete\".")
+                            .arg(ipath.get_key()));
+        NOTREACHED();
+    }
+
+    // we did not handle the page, so return false
+    return false;
 }
 
 
@@ -205,13 +297,16 @@ bool output::on_path_execute(content::path_info_t& ipath)
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A fallback path in case ipath is not satisfactory.
  */
-void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void output::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    static_cast<void>(page);
+    NOTUSED(page);
 
     // if the content is the main page then define the titles and body here
+    //
+    // titles are defined as HTML; you can output them as plain text
+    // using "value-of" instead of "copy-of" in your .xsl files
+    //
     FIELD_SEARCH
         (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
         (content::field_search::command_t::COMMAND_ELEMENT, body)
@@ -219,50 +314,30 @@ void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
 
         // /snap/page/body/titles
         (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "titles")
-        // /snap/page/body/titles/title
-        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
-        (content::field_search::command_t::COMMAND_SELF)
-        (content::field_search::command_t::COMMAND_IF_FOUND, 1)
-            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+
+            // /snap/page/body/titles/title
+            (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
             (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::command_t::COMMAND_LABEL, 1)
-        (content::field_search::command_t::COMMAND_SAVE, "title")
-        // /snap/page/body/titles/short-title
-        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_SHORT_TITLE))
-        (content::field_search::command_t::COMMAND_SELF)
-        (content::field_search::command_t::COMMAND_IF_FOUND, 2)
-            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+            (content::field_search::command_t::COMMAND_SAVE_XML, "title")
+            // /snap/page/body/titles/short-title
+            (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_SHORT_TITLE))
             (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::command_t::COMMAND_LABEL, 2)
-        (content::field_search::command_t::COMMAND_SAVE, "short-title")
-        // /snap/page/body/titles/long-title
-        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_LONG_TITLE))
-        (content::field_search::command_t::COMMAND_SELF)
-        (content::field_search::command_t::COMMAND_IF_FOUND, 3)
-            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+            (content::field_search::command_t::COMMAND_SAVE_XML, "short-title")
+            // /snap/page/body/titles/long-title
+            (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_LONG_TITLE))
             (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::command_t::COMMAND_LABEL, 3)
-        (content::field_search::command_t::COMMAND_SAVE, "long-title")
+            (content::field_search::command_t::COMMAND_SAVE_XML, "long-title")
+
         (content::field_search::command_t::COMMAND_PARENT_ELEMENT)
 
         // /snap/page/body/content
         (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))
         (content::field_search::command_t::COMMAND_SELF)
-        (content::field_search::command_t::COMMAND_IF_FOUND, 10)
-            (content::field_search::command_t::COMMAND_PATH, ctemplate)
-            (content::field_search::command_t::COMMAND_SELF)
-            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::command_t::COMMAND_LABEL, 10)
         (content::field_search::command_t::COMMAND_SAVE_XML, "content")
 
         // /snap/page/body/description
         (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_DESCRIPTION))
         (content::field_search::command_t::COMMAND_SELF)
-        // ignore ctemplate because descriptions should either not be there
-        // or be unique to be valid for SEO
         (content::field_search::command_t::COMMAND_SAVE_XML, "description")
 
         // generate!
@@ -276,13 +351,12 @@ void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
  * \param[in] ipath  The box being worked on.
  * \param[in] page  The page element.
  * \param[in] box  The box element.
- * \param[in] ctemplate  A template name in case no other layout applies.
  */
-void output::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+void output::on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box)
 {
-    static_cast<void>(page_cpath);
+    NOTUSED(page_cpath);
 
-    on_generate_main_content(ipath, page, box, ctemplate);
+    on_generate_main_content(ipath, page, box);
 }
 
 
@@ -294,13 +368,9 @@ void output::on_generate_boxes_content(content::path_info_t& page_cpath, content
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The body being generated.
  */
-void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void output::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    static_cast<void>(page);
-    static_cast<void>(ctemplate);
-
     // create information mainly used in the HTML <head> tag
     QString up;
     int const p(ipath.get_cpath().lastIndexOf('/'));
@@ -387,14 +457,14 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "navigation")
 
             // Index
-            (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "link")
+            (content::field_search::command_t::COMMAND_NEW_CHILD_ELEMENT, "link")
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "rel=top")
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "title=Index") // TODO: translate
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "href=" + f_snap->get_site_key())
             (content::field_search::command_t::COMMAND_PARENT_ELEMENT)
 
             // Up
-            (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "link")
+            (content::field_search::command_t::COMMAND_NEW_CHILD_ELEMENT, "link")
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "rel=up")
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "title=Up") // TODO: translate
             (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "href=" + up)
@@ -411,12 +481,11 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     // IMPORTANT NOTE: we handle the output of the messages in the output
     //                 plugin because the messages cannot depend on the
     //                 layout plugin (circular dependencies)
+    QDomDocument doc(page.ownerDocument());
     messages::messages *messages_plugin(messages::messages::instance());
     int const max_messages(messages_plugin->get_message_count());
     if(max_messages > 0)
     {
-        QDomDocument doc(page.ownerDocument());
-
         QDomElement messages_tag(doc.createElement("messages"));
         int const errcnt(messages_plugin->get_error_count());
         messages_tag.setAttribute("error-count", errcnt);
@@ -484,6 +553,12 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
         content::content::instance()->add_javascript(page.ownerDocument(), "output");
     }
+
+    {
+        QDomElement breadcrumb_tag(doc.createElement("breadcrumb"));
+        body.appendChild(breadcrumb_tag);
+        breadcrumb(ipath, breadcrumb_tag);
+    }
 }
 
 
@@ -498,15 +573,12 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
  * \li content::created -- the date when this page was created
  *
  * \param[in,out] ipath  The path to the page being worked on.
- * \param[in] plugin_owner  The plugin that owns this ipath content.
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void output::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void output::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(xml);
 
     if(!token.is_namespace("content::"))
     {
@@ -538,7 +610,7 @@ void output::on_replace_token(content::path_info_t& ipath, QString const& plugin
         if(token.verify_args(0, 1))
         {
             // last updated is the date when the last revision was created
-            content::content *content(content::content::instance());
+            content::content * content(content::content::instance());
             QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
             int64_t const created_date(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
             time_t const unix_time(created_date / 1000000); // transform to seconds
@@ -551,6 +623,185 @@ void output::on_replace_token(content::path_info_t& ipath, QString const& plugin
             token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
         }
         return;
+    }
+
+    // For now breadcrumbs are created as a DOM so we skip this part
+    // since anyway it should not be too useful
+    //if(token.is_token("content::breadcrumb"))
+    //{
+    //    token.f_replacement = breadcrumb(ipath);
+    //    return;
+    //}
+}
+
+
+void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
+{
+    content::content * content(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
+
+    QDomDocument doc(parent.ownerDocument());
+
+    QDomElement ol(doc.createElement("ol"));
+    ol.setAttribute("vocab", "http://schema.org/");
+    ol.setAttribute("typeOf", "BreadcrumList");
+    parent.appendChild(ol);
+
+    content::path_info_t info_ipath;
+    info_ipath.set_path("admin/settings/info");
+
+    QtCassandra::QCassandraRow::pointer_t info_row(revision_table->row(info_ipath.get_revision_key()));
+
+    QString home_label(info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_HOME_LABEL))->value().stringValue());
+    if(home_label.isEmpty())
+    {
+        // translation is taken in account by the settings since we
+        // expect the right language selection to happen before we
+        // reach this function
+        //
+        home_label = "Home";
+    }
+
+    QtCassandra::QCassandraValue value(info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_HOME))->value());
+    bool const show_home(value.nullValue() || value.safeSignedCharValue() != 0);
+
+    value = info_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_SHOW_CURRENT_PAGE))->value();
+    bool show_current_page(value.nullValue() || value.safeSignedCharValue() != 0);
+
+    // the breadcrumb is a list of paths from this page back to
+    // the home:
+    QDomElement previous_li;
+    snap_string_list segments = ipath.get_segments();
+    int max_segments(ipath.get_cpath() == "" ? 0 : segments.size());
+    int first(-1);
+    bool has_last(false);
+    for(int i(max_segments); i >= 0; --i)
+    {
+        // ol/li
+        QDomElement li(doc.createElement("li"));
+        snap_string_list classes;
+        if((!show_home && i == 0)
+        || (!show_current_page && i == max_segments))
+        {
+            classes << "hide";
+        }
+        if((show_home && i == 0)
+        || (!show_home && i == 1))
+        {
+            first = i;
+            classes << "first";
+        }
+        if(!has_last
+        && ((show_current_page && i == max_segments)
+        || (!show_current_page && i == max_segments - 1)))
+        {
+            has_last = true;
+            classes << "last";
+        }
+        // we expected "odd" for the very first item which is not hidden
+        if((i & 1) == first)
+        {
+            classes << "odd";
+        }
+        else if(first != -1)
+        {
+            classes << "even";
+        }
+        li.setAttribute("class", classes.join(" "));
+        li.setAttribute("typeOf", "ListItem");
+        li.setAttribute("property", "itemListElement");
+
+        if(previous_li.isNull())
+        {
+            ol.appendChild(li);
+        }
+        else
+        {
+            ol.insertBefore(li, previous_li);
+        }
+        previous_li = li;
+
+        // ol/li/a
+        // (for Google, it is better to have <a> for ALL entries, including
+        // the current page, although you could hide the current page.)
+        QDomElement anchor(doc.createElement("a"));
+        anchor.setAttribute("typeof", "WebPage");
+        anchor.setAttribute("property", "item");
+        li.appendChild(anchor);
+
+        // ol/li/a/span
+        QDomElement span(doc.createElement("span"));
+        span.setAttribute("property", "name");
+        anchor.appendChild(span);
+
+        content::path_info_t page_ipath;
+        QString label;
+        if(i == 0)
+        {
+            // special case for the Home page
+            anchor.setAttribute("href", "/");
+
+            // Note: although there is a title in the home page and
+            //       we could use that name, it is likely the name
+            //       of the website and it may not be appropriate
+            //       here. You can edit this label in "/admin/settings/info"
+            //
+            label = home_label;
+        }
+        else
+        {
+            QString const path(static_cast<QStringList>(segments.mid(0, i)).join("/"));
+            page_ipath.set_path(path);
+
+            // Google says we should use full paths... that is easy for us
+            anchor.setAttribute("href", "/" + page_ipath.get_cpath());
+
+            // by default try to use the short title if available
+            label = revision_table->row(page_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_SHORT_TITLE))->value().stringValue();
+            if(label.isEmpty())
+            {
+                label = revision_table->row(page_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue();
+            }
+        }
+
+        // ol/li/a/span//text
+        QDomText text(doc.createTextNode(label));
+        span.appendChild(text);
+
+        // ol/li/meta
+        QDomElement position(doc.createElement("meta"));
+        position.setAttribute("property", "position");
+        position.setAttribute("content", QString("%1").arg(i + 1)); // position starts at 1
+        li.appendChild(position);
+
+        // the page may know better than us what its parent is (i.e. we can
+        // build breadcrumbs that are not truely following the natural
+        // parent/child path)
+        if(i != 0
+        && revision_table->row(page_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_PARENT)))
+        {
+            // if the page defines its own breadcrumb parent, then replace
+            // the current path information with that new info.
+            QString const breadcrumbs_parent(revision_table->row(page_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BREADCRUMBS_PARENT))->value().stringValue());
+
+            // canonicalize
+            content::path_info_t parent_ipath;
+            parent_ipath.set_path(breadcrumbs_parent);
+
+            // replace segments and index
+            segments = parent_ipath.get_segments();
+            if(parent_ipath.get_cpath() == "")
+            {
+                // special case... (because "" or "one-segment" is the same)
+                i = 1;
+            }
+            else
+            {
+                i = segments.size() + 1;
+            }
+            max_segments = segments.size();
+            show_current_page = true;
+        }
     }
 }
 

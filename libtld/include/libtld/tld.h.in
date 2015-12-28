@@ -107,6 +107,7 @@ extern LIBTLD_EXPORT const char *tld_version();
 extern LIBTLD_EXPORT void tld_clear_info(struct tld_info *info);
 extern LIBTLD_EXPORT enum tld_result tld(const char *uri, struct tld_info *info);
 extern LIBTLD_EXPORT enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char *protocols, int flags);
+extern LIBTLD_EXPORT char *tld_domain_to_lowercase(const char *domain);
 
 
 

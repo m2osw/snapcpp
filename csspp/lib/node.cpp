@@ -15,16 +15,28 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief Implementation of the CSS Preprocessor node.
+ *
+ * The CSS Preprocessor node handles the tree of nodes that the parser
+ * generates, the compiler crunches, and the assembler outputs.
+ *
+ * All the code that handles the nodes is found here, however, the
+ * compiler and expression classes handle the various operations that
+ * are required between nodes. The nodes are nearly only limited to
+ * handling the data they hold and the tree.
+ *
+ * \sa \ref lexer_rules
+ */
+
 #include <csspp/node.h>
 
-#include <csspp/color.h>
 #include <csspp/exceptions.h>
 #include <csspp/nth_child.h>
 #include <csspp/unicode_range.h>
 
 #include <algorithm>
 #include <iostream>
-#include <sstream>
 
 namespace csspp
 {
@@ -50,8 +62,8 @@ void type_supports_integer(node_type_t const type)
     switch(type)
     {
     case node_type_t::AN_PLUS_B:
+    case node_type_t::ARG:
     case node_type_t::AT_KEYWORD:
-    case node_type_t::COLOR:
     case node_type_t::COMMENT:
     case node_type_t::INTEGER:
     case node_type_t::UNICODE_RANGE:
@@ -136,6 +148,23 @@ void type_supports_string(node_type_t const type)
     }
 }
 
+void type_supports_color(node_type_t const type)
+{
+    switch(type)
+    {
+    case node_type_t::COLOR:
+        break;
+
+    default:
+        {
+            std::stringstream ss;
+            ss << "trying to access (read/write) the color of a node of type " << type << ", which does not support colors.";
+            throw csspp_exception_logic(ss.str());
+        }
+
+    }
+}
+
 void type_supports_font_metrics(node_type_t const type)
 {
     switch(type)
@@ -157,11 +186,13 @@ void type_supports_children(node_type_t const type)
     switch(type)
     {
     case node_type_t::ARG:
+    case node_type_t::ARRAY:
     case node_type_t::AT_KEYWORD:
     case node_type_t::COMPONENT_VALUE:
     case node_type_t::DECLARATION:
     case node_type_t::FUNCTION:
     case node_type_t::LIST:
+    case node_type_t::MAP:
     case node_type_t::OPEN_CURLYBRACKET:
     case node_type_t::OPEN_PARENTHESIS:
     case node_type_t::OPEN_SQUAREBRACKET:
@@ -220,10 +251,7 @@ node::pointer_t node::clone() const
         result->f_children.push_back(c->clone());
     }
 
-    for(auto v : f_variables)
-    {
-        result->f_variables[v.first] = v.second->clone();
-    }
+    result->copy_variable(const_cast<node *>(this)->shared_from_this());
 
     return result;
 }
@@ -243,38 +271,52 @@ boolean_t node::to_boolean() const
     switch(f_type)
     {
     case node_type_t::BOOLEAN:
-        return f_boolean ? boolean_t::TRUE : boolean_t::FALSE;
+        return f_boolean ? boolean_t::BOOLEAN_TRUE : boolean_t::BOOLEAN_FALSE;
 
     case node_type_t::IDENTIFIER:
         if(f_string == "true")
         {
-            return boolean_t::TRUE;
+            return boolean_t::BOOLEAN_TRUE;
         }
         if(f_string == "false"
         || f_string == "null")
         {
-            return boolean_t::FALSE;
+            return boolean_t::BOOLEAN_FALSE;
         }
-        return boolean_t::INVALID;
+        return boolean_t::BOOLEAN_INVALID;
 
     case node_type_t::INTEGER:
-        return f_integer != 0 ? boolean_t::TRUE : boolean_t::FALSE;
+        return f_integer != 0 ? boolean_t::BOOLEAN_TRUE : boolean_t::BOOLEAN_FALSE;
 
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::PERCENT:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        return f_decimal_number != 0.0 ? boolean_t::TRUE : boolean_t::FALSE;
+        return f_decimal_number != 0.0 ? boolean_t::BOOLEAN_TRUE : boolean_t::BOOLEAN_FALSE;
 #pragma GCC diagnostic pop
 
     case node_type_t::STRING:
-        return f_string.empty() ? boolean_t::FALSE : boolean_t::TRUE;
+        return f_string.empty() ? boolean_t::BOOLEAN_FALSE : boolean_t::BOOLEAN_TRUE;
 
+    case node_type_t::ARRAY:
     case node_type_t::LIST:
-        return f_children.empty() ? boolean_t::FALSE : boolean_t::TRUE;
+    case node_type_t::MAP:
+        return f_children.empty() ? boolean_t::BOOLEAN_FALSE : boolean_t::BOOLEAN_TRUE;
+
+    case node_type_t::COLOR:
+        {
+            color c(get_color());
+            return (c.get_color() & 0x00FFFFFF) == 0
+                    ? boolean_t::BOOLEAN_FALSE
+                    : boolean_t::BOOLEAN_TRUE;
+        }
+        break;
+
+    case node_type_t::NULL_TOKEN:
+        return boolean_t::BOOLEAN_FALSE;
 
     default:
-        return boolean_t::INVALID;
+        return boolean_t::BOOLEAN_INVALID;
 
     }
     /*NOTREACHED*/
@@ -295,6 +337,18 @@ void node::set_string(std::string const & str)
 {
     type_supports_string(f_type);
     f_string = str;
+}
+
+std::string const & node::get_lowercase_string() const
+{
+    type_supports_string(f_type);
+    return f_lowercase_string;
+}
+
+void node::set_lowercase_string(std::string const & str)
+{
+    type_supports_string(f_type);
+    f_lowercase_string = str;
 }
 
 integer_t node::get_integer() const
@@ -331,6 +385,45 @@ void node::set_decimal_number(decimal_number_t decimal_number)
 {
     type_supports_decimal_number(f_type);
     f_decimal_number = decimal_number;
+}
+
+color node::get_color() const
+{
+    type_supports_color(f_type);
+
+    union color_transfer_t
+    {
+        uint64_t    f_int;
+        double      f_dbl;
+        float       f_flt[2];
+    };
+
+    color_transfer_t c1, c2;
+    c1.f_int = f_integer;
+    c2.f_dbl = f_decimal_number;
+
+    color c;
+    c.set_color(c1.f_flt[0], c1.f_flt[1], c2.f_flt[0], c2.f_flt[1]);
+
+    return c;
+}
+
+void node::set_color(color c)
+{
+    type_supports_color(f_type);
+
+    union color_transfer_t
+    {
+        uint64_t    f_int;
+        double      f_dbl;
+        float       f_flt[2];
+    };
+
+    color_transfer_t c1, c2;
+    c.get_color(c1.f_flt[0], c1.f_flt[1], c2.f_flt[0], c2.f_flt[1]);
+
+    f_integer        = c1.f_int;
+    f_decimal_number = c2.f_dbl;
 }
 
 decimal_number_t node::get_font_size() const
@@ -608,6 +701,17 @@ void node::set_variable(std::string const & name, pointer_t value)
     f_variables[name] = value;
 }
 
+void node::copy_variable(node::pointer_t source)
+{
+    if(source)
+    {
+        for(auto v : source->f_variables)
+        {
+            f_variables[v.first] = v.second->clone();
+        }
+    }
+}
+
 node::pointer_t node::get_variable(std::string const & name)
 {
     auto const it(f_variables.find(name));
@@ -677,8 +781,7 @@ std::string node::to_string(int flags) const
 
     case node_type_t::COLOR:
         {
-            color c;
-            c.set_color(f_integer);
+            color c(get_color());
             out << c.to_string();
         }
         break;
@@ -757,12 +860,13 @@ std::string node::to_string(int flags) const
 
     case node_type_t::FONT_METRICS:
         // this is a mouthful!
-        out <<        decimal_number_to_string(get_font_size()   * (get_dim1() == "%" ? 100.0 : 1.0)) << get_dim1()
-            << "/" << decimal_number_to_string(get_line_height() * (get_dim2() == "%" ? 100.0 : 1.0)) << get_dim2();
+        out <<        decimal_number_to_string(get_font_size()   * (get_dim1() == "%" ? 100.0 : 1.0), false) << get_dim1()
+            << "/" << decimal_number_to_string(get_line_height() * (get_dim2() == "%" ? 100.0 : 1.0), false) << get_dim2();
         break;
 
     case node_type_t::VARIABLE_FUNCTION:
         out << '$';
+        /*FALLTHROUGH*/
     case node_type_t::FUNCTION:
         {
             out << f_string << "(";
@@ -868,7 +972,7 @@ std::string node::to_string(int flags) const
         break;
 
     case node_type_t::PERCENT:
-        out << (f_boolean && f_integer >= 0 ? "+" : "") << decimal_number_to_string(f_decimal_number) << "%";
+        out << (f_boolean && f_integer >= 0 ? "+" : "") << decimal_number_to_string(f_decimal_number * 100.0, false) << "%";
         break;
 
     case node_type_t::PERIOD:
@@ -1010,7 +1114,21 @@ std::string node::to_string(int flags) const
                     }
                     else
                     {
-                        out << ",";
+                        switch(static_cast<node_type_t>(c->get_integer()))
+                        {
+                        case node_type_t::UNKNOWN: // this is the default if the integer is never set
+                        case node_type_t::COMMA:
+                            out << ",";
+                            break;
+
+                        case node_type_t::DIVIDE:
+                            out << "/";
+                            break;
+
+                        default:
+                            throw csspp_exception_logic("ARG only supports ',' and '/' as separators.");
+
+                        }
                     }
                     out << c->to_string(flags);
                 }
@@ -1037,6 +1155,55 @@ std::string node::to_string(int flags) const
         for(auto c : f_children)
         {
             out << c->to_string(flags);
+        }
+        break;
+
+    case node_type_t::ARRAY:
+        {
+            out << "(";
+            bool first(true);
+            for(auto c : f_children)
+            {
+                if(first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    out << ", ";
+                }
+                out << c->to_string(flags | g_to_string_flag_show_quotes);
+            }
+            out << ")";
+        }
+        break;
+
+    case node_type_t::MAP:
+        {
+            out << "(";
+            bool first(true);
+            bool label(true);
+            for(auto c : f_children)
+            {
+                if(label)
+                {
+                    if(first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        out << ", ";
+                    }
+                }
+                out << c->to_string(flags | g_to_string_flag_show_quotes);
+                if(label)
+                {
+                    out << ": ";
+                }
+                label = !label;
+            }
+            out << ")";
         }
         break;
 
@@ -1119,7 +1286,10 @@ void node::display(std::ostream & out, uint32_t indent) const
     switch(f_type)
     {
     case node_type_t::COLOR:
-        out << " H:" << std::hex << f_integer << std::dec;
+        {
+            color c(get_color());
+            out << " H:" << std::hex << c.get_color() << std::dec;
+        }
         break;
 
     default:
@@ -1130,8 +1300,8 @@ void node::display(std::ostream & out, uint32_t indent) const
     switch(f_type)
     {
     case node_type_t::FONT_METRICS:
-        out << " FM:" << decimal_number_to_string(get_font_size()   * (get_dim1() == "%" ? 100.0 : 1.0)) << get_dim1()
-               << "/" << decimal_number_to_string(get_line_height() * (get_dim2() == "%" ? 100.0 : 1.0)) << get_dim2();
+        out << " FM:" << decimal_number_to_string(get_font_size()   * (get_dim1() == "%" ? 100.0 : 1.0), false) << get_dim1()
+               << "/" << decimal_number_to_string(get_line_height() * (get_dim2() == "%" ? 100.0 : 1.0), false) << get_dim2();
         break;
 
     default:
@@ -1157,7 +1327,7 @@ void node::display(std::ostream & out, uint32_t indent) const
     {
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::PERCENT:
-        out << " D:" << f_decimal_number;
+        out << " D:" << decimal_number_to_string(f_decimal_number, false);
         break;
 
     default:
@@ -1182,12 +1352,14 @@ void node::display(std::ostream & out, uint32_t indent) const
     switch(f_type)
     {
     case node_type_t::ARG:
+    case node_type_t::ARRAY:
     case node_type_t::AT_KEYWORD:
     case node_type_t::COMPONENT_VALUE:
     case node_type_t::DECLARATION:
     case node_type_t::EXCLAMATION:
     case node_type_t::FUNCTION:
     case node_type_t::LIST:
+    case node_type_t::MAP:
     case node_type_t::OPEN_SQUAREBRACKET:
     case node_type_t::OPEN_CURLYBRACKET:
     case node_type_t::OPEN_PARENTHESIS:
@@ -1461,6 +1633,10 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
         out << "ARG";
         break;
 
+    case csspp::node_type_t::ARRAY:
+        out << "ARRAY";
+        break;
+
     case csspp::node_type_t::COMPONENT_VALUE:
         out << "COMPONENT_VALUE";
         break;
@@ -1471,6 +1647,10 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
 
     case csspp::node_type_t::LIST:
         out << "LIST";
+        break;
+
+    case csspp::node_type_t::MAP:
+        out << "MAP";
         break;
 
     case csspp::node_type_t::max_type:

@@ -21,12 +21,16 @@
 #include "../path/path.h"
 #include "../output/output.h"
 
-#include "not_reached.h"
-#include "snap_expr.h"
-#include "qdomhelpers.h"
 #include "dbutils.h"
 #include "log.h"
+#include "not_reached.h"
+#include "not_used.h"
+#include "qdomhelpers.h"
 #include "snap_backend.h"
+#include "snap_expr.h"
+
+#include <csspp/csspp.h>
+#include <QtCassandra/QCassandraLock.h>
 
 #include <iostream>
 
@@ -37,6 +41,7 @@
 
 SNAP_PLUGIN_START(list, 1, 0)
 
+
 /** \brief Get a fixed list name.
  *
  * The list plugin makes use of different names in the database. This
@@ -46,7 +51,7 @@ SNAP_PLUGIN_START(list, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -89,11 +94,14 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_LIST_PAGE_SIZE:
         return "list::page_size";
 
+    case name_t::SNAP_NAME_LIST_PROCESSALLLISTS: // --action processalllists
+        return "processalllists";
+
     case name_t::SNAP_NAME_LIST_PROCESSLIST: // --action processlist
         return "processlist";
 
-    case name_t::SNAP_NAME_LIST_RESETLISTS:
-        return "resetlist";
+    case name_t::SNAP_NAME_LIST_RESETLISTS: // --action resetlists
+        return "resetlists";
 
     case name_t::SNAP_NAME_LIST_SELECTOR: // all, public, children, hand-picked, type=name, ...
         return "list::selector";
@@ -190,7 +198,10 @@ char const *get_name(name_t name)
  *
  * \note
  * We do not repair list links when a page is cloned. If the clone is
- * to be part of a list the links will be updated accordingly.
+ * to be part of a list the links will be updated accordingly. This
+ * means if you do not write specialized code to make sure the clone
+ * is a list, the "list::type" link is missing and thus no checks
+ * are done to update the list data of the clone.
  */
 
 
@@ -209,7 +220,7 @@ char const *get_name(name_t name)
  *
  * \sa get_query_string_info()
  */
-paging_t::paging_t(snap_child *snap, content::path_info_t & ipath)
+paging_t::paging_t(snap_child * snap, content::path_info_t & ipath)
     : f_snap(snap)
     , f_ipath(ipath)
     //, f_retrieved_list_name(false) -- auto-init
@@ -347,12 +358,12 @@ int32_t paging_t::get_number_of_items() const
     {
         // if the number of items is not (yet) defined in the database
         // then it will be set to zero
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
         f_number_of_items = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value();
     }
 
-    // the count may have been limited by the user
+    // the total count may have been limited by the programmer
     if(f_maximum_number_of_items == -1
     || f_number_of_items < f_maximum_number_of_items)
     {
@@ -426,19 +437,8 @@ void paging_t::set_start_offset(int32_t start_offset)
  */
 int32_t paging_t::get_start_offset() const
 {
-    if(f_start_offset < 1)
-    {
-        // the caller did not force the offset, first check the query
-        // string to see whether the end user defined a page parameter
-
-        // calculate the offset using the start page
-        // and page size instead, adjusting for the
-        // fact that page numbers start at one instead
-        // of zero
-        return (f_page - 1) * get_page_size() + 1;
-    }
-
-    return f_start_offset;
+    int const offset(f_start_offset < 1 ? 1 : static_cast<int>(f_start_offset));
+    return offset + (f_page - 1) * get_page_size();
 }
 
 
@@ -503,7 +503,7 @@ void paging_t::process_query_string_info()
 
     // got such, retrieve it
     QString const variable(f_snap->get_uri().query_option(variable_name));
-    QStringList const params(variable.split(","));
+    snap_string_list const params(variable.split(","));
     bool defined_page(false);
     bool defined_size(false);
     bool defined_offset(false);
@@ -521,7 +521,7 @@ void paging_t::process_query_string_info()
             {
                 defined_page = true;
                 bool ok(false);
-                int page = p.mid(1).toInt(&ok);
+                int const page(p.mid(1).toInt(&ok));
                 if(ok && page > 0)
                 {
                     f_page = page;
@@ -555,7 +555,7 @@ void paging_t::process_query_string_info()
             }
             break;
 
-        case '0': // the page number
+        case '0': // the page number (like "p123")
         case '1':
         case '2':
         case '3':
@@ -609,7 +609,7 @@ QString paging_t::generate_query_string_info(int32_t page_offset) const
     int32_t const page_size(get_page_size());
 
     bool need_comma(false);
-    if(f_start_offset > 0)
+    if(f_start_offset > 1)
     {
         // keep using the offset if defined
         int32_t offset(f_start_offset + page_offset * page_size);
@@ -748,13 +748,10 @@ void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32
     // no navigation necessary if the number of items is limited and
     // that limit is smaller or equal to the size of one page
     if((f_maximum_number_of_items != -1 && f_maximum_number_of_items <= f_page_size)
-    || get_number_of_items() < f_page_size)
+    || get_number_of_items() <= f_page_size)
     {
         return;
     }
-
-    QString const qs_path(f_snap->get_server_parameter("qs_path"));
-    uri.unset_query_option(qs_path);
 
     QDomDocument doc(element.ownerDocument());
     QDomElement ul(doc.createElement("ul"));
@@ -772,7 +769,7 @@ void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32
     int32_t first(0);
     int32_t last(0);
     int32_t current_index(0);
-    QStringList qs;
+    snap_string_list qs;
     QString const current_page_query_string(generate_query_string_info(0));
     qs.push_back(current_page_query_string);
     for(int32_t i(-1); i >= -next_previous_count; --i)
@@ -1055,7 +1052,7 @@ int32_t paging_t::get_previous_page() const
 int32_t paging_t::get_total_pages() const
 {
     int32_t const page_size(get_page_size());
-    return (get_number_of_items() + page_size - 1) / page_size;
+    return (get_number_of_items() + page_size - f_start_offset) / page_size;
 }
 
 
@@ -1149,28 +1146,6 @@ list::~list()
 }
 
 
-/** \brief Initialize the list.
- *
- * This function terminates the initialization of the list plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void list::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-
-    SNAP_LISTEN0(list, "server", server, attach_to_session);
-    SNAP_LISTEN(list, "server", server, register_backend_action, _1);
-    SNAP_LISTEN(list, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
-    SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
-    SNAP_LISTEN(list, "content", content::content, modified_content, _1);
-    SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
-    SNAP_LISTEN(list, "links", links::links, modified_link, _1, _2);
-    SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3, _4);
-}
-
-
 /** \brief Get a pointer to the list plugin.
  *
  * This function returns an instance pointer to the list plugin.
@@ -1180,7 +1155,7 @@ void list::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the list plugin.
  */
-list *list::instance()
+list * list::instance()
 {
     return g_plugin_list_factory.instance();
 }
@@ -1200,6 +1175,19 @@ QString list::description() const
     return "Generate lists of pages using a set of parameters as defined"
           " by the system (some lists are defined internally) and the end"
           " users.";
+}
+
+
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString list::dependencies() const
+{
+    return "|filter|layout|links|messages|output|";
 }
 
 
@@ -1241,7 +1229,7 @@ int64_t list::do_update(int64_t last_updated)
  */
 void list::initial_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     get_list_table();
     f_list_table.reset();
@@ -1260,9 +1248,33 @@ void list::initial_update(int64_t variables_timestamp)
  */
 void list::content_update(int64_t variables_timestamp)
 {
-    static_cast<void>(variables_timestamp);
+    NOTUSED(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Initialize the list.
+ *
+ * This function terminates the initialization of the list plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void list::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
+
+    SNAP_LISTEN0(list, "server", server, attach_to_session);
+    SNAP_LISTEN(list, "server", server, register_backend_cron, _1);
+    SNAP_LISTEN(list, "server", server, register_backend_action, _1);
+    SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
+    SNAP_LISTEN(list, "content", content::content, modified_content, _1);
+    SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
+    SNAP_LISTEN(list, "links", links::links, modified_link, _1, _2);
+    SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3);
+
+    SNAP_TEST_PLUGIN_SUITE_LISTEN(list);
 }
 
 
@@ -1351,30 +1363,10 @@ QtCassandra::QCassandraTable::pointer_t list::get_listref_table()
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The page being generated.
  * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  A fallback path in case ipath is not satisfactory.
  */
-void list::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void list::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
-    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
-}
-
-
-/** \brief Generate the page common content.
- *
- * This function generates some content that is expected in a page
- * by default.
- *
- * \param[in,out] ipath  The path being managed.
- * \param[in,out] page  The page being generated.
- * \param[in,out] body  The body being generated.
- * \param[in] ctemplate  The body being generated.
- */
-void list::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(page);
-    static_cast<void>(body);
-    static_cast<void>(ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, body);
 }
 
 
@@ -1392,12 +1384,12 @@ void list::on_generate_page_content(content::path_info_t& ipath, QDomElement& pa
  * \param[in] owner  The plugin owner of the page.
  * \param[in] type  The type of the page.
  */
-void list::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
+void list::on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type)
 {
-    static_cast<void>(owner);
-    static_cast<void>(type);
+    NOTUSED(owner);
+    NOTUSED(type);
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
     // if a list is defined in this content, make sure to mark the
@@ -1415,7 +1407,7 @@ void list::on_create_content(content::path_info_t& ipath, QString const& owner, 
         // zero marks the list as brand new so we use a different
         // algorithm to check the data in that case (i.e. the list of
         // rows in the list table is NOT complete!)
-        QString const key(ipath.get_key());
+        QString const key(ipath.get_branch_key());
         int64_t const zero(0);
         branch_table->row(key)->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->setValue(zero);
     }
@@ -1430,16 +1422,28 @@ void list::on_create_content(content::path_info_t& ipath, QString const& owner, 
  * adding a link or removing a link. By now the page should be quite
  * complete, outside of other links still missing.
  *
+ * \warning
+ * As a limitation, a list script that checks the links of another list
+ * will likely not update properly. This is because this function will
+ * no mark a page as modified when the link being created is a link
+ * from the list to a page that the list includes.
+ *
  * \param[in] link  The link that was just created or deleted.
  * \param[in] created  Whether the link was created (true) or deleted (false).
  */
 void list::on_modified_link(links::link_info const & link, bool const created)
 {
-    static_cast<void>(created);
+    NOTUSED(created);
 
-    content::path_info_t ipath;
-    ipath.set_path(link.key());
-    on_modified_content(ipath); // same as on_modified_content()
+    // no need to record the fact that we added a link in a list
+    // (that is, at this point a list script cannot depend on the
+    // links of another list...)
+    if(!f_list_link)
+    {
+        content::path_info_t ipath;
+        ipath.set_path(link.key());
+        on_modified_content(ipath); // same as on_modified_content()
+    }
 }
 
 
@@ -1464,54 +1468,105 @@ void list::on_modified_link(links::link_info const & link, bool const created)
  *
  * \param[in,out] ipath  The path to the page being modified.
  */
-void list::on_modified_content(content::path_info_t& ipath)
+void list::on_modified_content(content::path_info_t & ipath)
 {
     // if the same page is modified multiple times then we overwrite the
     // same entry multiple times
-    QString site_key(f_snap->get_site_key_with_slash());
+    content::content * content_plugin(content::content::instance());
+    QString const site_key(f_snap->get_site_key_with_slash());
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     QtCassandra::QCassandraTable::pointer_t listref_table(get_listref_table());
-    int64_t const start_date(f_snap->get_start_date());
+
     QByteArray key;
-    QtCassandra::appendInt64Value(key, start_date);
-    QtCassandra::appendStringValue(key, ipath.get_key());
+
+    int64_t const start_date(f_snap->get_start_date());
+    int64_t key_start_date(start_date + f_start_date_offset);
+    priority_t priority(f_priority);
+
+    // content cannot access list information so we have to change the
+    // priority for it...
+    if(content_plugin->is_updating())
+    {
+        // +1h is quite arbitrary, but we assume that a website may have
+        // a few lists that may require the entire setup to be complete
+        key_start_date += 60LL * 60LL * 1000000LL;
+
+        priority = LIST_PRIORITY_UPDATES;
+    }
+
+    {
+        // we need to have this run by a single process at a time
+        // otherwise we'll miss some dropCell() calls
+        QtCassandra::QCassandraLock lock(f_snap->get_context(), QString("%1#list-reference").arg(ipath.get_key()));
+
+        // handle a reference so it is possible to delete the old key for that
+        // very page later (i.e. if the page changes multiple times before the
+        // list processes have time to catch up)
+        QtCassandra::QCassandraValue existing_entry(listref_table->row(site_key)->cell(ipath.get_key())->value());
+        if(!existing_entry.nullValue())
+        {
+            QByteArray const old_key(existing_entry.binaryValue());
+
+            // get the smallest of the two priority, we need to keep that
+            // smaller number
+            //
+            priority_t old_priority(QtCassandra::safeUnsignedCharValue(old_key, 0));
+            int64_t old_key_start_date(QtCassandra::safeUnsignedCharValue(old_key, 0));
+
+            // keep the smallest priority
+            priority = std::min(priority, old_priority);
+            // keep the latest date at which to update
+            key_start_date = std::max(key_start_date, old_key_start_date);
+
+            // create the key with the new or old priority, whichever is
+            // smaller
+            //
+            QtCassandra::appendUnsignedCharValue(key, priority);
+            QtCassandra::appendInt64Value(key, key_start_date);
+            QtCassandra::appendStringValue(key, ipath.get_key());
+
+            if(old_key != key)
+            {
+                // drop only if the key changed (i.e. if the code modifies the
+                // same page over and over again within the same child process,
+                // then the key will not change.)
+                //
+                list_table->row(site_key)->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+            }
+        }
+        else
+        {
+            QtCassandra::appendUnsignedCharValue(key, priority);
+            QtCassandra::appendInt64Value(key, key_start_date);
+            QtCassandra::appendStringValue(key, ipath.get_key());
+        }
+
+        //
+        // TBD: should we really time these rows? at this point we cannot
+        //      safely delete them so the best is certainly to do that
+        //      (unless we use the start_date time to create/delete these
+        //      entries safely) -- the result if these row disappear too
+        //      soon is that duplicates will appear in the main content
+        //      which is not a big deal (XXX I really think we can delete
+        //      those using the start_date saved in the cells to sort them!)
+        //
+        QtCassandra::QCassandraValue timed_key;
+        timed_key.setBinaryValue(key);
+        timed_key.setTtl(86400 * 3); // 3 days--the list should be updated within 5 min. so 3 days is in case it crashed or did not start, maybe?
+
+        listref_table->row(site_key)->cell(ipath.get_key())->setValue(timed_key);
+    }
+
+    // we insert after because the old key may have had a smaller
+    // priority and we need to keep that smaller priority
+    //
     bool const modified(true);
     list_table->row(site_key)->cell(key)->setValue(modified);
-
-    // handle a reference so it is possible to delete the old key for that
-    // very page later (i.e. if the page changes multiple times before the
-    // list processes have time to catch up)
-    QString const ref_key(QString("%1#ref").arg(site_key));
-    QtCassandra::QCassandraValue existing_entry(listref_table->row(ref_key)->cell(ipath.get_key())->value());
-    if(!existing_entry.nullValue())
-    {
-        QByteArray old_key(existing_entry.binaryValue());
-        if(old_key != key)
-        {
-            // drop only if the key changed (i.e. if the code modifies the
-            // same page over and over again within the same child process,
-            // then the key will not change.)
-            list_table->row(site_key)->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
-        }
-    }
-    //
-    // TBD: should we really time these rows? at this point we cannot
-    //      safely delete them so the best is certainly to do that
-    //      (unless we use the start_date time to create/delete these
-    //      entries safely) -- the result if these row disappear too
-    //      soon is that duplicates will appear in the main content
-    //      which is not a big deal (XXX I really think we can delete
-    //      those using the start_date saved in the cells to sort them!)
-    //
-    QtCassandra::QCassandraValue timed_key;
-    timed_key.setBinaryValue(key);
-    timed_key.setTtl(86400 * 3); // 3 days--the list should be updated within 5 min. so 3 days is in case it crashed or did not start, maybe?
-    listref_table->row(ref_key)->cell(ipath.get_key())->setValue(timed_key);
+//SNAP_LOG_WARNING("adding new page \"")(ipath.get_key())("\" to list table (priority: ")(priority)(", offset: ")((key_start_date - start_date) / 1000000);
 
     // just in case the row changed, we delete the pre-compiled (cached)
     // scripts (this could certainly be optimized but really the scripts
     // are compiled so quickly that it won't matter.)
-    content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QString const branch_key(ipath.get_branch_key());
     branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
@@ -1544,8 +1599,124 @@ void list::on_attach_to_session()
     if(f_ping_backend)
     {
         // send a PING to the backend
-        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
     }
+}
+
+
+/** \brief Change the priority.
+ *
+ * This function saves a new priority to use on any future pages being
+ * created or modified (see the on_modified_content() function.)
+ *
+ * The priority should NOT be changed by directly calling this function.
+ * Instead, you want to use the safe_priority_t object on your stack.
+ * For example, when the user is trying to reset a page in a list,
+ * the processing function uses:
+ *
+ * \code
+ *     {
+ *         safe_priority_t safe_priority(LIST_PRIORITY_RESET);
+ *         on_modified_content(ipath);
+ *     }
+ * \endcode
+ *
+ * The use of the { ... } makes sure that the priority gets modified only
+ * for that specific call to on_modified_content().
+ *
+ * \param[in] priority  The new priority to use for any future addition
+ *                      of pages to the list table.
+ */
+void list::set_priority(priority_t priority)
+{
+    f_priority = priority;
+}
+
+
+/** \brief Retrieve the current list priority.
+ *
+ * This function returns the priority that the list is to used to and
+ * any pages to its list of pages to be processed.
+ *
+ * \return The current priority.
+ */
+list::priority_t list::get_priority() const
+{
+    return f_priority;
+}
+
+
+/** \brief Change the start date offset to increase latency.
+ *
+ * The offset is defined in microseconds. It defines the amount of time
+ * it takes before the list plugin is allowed to process that page. By
+ * default is is set to LIST_PROCESSING_LATENCY, which at time of writing
+ * is 10 seconds.
+ *
+ * In most cases you do not need to change this value. However, if you
+ * are working with a special plugin that needs to create many pages,
+ * especially permissions to change who has access to those pages, then
+ * the process may take more or around the default 10 seconds. In that,
+ * you want to change the start date offset with a (much) larger amount.
+ *
+ * You should never call this function directly. Instead look into
+ * using the RAII class safe_start_date_offset, which will automatically
+ * restore the default offset once you are done.
+ *
+ * \code
+ *      {
+ *          // set your my_new_offset value to the amount in microseconds
+ *          // you want the list plugin to wait before processing your
+ *          // new content
+ *          //
+ *          list::safe_start_date_offset saved_offset(my_new_offset);
+ *
+ *          content::content::instance()->create_content(...);
+ *      }
+ * \endcode
+ *
+ * \note
+ * The minimum value of offset_us is LIST_PROCESSING_LATENCY.
+ * We also clamp to a maximum of 24h.
+ *
+ * \param[in] offset_us  The offset to add to the start date of items
+ *                       added to the list.
+ */
+void list::set_start_date_offset(int64_t offset_us)
+{
+    if(offset_us < LIST_PROCESSING_LATENCY)
+    {
+        f_start_date_offset = LIST_PROCESSING_LATENCY;
+    }
+    else if(offset_us > 24LL * 60LL * 60LL * 1000000LL)
+    {
+        f_start_date_offset = 24LL * 60LL * 60LL * 1000000LL;
+    }
+    else
+    {
+        f_start_date_offset = offset_us;
+    }
+}
+
+
+/** \brief Retrieve the start date offset.
+ *
+ * By default, the act of creating or modifying a page is registered for
+ * immediate processing by the list plugin.
+ *
+ * There are cases, however, where an item is created and needs some time
+ * before getting 100% ready. This offset defines how long the list plugin
+ * should wait.
+ *
+ * The default wait is LIST_PROCESSING_LATENCY, which at time of writing is
+ * 10 seconds.
+ *
+ * \return The offset to add to the start date when registering a page for
+ *         reprocessing after modification, in microseconds.
+ */
+int64_t list::get_start_date_offset() const
+{
+    return f_start_date_offset;
 }
 
 
@@ -1621,13 +1792,13 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
                     .arg(start).arg(count));
     }
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
     QString const branch_key(ipath.get_branch_key());
     QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(branch_key));
 
-    char const *ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
+    char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
     int const len(static_cast<int>(strlen(ordered_pages) + 2));
 
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -1672,235 +1843,148 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
 }
 
 
-/** \brief Register the pagelist and standalonelist actions.
+/** \brief Register the pagelist action.
  *
- * This function registers this plugin as supporting the "pagelist" and
- * the "standalonelist" actions.
+ * This function registers this plugin CRON action named pagelist.
  *
- * This is used by the backend to continuously and as fast as possible build
- * lists of pages. It understands PINGs so one can wake this backend up as
- * soon as required.
- *
- * \note
- * At this time there is a 10 seconds delay between a PING and the
- * processing of the list. This is to make sure that all the data
- * was saved by the main server before running the backend.
+ * The "pagelist" is used by the backend to continuously and as fast as
+ * possible build and update lists of pages.
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void list::on_register_backend_action(server::backend_action_map_t& actions)
+void list::on_register_backend_cron(server::backend_action_set & actions)
 {
-    actions[get_name(name_t::SNAP_NAME_LIST_PAGELIST)] = this;
-    actions[get_name(name_t::SNAP_NAME_LIST_PROCESSLIST)] = this;
-    actions[get_name(name_t::SNAP_NAME_LIST_STANDALONELIST)] = this;
-    actions[get_name(name_t::SNAP_NAME_LIST_RESETLISTS)] = this;
+    actions.add_action(get_name(name_t::SNAP_NAME_LIST_PAGELIST), this);
 }
 
 
-/** \brief Retrieve the name of the signal used by the list plugin.
+/** \brief Register the various list actions.
  *
- * This function returns "pagelist_udp_signal". Note that it says "pagelist"
- * instead of just "list" because the --list command line option already
- * "allocates" the list action name.
+ * This function registers this plugin as supporting the following
+ * one time actions:
  *
- * See also the name_t::SNAP_NAME_LIST_SIGNAL_NAME.
+ * \li list::processalllists
+ * \li list::processlist
+ * \li list::resetlists
  *
- * \param[in] action  The concerned action.
+ * The "processalllist" adds all the pages of a website to the 'list'
+ * table. This will force the system to re-check every single page.
+ * In this case, the pages are give a really low priority which means
+ * pretty much all other requests will be worked on first. This is
+ * similar to running "list::resetlists" except that it does not
+ * recompute lists in one go.
  *
- * \return The name of the list UDP signal.
+ * \code
+ * sendbackend http://example.com -a list::processalllists
+ * \endcode
+ *
+ * The "processlist" expects a URL parameter set to the page to be
+ * checked, in other words, the URL of a page for which we want to
+ * simulate a change to. This is useful to get the system to re-build
+ * lists that may include that page as soon as possible. That being said,
+ * it appends it to the existing list of pages to be processed and that
+ * list could be (very) long so it may still take a moment before it
+ * gets processed. That being said, it will get processed way sooner than
+ * without doing such. The URL may just include the path.
+ *
+ * \code
+ * sendbackend http://example.com -a list::processlist -p URL=journal/201508
+ * \endcode
+ *
+ * The "list::resetlists" goes through the pages marked as lists and delete
+ * the existing list scripts (but not the content of the lists.) This
+ * will force the list process to recalculate the entire list instead
+ * of just a few changes.
+ *
+ * \code
+ * sendbackend http://example.com -a list::resetlists
+ * \endcode
+ *
+ * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-char const * list::get_signal_name(QString const & action) const
+void list::on_register_backend_action(server::backend_action_set & actions)
 {
-    if(action == get_name(name_t::SNAP_NAME_LIST_PAGELIST))
-    {
-        return get_name(name_t::SNAP_NAME_LIST_SIGNAL_NAME);
-    }
-    return backend_action::get_signal_name(action);
+    actions.add_action(get_name(name_t::SNAP_NAME_LIST_PROCESSALLLISTS), this);
+    actions.add_action(get_name(name_t::SNAP_NAME_LIST_PROCESSLIST),     this);
+    actions.add_action(get_name(name_t::SNAP_NAME_LIST_RESETLISTS),      this);
 }
 
 
 /** \brief Start the page list server.
  *
  * When running the backend the user can ask to run the pagelist
- * server (--action pagelist). This function captures those events.
- * It loops until stopped with a STOP message via the UDP address/port.
- * Note that Ctrl-C won't work because it does not support killing
- * both: the parent and child processes (we do a fork() to create
- * this child.)
+ * server (--cron-action list::pagelist). This function captures those
+ * events. It loops until stopped with a STOP message via the UDP
+ * address/port. Note that Ctrl-C will not work because it does not
+ * support killing both: the parent and child processes (we do a
+ * fork() to create this child.)
  *
- * The loop updates all the lists as required, then it
- * falls asleep until the next UDP PING event received via the
- * "pagelist_udp_signal" IP:Port information. (see get_signal_name().)
+ * The loop updates all the lists as required, then it returns.
+ * The snap_backend object will call us back in 5 minutes or when
+ * a PING is received.
  *
- * Note that because the UDP signals are not 100% reliable, the
- * server actually sleeps for 5 minutes and checks for new pages
- * whether a PING signal was received or not.
- *
- * The lists data is found in the Cassandra cluster and never
- * sent along the UDP signal. This means the UDP signals do not need
- * to be secure.
- *
- * The server should be stopped with the snapsignal tool using the
- * STOP event as follow:
+ * The pagelist backend can be stopped with the snapsignal tool
+ * using the STOP event as follow:
  *
  * \code
- * snapsignal -a pagelist STOP
+ * snapsignal pagelist/STOP
  * \endcode
  *
- * \note
- * The \p action parameter is here because some plugins may
- * understand multiple actions in which case we need to know
- * which action is waking us up.
+ * However, if you are running snapinit, you want to STOP snapinit
+ * instead:
+ *
+ * \code
+ * snapinit stop
+ * \endcode
  *
  * \param[in] action  The action this function is being called with.
  */
-void list::on_backend_action(QString const& action)
+void list::on_backend_action(QString const & action)
 {
-    content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-
     if(action == get_name(name_t::SNAP_NAME_LIST_PAGELIST))
     {
-        snap_backend* backend( dynamic_cast<snap_backend*>(f_snap.get()) );
-        if(backend == nullptr)
+        f_backend = dynamic_cast<snap_backend *>(f_snap.get());
+        if(!f_backend)
         {
-            throw list_exception_no_backend("list.cpp:on_backend_action(): could not determine the snap_backend pointer");
+            throw list_exception_no_backend("list::on_backend_action(): could not determine the snap_backend pointer");
         }
-        backend->create_signal( get_signal_name(action) );
 
-// Test creating just one link (*:*)
-//content::path_info_t list_ipath;
-//list_ipath.set_path("admin");
-//content::path_info_t page_ipath;
-//page_ipath.set_path("user");
-//bool const source_unique(false);
-//bool const destination_unique(false);
-//links::link_info source("list::links_test", source_unique, list_ipath.get_key(), list_ipath.get_branch());
-//links::link_info destination("list::links_test", destination_unique, page_ipath.get_key(), page_ipath.get_branch());
-//links::links::instance()->create_link(source, destination);
-//return;
+        // by default the date limit is 'now + 5 minutes'
+        f_date_limit = f_snap->get_start_date() + 5LL * 60LL * 1000000LL;
 
+        // if we did some work, we want to restart our process again
+        // as soon as possible (although we give other websites a chance
+        // to also get their lists up to date)
+        //
         QString const site_key(f_snap->get_site_key_with_slash());
-        QString const core_plugin_threshold(get_name(snap::name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
-        // loop until stopped
-        for(;;)
+        int const did_work(generate_new_lists(site_key)
+                         | generate_all_lists(site_key));
+
+        // Calculate when we want to be awaken again and transmit that
+        // information to the backend process via the database
+        //
+        int64_t date_limit(f_date_limit - f_snap->get_current_date());
+        if(date_limit < 0
+        || did_work != 0)
         {
-            // verify that the site is ready, if not, do not process lists yet
-            QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
-            if(!threshold.nullValue())
-            {
-                //list_table->clearCache(); -- we do that below in the loop no need here
-                content_table->clearCache();
-                branch_table->clearCache();
-                revision_table->clearCache();
-
-                // work as long as there is work to do
-                int did_work(1);
-                while(did_work != 0)
-                {
-                    did_work = 0;
-                    QtCassandra::QCassandraRowPredicate row_predicate;
-                    row_predicate.setCount(1000);
-                    for(;;)
-                    {
-                        list_table->clearCache();
-                        uint32_t const count(list_table->readRows(row_predicate));
-                        if(count == 0)
-                        {
-                            // no more lists to process
-                            break;
-                        }
-                        QtCassandra::QCassandraRows const rows(list_table->rows());
-                        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
-                                o != rows.end(); ++o)
-                        {
-                            // do not work on standalone websites
-                            if(!(*o)->exists(get_name(name_t::SNAP_NAME_LIST_STANDALONE)))
-                            {
-                                f_snap->init_start_date();
-                                QString const key(QString::fromUtf8(o.key().data()));
-                                if(key.startsWith(site_key))
-                                {
-                                    did_work |= generate_new_lists(key);
-                                    did_work |= generate_all_lists(key);
-                                }
-                            }
-
-                            // quickly end this process if the user requested a stop
-                            if(backend->stop_received())
-                            {
-                                // clean STOP
-                                // we have to exit otherwise we'd get called again with
-                                // the next website!?
-                                exit(0);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Stop on error
-            //
-            if( backend->get_error() )
-            {
-                SNAP_LOG_FATAL("list::on_backend_action(): caught a UDP server error");
-                exit(1);
-            }
-
-            // sleep till next PING (but max. 5 minutes)
-            //
-            snap_backend::message_t message;
-            if( backend->pop_message( message, 5 * 60 * 1000 ) )
-            {
-                // quickly end this process if the user requested a stop
-                if(backend->stop_received())
-                {
-                    // clean STOP
-                    // we have to exit otherwise we'd get called again with
-                    // the next website!?
-                    exit(0);
-                }
-
-                // Because there is a delay of LIST_PROCESSING_LATENCY
-                // between the time when the user generates the PING and
-                // the time we can make use of the data, we sleep here
-                // before processing; note that in most cases that means
-                // the data will be processed very quickly in comparison
-                // to skipping on it now and waiting another 5 minutes
-                // before doing anything on the new data (i.e. at this
-                // time LIST_PROCESSING_LATENCY is only 10 seconds!)
-                //
-                // LIST_PROCESSING_LATENCY is in micro-seconds, whereas
-                // the timespec structure expects nanoseconds
-                // TBD -- should we add 1 sec., just in case?
-                // TBD -- should we check for other UDP packets while
-                //        waiting?
-                struct timespec wait;
-                wait.tv_sec = LIST_PROCESSING_LATENCY / 1000000;
-                wait.tv_nsec = (LIST_PROCESSING_LATENCY % 1000000) * 1000;
-                nanosleep(&wait, NULL);
-            }
-            // else -- 5 min. time out or we received the STOP message
-
-            // quickly end this process if the user requested a stop
-            if(backend->stop_received())
-            {
-                // clean STOP
-                // we have to exit otherwise we'd get called again with
-                // the next website!?
-                exit(0);
-            }
+            date_limit = f_snap->get_start_date();
         }
-    }
-    else if(action == get_name(name_t::SNAP_NAME_LIST_STANDALONELIST))
-    {
-        // mark the site as a standalone website for its list management
-        QString const site_key(f_snap->get_site_key_with_slash());
-        int8_t const standalone(1);
-        list_table->row(site_key)->cell(get_name(name_t::SNAP_NAME_LIST_STANDALONE))->setValue(standalone);
+        else if(date_limit > 5LL * 60LL * 1000000LL)
+        {
+            // wait at most 5 min. from the start date
+            //
+            // note that should never happen since we start with
+            // "now + 5min." in f_date_limit and only reduce that
+            // value in the loops below
+            //
+            date_limit = f_snap->get_start_date() + 5LL * 60LL * 1000000LL;
+        }
+
+        snap_backend * sb(dynamic_cast<snap_backend *>(f_snap.get()));
+        if(sb != nullptr)
+        {
+            sb->add_uri_for_processing(action, date_limit, site_key);
+        }
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_PROCESSLIST))
     {
@@ -1908,7 +1992,16 @@ void list::on_backend_action(QString const& action)
         content::path_info_t ipath;
         ipath.set_path(url);
         on_modified_content(ipath);
-        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
+    }
+    else if(action == get_name(name_t::SNAP_NAME_LIST_PROCESSALLLISTS))
+    {
+        // re-add all the pages back to the list table; this is very similar
+        // to the "resetlists", only instead of reseting the lists themselves,
+        // we "process" all the pages that may go in those lists
+        //
+        add_all_pages_to_list_table(f_snap->get_site_key_with_slash());
+        f_snap->udp_ping(get_name(name_t::SNAP_NAME_LIST_PAGELIST));
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_RESETLISTS))
     {
@@ -1916,6 +2009,10 @@ void list::on_backend_action(QString const& action)
         // will force the list code to regenerate all the lists; this
         // should be useful only when the code changes in such a way
         // that the current lists may not be 100% correct as they are
+        //
+        content::content * content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+
         int64_t const start_date(f_snap->get_start_date());
         content::path_info_t ipath;
         QString const site_key(f_snap->get_site_key_with_slash());
@@ -1938,6 +2035,70 @@ void list::on_backend_action(QString const& action)
         throw snap_logic_exception(QString("list.cpp:on_backend_action(): list::on_backend_action(\"%1\") called with an unknown action...").arg(action));
     }
 }
+
+
+/** \brief Add all website pages to the list table.
+ *
+ * This function is used once in a while whenever no other data is being
+ * processed by the list backend processes. It adds all the pages of
+ * a website back to the list table so they all get re-processed.
+ *
+ * Since these are added with a very slow priority, they are likely to
+ * be ignored for a while if important work appears in the list.
+ *
+ * \param[in] site_key  The key of the site to add for review in the list of
+ *                      pages to check with the list backend processes.
+ */
+void list::add_all_pages_to_list_table(QString const & site_key)
+{
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    safe_priority_t safe_priority(LIST_PRIORITY_REVIEW);
+
+    // TODO: use the '*index*' row which is sorted
+
+    QtCassandra::QCassandraRowPredicate row_predicate;
+    row_predicate.setCount(1000);
+    for(;;)
+    {
+        content_table->clearCache();
+        uint32_t const count(content_table->readRows(row_predicate));
+        if(count == 0)
+        {
+            // no more pages to process
+            break;
+        }
+        QtCassandra::QCassandraRows const rows(content_table->rows());
+        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                o != rows.end(); ++o)
+        {
+            QString key(QString::fromUtf8(o.key().data()));
+            if(key.startsWith(site_key))
+            {
+                content::path_info_t page_ipath;
+                page_ipath.set_path(o.key());
+                on_modified_content(page_ipath);
+            }
+
+            // The STOP is problematic because we would stop mid-way meaning that
+            // some pages could end up being processed over and over whereas
+            // others not at all... to support a stop in this loop we would
+            // need to know where we stopped to start again at that position
+            // next time (only rows are not sorted so we cannot really do
+            // that...)
+            //
+            // // quickly end this process if the user requested a stop
+            // if(f_backend->stop_received())
+            // {
+            //     // clean STOP
+            //     // we have to exit otherwise we'd get called again with
+            //     // the next website!?
+            //     exit(0);
+            // }
+        }
+    }
+}
+
 
 
 /** \brief Implementation of the backend process signal.
@@ -2021,25 +2182,29 @@ void list::on_backend_process()
  * The available selectors are:
  *
  * \li all -- all the pages of this site
- * \li children -- children of the list itself
- * \li children=cpath -- children of the specified canonicalized path
+ * \li children -- direct children of the list itself
+ * \li children=path -- direct children of the specified specified path
+ * \li descendants -- children, children of children, etc. of the list itself
+ * \li descendants=path -- descendants starting at the specified path
  * \li public -- use the list of public pages (a shortcut for
  *               type=types/taxonomy/system/content-types/page/public
  * \li type=cpath -- pages of that the specified type as a canonicalized path
- * \li hand-picked=cpath-list -- a hand defined list of paths that represent
- *                               the pages to put in the list, the cpaths are
- *                               separated by new-line (\n) characters
+ * \li hand-picked=path-list -- a hand defined list of paths that represent
+ *                              the pages to put in the list, the cpaths are
+ *                              separated by new-line (\n) characters
  *
  * \param[in] site_key  The site we want to process.
  *
  * \return 1 if the function changed anything, 0 otherwise
  */
-int list::generate_new_lists(QString const& site_key)
+int list::generate_new_lists(QString const & site_key)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
     int did_work(0);
+
+    QVector<QString> lists_to_work_on;
 
     content::path_info_t ipath;
     ipath.set_path(site_key + get_name(name_t::SNAP_NAME_LIST_TAXONOMY_PATH));
@@ -2055,57 +2220,81 @@ int list::generate_new_lists(QString const& site_key)
         if(last_updated.nullValue()
         || last_updated.int64Value() == 0)
         {
-            SNAP_LOG_TRACE("list plugin working on new list \"")(list_ipath.get_key())("\"");
+            lists_to_work_on.push_back(list_ipath.get_key());
+        }
+    }
 
-            QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
-            QString const selector(list_row->cell(get_name(name_t::SNAP_NAME_LIST_SELECTOR))->value().stringValue());
+    for(auto it : lists_to_work_on)
+    {
+        content::path_info_t list_ipath;
+        list_ipath.set_path(it);
 
-            if(selector == "children")
+        // IMPORTANT NOTE: We may see this message many times for a brand
+        //                 new list; this happens when no items are ready
+        //                 to be added so the list continues to look like
+        //                 it is brand new... (i.e. list::last_updated is
+        //                 not getting set to anything)
+        //
+        SNAP_LOG_TRACE("list plugin working on new list \"")(list_ipath.get_key())("\"");
+
+        QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
+        QString const selector(list_row->cell(get_name(name_t::SNAP_NAME_LIST_SELECTOR))->value().stringValue());
+
+        if(selector == "children")
+        {
+            did_work |= generate_new_list_for_children(site_key, list_ipath);
+        }
+        else if(selector.startsWith("children="))
+        {
+            content::path_info_t root_ipath;
+            root_ipath.set_path(selector.mid(9));
+            did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, false);
+        }
+        else if(selector == "descendants")
+        {
+            did_work |= generate_new_list_for_descendants(site_key, list_ipath);
+        }
+        else if(selector.startsWith("descendants="))
+        {
+            content::path_info_t root_ipath;
+            root_ipath.set_path(selector.mid(12));
+            did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, true);
+        }
+        else if(selector == "public")
+        {
+            did_work |= generate_new_list_for_public(site_key, list_ipath);
+        }
+        else if(selector.startsWith("type="))
+        {
+            // user can specify any type!
+            did_work |= generate_new_list_for_type(site_key, list_ipath, selector.mid(5));
+        }
+        else if(selector.startsWith("hand-picked="))
+        {
+            // user can specify any page directly!
+            did_work |= generate_new_list_for_hand_picked_pages(site_key, list_ipath, selector.mid(12));
+        }
+        else // "all"
+        {
+            if(selector != "all")
             {
-                did_work |= generate_new_list_for_children(site_key, list_ipath);
-            }
-            else if(selector.startsWith("children="))
-            {
-                content::path_info_t root_ipath;
-                root_ipath.set_path(selector.mid(9));
-                did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, false);
-            }
-            else if(selector == "public")
-            {
-                did_work |= generate_new_list_for_public(site_key, list_ipath);
-            }
-            else if(selector.startsWith("type="))
-            {
-                // user can specify any type!
-                did_work |= generate_new_list_for_type(site_key, list_ipath, selector.mid(5));
-            }
-            else if(selector.startsWith("hand-picked="))
-            {
-                // user can specify any page directly!
-                did_work |= generate_new_list_for_hand_picked_pages(site_key, list_ipath, selector.mid(12));
-            }
-            else // "all"
-            {
-                if(selector != "all")
+                if(selector.isEmpty())
                 {
-                    if(selector.isEmpty())
-                    {
-                        // the default is all because we cannot really know
-                        // what pages should be checked (although the field
-                        // is considered mandatory, but we ought to forget
-                        // once in a while)
-                        SNAP_LOG_WARNING("Mandatory field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" not defined for \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
-                    }
-                    else
-                    {
-                        // this could happen if you are running different
-                        // versions of snap and an old backend hits a new
-                        // still unknown selector
-                        SNAP_LOG_WARNING("Field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" set to unknown value \"")(selector)("\" in \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
-                    }
+                    // the default is all because we cannot really know
+                    // what pages should be checked (although the field
+                    // is considered mandatory, but we ought to forget
+                    // once in a while)
+                    SNAP_LOG_WARNING("Mandatory field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" not defined for \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
                 }
-                did_work |= generate_new_list_for_all_pages(site_key, list_ipath);
+                else
+                {
+                    // this could happen if you are running different
+                    // versions of snap and an old backend hits a new
+                    // still unknown selector
+                    SNAP_LOG_WARNING("Field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" set to unknown value \"")(selector)("\" in \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
+                }
             }
+            did_work |= generate_new_list_for_all_pages(site_key, list_ipath);
         }
     }
 
@@ -2113,7 +2302,7 @@ int list::generate_new_lists(QString const& site_key)
 }
 
 
-int list::generate_new_list_for_all_pages(QString const& site_key, content::path_info_t& list_ipath)
+int list::generate_new_list_for_all_pages(QString const & site_key, content::path_info_t & list_ipath)
 {
     // This is an extremely costly search which is similar to descendants starting from root instead of list_ipath
     content::path_info_t root_ipath;
@@ -2122,21 +2311,21 @@ int list::generate_new_list_for_all_pages(QString const& site_key, content::path
 }
 
 
-int list::generate_new_list_for_descendant(QString const& site_key, content::path_info_t& list_ipath)
+int list::generate_new_list_for_descendants(QString const & site_key, content::path_info_t & list_ipath)
 {
-    static_cast<void>(site_key);
+    NOTUSED(site_key);
     return generate_new_list_for_all_descendants(list_ipath, list_ipath, true);
 }
 
 
-int list::generate_new_list_for_children(QString const& site_key, content::path_info_t& list_ipath)
+int list::generate_new_list_for_children(QString const & site_key, content::path_info_t & list_ipath)
 {
-    static_cast<void>(site_key);
+    NOTUSED(site_key);
     return generate_new_list_for_all_descendants(list_ipath, list_ipath, false);
 }
 
 
-int list::generate_new_list_for_all_descendants(content::path_info_t& list_ipath, content::path_info_t& parent, bool const descendants)
+int list::generate_new_list_for_all_descendants(content::path_info_t & list_ipath, content::path_info_t & parent, bool const descendants)
 {
     int did_work(0);
 
@@ -2147,7 +2336,7 @@ int list::generate_new_list_for_all_descendants(content::path_info_t& list_ipath
     {
         content::path_info_t child_ipath;
         child_ipath.set_path(child_info.key());
-        did_work |= generate_list_for_page(child_ipath, list_ipath);
+        did_work |= generate_list_for_page(child_ipath, list_ipath, INT64_MAX);
 
         if(descendants)
         {
@@ -2159,13 +2348,13 @@ int list::generate_new_list_for_all_descendants(content::path_info_t& list_ipath
 }
 
 
-int list::generate_new_list_for_public(QString const& site_key, content::path_info_t& list_ipath)
+int list::generate_new_list_for_public(QString const & site_key, content::path_info_t & list_ipath)
 {
     return generate_new_list_for_type(site_key, list_ipath, "types/taxonomy/system/content-types/page/public");
 }
 
 
-int list::generate_new_list_for_type(QString const& site_key, content::path_info_t& list_ipath, QString const& type)
+int list::generate_new_list_for_type(QString const & site_key, content::path_info_t & list_ipath, QString const & type)
 {
 #ifdef DEBUG
     if(type.startsWith("/"))
@@ -2189,20 +2378,20 @@ int list::generate_new_list_for_type(QString const& site_key, content::path_info
     {
         content::path_info_t child_ipath;
         child_ipath.set_path(child_info.key());
-        did_work |= generate_list_for_page(child_ipath, list_ipath);
+        did_work |= generate_list_for_page(child_ipath, list_ipath, INT64_MAX);
     }
 
     return did_work;
 }
 
 
-int list::generate_new_list_for_hand_picked_pages(QString const& site_key, content::path_info_t& list_ipath, QString const& hand_picked_pages)
+int list::generate_new_list_for_hand_picked_pages(QString const & site_key, content::path_info_t & list_ipath, QString const & hand_picked_pages)
 {
-    static_cast<void>(site_key);
+    NOTUSED(site_key);
 
     int did_work(0);
 
-    QStringList pages(hand_picked_pages.split("\n"));
+    snap_string_list pages(hand_picked_pages.split("\n"));
     int const max_pages(pages.size());
     for(int i(0); i < max_pages; ++i)
     {
@@ -2213,7 +2402,7 @@ int list::generate_new_list_for_hand_picked_pages(QString const& site_key, conte
         }
         content::path_info_t page_ipath;
         page_ipath.set_path(path);
-        did_work |= generate_list_for_page(page_ipath, list_ipath);
+        did_work |= generate_list_for_page(page_ipath, list_ipath, INT64_MAX);
     }
 
     return did_work;
@@ -2253,7 +2442,7 @@ int list::generate_new_list_for_hand_picked_pages(QString const& site_key, conte
  *
  * \return 1 if the function changed anything, 0 otherwise
  */
-int list::generate_all_lists(QString const& site_key)
+int list::generate_all_lists(QString const & site_key)
 {
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     QtCassandra::QCassandraRow::pointer_t list_row(list_table->row(site_key));
@@ -2267,69 +2456,119 @@ int list::generate_all_lists(QString const& site_key)
     //       the oldest entries are automatically worked on first
     //
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100); // do one round then exit
+    column_predicate.setCount(100); // do one round then exit (we also check time and run at most 10ms too)
     column_predicate.setIndex(); // behave like an index
 
-    list_row->clearCache();
-    list_row->readCells(column_predicate);
-    QtCassandra::QCassandraCells const cells(list_row->cells());
-    if(cells.isEmpty())
-    {
-        return 0;
-    }
-
     int did_work(0);
-
-    // handle one batch
-    for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
-            c != cells.end();
-            ++c)
+    int64_t const loop_start_time(f_snap->get_current_date());
+    bool continue_work(true);
+    do
     {
-        int64_t const start_date(f_snap->get_start_date());
-
-        // the cell
-        QtCassandra::QCassandraCell::pointer_t cell(*c);
-        // the key starts with the "start date" and it is followed by a
-        // string representing the row key in the content table
-        QByteArray const& key(cell->columnKey());
-        if(key.size() < 8)
+        list_row->clearCache();
+        list_row->readCells(column_predicate);
+        QtCassandra::QCassandraCells const cells(list_row->cells());
+        if(cells.isEmpty())
         {
-            // drop any invalid entries, not need to keep them here
-            list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-            continue;
-        }
-
-        int64_t const page_start_date(QtCassandra::int64Value(key, 0));
-        if(page_start_date + LIST_PROCESSING_LATENCY > start_date)
-        {
-            // since the columns are sorted, anything after that will be
-            // inaccessible date wise
+            // we reached the end of the list
+            //continue_work = false;
             break;
         }
 
-        // print out the row being worked on
-        // (if it crashes it is really good to know where)
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                c != cells.end();
+                ++c)
         {
-            QString name;
-            int64_t time(QtCassandra::uint64Value(key, 0));
-            char buf[64];
-            struct tm t;
-            time_t const seconds(time / 1000000);
-            gmtime_r(&seconds, &t);
-            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-            name = QString("%1.%2 (%3) %4").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time).arg(QtCassandra::stringValue(key, sizeof(int64_t)));
-            SNAP_LOG_TRACE("list plugin working on column \"")(name)("\"");
+            int64_t const start_date(f_snap->get_start_date());
+
+            // the cell
+            QtCassandra::QCassandraCell::pointer_t cell(*c);
+            // the key starts with the "start date" and it is followed by a
+            // string representing the row key in the content table
+            QByteArray const & key(cell->columnKey());
+            if(static_cast<size_t>(key.size()) < sizeof(unsigned char) + sizeof(int64_t))
+            {
+                // drop any invalid entries, no need to keep them here
+                list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                continue;
+            }
+
+            priority_t const priority(QtCassandra::safeUnsignedCharValue(key, 0));
+
+            // Note: we now include the latency in the key so we do not
+            //       test it here anymore
+            //
+            int64_t const update_request_time(QtCassandra::safeInt64Value(key, sizeof(unsigned char)));
+            if(update_request_time > start_date)
+            {
+                if(update_request_time < f_date_limit)
+                {
+                    f_date_limit = update_request_time;
+                }
+
+                // since the columns are sorted, anything after that will be
+                // inaccessible date wise
+                //
+                // since we added a priority we cannot just have
+                //
+                //    continue_workd = false;
+                //
+                // as is...
+                //
+                if(priority >= LIST_PRIORITY_SLOW && did_work != 0)
+                {
+                    // stop the loop if the only thing left are slow pokes
+                    // and some work was already done
+                    //
+                    continue_work = false;
+                    break;
+                }
+
+                // otherwise try with the next entry
+                continue;
+            }
+
+            QString const row_key(QtCassandra::stringValue(key, sizeof(unsigned char) + sizeof(int64_t)));
+
+            // print out the row being worked on
+            // (if it crashes it is really good to know where)
+            {
+                char buf[64];
+                struct tm t;
+                time_t const seconds(update_request_time / 1000000);
+                gmtime_r(&seconds, &t);
+                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+                QString const name(QString("[%1] %2.%3 (%4) %5")
+                            .arg(static_cast<int>(priority))
+                            .arg(buf)
+                            .arg(update_request_time % 1000000, 6, 10, QChar('0'))
+                            .arg(update_request_time)
+                            .arg(row_key));
+                SNAP_LOG_TRACE("list plugin working on column \"")(name)("\"");
+            }
+
+            did_work |= generate_all_lists_for_page(site_key, row_key, update_request_time);
+
+            // we handled that page for all the lists that we have on
+            // this website, so drop it now
+            list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            did_work |= 1; // since we delete an entry, we did something and we have to return did_work != 0
+
+            SNAP_LOG_TRACE("list is done working on this column.");
         }
 
-        QString const row_key(QtCassandra::stringValue(key, sizeof(int64_t)));
-        did_work |= generate_all_lists_for_page(site_key, row_key);
-
-        // we handled that page for all the lists that we have on
-        // this website, so drop it now
-        list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-
-        SNAP_LOG_TRACE("list is done working on this column.");
+        // run for a max. of 10 seconds
+        if(continue_work)
+        {
+            int64_t const loop_current_time(f_snap->get_current_date());
+            if(loop_current_time - loop_start_time > 10 * 1000000)
+            {
+                //continue_work = false; -- no need to do this, we can just break
+                break;
+            }
+        }
     }
+    while(continue_work);
 
     // clear our cache
     f_check_expressions.clear();
@@ -2339,7 +2578,7 @@ int list::generate_all_lists(QString const& site_key)
 }
 
 
-int list::generate_all_lists_for_page(QString const& site_key, QString const& page_key)
+int list::generate_all_lists_for_page(QString const & site_key, QString const & page_key, int64_t update_request_time)
 {
     content::path_info_t page_ipath;
     page_ipath.set_path(page_key);
@@ -2389,7 +2628,8 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
         QString const key(child_info.key());
         content::path_info_t list_ipath;
         list_ipath.set_path(key);
-        did_work |= generate_list_for_page(page_ipath, list_ipath);
+//SNAP_LOG_WARNING("generate list \"")(list_ipath.get_key())("\" for page \"")(page_ipath.get_key());
+        did_work |= generate_list_for_page(page_ipath, list_ipath, update_request_time);
     }
 
     return did_work;
@@ -2403,19 +2643,38 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
  * the list (if it was not there). If it is not a match, the page is
  * removed from the list (if it was there.)
  *
- * \param[in] page_ipath  The path to the page being tested.
+ * \param[in,out] page_ipath  The path to the page being tested.
  * \param[in,out] list_ipath  The path to the list being worked on.
+ * \param[in] update_request_time  The time when the last change was registered.
  *
  * \return Zero (0) if nothing happens, 1 if the list was modified.
  */
-int list::generate_list_for_page(content::path_info_t& page_ipath, content::path_info_t& list_ipath)
+int list::generate_list_for_page(content::path_info_t & page_ipath, content::path_info_t & list_ipath, int64_t update_request_time)
 {
     // whether the function did change something: 0 no, 1 yes
     int did_work(0);
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
+
+    // check whether we already updated that page
+    // (because the same page may be listed many times in the list table)
+    // we allow a 1 minute gap because right now we do not yet have the
+    // correct way to create pages (i.e. create a finilized page before
+    // we move forward; today we create a basic entry, send the signal
+    // to the list then add content and links... which could take some
+    // time which is not otherwise taken in account)
+    //
+    // this does not seem to do what I was hoping it would do...
+    // maybe we can debug this later
+    //
+    //int64_t const last_updated(list_row->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value().safeInt64Value());
+    NOTUSED(update_request_time);
+    //if(last_updated - 60 * 1000000 > update_request_time)
+    //{
+    //    return did_work;
+    //}
 
     try
     {
@@ -2429,7 +2688,9 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
             return 0;
         }
 
-        // TODO testing just the row is not enough to know whether it was deleted
+        // TODO: testing just the row is not enough to know whether it was deleted
+        //       (I think we will also always have content::created in the
+        //       branch assuming it was properly created)
         if(!branch_table->exists(page_ipath.get_branch_key()))
         {
             // branch disappeared... ignore
@@ -2443,9 +2704,11 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
         QString const list_key_in_page(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_KEY)).arg(list_ipath.get_key()));
         bool const included(run_list_check(list_ipath, page_ipath));
         QString const new_item_key(run_list_item_key(list_ipath, page_ipath));
-        QString const new_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
         if(included)
         {
+//SNAP_LOG_WARNING("------- include this item");
+            QString const new_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
+
             // the check script says to include this item in this list;
             // first we need to check to find under which key it was
             // included if it is already there because it may have
@@ -2481,7 +2744,10 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
                 bool const destination_unique(false);
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
                 links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
-                links::links::instance()->create_link(source, destination);
+                {
+                    csspp::safe_bool_t save_list_link(*f_list_link.ptr());
+                    links::links::instance()->create_link(source, destination);
+                }
 
                 // create the ordered list
                 list_row->cell(new_item_key_full)->setValue(page_ipath.get_key());
@@ -2510,21 +2776,32 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
                 bool const destination_unique(false);
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
                 links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
+                csspp::safe_bool_t save_list_link(*f_list_link.ptr());
                 links::links::instance()->delete_this_link(source, destination);
 
                 did_work = 1;
             }
         }
-
+    }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_ERROR("exception \"")(e.what())("\" occurred while attempting to create the list for page \"")(page_ipath.get_key())("\".");
+        did_work = 1;
     }
     catch(...)
     {
+        SNAP_LOG_ERROR("an unknown exception occurred while attempting to create the list for page \"")(page_ipath.get_key())("\".");
         did_work = 1;
     }
 
     // if a new list failed in some way, we still get this value because
     // trying again will probably not help; also empty lists would otherwise
     // not get this date
+    //
+    // WARNING: it is VERY important that we use a date defined BEFORE
+    //          we started the generation of the list; this is very
+    //          important otherwise we would miss many updates required
+    //          by the front end.
     //
     // TODO: make sure we do not set this flag if we are quitting early
     //       (i.e. child receives a STOP signal)
@@ -2536,16 +2813,17 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
     // if we did work, the list size changed so we have to recalculate the
     // length (list::number_of_items) -- since we cannot be totally sure that
     // something was added or removed, we recalculate the size each time for
-    // now but this is very slow so we will want to fix the optimize that
+    // now but this is very slow so we will want to optimize that
     // at a later time to make sure we do not take forever to build lists
     //
     // on the other hand, once a list is complete and we just add an
-    // entry every now and then, this is not an overhead at all
+    // entry every now and then, this is not much of an overhead at all
     //
     if(did_work != 0)
     {
-        char const *ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
+        char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
 
+        // count the new total number of ordered pages
         int32_t count(0);
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
         column_predicate.setStartColumnName(QString("%1::").arg(ordered_pages));
@@ -2573,7 +2851,7 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
 }
 
 
-/** \brief Retrieve the test script of a list.
+/** \brief Execute the test script of a list.
  *
  * This function is used to run the test script of a list object against a
  * page. It returns whether it is a match.
@@ -2683,7 +2961,7 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
  *
  * \return The item key as a string.
  */
-QString list::run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath)
+QString list::run_list_item_key(content::path_info_t & list_ipath, content::path_info_t & page_ipath)
 {
     QString const branch_key(list_ipath.get_branch_key());
     snap_expr::expr::expr_pointer_t e(nullptr);
@@ -2691,7 +2969,7 @@ QString list::run_list_item_key(content::path_info_t& list_ipath, content::path_
     {
         e = snap_expr::expr::expr_pointer_t(new snap_expr::expr);
         QByteArray program;
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
         QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->value());
         if(compiled_script.nullValue())
@@ -2714,7 +2992,7 @@ QString list::run_list_item_key(content::path_info_t& list_ipath, content::path_
                 {
                     // TODO: generate a double error!
                     //       this should really not happen
-                    //       because "0" is definitively a valid script
+                    //       because "\"---\"" is definitively a valid script
                     return "";
                 }
             }
@@ -2761,23 +3039,22 @@ QString list::run_list_item_key(content::path_info_t& list_ipath, content::path_
  * [list::theme(path="<list path>", theme="<theme name>", start="<start>", count="<count>")]
  * \endcode
  *
- * Theme the list define at \<list path\> with the theme \<theme name\>.
+ * Theme the list defined at \<list path\> with the theme \<theme name\>.
  * You may skip some items and start with item \<start\> instead of item 0.
  * You may specified the number of items to display with \<count\>. Be
  * careful because by default all the items are shown (Although there is a
- * system limit which at this time is 10,000 that still a LARGE list!)
- * The theme name, start, and count paramters are optional.
+ * system limit which at this time is 10,000 which is still a very LARGE
+ * list!) The theme name, start, and count parameters are optional.
+ * The path is mandatory. It can be empty if the root page was transformed
+ * into a list.
  *
  * \param[in,out] ipath  The path to the page being worked on.
- * \param[in] plugin_owner  The plugin owner of the ipath data.
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
-    static_cast<void>(plugin_owner);
-    static_cast<void>(xml);
+    NOTUSED(xml);
 
     // a list::... token?
     if(!token.is_namespace("list::"))
@@ -2802,7 +3079,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         if(path_param.f_value.isEmpty())
         {
             token.f_error = true;
-            token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list path (first parameter) of the list::theme() function cannot be an empty string.</span>";
+            token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list 'path' (first parameter) of the list::theme() function cannot be an empty string.</span>";
             return;
         }
 
@@ -2865,13 +3142,13 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             if(!ok)
             {
                 token.f_error = true;
-                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list count (forth parameter) of the list::theme() function must be a valid integer.</span>";
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list 'count' (forth parameter) of the list::theme() function must be a valid integer.</span>";
                 return;
             }
             if(count != -1 && count <= 0)
             {
                 token.f_error = true;
-                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list count (forth parameter) of the list::theme() function must be a valid integer large than zero or -1.</span>";
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list 'count' (forth parameter) of the list::theme() function must be a valid integer large than zero or -1.</span>";
                 return;
             }
         }
@@ -2880,13 +3157,26 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
 
         content::path_info_t list_ipath;
         list_ipath.set_path(path_param.f_value);
-        list_ipath.set_parameter("action", "view"); // we are just viewing this list
+        QString const list_cpath(list_ipath.get_cpath());
+        if(list_cpath == "admin"
+        || list_cpath.startsWith("admin/"))
+        {
+            // although we are just viewing lists, only "administer" is
+            // used when visiting pages under /admin...
+            //
+            list_ipath.set_parameter("action", "administer");
+        }
+        else
+        {
+            // we are just viewing this list
+            list_ipath.set_parameter("action", "view");
+        }
 
         quiet_error_callback list_error_callback(f_snap, true);
-        plugin *list_plugin(path::path::instance()->get_plugin(list_ipath, list_error_callback));
+        plugin * list_plugin(path::path::instance()->get_plugin(list_ipath, list_error_callback));
         if(!list_error_callback.has_error() && list_plugin)
         {
-            layout::layout_content *list_content(dynamic_cast<layout::layout_content *>(list_plugin));
+            layout::layout_content * list_content(dynamic_cast<layout::layout_content *>(list_plugin));
             if(list_content == nullptr)
             {
                 f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
@@ -2901,7 +3191,11 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             // TODO: use a paging_t object to read the list so we can
             //       append a navigation and handle the page parameter
             //
-            list_item_vector_t items(read_list(list_ipath, start, count));
+            paging_t paging(f_snap, list_ipath);
+            paging.set_start_offset(start + 1);
+            paging.set_maximum_number_of_items(count);
+            paging.process_query_string_info();
+            list_item_vector_t items(paging.read_list());
             snap_child::post_file_t f;
 
             // Load the list body
@@ -2948,7 +3242,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             }
             QString const item_theme_xsl(QString::fromUtf8(f.get_data()));
 
-            layout::layout *layout_plugin(layout::layout::instance());
+            layout::layout * layout_plugin(layout::layout::instance());
             QDomDocument list_doc(layout_plugin->create_document(list_ipath, list_plugin));
             layout_plugin->create_body(list_doc, list_ipath, list_body_xsl, list_content);
             // TODO: fix this problem (i.e. /products, /feed...)
@@ -2992,88 +3286,103 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                 // (opposed to the test when going to the page or generating
                 // the list in the first place)
                 item_ipath.set_parameter("mode", "display");
-                plugin *item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
+                plugin * item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
+                layout_content * l(dynamic_cast<layout_content *>(item_plugin));
                 if(!list_error_callback.has_error() && item_plugin)
                 {
-                    // put each box in a filter tag so that way we have
-                    // a different owner and path for each
-                    QDomDocument item_doc(layout_plugin->create_document(item_ipath, item_plugin));
-                    QDomElement item_root(item_doc.documentElement());
-                    item_root.setAttribute("index", index);
-
-                    FIELD_SEARCH
-                        (content::field_search::command_t::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
-                        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
-
-                        // snap/head/metadata/desc[@type="list_uri"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_key())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_uri]/data")
-
-                        // snap/head/metadata/desc[@type="list_path"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_cpath())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_path]/data")
-
-                        // snap/head/metadata/desc[@type="box_uri"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_uri]/data")
-
-                        // snap/head/metadata/desc[@type="box_path"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_cpath())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_path]/data")
-
-                        // snap/head/metadata/desc[@type="main_page_uri"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_uri]/data")
-
-                        // snap/head/metadata/desc[@type="main_page_path"]/data
-                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_cpath())
-                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_path]/data")
-
-                        // retrieve names of all the boxes
-                        ;
-
-                    layout_content *l(dynamic_cast<layout_content *>(item_plugin));
-                    if(!l)
+                    if(l)
                     {
-                        throw snap_logic_exception("the item_plugin pointer was not a layout_content");
-                    }
-                    layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, l);
+                        // put each box in a filter tag so that way we have
+                        // a different owner and path for each
+                        //
+                        QDomDocument item_doc(layout_plugin->create_document(item_ipath, item_plugin));
+                        QDomElement item_root(item_doc.documentElement());
+                        item_root.setAttribute("index", index);
+
+                        FIELD_SEARCH
+                            (content::field_search::command_t::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
+                            (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+
+                            // snap/head/metadata/desc[@type="list_uri"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_key())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_uri]/data")
+
+                            // snap/head/metadata/desc[@type="list_path"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_cpath)
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_path]/data")
+
+                            // snap/head/metadata/desc[@type="box_uri"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_uri]/data")
+
+                            // snap/head/metadata/desc[@type="box_path"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_cpath())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_path]/data")
+
+                            // snap/head/metadata/desc[@type="main_page_uri"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_uri]/data")
+
+                            // snap/head/metadata/desc[@type="main_page_path"]/data
+                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_cpath())
+                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_path]/data")
+
+                            // retrieve names of all the boxes
+                            ;
+
+//SNAP_LOG_WARNING("create body for item ")(i)(" with index ")(index);
+                        layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, l);
 //std::cerr << "source to be parsed [" << item_doc.toString(-1) << "]\n";
-                    QDomElement item_body(snap_dom::get_element(item_doc, "body"));
-                    item_body.setAttribute("index", index);
-                    QString themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
+                        QDomElement item_body(snap_dom::get_element(item_doc, "body"));
+                        item_body.setAttribute("index", index);
+//SNAP_LOG_WARNING("apply theme to item ")(i)(" with index ")(index);
+                        QString const themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
 //std::cerr << "themed item [" << themed_item << "]\n";
 
-                    // add that result to the list document
-                    QDomElement item(list_doc.createElement("item"));
-                    list_element.appendChild(item);
-                    snap_dom::insert_html_string_to_xml_doc(item, themed_item);
+                        // add that result to the list document
+                        QDomElement item(list_doc.createElement("item"));
+                        list_element.appendChild(item);
+                        snap_dom::insert_html_string_to_xml_doc(item, themed_item);
 
-                    ++index; // index only counts items added to the output
+                        ++index; // index only counts items added to the output
+                    }
+                    else
+                    {
+                        SNAP_LOG_ERROR("the item_plugin pointer for \"")
+                                      (item_plugin->get_plugin_name())
+                                      ("\" is not a layout_content");
+                    }
                 }
             }
+
+            QDomElement navigation_tag(list_doc.createElement("navigation"));
+            body.appendChild(navigation_tag);
+            paging.generate_list_navigation(navigation_tag, f_snap->get_uri(), 5, true, true, true);
+
 //std::cerr << "resulting XML [" << list_doc.toString(-1) << "]\n";
 
             // now theme the list as a whole
             // we add a wrapper so we can use /node()/* in the final theme
+//SNAP_LOG_WARNING("apply list theme");
             token.f_replacement = layout_plugin->apply_theme(list_doc, list_theme_xsl, theme);
         }
         // else list is not accessible (permission "problem")
+//else SNAP_LOG_FATAL("list::on_replace_token() list \"")(list_ipath.get_key())("\" is not accessible.");
     }
 }
 
 
-void list::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+void list::on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box)
 {
-    static_cast<void>(page_cpath);
+    NOTUSED(page_cpath);
 
-    output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
+    output::output::instance()->on_generate_main_content(ipath, page, box);
 }
 
 
-void list::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+void list::on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
-    static_cast<void>(destination_branch);
+    NOTUSED(destination_branch);
 
     QtCassandra::QCassandraCells left_cells;
 

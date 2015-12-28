@@ -21,6 +21,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/plugins/avatar">
     <file>content.xml</file>
   </qresource>
+  <qresource prefix="/images/avatar">
+    <file>avatar-logo-64x64.png</file>
+  </qresource>
   <qresource prefix="/xml/editor">
     <file>avatar-settings-page.xml</file>
   </qresource>

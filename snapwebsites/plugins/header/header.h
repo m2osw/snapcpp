@@ -53,15 +53,22 @@ public:
                         header();
                         ~header();
 
+    // plugins::plugin implementation
     static header *     instance();
+    virtual QString     dependencies() const;
+    virtual QString     settings_path() const;
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
+    virtual void        bootstrap(snap_child * snap);
 
-    void                on_bootstrap(snap_child * snap);
+    // path::path_execute implementation
     virtual bool        on_path_execute(content::path_info_t & ipath);
-    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    void                on_generate_header_content(content::path_info_t & ipath, QDomElement & header_dom, QDomElement & metadata, QString const & ctemplate);
-    //void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+
+    // layout::layout_content implementation
+    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // layout signals
+    void                on_generate_header_content(content::path_info_t & ipath, QDomElement & header_dom, QDomElement & metadata);
 
 private:
     void                content_update(int64_t variables_timestamp);

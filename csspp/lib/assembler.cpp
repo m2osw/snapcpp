@@ -30,7 +30,6 @@
 
 #include "csspp/assembler.h"
 
-#include "csspp/color.h"
 #include "csspp/exceptions.h"
 #include "csspp/lexer.h"
 #include "csspp/nth_child.h"
@@ -53,6 +52,20 @@ flags_t const g_flag_optional_space_after               = 0x08;
 flags_t const g_flag_optional_spaces_or_newlines        = 0x10;
 flags_t const g_flag_optional_space_before_or_newline   = 0x20;
 flags_t const g_flag_optional_space_after_or_newline    = 0x40;
+
+void verify_dimension(node::pointer_t n)
+{
+    std::string const dimension(n->get_string());
+    std::string::size_type pos(dimension.find_first_of(" */"));
+    if(pos != std::string::npos)
+    {
+        error::instance() << n->get_position()
+                << "\""
+                << dimension
+                << "\" is not a valid CSS dimension."
+                << error_mode_t::ERROR_ERROR;
+    }
+}
 
 } // no name namespace
 
@@ -127,6 +140,9 @@ public:
     {
     }
 
+    virtual ~assembler_compressed()
+    {
+    }
 };
 
 class assembler_tidy : public assembler_compressed
@@ -134,6 +150,10 @@ class assembler_tidy : public assembler_compressed
 public:
     assembler_tidy(std::ostream & out)
         : assembler_compressed(out)
+    {
+    }
+
+    virtual ~assembler_tidy()
     {
     }
 
@@ -149,6 +169,10 @@ class assembler_compact : public assembler_tidy
 public:
     assembler_compact(std::ostream & out)
         : assembler_tidy(out)
+    {
+    }
+
+    virtual ~assembler_compact()
     {
     }
 
@@ -179,6 +203,10 @@ class assembler_expanded : public assembler_compact
 public:
     assembler_expanded(std::ostream & out)
         : assembler_compact(out)
+    {
+    }
+
+    virtual ~assembler_expanded()
     {
     }
 
@@ -219,6 +247,81 @@ public:
 assembler::assembler(std::ostream & out)
     : f_out(out)
 {
+}
+
+std::string assembler::escape_id(std::string const & id)
+{
+    std::string result;
+
+    // create a temporary lexer to apply the conversion
+    std::stringstream ss;
+    position pos("assembler.css");
+    lexer l(ss, pos);
+
+    bool first_char(true);
+    for(char const *s(id.c_str()); *s != '\0'; )
+    {
+        char mb[5];
+        unsigned char c(static_cast<unsigned char>(*s));
+        size_t len(1);
+        if(c >= 0xF0)
+        {
+            len = 4;
+        }
+        else if(c >= 0xE0)
+        {
+            len = 3;
+        }
+        else if(c >= 0xC0)
+        {
+            len = 2;
+        }
+        //else len = 1 -- already set to 1 by default
+        for(size_t i(0); i < len; ++i, ++s)
+        {
+            if(*s == '\0')
+            {
+                // UTF-8 should be perfect when we reach the assembler
+                throw csspp_exception_logic("assembler.cpp: assembler::escape_id(): invalid UTF-8 character found."); // LCOV_EXCL_LINE
+            }
+            mb[i] = *s;
+        }
+        mb[len] = '\0';
+
+        wide_char_t wc(l.mbtowc(mb));
+
+        if((first_char && lexer::is_start_identifier(wc))
+        || (!first_char && lexer::is_identifier(wc)))
+        {
+            result += mb;
+        }
+        else
+        {
+            result += '\\';
+            if(wc >= '0' && wc <= '9')
+            {
+                // digits need to be defined as hexa
+                result += '3';
+                result += wc;
+                // add a space if the next character requires us to do so
+                // (by now identifier letters should all be lower case so
+                // the 'A' to 'F' should never match)
+                if((s[0] >= '0' && s[0] <= '9')
+                || (s[0] >= 'a' && s[0] <= 'f')
+                || (s[0] >= 'A' && s[0] <= 'F')) // LCOV_EXCL_LINE
+                {
+                    result += ' ';
+                }
+            }
+            else
+            {
+                result += mb;
+            }
+        }
+        first_char = false;
+    }
+
+    return result;
 }
 
 void assembler::output(node::pointer_t n, output_mode_t mode)
@@ -281,8 +384,7 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::COLOR:
         {
-            color c;
-            c.set_color(n->get_integer());
+            color c(n->get_color());
             f_impl->output_token(c.to_string());
         }
         break;
@@ -303,7 +405,8 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::DECIMAL_NUMBER:
         // this may be a dimension, if not f_string is empty anyway
-        f_out << n->get_decimal_number() << n->get_string();
+        verify_dimension(n);
+        f_out << decimal_number_to_string(n->get_decimal_number(), true) << n->get_string();
         break;
 
     case node_type_t::DECLARATION:
@@ -336,8 +439,8 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::FONT_METRICS:
         // this is a mouthful!
-        f_out << decimal_number_to_string(n->get_font_size()) << n->get_dim1()
-              << "/" << decimal_number_to_string(n->get_line_height()) << n->get_dim2();
+        f_out << decimal_number_to_string(n->get_font_size() * (n->get_dim1() == "%" ? 100.0 : 1.0), true) << n->get_dim1()
+              << "/" << decimal_number_to_string(n->get_line_height() * (n->get_dim2() == "%" ? 100.0 : 1.0), true) << n->get_dim2();
         break;
 
     case node_type_t::FUNCTION:
@@ -387,7 +490,7 @@ void assembler::output(node::pointer_t n)
         break;
 
     case node_type_t::IDENTIFIER:
-        f_out << n->get_string();
+        f_out << escape_id(n->get_string());
         break;
 
     case node_type_t::INCLUDE_MATCH:
@@ -396,6 +499,7 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::INTEGER:
         // this may be a dimension, if not f_string is empty anyway
+        verify_dimension(n);
         f_out << n->get_integer() << n->get_string();
         break;
 
@@ -462,7 +566,7 @@ void assembler::output(node::pointer_t n)
         break;
 
     case node_type_t::PERCENT:
-        f_out << decimal_number_to_string(n->get_decimal_number() * 100.0) << "%";
+        f_out << decimal_number_to_string(n->get_decimal_number() * 100.0, true) << "%";
         break;
 
     case node_type_t::PERIOD:
@@ -487,6 +591,10 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::SUBSTRING_MATCH:
         f_impl->output_operator("*=", g_flag_optional_spaces);
+        break;
+
+    case node_type_t::SUBTRACT: // for calc() / expression()
+        f_impl->output_operator("-", 0);
         break;
 
     case node_type_t::SUFFIX_MATCH:
@@ -525,6 +633,7 @@ void assembler::output(node::pointer_t n)
     case node_type_t::UNKNOWN:
     case node_type_t::AND:
     case node_type_t::ASSIGNMENT:
+    case node_type_t::ARRAY:
     case node_type_t::BOOLEAN:
     case node_type_t::CDC:
     case node_type_t::CDO:
@@ -541,6 +650,7 @@ void assembler::output(node::pointer_t n)
     case node_type_t::GREATER_EQUAL:
     case node_type_t::LESS_EQUAL:
     case node_type_t::LESS_THAN:
+    case node_type_t::MAP:
     case node_type_t::MODULO:
     case node_type_t::NOT_EQUAL:
     case node_type_t::NULL_TOKEN:
@@ -548,7 +658,6 @@ void assembler::output(node::pointer_t n)
     case node_type_t::POWER:
     case node_type_t::REFERENCE:
     case node_type_t::SEMICOLON:
-    case node_type_t::SUBTRACT:
     case node_type_t::VARIABLE:
     case node_type_t::VARIABLE_FUNCTION:
     case node_type_t::max_type:
@@ -568,13 +677,17 @@ void assembler::output(node::pointer_t n)
 void assembler::output_component_value(node::pointer_t n)
 {
     bool first(true);
+    bool has_arg(false);
     size_t const max_children(n->size());
     for(size_t idx(0); idx < max_children; ++idx)
     {
         node::pointer_t c(n->get_child(idx));
         if(c->is(node_type_t::OPEN_CURLYBRACKET))
         {
-            output(c);
+            if(has_arg)
+            {
+                output(c);
+            }
         }
         else if(!c->is(node_type_t::ARG))
         {
@@ -585,8 +698,11 @@ void assembler::output_component_value(node::pointer_t n)
                << ".";                                                                                      // LCOV_EXCL_LINE
             throw csspp_exception_logic(ss.str());                                                          // LCOV_EXCL_LINE
         }
-        else
+        else if(c->empty() || !c->get_last_child()->is(node_type_t::PLACEHOLDER))
         {
+            // TODO: if we compile out PLACEHOLDER nodes in the compiler
+            //       then we can remove the test here... (on the line prior)
+            has_arg = true;
             if(first)
             {
                 first = false;

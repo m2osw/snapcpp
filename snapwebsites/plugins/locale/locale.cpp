@@ -15,25 +15,16 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "qunicodestring.h"
-
 #include "snap_locale.h"
 
-#include "../editor/editor.h"
-#include "../output/output.h"
-
-#include "not_reached.h"
-
-#include <libtld/tld.h>
-#include <QtSerialization/QSerialization.h>
+#include "not_used.h"
+#include "qunicodestring.h"
 
 #include <unicode/datefmt.h>
 #include <unicode/errorcode.h>
 #include <unicode/locid.h>
 #include <unicode/smpdtfmt.h>
 #include <unicode/timezone.h>
-
-#include <iostream>
 
 #include "poison.h"
 
@@ -92,19 +83,6 @@ locale::~locale()
 }
 
 
-/** \brief Initialize the locale.
- *
- * This function terminates the initialization of the locale plugin
- * by registering for different events.
- *
- * \param[in] snap  The child handling this request.
- */
-void locale::on_bootstrap(snap_child *snap)
-{
-    f_snap = snap;
-}
-
-
 /** \brief Get a pointer to the locale plugin.
  *
  * This function returns an instance pointer to the locale plugin.
@@ -114,9 +92,31 @@ void locale::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the locale plugin.
  */
-locale *locale::instance()
+locale * locale::instance()
 {
     return g_plugin_locale_factory.instance();
+}
+
+
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString locale::settings_path() const
+{
+    return "/admin/settings/locale";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString locale::icon() const
+{
+    return "/images/locale/locale-logo-64x64.png";
 }
 
 
@@ -137,6 +137,19 @@ QString locale::description() const
 }
 
 
+/** \brief Return our dependencies.
+ *
+ * This function builds the list of plugins (by name) that are considered
+ * dependencies (required by this plugin.)
+ *
+ * \return Our list of dependencies.
+ */
+QString locale::dependencies() const
+{
+    return "|server|";
+}
+
+
 /** \brief Check whether updates are necessary.
  *
  * This function updates the database when a newer version is installed
@@ -151,11 +164,24 @@ QString locale::description() const
  */
 int64_t locale::do_update(int64_t last_updated)
 {
-    static_cast<void>(last_updated);
+    NOTUSED(last_updated);
 
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Initialize the locale.
+ *
+ * This function terminates the initialization of the locale plugin
+ * by registering for different events.
+ *
+ * \param[in] snap  The child handling this request.
+ */
+void locale::bootstrap(snap_child * snap)
+{
+    f_snap = snap;
 }
 
 
@@ -288,7 +314,7 @@ locale::locale::timezone_list_t const& locale::get_timezone_list()
                 //}
 
                 QString const qid(QString::fromUtf16(id));
-                QStringList const id_segments(qid.split('/'));
+                snap_string_list const id_segments(qid.split('/'));
                 if(id_segments.size() == 2)
                 {
                     timezone_info_t info;
@@ -345,7 +371,7 @@ locale::locale::timezone_list_t const& locale::get_timezone_list()
                 // get that in a string so we can split it
                 QString const line(QString::fromUtf8(raw_line.data()));
 
-                QStringList const line_segments(line.split('\t'));
+                snap_string_list const line_segments(line.split('\t'));
                 if(line_segments.size() < 3)
                 {
                     continue;
@@ -372,7 +398,7 @@ locale::locale::timezone_list_t const& locale::get_timezone_list()
 
                 // the continent, country/state, city are separated by a slash
                 info.f_timezone_name = line_segments[2];
-                QStringList const names(info.f_timezone_name.split('/'));
+                snap_string_list const names(info.f_timezone_name.split('/'));
                 if(names.size() < 2)
                 {
                     // invalid continent/state/city (TZ) entry
@@ -601,7 +627,11 @@ void locale::set_timezone_done()
  * Save the DateFormat so if the function is called multiple times,
  * we do not have to re-create it.
  *
- * \param[in] d  The time to be presented to the end user.
+ * \todo
+ * Allow for milliseconds (or even microseconds) as input to be
+ * more compatible with other Snap! functions.
+ *
+ * \param[in] d  The time to be presented to the end user in seconds.
  *
  * \return A string formatted as per the locale.
  */
@@ -889,7 +919,7 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
         }
 
         // UDate is a double in milliseconds
-        return static_cast<time_t>(result / 1000LL);
+        return static_cast<time_t>(result / 1000.0);
     }
 }
 
@@ -1176,7 +1206,7 @@ time_t locale::parse_time(QString const & time_str, parse_error_t & errcode)
             result += second;
         }
 
-        // skip spaces after the time
+        // skip spaces after the time (optional)
         while(s->isSpace())
         {
             ++s;
