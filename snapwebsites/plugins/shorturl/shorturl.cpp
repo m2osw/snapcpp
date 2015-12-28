@@ -125,7 +125,7 @@ char const * get_name(name_t name)
  * This function is used to initialize the shorturl plugin object.
  */
 shorturl::shorturl()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
 {
 }
 
@@ -522,7 +522,9 @@ bool shorturl::allow_shorturl_impl(content::path_info_t & ipath, QString const &
     QString const cpath(ipath.get_cpath());
     if(cpath.isEmpty()                  // also marked as "no_shorturl" in content.xml
     || cpath == "admin"                 // also marked as "no_shorturl" in content.xml
-    || cpath.startsWith("admin/"))
+    || cpath.startsWith("admin/")
+    || cpath.endsWith(".css")
+    || cpath.endsWith(".js"))
     {
         // do not need on home page, do not allow any short URL on
         // administration pages (no need really since those are not

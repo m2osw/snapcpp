@@ -42,9 +42,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class shorturl_exception : public snap_exception
 {
 public:
-    shorturl_exception(char const *        what_msg) : snap_exception("Short URL", what_msg) {}
-    shorturl_exception(std::string const & what_msg) : snap_exception("Short URL", what_msg) {}
-    shorturl_exception(QString const &     what_msg) : snap_exception("Short URL", what_msg) {}
+    explicit shorturl_exception(char const *        what_msg) : snap_exception("Short URL", what_msg) {}
+    explicit shorturl_exception(std::string const & what_msg) : snap_exception("Short URL", what_msg) {}
+    explicit shorturl_exception(QString const &     what_msg) : snap_exception("Short URL", what_msg) {}
 };
 
 
@@ -91,8 +91,8 @@ public:
     SNAP_SIGNAL(allow_shorturl, (content::path_info_t & ipath, QString const & owner, QString const & type, bool & allow), (ipath, owner, type, allow));
 
 private:
-    void initial_update(int64_t variables_timestamp);
-    void content_update(int64_t variables_timestamp);
+    void                initial_update(int64_t variables_timestamp);
+    void                content_update(int64_t variables_timestamp);
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraTable::pointer_t f_shorturl_table;

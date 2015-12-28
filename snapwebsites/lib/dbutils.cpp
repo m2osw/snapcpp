@@ -564,6 +564,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return column_type_t::CT_float64_value;
     }
     else if((f_tableName == "backend" && f_rowName.startsWith("*"))
+         || (f_tableName == "antihammering" && n == "*blocked*")
          || n == "content::created"
          || n == "content::cloned"
          || n == "content::files::created"

@@ -180,6 +180,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_CORE_REQUEST_URI:
         return "REQUEST_URI";
 
+    case name_t::SNAP_NAME_CORE_RETRY_AFTER_HEADER:
+        return "Retry-After";
+
     case name_t::SNAP_NAME_CORE_RULES:
         return "core::rules";
 

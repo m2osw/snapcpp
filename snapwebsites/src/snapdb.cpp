@@ -181,7 +181,7 @@ using namespace QtCassandra;
 /** \brief A class for easy access to all resources.
  *
  * This class is just so we use resource in an object oriented
- * manner rather than having globals, but that's clearly very
+ * manner rather than having globals, but that is clearly very
  * similar here!
  */
 class snapdb
@@ -358,6 +358,7 @@ void snapdb::drop_tables(bool all)
     // there are re-created when we connect and refilled when
     // we access a page; obviously this is VERY dangerous on
     // a live system!
+    context->dropTable("antihammering");
     context->dropTable("backend");
     context->dropTable("branch");
     context->dropTable("cache");

@@ -6508,7 +6508,7 @@ void snap_child::set_header(QString const & name, QString const & value, header_
  *
  * \return false if the header was not defined yet, true otherwise.
  */
-bool snap_child::has_header(const QString& name) const
+bool snap_child::has_header(QString const & name) const
 {
     return f_header.find(name.toLower()) != f_header.end();
 }
@@ -6580,7 +6580,7 @@ void snap_child::output_headers(header_mode_t modes)
     // Output the status first (we may want to order the HTTP header
     // fields by type and output them ordered by type as defined in
     // the HTTP reference chapter 4.2)
-    if(has_header("Status") && (f_header["status"].f_modes & modes) != 0)
+    if(has_header(get_name(name_t::SNAP_NAME_CORE_STATUS_HEADER)) && (f_header["status"].f_modes & modes) != 0)
     {
         // If status is defined, it should not be 200
         write((f_header["status"].f_header + "\n").toLatin1().data());

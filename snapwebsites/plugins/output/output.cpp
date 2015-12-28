@@ -610,7 +610,7 @@ void output::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, 
         if(token.verify_args(0, 1))
         {
             // last updated is the date when the last revision was created
-            content::content *content(content::content::instance());
+            content::content * content(content::content::instance());
             QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
             int64_t const created_date(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
             time_t const unix_time(created_date / 1000000); // transform to seconds

@@ -858,7 +858,8 @@ void users_ui::show_user(content::path_info_t & ipath, QDomElement & page, QDomE
         {
             // invalid user identifier, generate a 404
             f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
-                    "User Not Found", "This user does not exist. Please check the URI and make corrections as required.",
+                    "User Not Found",
+                    "This user does not exist. Please check the URI and make corrections as required.",
                     "User attempt to access user \"" + user_id + "\" which does not look like a valid integer.");
             NOTREACHED();
         }

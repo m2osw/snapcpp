@@ -48,6 +48,7 @@ include( SnapXmlLint )
 ################################################################################
 # Keep the plugins in alphabetical order for ease of management
 #
+add_subdirectory(antihammering)
 add_subdirectory(antivirus)
 add_subdirectory(attachment)
 add_subdirectory(avatar)

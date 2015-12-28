@@ -101,7 +101,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 					</fieldset>
 
-					<fieldset class="blaclist">
+					<fieldset class="blacklist">
 						<legend>Blacklist</legend>
 
 						<!-- check password against blacklist widget -->

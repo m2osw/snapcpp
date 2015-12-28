@@ -1057,7 +1057,7 @@ void path::on_improve_signature(QString const & url_path, QDomDocument doc, QDom
 }
 
 
-/** \fn void path::preprocess_path(content::path_info_t& ipath, plugins::plugin *owner_plugin)
+/** \fn void path::preprocess_path(content::path_info_t & ipath, plugins::plugin * owner_plugin)
  * \brief Allow other modules to do some pre-processing.
  *
  * This signal is sent just before we run the actual execute() function
