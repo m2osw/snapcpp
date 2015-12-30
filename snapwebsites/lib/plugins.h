@@ -40,17 +40,17 @@ namespace plugins
 class plugin_exception : public snap_exception
 {
 public:
-    plugin_exception(char const *        what_msg) : snap_exception("plugin", what_msg) {}
-    plugin_exception(std::string const & what_msg) : snap_exception("plugin", what_msg) {}
-    plugin_exception(QString const &     what_msg) : snap_exception("plugin", what_msg) {}
+    explicit plugin_exception(char const *        what_msg) : snap_exception("plugin", what_msg) {}
+    explicit plugin_exception(std::string const & what_msg) : snap_exception("plugin", what_msg) {}
+    explicit plugin_exception(QString const &     what_msg) : snap_exception("plugin", what_msg) {}
 };
 
 class plugin_exception_invalid_order : public plugin_exception
 {
 public:
-    plugin_exception_invalid_order(char const *        what_msg) : plugin_exception(what_msg) {}
-    plugin_exception_invalid_order(std::string const & what_msg) : plugin_exception(what_msg) {}
-    plugin_exception_invalid_order(QString const &     what_msg) : plugin_exception(what_msg) {}
+    explicit plugin_exception_invalid_order(char const *        what_msg) : plugin_exception(what_msg) {}
+    explicit plugin_exception_invalid_order(std::string const & what_msg) : plugin_exception(what_msg) {}
+    explicit plugin_exception_invalid_order(QString const &     what_msg) : plugin_exception(what_msg) {}
 };
 
 

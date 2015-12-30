@@ -92,15 +92,24 @@ public:
     void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
     void                    on_init_editor_widget(content::path_info_t  & ipath, QString const  & field_id, QString const  & field_type, QDomElement  & widget, QtCassandra::QCassandraRow::pointer_t row);
 
+    // links test suite
+    SNAP_TEST_PLUGIN_SUITE_SIGNALS()
+
 private:
     void                    content_update(int64_t variables_timestamp);
 
     void                    init_plugin_selection_editor_widgets(content::path_info_t & ipath, QString const & field_id, QDomElement & widget);
     bool                    plugin_selection_on_path_execute(content::path_info_t & ipath);
+    bool                    install_plugin(snap_string_list & plugin_list, QString const & plugin_name);
+    bool                    uninstall_plugin(snap_string_list & plugin_list, QString const & plugin_name);
 
     void                    init_unsubscribe_editor_widgets(content::path_info_t & ipath, QString const & field_id, QDomElement & widget);
     void                    unsubscribe_on_finish_editor_form_processing(content::path_info_t & ipath);
     bool                    unsubscribe_on_path_execute(content::path_info_t & ipath);
+
+    // tests
+    SNAP_TEST_PLUGIN_TEST_DECL(verify_core_dependencies)
+    SNAP_TEST_PLUGIN_TEST_DECL(verify_all_dependencies)
 
     zpsnap_child_t          f_snap;
 };

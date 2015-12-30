@@ -142,7 +142,7 @@ QString attachment::description() const
  */
 QString attachment::dependencies() const
 {
-    return "|content|message|path|permissions|";
+    return "|content|messages|path|permissions|";
 }
 
 

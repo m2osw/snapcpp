@@ -420,7 +420,7 @@ QString editor::description() const
  */
 QString editor::dependencies() const
 {
-    return "|attachment|editor|locale|messages|output|server_access|sessions|";
+    return "|attachment|locale|messages|output|server_access|sessions|";
 }
 
 

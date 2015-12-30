@@ -724,7 +724,7 @@ links::~links()
  *
  * \param[in] snap  The child handling this request.
  */
-void links::bootstrap(snap_child *snap)
+void links::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -744,7 +744,7 @@ void links::bootstrap(snap_child *snap)
  *
  * \return A pointer to the links plugin.
  */
-links *links::instance()
+links * links::instance()
 {
     return g_plugin_links_factory.instance();
 }
@@ -777,7 +777,7 @@ QString links::description() const
  */
 QString links::dependencies() const
 {
-    return "|content|test_plugin_suite|";
+    return "|content|";
 }
 
 

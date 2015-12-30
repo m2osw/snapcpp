@@ -136,7 +136,7 @@ QString server_access::description() const
  */
 QString server_access::dependencies() const
 {
-    return "|content|test_plugin_suite|";
+    return "|content|";
 }
 
 

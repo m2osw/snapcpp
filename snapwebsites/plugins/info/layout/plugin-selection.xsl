@@ -24,7 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output> <!-- lang="{$lang}" 'lang variable undefined' -->
-			<div class="plugin">
+			<div>
+				<xsl:attribute name="class">plugin<xsl:if test="core-plugin/node() = 'true'"> core-plugin</xsl:if></xsl:attribute>
+				<xsl:attribute name="data-name"><xsl:value-of select="name/node()"/></xsl:attribute>
 				<div class="top-row">
 					<div class="name">
 						<xsl:attribute name="id"><xsl:value-of select="name/node()"/></xsl:attribute>

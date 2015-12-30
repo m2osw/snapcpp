@@ -40,6 +40,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <mime-type>image/png</mime-type>
     </attachment>
   </content>
+  <content path="/css/info">
+    <param name="content::title" revision="revision">Info CSS</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Info script CSS support.</p>]]>
+    </param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="info" type="attachment/public">
+      <path>qrc:/css/info/info.css</path>
+      <mime-type>text/css</mime-type>
+    </attachment>
+  </content>
   <content path="/admin/plugins" owner="output">
     <param name="content::title" revision="revision">Plugin Selection</param>
     <param name="content::body" revision="revision">

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: plugin-selection
- * Version: 0.0.1.8
+ * Version: 0.0.1.17
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5)
@@ -214,22 +214,55 @@ snapwebsites.PluginSelection.prototype.initPluginSelections_ = function()
  */
 snapwebsites.PluginSelection.prototype.serverAccessSuccess = function(result) // virtual
 {
+    var result_xml = result.jqxhr.responseXML,
+        that = this;
+
     snapwebsites.PluginSelection.superClass_.serverAccessSuccess.call(this, result);
 
-    if(this.clickedButton_)
-    {
-        this.clickedButton_.addClass("disabled");
-        if(this.clickedButton_.hasClass("install"))
-        {
-            this.clickedButton_.parent().parent().find(".remove").removeClass("disabled");
-            this.clickedButton_.parent().parent().find("a.settings").removeClass("disabled");
-        }
-        else if(this.clickedButton_.hasClass("remove"))
-        {
-            this.clickedButton_.parent().parent().find(".install").removeClass("disabled");
-            this.clickedButton_.parent().parent().find(".settings").addClass("disabled");
-        }
-    }
+    installed_plugins = jQuery("snap", result_xml)
+        .children("data[name='installed_plugins']")
+        .each(function(idx, t) // "each"... there will be only one
+            {
+                var list_of_installed_plugins = jQuery(t).text(),
+                    plugin_names = list_of_installed_plugins.split(",");
+
+                // check out all plugins except Core plugins
+                //
+                jQuery("div.editor-block > div.plugin:not(.core-plugin)")
+                    .each(function(idx, plugin_tag)
+                        {
+                            var p = jQuery(plugin_tag),
+                                name = p.data("name"),
+                                install_button = p.find("div.top-row ul.functions a.install"),
+                                remove_button = p.find("div.top-row ul.functions a.remove"),
+                                settings_button = p.find("div.top-row ul.functions a.settings");
+
+                            if(plugin_names.indexOf(name) != -1)
+                            {
+                                // plugin is installed
+                                //
+                                if(!install_button.hasClass("disabled"))
+                                {
+                                    p.removeClass("newly-removed").addClass("newly-installed");
+                                    install_button.addClass("disabled");
+                                    remove_button.removeClass("disabled");
+                                    settings_button.removeClass("disabled");
+                                }
+                            }
+                            else
+                            {
+                                // plugin is NOT installed
+                                //
+                                if(install_button.hasClass("disabled"))
+                                {
+                                    p.removeClass("newly-installed").addClass("newly-removed");
+                                    install_button.removeClass("disabled");
+                                    remove_button.addClass("disabled");
+                                    settings_button.addClass("disabled");
+                                }
+                            }
+                        });
+            });
 };
 
 

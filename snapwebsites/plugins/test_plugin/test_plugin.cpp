@@ -199,7 +199,7 @@ QString test_plugin::help_uri() const
  */
 QString test_plugin::dependencies() const
 {
-    return "|filter|layout|messages|output|path|server_access|";
+    return "|filter|layout|messages|output|path|server_access|test_plugin_suite|";
 }
 
 

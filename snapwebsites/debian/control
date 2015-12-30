@@ -37,7 +37,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++ (development 
 
 Package: libsnapwebsites-doc
 Section: doc
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}
 Recommends: libsnapwebsites (= ${binary:Version})
 Description: Fast Websites: powerful CMS for Apache written in C++ (documentation package).

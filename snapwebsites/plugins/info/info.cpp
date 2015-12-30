@@ -184,7 +184,7 @@ int64_t info::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 21, 0, 12, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 29, 23, 11, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -221,6 +221,8 @@ void info::bootstrap(snap_child * snap)
     SNAP_LISTEN(info, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(info, "editor", editor::editor, finish_editor_form_processing, _1, _2);
     SNAP_LISTEN(info, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
+
+    SNAP_TEST_PLUGIN_SUITE_LISTEN(info);
 }
 
 

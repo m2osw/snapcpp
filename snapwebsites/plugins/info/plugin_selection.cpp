@@ -122,21 +122,18 @@ void info::init_plugin_selection_editor_widgets(content::path_info_t & ipath, QS
                 // /info/description/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "description"));
-SNAP_LOG_WARNING("description: [")(information.get_description())("]");
                     snap_dom::append_plain_text_to_node(value_tag, information.get_description());
                 }
 
                 // /info/help/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "help-uri"));
-SNAP_LOG_WARNING("help URI: [")(information.get_help_uri())("]");
                     snap_dom::append_plain_text_to_node(value_tag, information.get_help_uri());
                 }
 
                 // /info/dependencies/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "dependencies"));
-SNAP_LOG_WARNING("about to split this: [")(information.get_dependencies())("]");
                     snap_string_list deps(information.get_dependencies().split('|', QString::SkipEmptyParts));
                     snap_dom::append_plain_text_to_node(value_tag, deps.join(","));
                 }
@@ -262,20 +259,33 @@ bool info::plugin_selection_on_path_execute(content::path_info_t & ipath)
         }
         else if(!plugin_list.contains(plugin_name))
         {
-            plugin_list << plugin_name;
-            site_plugins = plugin_list.join(",");
-            plugins.setStringValue(site_plugins);
-            f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS), plugins);
-            QString const installed("installed");
-            server_access_plugin->create_ajax_result(ipath, true);
-            server_access_plugin->ajax_append_data("plugin_selection", installed.toUtf8());
+            if(install_plugin(plugin_list, plugin_name))
+            {
+                site_plugins = plugin_list.join(",");
+                plugins.setStringValue(site_plugins);
+                f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS), plugins);
+                QString const installed("installed");
+                server_access_plugin->create_ajax_result(ipath, true);
+                server_access_plugin->ajax_append_data("plugin_selection", installed.toUtf8());
+                server_access_plugin->ajax_append_data("installed_plugins", site_plugins.toUtf8());
+            }
+            else
+            {
+                messages::messages::instance()->set_error(
+                    "Plugin Dependencies Missing",
+                    QString("One or more dependencies of plugin \"%1\" is missing.").arg(plugin_name),
+                    "info::plugin_selection_on_path_execute(): the plugin could not be installed because one or more dependency is missing.",
+                    false
+                );
+                server_access_plugin->create_ajax_result(ipath, false);
+            }
         }
         else
         {
             messages::messages::instance()->set_warning(
-                "Plugin Not Found",
-                QString("Could not install plugin \"%1\" since it is not current installed.").arg(plugin_name),
-                "info::plugin_selection_on_path_execute(): the plugin was not installed so we should not have gotten this event."
+                "Plugin Already Installed",
+                QString("Plugin \"%1\" is already installed.").arg(plugin_name),
+                "info::plugin_selection_on_path_execute(): the plugin is already installed so we should not have gotten this event."
             );
             server_access_plugin->create_ajax_result(ipath, false);
         }
@@ -285,16 +295,41 @@ bool info::plugin_selection_on_path_execute(content::path_info_t & ipath)
         // here we do not check the validity of the name from the file system
         // if the name is not in the list of plugins, we do nothing anyway
         QString const plugin_name(function.mid(7));
-        int const pos(plugin_list.indexOf(plugin_name));
-        if(pos >= 0)
+        if(plugin_list.contains(plugin_name))
         {
-            plugin_list.removeAt(pos);
-            site_plugins = plugin_list.join(",");
-            plugins.setStringValue(site_plugins);
-            f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS), plugins);
-            QString const removed("removed");
-            server_access_plugin->create_ajax_result(ipath, true);
-            server_access_plugin->ajax_append_data("plugin_selection", removed.toUtf8());
+            if(!f_snap->is_core_plugin(plugin_name))
+            {
+                if(uninstall_plugin(plugin_list, plugin_name))
+                {
+                    site_plugins = plugin_list.join(",");
+                    plugins.setStringValue(site_plugins);
+                    f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS), plugins);
+                    QString const removed("removed");
+                    server_access_plugin->create_ajax_result(ipath, true);
+                    server_access_plugin->ajax_append_data("plugin_selection", removed.toUtf8());
+                    server_access_plugin->ajax_append_data("installed_plugins", site_plugins.toUtf8());
+                }
+                else
+                {
+                    messages::messages::instance()->set_error(
+                        "Plugin Dependencies Missing",
+                        QString("One or more dependencies of plugin \"%1\" is missing.").arg(plugin_name),
+                        "info::plugin_selection_on_path_execute(): the plugin could not be installed because one or more dependency is missing.",
+                        false
+                    );
+                    server_access_plugin->create_ajax_result(ipath, false);
+                }
+            }
+            else
+            {
+                messages::messages::instance()->set_error(
+                    "Core Plugin Removal is Forbidden",
+                    QString("It is not possible to remove plugin \"%1\" since it is a core plugin.").arg(plugin_name),
+                    "info::plugin_selection_on_path_execute(): a core plugin cannot be removed at all.",
+                    false
+                );
+                server_access_plugin->create_ajax_result(ipath, false);
+            }
         }
         else
         {
@@ -321,6 +356,82 @@ bool info::plugin_selection_on_path_execute(content::path_info_t & ipath)
 
     // create AJAX response
     server_access_plugin->ajax_output();
+
+    return true;
+}
+
+
+bool info::install_plugin(snap_string_list & plugin_list, QString const & plugin_name)
+{
+    // accept but ignore request to install the main "server" plugin
+    // and any other core plugin since they are not required in the
+    // sites/core::plugins field
+    //
+    if(plugin_name == "server"
+    || f_snap->is_core_plugin(plugin_name))
+    {
+        return true;
+    }
+
+    plugin_list << plugin_name;
+
+    QString const plugins_paths( f_snap->get_server_parameter("plugins_path") );
+    try
+    {
+        plugins::plugin_info const information(plugins_paths, plugin_name);
+        snap_string_list deps(information.get_dependencies().split('|', QString::SkipEmptyParts));
+        for(auto d : deps)
+        {
+            if(!plugin_list.contains(d))
+            {
+                if(!install_plugin(plugin_list, d))
+                {
+                    // on false we ignore the entire result...
+                    return false;
+                }
+            }
+        }
+    }
+    catch(plugins::plugin_exception const & e)
+    {
+        // if there is one we cannot read, we cannot really go on, can we?
+        return false;
+    }
+
+    return true;
+}
+
+
+bool info::uninstall_plugin(snap_string_list & plugin_list, QString const & plugin_name)
+{
+    int const pos(plugin_list.indexOf(plugin_name));
+    plugin_list.removeAt(pos);
+
+    QString const plugins_paths( f_snap->get_server_parameter("plugins_path") );
+    snap_string_list const plugin_names(plugin_list);
+    try
+    {
+        for(auto const & n : plugin_names)
+        {
+            plugins::plugin * p(plugins::get_plugin(n));
+            snap_string_list const deps(p->dependencies().split('|', QString::SkipEmptyParts));
+            for(auto const & d : deps)
+            {
+                if(d == plugin_name)
+                {
+                    if(!uninstall_plugin(plugin_list, n))
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    catch(plugins::plugin_exception const & e)
+    {
+        // if there is one we cannot read, we cannot really go on, can we?
+        return false;
+    }
 
     return true;
 }
