@@ -11,3 +11,7 @@
 
 %:
 	dh $@ 
+
+override_dh_auto_test:
+	@echo "Skipping tests in build process for now (until we have time to make them work right in this environment.)"
+
