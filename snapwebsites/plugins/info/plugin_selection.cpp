@@ -367,8 +367,7 @@ bool info::install_plugin(snap_string_list & plugin_list, QString const & plugin
     // and any other core plugin since they are not required in the
     // sites/core::plugins field
     //
-    if(plugin_name == "server"
-    || f_snap->is_core_plugin(plugin_name))
+    if(f_snap->is_core_plugin(plugin_name))
     {
         return true;
     }

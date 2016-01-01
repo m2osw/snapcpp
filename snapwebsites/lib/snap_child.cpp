@@ -5683,6 +5683,14 @@ char const * snap_child::get_running_server_version()
  */
 bool snap_child::is_core_plugin(QString const & name) const
 {
+    // a special case because "server" is not listed in the g_minimum_plugins
+    // list (because it is already loaded since it is an object in the library)
+    //
+    if(name == "server")
+    {
+        return true;
+    }
+
     // TODO: make sure the table is sorted alphabetically and use
     //       a binary search
     //

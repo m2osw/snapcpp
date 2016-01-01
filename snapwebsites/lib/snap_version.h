@@ -36,17 +36,17 @@ namespace snap_version
 class snap_version_exception : public snap_exception
 {
 public:
-    snap_version_exception(char const *        whatmsg) : snap_exception("snap_version", whatmsg) {}
-    snap_version_exception(std::string const & whatmsg) : snap_exception("snap_version", whatmsg) {}
-    snap_version_exception(QString const &     whatmsg) : snap_exception("snap_version", whatmsg) {}
+    explicit snap_version_exception(char const *        whatmsg) : snap_exception("snap_version", whatmsg) {}
+    explicit snap_version_exception(std::string const & whatmsg) : snap_exception("snap_version", whatmsg) {}
+    explicit snap_version_exception(QString const &     whatmsg) : snap_exception("snap_version", whatmsg) {}
 };
 
 class snap_version_exception_invalid_extension : public snap_version_exception
 {
 public:
-    snap_version_exception_invalid_extension(char const *        whatmsg) : snap_version_exception(whatmsg) {}
-    snap_version_exception_invalid_extension(std::string const & whatmsg) : snap_version_exception(whatmsg) {}
-    snap_version_exception_invalid_extension(QString const &     whatmsg) : snap_version_exception(whatmsg) {}
+    explicit snap_version_exception_invalid_extension(char const *        whatmsg) : snap_version_exception(whatmsg) {}
+    explicit snap_version_exception_invalid_extension(std::string const & whatmsg) : snap_version_exception(whatmsg) {}
+    explicit snap_version_exception_invalid_extension(QString const &     whatmsg) : snap_version_exception(whatmsg) {}
 };
 
 

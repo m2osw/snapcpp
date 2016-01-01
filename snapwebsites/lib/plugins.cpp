@@ -25,6 +25,7 @@
 
 #include <dlfcn.h>
 #include <glob.h>
+#include <link.h>
 #include <sys/stat.h>
 
 #include <QDir>
@@ -850,6 +851,43 @@ plugin_info::plugin_info(QString const & plugin_paths, QString const & name)
         f_dependencies =        "";
         f_version_major =       SNAPWEBSITES_VERSION_MAJOR;
         f_version_minor =       SNAPWEBSITES_VERSION_MINOR;
+
+        // too bad that dlopen() returns opaque handles only...
+        // that being said, we can still walk the walk and
+        // find the full path to the currently running binary
+        //
+        struct unknown_structures  // <- yuck
+        {
+            void *                      f_unused[3];
+            struct unknown_structures * f_pointer;
+        };
+        struct unknown_structures * p(reinterpret_cast<struct unknown_structures *>(dlopen(nullptr, RTLD_LAZY | RTLD_GLOBAL)));
+        if(p != nullptr)
+        {
+            p = p->f_pointer;
+            if(p != nullptr)
+            {
+                struct link_map * map(reinterpret_cast<struct link_map *>(p->f_pointer));
+                if(map != nullptr)
+                {
+                    if(map->l_name != nullptr)
+                    {
+                        // full path to the snapwebsites.so library
+                        f_filename = QString::fromUtf8(map->l_name);
+
+                        if(!f_filename.isEmpty())
+                        {
+                            struct stat s;
+                            if(stat(f_filename.toUtf8().data(), &s) == 0)
+                            {
+                                // should we make use of the usec mtime when available?
+                                f_last_modification = static_cast<int64_t>(s.st_mtime * 1000000LL);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return;
     }
 
