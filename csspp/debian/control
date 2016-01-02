@@ -23,7 +23,7 @@ Description: CSS Preprocessor library development files for C++.
 
 Package: csspp-doc
 Section: doc
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}
 Recommends: libcsspp (= ${binary:Version})
 Description: C++ library API documentation.

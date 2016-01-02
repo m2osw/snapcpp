@@ -25,7 +25,7 @@ Description: C++ library to support AlexScript to JavaScript compilation.
 
 Package: as2js-doc
 Section: doc
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}
 Recommends: as2js (= ${binary:Version})
 Description: C++ AlexScript to JavaScript documentation.

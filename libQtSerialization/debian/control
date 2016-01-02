@@ -28,7 +28,7 @@ Description: Serialization Made Easy with Qt
 
 Package: libqtserialization-doc
 Section: doc
-Architecture: any
+Architecture: all
 Description: Serialization Made Easy with Qt
  The libQtSerialization library is a Qt extension that makes it really easy to
  serialize your data in a forward and backward compatible way1.

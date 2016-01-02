@@ -25,7 +25,7 @@ Description: Development package for AdvGetOpt library.
 
 Package: libadvgetopt-doc
 Section: doc
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}
 Description: Documenation for the AdvGetOpt library.
  Provides the advgetopt::getopt class, which parses command line options (from
