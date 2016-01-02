@@ -1,5 +1,5 @@
 // Snap Websites Server -- favicon management (little icon in tab)
-// Copyright (C) 2013-2015  Made to Order Software Corp.
+// Copyright (C) 2013-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -78,6 +78,7 @@ private:
     void                    content_update(int64_t variables_timestamp);
     void                    output(content::path_info_t & ipath);
     void                    get_icon(content::path_info_t & cpath, content::field_search::search_result_t & result);
+    void                    save_clicked_icon();
 
     zpsnap_child_t          f_snap;
 };

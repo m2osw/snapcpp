@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2013-2015 Made to Order Software Corp.
+#      Copyright (c) 2013-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -63,7 +63,16 @@ add_library(favicon SHARED
     content.xml
     favicon-settings-page.xml
     favicon-settings-parser.xsl
+    asterisk.ico
+    checkmark.ico
+    earth.ico
+    five-colors.ico
+    ladybug.ico
+    molecule.ico
+    ring.ico
     snap-favicon.ico
+    star.ico
+    yellow-ball.ico
 )
 
 target_link_libraries( favicon ${QT_LIBRARIES} )

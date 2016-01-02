@@ -15,7 +15,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2015 Made to Order Software Corp.
+#      Copyright (c) 2011-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -110,8 +110,9 @@ function( AddMagicFiles TARGET_NAME MAGIC_FILES )
         # Generate a .js from a set of magic files
         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/mimetype-${TARGET_lname}.js
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/magic_to_js --name ${TARGET_NAME}
-                ${MIMETYPE_BASICS}
+                ${MAGIC_FILES}
                 1> mimetype-${TARGET_lname}.js
+                || (rm mimetype-${TARGET_lname}.js && exit 1)
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/magic_to_js ${MAGIC_FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Generating mimetype-${TARGET_lname}.js"
@@ -121,8 +122,9 @@ endfunction(AddMagicFiles)
 
 set( MIMETYPE_BASICS
     Magdir/pdf
+    Magdir/snap-basics
 )
-AddMagicFiles( Basics ${MIMETYPE_BASICS} )
+AddMagicFiles( Basics "${MIMETYPE_BASICS}" )
 
 
 
@@ -149,7 +151,7 @@ project(magic_to_js)
 # Version used in the .js files
 set(MIMETYPE_VERSION_MAJOR  0)
 set(MIMETYPE_VERSION_MINOR  0)
-set(MIMETYPE_VERSION_PATCH 10)
+set(MIMETYPE_VERSION_PATCH 12)
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/magic-to-js.h.in ${CMAKE_CURRENT_BINARY_DIR}/magic-to-js.h )
 

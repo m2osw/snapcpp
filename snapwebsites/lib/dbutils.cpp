@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage sessions for users, forms, etc.
-// Copyright (C) 2012-2015  Made to Order Software Corp.
+// Copyright (C) 2012-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -459,7 +459,6 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     else if(n == "content::final"
          || n.startsWith("content::files::reference::")
          || n == "epayment_paypal::maximum_repeat_failures"
-         || n == "favicon::sitewide"
          || n == "sessions::used_up"
          || (f_tableName == "files" && f_rowName == "new")
          || (f_tableName == "files" && f_rowName == "images")
@@ -652,8 +651,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // n bit binary value
         return column_type_t::CT_hexarray_value;
     }
-    else if(n == "favicon::icon"
-         || n.startsWith("content::files::data")
+    else if(n.startsWith("content::files::data")
          || f_tableName == "layout"
          )
     {

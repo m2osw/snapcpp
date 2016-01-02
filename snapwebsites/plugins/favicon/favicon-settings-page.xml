@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == locale timezone page widgets
-Copyright (C) 2014-2015  Made to Order Software Corp.
+Copyright (C) 2014-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,16 +21,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <auto-reset minutes="30"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
-  <focus refid="picture"/>
+  <focus refid="icon"/>
   <on-save allow-edit="yes"/>
   <taborder>
-    <tabindex refid="picture"/>
+    <tabindex refid="icon"/>
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
 
-  <widget id="picture" type="image-box" field="finball::picture" path="favicon/picture" drop="drop" auto-save="html">
-    <attachment force-filename="favicon"/>
+  <widget id="icon" type="image-box" field="favicon::icon" path="favicon/icon" drop="drop" auto-save="html">
+    <attachment force-filename="favicon" force-path=""/>
     <tooltip>Drag &amp; Drop your Favicon Image Here.</tooltip>
     <help>
       Drag &amp; Drop an image here or use the Browse button to define

@@ -1,5 +1,5 @@
 // Snap Websites Server -- find out the MIME type of client's files
-// Copyright (C) 2014-2015  Made to Order Software Corp.
+// Copyright (C) 2014-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -137,7 +137,7 @@ int64_t mimetype::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 9, 19, 2, 7, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 12, 30, 23, 6, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

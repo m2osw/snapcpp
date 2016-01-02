@@ -1,5 +1,5 @@
 // Snap Websites Server -- transform magic definitions to a .js file
-// Copyright (C) 2014-2015  Made to Order Software Corp.
+// Copyright (C) 2014-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,6 +42,15 @@
  * This tool is used to parse magic data files to use in JavaScript
  * to detect file formats on file Drag & Drop.
  *
+ * The documentation of the format of the files is found in the magic
+ * man page:
+ *
+ * \code
+ *      man 5 magic
+ * \endcode
+ *
+ * The following is an approximation of the lexer:
+ *
  * \code
  * start: comment
  *      | empty_line
@@ -83,8 +92,8 @@
  *                     bequad, befloat, bedouble, bedate, deqdate, beldate,
  *                     beqldate, bestring16, leid3, leshort, lelong, lequad,
  *                     lefloat, ledouble, ledate, leqdate, leldate, leqldate,
- *                     lestring16, melong, medate, meldate, indirect, regex,
- *                     search, default, and 'u'-<integer type>
+ *                     lestring16, melong, medate, meldate, indirect, name,
+ *                     use, regex, search, default, and 'u'-<integer type>
  *
  * value: str_value
  *      | num_value
@@ -185,9 +194,10 @@ class lexer
 public:
     enum class mode_t
     {
-        LEXER_MODE_NORMAL,      // normal parsing
-        LEXER_MODE_MESSAGE,     // read whatever up to the end of line as a string (keep spaces, do not convert integers, etc.)
-        LEXER_MODE_REGEX        // reading a regular expression (read as a string)
+        LEXER_MODE_NORMAL,                  // normal parsing
+        LEXER_MODE_NORMAL_WITHOUT_FLOATS,   // normal parsing, but no floats
+        LEXER_MODE_MESSAGE,                 // read whatever up to the end of line as a string (keep spaces, do not convert integers, etc.)
+        LEXER_MODE_REGEX                    // reading a regular expression (read as a string)
     };
 
     typedef std::shared_ptr<lexer>      pointer_t;
@@ -261,22 +271,24 @@ public:
 
     std::string     list_of_filenames() const;
     token_t         get_token(mode_t mode);
+    std::string     current_filename() const { return f_filenames.empty() ? "<no filenames>" : f_filenames[f_fpos - 1]; }
+    int32_t         current_line() const { return f_line; }
 
 private:
     int             getc();
     void            ungetc(int c);
-    token_t         get_normal_token();
+    token_t         get_normal_token(mode_t mode);
     token_t         get_message_token();
     token_t         get_identifier_token(int c);
     token_t         get_string_token();
-    token_t         get_number_token(int c);
+    token_t         get_number_token(mode_t mode, int c);
 
-    filenames_t                 f_filenames;
-    controlled_vars::mint32_t   f_fpos;
-    controlled_vars::mint32_t   f_line;
-    controlled_vars::tbool_t    f_start_of_line;
-    std::ifstream               f_file; // current stream
-    std::vector<char>           f_unget;
+    filenames_t                     f_filenames;
+    controlled_vars::mint32_t       f_fpos;
+    controlled_vars::mint32_t       f_line;
+    controlled_vars::tbool_t        f_start_of_line;
+    std::shared_ptr<std::ifstream>  f_file; // current stream
+    std::vector<char>               f_unget;
 };
 
 
@@ -334,7 +346,7 @@ std::ostream& operator << (std::ostream& out, lexer::token_t const& token)
             }
             else if(c < 0x20 || c >= 0x7F)
             {
-                out << "character '\\" << std::oct << std::setw(3) << static_cast<int>(c) << std::dec << "' (\\x" << std::hex << static_cast<int>(c) << std::dec << ")";
+                out << "character '\\" << std::oct << std::setw(3) << static_cast<int>(c) << std::dec << "' (\\x" << std::hex << std::uppercase << static_cast<int>(c) << std::dec << ")";
             }
             else
             {
@@ -348,7 +360,7 @@ std::ostream& operator << (std::ostream& out, lexer::token_t const& token)
         break;
 
     case lexer::token_t::type_t::TOKEN_TYPE_INTEGER:
-        out << "integer " << token.get_integer() << " (0x" << std::hex << token.get_integer() << std::dec << ")";
+        out << "integer " << token.get_integer() << " (0x" << std::hex << std::uppercase << token.get_integer() << std::dec << ")";
         break;
 
     case lexer::token_t::type_t::TOKEN_TYPE_FLOAT:
@@ -380,14 +392,15 @@ std::ostream& operator << (std::ostream& out, lexer::token_t const& token)
 lexer::lexer(filenames_t fn)
     : f_filenames(fn)
     , f_fpos(0)
-    //, f_file() -- auto-init
+    //, f_file(nullptr) -- auto-init
     , f_line(1)
     //, f_start_of_line(true)
 {
     if(fn.size() > 0)
     {
-        f_file.open(f_filenames[0]);
-        if(!f_file.is_open())
+        f_file.reset(new std::ifstream);
+        f_file->open(f_filenames[0]);
+        if(!f_file->is_open())
         {
             std::cerr << "error: could not open file \"" << f_filenames[0] << "\".\n";
             exit(1);
@@ -425,7 +438,8 @@ lexer::token_t lexer::get_token(mode_t mode)
     switch(mode)
     {
     case mode_t::LEXER_MODE_NORMAL:
-        token = get_normal_token();
+    case mode_t::LEXER_MODE_NORMAL_WITHOUT_FLOATS:
+        token = get_normal_token(mode);
         break;
 
     case mode_t::LEXER_MODE_MESSAGE:
@@ -462,16 +476,17 @@ int lexer::getc()
 {
     if(!f_unget.empty())
     {
-        int c(f_unget.back());
+        int const c(f_unget.back());
         f_unget.pop_back();
         return c;
     }
     for(;;)
     {
-        int c(f_file.get());
+        int const c(f_file->get());
         if(c != std::istream::traits_type::eof())
         {
             // get a character, return it
+//std::cerr << static_cast<char>(c);
             return c;
         }
         // more files to read?
@@ -479,13 +494,16 @@ int lexer::getc()
         {
             return std::istream::traits_type::eof();
         }
-        f_file.open(f_filenames[f_fpos]);
-        if(!f_file.is_open())
+        f_file.reset(new std::ifstream);
+        f_file->open(f_filenames[f_fpos]);
+        if(!f_file->is_open())
         {
             // file cannot be read...
-            std::cerr << "error: could not open file \"" << f_filenames[0] << "\".\n";
+            std::cerr << "error: could not open file \"" << f_filenames[f_fpos] << "\".\n";
             exit(1);
         }
+        ++f_fpos;
+        f_line = 1;
     }
 }
 
@@ -516,7 +534,7 @@ void lexer::ungetc(int c)
  *
  * \return The next token.
  */
-lexer::token_t lexer::get_normal_token()
+lexer::token_t lexer::get_normal_token(mode_t mode)
 {
     // at this time the only reason we loop is a line commented out
     // or an empty line; anything else either returns or generates
@@ -576,14 +594,18 @@ lexer::token_t lexer::get_normal_token()
         case '=':
         case '&':
         case '^':
+        case '*':
         case '/':
         case '+':
         case '-':
+        case '(':
+        case ')':
+        case '.':
             return token_t(static_cast<token_t::character_t>(c));
 
         case '!':
-            // TBD: should we force this check at the start of a line
-            //      (if it works like this for us, we'll be just fine.)
+            // TBD: should we force this check at the start of a line?
+            //      (if it works like this for us, we will be just fine.)
             c = getc();
             if(c == ':')
             {
@@ -593,12 +615,12 @@ lexer::token_t lexer::get_normal_token()
                 return token_t(id.get_string(), false);
             }
             ungetc(c);
-            return token_t(static_cast<token_t::character_t>(c));
+            return token_t(static_cast<token_t::character_t>('!'));
 
         default:
             if(c >= '0' && c <= '9')
             {
-                return get_number_token(c);
+                return get_number_token(mode, c);
             }
             if((c >= 'a' && c <= 'z')
             || (c >= 'A' && c <= 'Z')
@@ -610,7 +632,11 @@ lexer::token_t lexer::get_normal_token()
             {
                 return token_t();
             }
-            std::cerr << "error: unsupported character in token in \"" << f_filenames[f_fpos - 1] << "\".\n";
+            std::cerr << "error:" << f_filenames[f_fpos - 1]
+                      << ":" << f_line
+                      << ": unsupported character " << c
+                      << " (0x" << std::hex << std::uppercase << c
+                      << ") from input file.\n";
             exit(1);
             snap::NOTREACHED();
 
@@ -670,9 +696,10 @@ lexer::token_t lexer::get_message_token()
  *
  * This function does not detect a sign at the start of the number.
  *
+ * \param[in] mode  The mode used to read this token.
  * \param[in] c  The start digit.
  */
-lexer::token_t lexer::get_number_token(int c)
+lexer::token_t lexer::get_number_token(mode_t mode, int c)
 {
     token_t::integer_t   ri(0);
     token_t::float_t     rf(0.0);
@@ -747,7 +774,8 @@ lexer::token_t lexer::get_number_token(int c)
 
     // floating point number?
     // TBD: we may need to support detecting 'e' or 'E' as a floating point too?
-    if(d == '.')
+    if(d == '.'
+    && mode == lexer::mode_t::LEXER_MODE_NORMAL_WITHOUT_FLOATS)
     {
         // TBD: for floating points we may want to use the strtod() or
         //      similar function to make sure that we get the same result
@@ -1054,7 +1082,9 @@ public:
             ENTRY_TYPE_MELDATE,
             // special
             ENTRY_TYPE_INDIRECT,
-            ENTRY_TYPE_DEFAULT
+            ENTRY_TYPE_DEFAULT,
+            ENTRY_TYPE_NAME,
+            ENTRY_TYPE_USE
         };
         typedef controlled_vars::limited_auto_init<type_t, type_t::ENTRY_TYPE_UNKNOWN, type_t::ENTRY_TYPE_DEFAULT, type_t::ENTRY_TYPE_UNKNOWN> safe_type_t;
 
@@ -1088,21 +1118,22 @@ public:
         static integer_t const  ENTRY_FLAG_NEGATE               = 0x00040000; // ~value   integer only
         static integer_t const  ENTRY_FLAG_TRUE                 = 0x00080000; // x        numbers only
         // regex flags
-        static integer_t const  ENTRY_FLAG_CASE_INSENSITIVE     = 0x00100000; // c        regex only
-        static integer_t const  ENTRY_FLAG_START_OFFSET         = 0x00200000; // s        regex only
+        static integer_t const  ENTRY_FLAG_LINES                = 0x00100000; // l        regex only
+        static integer_t const  ENTRY_FLAG_CASE_INSENSITIVE     = 0x00200000; // c        regex only
+        static integer_t const  ENTRY_FLAG_START_OFFSET         = 0x00400000; // s        regex only
         // offset flags
-        static integer_t const  ENTRY_FLAG_RELATIVE             = 0x00400000; // &        before the offset
-        static integer_t const  ENTRY_FLAG_INDIRECT_RELATIVE    = 0x00800000; // (&...)   before the indirect offset
+        static integer_t const  ENTRY_FLAG_RELATIVE             = 0x04000000; // &        before the offset
+        static integer_t const  ENTRY_FLAG_INDIRECT_RELATIVE    = 0x08000000; // (&...)   before the indirect offset
 
         // indirect sizes (TBD: what are the "i and I"? why have "b and B"?)
-        static integer_t const  ENTRY_FLAG_INDIRECT_BYTE        = 0x0100000000; // b or B (B not used in existing files)
-        static integer_t const  ENTRY_FLAG_INDIRECT_BE_SHORT    = 0x0200000000; // S
-        static integer_t const  ENTRY_FLAG_INDIRECT_LE_SHORT    = 0x0400000000; // s
-        static integer_t const  ENTRY_FLAG_INDIRECT_BE_LONG     = 0x0800000000; // L
-        static integer_t const  ENTRY_FLAG_INDIRECT_LE_LONG     = 0x1000000000; // l
-        static integer_t const  ENTRY_FLAG_INDIRECT_ME_LONG     = 0x2000000000; // m
-        static integer_t const  ENTRY_FLAG_INDIRECT_BE_ID3      = 0x4000000000; // I
-        static integer_t const  ENTRY_FLAG_INDIRECT_LE_ID3      = 0x8000000000; // i
+        static integer_t const  ENTRY_FLAG_INDIRECT_BYTE        = 0x01000000000; // b or B (B not used in existing files)
+        static integer_t const  ENTRY_FLAG_INDIRECT_BE_SHORT    = 0x02000000000; // S
+        static integer_t const  ENTRY_FLAG_INDIRECT_LE_SHORT    = 0x04000000000; // s
+        static integer_t const  ENTRY_FLAG_INDIRECT_BE_LONG     = 0x08000000000; // L
+        static integer_t const  ENTRY_FLAG_INDIRECT_LE_LONG     = 0x10000000000; // l
+        static integer_t const  ENTRY_FLAG_INDIRECT_ME_LONG     = 0x20000000000; // m
+        static integer_t const  ENTRY_FLAG_INDIRECT_BE_ID3      = 0x40000000000; // I
+        static integer_t const  ENTRY_FLAG_INDIRECT_LE_ID3      = 0x80000000000; // i
 
         void                set_level(integer_t level) { f_level = level; }
         integer_t           get_level() const { return f_level; }
@@ -1122,6 +1153,7 @@ public:
         void                set_flags(integer_t flags) { f_flags |= flags; }
         void                clear_flags(integer_t flags) { f_flags &= ~flags; }
         integer_t           get_flags() const { return f_flags; }
+        std::string         flags_to_js_operator() const;
 
         void                set_mimetype(std::string mimetype) { f_mimetype = mimetype; }
         std::string         get_mimetype() const { return f_mimetype; }
@@ -1159,7 +1191,7 @@ public:
     void                    output();
 
 private:
-    void                    output_entry(size_t start, size_t end);
+    void                    output_entry(size_t start, size_t end, bool has_mime);
     void                    output_header();
     void                    output_footer();
 
@@ -1168,6 +1200,29 @@ private:
     entry_vector_t          f_entries;
     std::string             f_magic_name;
 };
+
+
+
+std::string parser::entry_t::flags_to_js_operator() const
+{
+    if((f_flags & ENTRY_FLAG_NOT) != 0)
+    {
+        return "!==";
+    }
+    else
+    {
+        return "===";
+    }
+        // TODO: support <, >, &, ^, ~...
+        //static integer_t const  ENTRY_FLAG_NOT                  = 0x00001000; // !value
+        //static integer_t const  ENTRY_FLAG_EQUAL                = 0x00002000; // =value
+        //static integer_t const  ENTRY_FLAG_LESS                 = 0x00004000; // <value
+        //static integer_t const  ENTRY_FLAG_GREATER              = 0x00008000; // >value
+        //static integer_t const  ENTRY_FLAG_ARE_SET              = 0x00010000; // &value   integer only
+        //static integer_t const  ENTRY_FLAG_ARE_CLEAR            = 0x00020000; // ^value   integer only
+        //static integer_t const  ENTRY_FLAG_NEGATE               = 0x00040000; // ~value   integer only
+        //static integer_t const  ENTRY_FLAG_TRUE                 = 0x00080000; // x        numbers only
+}
 
 
 /** \brief Parse the magic files data.
@@ -1226,7 +1281,7 @@ void parser::parse()
             continue;
 
         case lexer::token_t::type_t::TOKEN_TYPE_EOT:
-            // we're done parsing
+            // we are done parsing
             return;
 
         case lexer::token_t::type_t::TOKEN_TYPE_CHARACTER:
@@ -1253,20 +1308,41 @@ void parser::parse()
             && token.get_character() == '&')
             {
                 e->set_flags(entry_t::ENTRY_FLAG_RELATIVE);
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
             }
 
-            if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
             {
-                // the actual offset
-                e->set_offset(token.get_integer());
-                break;
+                int offset_sign(1);
+                if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
+                && token.get_character() == '-')
+                {
+                    offset_sign = -1;
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                }
+
+                if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
+                {
+                    // the actual offset
+                    e->set_offset(token.get_integer() * offset_sign);
+                    break;
+                }
+
+                if(offset_sign == -1)
+                {
+                    std::cerr << "error:" << f_lexer->current_filename()
+                              << ":" << f_lexer->current_line()
+                              << ": expected an integer after a '-' in the offset.\n";
+                    exit(1);
+                }
             }
 
             // indirect
             if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             || token.get_character() != '(')
             {
-                std::cerr << "error: expected an integer, '&', or '(' after the level indication.\n";
+                std::cerr << "error:" << f_lexer->current_filename()
+                          << ":" << f_lexer->current_line()
+                          << ": expected an integer, '&', or '(' after the level indication.\n";
                 exit(1);
             }
             token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
@@ -1364,22 +1440,67 @@ void parser::parse()
                     break;
 
                 default:
-                    std::cerr << "error: indirect adjustment operator (" << token.get_character() << ") not supported.\n";
+                    std::cerr << "error: indirect adjustment operator ("
+                              << token.get_character() << ") not supported."
+                              << std::endl;
                     exit(1);
 
                 }
                 token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
-                if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
+                if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
+                && token.get_character() == '(')
                 {
-                    // Note: in the documentation they say you can also have
-                    //       another parenthesis layer as in: +(-4)
-                    std::cerr << "error: indirect adjustment operator must be followed by an integer.\n";
-                    exit(1);
+                    // case were we have a negative number and they
+                    // generally use (<position>.<size>+(-<offset>))
+                    //
+                    int sign(1);
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                    if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
+                    && token.get_character() == '-')
+                    {
+                        sign = -1;
+                        token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                    }
+                    if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
+                    {
+                        std::cerr << "error:" << f_lexer->current_filename()
+                                  << ":" << f_lexer->current_line()
+                                  << ": indirect adjustment operator must be followed by an integer."
+                                  << std::endl;
+                        exit(1);
+                    }
+                    // Note: the + and - can be optimized by replacing the
+                    //       integer with -integer and the '-' by '+'
+                    //e->set_indirect_adjustment(token.get_integer() * sign);
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                    if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
+                    && token.get_character() != ')')
+                    {
+                        std::cerr << "error:" << f_lexer->current_filename()
+                                  << ":" << f_lexer->current_line()
+                                  << ": indirect adjustment operator sub-offset must be ended by a ')'."
+                                  << std::endl;
+                        exit(1);
+                    }
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
                 }
-                // Note: the + and - can be optimized by replacing the
-                //       integer with -integer and the '-' by '+'
-                //e->set_indirect_adjustment(token.get_integer());
-                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                else
+                {
+                    if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
+                    {
+                        // Note: in the documentation they say you can also have
+                        //       another parenthesis layer as in: +(-4)
+                        std::cerr << "error:" << f_lexer->current_filename()
+                                  << ":" << f_lexer->current_line()
+                                  << ": indirect adjustment operator must be followed by an integer."
+                                  << std::endl;
+                        exit(1);
+                    }
+                    // Note: the + and - can be optimized by replacing the
+                    //       integer with -integer and the '-' by '+'
+                    //e->set_indirect_adjustment(token.get_integer());
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                }
             }
             if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             || token.get_character() != ')')
@@ -1638,9 +1759,19 @@ void parser::parse()
         {
             e->set_type(entry_t::type_t::ENTRY_TYPE_DEFAULT);
         }
+        else if(type == "name")
+        {
+            e->set_type(entry_t::type_t::ENTRY_TYPE_NAME);
+        }
+        else if(type == "use")
+        {
+            e->set_type(entry_t::type_t::ENTRY_TYPE_USE);
+        }
         else
         {
-            std::cerr << "error: unknown type \"" << type << "\".\n";
+            std::cerr << "error:" << f_lexer->current_filename()
+                      << ":" << f_lexer->current_line()
+                      << ": unknown type \"" << type << "\".\n";
             exit(1);
         }
 
@@ -1723,8 +1854,8 @@ void parser::parse()
                         exit(1);
                     }
                     {
-                        std::string flags(token.get_string());
-                        for(char const *f(flags.c_str()); f != '\0'; ++f)
+                        std::string const flags(token.get_string());
+                        for(char const *f(flags.c_str()); *f != '\0'; ++f)
                         {
                             switch(*f)
                             {
@@ -1753,7 +1884,10 @@ void parser::parse()
                                 break;
 
                             default:
-                                std::cerr << "error: invalid character used as a string, bestring16, or lestring16 (" << *f << ").\n";
+                                std::cerr << "error:" << f_lexer->current_filename()
+                                          << ":" << f_lexer->current_line()
+                                          << ": invalid character used as a string, bestring16, or lestring16 ("
+                                          << *f << ").\n";
                                 exit(1);
 
                             }
@@ -1771,8 +1905,8 @@ void parser::parse()
                         exit(1);
                     }
                     {
-                        std::string flags(token.get_string());
-                        for(char const *f(flags.c_str()); f != '\0'; ++f)
+                        std::string const flags(token.get_string());
+                        for(char const *f(flags.c_str()); *f != '\0'; ++f)
                         {
                             switch(*f)
                             {
@@ -1815,7 +1949,7 @@ void parser::parse()
                     // TBD:
                     // I would imagine that both could be used (integer + flags)
                     // but it is not documented so at this point I read one or
-                    // the other and that's enough with the existing files.
+                    // the other and that is enough with the existing files.
                     if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
                     {
                         // the number of lines to check the regex against
@@ -1830,12 +1964,16 @@ void parser::parse()
                     }
                     if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_STRING)
                     {
-                        // regex flags are 's' and 'c'
+                        // regex flags are 'l', 's' and 'c'
                         std::string flags(token.get_string());
-                        for(char const *f(flags.c_str()); f != '\0'; ++f)
+                        for(char const *f(flags.c_str()); *f != '\0'; ++f)
                         {
                             switch(*f)
                             {
+                            case 'l':
+                                e->set_flags(entry_t::ENTRY_FLAG_LINES);
+                                break;
+
                             case 'c':
                                 e->set_flags(entry_t::ENTRY_FLAG_CASE_INSENSITIVE);
                                 break;
@@ -2000,7 +2138,8 @@ void parser::parse()
             }
             {
                 bool has_operator(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER);
-                if(has_operator)
+                if(has_operator
+                && token.get_character() != '-')
                 {
                     // verify that it is legal with a floating point value if such
                     if(is_float)
@@ -2010,7 +2149,10 @@ void parser::parse()
                         case '&':
                         case '^':
                         case '~':
-                            std::cerr << "error: & used with a floating point number.\n";
+                            std::cerr << "error:" << f_lexer->current_filename()
+                                    << ":" << f_lexer->current_line()
+                                    << ": " << static_cast<char>(token.get_character())
+                                    << " used with a floating point number.\n";
                             exit(1);
                             snap::NOTREACHED();
 
@@ -2043,12 +2185,22 @@ void parser::parse()
                         break;
 
                     default:
-                        std::cerr << "error: unknown comparison operator " << token.get_character() << ".\n";
+                        std::cerr << "error:"
+                                  << f_lexer->current_filename() << ":"
+                                  << f_lexer->current_line() << ": unknown comparison operator "
+                                  << token.get_character() << ".\n";
                         exit(1);
                         snap::NOTREACHED();
 
                     }
                     token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+
+                    // we allow spaces after an operator
+                    if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
+                    && token.get_character() == ' ')
+                    {
+                        token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                    }
                 }
                 // one special case here: "x"
                 if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_STRING
@@ -2057,18 +2209,48 @@ void parser::parse()
                 {
                     e->set_flags(entry_t::ENTRY_FLAG_TRUE);
                 }
-                else if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
+                else
                 {
-                    std::cerr << "error: a number was expected for an entry specifying a number type.\n";
-                    exit(1);
-                }
-                else if(is_float)
-                {
-                    e->set_float(token.get_float());
-                }
-                else /* is integer */
-                {
-                    e->set_integer(token.get_integer());
+                    int sign(1);
+                    if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
+                    && token.get_character() == '-')
+                    {
+                        sign = -1;
+                        token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                    }
+                    if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_FLOAT)
+                    {
+                        if(!is_float)
+                        {
+                            std::cerr << "error:" << f_lexer->current_filename()
+                                    << ":" << f_lexer->current_line()
+                                    << ": an integer was expected for an entry specifying a number type.\n";
+                            exit(1);
+                        }
+
+                        e->set_float(token.get_float() * static_cast<double>(sign));
+                    }
+                    else if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
+                    {
+                        if(is_float)
+                        {
+                            std::cerr << "error:" << f_lexer->current_filename()
+                                    << ":" << f_lexer->current_line()
+                                    << ": a floating point number was expected for an entry specifying a floating point type, got an integer.\n";
+                            exit(1);
+                        }
+
+                        e->set_integer(token.get_integer() * sign);
+                    }
+                    else
+                    {
+                        std::cerr << "error:" << f_lexer->current_filename()
+                                << ":" << f_lexer->current_line()
+                                << ": an \"x\", an integer, or a floating point number were expected (instead token type is: "
+                                << static_cast<int>(token.get_type())
+                                << ").\n";
+                        exit(1);
+                    }
                 }
             }
             break;
@@ -2112,6 +2294,16 @@ void parser::parse()
 
         case entry_t::type_t::ENTRY_TYPE_REGEX:
             token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_REGEX);
+            e->set_string(token.get_string());
+            break;
+
+        case entry_t::type_t::ENTRY_TYPE_NAME: // this creates a macro
+            token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+            e->set_string(token.get_string());
+            break;
+
+        case entry_t::type_t::ENTRY_TYPE_USE: // this calls a macro
+            token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
             e->set_string(token.get_string());
             break;
 
@@ -2185,6 +2377,7 @@ void parser::output()
     output_header();
 
     bool has_mime(false);
+    std::string name;
     size_t start(0);
     for(size_t i(0); i < max_entries; ++i)
     {
@@ -2193,7 +2386,15 @@ void parser::output()
             // if we get an entry with a mime type, then send it out
             if(has_mime)
             {
-                output_entry(start, i);
+                output_entry(start, i, true);
+                has_mime = false;
+            }
+            else if(!name.empty())
+            {
+                std::cout << "__macro_" << name << " = function(offset) {" << std::endl;
+                output_entry(start, i, false);
+                std::cout << "return false;};" << std::endl;
+                name.clear();
             }
             start = i;
         }
@@ -2202,29 +2403,43 @@ void parser::output()
             // this means it is worth encoding
             has_mime = true;
         }
+        if(f_entries[i]->get_type() == entry_t::type_t::ENTRY_TYPE_NAME)
+        {
+            // found a macro
+            name = f_entries[i]->get_string();
+        }
     }
     if(has_mime)
     {
-        output_entry(start, max_entries);
+        output_entry(start, max_entries, true);
     }
 
     output_footer();
 }
 
 
-void parser::output_entry(size_t start, size_t end)
+void parser::output_entry(size_t start, size_t end, bool has_mime)
 {
     struct recursive_output
     {
+        recursive_output(bool has_mime)
+            : f_has_mime(has_mime)
+        {
+        }
+
         size_t output(size_t pos)
         {
             output_if(pos);
             size_t next_pos(pos + 1);
             if(next_pos < f_entries.size()
-            && f_entries[pos]->get_level() < f_entries[next_pos]->get_level())
+            && f_entries[pos]->get_level() <= f_entries[next_pos]->get_level())
             {
                 // returns our new next_pos
                 next_pos = output(next_pos);  // recursive call
+            }
+            else if(!f_has_mime)
+            {
+                std::cout << "return true;" << std::endl;
             }
             output_mimetype(pos);
             output_endif(pos);
@@ -2302,7 +2517,9 @@ void parser::output_entry(size_t start, size_t end)
                 [static_cast<int>(entry_t::type_t::ENTRY_TYPE_MELDATE)] = &recursive_output::output_meldate,
                 // special
                 [static_cast<int>(entry_t::type_t::ENTRY_TYPE_INDIRECT)] = &recursive_output::output_indirect,
-                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_DEFAULT)] = &recursive_output::output_default
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_DEFAULT)] = &recursive_output::output_default,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_NAME)] = &recursive_output::output_name,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_USE)] = &recursive_output::output_use
             };
 
             std::cout << "if(";
@@ -2319,240 +2536,322 @@ void parser::output_entry(size_t start, size_t end)
 
         void output_byte(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            int64_t const be(f_entries[pos]->get_integer());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << f_entries[pos]->get_offset() << "]"
+                      << " "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (be & 0xff)
+                      << std::dec;
         }
 
         void output_ubyte(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            int64_t const be(f_entries[pos]->get_integer());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << f_entries[pos]->get_offset() << "]"
+                      << " "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (be & 0xff)
+                      << std::dec;
         }
 
         void output_short(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (short).\n";
             exit(1);
         }
 
         void output_leshort(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            int64_t const le(f_entries[pos]->get_integer());
+            int64_t const offset(f_entries[pos]->get_offset());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << offset
+                      << "] + buf[" << (f_has_mime ? "" : "offset+") << (offset + 1)
+                      << "] * 256 "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (le & 0xffff)
+                      << std::dec;
         }
 
         void output_beshort(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            int64_t const be(f_entries[pos]->get_integer());
+            int64_t const offset(f_entries[pos]->get_offset());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << offset
+                      << "] * 256 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 1)
+                      << " "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (be & 0xffff)
+                      << std::dec;
         }
 
         void output_ushort(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (ushort).\n";
             exit(1);
         }
 
         void output_uleshort(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            int64_t const ule(f_entries[pos]->get_integer());
+            int64_t const offset(f_entries[pos]->get_offset());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << offset
+                      << "] + buf[" << (f_has_mime ? "" : "offset+") << (offset + 1)
+                      << " * 256 "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (ule & 0xffff)
+                      << std::dec;
         }
 
         void output_ubeshort(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            int64_t const ube(f_entries[pos]->get_integer());
+            int64_t const offset(f_entries[pos]->get_offset());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << offset
+                      << "] * 256 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 1)
+                      << " "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (ube & 0xffff)
+                      << std::dec;
         }
 
         void output_long(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            // this is a machine byte order, I am not currently sure
+            // on how we could really get that in JavaScript; for
+            // now do a little endian since most users have x86 based
+            // processors which are in little endian
+            //
+            int64_t const le(f_entries[pos]->get_integer());
+            int64_t const offset(f_entries[pos]->get_offset());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << offset
+                      << "] + buf[" << (f_has_mime ? "" : "offset+") << (offset + 1)
+                      << "] * 256 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 2)
+                      << "] * 65536 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 3)
+                      << "] * 16777216 "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (le & 0xffffffffLL)
+                      << std::dec;
         }
 
         void output_lelong(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            int64_t const le(f_entries[pos]->get_integer());
+            int64_t const offset(f_entries[pos]->get_offset());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << offset
+                      << "] + buf[" << (f_has_mime ? "" : "offset+") << (offset + 1)
+                      << "] * 256 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 2)
+                      << "] * 65536 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 3)
+                      << "] * 16777216 "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (le & 0xffffffffLL)
+                      << std::dec;
         }
 
         void output_belong(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            int64_t const be(f_entries[pos]->get_integer());
+            int64_t const offset(f_entries[pos]->get_offset());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << offset
+                      << "] * 16777216 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 1)
+                      << "] * 65536 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 2)
+                      << "] * 256 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 3)
+                      << "] "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (be & 0xffffffffLL)
+                      << std::dec;
         }
 
         void output_melong(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (melong).\n";
             exit(1);
         }
 
         void output_ulong(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (ulong).\n";
             exit(1);
         }
 
         void output_ulelong(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (ulelong).\n";
             exit(1);
         }
 
         void output_ubelong(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            int64_t const ube(f_entries[pos]->get_integer());
+            int64_t const offset(f_entries[pos]->get_offset());
+            std::cout << "buf[" << (f_has_mime ? "" : "offset+") << offset
+                      << "] * 16777216 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 1)
+                      << "] * 65536 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 2)
+                      << "] * 256 + buf[" << (f_has_mime ? "" : "offset+") << (offset + 3)
+                      << "] "
+                      << f_entries[pos]->flags_to_js_operator()
+                      << " 0x"
+                      << std::hex << std::uppercase
+                      << (ube & 0xffffffffLL)
+                      << std::dec;
         }
 
         void output_umelong(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (umelong).\n";
             exit(1);
         }
 
         void output_beid3(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (beid3).\n";
             exit(1);
         }
 
         void output_leid3(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (leid3).\n";
             exit(1);
         }
 
         void output_ubeid3(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (ubeid3).\n";
             exit(1);
         }
 
         void output_uleid3(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (uleid3).\n";
             exit(1);
         }
 
         void output_quad(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (quad).\n";
             exit(1);
         }
 
         void output_bequad(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (bequad).\n";
             exit(1);
         }
 
         void output_lequad(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (lequad).\n";
             exit(1);
         }
 
         void output_uquad(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (uquad).\n";
             exit(1);
         }
 
         void output_ubequad(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (ubequad).\n";
             exit(1);
         }
 
         void output_ulequad(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (ulequad).\n";
             exit(1);
         }
 
         void output_float(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (float).\n";
             exit(1);
         }
 
         void output_befloat(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (befloat).\n";
             exit(1);
         }
 
         void output_lefloat(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (lefloat).\n";
             exit(1);
         }
 
         void output_double(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (double).\n";
             exit(1);
         }
 
         void output_bedouble(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (bedouble).\n";
             exit(1);
         }
 
         void output_ledouble(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (ledouble).\n";
             exit(1);
         }
 
         void output_string(size_t pos)
         {
             parser::entry_t::integer_t offset(f_entries[pos]->get_offset());
-            std::string str(f_entries[pos]->get_string());
+            std::string const str(f_entries[pos]->get_string());
             for(size_t i(0); i < str.length(); ++i, ++offset)
             {
                 std::cout << (i > 0 ? "\n&& " : "")
                           << "buf["
+                          << (f_has_mime ? "" : "offset+")
                           << offset
-                          << "] === 0x"
-                          << std::hex
-                          << static_cast<int>(str[i])
+                          << "] "
+                          << f_entries[pos]->flags_to_js_operator()
+                          << " 0x"
+                          << std::hex << std::uppercase
+                          << (static_cast<int>(str[i]) & 0xff)
                           << std::dec;
             }
         }
@@ -2560,189 +2859,238 @@ void parser::output_entry(size_t start, size_t end)
         void output_pstring(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (pstring).\n";
             exit(1);
         }
 
         void output_besearch16(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (besearch16).\n";
             exit(1);
         }
 
         void output_lesearch16(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (lesearch16).\n";
             exit(1);
         }
 
         void output_search(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            parser::entry_t::integer_t const offset(f_entries[pos]->get_offset());
+            std::cout << "snapwebsites.BufferToMIMESystemImages.scan(buf,"
+                      << offset << "," << f_entries[pos]->get_maxlength()
+                      << ",{";
+            std::string const str(f_entries[pos]->get_string());
+            for(size_t i(0); i < str.length(); ++i)
+            {
+                std::cout << (i == 0 ? "" : ",")
+                          << std::hex << std::uppercase
+                          << "0x" << static_cast<int>(str[i])
+                          << std::dec;
+            }
+            std::cout << "});";
         }
 
         void output_regex(size_t pos)
         {
-            snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            parser::entry_t::integer_t const offset(f_entries[pos]->get_offset());
+            std::cout << "snapwebsites.BufferToMIMESystemImages.regex(buf,"
+                      << offset << "," << f_entries[pos]->get_maxlength()
+                      << ",{";
+            std::string const str(f_entries[pos]->get_string());
+            for(size_t i(0); i < str.length(); ++i)
+            {
+                std::cout << (i == 0 ? "" : ",")
+                          << std::hex << std::uppercase
+                          << "0x" << static_cast<int>(str[i])
+                          << std::dec;
+            }
+            std::cout << "},"
+                      << (
+                            ((f_entries[pos]->get_flags() & entry_t::ENTRY_FLAG_LINES           ) != 0 ? 1 : 0)
+                          | ((f_entries[pos]->get_flags() & entry_t::ENTRY_FLAG_CASE_INSENSITIVE) != 0 ? 2 : 0)
+                          | ((f_entries[pos]->get_flags() & entry_t::ENTRY_FLAG_START_OFFSET    ) != 0 ? 4 : 0)
+                         )
+                      << ");";
         }
 
         void output_date(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (date).\n";
             exit(1);
         }
 
         void output_qdate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (qdate).\n";
             exit(1);
         }
 
         void output_ldate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (ldate).\n";
             exit(1);
         }
 
         void output_qldate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (qldate).\n";
             exit(1);
         }
 
         void output_bedate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (bedate).\n";
             exit(1);
         }
 
         void output_beqdate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (beqdate).\n";
             exit(1);
         }
 
         void output_beldate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (beldate).\n";
             exit(1);
         }
 
         void output_beqldate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (beqldate).\n";
             exit(1);
         }
 
         void output_ledate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (ledate).\n";
             exit(1);
         }
 
         void output_leqdate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (leqdate).\n";
             exit(1);
         }
 
         void output_leldate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (leldate).\n";
             exit(1);
         }
 
         void output_leqldate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (leqldate).\n";
             exit(1);
         }
 
         void output_medate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (medate).\n";
             exit(1);
         }
 
         void output_meldate(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (meldate).\n";
             exit(1);
         }
 
         void output_indirect(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
+            std::cerr << "error: type not implemented yet (indirect).\n";
             exit(1);
         }
 
         void output_default(size_t pos)
         {
+            // default is always true
             snap::NOTUSED(pos);
-            std::cerr << "error: type not implemented yet.\n";
-            exit(1);
+            std::cout << "true";
+        }
+
+        void output_name(size_t pos)
+        {
+            snap::NOTUSED(pos);
+            // this is already done in the caller which generates the
+            // function declaration
+        }
+
+        void output_use(size_t pos)
+        {
+            std::cout << "__macro_" << f_entries[pos]->get_string()
+                      << "("
+                      << f_entries[pos]->get_offset()
+                      << ")";
         }
 
         void output_mimetype(size_t pos)
         {
-            std::string mimetype(f_entries[pos]->get_mimetype());
+            std::string const mimetype(f_entries[pos]->get_mimetype());
             if(!mimetype.empty())
             {
-                std::cout << "return \"" << mimetype << "\";\n";
+                std::cout << "return \"" << mimetype << "\";" << std::endl;
             }
         }
 
         void output_endif(size_t pos)
         {
             snap::NOTUSED(pos);
-            std::cout << "}\n";
+            std::cout << "}" << std::endl;
         }
 
         // variable members
-        entry_vector_t f_entries;
+        entry_vector_t  f_entries;
+        bool            f_has_mime;
     };
-    recursive_output out;
+    recursive_output out(has_mime);
 
     // first remove all entries that we are not going to use (i.e.
     // anything at the end which does not include a MIME type)
     entry_t::integer_t l(-1);
+    if(!has_mime)
+    {
+        l = f_entries[end - 1]->get_level();
+    }
     size_t j(end);
     while(j > start)
     {
         --j;
 
-        if(f_entries[j]->get_mimetype().empty())
+        if(f_entries[j]->get_type() != entry_t::type_t::ENTRY_TYPE_NAME)
         {
-            if(f_entries[j]->get_level() < l)
+            if(f_entries[j]->get_mimetype().empty())
             {
+                if(f_entries[j]->get_level() <= l)
+                {
+                    out.f_entries.insert(out.f_entries.begin(), f_entries[j]);
+                }
+            }
+            else
+            {
+                l = f_entries[j]->get_level();
                 out.f_entries.insert(out.f_entries.begin(), f_entries[j]);
             }
-        }
-        else
-        {
-            l = f_entries[j]->get_level();
-            out.f_entries.insert(out.f_entries.begin(), f_entries[j]);
         }
     }
 
@@ -2757,11 +3105,11 @@ void parser::output_header()
 
     std::cout <<
 "/** @preserve\n"
-" * WARNING: AUTO-GENERATED FILE, DO NOT EDIT. See Source.\n"
+" * WARNING: AUTO-GENERATED FILE, DO NOT EDIT. See Source: magic-to-js.cpp\n"
 " * Name: mimetype-" << lower_magic_name << "\n"
 " * Version: " << MIMETYPE_VERSION_STRING << "\n"
 " * Browsers: all\n"
-" * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.\n"
+" * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.\n"
 " * Depends: output (0.1.5.5)\n"
 " * License: GPL 2.0\n"
 " * Source: File generated by magic-to-js from magic library definition files.\n"
@@ -2937,7 +3285,7 @@ int main(int argc, char *argv[])
 
         return 0;
     }
-    catch(std::exception const& e)
+    catch(std::exception const & e)
     {
         std::cerr << "magic-to-js: exception: " << e.what() << std::endl;
         return 1;

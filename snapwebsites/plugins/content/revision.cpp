@@ -1,5 +1,5 @@
 // Snap Websites Server -- all the user content and much of the system content
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -254,7 +254,7 @@ snap_version::version_number_t content::get_current_revision(QString const& key,
  *
  * \sa get_current_user_branch()
  */
-snap_version::version_number_t content::get_new_branch(QString const& key, QString const& locale)
+snap_version::version_number_t content::get_new_branch(QString const & key, QString const & locale)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
@@ -519,12 +519,15 @@ void content::copy_branch_cells_as_is(QtCassandra::QCassandraCells& source_cells
  * \param[in] locale  The locale used for this revision.
  * \param[in] repeat  Whether the existing data should be duplicated in the
  *                    new revision.
+ * \param[in] old_branch  The previous branch.
  *
  * \return The new revision number.
  */
-snap_version::version_number_t content::get_new_revision(QString const& key,
+snap_version::version_number_t content::get_new_revision(
+                QString const & key,
                 snap_version::version_number_t const branch,
-                QString const& locale, bool repeat,
+                QString const & locale,
+                bool repeat,
                 snap_version::version_number_t const old_branch)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
@@ -568,7 +571,8 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
         {
             // the 'branch' parameter cannot be larger than the last branch allocated
             throw snap_logic_exception(QString("trying to create a new revision for branch %1 which does not exist (last branch is %2)")
-                        .arg(branch).arg(branch_value.uint32Value()));
+                        .arg(branch)
+                        .arg(branch_value.uint32Value()));
         }
     }
 #endif

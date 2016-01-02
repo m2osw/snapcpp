@@ -1,9 +1,9 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.471
+ * Version: 0.0.3.474
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
- * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 

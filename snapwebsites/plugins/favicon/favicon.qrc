@@ -1,6 +1,6 @@
 <!--
 Snap Plugin - - snap favicon plugin resources
-Copyright (C) 2013-2015  Made to Order Software Corp.
+Copyright (C) 2013-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,7 +20,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <RCC version="1.0">
   <qresource prefix="/plugins/favicon">
     <file>content.xml</file>
+  </qresource>
+  <qresource prefix="/images/favicon">
+    <file>asterisk.ico</file>
+    <file>checkmark.ico</file>
+    <file>earth.ico</file>
+    <file>five-colors.ico</file>
+    <file>ladybug.ico</file>
+    <file>molecule.ico</file>
+    <file>ring.ico</file>
     <file>snap-favicon.ico</file>
+    <file>star.ico</file>
+    <file>yellow-ball.ico</file>
   </qresource>
   <qresource prefix="/xml/editor">
     <file>favicon-settings-page.xml</file>
@@ -30,6 +41,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </qresource>
   <qresource prefix="/css/favicon">
     <file>favicon.css</file>
+  </qresource>
+  <qresource prefix="/js/favicon">
+    <file>favicon.js</file>
   </qresource>
 </RCC>
 <!--

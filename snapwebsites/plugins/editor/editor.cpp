@@ -1,5 +1,5 @@
 // Snap Websites Server -- JavaScript WYSIWYG form widgets
-// Copyright (C) 2013-2015  Made to Order Software Corp.
+// Copyright (C) 2013-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -441,7 +441,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 24, 3, 28, 56, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 1, 17, 18, 56, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -770,6 +770,7 @@ void editor::process_new_draft()
     }
 
     // before we go further officially create the content
+    //
     // TODO: fix the locale; it should come from the favorite locale of that
     //       user and we should offer the user to select another locale if
     //       he/she has more than one in his account
@@ -1491,6 +1492,7 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
     }
 
     // a standard string (remember we use UTF-8 everywhere)
+    //
     if(value_info.get_data_type() == "string")
     {
         value_info.set_type_name("string");
@@ -1504,6 +1506,7 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
     // full HTML, we do one special trick on that data: we convert
     // inline images into attachment and replace the href with the
     // new URI
+    //
     if(value_info.get_data_type() == "html")
     {
         value_info.set_type_name("HTML");
@@ -1522,6 +1525,8 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
         return false;
     }
 
+    // plain text is easy
+    //
     if(value_info.get_data_type() == "plain")
     {
         value_info.set_type_name("plain text");
@@ -1529,12 +1534,14 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
         // in case of plain text we want to remove all
         // tags if any and then unescape entities which
         // the remove_tags() function does all at once
+        //
         value_info.result().setStringValue(snap_dom::remove_tags(value_info.get_data()));
         value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
 
     // not an internal data type, let other plugins handle this one
+    //
     return true;
 }
 
@@ -1944,7 +1951,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
                 // restore the last type
                 info.set_session_type(session_type);
 
-                // TODO support for attachment so they don't just disappear on
+                // TODO support for attachment so they do not just disappear on
                 //      errors is required here; i.e. we need a way to be able
                 //      to save all the valid attachments in a temporary place
                 //      and then "move" them to their final location once the
@@ -2817,7 +2824,7 @@ bool editor::validate_editor_post_for_widget_impl(
                     }
                     else if(f_snap->postfile_exists(widget_name))
                     {
-                        snap_child::post_file_t const& image(f_snap->postfile(widget_name));
+                        snap_child::post_file_t const & image(f_snap->postfile(widget_name));
                         int image_width(image.get_image_width());
                         int image_height(image.get_image_height());
                         if(width == 0 || height == 0)
@@ -3917,13 +3924,13 @@ bool editor::validate_editor_post_for_widget_impl(
  *
  * \param[in,out] ipath  The path to the page being updated.
  */
-void editor::editor_create_new_branch(content::path_info_t& ipath)
+void editor::editor_create_new_branch(content::path_info_t & ipath)
 {
-    messages::messages *messages(messages::messages::instance());
-    content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
-    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
+    messages::messages * messages(messages::messages::instance());
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QString const site_key(f_snap->get_site_key_with_slash());
 
     // although we expect the URI sent by the editor to be safe, we filter it
@@ -3942,6 +3949,7 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
     // IMPORTANT: it is different here from the normal case because
     //            we check the EDITOR page type and not the CONTENT
     //            page type...
+    //
     QString type_name;
     links::link_info info(is_draft ? content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE)
                                    : get_name(name_t::SNAP_NAME_EDITOR_PAGE_TYPE),
@@ -3971,6 +3979,7 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
     // now that we have the type, we can get the path definition for that
     // type of pages; it is always important because when editing a page
     // you "lose" the path and "regain" it when you save
+    //
     QString type_format("[page-uri]"); // default is just the page URI computed from the title
     QString const type_key(QString("%1types/taxonomy/system/content-types/%2").arg(site_key).arg(type_name));
     if(content_table->row(type_key)->exists(get_name(name_t::SNAP_NAME_EDITOR_TYPE_FORMAT_PATH)))
@@ -3985,6 +3994,7 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
         // TBD: we probably should have a lock, but what would we lock in
         //      this case? (also it is rather unlikely that two people try
         //      to create a page with the exact same URI at the same time)
+        //
         QString extended_type_format;
         QString new_key;
         for(int i(0);; ++i)
@@ -4018,7 +4028,8 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
                     messages->set_warning(
                         "Editor Already Submitted",
                         QString("The URL \"<a href=\"%1\">%1</a>\" for your new page is already used by another page and was changed to \"%2\" for this new page.")
-                                            .arg(key).arg(new_key),
+                                            .arg(key)
+                                            .arg(new_key),
                         "Changed URL because another page already used that one.");
                     key = new_key;
                 }
@@ -4041,7 +4052,7 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
         content_plugin->create_content(page_ipath, owner, type_name);
 
         // it was created at the time the draft was created
-        int64_t created_on(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().int64Value());
+        int64_t const created_on(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().int64Value());
         content_table->row(page_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_on);
 
         // it is being issued now
@@ -4106,7 +4117,7 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
  *
  * \return The formatted path.
  */
-QString editor::format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params)
+QString editor::format_uri(QString const & format, content::path_info_t & ipath, QString const & page_name, params_map_t const & params)
 {
     class parser
     {
@@ -4541,6 +4552,7 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
 
     // we check for a force-filename here because of the counter
     // below which requires a name
+    //
     QDomNodeList attachment_tags(widget.elementsByTagName("attachment"));
     int const max_attachments(attachment_tags.size());
     if(max_attachments >= 2)
@@ -4560,7 +4572,8 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
     }
 
     snap_string_list used_filenames;
-    int changed(0);
+    int count(0);
+    bool has_changed(false);
     int const max_images(imgs.size());
     for(int i(0); i < max_images; ++i)
     {
@@ -4572,7 +4585,9 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
             if(src.startsWith("data:"))
             {
                 // TBD: should multi-image + force_filename be an error?
-                //if(changed && !force_filename.isEmpty()) ...error...
+                //if(has_changed && !force_filename.isEmpty()) ...error...
+
+                has_changed = true;
 
                 // TODO: we need to extract the function from save_inline_image()
                 //       to "calculate" the proper filename, especially because
@@ -4589,8 +4604,8 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
                 }
                 if(used_filenames.contains(ff))
                 {
-                    // add "-<changed>" to the filename just before the
-                    // extension; note that the parameter 'changed' is
+                    // add "-<count>" to the filename just before the
+                    // extension; note that the parameter 'count' is
                     // always unique and incremented on each iteration
                     // which means it may not be incremented one by
                     // one when it comes to saving the files to the
@@ -4603,12 +4618,12 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
                     if(p1 > p2)
                     {
                         // make sure to remove the extension
-                        ff = QString("%1-%2%3").arg(ff.mid(0, p1)).arg(changed).arg(ff.mid(p1));
+                        ff = QString("%1-%2%3").arg(ff.mid(0, p1)).arg(count).arg(ff.mid(p1));
                     }
                     else
                     {
                         // no valid extension it looks like
-                        ff = QString("%1-%2").arg(ff).arg(changed);
+                        ff = QString("%1-%2").arg(ff).arg(count);
                     }
                 }
                 //else -- although we should be able to do that, a hacker could send us a matching filename of a name with -<number>...
@@ -4623,11 +4638,16 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
                 else
                 {
                     attachment_ipath.set_path(force_path);
+                    // the locale is defined in the call to
+                    // create_attachment() (last parameter at this time)
                 }
                 bool const valid(save_inline_image(attachment_ipath, img, src, ff, widget));
                 if(valid)
                 {
-                    ++changed;
+                    // XXX: the counter may need to be incremented any time
+                    //      it gets used rather than here?
+                    //
+                    ++count;
 
                     // TODO: check whether the img tag has a width/height
                     //       which are (way) smaller than the image, and
@@ -4649,11 +4669,16 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
     }
 
     // if any image was switched, change the body with the new img tags
-    if(changed != 0)
+    if(has_changed)
     {
         // get the document back in the form of a string (unfortunate...)
+        //
         body = doc.toString(-1);
-        body.remove("<element>").remove("</element>");
+
+        // the <element/> happens if the widget was just an image and
+        // thus the result becomes empty
+        //
+        body.remove("<element>").remove("</element>").remove("<element/>");
     }
 }
 
@@ -4665,6 +4690,7 @@ void editor::parse_out_inline_img(content::path_info_t & ipath, QString & body, 
  *
  * \param[in,out] ipath  The path of the page with the image.
  * \param[in] img  The image element being saved.
+ * \param[in] src  The src attribute of the image element.
  * \param[in] filename  The name to used to save the attachment, if empty
  *                      save as "image.<type>"
  * \param[in] widget  The widget being saved.
@@ -4676,6 +4702,7 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
     // we only support images so the MIME type has to start with "image/"
     if(!src.startsWith("data:image/"))
     {
+        SNAP_LOG_DEBUG("refused image because it does not start with \"data:image/\".");
         return false;
     }
 
@@ -4686,6 +4713,7 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
     || p > 64
     || src.mid(p, 8) != ";base64,")
     {
+        SNAP_LOG_DEBUG("refused image because it is not base64 encoded.");
         return false;
     }
 
@@ -4694,13 +4722,28 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
     //
     // the type of image (i.e. "png", "jpeg", "gif"...)
     // we set that up so we know that it is "jpeg" and not "jpg"
+    //
+    // also define the extension for each type, especially for image
+    // types that have a type which is completely different than what
+    // the general extension is expected to be
+    //
     QString const type(src.mid(11, p - 11));
-    if(type != "png"
-    && type != "jpeg"
-    && type != "gif")
+    QString ext(type);
+    if(type == "jpeg")
+    {
+        ext = "jpg";
+    }
+    else if(type == "x-icon")
+    {
+        ext = "ico";
+    }
+    else if(type != "png"
+         && type != "gif")
     {
         // not one of the image format that our JavaScript supports, so
         // ignore at once
+        //
+        SNAP_LOG_DEBUG("refused image of type \"")(type)("\" because at this point we do not accept such.");
         return false;
     }
 
@@ -4712,12 +4755,14 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
     snap_image image;
     if(!image.get_info(data))
     {
+        SNAP_LOG_WARNING("image.get_info() failed for image of type \"")(type)("\".");
         return false;
     }
     int const max_frames(image.get_size());
     if(max_frames == 0)
     {
         // a "valid" image file without actual frames?!
+        SNAP_LOG_WARNING("image.get_info() returned an image with 0 frames, image type \"")(type)("\".");
         return false;
     }
     for(int i(0); i < max_frames; ++i)
@@ -4726,6 +4771,11 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
         if(ibuf->get_mime_type().mid(6) != type)
         {
             // mime types do not match!?
+            SNAP_LOG_WARNING("image defined MIME type returned by sever is \"")
+                            (ibuf->get_mime_type().mid(6))
+                            ("\" an image with 0 frames, image type \"")
+                            (type)
+                            ("\".");
             return false;
         }
     }
@@ -4779,7 +4829,7 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
     if(!filename.isEmpty())
     {
         int const period(filename.lastIndexOf('.'));
-        filename = QString("%1.%2").arg(filename.left(period)).arg(type == "jpeg" ? "jpg" : type);
+        filename = QString("%1.%2").arg(filename.left(period)).arg(ext);
     }
 
     // prevent hidden Unix filenames, it could cause problems on Linux
@@ -4793,7 +4843,7 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
     // user supplied filename is not considered valid, use a default name
     if(filename.isEmpty())
     {
-        filename = QString("image.%1").arg(type == "jpeg" ? "jpg" : type);
+        filename = QString("image.%1").arg(ext);
     }
 //}
 
@@ -4849,8 +4899,22 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
 
     // replace the inline image data block with a local (albeit full) URI
     //
-    // TODO: this most certainly won't work if the website definition uses a path
-    img.setAttribute("src", QString("/%1/%2").arg(ipath.get_cpath()).arg(filename));
+    // TODO: this most certainly won't work if the website definition
+    //       uses a path
+    //
+    // TODO: get a function to fix a path like this, because it is rather
+    //       complex when considering path right under the root...
+    //
+    QString result_src;
+    if(ipath.get_cpath() != "")
+    {
+        // this is important because otherwise we end up with "//favicon.ico"
+        // or similar invalid paths since "//" references a domain name
+        //
+        result_src = QString("/%1").arg(ipath.get_cpath());
+    }
+    result_src = QString("%1/%2").arg(result_src).arg(filename);
+    img.setAttribute("src", result_src);
 
     new_attachment_saved(the_attachment, widget, attachment_tag);
 

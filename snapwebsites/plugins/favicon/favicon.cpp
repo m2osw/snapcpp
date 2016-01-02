@@ -1,5 +1,5 @@
 // Snap Websites Server -- favicon generator and settings
-// Copyright (C) 2013-2015  Made to Order Software Corp.
+// Copyright (C) 2013-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,14 +17,17 @@
 
 #include "favicon.h"
 
+#include "../attachment/attachment.h"
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 #include "../output/output.h"
+#include "../server_access/server_access.h"
 
 #include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
 #include "qdomhelpers.h"
+#include "snap_image.h"
 
 #include <QFile>
 
@@ -51,7 +54,7 @@ char const * get_name(name_t name)
         return "icon";
 
     case name_t::SNAP_NAME_FAVICON_ICON_PATH:
-        return "favicon::icon::path";
+        return "favicon::icon";
 
     case name_t::SNAP_NAME_FAVICON_IMAGE: // specific image for this page or type
         return "content::attachment::favicon::icon::path";
@@ -219,7 +222,7 @@ int64_t favicon::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 11, 26, 6, 4, 1, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 1, 16, 56, 1, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -275,9 +278,10 @@ bool favicon::on_path_execute(content::path_info_t & ipath)
 {
     // favicon.ico happens all the time so it is much faster to test here
     // like this...
-    if(ipath.get_cpath() == "favicon.ico"
-    || ipath.get_cpath() == "default-favicon.ico"
-    || ipath.get_cpath().endsWith("/favicon.ico"))
+    QString const cpath(ipath.get_cpath());
+    if(cpath == "favicon.ico"
+    || cpath == "default-favicon.ico"
+    || cpath.endsWith("/favicon.ico"))
     {
         // got to use the master favorite icon or a page specific icon
         // either way we search using the get_icon() function
@@ -285,7 +289,101 @@ bool favicon::on_path_execute(content::path_info_t & ipath)
         return true;
     }
 
+    // in case of the settings, we handle that special case, which we
+    // use to handle the default favicon of the settings
+    //
+    if(cpath == "admin/settings/favicon")
+    {
+        if(f_snap->postenv_exists("icon"))
+        {
+            save_clicked_icon();
+
+            server_access::server_access * server_access_plugin(server_access::server_access::instance());
+            server_access_plugin->create_ajax_result(ipath, true);
+            server_access_plugin->ajax_output();
+            return true;
+        }
+
+        output::output::instance()->on_path_execute(ipath);
+        return true;
+    }
+
     return false;
+}
+
+
+void favicon::save_clicked_icon()
+{
+    QString const icon_name(f_snap->postenv("icon"));
+
+    QFile file(QString(":/images/favicon/%1.ico").arg(icon_name));
+    if(!file.open(QIODevice::ReadOnly))
+    {
+        f_snap->die(
+                snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
+                "Predefined Icon Not Found",
+                QString("The system could not read favorite icon \"%1.ico\".").arg(icon_name),
+                QString("Could not load the default resource favicon \":/images/favicon/%1.ico\".").arg(icon_name));
+        NOTREACHED();
+    }
+    QByteArray data(file.readAll());
+
+    // verify the image magic
+    snap_image image;
+    if(!image.get_info(data))
+    {
+        f_snap->die(
+                snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
+                "Predefined Icon Incompatible",
+                QString("The system could not load favorite icon \"%1.ico\".").arg(icon_name),
+                QString("The load of resource favicon \":/images/favicon/%1.ico\" failed.").arg(icon_name));
+        NOTREACHED();
+    }
+
+    // verify the number of frames in this .ico
+    int const max_frames(image.get_size());
+    if(max_frames == 0)
+    {
+        // a "valid" image file without actual frames?!
+        f_snap->die(
+                snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
+                "Predefined Icon Incompatible",
+                QString("The system could not load at least one frame from favorite icon \"%1.ico\".").arg(icon_name),
+                QString("The load of resource favicon \":/images/favicon/%1.ico\" failed: no frames available.").arg(icon_name));
+        NOTREACHED();
+    }
+
+    smart_snap_image_buffer_t ibuf(image.get_buffer(0));
+    if(ibuf->get_mime_type().mid(6) != "x-icon")
+    {
+        // this is a "warning" to the developer who maybe one day will see
+        // it and fix the problem...
+        //
+        SNAP_LOG_ERROR("the image \":/images/favicon/")(icon_name)(".ico\" is not an x-icon image.");
+    }
+
+    content::path_info_t root_ipath;
+    root_ipath.set_path("");
+
+    snap_child::post_file_t postfile;
+    postfile.set_name("image");
+    postfile.set_filename("favicon.ico");
+    postfile.set_original_mime_type("image/x-icon"); // should be "image/vnd.microsoft.icon", but x-icon still works in (many) more cases
+    postfile.set_creation_time(f_snap->get_start_time());
+    postfile.set_modification_time(f_snap->get_start_time());
+    postfile.set_data(data);
+    postfile.set_image_width(image.get_buffer(0)->get_width());
+    postfile.set_image_height(image.get_buffer(0)->get_height());
+    postfile.set_index(1);
+
+    content::attachment_file the_attachment(f_snap, postfile);
+    the_attachment.set_multiple(false);
+    the_attachment.set_parent_cpath(""); // root (/)
+    the_attachment.set_field_name("image");
+    the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
+    the_attachment.set_attachment_type("attachment/public");
+    // TODO: define the locale in some ways... for now we use "neutral"
+    content::content::instance()->create_attachment(the_attachment, root_ipath.get_branch(), "");
 }
 
 
@@ -325,79 +423,89 @@ void favicon::output(content::path_info_t & ipath)
     QByteArray image;
     content::field_search::search_result_t result;
 
+    // set a default Content-Type, although we should always
+    // set this properly below, to make it safe...
+    //
+    QString content_type("image/x-icon");
+
     // check for a favicon.ico on this very page and then its type tree
+    //
     bool const default_icon(ipath.get_cpath() == "default-favicon.ico");
     if(!default_icon)
     {
-        // if the user tried with the default "favicon.ico" then it cannot
+        // if the user tried with "default-favicon.ico" then it cannot
         // be an attachment at the top so skip on that get_icon()
+        //
         int const pos(ipath.get_cpath().indexOf('/'));
         if(pos > 0)
         {
+            // this is not the top default icon
+            //
             get_icon(ipath, result);
         }
     }
 
+    // keep user defined .ico file?
+    //
     if(result.isEmpty())
     {
-        // try the site wide parameter core::favicon
-        QtCassandra::QCassandraValue image_value;
+        // attempt loading the /favicon.ico attachment directly
+        //
         if(!default_icon)
         {
-            // try the site wide settings for an attachment
-            FIELD_SEARCH
-                // /admin/settings/favicon/content::attachment::favicon::icon::path
-                (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
-                (content::field_search::command_t::COMMAND_FIELD_NAME, QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)).arg(get_name(name_t::SNAP_NAME_FAVICON_ICON_PATH)))
-                (content::field_search::command_t::COMMAND_PATH, get_name(name_t::SNAP_NAME_FAVICON_SETTINGS))
-                (content::field_search::command_t::COMMAND_SELF)
-                (content::field_search::command_t::COMMAND_RESULT, result)
-
-                // generate
-                ;
-
-            if(!result.isEmpty())
-            {
-                image_value = result[0];
-            }
-        }
-
-        if(image_value.nullValue())
-        {
-            // last resort we use the version saved in our resources
-            QFile file(":/plugins/favicon/snap-favicon.ico");
-            if(!file.open(QIODevice::ReadOnly))
-            {
-                f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Icon Not Found",
-                        "This website does not have a favorite icon.",
-                        "Could not load the default resource favicon \":/plugins/favicon/snap-favicon.ico\".");
-                NOTREACHED();
-            }
-            image = file.readAll();
-        }
-        else
-        {
             content::attachment_file file(f_snap);
-            content::content::instance()->load_attachment(image_value.stringValue(), file);
+            content::content::instance()->load_attachment(ipath.get_key(), file);
             image = file.get_file().get_data();
+            content_type = file.get_file().get_mime_type();
         }
     }
     else
     {
+        // load a user favicon.ico file from somewhere else than the
+        // root folder
+        //
         content::attachment_file file(f_snap);
         content::content::instance()->load_attachment(ipath.get_key(), file);
         image = file.get_file().get_data();
+        content_type = file.get_file().get_mime_type();
+    }
+
+    // if the load_attachment() fails (or does not happen because the
+    // user wants the default icon), we want to load the default
+    // snap-favicon.ico instead, directly from the resources
+    //
+    // Note: the load_attachment() fails until the user adds his own
+    //       icon (because the content.xml cannot properly add an
+    //       image at that location for now... I think. We may want
+    //       to completely change this scheme anyway once we have
+    //       a fix and put the snap-favicon.ico as /favicon.ico so
+    //       that way it works as expected.)
+    //
+    if(image.isEmpty())
+    {
+        // last resort we use the version saved in our resources
+        QFile file(":/images/favicon/snap-favicon.ico");
+        if(!file.open(QIODevice::ReadOnly))
+        {
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Icon Not Found",
+                    "This website does not have a favorite icon.",
+                    "Could not load the default resource favicon \":/images/favicon/snap-favicon.ico\".");
+            NOTREACHED();
+        }
+        image = file.readAll();
+
+        // we know that this image is an ICO, although if someone changes
+        // it to something else (PNG, GIF...) the agent could fail
+        // the newer media type is image/vnd.microsoft.icon
+        // the old media type was image/x-icon and it works better for our purpose
+        //content_type = "image/vnd.microsoft.icon";
+        content_type = "image/x-icon";
     }
 
     // Note: since IE v11.x PNG and GIF are supported.
     //       support varies between browsers
     //
-    // we know that this image is an ICO, although if someone changes
-    // it to something else (PNG, GIF...) the agent could fail
-    // the newer media type is image/vnd.microsoft.icon
-    // the old media type was image/x-icon and it works better for our pupose
-    //f_snap->set_header("Content-Type", "image/vnd.microsoft.icon"); -- this is not supported by older browsers...
-    f_snap->set_header("Content-Type", "image/x-icon");
+    f_snap->set_header("Content-Type", content_type);
     f_snap->set_header("Content-Transfer-Encoding", "binary");
 
     f_snap->output(image);
@@ -461,6 +569,20 @@ void favicon::on_generate_page_content(content::path_info_t & ipath, QDomElement
 void favicon::get_icon(content::path_info_t & ipath, content::field_search::search_result_t & result)
 {
     result.clear();
+
+// *** WARNING WARNING WARNING ***
+//
+// This function is crap now, we will not be doing things this way at all
+// instead we always want to save favicon images as attachments and just
+// reference that attachment; the code below assumes we load an image
+// from a "special field" instead which is way too complicated to
+// implement with the editor when attachments are 100% automatic!
+//
+// Only we would need to have a UI for pages to test this feature properly.
+//
+// *** WARNING WARNING WARNING ***
+
+
 
     FIELD_SEARCH
         (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)

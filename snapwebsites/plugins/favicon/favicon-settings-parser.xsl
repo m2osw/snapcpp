@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == editor test parser for our test form
-Copyright (C) 2014-2015  Made to Order Software Corp.
+Copyright (C) 2014-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output><!-- lang="{$lang}"-->
-			<div id="content" class="editor-form" form_name="info">
+			<div id="content" class="editor-form" form_name="favicon">
 				<xsl:attribute name="session"><xsl:copy-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 
 				<div>
@@ -41,13 +41,32 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<!-- site name widget -->
 						<div class="editor-block">
 							<label for="site_name_widget" class="editor-title">Small Icon:</label>
-							<xsl:copy-of select="page/body/favicon/picture/node()"/>
+							<xsl:copy-of select="page/body/favicon/icon/node()"/>
+						</div>
+
+						<!-- list of default .ico files one can use -->
+						<!-- TODO: look into a way to this list dynamically growable -->
+						<div class="editor-block">
+							<ul class="default-icons">
+								<li><a href="#asterisk"><img src="/images/favicon/asterisk.ico" title="Asterisk"/></a></li>
+								<li><a href="#checkmark"><img src="/images/favicon/checkmark.ico" title="Checkmark"/></a></li>
+								<li><a href="#earth"><img src="/images/favicon/earth.ico" title="Earth"/></a></li>
+								<li><a href="#five-colors"><img src="/images/favicon/five-colors.ico" title="Five Colors"/></a></li>
+								<li><a href="#ladybug"><img src="/images/favicon/ladybug.ico" title="Ladybug"/></a></li>
+								<li><a href="#molecule"><img src="/images/favicon/molecule.ico" title="Molecule"/></a></li>
+								<li><a href="#ring"><img src="/images/favicon/ring.ico" title="Ring"/></a></li>
+								<li><a href="#snap-favicon"><img src="/images/favicon/snap-favicon.ico" title="Snap"/></a></li>
+								<li><a href="#star"><img src="/images/favicon/star.ico" title="Star"/></a></li>
+								<li><a href="#yellow-ball"><img src="/images/favicon/yellow-ball.ico" title="Yellow Ball"/></a></li>
+							</ul>
 						</div>
 
 					</fieldset>
 
 				</div>
 			</div>
+
+			<javascript name="favicon"/>
 		</output>
 	</xsl:template>
 </xsl:stylesheet>

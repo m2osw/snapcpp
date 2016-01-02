@@ -1,5 +1,5 @@
 // Snap Websites Server -- all the user content and much of the system content
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1034,7 +1034,7 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
     }
 
     // note: we do not need to test whether the home page ("") allows
-    //       for children; if not we'd have a big problem!
+    //       for children; if not we would have a big problem!
     if(!ipath.get_cpath().isEmpty())
     {
         // parent path is the path without the last "/..." part
@@ -1086,11 +1086,12 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
     int64_t const start_date(f_snap->get_start_date());
     row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
 
-    QtCassandra::QCassandraRow::pointer_t data_row(branch_table->row(ipath.get_branch_key()));
-    data_row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
-    data_row->cell(get_name(name_t::SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
+    QtCassandra::QCassandraRow::pointer_t branch_row(branch_table->row(ipath.get_branch_key()));
+    branch_row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    branch_row->cell(get_name(name_t::SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
 
     // link the page to its type (very important for permissions)
+    links::links * links_plugin(links::links::instance());
     {
         // TODO We probably should test whether that content-types exists
         //      because if not it's certainly completely invalid (i.e. the
@@ -1109,7 +1110,7 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, key, branch_number);
         links::link_info destination(link_to, destination_unique, destination_key, destination_ipath.get_branch());
-        links::links::instance()->create_link(source, destination);
+        links_plugin->create_link(source, destination);
     }
 
     // link this entry to its parent automatically
@@ -1131,8 +1132,8 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
         links::link_info destination(get_name(name_t::SNAP_NAME_CONTENT_CHILDREN), false, dst, parent_branch);
 // TODO only repeat if the parent did not exist, otherwise we assume the
 //      parent created its own parent/children link already.
-//printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
-        links::links::instance()->create_link(source, destination);
+//SNAP_LOG_DEBUG("parent/children [")(src)("]/[")(dst)("]");
+        links_plugin->create_link(source, destination);
 
         child_branch = parent_branch;
     }
@@ -1283,6 +1284,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
 {
     // quick check for security reasons so we can avoid unwanted uploads
     // (note that we already had the check for size and similar "problems")
+    //
     permission_flag secure;
     check_attachment_security(file, secure, true);
     if(!secure.allowed())
@@ -1296,28 +1298,35 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
     //       compressed MD5 (otherwise we end up with TWO files.)
 
     // verify that the row specified by file::get_cpath() exists
+    //
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const parent_key(site_key + file.get_parent_cpath());
     if(!content_table->exists(parent_key))
     {
         // the parent row does not even exist yet...
+        //
         SNAP_LOG_ERROR("user attempted to create an attachment in page \"")(parent_key)("\" that doesn't exist.");
         return false;
     }
 
     // create the path to the new attachment itself
     // first get the basename
+    //
     snap_child::post_file_t const & post_file(file.get_file());
     QString attachment_filename(post_file.get_basename());
 
     // make sure that the parent of the attachment is not final
+    //
     if(is_final(parent_key))
     {
         // the user was trying to add content under a final leaf
-        f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Final Parent",
-                QString("The attachment \"%1\" cannot be added under \"%2\" as this page is marked as final.")
-                            .arg(attachment_filename).arg(parent_key),
+        f_snap->die(
+                snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
+                "Final Parent",
+                QString("The attachment \"%1\" cannot be added under \"%2\" since it is marked as final.")
+                            .arg(attachment_filename)
+                            .arg(parent_key),
                 "The parent row does not allow for further children.");
         NOTREACHED();
     }
@@ -1367,8 +1376,13 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
 
         if(!fv.find_version(post_file.get_data().data(), post_file.get_size()))
         {
-            f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Invalid File",
-                    "The attachment \"" + attachment_filename + "\" does not include a valid C-like comment at the start. The comment must at least include a <a href=\"See http://snapwebsites.org/implementation/feature-requirements/attachments-core\">Version field</a>.",
+            f_snap->die(
+                    snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
+                    "Invalid File",
+                    QString("The attachment \"%1\" does not include a valid C-like comment at the start."
+                            " The comment must at least include a <a href=\"See "
+                            "http://snapwebsites.org/implementation/feature-requirements/attachments-core\">Version field</a>.")
+                                    .arg(attachment_filename),
                     "The content of this file is not valid for a JavaScript or CSS file (version required).");
             NOTREACHED();
         }
@@ -1424,7 +1438,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
             //    [a-z][-a-z0-9]*[a-z0-9]
             //
             // TBD: I removed the namespace, it does not look like we
-            //      should support filename such as css::name.js and
+            //      should support filename such as info::name.js and
             //      now we have a separate function to check the basic
             //      filename so I could remove the namespace support here
             //
@@ -1706,7 +1720,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
     QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
     QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
 
-    // if the revision is still empty then we're dealing with a file
+    // if the revision is still empty then we are dealing with a file
     // which is neither a JavaScript nor a CSS file
     if(revision.isEmpty())
     {
@@ -1746,18 +1760,37 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
                 branch_number = get_current_branch(attachment_ipath.get_key(), true);
             }
             attachment_ipath.force_branch(branch_number);
-            if(snap_version::SPECIAL_VERSION_UNDEFINED == branch_number)
+
+            // validity check; although the code would fail a few lines
+            // later, by failing here we can better explain what the
+            // problem is to the programmer
+            //
+            snap_version::version_number_t const old_branch_number(get_current_branch(attachment_ipath.get_key(), true));
+            if(old_branch_number != snap_version::SPECIAL_VERSION_INVALID
+            && old_branch_number != snap_version::SPECIAL_VERSION_UNDEFINED
+            && old_branch_number != branch_number)
             {
-                // this should nearly never (if ever) happen
-                branch_number = get_new_branch(attachment_ipath.get_key(), locale);
-                set_branch_key(attachment_ipath.get_key(), branch_number, true);
-                // new branches automatically get a revision of zero (0)
+                // the page exists, but not that branch so create it now
+                //
+                copy_branch(attachment_ipath.get_key(), old_branch_number, branch_number);
                 revision_number = snap_version::SPECIAL_VERSION_FIRST_REVISION;
             }
             else
             {
-                revision_number = get_new_revision(attachment_ipath.get_key(), branch_number, locale, true);
+                if(snap_version::SPECIAL_VERSION_UNDEFINED == branch_number)
+                {
+                    // this should nearly never (if ever) happen
+                    branch_number = get_new_branch(attachment_ipath.get_key(), locale);
+                    set_branch_key(attachment_ipath.get_key(), branch_number, true);
+                    // new branches automatically get a revision of zero (0)
+                    revision_number = snap_version::SPECIAL_VERSION_FIRST_REVISION;
+                }
+                else
+                {
+                    revision_number = get_new_revision(attachment_ipath.get_key(), branch_number, locale, true);
+                }
             }
+
             attachment_ipath.force_revision(revision_number);
         }
 

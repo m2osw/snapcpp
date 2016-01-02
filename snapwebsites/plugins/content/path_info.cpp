@@ -1,5 +1,5 @@
 // Snap Websites Server -- all the user content and much of the system content
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -168,7 +168,7 @@ void path_info_t::set_real_path(QString const & path)
     {
         f_initialized = true;
 
-        QString const& site_key(f_snap->get_site_key_with_slash());
+        QString const & site_key(f_snap->get_site_key_with_slash());
         if(path.startsWith(site_key))
         {
             // already canonicalized

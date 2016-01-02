@@ -1,5 +1,5 @@
 // Snap Websites Server -- content management (pages, tags, everything!)
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -528,7 +528,7 @@ private:
     cmd_info_vector_t   f_program;
 };
 
-field_search create_field_search(char const *filename, char const *func, int line, snap_child *snap);
+field_search create_field_search(char const * filename, char const * func, int line, snap_child * snap);
 
 #define FIELD_SEARCH    snap::content::create_field_search(__FILE__, __func__, __LINE__, f_snap)
 

@@ -1,5 +1,5 @@
 // Snap Websites Server -- all the user content and much of the system content
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -233,7 +233,8 @@ void attachment_file::set_attachment_owner(QString const& owner)
  * When adding an attachment to the database, a new page is created as
  * a child of the page where the attachment is added. This allows us
  * to easily do all sorts of things with attachments. This new page being
- * content it needs to have a type and this type represents that type.
+ * content it needs to have a type and this type represents that type
+ * (i.e. "attachment", "page/public", etc.)
  *
  * In most cases the type is set to the parent by default.
  *

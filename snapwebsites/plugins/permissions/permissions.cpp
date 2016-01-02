@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage permissions for users, forms, etc.
-// Copyright (C) 2013-2015  Made to Order Software Corp.
+// Copyright (C) 2013-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -853,7 +853,7 @@ void permissions::sets_t::add_user_right(QString right)
                 // we are done, that right is already here
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (ignore, \"better\" [shrunk/smaller] already there)" << std::endl;
+                SNAP_LOG_DEBUG("USER RIGHT -> [")(right)("] (ignore, \"better\" [shrunk/smaller] already there)");
 #endif
 #endif
                 return;
@@ -880,7 +880,7 @@ void permissions::sets_t::add_user_right(QString right)
                 }
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (shrunk)" << std::endl;
+                SNAP_LOG_DEBUG("USER RIGHT -> [")(right)("] (shrunk)");
 #endif
 #endif
                 return;
@@ -893,7 +893,7 @@ void permissions::sets_t::add_user_right(QString right)
                 // that is exactly the same, no need to have it twice
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (already present)" << std::endl;
+                SNAP_LOG_DEBUG("USER RIGHT -> [")(right)("] (already present)");
 #endif
 #endif
                 return;
@@ -905,7 +905,7 @@ void permissions::sets_t::add_user_right(QString right)
     f_user_rights.push_back(right);
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-    std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (add)" << std::endl;
+    SNAP_LOG_DEBUG("USER RIGHT -> [")(right)("] (add)");
 #endif
 #endif
 }
@@ -1023,7 +1023,7 @@ void permissions::sets_t::add_plugin_permission(QString const & plugin, QString 
     {
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "[" << getpid() << "]  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add, new plugin)" << std::endl;
+        SNAP_LOG_DEBUG("PLUGIN [")(plugin)("] PERMISSION -> [")(right)("] (add, new plugin)");
 #endif
 #endif
         f_plugin_permissions[plugin].push_back(right);
@@ -1044,7 +1044,7 @@ void permissions::sets_t::add_plugin_permission(QString const & plugin, QString 
                 // the new right is generally considered easier to get
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "[" << getpid() << "]  PLUGIN [" << plugin << "] PERMISSION -> [" << set[i] << "] (REMOVING)" << std::endl;
+                SNAP_LOG_DEBUG("PLUGIN [")(plugin)("] PERMISSION -> [")(set[i])("] (REMOVING)");
 #endif
 #endif
                 set.remove(i);
@@ -1059,7 +1059,7 @@ void permissions::sets_t::add_plugin_permission(QString const & plugin, QString 
                 // this new right is harder to get, ignore it
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "[" << getpid() << "]  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (skipped)" << std::endl;
+                SNAP_LOG_DEBUG("PLUGIN [")(plugin)("] PERMISSION -> [")(right)("] (skipped)");
 #endif
 #endif
                 return;
@@ -1072,7 +1072,7 @@ void permissions::sets_t::add_plugin_permission(QString const & plugin, QString 
                 // that's exactly the same, no need to have it twice
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "[" << getpid() << "]  PLUGIN [" << right << "] PERMISSION -> [" << right << "] (already present)" << std::endl;
+                SNAP_LOG_DEBUG("PLUGIN [")(right)("] PERMISSION -> [")(right)("] (already present)");
 #endif
 #endif
                 return;
@@ -1085,7 +1085,7 @@ void permissions::sets_t::add_plugin_permission(QString const & plugin, QString 
     set.push_back(right);
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-    std::cout << "[" << getpid() << "]  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add)" << std::endl;
+    SNAP_LOG_DEBUG("PLUGIN [")(plugin)("] PERMISSION -> [")(right)("] (add)");
 #endif
 #endif
 }
@@ -1130,8 +1130,7 @@ bool permissions::sets_t::allowed() const
     {
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        //std::cout << "f_user_rights.size()=" << f_user_rights.size() << ", f_plugin_permissions.size() = " << f_plugin_permissions.size() << std::endl;
-        std::cout << "--- intersection of these sets is empty; user is not allowed access to that page!" << std::endl;
+        SNAP_LOG_DEBUG("--- intersection of these sets is empty; user is not allowed access to that page!");
 #endif
 #endif
         // if the plugins added nothing, there are no rights to compare
@@ -1144,20 +1143,20 @@ bool permissions::sets_t::allowed() const
 
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-std::cout << "[" << getpid() << "] final USER RIGHTS:" << std::endl;
+SNAP_LOG_DEBUG("final USER RIGHTS:");
 for(int i(0); i < f_user_rights.size(); ++i)
 {
-    std::cout << "  [" << f_user_rights[i] << "]" << std::endl;
+    SNAP_LOG_DEBUG("  [")(f_user_rights[i])("]");
 }
-std::cout << "[" << getpid() << "] final PLUGIN PERMISSIONS:" << std::endl;
+SNAP_LOG_DEBUG("final PLUGIN PERMISSIONS:");
 for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
         pp != f_plugin_permissions.end();
         ++pp)
 {
-    std::cout << "  [" << pp.key() << "]:" << std::endl;
+    SNAP_LOG_DEBUG("  [")(pp.key())("]:");
     for(int j(0); j < pp->size(); ++j)
     {
-        std::cout << "    [" << (*pp)[j] << "]" << std::endl;
+        SNAP_LOG_DEBUG("    [")((*pp)[j])("]");
     }
 }
 #endif
@@ -1193,7 +1192,7 @@ for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
         //     failed the user?
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "  failed, no match for [" << pp.key() << "]" << std::endl;
+        SNAP_LOG_DEBUG("  failed, no match for [")(pp.key())("]");
 #endif
 #endif
         return false;
@@ -1202,7 +1201,7 @@ next_plugin:;
 
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-    std::cout << "  allowed!!!" << std::endl;
+    SNAP_LOG_DEBUG("  allowed!!!");
 #endif
 #endif
     return true;
@@ -1409,7 +1408,7 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
             // some kind of visitor
             QString const & user_key(sets.get_user_path());
 //#ifdef DEBUG
-//std::cout << "  +-> user key = [" << user_key << "]" << std::endl;
+//SNAP_LOG_DEBUG("  +-> user key = [")(user_key)("]");
 //#endif
             if(user_key.isEmpty()
             || login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR))
@@ -1593,7 +1592,7 @@ bool permissions::get_plugin_permissions_impl(permissions * perms, sets_t & sets
         {
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-std::cerr << "from " << user_id << " -> ";
+SNAP_LOG_DEBUG("from ")(user_id)(" -> ");
 #endif
 #endif
             sets.add_plugin_permission(content::content::instance()->get_plugin_name(), ipath.get_key());
@@ -1713,7 +1712,7 @@ std::cerr << "from " << user_id << " -> ";
             QString const right_key(right_info.key());
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-std::cerr << "direct: ";
+SNAP_LOG_DEBUG("direct: ");
 #endif
 #endif
             // page -> permissions::direct::action::...
@@ -1755,7 +1754,7 @@ std::cerr << "direct: ";
                     QString const right_key(right_info.key());
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-std::cerr << "page type: ";
+SNAP_LOG_DEBUG("page type: ");
 #endif
 #endif
                     // page -> page type -> permissions::action::...
@@ -1777,7 +1776,7 @@ std::cerr << "page type: ";
                     QString const right_key(right_info.key());
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-std::cerr << "page group: ";
+SNAP_LOG_DEBUG("page group: ");
 #endif
 #endif
                     // page -> page type -> permissions::group::...
@@ -2196,9 +2195,9 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
     // (intersection of an empty set with anything else is the empty set)
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-    std::cout << std::endl << "[" << getpid() << "]: retrieving USER rights from all plugins... ["
-            << sets.get_action() << "] [" << login_status << "] ["
-            << ipath.get_cpath() << "]" << std::endl;
+    SNAP_LOG_DEBUG("retrieving USER rights from all plugins... [")
+            (sets.get_action())("] [")(login_status)("] [")
+            (ipath.get_cpath())("]");
 #endif
 #endif
     // get all of user's rights
@@ -2211,16 +2210,15 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
         }
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "[" << getpid() << "]: retrieving PLUGIN permissions... ["
-                  << sets.get_action() << "] / ["
-                  << sets.get_ipath().get_key() << "]"
-                  << std::endl;
+        SNAP_LOG_DEBUG("retrieving PLUGIN permissions... [")
+                  (sets.get_action())("] / [")
+                  (sets.get_ipath().get_key())("]");
 #endif
 #endif
         get_plugin_permissions(this, sets);
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "[" << getpid() << "]: now compute the intersection!" << std::endl;
+        SNAP_LOG_DEBUG("now compute the intersection!");
 #endif
 #endif
         if(sets.allowed())
@@ -2258,7 +2256,7 @@ void permissions::add_user_rights(QString const & group, sets_t & sets)
         throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use sets.add_user_right() directly");
     }
 
-//std::cerr << "*** add_user_rights...\n";
+//SNAP_LOG_DEBUG("*** add_user_rights...");
     recursive_add_user_rights(group, sets);
 }
 
@@ -2277,7 +2275,7 @@ void permissions::add_user_rights(QString const & group, sets_t & sets)
  */
 void permissions::recursive_add_user_rights(QString const & group, sets_t & sets)
 {
-//std::cerr << "*** user right key: [" << group << "]\n";
+//SNAP_LOG_DEBUG("*** user right key: [")(group)("]");
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(!content_table->exists(group))
     {
@@ -2317,7 +2315,7 @@ void permissions::recursive_add_user_rights(QString const & group, sets_t & sets
         {
             // a user right is attached to this page
             const QString child_key(right_info.key());
-//std::cerr << "*** children...\n";
+//SNAP_LOG_DEBUG("*** children...");
             recursive_add_user_rights(child_key, sets);
         }
     }
@@ -2598,6 +2596,7 @@ void permissions::on_backend_action(QString const & action)
  * \param[in] email  The email to the user being checked.
  * \param[in] page  The URI to the page being checked.
  * \param[in] action  The action being applied.
+ * \param[in] status  The user login status.
  */
 void permissions::check_permissions(QString const & email, QString const & page, QString const & action, QString const & status)
 {
@@ -2617,6 +2616,9 @@ void permissions::check_permissions(QString const & email, QString const & page,
         {
             // TODO it is rather easy to get here so we need to test whether
             //      the same IP does it over and over again and block them if so
+            //
+            //    [ only this is a backend an administrator uses... ]
+            //
             std::cerr << "error: " << action << " is not a known action.\n";
             return;
         }
@@ -2761,6 +2763,8 @@ void permissions::check_permissions(QString const & email, QString const & page,
               << "\" with action \""
               << action
               << "\"."
+              << std::endl
+              << "  -- Note: If you have a problem, you may want to first delete the caches for that page and try again."
               << std::endl;
 }
 
