@@ -894,7 +894,7 @@ void watchdog_child::run_watchdog_plugins()
         else
         {
             int64_t const start_date(get_start_date());
-            // round to the hour first, then apply period
+            // round to the minute first, then apply period
             int64_t const date((start_date / (1000000LL * 60LL) * 60LL) % server->get_statistics_period());
 
             // add the date in ns to this result
