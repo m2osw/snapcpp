@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap websites serving children
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ namespace snap
  * \sa get_start_time()
  */
 
-/** \fn int64_t get_start_time() const
+/** \fn time_t get_start_time() const
  * \brief Retrieve the date when the child process started in seconds.
  *
  * This function returns the date in seconds (same as a Unix date)
@@ -8425,6 +8425,8 @@ time_t snap_child::string_to_date(QString const & date)
  *
  * \param[in] month  A number from 1 to 12 representing a month.
  * \param[in] year  A year, including the century.
+ *
+ * \return Last day of month, 30, 31, or in February, 28 or 29.
  */
 int snap_child::last_day_of_month(int month, int year)
 {
@@ -8446,7 +8448,7 @@ int snap_child::last_day_of_month(int month, int year)
         // being said, it should not matter too much because most dates on
         // the Internet are past 2000.
         //
-        if(year < 1752)
+        if(year <= 1752)
         {
             return year % 4 == 0 ? 29 : 28;
         }
@@ -8455,8 +8457,8 @@ int snap_child::last_day_of_month(int month, int year)
 
     if(month == 9 && year == 1752)
     {
-        // we cannot handle this nice here, days 3 to 13 are missing on this
-        // month... (to adjust the calendar all at once!)
+        // we cannot handle this nice one here, days 3 to 13 are missing on
+        // this month... (to adjust the calendar all at once!)
         throw snap_logic_exception(QString("last_day_of_month called with %1 as the year number").arg(year));
     }
 

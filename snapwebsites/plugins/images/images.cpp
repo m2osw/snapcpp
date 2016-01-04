@@ -1,5 +1,5 @@
 // Snap Websites Server -- handling of images
-// Copyright (C) 2014-2015  Made to Order Software Corp.
+// Copyright (C) 2014-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -67,9 +67,6 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_IMAGES_SCRIPT:
         return "images::script";
-
-    case name_t::SNAP_NAME_IMAGES_SIGNAL_NAME:
-        return "images_udp_signal";
 
     default:
         // invalid index
@@ -1021,7 +1018,7 @@ void images::on_backend_action(QString const & action)
  */
 int64_t images::transform_images()
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
     files_table->clearCache();
     QtCassandra::QCassandraRow::pointer_t images_row(files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW)));

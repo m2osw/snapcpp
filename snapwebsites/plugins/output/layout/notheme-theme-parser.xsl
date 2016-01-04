@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == notheme theme layout setup
-Copyright (C) 2014-2015  Made to Order Software Corp.
+Copyright (C) 2014-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,13 +28,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<!-- some special variables to define the theme -->
 	<xsl:param name="layout-name">notheme</xsl:param>
 	<xsl:param name="layout-area">notheme-theme-parser</xsl:param>
-	<xsl:param name="layout-modified">2014-08-15 15:19:58</xsl:param>
+	<xsl:param name="layout-modified">2016-01-04 01:03:58</xsl:param>
 
 	<xsl:template match="snap">
 		<html>
 			<xsl:call-template name="snap:html-attributes"/>
 			<head>
-				<xsl:call-template name="snap:html-header"/>
+				<xsl:call-template name="snap:html-header">
+					<xsl:with-param name="theme-css" select="'/css/snap/notheme-style.css'"/>
+				</xsl:call-template>
 			</head>
 			<xsl:apply-templates select="page/body"/>
 		</html>

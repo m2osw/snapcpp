@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle the basic display of the website content
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -166,7 +166,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 29, 23, 14, 44, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 4, 4, 49, 44, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

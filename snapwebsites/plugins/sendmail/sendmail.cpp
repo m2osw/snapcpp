@@ -1,5 +1,5 @@
 // Snap Websites Server -- manage sendmail (record, display)
-// Copyright (C) 2013-2015  Made to Order Software Corp.
+// Copyright (C) 2013-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -195,9 +195,6 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_SENDMAIL_SENDING_STATUS:
         return "sendmail::sending_status";
-
-    case name_t::SNAP_NAME_SENDMAIL_SIGNAL_NAME:
-        return "sendmail_udp_signal";
 
     case name_t::SNAP_NAME_SENDMAIL_STATUS:
         return "sendmail::status";
@@ -1962,32 +1959,25 @@ void sendmail::on_register_backend_cron(server::backend_action_set & actions)
 }
 
 
-/** \brief Start the sendmail server.
+/** \brief Run the sendmail server once.
  *
- * When running the backend the user can ask to run the sendmail
- * server (--action sendmail). This function captures those events.
- * It loops until stopped with a STOP message via the UDP address/port.
- * Note that Ctrl-C won't work because it does not support killing
- * both: the parent and child processes (we do a fork() to create
- * this child.)
+ * The sendmail server processes emails that the system wants to send
+ * to varoius users. All the email data is found in the Cassandra
+ * database.
  *
- * The loop reads all the emails that are ready to be processed then
- * falls asleep until the next UDP PING event received via the
- * "sendmail_udp_signal" IP:Port information. (see get_signal_name())
+ * The CRON action is defined as:
  *
- * Note that because the UDP signals are not 100% reliable, the
- * server actually sleeps for 5 minutes and checks for new emails
- * whether a PING signal was received or not.
+ * \code
+ *      snapbackend --action sendmail::sendmail
+ * \endcode
  *
- * The email data is found in the Cassandra cluster and never
- * sent along the UDP signal. This means the UDP signals do not need
- * to be secure.
+ * The process stops as soon as possible if it receives a STOP event.
  *
  * The server should be stopped with the snapsignal tool using the
  * STOP event as follow:
  *
  * \code
- * snapsignal -a sendmail STOP
+ *      snapsignal -a sendmail::sendmail STOP
  * \endcode
  *
  * \note

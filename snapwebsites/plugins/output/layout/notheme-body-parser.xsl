@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == notheme body layout setup
-Copyright (C) 2014-2015  Made to Order Software Corp.
+Copyright (C) 2014-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <!-- some special variables to define the theme -->
 	<xsl:param name="layout-name">notheme</xsl:param>
 	<xsl:param name="layout-area">notheme-body-parser</xsl:param>
-	<xsl:param name="layout-modified">2014-03-27 21:43:58</xsl:param>
+	<xsl:param name="layout-modified">2016-01-03 22:48:58</xsl:param>
 
 	<xsl:template match="snap">
 		<output lang="{$lang}">

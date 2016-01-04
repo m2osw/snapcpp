@@ -4101,7 +4101,7 @@ void content::add_inline_javascript(QDomDocument doc, QString const & code)
  * \param[in,out] doc  The XML document receiving the CSS.
  * \param[in] name  The name of the script.
  */
-void content::add_css(QDomDocument doc, QString const& name)
+void content::add_css(QDomDocument doc, QString const & name)
 {
     if(f_added_css.contains(name))
     {
@@ -4122,7 +4122,7 @@ void content::add_css(QDomDocument doc, QString const& name)
     QtCassandra::QCassandraRow::pointer_t css_row(files_table->row("css"));
 
     // TODO: at this point I read all the entries with "name_..."
-    //       we'll want to first check with the user's browser and
+    //       we will want to first check with the user's browser and
     //       then check with "any" as the browser name if no specific
     //       file is found
     //
@@ -4294,7 +4294,7 @@ void content::add_css(QDomDocument doc, QString const& name)
             link_tag.setAttribute("type", "text/css");
             link_tag.setAttribute("rel", "stylesheet");
             css_tag.appendChild(link_tag);
-            return; // we're done since we found our script and added it
+            return; // we are done since we found our script and added it
         }
     }
 

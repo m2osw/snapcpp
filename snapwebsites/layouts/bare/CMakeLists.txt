@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2013-2015 Made to Order Software Corp.
+#      Copyright (c) 2013-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -36,7 +36,8 @@ snap_validate_xml( content.xml  content/content.dtd )
 snap_validate_xml( theme-parser.xsl     layout/simplified-xslt20.dtd )
 snap_validate_xml( body-parser.xsl      layout/simplified-xslt20.dtd )
 
-snap_zip_layout( LAYOUT_NAME bare
+snap_zip_layout(
+    LAYOUT_NAME bare
     LAYOUT_FILES
         content.xml
         body-parser.xsl

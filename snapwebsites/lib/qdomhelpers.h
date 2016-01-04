@@ -1,5 +1,5 @@
 // Snap Websites Servers -- helper functions used against the DOM
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,18 +29,18 @@ namespace snap_dom
 class snap_dom_exception : public snap_exception
 {
 public:
-    snap_dom_exception(char const *        whatmsg) : snap_exception("snap_dom", whatmsg) {}
-    snap_dom_exception(std::string const & whatmsg) : snap_exception("snap_dom", whatmsg) {}
-    snap_dom_exception(QString const &     whatmsg) : snap_exception("snap_dom", whatmsg) {}
+    explicit snap_dom_exception(char const *        whatmsg) : snap_exception("snap_dom", whatmsg) {}
+    explicit snap_dom_exception(std::string const & whatmsg) : snap_exception("snap_dom", whatmsg) {}
+    explicit snap_dom_exception(QString const &     whatmsg) : snap_exception("snap_dom", whatmsg) {}
 };
 
 
 class snap_dom_exception_element_not_found : public snap_dom_exception
 {
 public:
-    snap_dom_exception_element_not_found(char const *        whatmsg) : snap_dom_exception(whatmsg) {}
-    snap_dom_exception_element_not_found(std::string const & whatmsg) : snap_dom_exception(whatmsg) {}
-    snap_dom_exception_element_not_found(QString const &     whatmsg) : snap_dom_exception(whatmsg) {}
+    explicit snap_dom_exception_element_not_found(char const *        whatmsg) : snap_dom_exception(whatmsg) {}
+    explicit snap_dom_exception_element_not_found(std::string const & whatmsg) : snap_dom_exception(whatmsg) {}
+    explicit snap_dom_exception_element_not_found(QString const &     whatmsg) : snap_dom_exception(whatmsg) {}
 };
 
 

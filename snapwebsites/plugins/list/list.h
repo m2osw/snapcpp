@@ -1,5 +1,5 @@
 // Snap Websites Server -- list management (sort criteria)
-// Copyright (C) 2014-2015  Made to Order Software Corp.
+// Copyright (C) 2014-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -66,33 +66,33 @@ char const * get_name(name_t name) __attribute__ ((const));
 class list_exception : public snap_exception
 {
 public:
-    list_exception(char const *        what_msg) : snap_exception("list", what_msg) {}
-    list_exception(std::string const & what_msg) : snap_exception("list", what_msg) {}
-    list_exception(QString const &     what_msg) : snap_exception("list", what_msg) {}
+    explicit list_exception(char const *        what_msg) : snap_exception("list", what_msg) {}
+    explicit list_exception(std::string const & what_msg) : snap_exception("list", what_msg) {}
+    explicit list_exception(QString const &     what_msg) : snap_exception("list", what_msg) {}
 };
 
 class list_exception_no_backend : public list_exception
 {
 public:
-    list_exception_no_backend(char const *        what_msg) : list_exception(what_msg) {}
-    list_exception_no_backend(std::string const & what_msg) : list_exception(what_msg) {}
-    list_exception_no_backend(QString const &     what_msg) : list_exception(what_msg) {}
+    explicit list_exception_no_backend(char const *        what_msg) : list_exception(what_msg) {}
+    explicit list_exception_no_backend(std::string const & what_msg) : list_exception(what_msg) {}
+    explicit list_exception_no_backend(QString const &     what_msg) : list_exception(what_msg) {}
 };
 
 class list_exception_invalid_number_of_parameters : public list_exception
 {
 public:
-    list_exception_invalid_number_of_parameters(char const *        what_msg) : list_exception(what_msg) {}
-    list_exception_invalid_number_of_parameters(std::string const & what_msg) : list_exception(what_msg) {}
-    list_exception_invalid_number_of_parameters(QString const &     what_msg) : list_exception(what_msg) {}
+    explicit list_exception_invalid_number_of_parameters(char const *        what_msg) : list_exception(what_msg) {}
+    explicit list_exception_invalid_number_of_parameters(std::string const & what_msg) : list_exception(what_msg) {}
+    explicit list_exception_invalid_number_of_parameters(QString const &     what_msg) : list_exception(what_msg) {}
 };
 
 class list_exception_invalid_parameter_type : public list_exception
 {
 public:
-    list_exception_invalid_parameter_type(char const *        what_msg) : list_exception(what_msg) {}
-    list_exception_invalid_parameter_type(std::string const & what_msg) : list_exception(what_msg) {}
-    list_exception_invalid_parameter_type(QString const &     what_msg) : list_exception(what_msg) {}
+    explicit list_exception_invalid_parameter_type(char const *        what_msg) : list_exception(what_msg) {}
+    explicit list_exception_invalid_parameter_type(std::string const & what_msg) : list_exception(what_msg) {}
+    explicit list_exception_invalid_parameter_type(QString const &     what_msg) : list_exception(what_msg) {}
 };
 
 
@@ -286,6 +286,7 @@ public:
     int64_t             get_start_date_offset() const;
 
     list_item_vector_t  read_list(content::path_info_t & ipath, int start, int count);
+    QString             generate_list(content::path_info_t ipath, content::path_info_t list_ipath, int start = 0, int count = -1, QString const & theme = "qrc:/xsl/list/default");
 
     // links test suite
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()

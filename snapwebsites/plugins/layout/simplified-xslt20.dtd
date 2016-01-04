@@ -1,6 +1,6 @@
 <!--
 Snap Websites Server == DTD for all .xsl files
-Copyright (C) 2011-2015  Made to Order Software Corp.
+Copyright (C) 2011-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -278,6 +278,12 @@ DTD of the XSLT 2.0.
                 style CDATA #IMPLIED
                 width CDATA #IMPLIED>
 
+<!ELEMENT theader ANY>
+<!ATTLIST theader class CDATA #IMPLIED>
+
+<!ELEMENT tfooter ANY>
+<!ATTLIST tfooter class CDATA #IMPLIED>
+
 <!ELEMENT tbody ANY>
 <!ATTLIST tbody class CDATA #IMPLIED>
 
@@ -288,7 +294,9 @@ DTD of the XSLT 2.0.
              rowspan CDATA #IMPLIED
              style CDATA #IMPLIED
              valign (top|middle|bottom) "middle"
-             width CDATA #IMPLIED>
+             width CDATA #IMPLIED
+             data-month CDATA #IMPLIED
+             data-year CDATA #IMPLIED>
 
 <!ELEMENT th ANY>
 <!ATTLIST th class CDATA #IMPLIED

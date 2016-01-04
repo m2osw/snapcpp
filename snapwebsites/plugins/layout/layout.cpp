@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle the theme/layout information
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1165,7 +1165,7 @@ SNAP_LOG_TRACE("handle box for ")(box_plugin->get_plugin_name())(" with owner \"
  *
  * \return The XML document themed in the form of a string.
  */
-QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const& theme_name)
+QString layout::apply_theme(QDomDocument doc, QString const & xsl, QString const & theme_name)
 {
     QDomElement metadata(snap_dom::get_element(doc, "metadata"));
     metadata.setAttribute("theme-name", theme_name);
@@ -1182,9 +1182,9 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
         }
     }
 
-    //QDomXPath::node_vector_t output_tag;
     //if(doc_str.length() > 1024 * 500)
     //{
+    //    QDomXPath::node_vector_t output_tag;
     //    QDomXPath xpath;
     //    xpath.setXPath("/snap/page/body/output");
     //    output_tag = xpath.apply(doc);
@@ -1199,33 +1199,6 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
     x.set_xsl(xsl);
     x.set_document(doc);
     return x.evaluate_to_string();
-
-    // finally apply the theme XSLT to the final XML
-    // the output is what we want to return
-    //QXmlQuery q(QXmlQuery::XSLT20);
-    //if(doc_str.isEmpty())
-    //{
-    //    throw snap_logic_exception("somehow the memory XML document for the theme XSLT is empty");
-    //}
-    //QMessageHandler msg;
-    //msg.set_xsl(xsl);
-    //msg.set_doc(doc_str);
-    //q.setMessageHandler(&msg);
-    //q.setFocus(doc_str);
-    //q.setQuery(xsl);
-    //if(!q.isValid())
-    //{
-    //    throw layout_exception_invalid_xslt_data(QString("invalid XSLT query for THEME \"%1\" detected by Qt").arg(theme_name));
-    //}
-
-    //QBuffer output;
-    //output.open(QBuffer::ReadWrite);
-    //QHtmlSerializer html(q.namePool(), &output);
-    //q.evaluateTo(&html);
-
-    //QString const out(QString::fromUtf8(output.data()));
-
-    //return out;
 }
 
 
@@ -1845,6 +1818,9 @@ void layout::add_layout_from_resources_done(QString const & name)
 
     int64_t const updated(f_snap->get_start_date());
     layout_table->row(name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
+
+    int64_t const last_update(install_layout(name, 0));
+    layout_table->row(name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_update);
 }
 
 

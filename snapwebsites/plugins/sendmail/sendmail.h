@@ -1,5 +1,5 @@
 // Snap Websites Server -- queue emails for the backend to send
-// Copyright (C) 2013-2015  Made to Order Software Corp.
+// Copyright (C) 2013-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -76,7 +76,6 @@ enum class name_t
     SNAP_NAME_SENDMAIL_PING,
     SNAP_NAME_SENDMAIL_PRECEDENCE,
     SNAP_NAME_SENDMAIL_SENDING_STATUS,
-    SNAP_NAME_SENDMAIL_SIGNAL_NAME,
     SNAP_NAME_SENDMAIL_STATUS,
     SNAP_NAME_SENDMAIL_STATUS_DELETED,
     SNAP_NAME_SENDMAIL_STATUS_FAILED,

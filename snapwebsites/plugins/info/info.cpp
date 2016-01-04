@@ -1,5 +1,5 @@
 // Snap Websites Server -- info plugin to control the core settings
-// Copyright (C) 2013-2015  Made to Order Software Corp.
+// Copyright (C) 2013-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -73,7 +73,6 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_INFO_SHORT_NAME:
         return "short_name";
-
 
     default:
         // invalid index
@@ -184,7 +183,7 @@ int64_t info::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 29, 23, 11, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 3, 2, 40, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

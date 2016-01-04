@@ -1,5 +1,5 @@
 // Snap Websites Server -- images management (transformations)
-// Copyright (C) 2014-2015  Made to Order Software Corp.
+// Copyright (C) 2014-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,8 +37,7 @@ enum class name_t
     SNAP_NAME_IMAGES_MODIFIED,
     SNAP_NAME_IMAGES_PROCESS_IMAGE,
     SNAP_NAME_IMAGES_ROW,
-    SNAP_NAME_IMAGES_SCRIPT,
-    SNAP_NAME_IMAGES_SIGNAL_NAME
+    SNAP_NAME_IMAGES_SCRIPT
 };
 char const * get_name(name_t name) __attribute__ ((const));
 

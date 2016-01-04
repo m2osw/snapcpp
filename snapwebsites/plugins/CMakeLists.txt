@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2015 Made to Order Software Corp.
+#      Copyright (c) 2011-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -97,6 +97,7 @@ add_subdirectory(snap_software_description)
 add_subdirectory(taxonomy)
 add_subdirectory(test_plugin_suite)
 add_subdirectory(test_plugin)
+add_subdirectory(timetracker)
 add_subdirectory(tracker)
 add_subdirectory(users)
 add_subdirectory(users_ui)

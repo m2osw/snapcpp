@@ -1,5 +1,5 @@
 // Snap Websites Server -- snap websites serving children
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1335,7 +1335,7 @@ void snap_backend::capture_zombies(pid_t pid)
             int const exit_code(WEXITSTATUS(status));
             if(exit_code != 0)
             {
-                SNAP_LOG_ERROR("child process for backend ")(f_action)(" returned with an error: ")(exit_code)(".");
+                SNAP_LOG_ERROR("child process (pid: ")(pid)(") for backend \"")(f_action)("\" returned with an error: ")(exit_code)(".");
             }
         }
         else if(WIFSIGNALED(status))
@@ -1483,7 +1483,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
     }
 
 #ifdef DEBUG
-    SNAP_LOG_TRACE("Process website \"")(uri)("\".");
+    SNAP_LOG_TRACE("Process website \"")(uri)("\" with action \"")(f_action)("\".");
 #endif
 
     // create a child connection so our child and us can communicate
@@ -1558,7 +1558,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
         for(int idx(0); idx < max_values; ++idx)
         {
             bool ok(false);
-            snap_string_list const named_value(values[idx].split(':'));
+            snap_string_list const named_value(values[idx].split('/'));
             if(named_value.size() == 1)
             {
                 nice = named_value[0].toInt(&ok, 10);
@@ -1676,9 +1676,27 @@ bool snap_backend::process_backend_uri(QString const & uri)
     }
     else
     {
-        SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown action \"")(f_action)("\"");
-        exit(1);
-        NOTREACHED();
+        if(f_cron_action)
+        {
+            int const pos(f_action.indexOf(':'));
+            QString const namespace_name(f_action.mid(0, pos));
+            if(plugins::exists(namespace_name))
+            {
+                SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown CRON action \"")
+                              (f_action)
+                              ("\" even with the plugin is installed \"")
+                              (namespace_name)
+                              ("\".");
+                exit(1);
+                NOTREACHED();
+            }
+        }
+        else
+        {
+            SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown action \"")(f_action)("\"");
+            exit(1);
+            NOTREACHED();
+        }
     }
 
     // the child process is done

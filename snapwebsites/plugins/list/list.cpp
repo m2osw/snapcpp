@@ -1,5 +1,5 @@
 // Snap Websites Server -- advanced handling of lists
-// Copyright (C) 2014-2015  Made to Order Software Corp.
+// Copyright (C) 2014-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -3152,223 +3152,230 @@ void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
                 return;
             }
         }
-        // IMPORTANT NOTE: We do not check the maximum with the count
-        //                 because our lists may expend with time
 
         content::path_info_t list_ipath;
         list_ipath.set_path(path_param.f_value);
-        QString const list_cpath(list_ipath.get_cpath());
-        if(list_cpath == "admin"
-        || list_cpath.startsWith("admin/"))
+
+        token.f_replacement = generate_list(ipath, list_ipath, start, count, theme);
+    }
+}
+
+
+
+QString list::generate_list(content::path_info_t ipath, content::path_info_t list_ipath, int start, int count, QString const & theme)
+{
+    QString const list_cpath(list_ipath.get_cpath());
+    if(list_cpath == "admin"
+    || list_cpath.startsWith("admin/"))
+    {
+        // although we are just viewing lists, only "administer" is
+        // used when visiting pages under /admin...
+        //
+        list_ipath.set_parameter("action", "administer");
+    }
+    else
+    {
+        // we are just viewing this list
+        list_ipath.set_parameter("action", "view");
+    }
+
+    quiet_error_callback list_error_callback(f_snap, true);
+    plugin * list_plugin(path::path::instance()->get_plugin(list_ipath, list_error_callback));
+    if(!list_error_callback.has_error() && list_plugin)
+    {
+        layout::layout_content * list_content(dynamic_cast<layout::layout_content *>(list_plugin));
+        if(list_content == nullptr)
         {
-            // although we are just viewing lists, only "administer" is
-            // used when visiting pages under /admin...
-            //
-            list_ipath.set_parameter("action", "administer");
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    "Plugin Missing",
+                    QString("Plugin \"%1\" does not know how to handle a list assigned to it.").arg(list_plugin->get_plugin_name()),
+                    "list::on_replace_token() the plugin does not derive from layout::layout_content.");
+            NOTREACHED();
         }
-        else
+
+        // IMPORTANT NOTE: We do not check the maximum with the count
+        //                 because our lists may expend with time
+
+        // read the list of items
+        //
+        // TODO: use a paging_t object to read the list so we can
+        //       append a navigation and handle the page parameter
+        //
+        paging_t paging(f_snap, list_ipath);
+        paging.set_start_offset(start + 1);
+        paging.set_maximum_number_of_items(count);
+        paging.process_query_string_info();
+        list_item_vector_t items(paging.read_list());
+        snap_child::post_file_t f;
+
+        // Load the list body
+        f.set_filename(theme + "-list-body.xsl");
+        if(!f_snap->load_file(f) || f.get_size() == 0)
         {
-            // we are just viewing this list
-            list_ipath.set_parameter("action", "view");
+            list_ipath.set_parameter("error", "1");
+            return QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-list-body.xsl) could not be loaded.</span>")
+                                        .arg(theme);
         }
+        QString const list_body_xsl(QString::fromUtf8(f.get_data()));
 
-        quiet_error_callback list_error_callback(f_snap, true);
-        plugin * list_plugin(path::path::instance()->get_plugin(list_ipath, list_error_callback));
-        if(!list_error_callback.has_error() && list_plugin)
+        // Load the list theme
+        f.set_filename(theme + "-list-theme.xsl");
+        if(!f_snap->load_file(f) || f.get_size() == 0)
         {
-            layout::layout_content * list_content(dynamic_cast<layout::layout_content *>(list_plugin));
-            if(list_content == nullptr)
+            list_ipath.set_parameter("error", "1");
+            return QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-list-theme.xsl) could not be loaded.</span>")
+                                        .arg(theme);
+        }
+        QString const list_theme_xsl(QString::fromUtf8(f.get_data()));
+
+        // Load the item body
+        f.set_filename(theme + "-item-body.xsl");
+        if(!f_snap->load_file(f) || f.get_size() == 0)
+        {
+            list_ipath.set_parameter("error", "1");
+            return QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-item-theme.xsl) could not be loaded.</span>")
+                                        .arg(theme);
+        }
+        QString const item_body_xsl(QString::fromUtf8(f.get_data()));
+
+        // Load the item theme
+        f.set_filename(theme + "-item-theme.xsl");
+        if(!f_snap->load_file(f) || f.get_size() == 0)
+        {
+            list_ipath.set_parameter("error", "1");
+            return QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-item-theme.xsl) could not be loaded.</span>")
+                                        .arg(theme);
+        }
+        QString const item_theme_xsl(QString::fromUtf8(f.get_data()));
+
+        layout::layout * layout_plugin(layout::layout::instance());
+        QDomDocument list_doc(layout_plugin->create_document(list_ipath, list_plugin));
+        layout_plugin->create_body(list_doc, list_ipath, list_body_xsl, list_content);
+        // TODO: fix this problem (i.e. /products, /feed...)
+        // The following is a "working" fix so we can generate a list
+        // for the page that defines the list, but of course, in
+        // that case we have the "wrong" path... calling with the
+        // list_ipath generates a filter loop problem
+        //content::path_info_t random_ipath;
+        //random_ipath.set_path("");
+        //layout_plugin->create_body(list_doc, random_ipath, list_body_xsl, list_content);
+
+        QDomElement body(snap_dom::get_element(list_doc, "body"));
+        QDomElement list_element(list_doc.createElement("list"));
+        body.appendChild(list_element);
+
+        QString const main_path(f_snap->get_uri().path());
+        content::path_info_t main_ipath;
+        main_ipath.set_path(main_path);
+
+        // now theme the list
+        int const max_items(items.size());
+        for(int i(0), index(1); i < max_items; ++i)
+        {
+            list_error_callback.clear_error();
+            content::path_info_t item_ipath;
+            item_ipath.set_path(items[i].get_uri());
+            if(item_ipath.get_parameter("action").isEmpty())
             {
-                f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                        "Plugin Missing",
-                        QString("Plugin \"%1\" does not know how to handle a list assigned to it.").arg(list_plugin->get_plugin_name()),
-                        "list::on_replace_token() the plugin does not derive from layout::layout_content.");
-                NOTREACHED();
-            }
-
-            // read the list of items
-            //
-            // TODO: use a paging_t object to read the list so we can
-            //       append a navigation and handle the page parameter
-            //
-            paging_t paging(f_snap, list_ipath);
-            paging.set_start_offset(start + 1);
-            paging.set_maximum_number_of_items(count);
-            paging.process_query_string_info();
-            list_item_vector_t items(paging.read_list());
-            snap_child::post_file_t f;
-
-            // Load the list body
-            f.set_filename(theme + "-list-body.xsl");
-            if(!f_snap->load_file(f) || f.get_size() == 0)
-            {
-                token.f_error = true;
-                token.f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-list-body.xsl) could not be loaded.</span>")
-                                            .arg(theme);
-                return;
-            }
-            QString const list_body_xsl(QString::fromUtf8(f.get_data()));
-
-            // Load the list theme
-            f.set_filename(theme + "-list-theme.xsl");
-            if(!f_snap->load_file(f) || f.get_size() == 0)
-            {
-                token.f_error = true;
-                token.f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-list-theme.xsl) could not be loaded.</span>")
-                                            .arg(theme);
-                return;
-            }
-            QString const list_theme_xsl(QString::fromUtf8(f.get_data()));
-
-            // Load the item body
-            f.set_filename(theme + "-item-body.xsl");
-            if(!f_snap->load_file(f) || f.get_size() == 0)
-            {
-                token.f_error = true;
-                token.f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-item-theme.xsl) could not be loaded.</span>")
-                                            .arg(theme);
-                return;
-            }
-            QString const item_body_xsl(QString::fromUtf8(f.get_data()));
-
-            // Load the item theme
-            f.set_filename(theme + "-item-theme.xsl");
-            if(!f_snap->load_file(f) || f.get_size() == 0)
-            {
-                token.f_error = true;
-                token.f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list theme (%1-item-theme.xsl) could not be loaded.</span>")
-                                            .arg(theme);
-                return;
-            }
-            QString const item_theme_xsl(QString::fromUtf8(f.get_data()));
-
-            layout::layout * layout_plugin(layout::layout::instance());
-            QDomDocument list_doc(layout_plugin->create_document(list_ipath, list_plugin));
-            layout_plugin->create_body(list_doc, list_ipath, list_body_xsl, list_content);
-            // TODO: fix this problem (i.e. /products, /feed...)
-            // The following is a "working" fix so we can generate a list
-            // for the page that defines the list, but of course, in
-            // that case we have the "wrong" path... calling with the
-            // list_ipath generates a filter loop problem
-            //content::path_info_t random_ipath;
-            //random_ipath.set_path("");
-            //layout_plugin->create_body(list_doc, random_ipath, list_body_xsl, list_content);
-
-            QDomElement body(snap_dom::get_element(list_doc, "body"));
-            QDomElement list_element(list_doc.createElement("list"));
-            body.appendChild(list_element);
-
-            QString const main_path(f_snap->get_uri().path());
-            content::path_info_t main_ipath;
-            main_ipath.set_path(main_path);
-
-            // now theme the list
-            int const max_items(items.size());
-            for(int i(0), index(1); i < max_items; ++i)
-            {
-                list_error_callback.clear_error();
-                content::path_info_t item_ipath;
-                item_ipath.set_path(items[i].get_uri());
-                if(item_ipath.get_parameter("action").isEmpty())
+                // the default action on a link is "view" unless it
+                // references an administrative task under /admin
+                if(item_ipath.get_cpath() == "admin" || item_ipath.get_cpath().startsWith("admin/"))
                 {
-                    // the default action on a link is "view" unless it
-                    // references an administrative task under /admin
-                    if(item_ipath.get_cpath() == "admin" || item_ipath.get_cpath().startsWith("admin/"))
-                    {
-                        item_ipath.set_parameter("action", "administer");
-                    }
-                    else
-                    {
-                        item_ipath.set_parameter("action", "view");
-                    }
+                    item_ipath.set_parameter("action", "administer");
                 }
-                // whether we are attempting to display this item
-                // (opposed to the test when going to the page or generating
-                // the list in the first place)
-                item_ipath.set_parameter("mode", "display");
-                plugin * item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
-                layout_content * l(dynamic_cast<layout_content *>(item_plugin));
-                if(!list_error_callback.has_error() && item_plugin)
+                else
                 {
-                    if(l)
-                    {
-                        // put each box in a filter tag so that way we have
-                        // a different owner and path for each
-                        //
-                        QDomDocument item_doc(layout_plugin->create_document(item_ipath, item_plugin));
-                        QDomElement item_root(item_doc.documentElement());
-                        item_root.setAttribute("index", index);
+                    item_ipath.set_parameter("action", "view");
+                }
+            }
+            // whether we are attempting to display this item
+            // (opposed to the test when going to the page or generating
+            // the list in the first place)
+            item_ipath.set_parameter("mode", "display");
+            plugin * item_plugin(path::path::instance()->get_plugin(item_ipath, list_error_callback));
+            layout_content * l(dynamic_cast<layout_content *>(item_plugin));
+            if(!list_error_callback.has_error() && item_plugin)
+            {
+                if(l)
+                {
+                    // put each box in a filter tag so that way we have
+                    // a different owner and path for each
+                    //
+                    QDomDocument item_doc(layout_plugin->create_document(item_ipath, item_plugin));
+                    QDomElement item_root(item_doc.documentElement());
+                    item_root.setAttribute("index", index);
 
-                        FIELD_SEARCH
-                            (content::field_search::command_t::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
-                            (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+                    FIELD_SEARCH
+                        (content::field_search::command_t::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
+                        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
 
-                            // snap/head/metadata/desc[@type="list_uri"]/data
-                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_key())
-                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_uri]/data")
+                        // snap/head/metadata/desc[@type="list_uri"]/data
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_key())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_uri]/data")
 
-                            // snap/head/metadata/desc[@type="list_path"]/data
-                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_cpath)
-                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_path]/data")
+                        // snap/head/metadata/desc[@type="list_path"]/data
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_cpath)
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_path]/data")
 
-                            // snap/head/metadata/desc[@type="box_uri"]/data
-                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
-                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_uri]/data")
+                        // snap/head/metadata/desc[@type="box_uri"]/data
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_uri]/data")
 
-                            // snap/head/metadata/desc[@type="box_path"]/data
-                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_cpath())
-                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_path]/data")
+                        // snap/head/metadata/desc[@type="box_path"]/data
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_cpath())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_path]/data")
 
-                            // snap/head/metadata/desc[@type="main_page_uri"]/data
-                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
-                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_uri]/data")
+                        // snap/head/metadata/desc[@type="main_page_uri"]/data
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_uri]/data")
 
-                            // snap/head/metadata/desc[@type="main_page_path"]/data
-                            (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_cpath())
-                            (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_path]/data")
+                        // snap/head/metadata/desc[@type="main_page_path"]/data
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_cpath())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_path]/data")
 
-                            // retrieve names of all the boxes
-                            ;
+                        // retrieve names of all the boxes
+                        ;
 
 //SNAP_LOG_WARNING("create body for item ")(i)(" with index ")(index);
-                        layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, l);
+                    layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, l);
 //std::cerr << "source to be parsed [" << item_doc.toString(-1) << "]\n";
-                        QDomElement item_body(snap_dom::get_element(item_doc, "body"));
-                        item_body.setAttribute("index", index);
+                    QDomElement item_body(snap_dom::get_element(item_doc, "body"));
+                    item_body.setAttribute("index", index);
 //SNAP_LOG_WARNING("apply theme to item ")(i)(" with index ")(index);
-                        QString const themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
+                    QString const themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
 //std::cerr << "themed item [" << themed_item << "]\n";
 
-                        // add that result to the list document
-                        QDomElement item(list_doc.createElement("item"));
-                        list_element.appendChild(item);
-                        snap_dom::insert_html_string_to_xml_doc(item, themed_item);
+                    // add that result to the list document
+                    QDomElement item(list_doc.createElement("item"));
+                    list_element.appendChild(item);
+                    snap_dom::insert_html_string_to_xml_doc(item, themed_item);
 
-                        ++index; // index only counts items added to the output
-                    }
-                    else
-                    {
-                        SNAP_LOG_ERROR("the item_plugin pointer for \"")
-                                      (item_plugin->get_plugin_name())
-                                      ("\" is not a layout_content");
-                    }
+                    ++index; // index only counts items added to the output
+                }
+                else
+                {
+                    SNAP_LOG_ERROR("the item_plugin pointer for \"")
+                                  (item_plugin->get_plugin_name())
+                                  ("\" is not a layout_content");
                 }
             }
+        }
 
-            QDomElement navigation_tag(list_doc.createElement("navigation"));
-            body.appendChild(navigation_tag);
-            paging.generate_list_navigation(navigation_tag, f_snap->get_uri(), 5, true, true, true);
+        QDomElement navigation_tag(list_doc.createElement("navigation"));
+        body.appendChild(navigation_tag);
+        paging.generate_list_navigation(navigation_tag, f_snap->get_uri(), 5, true, true, true);
 
 //std::cerr << "resulting XML [" << list_doc.toString(-1) << "]\n";
 
-            // now theme the list as a whole
-            // we add a wrapper so we can use /node()/* in the final theme
+        // now theme the list as a whole
+        // we add a wrapper so we can use /node()/* in the final theme
 //SNAP_LOG_WARNING("apply list theme");
-            token.f_replacement = layout_plugin->apply_theme(list_doc, list_theme_xsl, theme);
-        }
-        // else list is not accessible (permission "problem")
-//else SNAP_LOG_FATAL("list::on_replace_token() list \"")(list_ipath.get_key())("\" is not accessible.");
+        return layout_plugin->apply_theme(list_doc, list_theme_xsl, theme);
     }
+    // else list is not accessible (permission "problem")
+//else SNAP_LOG_FATAL("list::on_replace_token() list \"")(list_ipath.get_key())("\" is not accessible.");
+
+    return QString();
 }
 
 

@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle various locale information such as timezone and date output, number formatting for display, etc.
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -470,7 +470,7 @@ QString locale::get_current_locale() const
  * \sa set_locale()
  *
  */
-void locale::set_current_locale(QString const& new_locale)
+void locale::set_current_locale(QString const & new_locale)
 {
     f_current_locale = new_locale;
 }
@@ -513,7 +513,7 @@ QString locale::get_current_timezone() const
  *
  * \sa set_timezone()
  */
-void locale::set_current_timezone(QString const& new_timezone)
+void locale::set_current_timezone(QString const & new_timezone)
 {
     f_current_timezone = new_timezone;
 }
@@ -696,8 +696,8 @@ QString locale::format_time(time_t d)
  * This function calls the set_timezone() and may call the set_locale()
  * functions setting up the timezone and locale of the plugin.
  *
+ * \param[in] d  The Unix time to convert.
  * \param[in] date_format  The format to use as defined in strftime().
- * \param[in] unix_time  The time to convert.
  * \param[in] use_local  Whether to use the localtime() or gmtime() function.
  *
  * \return The formatted date.

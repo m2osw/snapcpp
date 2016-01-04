@@ -1,5 +1,5 @@
 // Snap Websites Server -- website system info settings
-// Copyright (C) 2013-2015  Made to Order Software Corp.
+// Copyright (C) 2013-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,8 +59,6 @@ class info
         , public layout::layout_content
 {
 public:
-    static const sessions::sessions::session_info::session_id_t INFO_SESSION_ID_SETTINGS = 1;      // settings-form.xml
-
                             info();
                             ~info();
 
