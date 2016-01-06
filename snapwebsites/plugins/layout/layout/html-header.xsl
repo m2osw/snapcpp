@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == system messages XSLT templates
-Copyright (C) 2011-2015  Made to Order Software Corp.
+Copyright (C) 2011-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -463,7 +463,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			</xsl:call-template>
 		</xsl:for-each>
 		<xsl:if test="page/body/bookmarks[@href]">
-			<xsl:variable name="sitemap" select="page/body/navigation/@href"/>
+			<xsl:variable name="sitemap" select="page/body/bookmarks/@href"/>
 			<link rel="sitemap" type="text/html" title="Sitemap" href="{$sitemap}"/>
 		</xsl:if>
 

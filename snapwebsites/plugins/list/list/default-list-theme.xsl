@@ -26,16 +26,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<xsl:param name="layout-modified">2015-10-14 21:33:24</xsl:param>
 
 	<xsl:template match="snap">
-		<div class="list-wrapper">
-			<ul class="list default-list">
-				<xsl:for-each select="page/body/list">
-					<xsl:copy-of select="item/node()"/>
-				</xsl:for-each>
-			</ul>
-			<xsl:if test="page/body/navigation">
-				<div class="navigation"><xsl:copy-of select="page/body/navigation/node()"/></div>
-			</xsl:if>
-		</div>
+		<xsl:if test="count(page/body/list/*)">
+			<div class="list-wrapper">
+				<ul class="list default-list">
+					<xsl:for-each select="page/body/list">
+						<xsl:copy-of select="item/node()"/>
+					</xsl:for-each>
+				</ul>
+				<xsl:if test="page/body/list-navigation-tags">
+					<div class="navigation"><xsl:copy-of select="page/body/list-navigation-tags/node()"/></div>
+				</xsl:if>
+			</div>
+		</xsl:if>
 	</xsl:template>
 </xsl:stylesheet>
 <!-- vim: ts=2 sw=2

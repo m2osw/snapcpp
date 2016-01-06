@@ -174,7 +174,7 @@ int64_t timetracker::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 6, 2, 40, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 6, 3, 26, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -518,7 +518,7 @@ QString timetracker::token_main_page(content::path_info_t & ipath)
         //
         result +=
                 "<div class=\"time-tracker-buttons\">"
-                    "<a class=\"button time-tracker add-user\""
+                    "<a class=\"button timetracker-button time-tracker add-user\""
                     " href=\"#add-user\">Add User</a>"
                 "</div>";
 

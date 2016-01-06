@@ -3358,7 +3358,10 @@ QString list::generate_list(content::path_info_t ipath, content::path_info_t lis
             }
         }
 
-        QDomElement navigation_tag(list_doc.createElement("navigation"));
+        // we cannot use "navigation" as the name of this tag since it is
+        // used for the navigation links defined in the header.
+        //
+        QDomElement navigation_tag(list_doc.createElement("list-navigation-tags"));
         body.appendChild(navigation_tag);
         paging.generate_list_navigation(navigation_tag, f_snap->get_uri(), 5, true, true, true);
 
