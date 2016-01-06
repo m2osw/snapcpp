@@ -278,11 +278,11 @@ DTD of the XSLT 2.0.
                 style CDATA #IMPLIED
                 width CDATA #IMPLIED>
 
-<!ELEMENT theader ANY>
-<!ATTLIST theader class CDATA #IMPLIED>
+<!ELEMENT thead ANY>
+<!ATTLIST thead class CDATA #IMPLIED>
 
-<!ELEMENT tfooter ANY>
-<!ATTLIST tfooter class CDATA #IMPLIED>
+<!ELEMENT tfoot ANY>
+<!ATTLIST tfoot class CDATA #IMPLIED>
 
 <!ELEMENT tbody ANY>
 <!ATTLIST tbody class CDATA #IMPLIED>
@@ -303,10 +303,9 @@ DTD of the XSLT 2.0.
              colspan CDATA #IMPLIED
              rowspan CDATA #IMPLIED
              valign (top|middle|bottom) "middle"
-             width CDATA #IMPLIED>
-
-<!ELEMENT thead ANY>
-<!ATTLIST thead class CDATA #IMPLIED>
+             width CDATA #IMPLIED
+             data-month CDATA #IMPLIED
+             data-year CDATA #IMPLIED>
 
 <!ELEMENT tr ANY>
 <!ATTLIST tr class CDATA #IMPLIED>

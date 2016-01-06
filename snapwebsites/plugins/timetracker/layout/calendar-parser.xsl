@@ -32,15 +32,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	</xsl:template>
 
 	<xsl:template match="day">
-		<td class="day">
-			<xsl:attribute name="class">day<xsl:if test="@today"> today</xsl:if></xsl:attribute>
+		<td>
+			<xsl:attribute name="class">day<xsl:if test="@today"> today</xsl:if><xsl:if
+				test="position() = 7"> last</xsl:if></xsl:attribute>
 			<xsl:value-of select="."/>
 		</td>
 	</xsl:template>
 
 	<xsl:template match="line">
-		<tr class="days-line">
-			<td class="week-column">
+		<xsl:param name="last_day"/>
+
+		<tr>
+			<xsl:attribute name="class">days-line<xsl:if test="position() = $last_day"> last-line</xsl:if></xsl:attribute>
+			<td>
 				<xsl:attribute name="class">week-column<xsl:if test="*/@today"> this-week</xsl:if></xsl:attribute>
 				<xsl:value-of select="@week"/>
 			</td>
@@ -50,21 +54,23 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output> <!-- lang="{$lang}" 'lang variable undefined' -->
-			<div id="content">
+			<div id="calendar-content">
 
 				<h3>Time Tracking Calendar</h3>
 				<div class="calendar">
 
-					<table>
-						<theader>
-							<th>
-								<td class="buttons"><a href="#previous-year" title="Previous Year">&lt;&lt;</a></td>
-								<td class="buttons"><a href="#previous-month" title="Previous Month">&lt;</a></td>
-								<td class="month" colspan="4" data-month="{month/@mm}" data-year="{year}"><xsl:copy-of select="month"/> <xsl:copy-of select="year"/></td>
-								<td class="buttons"><a href="#next-month" title="Next Month">&gt;</a></td>
-								<td class="buttons"><a href="#next-year" title="Next Year">&gt;&gt;</a></td>
-							</th>
-						</theader>
+					<table class="calendar-table">
+						<thead>
+							<tr>
+								<th class="buttons"><a href="#previous-year" title="Previous Year">&lt;&lt;</a></th>
+								<th class="buttons"><a href="#previous-month" title="Previous Month">&lt;</a></th>
+								<th class="month" colspan="4" data-month="{month/@mm}" data-year="{year}">
+									<xsl:copy-of select="month/node()"/><xsl:text> </xsl:text><xsl:copy-of select="year/node()"/>
+								</th>
+								<th class="buttons"><a href="#next-month" title="Next Month">&gt;</a></th>
+								<th class="buttons last"><a href="#next-year" title="Next Year">&gt;&gt;</a></th>
+							</tr>
+						</thead>
 
 						<tbody class="days">
 							<tr class="day-columns">
@@ -75,9 +81,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 								<td class="day-column">Wed</td>
 								<td class="day-column">Thu</td>
 								<td class="day-column">Fri</td>
-								<td class="day-column">Sat</td>
+								<td class="day-column last">Sat</td>
 							</tr>
-							<xsl:apply-templates select="days/*"/>
+							<xsl:apply-templates select="days/*">
+								<xsl:with-param name="last_day" select="count(days/*)"/>
+							</xsl:apply-templates>
 						</tbody>
 					</table>
 

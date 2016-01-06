@@ -91,6 +91,7 @@ public:
 private:
     void                    content_update(int64_t variables_timestamp);
 
+    void                    add_calendar(int64_t identifier);
     QString                 token_main_page(content::path_info_t & ipath);
     QString                 token_calendar(content::path_info_t & ipath);
 

@@ -1,5 +1,5 @@
 // Snap Websites Servers -- handle messages for QXmlQuery
-// Copyright (C) 2014-2015  Made to Order Software Corp.
+// Copyright (C) 2014-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,25 +28,25 @@ namespace snap
 class xslt_exception : public snap_exception
 {
 public:
-    xslt_exception(char const *        what_msg) : snap_exception("xslt", what_msg) {}
-    xslt_exception(std::string const & what_msg) : snap_exception("xslt", what_msg) {}
-    xslt_exception(QString const &     what_msg) : snap_exception("xslt", what_msg) {}
+    explicit xslt_exception(char const *        what_msg) : snap_exception("xslt", what_msg) {}
+    explicit xslt_exception(std::string const & what_msg) : snap_exception("xslt", what_msg) {}
+    explicit xslt_exception(QString const &     what_msg) : snap_exception("xslt", what_msg) {}
 };
 
 class xslt_initialization_error : public xslt_exception
 {
 public:
-    xslt_initialization_error(char const *        whatmsg) : xslt_exception(whatmsg) {}
-    xslt_initialization_error(std::string const & whatmsg) : xslt_exception(whatmsg) {}
-    xslt_initialization_error(QString const &     whatmsg) : xslt_exception(whatmsg) {}
+    explicit xslt_initialization_error(char const *        whatmsg) : xslt_exception(whatmsg) {}
+    explicit xslt_initialization_error(std::string const & whatmsg) : xslt_exception(whatmsg) {}
+    explicit xslt_initialization_error(QString const &     whatmsg) : xslt_exception(whatmsg) {}
 };
 
 class xslt_evaluation_error : public xslt_exception
 {
 public:
-    xslt_evaluation_error(char const *        whatmsg) : xslt_exception(whatmsg) {}
-    xslt_evaluation_error(std::string const & whatmsg) : xslt_exception(whatmsg) {}
-    xslt_evaluation_error(QString const &     whatmsg) : xslt_exception(whatmsg) {}
+    explicit xslt_evaluation_error(char const *        whatmsg) : xslt_exception(whatmsg) {}
+    explicit xslt_evaluation_error(std::string const & whatmsg) : xslt_exception(whatmsg) {}
+    explicit xslt_evaluation_error(QString const &     whatmsg) : xslt_exception(whatmsg) {}
 };
 
 

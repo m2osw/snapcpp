@@ -17,6 +17,7 @@
 
 #include "timetracker.h"
 
+#include "../messages/messages.h"
 #include "../output/output.h"
 #include "../permissions/permissions.h"
 #include "../layout/layout.h"
@@ -28,6 +29,7 @@
 #include "not_reached.h"
 #include "not_used.h"
 #include "qdomhelpers.h"
+#include "xslt.h"
 
 #include "poison.h"
 
@@ -172,7 +174,7 @@ int64_t timetracker::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 4, 2, 15, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 6, 2, 40, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -244,10 +246,137 @@ void timetracker::on_generate_header_content(content::path_info_t & ipath, QDomE
 bool timetracker::on_path_execute(content::path_info_t & ipath)
 {
     // TODO: add support to quickly interact with our form(s)
+    QString const cpath(ipath.get_cpath());
+    if(cpath == "timetracker")
+    {
+        if(f_snap->postenv_exists("operation"))
+        {
+            server_access::server_access * server_access_plugin(server_access::server_access::instance());
+
+            QString const operation(f_snap->postenv("operation"));
+            if(operation == "add-self")
+            {
+                users::users * users_plugin(users::users::instance());
+
+                int64_t const identifier(users_plugin->get_user_identifier());
+                add_calendar(identifier);
+                server_access_plugin->create_ajax_result(ipath, true);
+                server_access_plugin->ajax_redirect("/timetracker");
+            }
+            else if(operation == "calendar")
+            {
+                users::users * users_plugin(users::users::instance());
+
+                int64_t const identifier(users_plugin->get_user_identifier());
+                content::path_info_t calendar_ipath;
+                ipath.get_child(calendar_ipath, QString("%1").arg(identifier));
+                if(f_snap->postenv_exists("year")
+                && f_snap->postenv_exists("month"))
+                {
+                    // convert the year/month in a date that the
+                    // token_calendar() understands
+                    bool ok(false);
+                    int const year(f_snap->postenv("year").toInt(&ok, 10));
+                    if(!ok || year < 2000 || year > 3000)
+                    {
+                        messages::messages::instance()->set_error(
+                            "Invalid Year",
+                            QString("The year (%1) is not a valid number or is out of bounds.").arg(f_snap->postenv("year")),
+                            "timetracker::on_path_execute(): the year was not correct.",
+                            false
+                        );
+                        goto invalid_data;
+                    }
+                    int const month(f_snap->postenv("month").toInt(&ok, 10));
+                    if(!ok || month < 1 || month > 12)
+                    {
+                        messages::messages::instance()->set_error(
+                            "Invalid Month",
+                            QString("The month (%1) is not a valid number or is out of bounds.").arg(f_snap->postenv("month")),
+                            "timetracker::on_path_execute(): the month was not correct.",
+                            false
+                        );
+                        goto invalid_data;
+                    }
+                    calendar_ipath.set_parameter("date", QString("%1%0201").arg(year, 4, 10, QChar('0')).arg(month, 2, 10, QChar('0')));
+                }
+                QString const result(token_calendar(calendar_ipath));
+                server_access_plugin->create_ajax_result(ipath, true);
+                server_access_plugin->ajax_append_data("calendar", result.toUtf8());
+            }
+            else
+            {
+                messages::messages::instance()->set_error(
+                    "Unknown Timetracker Operation",
+                    QString("Timetracker received unknown operation \"%1\".").arg(operation),
+                    "info::plugin_selection_on_path_execute(): the plugin is already installed so we should not have gotten this event.",
+                    false
+                );
+invalid_data:
+                server_access_plugin->create_ajax_result(ipath, false);
+            }
+
+            // create AJAX response
+            server_access_plugin->ajax_output();
+            return true;
+        }
+    }
 
     // let the output plugin take care of this otherwise
     //
     return output::output::instance()->on_path_execute(ipath);
+}
+
+
+/** \brief Add current user to timetracker.
+ *
+ * This function adds the current user to the list of users who can
+ * use the timetracker.
+ *
+ * This adds a page with the calendar as:
+ *
+ * \code
+ *      /timetracker/<user identifier>
+ * \endcode
+ *
+ * \param[in] identifier  The identifier of the user to be added.
+ */
+void timetracker::add_calendar(int64_t identifier)
+{
+    // basic setup
+    output::output * output_plugin(output::output::instance());
+    content::content * content_plugin(content::content::instance());
+    //QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+
+    // setup locale
+    QString const locale("xx"); // TODO: use the user defined locale by default, instead of "xx"
+
+    // setup calendar info path
+    content::path_info_t calendar_ipath;
+    calendar_ipath.set_path(QString("timetracker/%1").arg(identifier));
+    calendar_ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
+    calendar_ipath.force_revision(snap_version::SPECIAL_VERSION_FIRST_REVISION);
+    calendar_ipath.force_locale(locale);
+
+    // create the actual page
+    //
+    // Note: if the page already exists, nothing happens;
+    //       if the page was previously deleted, it gets "recreated"
+    //       (reinstantiated as a NORMAL page)
+    //
+    content_plugin->create_content(calendar_ipath, output_plugin->get_plugin_name(), "timetracker/calendar");
+
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(calendar_ipath.get_revision_key()));
+    int64_t const start_date(f_snap->get_start_date());
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue("Time Tracker Calendar");
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue("<div>[timetracker::calendar]</div>");
+
+    // TODO: create a new permission for this user so he can access
+    //       his calendar page (right now this is not required since
+    //       the calendar is shown in the main page so we keep that
+    //       work for later)
 }
 
 
@@ -456,8 +585,14 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
 
     // optionally we expect a full date with format: %Y%m%d
     //
-    snap_uri const & uri(f_snap->get_uri());
-    QString const when(uri.query_option(get_name(name_t::SNAP_NAME_TIMETRACKER_DATE_QUERY_STRING)));
+    // the date may come from the ipath or the query string
+    //
+    QString when(ipath.get_parameter("date"));
+    if(when.isEmpty())
+    {
+        snap_uri const & uri(f_snap->get_uri());
+        when = uri.query_option(get_name(name_t::SNAP_NAME_TIMETRACKER_DATE_QUERY_STRING));
+    }
     if(!when.isEmpty())
     {
         int const when_year(when.mid(0, 4).toInt(&ok, 10));
@@ -517,8 +652,14 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
         int const week_number(locale_plugin->format_date(day_one, "%U", true).toInt(&ok)); // user should be in control of which number to use, valid formats are: %U, %V, %W
         line_tag.setAttribute("week", week_number);
 
-        int const week_day(locale_plugin->format_date(day_one, "%B", true).toInt(&ok));
+        int const week_day(locale_plugin->format_date(day_one, "%w", true).toInt(&ok));
+        if(line == 1)
+        {
+            days_tag.setAttribute("first-week-day", week_day);
+        }
 #ifdef DEBUG
+// this debug will work as long as Sunday is the first day, of course...
+// later we may have to change the week_day test
         if(line != 1 && week_day != 0)
         {
             throw snap_logic_exception(QString("line = %1 and week_day = %2 when it should be zero.").arg(line).arg(week_day));
@@ -533,13 +674,13 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
                 // this is a day in the previous or next month
                 // (a.k.a. out of range)
                 //
-                QDomElement no_day_tag(doc.createElement("no_day"));
-                days_tag.appendChild(no_day_tag);
+                QDomElement no_day_tag(doc.createElement("no-day"));
+                line_tag.appendChild(no_day_tag);
             }
             else
             {
                 QDomElement day_tag(doc.createElement("day"));
-                days_tag.appendChild(day_tag);
+                line_tag.appendChild(day_tag);
 
                 // does this day represent today?
                 //
@@ -550,6 +691,7 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
                     day_tag.setAttribute("today", "today");
                 }
 
+// TODO: add data
 snap_dom::append_plain_text_to_node(day_tag, QString("%1").arg(line));
 
                 ++line;
@@ -557,10 +699,16 @@ snap_dom::append_plain_text_to_node(day_tag, QString("%1").arg(line));
         }
     }
 
+//SNAP_LOG_WARNING("creating the calendar... [")(doc.toString())("]");
 
     QString result;
 
-    return result;
+    xslt x;
+    x.set_xsl_from_file("qrc:/xsl/layout/calendar-parser.xsl");
+    x.set_document(doc);
+    QString const output(x.evaluate_to_string());
+    // "<output>"
+    return output.mid(8, output.size() - 17);
 }
 
 

@@ -1,5 +1,5 @@
 // Snap Websites Server -- URI canonicalization
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1593,7 +1593,7 @@ bool snap_uri::has_query_option(const QString& name) const
  *
  * \sa has_query_option();
  */
-QString snap_uri::query_option(const QString& name) const
+QString snap_uri::query_option(const QString & name) const
 {
     if(name.isEmpty())
     {

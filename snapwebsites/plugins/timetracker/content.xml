@@ -95,6 +95,34 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <dependency>editor (&gt;= 0.0.3.460)</dependency>
     </attachment>
   </content>
+  <content path="/types/taxonomy/system/content-types/timetracker" owner="output">
+    <param name="content::title" revision="revision">Various Time Tracker Page Types</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The time tracker makes use of these types to handle its data.</p>]]>
+    </param>
+    <!-- TODO: deal with the permissions at some point as in:
+               * plain users cannot see someone else's data
+               * an administrator or bookkeeper can see anyone's data
+    -->
+    <!--link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/timetracker/calendar</link-->
+    <!--link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/timetracker/calendar</link-->
+  </content>
+  <content path="/types/taxonomy/system/content-types/timetracker/calendar" owner="output">
+    <param name="content::title" revision="revision">Type of the time tracker calendar pages</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The calendar page of each Time Tracker user is given this type.</p>]]>
+    </param>
+    <!--link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/timetracker/calendar</link-->
+    <!--link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/timetracker/calendar</link-->
+  </content>
+  <content path="/types/taxonomy/system/content-types/timetracker/day" owner="output">
+    <param name="content::title" revision="revision">Type of the time tracker day pages</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>The calendar daily pages is given this type.</p>]]>
+    </param>
+    <!--link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/timetracker/calendar</link-->
+    <!--link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/timetracker/calendar</link-->
+  </content>
   <!--
     timetracker specific permissions
 
