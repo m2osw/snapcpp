@@ -106,9 +106,6 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_LIST_SELECTOR: // all, public, children, hand-picked, type=name, ...
         return "list::selector";
 
-    case name_t::SNAP_NAME_LIST_SIGNAL_NAME:
-        return "pagelist_udp_signal";
-
     case name_t::SNAP_NAME_LIST_STANDALONE: // when present in list table as a column name of a site row: signals a website managed as a standalone site
         return "*standalone*";
 
