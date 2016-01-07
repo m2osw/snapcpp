@@ -5,7 +5,7 @@ Build-Depends: debhelper, cmake, zip, libqt4-dev (>= 4.8.4), doxygen, graphviz, 
     libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.23.231~trusty), libadvgetopt-dev (>= 1.0.2),
     libcontrolledvars-dev (>= 1.4.15.231~trusty), libtld-dev (>= 1.4.21.92~trusty),
     libqtserialization-dev (>= 0.1.3), libqtcassandra-dev (>= 0.5.21.20~trusty),
-    libsnapwebsites-dev (>= 0.1.71.251~trusty), liblog4cplus-dev (>= 1.2.0)
+    libsnapwebsites-dev (>= 0.1.71.252~trusty), liblog4cplus-dev (>= 1.2.0)
 Standards-Version: 3.9.4
 Section: admin
 Homepage: http://www.snapwebsites.org/
@@ -16,7 +16,7 @@ Package: snapmanager
 Section: admin
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: snapserver (>= 0.1.71.251~trusty)
+Suggests: snapserver (>= 0.1.71.252~trusty)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
