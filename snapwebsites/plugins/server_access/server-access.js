@@ -3,7 +3,7 @@
  * Version: 0.0.1.33
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
- * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 

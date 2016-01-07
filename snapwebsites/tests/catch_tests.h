@@ -1,7 +1,7 @@
 #ifndef SNAP_TESTS_H
 #define SNAP_TESTS_H
 // Snap! Websites -- Test Suite Main Header
-// Copyright (C) 2015  Made to Order Software Corp.
+// Copyright (C) 2015-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
