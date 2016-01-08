@@ -194,9 +194,10 @@ void check_lexer()
             exit(1);
         }
         if(t.get_id() != results[i].f_token) {
+            int const id(static_cast<int>(t.get_id()));
             int const tok(static_cast<int>(results[i].f_token));
             fprintf(stderr, "error: token #%d returned an unexpected token identifier (%d instead of %d)\n",
-                    i, t.get_id(), tok);
+                    i, id, tok);
             exit(1);
         }
         if(t.get_value().toString() != results[i].f_result) {
