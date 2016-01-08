@@ -19,6 +19,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/favicon.ico"> <!-- owner must stay favicon -->
+    <!-- there is a problem and if no revision exists for this page,
+         then the icon does not come up at all -->
+    <param name="content::title" revision="revision">Favorite Icon Attachment</param>
     <param name="content::final" type="int8" revision="global">1</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
