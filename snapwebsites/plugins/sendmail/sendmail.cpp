@@ -2334,7 +2334,7 @@ void sendmail::process_bounce_email(QByteArray const & column_key, QString const
     users::users * users_plugin(users::users::instance());
     QString const user_email(page_path.mid(7));
     QString status_key;
-    users::users::status_t const user_status(users_plugin->user_status(user_email, status_key));
+    users::users::status_t const user_status(users_plugin->user_status_from_email(user_email, status_key));
     if(user_status != users::users::status_t::STATUS_VALID
     && user_status != users::users::status_t::STATUS_NEW
     && user_status != users::users::status_t::STATUS_AUTO

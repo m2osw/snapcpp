@@ -74,6 +74,7 @@ public:
 
     // path signals
     //void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+    void                    on_check_for_redirect(content::path_info_t & ipath);
 
     // layout_content implementation
     virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);

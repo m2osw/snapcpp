@@ -1,6 +1,6 @@
 /** @preserve
  * Name: timetracker
- * Version: 0.0.1.27
+ * Version: 0.0.1.30
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5)
@@ -101,7 +101,7 @@ snapwebsites.TimeTracker.prototype.clickedButton_ = null;
  * the administrator wants to add a user to the Time Tracker system.
  *
  * \note
- * We have exactly ONE instance of this variable (i.e. is is static).
+ * We have exactly ONE instance of this variable (i.e. it is static).
  * This means we cannot open two such popups simultaneously.
  *
  * @type {Object}
@@ -109,10 +109,32 @@ snapwebsites.TimeTracker.prototype.clickedButton_ = null;
  */
 snapwebsites.TimeTracker.addUserPopup_ = // static
 {
-    id: "timetracker-popup",
+    id: "timetracker-add-user-popup",
     path: "/admin/settings/timetracker/add-user",
     darken: 150,
     width: 500
+};
+
+
+/** \brief The Time Tracker "Edit Day" popup window.
+ *
+ * This variable is used to describe the Time Tracker popup used when
+ * a user edits his hours for a day.
+ *
+ * \note
+ * We have exactly ONE instance of this variable (i.e. it is static).
+ * This means we cannot open two such popups simultaneously. Plus
+ * we change the path each time we open the popup.
+ *
+ * @type {Object}
+ * @private
+ */
+snapwebsites.TimeTracker.editDayPopup_ = // static
+{
+    id: "timetracker-edit-day-popup",
+    //path: "/timetracker/<user-id>/<day>",
+    darken: 150,
+    width: 850
 };
 
 
@@ -200,7 +222,7 @@ snapwebsites.TimeTracker.prototype.initTimeTrackerCalendar_ = function()
     jQuery("div.calendar table.calendar-table .buttons a[href='#previous-month']")
         .makeButton()
         .click(function(e){
-            that.nextMonth(e, jQuery(this), -1);
+            that.nextMonth_(e, jQuery(this), -1);
         });
 
     // The "Next Month" button
@@ -208,7 +230,7 @@ snapwebsites.TimeTracker.prototype.initTimeTrackerCalendar_ = function()
     jQuery("div.calendar table.calendar-table .buttons a[href='#next-month']")
         .makeButton()
         .click(function(e){
-            that.nextMonth(e, jQuery(this), 1);
+            that.nextMonth_(e, jQuery(this), 1);
         });
 
     // The "Previous Year" button
@@ -216,7 +238,7 @@ snapwebsites.TimeTracker.prototype.initTimeTrackerCalendar_ = function()
     jQuery("div.calendar table.calendar-table .buttons a[href='#previous-year']")
         .makeButton()
         .click(function(e){
-            that.nextMonth(e, jQuery(this), -12);
+            that.nextMonth_(e, jQuery(this), -12);
         });
 
     // The "Next Year" button
@@ -224,7 +246,15 @@ snapwebsites.TimeTracker.prototype.initTimeTrackerCalendar_ = function()
     jQuery("div.calendar table.calendar-table .buttons a[href='#next-year']")
         .makeButton()
         .click(function(e){
-            that.nextMonth(e, jQuery(this), 12);
+            that.nextMonth_(e, jQuery(this), 12);
+        });
+
+    // each valid day (opposed to a  "no-day" entry) is a button too
+    //
+    jQuery("div.calendar table.calendar-table td.day")
+        .makeButton()
+        .click(function(e){
+            that.editDay_(e, jQuery(this));
         });
 };
 
@@ -245,8 +275,10 @@ snapwebsites.TimeTracker.prototype.initTimeTrackerCalendar_ = function()
  * @param {Event} e  The event that triggered this move or null.
  * @param {jQuery} button  The button just clicked as a jQuery object.
  * @param {integer} offset  The offset to be added to the month.
+ *
+ * @private
  */
-snapwebsites.TimeTracker.prototype.nextMonth = function(e, button, offset)
+snapwebsites.TimeTracker.prototype.nextMonth_ = function(e, button, offset)
 {
     var year = this.getYear_(),
         month = this.getMonth_();
@@ -314,7 +346,7 @@ snapwebsites.TimeTracker.prototype.nextMonth = function(e, button, offset)
         break;
 
     default:
-        throw new Error("invalid offset (" + offset + ") in timeTracker.nextMonth().");
+        throw new Error("invalid offset (" + offset + ") in timeTracker.nextMonth_().");
 
     }
 
@@ -327,6 +359,36 @@ snapwebsites.TimeTracker.prototype.nextMonth = function(e, button, offset)
                 month: month
             });
     this.serverAccess_.send(e);
+};
+
+
+/** \brief Open the popup for that day.
+ *
+ * Let the user edit the specified day.
+ *
+ * @param {Event} e  The event that generated this call.
+ * @param {jQuery} day  The jQuery object of the day that was clicked.
+ *
+ * @private
+ */
+snapwebsites.TimeTracker.prototype.editDay_ = function(e, day)
+{
+    var d = day.data("day"),
+        user_id = jQuery("div.calendar").data("user-identifier");
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // determine the path
+    //
+    snapwebsites.TimeTracker.editDayPopup_.path = "/timetracker/" + user_id + "/" + d;
+console.log("path = " + snapwebsites.TimeTracker.editDayPopup_.path);
+
+    // open and show popup where we can select a new user
+    // and click "Add User" to actually add it
+    //
+    snapwebsites.PopupInstance.open(snapwebsites.TimeTracker.editDayPopup_);
+    snapwebsites.PopupInstance.show(snapwebsites.TimeTracker.editDayPopup_);
 };
 
 

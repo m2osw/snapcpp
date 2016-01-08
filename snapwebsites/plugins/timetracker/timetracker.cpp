@@ -174,7 +174,7 @@ int64_t timetracker::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 6, 3, 26, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 7, 20, 29, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -418,6 +418,21 @@ void timetracker::on_generate_main_content(content::path_info_t & ipath, QDomEle
 //}
 
 
+void timetracker::on_check_for_redirect(content::path_info_t & ipath)
+{
+    QString const cpath(ipath.get_cpath());
+
+    // we are only interested by timetracker pages
+    snap_string_list const & segments(ipath.get_segments());
+    if(segments.size() != 3
+    || segments[0] != "timetracker")
+    {
+        return;
+    }
+
+}
+
+
 void timetracker::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token)
 {
     NOTUSED(xml);
@@ -565,8 +580,55 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
     NOTUSED(ipath);
 
     locale::locale * locale_plugin(locale::locale::instance());
+    users::users * users_plugin(users::users::instance());
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
 
     bool ok(false);
+
+    // validate the user identifier which we get in the path as
+    // in "/timetracker/3"
+    //
+    snap_string_list const & segments(ipath.get_segments());
+    if(segments.size() != 2)
+    {
+        // not a valid path
+        throw snap_logic_exception(QString("the token_calendar() ipath is \"%1\" instead of exactly 2 segments").arg(ipath.get_cpath()));
+    }
+SNAP_LOG_WARNING("user identifier from ipath [")(ipath.get_cpath())("] -- [")(segments[1])("]");
+    int const user_identifier(segments[1].toInt(&ok, 10));
+    if(!ok || user_identifier <= 0)
+    {
+        // not a valid number or zero or negative
+        throw snap_logic_exception(QString("invalid user identifier in the token_calendar() ipath \"%1\" (not a number or out of range).").arg(ipath.get_cpath()));
+    }
+    QString ignore_status_key;
+    users::users::status_t status(users_plugin->user_status_from_identifier(user_identifier, ignore_status_key));
+    if(status == users::users::status_t::STATUS_UNKNOWN
+    || status == users::users::status_t::STATUS_UNDEFINED
+    || status == users::users::status_t::STATUS_NOT_FOUND)
+    {
+        // user does not seem to even exist on this website
+        messages::messages::instance()->set_error(
+            "Unknown User",
+            "The specified user does not exist on this website.",
+            QString("timetracker::token_calendar(): with with wrong user.").arg(user_identifier),
+            false
+        );
+        return QString("<p class=\"bad-user\">Calendar not available.</p>");
+    }
+    if(!content_table->exists(ipath.get_key())
+    || !content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    {
+        // user does not have a calendar in this timetracker instance
+        messages::messages::instance()->set_error(
+            "Unassigned User",
+            QString("The specified user (%1) was not added to this timetracker instance.").arg(user_identifier),
+            "timetracker::token_calendar(): user is valid, but has no calendar in timetracker.",
+            false
+        );
+        return QString("<p class=\"bad-user\">Calendar not available.</p>");
+    }
 
     // by default we want to create the calendar for the current month,
     // if the main URI includes a query string, we may switch to a different
@@ -638,6 +700,8 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
     root.appendChild(year_tag);
 
     QDomElement days_tag(doc.createElement("days"));
+    //days_tag.setAttribute("user-identifier", QString("%1").arg(user_identifier));
+    days_tag.setAttribute("user-identifier", user_identifier);
     root.appendChild(days_tag);
 
     int const max_day(f_snap->last_day_of_month(month, year));
@@ -680,6 +744,7 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
             else
             {
                 QDomElement day_tag(doc.createElement("day"));
+                day_tag.setAttribute("day", line);
                 line_tag.appendChild(day_tag);
 
                 // does this day represent today?

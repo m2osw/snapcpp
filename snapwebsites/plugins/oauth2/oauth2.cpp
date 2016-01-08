@@ -426,7 +426,7 @@ bool oauth2::on_path_execute(content::path_info_t & ipath)
                     // make sure user is currently valid otherwise it would
                     // be a way for a user to bypass being blocked!
                     QString ignore_status_key;
-                    users::users::status_t const status(users_plugin->user_status(email, ignore_status_key));
+                    users::users::status_t const status(users_plugin->user_status_from_email(email, ignore_status_key));
                     if(status == users::users::status_t::STATUS_VALID
                     || status == users::users::status_t::STATUS_PASSWORD)
                     {

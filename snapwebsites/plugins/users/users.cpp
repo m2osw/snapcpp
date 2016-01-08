@@ -2620,7 +2620,7 @@ int64_t users::get_user_identifier() const
  *
  * \return The status of the user.
  */
-users::status_t users::user_status(QString const & email, QString & status_key)
+users::status_t users::user_status_from_email(QString const & email, QString & status_key)
 {
     status_key.clear();
 
@@ -2635,6 +2635,77 @@ users::status_t users::user_status(QString const & email, QString & status_key)
     {
         return status_t::STATUS_NOT_FOUND;
     }
+
+    return user_status_from_user_path(user_path, status_key);
+}
+
+
+/** \brief Check the current status of the specified user.
+ *
+ * This function checks the status of the user specified by an
+ * email address.
+ *
+ * \note
+ * The function returns STATUS_UNDEFINED if the email address is
+ * the empty string.
+ *
+ * \note
+ * The function returns STATUS_UNKNOWN if the status is not known
+ * by the users plugin. The status itself is saved in the status_key
+ * parameter so one can further check what the status is and act on
+ * it appropriately.
+ *
+ * \todo
+ * Allow the use of the user path and user identifier instead of
+ * just the email address.
+ *
+ * \param[in] email  The email address of the user being checked. It does
+ *                   not need to be canonicalized yet (i.e. a user_key.)
+ * \param[out] status_key  Return the status key if available.
+ *
+ * \return The status of the user.
+ */
+users::status_t users::user_status_from_identifier(int64_t identifier, QString & status_key)
+{
+    status_key.clear();
+
+    if(identifier <= 0)
+    {
+        return status_t::STATUS_UNDEFINED;
+    }
+
+    return user_status_from_user_path(QString("user/%1").arg(identifier), status_key);
+}
+
+
+/** \brief Check the current status of the specified user.
+ *
+ * This function checks the status of the user specified by an
+ * email address.
+ *
+ * \note
+ * The function returns STATUS_UNDEFINED if the email address is
+ * the empty string.
+ *
+ * \note
+ * The function returns STATUS_UNKNOWN if the status is not known
+ * by the users plugin. The status itself is saved in the status_key
+ * parameter so one can further check what the status is and act on
+ * it appropriately.
+ *
+ * \todo
+ * Allow the use of the user path and user identifier instead of
+ * just the email address.
+ *
+ * \param[in] user_path  The path to the user (i.e. "/user/3")
+ * \param[out] status_key  Return the status key if available.
+ *
+ * \return The status of the user.
+ */
+users::status_t users::user_status_from_user_path(QString const & user_path, QString & status_key)
+{
+    status_key.clear();
+
     content::path_info_t user_ipath;
     user_ipath.set_path(user_path);
 
@@ -2957,7 +3028,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
             {
                 // it exists, just return the current status of that existing user
                 QString ignore_status_key;
-                status = user_status(email, ignore_status_key);
+                status = user_status_from_email(email, ignore_status_key);
                 SNAP_LOG_INFO("user \"")(email)("\" (")(user_key)(") already exists, just return its current status: ")(static_cast<int>(status))(".");
                 return status;
             }
@@ -3210,7 +3281,7 @@ void users::check_user_security_done(user_security_t & security)
     && !security.get_email().isEmpty())
     {
         QString status_key;
-        status_t const status(user_status(security.get_email(), status_key));
+        status_t const status(user_status_from_email(security.get_email(), status_key));
         if(status != status_t::STATUS_NOT_FOUND
         && status != status_t::STATUS_VALID
         && status != status_t::STATUS_NEW

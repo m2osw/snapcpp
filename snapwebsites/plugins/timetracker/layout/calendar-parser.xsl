@@ -35,15 +35,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<td>
 			<xsl:attribute name="class">day<xsl:if test="@today"> today</xsl:if><xsl:if
 				test="position() = 7"> last</xsl:if></xsl:attribute>
+			<xsl:attribute name="data-day"><xsl:value-of select="@day"/></xsl:attribute>
 			<xsl:value-of select="."/>
 		</td>
 	</xsl:template>
 
 	<xsl:template match="line">
-		<xsl:param name="last_day"/>
+		<xsl:param name="last_line"/>
 
 		<tr>
-			<xsl:attribute name="class">days-line<xsl:if test="position() = $last_day"> last-line</xsl:if></xsl:attribute>
+			<xsl:attribute name="class">days-line<xsl:if test="position() = $last_line"> last-line</xsl:if></xsl:attribute>
 			<td>
 				<xsl:attribute name="class">week-column<xsl:if test="*/@today"> this-week</xsl:if></xsl:attribute>
 				<xsl:value-of select="@week"/>
@@ -58,6 +59,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 				<h3>Time Tracking Calendar</h3>
 				<div class="calendar">
+					<xsl:attribute name="data-user-identifier">
+						<xsl:value-of select="days/@user-identifier"/>
+					</xsl:attribute>
 
 					<table class="calendar-table">
 						<thead>
@@ -84,7 +88,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 								<td class="day-column last">Sat</td>
 							</tr>
 							<xsl:apply-templates select="days/*">
-								<xsl:with-param name="last_day" select="count(days/*)"/>
+								<xsl:with-param name="last_line" select="count(days/*)"/>
 							</xsl:apply-templates>
 						</tbody>
 					</table>

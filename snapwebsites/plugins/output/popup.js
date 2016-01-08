@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.31
+ * Version: 0.1.0.33
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5.71)
@@ -271,7 +271,7 @@ snapwebsites.Popup.prototype.darkenPage = function(show, wait)
  *               rest of the screen, the default is to not darken
  *               if undefined (0)
  * \li position -- we accept absolute (scrolls up and down) and fixed
- *                 (does not scroll and default)
+ *                 (does not scroll, the default)
  * \li title -- a title shown at the top, may be HTML, added inside
  *              a \<div\> tag (i.e. if you want an header tag, you have
  *              to include it in the title)
@@ -308,7 +308,7 @@ snapwebsites.Popup.prototype.open = function(popup)
     popup.widget = jQuery("#" + popup.id);
     if(popup.widget.length === 0)
     {
-        jQuery("<div class='snap-popup zordered' id='" + popup.id + "' style='position:fixed;display:none;'>"
+        jQuery("<div class='snap-popup zordered' id='" + popup.id + "' style='position:fixed;visibility:hidden;'>"
              + (popup.noClose ? "" : "<div class='close-popup'></div>")
              + "<div class='inside-popup'><div class='popup-title'></div><div class='popup-body'></div></div></div>")
                 .appendTo("body");
@@ -355,7 +355,8 @@ snapwebsites.Popup.prototype.open = function(popup)
     {
         // We use jQuery("body") instead of jQuery(window) because the
         // body may have padding which needs to be taken in account
-        y = Math.floor((jQuery("body").height() - popup.widget.outerHeight()) / 2);
+console.log("heights: " + jQuery(window).height() + " and " + popup.widget.outerHeight());
+        y = Math.floor((jQuery(window).height() - popup.widget.outerHeight()) / 2);
         if(y < 0)
         {
             y = 0;
@@ -415,6 +416,11 @@ snapwebsites.Popup.prototype.open = function(popup)
         popup.open(popup.widget);
     }
     popup.widget.hide();
+
+    // we start with "visibility: hidden" so switch to visible now that we
+    // have a hidden popup
+    popup.widget.css("visibility", "visible");
+
     return popup.widget;
 };
 
@@ -496,7 +502,7 @@ snapwebsites.Popup.prototype.hide = function(popup)
                 return;
             }
             // no beforeHide(), immediate close
-            that.hideNow_(popup);
+            this.hideNow_(popup);
             return;
         }
     }

@@ -343,7 +343,9 @@ public:
     void                    encrypt_password(QString const & digest, QString const & password, QByteArray const & salt, QByteArray & hash);
     status_t                register_user(QString const & email, QString const & password, QString & reason);
     void                    verify_user(content::path_info_t & ipath);
-    status_t                user_status(QString const & email, QString & status_key);
+    status_t                user_status_from_email(QString const & email, QString & status_key);
+    status_t                user_status_from_identifier(int64_t identifier, QString & status_key);
+    status_t                user_status_from_user_path(QString const & user_path, QString & status_key);
     sessions::sessions::session_info const & get_session() const;
     void                    attach_to_session(QString const & name, QString const & data);
     QString                 detach_from_session(QString const & name);
