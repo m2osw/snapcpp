@@ -57,25 +57,36 @@ endif()
 ##
 ## The unified unit tests in one large test
 ##
-project(test_snap)
 
+find_package( Catch )
 
-add_executable(test_snap
-    # Main
-    catch_tests.cpp
+if(CATCH_FOUND)
 
-    # Test suites
-    catch_snap_communicator.cpp
-)
-add_dependencies( test_snap test_prereqs )
-target_link_libraries(test_snap
-    snapwebsites
-    ${QTCASSANDRA_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
-    dl
-)
+    project(test_snap)
+
+    add_executable(test_snap
+        # Main
+        catch_tests.cpp
+
+        # Test suites
+        catch_snap_communicator.cpp
+    )
+    add_dependencies( test_snap test_prereqs )
+    target_link_libraries(test_snap
+        snapwebsites
+        ${QTCASSANDRA_LIBRARIES}
+        ${LIBTLD_LIBRARIES}
+        ${QT_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        dl
+    )
+
+else(CATCH_FOUND)
+
+    # You may use 'apt-get install catch' under Ubuntu
+    message("Catch based tests will be created because you do not seem to have catch.hpp installed...")
+
+endif(CATCH_FOUND)
 
 
 ##
