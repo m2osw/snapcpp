@@ -195,7 +195,7 @@ void check_lexer()
         }
         if(t.get_id() != results[i].f_token) {
             fprintf(stderr, "error: token #%d returned an unexpected token identifier (%d instead of %d)\n",
-                    i, t.get_id(), results[i].f_token);
+                    i, t.get_id(), static_cast<int>(results[i].f_token));
             exit(1);
         }
         if(t.get_value().toString() != results[i].f_result) {
