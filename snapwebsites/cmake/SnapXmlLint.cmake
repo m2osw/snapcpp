@@ -24,7 +24,15 @@ set( SNAP_XML_LINT TRUE )
 # Handle linting the xml files...
 #
 find_program( BASH    bash    /bin     )
+if( ${BASH} STREQUAL "BASH-NOTFOUND" )
+    message( FATAL_ERROR "xmllint is used with bash which has to be installed. Run 'sudo apt-get install bash' and try again." )
+endif()
+
 find_program( XMLLINT xmllint /usr/bin )
+if( ${XMLLINT} STREQUAL "XMLLINT-NOTFOUND" )
+    message( FATAL_ERROR "xmllint is not installed. Run 'sudo apt-get install libxml2-utils' and try again." )
+endif()
+
 #
 set( lint_script ${CMAKE_BINARY_DIR}/dolint.sh CACHE INTERNAL "XML lint script" FORCE )
 file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
