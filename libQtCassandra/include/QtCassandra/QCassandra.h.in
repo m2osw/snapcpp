@@ -125,7 +125,7 @@ private:
     friend class QCassandraPrivate;
     friend class QCassandraContext;
 
-    std::auto_ptr<QCassandraPrivate>        f_private;
+    std::unique_ptr<QCassandraPrivate>      f_private;
     QCassandraContext::pointer_t            f_current_context;
     mutable controlled_vars::flbool_t       f_contexts_read;
     QCassandraContexts                      f_contexts;
