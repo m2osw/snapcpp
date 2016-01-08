@@ -144,7 +144,7 @@ private:
     friend class QCassandraTable;
     friend class QCassandraLock;
 
-    std::auto_ptr<QCassandraContextPrivate>     f_private;
+    std::unique_ptr<QCassandraContextPrivate>   f_private;
     // f_cassandra is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)

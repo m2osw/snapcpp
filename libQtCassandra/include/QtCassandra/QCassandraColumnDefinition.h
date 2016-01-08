@@ -93,7 +93,7 @@ private:
     friend class QCassandraTable;
     friend class QCassandraColumnDefinitionPrivate;
 
-    std::auto_ptr<QCassandraColumnDefinitionPrivate>    f_private;
+    std::unique_ptr<QCassandraColumnDefinitionPrivate>  f_private;
     // f_table is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
