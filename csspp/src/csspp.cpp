@@ -1,5 +1,5 @@
 // CSS Preprocessor
-// Copyright (C) 2015  Made to Order Software Corp.
+// Copyright (C) 2015-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -624,9 +624,24 @@ int main(int argc, char *argv[])
         // something went wrong in the library
         return e.exit_code();
     }
+    catch(csspp::csspp_exception_logic const & e)
+    {
+        std::cerr << "fatal error: a logic exception, which should NEVER occur, occurred: " << e.what() << std::endl;
+        exit(1);
+    }
+    catch(csspp::csspp_exception_overflow const & e)
+    {
+        std::cerr << "fatal error: an overflow exception occurred: " << e.what() << std::endl;
+        exit(1);
+    }
     catch(csspp::csspp_exception_runtime const & e)
     {
-        std::cerr << "fatal error: an exception occurred: " << e.what() << std::endl;
+        std::cerr << "fatal error: a runtime exception occurred: " << e.what() << std::endl;
+        exit(1);
+    }
+    catch(advgetopt::getopt_exception_undefined const & e)
+    {
+        std::cerr << "fatal error: an undefined exception occurred because of your command line: " << e.what() << std::endl;
         exit(1);
     }
     catch(advgetopt::getopt_exception_invalid const & e)

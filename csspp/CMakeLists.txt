@@ -10,7 +10,7 @@
 #
 # License:
 #      csspp -- a CSS Preprocessor
-#      Copyright (c) 2015 Made to Order Software Corp.
+#      Copyright (c) 2015-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -35,7 +35,7 @@
 ##
 set(CSSPP_VERSION_MAJOR 1)
 set(CSSPP_VERSION_MINOR 0)
-set(CSSPP_VERSION_PATCH 8)
+set(CSSPP_VERSION_PATCH 9)
 
 cmake_minimum_required(VERSION 2.8.4)
 
