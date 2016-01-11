@@ -381,6 +381,9 @@ bool                    verify_plugin_name(QString const & name);
  * For this reason our macro subtract values from the year that are different
  * from those shown in the FreeBSD sample code.
  *
+ * Also the month must be a number from 1 to 12 and not 0 to 11 as used
+ * in various Unix structures.
+ *
  * \param[in] year  The year representing this Unix timestamp.
  * \param[in] month  The month representing this Unix timestamp.
  * \param[in] day  The day representing this Unix timestamp.

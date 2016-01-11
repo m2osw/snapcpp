@@ -1,6 +1,6 @@
 /*
  * Name: output
- * Version: 0.0.25
+ * Version: 0.0.27
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -18,6 +18,11 @@ div.user-messages
 	border: 2px solid #00ff00;
 	border-radius: 5px;
 	background-color: #e0ffe0;
+}
+div.user-messages.in-iframe
+{
+	top: 10px;
+	margin-left: 20px;
 }
 div.user-messages.warning-messages
 {
@@ -140,7 +145,6 @@ div.breadcrumb li.hide
 
 
 /** list navigation */
-
 .navigation
 {
 	text-align: center;

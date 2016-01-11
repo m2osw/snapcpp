@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.73
+ * Version: 0.1.5.78
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -779,7 +779,8 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
         visible = false,
         errors = 0,
         warnings = 0,
-        call_handle = false;
+        call_handle = false,
+        width;
 
     // if the list is empty, ignore
     if(!xml || xml.length == 0)
@@ -807,6 +808,25 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
             //       of re-adding it each time...
             msg.append("<div class='close-button'><img src='/images/snap/close-button.png' width='21' height='21'/></div>");
         }
+    }
+
+    if(window.frameElement)
+    {
+        // we are in an IFRAME, let CSS know that
+        msg.addClass("in-iframe");
+
+        // we are in an IFRAME so we want to adjust the dimensions
+        //
+        // -55px because we want about 20px on the left, 10px on the right
+        // and there are 10px x 2 for the padding and a few more pixels for
+        // borders
+        //
+        width = jQuery(window.frameElement).innerWidth() - 55;
+        if(width > 550)
+        {
+            width = 550;
+        }
+        msg.css("width", width);
     }
 
     jQuery(xml).children("message").each(function()

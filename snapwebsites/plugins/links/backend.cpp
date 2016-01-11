@@ -54,7 +54,8 @@ SNAP_PLUGIN_EXTENSION_START(links)
  * \li createlink -- create a link between two pages
  *
  * \code
- * snapbackend [--config snapserver.conf] [website-url] --action createlink \
+ * snapbackend [--config snapserver.conf] [website-url] \
+ *      --action links::createlink \
  *      --param SOURCE_LINK_NAME=users::author \
  *              SOURCE_LINK=http://csnap.example.com/ \
  *              DESTINATION_LINK_NAME=users::authored_pages \
@@ -72,7 +73,7 @@ SNAP_PLUGIN_EXTENSION_START(links)
  * # delete one specific link between two pages
  * snapbackend your-snap.website.ext \
  *      [--config snapserver.conf]
- *      --action deletelink \
+ *      --action links::deletelink \
  *      --param SOURCE_LINK_NAME=users::author \
  *              SOURCE_LINK=/ \
  *              DESTINATION_LINK_NAME=users::authored_pages \
@@ -82,7 +83,7 @@ SNAP_PLUGIN_EXTENSION_START(links)
  * # delete all links named users::author in this page
  * snapbackend your-snap.website.ext \
  *      [--config snapserver.conf]
- *      --action deletelink \
+ *      --action links::deletelink \
  *      --param SOURCE_LINK_NAME=users::author \
  *              SOURCE_LINK=/ \
  *              LINK_MODE=1
@@ -99,6 +100,10 @@ SNAP_PLUGIN_EXTENSION_START(links)
  * This should be a user action, unfortunately that would add a permissions
  * dependency in the users plugin which we cannot have (i.e. permissions
  * need to know about users...)
+ *
+ * \todo
+ * The links::deletelink needs to allow for the branch to be specified.
+ * Right now it deletes the links in the current branch only.
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
@@ -196,7 +201,7 @@ void links::on_backend_action_create_link()
 
 void links::on_backend_action_delete_link()
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
 
     // delete a link

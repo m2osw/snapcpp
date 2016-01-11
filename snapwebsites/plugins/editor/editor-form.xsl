@@ -304,7 +304,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                   <xsl:for-each select="preset/item">
                     <li>
                       <xsl:attribute name="class">dropdown-item<xsl:if
-                          test="$value = node() or ../../default/node() = node()"> selected</xsl:if><xsl:if
+                          test="$value = text() or ../../default/node() = node()"> selected</xsl:if><xsl:if
                           test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
                       <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
                       <xsl:copy-of select="./node()"/>
@@ -332,7 +332,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </xsl:otherwise>
         </xsl:choose>
       </div>
-      <xsl:if test="required = 'required'"> <span class="required">*</span></xsl:if>
+      <!--xsl:if test="required = 'required'"> <span class="required">*</span></xsl:if-->
 
       <xsl:call-template name="snap:common-parts"/>
     </div>

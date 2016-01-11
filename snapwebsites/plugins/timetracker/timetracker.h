@@ -27,8 +27,12 @@ namespace timetracker
 
 enum class name_t
 {
+    SNAP_NAME_TIMETRACKER_BILLING_DURATION,
     SNAP_NAME_TIMETRACKER_DATE_QUERY_STRING,
-    SNAP_NAME_TIMETRACKER_MAIN_PAGE
+    SNAP_NAME_TIMETRACKER_LOCATION,
+    SNAP_NAME_TIMETRACKER_MAIN_PAGE,
+    SNAP_NAME_TIMETRACKER_PATH,
+    SNAP_NAME_TIMETRACKER_TRANSPORTATION
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
@@ -87,7 +91,7 @@ public:
 
     // editor signals
     //void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
-    //void                    on_init_editor_widget(content::path_info_t  & ipath, QString const  & field_id, QString const  & field_type, QDomElement  & widget, QtCassandra::QCassandraRow::pointer_t row);
+    void                    on_init_editor_widget(content::path_info_t  & ipath, QString const  & field_id, QString const  & field_type, QDomElement  & widget, QtCassandra::QCassandraRow::pointer_t row);
 
 private:
     void                    content_update(int64_t variables_timestamp);
@@ -95,6 +99,7 @@ private:
     void                    add_calendar(int64_t identifier);
     QString                 token_main_page(content::path_info_t & ipath);
     QString                 token_calendar(content::path_info_t & ipath);
+    void                    init_day_editor_widgets(QString const & field_id, QDomElement & widget);
 
     zpsnap_child_t          f_snap;
 };

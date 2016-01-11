@@ -49,26 +49,41 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     timetracker.qrc
 )
 
-snap_validate_xml( content.xml                              content/content.dtd )
+snap_validate_xml( timetracker/content.xml                  content/content.dtd )
 
 snap_validate_xml( editor/timetracker-page.xml              editor/editor-form.dtd )
+snap_validate_xml( editor/timetracker-add-user-page.xml     editor/editor-form.dtd )
+snap_validate_xml( editor/timetracker-settings-page.xml     editor/editor-form.dtd )
 
 snap_validate_xml( layout/calendar-parser.xsl               layout/simplified-xslt20.dtd )
 snap_validate_xml( layout/timetracker-parser.xsl            layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/timetracker-add-user-parser.xsl   layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/timetracker-settings-parser.xsl   layout/simplified-xslt20.dtd )
 
-snap_validate_js( timetracker.js )
+snap_validate_js( timetracker/timetracker.js )
 
 
 add_library(timetracker SHARED
     timetracker.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    content.xml
     editor/timetracker-page.xml
+    editor/timetracker-add-user-page.xml
+    editor/timetracker-settings-page.xml
     layout/calendar-parser.xsl
     layout/timetracker-parser.xsl
-    timetracker.js
-    timetracker-logo-64x64.png
+    layout/timetracker-add-user-parser.xsl
+    layout/timetracker-settings-parser.xsl
+    timetracker/content.xml
+    timetracker/timetracker.css
+    timetracker/timetracker.js
+    timetracker/timetracker-logo-64x64.png
+    timetracker/black-bicycle.png
+    timetracker/black-car.png
+    timetracker/black-client.png
+    timetracker/black-commute.png
+    timetracker/black-foot.png
+    timetracker/black-telecommute.png
 )
 
 target_link_libraries( timetracker ${QT_LIBRARIES} )
@@ -89,7 +104,7 @@ install(
 
 install(
     FILES
-        timetracker.js
+        timetracker/timetracker.js
     DESTINATION
         share/javascript/snapwebsites/timetracker
 )

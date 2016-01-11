@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <!-- some special variables to define the theme -->
   <xsl:variable name="layout-name">bare</xsl:variable>
   <xsl:variable name="layout-area">theme-parser</xsl:variable>
-  <xsl:variable name="layout-modified">2014-12-03 09:44:54</xsl:variable>
+  <xsl:variable name="layout-modified">2016-01-08 03:20:00</xsl:variable>
 
   <xsl:template match="snap">
     <!--
@@ -42,9 +42,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <html>
       <xsl:call-template name="snap:html-attributes"/>
       <head>
-        <xsl:call-template name="snap:html-header"/>
-        <link rel="stylesheet" type="text/css" href="/css/bare/style.css"/>
-        <link rel="stylesheet" type="text/css" href="/css/editor/editor.css"/>
+        <xsl:call-template name="snap:html-header">
+          <xsl:with-param name="theme-css" select="'/css/bare/style.css'"/>
+        </xsl:call-template>
       </head>
       <xsl:apply-templates select="page/body"/>
     </html>

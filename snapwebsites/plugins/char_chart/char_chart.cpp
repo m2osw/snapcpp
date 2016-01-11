@@ -60,9 +60,21 @@ char_chart::~char_chart()
  *
  * \return A pointer to the char_chart plugin.
  */
-char_chart *char_chart::instance()
+char_chart * char_chart::instance()
 {
     return g_plugin_char_chart_factory.instance();
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString char_chart::icon() const
+{
+    return "/images/char-chart/char-chart-logo-64x64.png";
 }
 
 
@@ -110,7 +122,7 @@ int64_t char_chart::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 19, 0, 41, 20, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 9, 15, 2, 20, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

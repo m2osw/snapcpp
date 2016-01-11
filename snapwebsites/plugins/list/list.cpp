@@ -198,7 +198,8 @@ char const * get_name(name_t name)
  * to be part of a list the links will be updated accordingly. This
  * means if you do not write specialized code to make sure the clone
  * is a list, the "list::type" link is missing and thus no checks
- * are done to update the list data of the clone.
+ * are done to update the list data of the clone which by default will
+ * be empty (inexistant may be a better way to describe this one.)
  */
 
 

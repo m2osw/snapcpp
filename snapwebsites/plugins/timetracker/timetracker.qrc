@@ -18,14 +18,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/plugins/timetracker">
-    <file>content.xml</file>
+  <qresource prefix="/plugins">
+    <file>timetracker/content.xml</file>
   </qresource>
-  <qresource prefix="/images/timetracker">
-    <file>timetracker-logo-64x64.png</file>
+  <qresource prefix="/images">
+    <file>timetracker/timetracker-logo-64x64.png</file>
+    <file>timetracker/black-bicycle.png</file>
+    <file>timetracker/black-car.png</file>
+    <file>timetracker/black-client.png</file>
+    <file>timetracker/black-commute.png</file>
+    <file>timetracker/black-foot.png</file>
+    <file>timetracker/black-telecommute.png</file>
   </qresource>
-  <qresource prefix="/css/timetracker">
-    <file>timetracker.css</file>
+  <qresource prefix="/css">
+    <file>timetracker/timetracker.css</file>
   </qresource>
   <qresource prefix="/xml">
     <file>editor/timetracker-page.xml</file>
@@ -38,8 +44,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>layout/timetracker-settings-parser.xsl</file>
     <file>layout/timetracker-add-user-parser.xsl</file>
   </qresource>
-  <qresource prefix="/js/timetracker">
-    <file>timetracker.js</file>
+  <qresource prefix="/js">
+    <file>timetracker/timetracker.js</file>
   </qresource>
 </RCC>
 <!--

@@ -55,7 +55,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/terms-and-conditions/privacy-policy">
     <param name="content::title" revision="revision">Privacy Policy</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Snap! Websites save your IP address and make use of a cookie to track all your movement all the time.</p><p>Also we do not generally use that information, it is checked by our robots to see whether you are spamming or hacking our systems.</p>]]>
+      <![CDATA[
+        <p>Snap! Websites save your IP address and make use of a cookie to track all your movement all the time.</p>
+        <p>Also we do not generally use that information, it is checked by our robots to see whether you are spamming or hacking our systems.</p>
+      ]]>
     </param>
     <param name="sitemapxml::priority" type="float">0.2</param>
     <param name="sitemapxml::frequency">yearly</param>

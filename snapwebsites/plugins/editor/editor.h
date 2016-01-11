@@ -293,7 +293,7 @@ private:
     bool                save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget);
     QString             verify_html_validity(QString body);
     bool                widget_is_secret(QDomElement widget);
-    void                retrieve_original_field(content::path_info_t ipath);
+    void                retrieve_original_field(content::path_info_t & ipath);
 
     zpsnap_child_t          f_snap;
     QDomDocument            f_editor_form;          // XSL from editor-form.xsl + other plugin extensions

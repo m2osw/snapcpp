@@ -346,7 +346,9 @@ std::ostream& operator << (std::ostream& out, lexer::token_t const& token)
             }
             else if(c < 0x20 || c >= 0x7F)
             {
-                out << "character '\\" << std::oct << std::setw(3) << static_cast<int>(c) << std::dec << "' (\\x" << std::hex << std::uppercase << static_cast<int>(c) << std::dec << ")";
+                out << "character '\\" << std::oct << std::setw(3) << static_cast<int>(c) << std::dec
+                    << "' (\\x" << std::hex << std::uppercase << static_cast<int>(c)
+                    << std::dec << std::nouppercase << ")";
             }
             else
             {
@@ -360,7 +362,9 @@ std::ostream& operator << (std::ostream& out, lexer::token_t const& token)
         break;
 
     case lexer::token_t::type_t::TOKEN_TYPE_INTEGER:
-        out << "integer " << token.get_integer() << " (0x" << std::hex << std::uppercase << token.get_integer() << std::dec << ")";
+        out << "integer " << token.get_integer() << " (0x"
+            << std::hex << std::uppercase << token.get_integer()
+            << std::dec << std::nouppercase << ")";
         break;
 
     case lexer::token_t::type_t::TOKEN_TYPE_FLOAT:
@@ -2543,7 +2547,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (be & 0xff)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_ubyte(size_t pos)
@@ -2555,7 +2559,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (be & 0xff)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_short(size_t pos)
@@ -2576,7 +2580,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (le & 0xffff)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_beshort(size_t pos)
@@ -2590,7 +2594,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (be & 0xffff)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_ushort(size_t pos)
@@ -2611,7 +2615,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (ule & 0xffff)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_ubeshort(size_t pos)
@@ -2625,7 +2629,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (ube & 0xffff)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_long(size_t pos)
@@ -2646,7 +2650,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (le & 0xffffffffLL)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_lelong(size_t pos)
@@ -2662,7 +2666,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (le & 0xffffffffLL)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_belong(size_t pos)
@@ -2678,7 +2682,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (be & 0xffffffffLL)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_melong(size_t pos)
@@ -2715,7 +2719,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                       << " 0x"
                       << std::hex << std::uppercase
                       << (ube & 0xffffffffLL)
-                      << std::dec;
+                      << std::dec << std::nouppercase;
         }
 
         void output_umelong(size_t pos)
@@ -2852,7 +2856,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                           << " 0x"
                           << std::hex << std::uppercase
                           << (static_cast<int>(str[i]) & 0xff)
-                          << std::dec;
+                          << std::dec << std::nouppercase;
             }
         }
 
@@ -2889,7 +2893,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                 std::cout << (i == 0 ? "" : ",")
                           << std::hex << std::uppercase
                           << "0x" << static_cast<int>(str[i])
-                          << std::dec;
+                          << std::dec << std::nouppercase;
             }
             std::cout << "});";
         }
@@ -2906,7 +2910,7 @@ void parser::output_entry(size_t start, size_t end, bool has_mime)
                 std::cout << (i == 0 ? "" : ",")
                           << std::hex << std::uppercase
                           << "0x" << static_cast<int>(str[i])
-                          << std::dec;
+                          << std::dec << std::nouppercase;
             }
             std::cout << "},"
                       << (

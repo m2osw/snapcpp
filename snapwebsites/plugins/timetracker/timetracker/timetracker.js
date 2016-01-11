@@ -1,6 +1,6 @@
 /** @preserve
  * Name: timetracker
- * Version: 0.0.1.30
+ * Version: 0.0.1.58
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5)
@@ -48,6 +48,7 @@ snapwebsites.TimeTracker = function()
     this.serverAccess_ = new snapwebsites.ServerAccess(this);
     this.initTimeTrackerMainPage_();
     this.initTimeTrackerCalendar_();
+    this.initTimeTrackerDay_();
 
     return this;
 };
@@ -116,6 +117,24 @@ snapwebsites.TimeTracker.addUserPopup_ = // static
 };
 
 
+/** \brief Force a reload of the calendar.
+ *
+ * After one closes the Day popup, we want to reload the calendar
+ * so that way we can make sure that changes to the data are
+ * reflected in the calendar.
+ *
+ * This function is static because it is used in the popup definition
+ * which requires it to be static. It calls the non-static version.
+ *
+ * @private
+ */
+snapwebsites.TimeTracker.reloadCalendarStatic_ = function() // static
+{
+    // WARNING: we are in a static function
+    snapwebsites.TimeTrackerInstance.reloadCalendar_();
+};
+
+
 /** \brief The Time Tracker "Edit Day" popup window.
  *
  * This variable is used to describe the Time Tracker popup used when
@@ -134,7 +153,11 @@ snapwebsites.TimeTracker.editDayPopup_ = // static
     id: "timetracker-edit-day-popup",
     //path: "/timetracker/<user-id>/<day>",
     darken: 150,
-    width: 850
+    width: 850,
+    height: 450,
+    beforeHide: snapwebsites.EditorForm.beforeHide,
+    editorFormName: "timetracker",
+    hide: snapwebsites.TimeTracker.reloadCalendarStatic_
 };
 
 
@@ -259,6 +282,104 @@ snapwebsites.TimeTracker.prototype.initTimeTrackerCalendar_ = function()
 };
 
 
+/** \brief Attach to the Day buttons.
+ *
+ * This function attaches the TimeTracker instance to the day
+ * buttons and a few other features present in the day popup window.
+ *
+ * The function is expected to be called once by the constructor.
+ *
+ * @private
+ */
+snapwebsites.TimeTracker.prototype.initTimeTrackerDay_ = function()
+{
+    var that = this,
+        editor = snapwebsites.EditorInstance,
+        timetracker_form = editor.getFormByName("timetracker"),
+        save_dialog,
+        save_button;
+
+    if(!timetracker_form)
+    {
+        // form not present, ignore, we are probably not on a "Day" page
+        return;
+    }
+
+    save_button = jQuery("div.buttons a.timetracker-button.save-button");
+
+    save_dialog = timetracker_form.getSaveDialog();
+    save_dialog.setPopup(save_button);
+
+    timetracker_form.setTimedoutCallback(function(timetracker_form)
+        {
+            that.closeDayPopup_();
+        });
+
+    timetracker_form.setSaveFunctionOnSuccess(function(timetracker_form, result)
+        {
+            that.closeDayPopup_();
+        });
+
+    save_button
+        .makeButton()
+        .click(function(e)
+            {
+                // avoid the '#' from appearing in the URI
+                e.preventDefault();
+
+                timetracker_form.saveData("save");
+            });
+
+    jQuery("div.buttons a.timetracker-button.cancel-button")
+        .makeButton()
+        .click(function()
+            {
+                that.closeDayPopup_();
+            });
+};
+
+
+/** \brief Close the Day popup window.
+ *
+ * This function is used to close the Day popup window.
+ *
+ * @private
+ */
+snapwebsites.TimeTracker.prototype.closeDayPopup_ = function()
+{
+    window.parent.snapwebsites.PopupInstance.hide(window.parent.snapwebsites.TimeTracker.editDayPopup_);
+};
+
+
+/** \brief Force a reload of the calendar.
+ *
+ * After one closes the Day popup, we want to reload the calendar
+ * so that way we can make sure that changes to the data are
+ * reflected in the calendar.
+ *
+ * \todo
+ * Avoid the reload if the edit was just canceled.
+ *
+ * @private
+ */
+snapwebsites.TimeTracker.prototype.reloadCalendar_ = function()
+{
+    // whichever button will do
+    //
+    this.clickedButton_ = jQuery("div.calendar table.calendar-table .buttons a[href='#next-month']");
+
+    // user clicked a next/previous month/year, request the new calendar
+    //
+    this.serverAccess_.setURI("/timetracker");
+    this.serverAccess_.setData({
+                operation: "calendar",
+                year: this.getYear_(),
+                month: this.getMonth_()
+            });
+    this.serverAccess_.send();
+};
+
+
 /** \brief Go to the next month.
  *
  * This function moves the calendar to the next, previous month or year.
@@ -367,22 +488,36 @@ snapwebsites.TimeTracker.prototype.nextMonth_ = function(e, button, offset)
  * Let the user edit the specified day.
  *
  * @param {Event} e  The event that generated this call.
- * @param {jQuery} day  The jQuery object of the day that was clicked.
+ * @param {jQuery} day_tag  The jQuery object of the day that was clicked.
  *
  * @private
  */
-snapwebsites.TimeTracker.prototype.editDay_ = function(e, day)
+snapwebsites.TimeTracker.prototype.editDay_ = function(e, day_tag)
 {
-    var d = day.data("day"),
+    var year = this.getYear_(),
+        month = this.getMonth_(),
+        day = day_tag.data("day"),
         user_id = jQuery("div.calendar").data("user-identifier");
 
     e.preventDefault();
     e.stopPropagation();
 
+    if(year < 1000)
+    {
+        throw new Error("year for the timetracker calendar has a length of " + year.length + ", it was expected to be 4 though");
+    }
+
     // determine the path
     //
-    snapwebsites.TimeTracker.editDayPopup_.path = "/timetracker/" + user_id + "/" + d;
-console.log("path = " + snapwebsites.TimeTracker.editDayPopup_.path);
+    if(month < 10)
+    {
+        month = "0" + month;
+    }
+    if(day < 10)
+    {
+        day = "0" + day;
+    }
+    snapwebsites.TimeTracker.editDayPopup_.path = "/timetracker/" + user_id + "/" + year + month + day + "?theme=notheme";
 
     // open and show popup where we can select a new user
     // and click "Add User" to actually add it
@@ -435,7 +570,8 @@ snapwebsites.TimeTracker.prototype.serverAccessSuccess = function(result) // vir
 {
     var button_name = this.clickedButton_.get(0).hash,
         result_xml = result.jqxhr.responseXML,
-        new_calendar;
+        new_calendar,
+        a;
 
     snapwebsites.TimeTracker.superClass_.serverAccessSuccess.call(this, result);
 
@@ -456,11 +592,13 @@ snapwebsites.TimeTracker.prototype.serverAccessSuccess = function(result) // vir
 };
 
 
-/** \brief Function called on AJAX success.
+/** \brief Function called on AJAX completion.
  *
- * This function is called if the install or remove of a plugin succeeded.
+ * This function is called whether the install or remove of a plugin
+ * succeeded or not.
  *
- * Here we make sure to change the interface accordingly.
+ * Here we make sure to remove the darken layer and reset the
+ * clickedButton_ parameter.
  *
  * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
  *          resulting data.

@@ -36,7 +36,23 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<xsl:attribute name="class">day<xsl:if test="@today"> today</xsl:if><xsl:if
 				test="position() = 7"> last</xsl:if></xsl:attribute>
 			<xsl:attribute name="data-day"><xsl:value-of select="@day"/></xsl:attribute>
-			<xsl:value-of select="."/>
+			<div class="date-duration">
+				<xsl:value-of select="@day"/>
+				<br/>
+				<xsl:value-of select="@billing_duration"/>
+			</div>
+			<div class="location-transport">
+				<xsl:if test="@location and @location != ''">
+					<img src="/images/timetracker/black-{@location}.png" width="16" height="16" title="{@location}"/>
+					<br/>
+				</xsl:if>
+				<xsl:choose>
+					<xsl:when test="contains('|foot|car|bicycle|', concat('|', @transportation, '|'))">
+						<img src="/images/timetracker/black-{@transportation}.png" width="16" height="16" title="{@transportation}"/>
+					</xsl:when>
+				</xsl:choose>
+			</div>
+			<div style="clear: both;"></div>
 		</td>
 	</xsl:template>
 

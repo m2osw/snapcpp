@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == timetracker form parser
+Snap Websites Server == timetracker day form parser
 Copyright (C) 2014-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -29,43 +29,38 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output> <!-- lang="{$lang}" 'lang variable undefined' -->
-			<div id="content" class="editor-form" form_name="timetracker">
+			<div id="content" class="editor-form timetracker-day-form" form_name="timetracker">
 				<xsl:attribute name="session"><xsl:copy-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 
-				<!-- xsl:if test="$action != 'edit' and $can_edit = 'yes'">
-					<a class="settings-edit-button" href="?a=edit">Edit</a>
-				</xsl:if>
-				<xsl:if test="$action = 'edit'">
-					<a class="settings-save-button" href="#">Save Changes</a>
-					<a class="settings-cancel-button right-aligned" href="{/snap/head/metadata/desc[@type='page_uri']/data}">Cancel</a>
-				</xsl:if-->
-				<h3>Time Tracking</h3>
 				<div>
-					<xsl:attribute name="class">test<!--xsl:if test="$action = 'edit'"> editing</xsl:if--></xsl:attribute>
-
-					<p>You are running Snap! v[version] (more <a href="/admin/versions?back=admin/settings/info">version information</a>)</p>
-					<p>Site wide settings as offerred by the core system of your website.</p>
-
-					<fieldset class="site-name">
-						<legend>Site Name</legend>
 
 						<!-- row -->
 						<div class="editor-block">
-							<label for="date" class="editor-title">Date:</label>
-							<xsl:copy-of select="page/body/timetracker/date/node()"/>
+							<label for="client" class="editor-title">Client: <span class="required">*</span></label>
+							<xsl:copy-of select="page/body/timetracker/client/node()"/>
 						</div>
 						<div class="editor-block">
-							<label for="time" class="editor-title">Time:</label>
-							<xsl:copy-of select="page/body/timetracker/time/node()"/>
+							<label for="billing_duration" class="editor-title">Billing Duration: <span class="required">*</span></label>
+							<xsl:copy-of select="page/body/timetracker/billing_duration/node()"/>
+						</div>
+						<div class="editor-block">
+							<label for="location" class="editor-title">Location: <span class="required">*</span></label>
+							<xsl:copy-of select="page/body/timetracker/location/node()"/>
+							<label for="transportation" class="editor-title">Transportation:</label>
+							<xsl:copy-of select="page/body/timetracker/transportation/node()"/>
 						</div>
 						<div class="editor-block">
 							<label for="description" class="editor-title">Description:</label>
 							<xsl:copy-of select="page/body/timetracker/description/node()"/>
 						</div>
 
-					</fieldset>
-
 				</div>
+
+				<div class="buttons">
+					<a class="timetracker-button cancel-button" href="#cancel">Cancel</a>
+					<a class="timetracker-button save-button editor-default-button" href="#save">Save</a>
+				</div>
+
 			</div>
 		</output>
 	</xsl:template>

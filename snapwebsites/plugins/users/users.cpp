@@ -3717,7 +3717,7 @@ void users::encrypt_password(QString const & digest, QString const & password, Q
 
     // retrieve the digest we want to use
     // (TODO: allows website owners to change this value)
-    const EVP_MD *md(EVP_get_digestbyname(digest.toUtf8().data()));
+    EVP_MD const * md(EVP_get_digestbyname(digest.toUtf8().data()));
     if(md == nullptr)
     {
         throw users_exception_digest_not_available("the specified digest could not be found");
@@ -3814,8 +3814,9 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
 
     if(token.is_token("users::email_anchor"))
     {
-        // TODO: replace f_user_key with the user first/last names when
-        //       available AND authorized
+        // TODO: replace f_user_key with the user first/last names in the
+        //       anchor text when available AND authorized
+        //
         token.f_replacement = "<a href=\"mailto:" + f_user_key + "\">" + f_user_key + "</a>";
         return;
     }
@@ -3830,7 +3831,7 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
 
     if(token.is_token("users::since"))
     {
-        // make sure that the user created and verified his account
+        // TODO: make sure that the user created and verified his account
         QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->value());
         int64_t date(value.int64Value());
         token.f_replacement = QString("%1 %2")

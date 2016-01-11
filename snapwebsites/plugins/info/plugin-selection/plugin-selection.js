@@ -69,12 +69,12 @@ snapwebsites.inherits(snapwebsites.PluginSelection, snapwebsites.ServerAccessCal
 snapwebsites.PluginSelectionInstance = null; // static
 
 
-/** \brief The toolbar object.
+/** \brief The server access object.
  *
- * This variable represents the toolbar used by the editor.
+ * This variable represents the server access used to send AJAX
+ * requests to the server.
  *
- * Note that this is the toolbar object, not the DOM. The DOM is
- * defined within the toolbar object and is considered private.
+ * The object is created once needed.
  *
  * @type {snapwebsites.ServerAccess}
  * @private
@@ -214,8 +214,9 @@ snapwebsites.PluginSelection.prototype.initPluginSelections_ = function()
  */
 snapwebsites.PluginSelection.prototype.serverAccessSuccess = function(result) // virtual
 {
-    var result_xml = result.jqxhr.responseXML,
-        that = this;
+    var that = this,
+        result_xml = result.jqxhr.responseXML,
+        installed_plugins;
 
     snapwebsites.PluginSelection.superClass_.serverAccessSuccess.call(this, result);
 

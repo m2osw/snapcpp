@@ -20,10 +20,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <editor-form owner="timetracker" content-modified="2016-01-03 18:11:44">
   <mode action="edit"/>
   <immediate/>
-  <focus refid="time"/>
+  <focus refid="user"/>
   <on-save allow-edit="yes"/>
   <taborder>
-    <tabindex refid="time"/>
+    <tabindex refid="user"/>
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>

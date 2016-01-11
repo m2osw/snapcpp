@@ -1,6 +1,6 @@
 /*
  * Name: timetracker
- * Version: 0.0.16
+ * Version: 0.0.39
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -10,14 +10,13 @@
 /** timetracker buttons */
 .timetracker-button
 {
+	display: block;
 	padding: 10px;
-	position: absolute;
 	font-weight: normal;
-	z-index: 1;
 	border: 1px solid black;
 	border-radius: 7px;
-	background: #f0fff0;
-	color: #0f000f;
+	background: #b0e8a0;
+	text-decoration: none;
 }
 
 div.time-tracker-buttons
@@ -70,7 +69,7 @@ div.calendar table td
 div.calendar table td.day
 {
 	cursor: pointer;
-};
+}
 div.calendar table td.last
 {
 	border-right: none;
@@ -84,5 +83,56 @@ div.calendar table td.no-day
 {
 	/* draw one diagonal bar accross the cell (bottom left to top-right) */
 	background: linear-gradient(to right bottom, #ffffff 0%, #ffffff 49.9%, #aaaaaa 50%, #aaaaaa 51%, #ffffff 51.1%, #ffffff 100%);
+}
+div.calendar table td.day .date-duration
+{
+	float: left;
+}
+div.calendar table td.day .location-transport
+{
+	padding-left: 3px;
+	float: right;
+}
+
+/** trimetracker day form */
+.timetracker-button.cancel-button
+{
+	display: block;
+	float: left;
+}
+.timetracker-button.save-button
+{
+	display: block;
+	float: right;
+}
+div.timetracker-day-form div.editor-block
+{
+	clear: left;
+}
+div.timetracker-day-form label.editor-title
+{
+	display: block;
+	float: left;
+	margin: 10px 0;
+	padding: 3px 3px 3px 0;
+	width: 24%;
+	text-align: right;
+}
+div.timetracker-day-form div.snap-editor.dropdown,
+div.timetracker-day-form div.snap-editor.line-edit,
+div.timetracker-day-form div.snap-editor.text-edit
+{
+	float: left;
+	width: 74%;
+}
+div.timetracker-day-form div.snap-editor.dropdown.billing_duration,
+div.timetracker-day-form div.snap-editor.dropdown.location,
+div.timetracker-day-form div.snap-editor.dropdown.transportation
+{
+	width: 23%;
+}
+div.timetracker-day-form div.snap-editor.text-edit.description .editor-content
+{
+	min-height: 3.7em;
 }
 

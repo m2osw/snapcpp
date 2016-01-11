@@ -21,7 +21,8 @@ OPTIONS="--warning_level VERBOSE"
        # much about checking such with the closure compiler.
        #plugins/mimetype/mimetype-basics.js
 
-FILES="plugins/ecommerce/ecommerce.js
+FILES="plugins/bookkeeping/bookkeeping-client.js
+       plugins/ecommerce/ecommerce.js
        plugins/editor/editor.js
        plugins/epayment/epayment.js
        plugins/epayment_paypal/epayment-paypal.js
@@ -41,6 +42,7 @@ FILES="plugins/ecommerce/ecommerce.js
        plugins/permissions/remove-iframe-for-login.js
        plugins/server_access/server-access.js
        plugins/test_plugin/test-plugin.js
+       plugins/timetracker/timetracker/timetracker.js
        plugins/users/users.js"
 
 CLOSURE_COMPILER=/home/snapwebsites/tmp/google-js-compiler/closure-compiler

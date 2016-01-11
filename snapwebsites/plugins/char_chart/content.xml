@@ -37,6 +37,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <param name="permissions::dynamic" type="int8" revision="global">1</param>
   </content>
+  <content path="/images/char-chart">
+    <param name="content::title" revision="revision">Character Chart Images</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Various images used by the character chart plugin.</p>]]>
+    </param>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="char_chart-logo" type="attachment/public">
+      <path>:/images/char_chart/char-chart-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

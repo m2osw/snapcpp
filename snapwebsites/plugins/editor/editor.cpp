@@ -441,7 +441,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 1, 17, 18, 56, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 10, 22, 25, 56, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1071,7 +1071,7 @@ void editor::on_process_post(QString const & uri_path)
 }
 
 
-void editor::retrieve_original_field(content::path_info_t ipath)
+void editor::retrieve_original_field(content::path_info_t & ipath)
 {
     server_access::server_access * server_access_plugin(server_access::server_access::instance());
     messages::messages * messages(messages::messages::instance());

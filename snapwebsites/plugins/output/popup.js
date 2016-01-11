@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.33
+ * Version: 0.1.0.39
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5.71)
@@ -91,7 +91,8 @@ snapwebsites.base(snapwebsites.Popup);
  * \li beforeHide -- a callback called before the popup gets hidden; this
  *                   gives your code a chance to cancel a click on the close
  *                   button or equivalent; the callback is called with a
- *                   PopupData object.
+ *                   PopupData object; the editor offers such a function:
+ *                   snapwebsites.EditorForm.beforeHide().
  * \li hide -- a callback called once the popup is fully hidden; which means
  *             after the fade out is over; it is called without any
  *             parameters.
@@ -101,6 +102,8 @@ snapwebsites.base(snapwebsites.Popup);
  *                to anyway close the popup; it takes no parameters.
  * \li widget -- this parameter is defined by the system; it is set to the
  *               jQuery widget using the id parameter.
+ * \li editorFormName -- the name of the form attached to this popup;
+ *                       this is used by the editor beforeHide() function.
  *
  * \note
  * The width and height could be calculated with different euristic math
@@ -123,7 +126,8 @@ snapwebsites.base(snapwebsites.Popup);
  *            beforeHide: ?function(Object),
  *            hide: ?function(),
  *            hideNow: ?function(),
- *            widget: ?Object}}
+ *            widget: ?Object,
+ *            editorFormName: ?string}}
  */
 snapwebsites.Popup.PopupData;
 
@@ -300,7 +304,7 @@ snapwebsites.Popup.prototype.open = function(popup)
 
     if(!popup.id)
     {
-        // user did not specific an id, generate a new one
+        // user did not specify an id, generate a new one
         ++this.uniqueID_;
         popup.id = "snapPopup" + this.uniqueID_;
     }
@@ -353,9 +357,12 @@ snapwebsites.Popup.prototype.open = function(popup)
     }
     else
     {
-        // We use jQuery("body") instead of jQuery(window) because the
-        // body may have padding which needs to be taken in account
-console.log("heights: " + jQuery(window).height() + " and " + popup.widget.outerHeight());
+        // Using jQuery("body") would be better to take any padding in
+        // account, unfortunately, it gives us the whole document size
+        // and not just the window size.
+        //
+        // TODO: retrieve the "body" padding to reduce the window height
+        //
         y = Math.floor((jQuery(window).height() - popup.widget.outerHeight()) / 2);
         if(y < 0)
         {
@@ -385,7 +392,8 @@ console.log("heights: " + jQuery(window).height() + " and " + popup.widget.outer
         // make sure to mark this popup window as coming from an IFRAME
         p = popup.path + (popup.path.indexOf("?") === -1 ? "?" : "&") + "iframe=true";
         b.empty();
-        b.append("<iframe class='popup-iframe' src='" + p + "' frameborder='0' marginheight='0' marginwidth='0'></iframe>");
+        b.append("<iframe name='" + popup.id + "' class='popup-iframe' src='"
+                    + p + "' frameborder='0' marginheight='0' marginwidth='0'></iframe>");
         f = b.children(".popup-iframe");
 
         // 'b.width()' may return a jQuery object so we have to force the
@@ -545,10 +553,12 @@ snapwebsites.Popup.prototype.hideNow_ = function(popup)
  *
  * This function removes the popup from the DOM. It does not first
  * fade out the popup. This function immediately removes the elements
- * from the DOM. You may want to first close then forget.
+ * from the DOM. You may want to first hide then forget.
  *
  * @param {snapwebsites.Popup.PopupData} popup  The settings to create
  *                                              the popup.
+ *
+ * \sa hide()
  */
 snapwebsites.Popup.prototype.forget = function(popup)
 {
@@ -604,7 +614,8 @@ snapwebsites.Popup.prototype.messageBox = function(msg)
         {
             popup.html += "<a class=\"message-button\" name=\""
                     + msg.buttons[key].name
-                    + "\" href=\"#\">" + msg.buttons[key].label + "</a>";
+                    + "\" href=\"#" + msg.buttons[key].name + "\">"
+                    + msg.buttons[key].label + "</a>";
         }
     }
     popup.html += "</div>";

@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.48
+ * Version: 0.0.1.53
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -657,3 +657,35 @@
 {
 	color: #e00000;
 }
+
+
+/** message box */
+#confirm-popup-closure .popup-title
+{
+	font-size: 120%;
+	font-weight: bold;
+}
+
+#confirm-popup-closure .message-box
+{
+	margin: 15px 0;
+}
+
+#confirm-popup-closure .message-box-buttons
+{
+	display: flex;
+	justify-content: center;
+}
+#confirm-popup-closure .message-box-buttons .message-button
+{
+	margin: 0 10px;
+	padding: 0.5em 1em 0.55em;
+	border: 1px solid black;
+	border-radius: 5px;
+	background-color: #b0e8a0;
+	font-weight: bold;
+	text-align: center;
+	font-variant: small-caps;
+	text-decoration: none;
+}
+

@@ -17,12 +17,13 @@
 
 #include "timetracker.h"
 
-#include "../messages/messages.h"
-#include "../output/output.h"
-#include "../permissions/permissions.h"
+#include "../bookkeeping/bookkeeping.h"
 #include "../layout/layout.h"
 #include "../list/list.h"
 #include "../locale/snap_locale.h"
+#include "../messages/messages.h"
+#include "../output/output.h"
+#include "../permissions/permissions.h"
 #include "../users/users.h"
 
 #include "log.h"
@@ -59,11 +60,23 @@ char const * get_name(name_t name)
 {
     switch(name)
     {
+    case name_t::SNAP_NAME_TIMETRACKER_BILLING_DURATION:
+        return "timetracker::billing_duration";
+
     case name_t::SNAP_NAME_TIMETRACKER_DATE_QUERY_STRING:
         return "date";
 
+    case name_t::SNAP_NAME_TIMETRACKER_LOCATION:
+        return "timetracker::location";
+
     case name_t::SNAP_NAME_TIMETRACKER_MAIN_PAGE:
         return "timetracker::main_page";
+
+    case name_t::SNAP_NAME_TIMETRACKER_PATH:
+        return "timetracker";
+
+    case name_t::SNAP_NAME_TIMETRACKER_TRANSPORTATION:
+        return "timetracker::transportation";
 
     default:
         // invalid index
@@ -154,7 +167,7 @@ QString timetracker::description() const
  */
 QString timetracker::dependencies() const
 {
-    return "|editor|messages|output|path|permissions|users|";
+    return "|bookkeeping|editor|messages|output|path|permissions|users|";
 }
 
 
@@ -174,7 +187,7 @@ int64_t timetracker::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 7, 20, 29, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 10, 20, 2, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -208,9 +221,10 @@ void timetracker::bootstrap(snap_child * snap)
     f_snap = snap;
 
     //SNAP_LISTEN(timetracker, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(timetracker, "path", path::path, check_for_redirect, _1);
     SNAP_LISTEN(timetracker, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(timetracker, "filter", filter::filter, replace_token, _1, _2, _3);
-    //SNAP_LISTEN(timetracker, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(timetracker, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
 }
 
 
@@ -220,7 +234,8 @@ void timetracker::on_generate_header_content(content::path_info_t & ipath, QDomE
     NOTUSED(metadata);
 
     QString const cpath(ipath.get_cpath());
-    if(cpath == "timetracker")
+    if(cpath == get_name(name_t::SNAP_NAME_TIMETRACKER_PATH)
+    || cpath.startsWith(QString("%1/").arg(get_name(name_t::SNAP_NAME_TIMETRACKER_PATH))))
     {
         content::content * content_plugin(content::content::instance());
 
@@ -245,9 +260,8 @@ void timetracker::on_generate_header_content(content::path_info_t & ipath, QDomE
  */
 bool timetracker::on_path_execute(content::path_info_t & ipath)
 {
-    // TODO: add support to quickly interact with our form(s)
     QString const cpath(ipath.get_cpath());
-    if(cpath == "timetracker")
+    if(cpath == get_name(name_t::SNAP_NAME_TIMETRACKER_PATH))
     {
         if(f_snap->postenv_exists("operation"))
         {
@@ -261,7 +275,7 @@ bool timetracker::on_path_execute(content::path_info_t & ipath)
                 int64_t const identifier(users_plugin->get_user_identifier());
                 add_calendar(identifier);
                 server_access_plugin->create_ajax_result(ipath, true);
-                server_access_plugin->ajax_redirect("/timetracker");
+                server_access_plugin->ajax_redirect(QString("/%1").arg(get_name(name_t::SNAP_NAME_TIMETRACKER_PATH)));
             }
             else if(operation == "calendar")
             {
@@ -341,7 +355,7 @@ invalid_data:
  *
  * \param[in] identifier  The identifier of the user to be added.
  */
-void timetracker::add_calendar(int64_t identifier)
+void timetracker::add_calendar(int64_t const identifier)
 {
     // basic setup
     output::output * output_plugin(output::output::instance());
@@ -354,7 +368,7 @@ void timetracker::add_calendar(int64_t identifier)
 
     // setup calendar info path
     content::path_info_t calendar_ipath;
-    calendar_ipath.set_path(QString("timetracker/%1").arg(identifier));
+    calendar_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_TIMETRACKER_PATH)).arg(identifier));
     calendar_ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
     calendar_ipath.force_revision(snap_version::SPECIAL_VERSION_FIRST_REVISION);
     calendar_ipath.force_locale(locale);
@@ -370,13 +384,30 @@ void timetracker::add_calendar(int64_t identifier)
     QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(calendar_ipath.get_revision_key()));
     int64_t const start_date(f_snap->get_start_date());
     revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue("Time Tracker Calendar");
-    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue("<div>[timetracker::calendar]</div>");
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(QString("Time Tracker Calendar"));
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(QString("<div>[timetracker::calendar]</div>"));
 
     // TODO: create a new permission for this user so he can access
     //       his calendar page (right now this is not required since
     //       the calendar is shown in the main page so we keep that
     //       work for later)
+
+    {
+        // assign the user with the permission of viewing his calendar
+        //
+        bool const source_unique(false);
+        bool const destination_unique(false);
+
+        content::path_info_t user_ipath;
+        user_ipath.set_path(QString("user/%1").arg(identifier));
+
+        QString const user_back_group(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW));
+        QString const direct_link_name(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_VIEW));
+
+        links::link_info source(user_back_group, source_unique, user_ipath.get_key(), user_ipath.get_branch());
+        links::link_info destination(direct_link_name, destination_unique, calendar_ipath.get_key(), calendar_ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
 }
 
 
@@ -425,11 +456,146 @@ void timetracker::on_check_for_redirect(content::path_info_t & ipath)
     // we are only interested by timetracker pages
     snap_string_list const & segments(ipath.get_segments());
     if(segments.size() != 3
-    || segments[0] != "timetracker")
+    || segments[0] != get_name(name_t::SNAP_NAME_TIMETRACKER_PATH)
+    || segments[2].length() != 8)
     {
+        // not /timetracker/<userid>/<date>
         return;
     }
 
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+
+    bool ok(false);
+    int const user_identifier(segments[1].toInt(&ok, 10));
+    if(!ok)
+    {
+        // the <userid> segment is not a number
+        return;
+    }
+    content::path_info_t calendar_ipath;
+    calendar_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_TIMETRACKER_PATH)).arg(user_identifier));
+
+    if(!content_table->exists(calendar_ipath.get_key())
+    || !content_table->row(calendar_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    {
+        // the user MUST exists
+        return;
+    }
+
+    // 3rd segment must be YYYYMMDD
+    //
+    int const year(segments[2].mid(0, 4).toInt(&ok, 10));
+    if(!ok
+    || year < 2012
+    || year > 3000)
+    {
+        // the <year> is not a number or is out of bounds
+        return;
+    }
+    int const month(segments[2].mid(4, 2).toInt(&ok, 10));
+    if(!ok
+    || month <= 0
+    || month > 12)
+    {
+        // the <month> is not a number or is out of bounds
+        return;
+    }
+    int const max_day(f_snap->last_day_of_month(month, year));
+    int const day(segments[2].mid(6, 2).toInt(&ok, 10));
+    if(!ok
+    || day <= 0
+    || day > max_day)
+    {
+        // the <day> is not a number or is out of bounds
+        return;
+    }
+
+    // okay all sections are valid, check whether it exists
+    // if not, we can create that day now, the path is in "ipath"
+    //
+    if(content_table->exists(ipath.get_key())
+    && content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    {
+        // it exists, we do not need to do anything more
+        return;
+    }
+
+    locale::locale * locale_plugin(locale::locale::instance());
+
+    ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
+    ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+    ipath.force_locale("xx");
+
+    output::output * output_plugin(output::output::instance());
+    content_plugin->create_content(ipath, output_plugin->get_plugin_name(), "timetracker/day");
+
+    QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(ipath.get_key()));
+    content_row->cell(layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_LAYOUT))->setValue(QString("\"timetracker-parser\";"));
+    //content_row->cell(layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_THEME))->setValue("\"...\";");
+    content_row->cell(editor::get_name(editor::name_t::SNAP_NAME_EDITOR_LAYOUT))->setValue(QString("\"timetracker-page\";"));
+
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
+    int64_t const start_date(f_snap->get_start_date());
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    // Note: we can hard code the date in the title since that specific page
+    //       is for that specific day and it cannot be changed
+    time_t const selected_date(SNAP_UNIX_TIMESTAMP(year, month, day, 0, 0, 0));
+    QString const date(locale_plugin->format_date(selected_date));
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(QString("Time Tracker: %1").arg(date));
+    //revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue("...using editor form...");
+
+    {
+        // assign the user with the permission of viewing his day
+        //
+        bool const source_unique(false);
+        bool const destination_unique(false);
+
+        content::path_info_t user_ipath;
+        user_ipath.set_path(QString("user/%1").arg(user_identifier));
+
+        QString const user_back_group(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW));
+        QString const direct_link_name(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_VIEW));
+
+        links::link_info source(user_back_group, source_unique, user_ipath.get_key(), user_ipath.get_branch());
+        links::link_info destination(direct_link_name, destination_unique, ipath.get_key(), ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+
+    {
+        // assign the user with the permission of editing his day
+        //
+        bool const source_unique(false);
+        bool const destination_unique(false);
+
+        content::path_info_t user_ipath;
+        user_ipath.set_path(QString("user/%1").arg(user_identifier));
+
+        QString const user_back_group(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
+        QString const direct_link_name(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_EDIT));
+
+        links::link_info source(user_back_group, source_unique, user_ipath.get_key(), user_ipath.get_branch());
+        links::link_info destination(direct_link_name, destination_unique, ipath.get_key(), ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
+
+    {
+        // assign the user with the permission of adminitering his day
+        //
+        bool const source_unique(false);
+        bool const destination_unique(false);
+
+        content::path_info_t user_ipath;
+        user_ipath.set_path(QString("user/%1").arg(user_identifier));
+
+        QString const user_back_group(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
+        QString const direct_link_name(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER));
+
+        links::link_info source(user_back_group, source_unique, user_ipath.get_key(), user_ipath.get_branch());
+        links::link_info destination(direct_link_name, destination_unique, ipath.get_key(), ipath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
 }
 
 
@@ -583,6 +749,7 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
     users::users * users_plugin(users::users::instance());
     content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
     bool ok(false);
 
@@ -595,7 +762,6 @@ QString timetracker::token_calendar(content::path_info_t & ipath)
         // not a valid path
         throw snap_logic_exception(QString("the token_calendar() ipath is \"%1\" instead of exactly 2 segments").arg(ipath.get_cpath()));
     }
-SNAP_LOG_WARNING("user identifier from ipath [")(ipath.get_cpath())("] -- [")(segments[1])("]");
     int const user_identifier(segments[1].toInt(&ok, 10));
     if(!ok || user_identifier <= 0)
     {
@@ -706,6 +872,14 @@ SNAP_LOG_WARNING("user identifier from ipath [")(ipath.get_cpath())("] -- [")(se
 
     int const max_day(f_snap->last_day_of_month(month, year));
 
+    // this part of the path to the day data does not change over time
+    //
+    QString const pre_defined_day_path(QString("%1/%2/%3%4")
+                                .arg(get_name(name_t::SNAP_NAME_TIMETRACKER_PATH))
+                                .arg(user_identifier)
+                                .arg(year)
+                                .arg(month, 2, 10, QChar('0')));
+
     for(int line(1); line <= max_day; )
     {
         QDomElement line_tag(doc.createElement("line"));
@@ -746,6 +920,7 @@ SNAP_LOG_WARNING("user identifier from ipath [")(ipath.get_cpath())("] -- [")(se
                 QDomElement day_tag(doc.createElement("day"));
                 day_tag.setAttribute("day", line);
                 line_tag.appendChild(day_tag);
+                //snap_dom::append_plain_text_to_node(day_tag, QString("%1").arg(line)); -- using @day for now
 
                 // does this day represent today?
                 //
@@ -756,8 +931,28 @@ SNAP_LOG_WARNING("user identifier from ipath [")(ipath.get_cpath())("] -- [")(se
                     day_tag.setAttribute("today", "today");
                 }
 
-// TODO: add data
-snap_dom::append_plain_text_to_node(day_tag, QString("%1").arg(line));
+                // we want to get the data to show directly in the calendar
+                // first we have to make sure data exists
+                //
+                content::path_info_t day_ipath;
+                day_ipath.set_path(QString("%1%2").arg(pre_defined_day_path).arg(line, 2, 10, QChar('0')));
+                if(content_table->exists(day_ipath.get_key())
+                && content_table->row(day_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+                {
+                    QtCassandra::QCassandraRow::pointer_t row(revision_table->row(day_ipath.get_revision_key()));
+
+                    // billing duration
+                    QString const duration(row->cell(get_name(name_t::SNAP_NAME_TIMETRACKER_BILLING_DURATION))->value().stringValue());
+                    day_tag.setAttribute("billing_duration", duration);
+
+                    // location
+                    QString const location(row->cell(get_name(name_t::SNAP_NAME_TIMETRACKER_LOCATION))->value().stringValue());
+                    day_tag.setAttribute("location", location);
+
+                    // transportation
+                    QString const transportation(row->cell(get_name(name_t::SNAP_NAME_TIMETRACKER_TRANSPORTATION))->value().stringValue());
+                    day_tag.setAttribute("transportation", transportation);
+                }
 
                 ++line;
             }
@@ -777,23 +972,64 @@ snap_dom::append_plain_text_to_node(day_tag, QString("%1").arg(line));
 }
 
 
+/** \brief Initializes various dynamic widgets.
+ *
+ * This function gets called any time a field is initialized for use
+ * in the editor.
+ */
+void timetracker::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row)
+{
+    NOTUSED(field_type);
+    NOTUSED(row);
 
-//void timetracker::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row)
-//{
-//    NOTUSED(field_type);
-//    NOTUSED(row);
-//
-//    QString const cpath(ipath.get_cpath());
-//    if(cpath == "unsubscribe")
-//    {
-//        init_unsubscribe_editor_widgets(ipath, field_id, widget);
-//    }
-//    else if(cpath == "admin/plugins")
-//    {
-//        init_plugin_selection_editor_widgets(ipath, field_id, widget);
-//    }
-//}
+    QString const cpath(ipath.get_cpath());
+    snap_string_list const & segments(ipath.get_segments());
+    if(segments.size() == 3
+    && segments[0] == "timetracker")
+    {
+        // we assume timetracker/<user id>/<day>
+        //
+        init_day_editor_widgets(field_id, widget);
+    }
+}
 
+
+void timetracker::init_day_editor_widgets(QString const & field_id, QDomElement & widget)
+{
+    if(field_id == "client")
+    {
+        // the client dropdown is filled with the list of bookkeeping clients
+        // this will be this way until we get a dynamic dropdown that let
+        // you start typing and show only part of the list
+        //
+        list::list * list_plugin(list::list::instance());
+        content::content * content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+
+        QDomDocument doc(widget.ownerDocument());
+        QDomElement preset(snap_dom::create_element(widget, "preset"));
+
+        content::path_info_t client_list_ipath;
+        client_list_ipath.set_path(bookkeeping::get_name(bookkeeping::name_t::SNAP_NAME_BOOKKEEPING_CLIENT_PATH));
+        list::list_item_vector_t client_list(list_plugin->read_list(client_list_ipath, 0, 20));
+        int const client_max_items(client_list.size());
+        for(int idx(0); idx < client_max_items; ++idx)
+        {
+            QDomElement item(doc.createElement("item"));
+            preset.appendChild(item);
+            if(client_max_items == 1)
+            {
+                // for businesses which have a single client
+                item.setAttribute("default", "default");
+            }
+            content::path_info_t value_ipath;
+            value_ipath.set_path(client_list[idx].get_uri());
+            item.setAttribute("value", client_list[idx].get_uri());
+            QString const client_name(revision_table->row(value_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue());
+            snap::snap_dom::insert_html_string_to_xml_doc(item, client_name);
+        }
+    }
+}
 
 
 SNAP_PLUGIN_END()

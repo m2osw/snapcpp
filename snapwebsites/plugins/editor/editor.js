@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.474
+ * Version: 0.0.3.486
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -3557,6 +3557,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function setAutoResetCallback(f: function(EditorForm));
  *      function newTypeRegistered();
  *      function wasModified(recheck: boolean) : boolean;
+ *      static function beforeHide(popup: Popup);
  *      function earlyClose() : boolean;
  *      static function titleToURI(title: string) : string;
  *
@@ -4830,6 +4831,70 @@ snapwebsites.EditorForm.prototype.wasModified = function(recheck)
 };
 
 
+/** \brief Callback called just before a popup gets closed.
+ *
+ * This callback gives a chance to the user the save before closing so
+ * as to not lose his changes. The editor will also mark the form as
+ * saved so if the user clicked cancel it will still not ask the
+ * client whether to save when going to another page.
+ *
+ * The close function can also be Canceled with this feature.
+ *
+ * @param {Object} popupObject  The popup being closed.
+ */
+snapwebsites.EditorForm.beforeHide = function(popupObject) // static
+{
+    var popup = /** @type {snapwebsites.Popup.PopupData} */ (popupObject),
+        iframe = popup.widget.find("iframe")[0],
+        iframe_window = iframe.contentWindow ? iframe.contentWindow : iframe.contentDocument.defaultView,
+        iframe_editor,
+        editor_form,
+        early_close;
+
+    if(!iframe_window || !iframe_window.snapwebsites)
+    {
+        // if there is no iframe window then we do not have an editor form
+        // so we cannot use the editor early close, just do an immediate
+        // close instead as follow:
+        popup.hideNow();
+        return;
+    }
+
+    iframe_editor = iframe_window.snapwebsites.EditorInstance;
+    editor_form = iframe_editor.getFormByName(popup.editorFormName);
+    if(!editor_form)
+    {
+        // we may have an iframe window, but still no editor form (i.e.
+        // a simple page with links...) so we just want to close the
+        // window immediately in this case
+        popup.hideNow();
+        return;
+    }
+
+    early_close = {
+        save_mode: snapwebsites.EditorFormBase.SAVE_MODE_SAVE,
+        id: "confirm-popup-closure",
+        title: "Confirm Closure",
+        message: "You made changes to this form, are you sure you just want to close it?",
+        buttons: [
+            { name: 'discard', label: 'Yes, Discard' },
+            { name: 'save', label: 'No, Save' },
+            { name: 'cancel', label: 'Cancel' }
+        ],
+        top: 10,
+        height: 150,
+        callback: function(name)
+            {
+                if(name == 'discard' || name == 'save' || name == 'no-save')
+                {
+                    popup.hideNow();
+                }
+            }
+    };
+    editor_form.earlyClose(early_close);
+};
+
+
 /** \brief Close this form early.
  *
  * This function handles the case when a form is to be closed before the
@@ -5532,7 +5597,10 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
     this.setupEditButton(editor_widget); // allow overrides to an empty function
 
     // widget was possibly modified, so make sure we stay on top
-    c.on("keyup cut copy paste", function()
+    //
+    // Note: "textinput" was used by older versions of Safari
+    //
+    c.on("keyup cut copy paste input textinput", function()
         {
             // use a timeout so we execute checkModified()
             // AFTER the changes were made... otherwise we are
@@ -6813,7 +6881,11 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
     {
         this.openDropdown_ = window.top.jQuery("<div class='top-window dropdown-items zordered' style='position: absolute;'>" + d.html() + "</div>").appendTo("body");
         pos = c.offset();
-        iframe_pos = window.top.jQuery("#create-finball.snap-popup .popup-body iframe").offset();
+        // Just in case, I'm keeping the window.name trick here, but it looks
+        // like all browsers have the window.frameElement parameter set properly
+        //var name = window.name;
+        //iframe_pos = window.top.jQuery("#" + name + ".snap-popup .popup-body iframe").offset();
+        iframe_pos = jQuery(window.frameElement).offset();
         pos.left += iframe_pos.left;
         pos.top += iframe_pos.top + w.height();
         this.openDropdown_.offset(pos);
@@ -6927,8 +6999,6 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(editor_wi
         }
         else
         {
-            // canonicalize the undefined value
-            value = null; // TBD should it be value = c.text(); ?
             c.removeAttr("value");
         }
 

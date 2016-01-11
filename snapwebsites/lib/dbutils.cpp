@@ -504,7 +504,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         return column_type_t::CT_uint32_value;
     }
-    else if(n == "cookie_consent_silktide::javascript_version"
+    else if(n == "bookkeeping::counter"
+         || n == "cookie_consent_silktide::javascript_version"
          || n == "cookie_consent_silktide::consent_duration"
          || n == "feed::teaser_tags"
          || n == "feed::teaser_words"
