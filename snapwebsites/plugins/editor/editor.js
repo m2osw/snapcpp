@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.486
+ * Version: 0.0.3.490
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -6874,18 +6874,37 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
         d = w.children(".dropdown-items"),
         z,
         pos,
-        iframe_pos;
+        iframe,
+        iframe_pos,
+        popup_position;
 
     // test with 'window.' so it works in IE
     if(window.self != window.top)
     {
-        this.openDropdown_ = window.top.jQuery("<div class='top-window dropdown-items zordered' style='position: absolute;'>" + d.html() + "</div>").appendTo("body");
+        iframe = jQuery(window.frameElement);
+
+        // TODO: As long as we do support showing dropdowns with a sliderbar
+        //       or as multiple columns, we want to make the dropdown
+        //       absolute so one can scroll the whole window to see the rest
+        //       of the dropdown... The code below otherwise works neatly.
+        //
+        popup_position = "absolute"; //iframe.parents("div.snap-popup").css("position");
+        if(popup_position != "fixed")
+        {
+            popup_position = "absolute";
+        }
+
+        this.openDropdown_ = window.top.jQuery("<div class='top-window dropdown-items zordered' style='position: "
+                                + popup_position + ";'>"
+                                + d.html() + "</div>").appendTo("body");
         pos = c.offset();
+
         // Just in case, I'm keeping the window.name trick here, but it looks
         // like all browsers have the window.frameElement parameter set properly
         //var name = window.name;
         //iframe_pos = window.top.jQuery("#" + name + ".snap-popup .popup-body iframe").offset();
-        iframe_pos = jQuery(window.frameElement).offset();
+        iframe_pos = iframe.offset();
+
         pos.left += iframe_pos.left;
         pos.top += iframe_pos.top + w.height();
         this.openDropdown_.offset(pos);
@@ -6985,7 +7004,19 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(editor_wi
 
         // first select the new item
         d.find(".dropdown-item").removeClass("selected");
-        selected_item.addClass("selected");
+        if(window.self != window.top)
+        {
+            // "selected_item" look nice, but it is the copy in the _top
+            // window and we have to mark the selected item in the list
+            // present in this popup instead
+            //
+            d.find(".dropdown-item").eq(selected_item.index()).addClass("selected");
+        }
+        else
+        {
+            // avoid wasting time, we know which item this is
+            selected_item.addClass("selected");
+        }
 
         // then copy the item label to the "content" (line edit)
         c.empty();
