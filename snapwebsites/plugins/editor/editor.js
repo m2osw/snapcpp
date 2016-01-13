@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.559
+ * Version: 0.0.3.560
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -6928,7 +6928,13 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.isCalendarOpen = function(editor
 snapwebsites.EditorWidgetTypeDateEdit.prototype.openCalendar = function(editor_widget)
 {
     var calendar,
+        w = editor_widget.getWidget(),
         z;
+
+    if(w.is(".read-only"))
+    {
+        return;
+    }
 
     this.cancelCalendarHide(editor_widget);
 
