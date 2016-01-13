@@ -38,6 +38,29 @@
 #include "poison.h"
 
 
+/** \file
+ * \brief The password plugin is used to check password policies.
+ *
+ * Our implementation follows all sorts of schemes that are offered on
+ * many websites. However, it is important to note that things are
+ * changing quickly and security does not really mean having a super
+ * strong password policy in place. Instead, it is to have passwords
+ * that are generally hard to crack. We are trying to move toward that
+ * specific target, yet we still offer the old fashion policy rules
+ * because most users expect to have them.
+ *
+ * We have a few documents under snapwebsites/doc (in the source)
+ * that describe various points on passwords:
+ *
+ * \li WhereDoSecurityPoliciesComeFrom.pdf
+ * \li AboutPasswordEntropy-NIST.SP.800-63-2.pdf
+ * \li CCS_Password_Metric_Measurement.pdf
+ *
+ * And a few links that you may find useful:
+ *
+ * \li http://reusablesec.blogspot.com/2010/10/new-paper-on-password-security-metrics.html
+ */
+
 SNAP_PLUGIN_START(password, 1, 0)
 
 
