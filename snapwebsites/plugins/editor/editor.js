@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.490
+ * Version: 0.0.3.559
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -227,20 +227,20 @@
  *  | EditorWidgetTypeLineEdit         |    | EditorWidgetTypeImageBox  |   |
  *  |                                  |    |                           |   |
  *  +----------------------------------+    +---------------------------+   |
- *      ^                                      ^                            |
- *      | Inherit                              | Inherit                    |
- *      |                                      |                            |
- *  +---+------------------------------+    +---------------------------+   |
+ *      ^                           ^          ^                            |
+ *      | Inherit           Inherit |          | Inherit                    |
+ *      |                           |          |                            |
+ *  +---+----------------------+    |       +---------------------------+   |
+ *  |                          |    |       |                           |   |
+ *  | EditorWidgetTypeDropdown |    |       | EditorWidgetTypeDropped-  |   |
+ *  |                          |    |       | FileWithPreview           |   |
+ *  +--------------------------+    |       +---------------------------+   |
+ *                                  |                                       |
+ *  +-------------------------------+--+    +---------------------------+   |
+ *  |                                  |    |                           +---+
+ *  | EditorWidgetTypeDateEdit         |    | EditorWidgetTypeSilent    |   |
  *  |                                  |    |                           |   |
- *  | EditorWidgetTypeDropdown         |    | EditorWidgetTypeDropped-  |   |
- *  |                                  |    | FileWithPreview           |   |
  *  +----------------------------------+    +---------------------------+   |
- *                                                                          |
- *                                          +---------------------------+   |
- *                                          |                           +---+
- *                                          | EditorWidgetTypeSilent    |   |
- *                                          |                           |   |
- *                                          +---------------------------+   |
  *                                                                          |
  *                                          +---------------------------+   |
  *                                          |                           +---+
@@ -746,11 +746,11 @@ snapwebsites.EditorSelection =
  *      };
  *
  *      abstract function getType() : string;
- *      abstract function preInitializeWidget(widget: Object) : void;
- *      abstract function initializeWidget(editor_widget: Object) : void;
- *      virtual function saving(editor_widget: Object, data: EditorWidgetTypeBase.SaveData) : void;
- *      virtual function resetValue(editor_widget: Object) : void;
- *      virtual function setValue(editor_widget: Object, value: Object) : void;
+ *      abstract function preInitializeWidget(widget: Object) : Void;
+ *      abstract function initializeWidget(editor_widget: Object) : Void;
+ *      virtual function saving(editor_widget: Object, data: EditorWidgetTypeBase.SaveData) : Void;
+ *      virtual function resetValue(editor_widget: Object) : Void;
+ *      virtual function setValue(editor_widget: Object, value: Object) : Void;
  *
  *  private:
  *      var ajaxReason_: string = "";
@@ -2135,9 +2135,16 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
 
     if(isNaN(this.toolbarTimeoutID_))
     {
-        this.toolbarTimeoutID_ = setTimeout(
-            function()
+        this.toolbarTimeoutID_ = setTimeout(function()
             {
+                // although the toggleToolbar() function is likely to
+                // call the cancelToolbarHide() ["likely" because there
+                // is one case where it could be that it does not happen],
+                // it is not clean to have it clear a timer that was just
+                // triggered...
+                //
+                that.toolbarTimeoutID_ = NaN;
+
                 that.toggleToolbar(false);
             },
             200);
@@ -2175,11 +2182,18 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      final function checkForBackgroundValue();
  *      static final function isEmptyBlock(html: string|jQuery) : boolean;
  *      function getValue() : string;
- *      function resetValue(changed: boolean) : void;
- *      function setValue(value: Object, changed: boolean) : void;
+ *      function restoreValue() : boolean;
+ *      function resetValue(changed: boolean) : Void;
+ *      function setValue(value: Object, changed: boolean) : Void;
  *      function getWidgetType() : EditorWidgetTypeBase;
+ *      function showWaitImage() : Void;
+ *      function hideWaitImage() : Void;
+ *      function getData(name: string) : Object;
+ *      function setData(name: string, data: Object) : Void;
  *
  * private:
+ *      function rotateWaitImage_() : Void;
+ *
  *      var editorBase_: EditorBase = null;
  *      var editorForm_: EditorForm = null;
  *      var widget_: jQuery = null;
@@ -2221,6 +2235,7 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
     // Moved to AFTER the [pre]initialization
     //this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
     this.widgetType_ = editor_base.getWidgetType(type);
+    this.widgetData_ = [];
     this.checkForBackgroundValue();
 
 //#ifdef DEBUG
@@ -2392,6 +2407,16 @@ snapwebsites.EditorWidget.prototype.modified_ = false;
  * @private
  */
 snapwebsites.EditorWidget.prototype.widgetType_ = null;
+
+
+/** \brief User defined data.
+ *
+ * A map of objects that, in most cases, the widget type handles.
+ *
+ * @type {Object}
+ * @private
+ */
+snapwebsites.EditorWidget.prototype.widgetData_ = null; // = []; -- initialized in constructor to avoid inter-object sharing problems
 
 
 /** \brief Get the name of this widget.
@@ -2908,6 +2933,9 @@ snapwebsites.EditorWidget.prototype.resetValue = function(changed)
  * modified, otherwise the modified flag is not changed (it may
  * actually get reset if you restore the value in this way.)
  *
+ * \todo
+ * Note that at this time YOU are responsible to call the hasChanged()
+ *
  * @param {!Object|string|number} value  The new widget value.
  * @param {!boolean} changed  Whether to mark the widget as modified.
  *
@@ -3047,6 +3075,52 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
 {
     this.waitWidgetPosition_ = (this.waitWidgetPosition_ + 1) % 12;
     this.waitWidget_.css('background-position', (this.waitWidgetPosition_ * -64) + 'px 0');
+};
+
+
+/** \brief Retrieve an object from this editor widget.
+ *
+ * This function checks whether a named block of data exists in the
+ * widget data storage. If so it gets returned. Otherwise the function
+ * returns undefined.
+ *
+ * @param {string} name  The name of the object to retrieve.
+ *
+ * @return {Object|boolean|number|string|null}  The object as saved by
+ *                   setData() with the same name or undefined.
+ *
+ * \sa setData()
+ */
+snapwebsites.EditorWidget.prototype.getData = function(name)
+{
+    return this.widgetData_[name];
+};
+
+
+/** \brief Save data in this editor widget.
+ *
+ * This function is used to save an object of data in this widget.
+ * It can later be retrieved with the use of the getData() function
+ * and the exact same name.
+ *
+ * @param {string} name  The name of the object to save.
+ * @param {Object|boolean|number|string|null|undefined} data  The actual data
+ *                                                            to save.
+ *
+ * \sa getData()
+ */
+snapwebsites.EditorWidget.prototype.setData = function(name, data)
+{
+    // when setting to undefined, we actually want to delete the property
+    // (i.e. setting a variable to undefined is not equivalent to deleting it)
+    if(data === undefined)
+    {
+        delete this.widgetData_[name];
+    }
+    else
+    {
+        this.widgetData_[name] = data;
+    }
 };
 
 
@@ -5147,7 +5221,7 @@ snapwebsites.Editor.prototype.initUserActivity_ = function()
     var that = this;
 
     jQuery("body")
-        .on("keyup keydown cut paste", function()
+        .on("keyup keydown cut paste input textinput", function()
             {
                 that.resetFormsAutoReset();
             });
@@ -5520,16 +5594,16 @@ snapwebsites.Editor.prototype.registerWidgetType = function(widget_type) // virt
  *  {
  *  public:
  *      function EditorWidgetType();
- *      virtual function preInitializeWidget(widget: Object) : void;
- *      virtual function initializeWidget(widget: Object) : void;
- *      virtual function setupEditButton(editor_widget: snapwebsites.EditorWidget) : void;
- *      abstract function droppedImage(e: ProgressEvent, img: Image) : void;
- *      abstract function droppedAttachment(e: ProgressEvent) : void;
+ *      virtual function preInitializeWidget(widget: Object) : Void;
+ *      virtual function initializeWidget(widget: Object) : Void;
+ *      virtual function setupEditButton(editor_widget: snapwebsites.EditorWidget) : Void;
+ *      abstract function droppedImage(e: ProgressEvent, img: Image) : Void;
+ *      abstract function droppedAttachment(e: ProgressEvent) : Void;
  *
  *  private:
- *      function droppedImageConvert_(e: ProgressEvent) : void;
- *      function droppedFiles_(e: ProgressEvent) : void;
- *      function droppedFileLoaded_(e: ProgressEvent) : void;
+ *      function droppedImageConvert_(e: ProgressEvent) : Void;
+ *      function droppedFiles_(e: ProgressEvent) : Void;
+ *      function droppedFileLoaded_(e: ProgressEvent) : Void;
  *  };
  * \endcode
  *
@@ -6075,7 +6149,7 @@ snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // abstr
  *  {
  *  public:
  *      function EditorWidgetTypeContentEditable();
- *      function setupEditButton(editor_widget: snapwebsites.EditorWidget) : void;
+ *      function setupEditButton(editor_widget: snapwebsites.EditorWidget) : Void;
  *      virtual function getEditButton() : string;
  *  };
  * \endcode
@@ -6257,7 +6331,7 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.serverAccessSuccess = fun
  *  {
  *  public:
  *      virtual function getType() : string;
- *      virtual function initializeWidget(widget: Object) : void;
+ *      virtual function initializeWidget(widget: Object) : Void;
  *  };
  * \endcode
  *
@@ -6582,6 +6656,760 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.verifyValue_ = function(editor_w
 
 
 
+/** \brief Editor widget type for Date widgets.
+ *
+ * This widget defines the "date-edit" in the editor forms. This is
+ * an equivalent to the input tag of type text of a standard form.
+ *
+ * @return {!snapwebsites.EditorWidgetTypeDateEdit}
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetTypeLineEdit}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeDateEdit = function()
+{
+    snapwebsites.EditorWidgetTypeDateEdit.superClass_.constructor.call(this);
+
+    return this;
+};
+
+
+/** \brief Chain up the extension.
+ *
+ * This is the chain between this class and its super.
+ */
+snapwebsites.inherits(snapwebsites.EditorWidgetTypeDateEdit, snapwebsites.EditorWidgetTypeLineEdit);
+
+
+/** \brief Return "date-edit".
+ *
+ * Return the name of the widget type.
+ *
+ * @return {string} The name of the widget type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDateEdit.prototype.getType = function()
+{
+    return "date-edit";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the date-edit widget.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDateEdit.prototype.initializeWidget = function(widget) // virtual
+{
+    var that = this,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        c = editor_widget.getWidgetContent();
+
+    editor_widget.setData("calendarTimeoutID", NaN);
+
+    snapwebsites.EditorWidgetTypeDateEdit.superClass_.initializeWidget.call(this, widget);
+
+    c.focus(function()
+        {
+            that.openCalendar(editor_widget);
+        })
+     .blur(function()
+        {
+            that.startCalendarHide(editor_widget);
+        })
+     .click(function(e)
+        {
+            // if the user clicks the widget and the widget already
+            // has focus, it will not attempt to reopen the calendar
+            //
+            if(!that.isCalendarOpen(editor_widget))
+            {
+                that.openCalendar(editor_widget);
+            }
+        })
+     .on("cut paste input textinput", function()
+        {
+            if(that.isCalendarOpen(editor_widget))
+            {
+                that.startCalendarHide(editor_widget);
+            }
+        })
+     .keydown(function(e)
+        {
+            switch(e.which)
+            {
+            case 40: // arrow down
+                // always avoid default browser behavior
+                e.preventDefault();
+
+                if(!that.isCalendarOpen(editor_widget))
+                {
+                    // first arrow down just opens the calendar
+                    that.openCalendar(editor_widget);
+                }
+                else
+                {
+                    that.createCalendar(editor_widget, "next-week");
+                }
+                break;
+
+            case 38: // arrow up
+                if(that.isCalendarOpen(editor_widget))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    that.createCalendar(editor_widget, "previous-week");
+                }
+                break;
+
+            case 37: // arrow left
+                if(that.isCalendarOpen(editor_widget))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    if(e.shiftKey)
+                    {
+                        that.createCalendar(editor_widget, "monday");
+                    }
+                    else
+                    {
+                        that.createCalendar(editor_widget, "previous-day");
+                    }
+                }
+                break;
+
+            case 39: // arrow right
+                if(that.isCalendarOpen(editor_widget))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    if(e.shiftKey)
+                    {
+                        that.createCalendar(editor_widget, "friday");
+                    }
+                    else
+                    {
+                        that.createCalendar(editor_widget, "next-day");
+                    }
+                }
+                break;
+
+            case 36: // home
+                if(that.isCalendarOpen(editor_widget))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    if(e.shiftKey)
+                    {
+                        that.createCalendar(editor_widget, "first-day-month");
+                    }
+                    else
+                    {
+                        that.createCalendar(editor_widget, "first-day-week");
+                    }
+                }
+                break;
+
+            case 35: // end
+                if(that.isCalendarOpen(editor_widget))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    if(e.shiftKey)
+                    {
+                        that.createCalendar(editor_widget, "last-day-month");
+                    }
+                    else
+                    {
+                        that.createCalendar(editor_widget, "last-day-week");
+                    }
+                }
+                break;
+
+            case 33: // page up
+                if(that.isCalendarOpen(editor_widget))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    if(e.shiftKey)
+                    {
+                        that.createCalendar(editor_widget, "previous-year");
+                    }
+                    else
+                    {
+                        that.createCalendar(editor_widget, "previous-month");
+                    }
+                }
+                break;
+
+            case 34: // page down
+                if(that.isCalendarOpen(editor_widget))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    if(e.shiftKey)
+                    {
+                        that.createCalendar(editor_widget, "next-year");
+                    }
+                    else
+                    {
+                        that.createCalendar(editor_widget, "next-month");
+                    }
+                }
+                break;
+
+            case 27: // escape (close, no changes)
+                if(that.isCalendarOpen(editor_widget))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    that.startCalendarHide(editor_widget);
+                }
+                break;
+
+            case 13: // return (select)
+                if(that.isCalendarOpen(editor_widget))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    that.startCalendarHide(editor_widget);
+                }
+                break;
+
+            }
+
+            return true;
+        });
+};
+
+
+/** \brief Check whether the calendar dropdown is open.
+ *
+ * This function check whether the calendar dropdown exists and whether it
+ * is open. Note that the function returns false if the calendar dropdown
+ * "visually" exists but the hideCalendar() function was called. This is
+ * because as soon as we fade it out, it is considered deleted.
+ *
+ * Note that the startCalendarHide() may have been called and this function
+ * will still return true since the dropdown is still available and the
+ * caller still has a chance to call cancelCalendarHide() to prevent the
+ * hide from happening.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget to check for
+ *        the calendar dropdown window.
+ *
+ * @return {boolean}  true if the calendar is currently considered open.
+ */
+snapwebsites.EditorWidgetTypeDateEdit.prototype.isCalendarOpen = function(editor_widget)
+{
+    var calendar = editor_widget.getData("calendar");
+
+    return calendar && calendar.is(":visible");
+};
+
+
+/** \brief Open the date widget calendar.
+ *
+ * This function generates a calendar, a rectangle representing a month.
+ * The calendar includes a set of 4 buttons to move to the next/previous
+ * month/year.
+ *
+ * Each day is also made a button which when clicked gets saved as the
+ * selected date in the Date widget.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The editor widget
+ *        that got focused.
+ */
+snapwebsites.EditorWidgetTypeDateEdit.prototype.openCalendar = function(editor_widget)
+{
+    var calendar,
+        z;
+
+    this.cancelCalendarHide(editor_widget);
+
+    calendar = editor_widget.getData("calendar");
+    if(!calendar)
+    {
+        calendar = this.createCalendar(editor_widget, "create");
+    }
+
+    // setup z-index each time we reopen the calendar
+    // (reset itself first so we do not just +1 each time)
+    calendar.css("z-index", 0);
+    z = window.top.jQuery("div.zordered").maxZIndex() + 1;
+    calendar.css("z-index", z);
+
+    calendar.fadeIn(300);
+};
+
+
+/** \brief Generate a calendar page.
+ *
+ * This function calculates a calendar page. It may be in replacement
+ * from the existing calendar because the user clicked on a button
+ * or used a key (i.e. Page Down or Next Month.)
+ *
+ * The function return a reference to the new calendar. Note that we
+ * do not actually destroy the old calendar, we only replace the
+ * table within if it already existed. That way the position is not
+ * changed.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget receiving
+ *        the new calendar.
+ * @param {string} command  The command to apply to the existing calendar.
+ *
+ * @return {jQuery}  A reference to the calendar.
+ */
+snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor_widget, command)
+{
+    var that = this,
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        calendar = editor_widget.getData("calendar"),
+        now,                // today's JavaScript Date object
+        today,              // day of the month for today
+        selection_value,    // current selection as a string
+        selection,          // JavaScript Date object of current selection
+        new_selection,      // whether the command generated a new selection which we have to put in the widget
+        no_selection,       // if true, the input is invalid so we do not have any real selection
+        selection_date,     // day of the month of current selection
+        selection_month,    // month of current selection (0 to 11)
+        selection_year,     // full year of current selection (i.e. 2016)
+        start_day_date,     // JavaScript Date of selection date with the day set to 1
+        start_day,          // week day number the first day of the month falls on
+        last_date_date,     // JavaScript Date of selection date with the day set to the last day of the month (i.e. +1 month -1 day)
+        last_date,          // week day number the last day of the month falls on
+        line,               // the day of the month while creating the calendar
+        week_day,           // the calendar is one week per line, this represents the current day of the week
+        day,                // JavaScript date object representing the date being output, this adjusts our 'line' parameter to a real day on the previous, current, or next month
+        day_class,          // manage the class of the cell where the calendar day is output
+        max_width = 0,      // maximum width from all the popup cells
+        d,                  // the calendar HTML as a string
+        pos,
+        iframe,
+        iframe_pos,
+        popup_position;
+
+    // sanity check
+    if(calendar && command == "create")
+    {
+        throw new Error("command to the snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar() function cannot be \"create\" if the calendar alrady exists.");
+    }
+
+    // this is today's date, we want to show today with a special border
+    now = new Date();
+    today = now.getDate();
+
+    // this is the selected date, we have to show that as selected
+    selection_value = editor_widget.getValue();
+    selection = new Date(selection_value);
+    no_selection = isNaN(selection);
+    if(no_selection)
+    {
+        // default to today if otherwise invalid
+        selection = new Date();
+    }
+
+    // move the selection as required
+    new_selection = true;
+    selection_date = selection.getDate();
+    selection_month = selection.getMonth();
+    selection_year = selection.getFullYear();
+    switch(command)
+    {
+    case "next-year": // Ctrl-Page Up or button
+        if(selection_month == 1 && selection_date == 29)
+        {
+            // stay in February
+            selection_date = 28;
+        }
+        selection = new Date(selection_year + 1, selection_month, selection_date);
+        break;
+
+    case "previous-year": // Ctrl-Page Down or button
+        if(selection_month == 1 && selection_date == 29)
+        {
+            // stay in February
+            selection_date = 28;
+        }
+        selection = new Date(selection_year - 1, selection_month, selection_date);
+        break;
+
+    case "next-month": // Page Down or button
+        selection = new Date(selection_year, selection_month + 2, 0);
+        last_date = selection.getDate();
+        if(selection_date > last_date)
+        {
+            selection_date = last_date;
+        }
+        selection = new Date(selection_year, selection_month + 1, selection_date);
+        break;
+
+    case "previous-month": // Page Up or button
+        selection = new Date(selection_year, selection_month, 0);
+        last_date = selection.getDate();
+        if(selection_date > last_date)
+        {
+            selection_date = last_date;
+        }
+        selection = new Date(selection_year, selection_month - 1, selection_date);
+        break;
+
+    case "first-day-month": // Shift-Home
+        selection = new Date(selection_year, selection_month, 1);
+        break;
+
+    case "last-day-month": // Shift-End
+        selection = new Date(selection_year, selection_month + 1, 0);
+        break;
+
+    case "next-week": // Arrow Down
+        selection = new Date(selection_year, selection_month, selection_date + 7);
+        break;
+
+    case "previous-week": // Arrow Up
+        selection = new Date(selection_year, selection_month, selection_date - 7);
+        break;
+
+    case "first-day-week": // first day of the week (Home)
+        week_day = selection.getDay();
+        selection = new Date(selection_year, selection_month, selection_date - week_day);
+        break;
+
+    case "last-day-week": // last day of the week (End)
+        week_day = selection.getDay();
+        selection = new Date(selection_year, selection_month, selection_date - week_day + 6);
+        break;
+
+    case "monday": // Monday (Shift-Arrow Left)
+        week_day = selection.getDay();
+        selection = new Date(selection_year, selection_month, selection_date - week_day + 1);
+        break;
+
+    case "friday": // Friday (Shift-Array Right)
+        week_day = selection.getDay();
+        selection = new Date(selection_year, selection_month, selection_date - week_day + 5);
+        break;
+
+    case "next-day": // Arrow Right
+        selection = new Date(selection_year, selection_month, selection_date + 1);
+        break;
+
+    case "previous-day": // Arrow Left
+        selection = new Date(selection_year, selection_month, selection_date - 1);
+        break;
+
+    case "create":
+        // no movement in this case
+        new_selection = false;
+        break;
+
+    default:
+        throw new Error("unknown command \"" + command + "\" for snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar().");
+
+    }
+
+    if(new_selection)
+    {
+        no_selection = false;
+    }
+
+    // day currently selected
+    selection_date = selection.getDate(); // day of the month
+    selection_month = selection.getMonth();
+    selection_year= selection.getFullYear();
+
+    // first week day of this month
+    start_day_date = new Date(selection_year, selection_month, 1);
+    start_day = start_day_date.getDay();
+
+    // last day of the month
+    last_date_date = new Date(selection_year, selection_month + 1, 0);
+    last_date = last_date_date.getDate();
+
+    // generate the calendar, we use the widget date to determine the
+    // year and month to show at first
+    //
+    d = "<div class='date-edit-calendar' data-year='" + selection_year
+                + "' data-month='" + selection_month + "'><table><thead><tr>"
+      + "<th><a href='#previous-year'>&lt;&lt;</a></th>"
+      + "<th><a href='#previous-month'>&lt;</a></th>"
+      + "<th colspan='3'>" + (selection_month + 1) + "/" + selection_year + "</th>"
+      + "<th><a href='#next-month'>&gt;</a></th>"
+      + "<th><a href='#next-year'>&gt;&gt;</a></th>"
+      + "</tr></thead><tbody>";
+    for(line = 1 - start_day; line <= 31; )
+    {
+        d += "<tr>";
+        for(week_day = 0; week_day <= 6; ++week_day, ++line)
+        {
+            day = new Date(selection_year, selection_month, line);
+            day_class = "day";
+            if(!no_selection
+            && line == selection_date)
+            {
+                day_class += " selection";
+            }
+            if(line == today
+            && selection_month == now.getMonth()
+            && selection_year == now.getFullYear())
+            {
+                day_class += " today";
+            }
+            if(line < 1
+            || line > last_date)
+            {
+                day_class += " other-month";
+            }
+            d += "<td class='" + day_class + "' data-day='" + line + "'><div>" + day.getDate() + "</div></td>";
+        }
+        d += "</tr>";
+    }
+    d += "</tbody></table></div>";
+
+    // test with 'window.' so it works in IE
+    pos = c.offset();
+    pos.top += w.height();
+    popup_position = "absolute";
+    if(window.self != window.top)
+    {
+        iframe = jQuery(window.frameElement);
+        if(iframe.parents("div.snap-popup").css("position") == "fixed")
+        {
+            popup_position = "fixed";
+        }
+
+        iframe_pos = iframe.offset();
+        pos.left += iframe_pos.left;
+        pos.top += iframe_pos.top;
+    }
+
+    if(calendar)
+    {
+        calendar.html(d);
+    }
+    else
+    {
+        calendar = window.top.jQuery("<div class='calendar-box zordered' style='position: "
+                           + popup_position + ";'>"
+                           + d + "</div>").appendTo("body");
+        editor_widget.setData("calendar", calendar);
+    }
+
+    calendar.offset(pos);
+
+    // force the width of all the cells to the maximum width from any
+    // of the columns
+    //
+    calendar.find('tr:nth-child(2) td').each(function(){
+        var cell_width = parseFloat($(this).css('width'));
+
+        if(cell_width > max_width)
+        {
+            max_width = cell_width;
+        }
+    });
+    $('td').css('width', max_width);
+
+    calendar
+        .click(function(e)
+            {
+                e.preventDefault();
+
+                editor_widget.editorBase_.refocus();
+            })
+        .mousedown(function(e)
+            {
+                e.preventDefault();
+
+                that.cancelCalendarHide(editor_widget);
+            })
+        .find("td.day")
+        .makeButton()
+        .click(function(e)
+            {
+                var td_tag = jQuery(e.target);
+
+                // avoid default browser behavior
+                e.preventDefault();
+                e.stopPropagation();
+
+                // I cannot explain this one at this time, the click
+                // may happen on the td or the div but we want to pass
+                // one specific tag to the dayClicked() function
+                //
+                if(td_tag.prop("tagName") == "DIV")
+                {
+                    td_tag = td_tag.parents("td");
+                }
+                that.dayClicked(editor_widget, td_tag, true);
+            });
+
+    calendar
+        .find("th a")
+        .makeButton()
+        .click(function(e)
+            {
+                var action = this.hash.substr(1);
+
+                editor_widget.editorBase_.refocus();
+
+                // avoid default browser behavior
+                e.preventDefault();
+                e.stopPropagation();
+
+                that.createCalendar(editor_widget, action);
+            });
+
+    if(new_selection)
+    {
+        this.dayClicked(editor_widget, calendar.find("td[data-day='" + selection_date + "']"), false);
+
+        // TBD: it looks like setting the widget value does not generate
+        //      an input or input text event so we do not need to cancel
+        //      the hide
+        //
+        //this.cancelCalendarHide(editor_widget);
+    }
+
+    if(command == "create")
+    {
+        calendar.css("display", "none");
+    }
+
+    return calendar;
+};
+
+
+/** \brief Hide the calendar of a Date widget.
+ *
+ * This function checks whether the calendar was opened. If so, then
+ * it gets hidden.
+ *
+ * \warning
+ * This function immediately hides the calendar. You may want to call
+ * the startCalendarHide() instead. In many cases you do not want to
+ * force the hide immediately since it may be that the system wants
+ * to keep it open.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The editor widget
+ *        that got focused.
+ */
+snapwebsites.EditorWidgetTypeDateEdit.prototype.hideCalendar = function(editor_widget)
+{
+    var that = this,
+        calendar = editor_widget.getData("calendar");
+
+    // make sure it was defined for this editor widget
+    if(calendar)
+    {
+        editor_widget.setData("calendar", undefined);
+        calendar.fadeOut(150, function()
+            {
+                calendar.remove();
+            });
+    }
+};
+
+
+/** \brief Cancel call to the startCalendarHide() function.
+ *
+ * This function check whether the startCalendarHide() function was called.
+ * If so, then it tries to prevent it from happening.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The editor widget
+ *        that got focused.
+ */
+snapwebsites.EditorWidgetTypeDateEdit.prototype.cancelCalendarHide = function(editor_widget)
+{
+    var that = this,
+        timeout_id = /** @type {number} */ (editor_widget.getData("calendarTimeoutID"));
+
+    if(!isNaN(timeout_id))
+    {
+        clearTimeout(timeout_id);
+        editor_widget.setData("calendarTimeoutID", NaN);
+    }
+};
+
+
+/** \brief Setup the necessary time to close the calendar popup.
+ *
+ * In many situations we want users to click on the calendar popup
+ * and not have it closed. This function allows us to "start" the
+ * hide meaning that we use a timer which allows the hide to happen
+ * but only if it does not get canceled first.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The editor widget
+ *        that got focused.
+ */
+snapwebsites.EditorWidgetTypeDateEdit.prototype.startCalendarHide = function(editor_widget)
+{
+    var that = this,
+        timeout_id = /** @type {number} */ (editor_widget.getData("calendarTimeoutID"));
+
+    if(isNaN(timeout_id))
+    {
+        timeout_id = setTimeout(function()
+            {
+                that.hideCalendar(editor_widget);
+            },
+            200);
+        editor_widget.setData("calendarTimeoutID", timeout_id);
+    }
+};
+
+
+/** \brief Handle a click on one of the calendar days.
+ *
+ * This function handles the click on a calendar day by using the
+ * clicked date as the new selection for this DateEdit widget.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The DateEdit widget concerned.
+ * @param {jQuery} day  The day that just got clicked (the td tag).
+ * @param {boolean} allow_auto_hide  Allow the automatic hiding of the calendar.
+ */
+snapwebsites.EditorWidgetTypeDateEdit.prototype.dayClicked = function(editor_widget, day, allow_auto_hide)
+{
+    var w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        calendar = editor_widget.getData("calendar"),
+        calendar_block = calendar.children(".date-edit-calendar"),
+        year = calendar_block.data("year"),
+        month = calendar_block.data("month"),
+        day_of_month = day.data("day"),
+        new_selection = new Date(year, month, day_of_month),
+        tbody = day.parents("tbody");
+
+    tbody.find("td").removeClass("selection");
+    day.addClass("selection");
+
+    // TODO: "older" Safari (As of 2016, NONE) do not support the
+    //       toLocaleDateString() function with parameters,
+    //       we should change the code in that case and generate
+    //       a hard coded US date as a default fallback...
+    //       https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
+    //
+    editor_widget.setValue(new_selection.toLocaleDateString(navigator.language, { year: "numeric", month: "short", day: "numeric" }), true);
+
+    // TODO: offer an option to hide the calendar once a choice was made
+    //
+    if(allow_auto_hide && w.hasClass("auto-hide"))
+    {
+        this.startCalendarHide(editor_widget);
+    }
+
+    // make sure the form is aware of the possible change
+    editor_widget.getEditorBase().checkModified(editor_widget);
+};
+
+
+
 /** \brief Editor widget type for Dropdown widgets.
  *
  * This widget defines a dropdown in the editor forms.
@@ -6879,7 +7707,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
         popup_position;
 
     // test with 'window.' so it works in IE
-    if(window.self != window.top)
+    this.clonedDropdown_ = window.self != window.top;
+    if(this.clonedDropdown_)
     {
         iframe = jQuery(window.frameElement);
 
@@ -6908,7 +7737,6 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
         pos.left += iframe_pos.left;
         pos.top += iframe_pos.top + w.height();
         this.openDropdown_.offset(pos);
-        this.clonedDropdown_ = true;
 
         this.openDropdown_
             .children(".dropdown-selection")
@@ -6932,7 +7760,6 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
     {
         // the newly visible dropdown
         this.openDropdown_ = d;
-        this.clonedDropdown_ = false;
 
         // setup z-index
         // (reset itself first so we do not just +1 each time)
@@ -8139,6 +8966,7 @@ jQuery(document).ready(function()
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeHidden());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeTextEdit());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeLineEdit());
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDateEdit());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDropdown());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeCheckmark());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeRadio());
