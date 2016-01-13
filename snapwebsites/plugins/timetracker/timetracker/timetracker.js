@@ -1,6 +1,6 @@
 /** @preserve
  * Name: timetracker
- * Version: 0.0.1.58
+ * Version: 0.0.1.60
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5)
@@ -67,7 +67,7 @@ snapwebsites.inherits(snapwebsites.TimeTracker, snapwebsites.ServerAccessCallbac
  * This class is a singleton and as such it makes use of a static
  * reference to itself. It gets created on load.
  *
- * \@type {snapwebsites.TimeTracker}
+ * @type {snapwebsites.TimeTracker}
  */
 snapwebsites.TimeTrackerInstance = null; // static
 
@@ -395,7 +395,7 @@ snapwebsites.TimeTracker.prototype.reloadCalendar_ = function()
  *
  * @param {Event} e  The event that triggered this move or null.
  * @param {jQuery} button  The button just clicked as a jQuery object.
- * @param {integer} offset  The offset to be added to the month.
+ * @param {number} offset  The offset to be added to the month.
  *
  * @private
  */
@@ -496,7 +496,7 @@ snapwebsites.TimeTracker.prototype.editDay_ = function(e, day_tag)
 {
     var year = this.getYear_(),
         month = this.getMonth_(),
-        day = day_tag.data("day"),
+        day = /** @type {number} */ (day_tag.data("day")),
         user_id = jQuery("div.calendar").data("user-identifier");
 
     e.preventDefault();
@@ -504,7 +504,7 @@ snapwebsites.TimeTracker.prototype.editDay_ = function(e, day_tag)
 
     if(year < 1000)
     {
-        throw new Error("year for the timetracker calendar has a length of " + year.length + ", it was expected to be 4 though");
+        throw new Error("timetracker year " + year + " is too small, it is expected to be 1000 or more");
     }
 
     // determine the path
@@ -533,12 +533,12 @@ snapwebsites.TimeTracker.prototype.editDay_ = function(e, day_tag)
  * on the div that encompasses the table representing the calendar, it
  * should always get updated whenever we go to a different month/year.
  *
- * @return {integer}  The year the calendar displays.
+ * @return {number}  The year the calendar displays.
  * @private
  */
 snapwebsites.TimeTracker.prototype.getYear_ = function()
 {
-    return jQuery("div.calendar table.calendar-table th.month").data("year");
+    return /** @type {number} */ (jQuery("div.calendar table.calendar-table th.month").data("year"));
 };
 
 
@@ -548,12 +548,12 @@ snapwebsites.TimeTracker.prototype.getYear_ = function()
  * on the div that encompasses the table representing the calendar, it
  * should always get updated whenever we go to a different month/year.
  *
- * @return {integer}  The month the calendar displays.
+ * @return {number}  The month the calendar displays.
  * @private
  */
 snapwebsites.TimeTracker.prototype.getMonth_ = function()
 {
-    return jQuery("div.calendar table.calendar-table th.month").data("month");
+    return /** @type {number} */ (jQuery("div.calendar table.calendar-table th.month").data("month"));
 };
 
 
@@ -583,10 +583,10 @@ snapwebsites.TimeTracker.prototype.serverAccessSuccess = function(result) // vir
     {
         // on success we get a new calendar, save it
         //
-        a = jQuery("data[name='calendar']", result_xml).text();
+        a = /** @type {string} */ (jQuery("data[name='calendar']", result_xml).text());
         new_calendar = jQuery.parseHTML(a);
         //new_calendar = jQuery.parseHTML(jQuery("data[name='calendar']", result_xml));
-        jQuery("div.calendar").html(jQuery("div.calendar table.calendar-table", new_calendar));
+        jQuery("div.calendar").empty().append(jQuery("div.calendar table.calendar-table", new_calendar[0]));
         this.initTimeTrackerCalendar_();
     }
 };
