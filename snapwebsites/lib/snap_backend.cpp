@@ -834,6 +834,7 @@ void snap_backend::process_action()
 
     // start our event loop
     //
+SNAP_LOG_WARNING("entering run() loop with action: ")(f_action);
     g_communicator->run();
 }
 

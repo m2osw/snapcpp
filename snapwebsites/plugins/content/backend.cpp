@@ -164,6 +164,7 @@ void content::backend_action_reset_status(bool const force)
 
     // TODO: use the '*index*' row instead of the entire content table
 
+SNAP_LOG_INFO("backend_action_reset_status() started.\n");
     QtCassandra::QCassandraRowPredicate row_predicate;
     QString const site_key(f_snap->get_site_key_with_slash());
     // process 100 in a row
@@ -196,6 +197,8 @@ void content::backend_action_reset_status(bool const force)
                         int32_t s(static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL))
                                 + static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING) * 256));
                         status.setInt32Value(s);
+                        content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->setValue(status);
+SNAP_LOG_INFO("setup status of ")(ipath.get_key());
                     }
                     else
                     {
@@ -224,12 +227,14 @@ void content::backend_action_reset_status(bool const force)
                         {
                             status.setInt32Value(s);
                             content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->setValue(status);
+SNAP_LOG_INFO("reset status of ")(ipath.get_key());
                         }
                     }
                 }
             }
         }
     }
+SNAP_LOG_INFO("backend_action_reset_status() done!\n");
 }
 
 
