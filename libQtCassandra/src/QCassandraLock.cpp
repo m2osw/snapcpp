@@ -616,15 +616,17 @@ void QCassandraLock::internal_init(const QByteArray& object_name)
     // get the table
     QCassandraTable::pointer_t table(f_context->lockTable());
     if(!table) {
-        // table doesn't exist yet, it cannot even remotely work
-        throw std::runtime_error("the lock table doesn't exist yet; you must create a lock table and add your computer hosts to the table before you can use a lock; see QCassandraContext::addLockHost()");
+        // table does not exist yet, it cannot even remotely work
+        throw std::runtime_error("the lock table does not exist yet; you must create a lock table and add your computer hosts to the table before you can use a lock; see QCassandraContext::addLockHost()");
     }
     f_table = table;
 
     // now if the user wanted an auto-lock, do that
     if(!object_name.isEmpty()) {
         if(!lock(object_name)) {
-            throw std::runtime_error(QString("QCassandraLock failed, lock could not be obtained within specified timeout (pid:%1)").arg(getpid()).toUtf8().data());
+            throw std::runtime_error(QString("QCassandraLock failed, lock \"%1\" could not be obtained within specified timeout (pid:%2)")
+                    .arg(QString::fromUtf8(object_name))
+                    .arg(getpid()).toUtf8().data());
         }
     }
 }
