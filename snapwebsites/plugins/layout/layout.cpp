@@ -1386,6 +1386,7 @@ void layout::replace_includes(QString& xsl)
  * \param[in] layout_name  The name of the layout to install.
  * \param[in,out] last_updated  The date when the layout was last updated.
  *                              If zero, do not check for updates.
+ *
  * \return last updated timestamp
  */
 int64_t layout::install_layout(QString const & layout_name, int64_t const last_updated)
@@ -1394,6 +1395,11 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+
+    // installing a layout can be complex so knowing which one breaks an
+    // update can be really useful
+    //
+    SNAP_LOG_TRACE("layout::install_layout(): layout name \"")(layout_name)("\" last updated on ")(last_updated);
 
     QtCassandra::QCassandraValue last_updated_value;
     if(layout_name == "default")
