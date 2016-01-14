@@ -75,6 +75,14 @@ void info::init_plugin_selection_editor_widgets(content::path_info_t & ipath, QS
             {
                 plugins::plugin_info const information(plugins_paths, name);
 
+                // we also want to have the date when it was last updated
+                // (as in the do_update() callbacks)
+                //
+                QString const core_last_updated(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED));
+                QString const param_name(QString("%1::%2").arg(core_last_updated).arg(name));
+                QtCassandra::QCassandraValue plugin_last_updated(f_snap->get_site_parameter(param_name));
+                int64_t const last_updated(plugin_last_updated.safeInt64Value());
+
                 QDomDocument xml;
                 QDomElement root(xml.createElement("snap"));
                 xml.appendChild(root);
@@ -101,7 +109,14 @@ void info::init_plugin_selection_editor_widgets(content::path_info_t & ipath, QS
                 {
                     // format this date using the user locale
                     QDomElement value_tag(snap_dom::create_element(root, "last-modification-date"));
-                    snap_dom::append_plain_text_to_node(value_tag, locale_plugin->format_date(information.get_last_modification() / 1000000LL));
+                    snap_dom::append_plain_text_to_node(value_tag, locale_plugin->format_date(information.get_last_modification() / 1000000LL) + " " + locale_plugin->format_time(information.get_last_modification() / 1000000LL));
+                }
+
+                // /info/last-updated/...
+                if(last_updated > 0)
+                {
+                    QDomElement value_tag(snap_dom::create_element(root, "last-updated-date"));
+                    snap_dom::append_plain_text_to_node(value_tag, locale_plugin->format_date(last_updated / 1000000LL) + " " + locale_plugin->format_time(last_updated / 1000000LL));
                 }
 
                 // /info/icon/...

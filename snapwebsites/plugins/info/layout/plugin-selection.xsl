@@ -86,6 +86,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<div class="last-row">
 					<!-- advance information -->
 					<div class="last-modification"><strong>Last modified on: </strong> <span class="date"><xsl:copy-of select="last-modification-date/node()"/></span></div>
+					<div class="last-update">
+						<xsl:choose>
+							<xsl:when test="last-updated-date and last-updated-date != ''">
+								<strong>Last updated on: </strong> <span class="date"><xsl:copy-of select="last-updated-date/node()"/></span>
+							</xsl:when>
+							<xsl:otherwise>
+								<strong>Never updated</strong>
+							</xsl:otherwise>
+						</xsl:choose>
+					</div>
 					<div class="filename"><strong>Loading from: </strong> <span class="path"><xsl:copy-of select="filename/node()"/></span></div>
 					<div class="dependencies"><strong>Dependencies: </strong>
 						<xsl:choose>
