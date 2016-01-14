@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.78
+ * Version: 0.1.5.81
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -171,7 +171,7 @@ snapwebsites.inherits = function(child_class, super_class) // static
  *
  * \todo
  * TBD: should we trim any \&nbsp; character too? The fact is that
- * the no break spaces are not totally removed so keep them probably
+ * the "no break spaces" are not totally removed so keep them probably
  * makes more sense.
  *
  * @param {string} s  The string to trim.
@@ -367,6 +367,82 @@ snapwebsites.htmlEscape = function(str) // static
 };
 
 
+/** \brief Remove HTML tags from a string.
+ *
+ * When you get a value of a widget or other similar data, it may include
+ * HTML tags. This function removes such tags from the string and returns
+ * the result.
+ *
+ * If you want to strip out certain tags and keep others, look at the
+ * stripTag() function instead.
+ *
+ * @param {string} html_str  The input string to convert.
+ *
+ * @return {string}  The converted string.
+ *
+ * \sa stripTag()
+ */
+snapwebsites.stripAllTags = function(html_str) // static
+{
+    // Note that this regex removes all tags that are generall considered
+    // valid; although frankly it does not check the tag per se, only the
+    // syntax of such; it will keep lone < and unmatched > characters.
+    //
+    return html_str.replace(/<(?:\w|\/)[^>]*>/g, '');
+};
+
+
+/** \brief Remove HTML tags except those considered acceptable.
+ *
+ * The function removes all tags that are not defined in the allowed
+ * string from the \p html_str input string. It makes heavy use
+ * of regular expression so it can be a bit slow and should probably
+ * not be used on really large buffers.
+ *
+ * The \p opt_allowed_tags parameter can be defined as a string or an array.
+ * When defined as a string, it must be a list of tags written in lowercase
+ * and separated by commas: 'a,b,h1,h2,h3,h4,h5,h6,span'. The function
+ * does not verify the validity of the \p opt_allowed_tags string. However, if
+ * undefined or empty, the function calls stripAllTags() instead.
+ *
+ * \code
+ *      // called with an array
+ *      stripTags("<b>string</b> with <em>HTML</em> tags", ["b","em"]);
+ *
+ *      // called with a string equivalent to the array
+ *      stripTags("<b>string</b> with <em>HTML</em> tags", "b,em");
+ * \endcode
+ *
+ * \note
+ * This function is based on the code found on the PHP website:
+ * http://phpjs.org/functions/strip_tags/
+ *
+ * @param {!string} html_str  The string where tags are to be stripped.
+ * @param {string|Array.<string>} opt_allowed_tags  The tags that can stay in your string.
+ *
+ * @return {string}  The \p html_str string without tags except those
+ *                   in the \p opt_allowed_tags string.
+ */
+snapwebsites.stripTags = function(html_str, opt_allowed_tags) // static
+{
+    if(!opt_allowed_tags || opt_allowed_tags === '')
+    {
+        return snapwebsites.stripAllTags(html_str);
+    }
+    // transform the string in an array
+    if(!jQuery.isArray(opt_allowed_tags))
+    {
+        opt_allowed_tags = opt_allowed_tags.split(",");
+    }
+    return html_str.replace(
+                /<\/?([a-z][a-z0-9:]*)\b[^>]*>/gi,
+                function(full_match, first_match)
+                    {
+                        return opt_allowed_tags.indexOf(first_match.toLowerCase()) != -1 ? full_match : '';
+                    });
+};
+
+
 /** \brief Make sure a parameter is a string.
  *
  * This function makes sure the parameter is a string, if not it
@@ -375,7 +451,7 @@ snapwebsites.htmlEscape = function(str) // static
  * This is useful in situations where a function may return something
  * else than a string.
  *
- * As you can see the function doesn't do anything to the parameter,
+ * As you can see the function does not do anything to the parameter,
  * only the closure compiler sees a "string" coming out.
  *
  * @param {Object|string|number|boolean} s  Expects a string as input.

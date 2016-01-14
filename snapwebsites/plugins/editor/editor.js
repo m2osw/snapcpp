@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.562
+ * Version: 0.0.3.569
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -7013,7 +7013,7 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
 
     // this is the selected date, we have to show that as selected
     selection_value = editor_widget.getValue();
-    selection = new Date(selection_value);
+    selection = new Date(snapwebsites.stripAllTags(selection_value));
     no_selection = isNaN(selection);
     if(no_selection)
     {

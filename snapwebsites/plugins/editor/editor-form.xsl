@@ -565,8 +565,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
-        <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+        <xsl:if test="sizes/min"><xsl:attribute name="data-minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
+        <xsl:if test="sizes/max"><xsl:attribute name="data-maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
         <!-- now the actual value of this text widget -->
         <xsl:choose>
           <xsl:when test="post">
@@ -636,8 +636,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:copy-of select="tooltip"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
-        <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+        <xsl:if test="sizes/min"><xsl:attribute name="data-minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
+        <xsl:if test="sizes/max"><xsl:attribute name="data-maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
         <!-- now the actual value of this line -->
         <xsl:choose>
           <xsl:when test="post">
@@ -708,8 +708,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:copy-of select="tooltip"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
-        <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+        <xsl:if test="sizes/min"><xsl:attribute name="data-minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
+        <xsl:if test="sizes/max"><xsl:attribute name="data-maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
         <!-- now the actual value of this line -->
         <xsl:choose>
           <xsl:when test="post">
