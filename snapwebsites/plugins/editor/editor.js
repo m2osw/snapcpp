@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.560
+ * Version: 0.0.3.562
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -7148,7 +7148,13 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
       + "<th colspan='3'>" + (selection_month + 1) + "/" + selection_year + "</th>"
       + "<th><a href='#next-month'>&gt;</a></th>"
       + "<th><a href='#next-year'>&gt;&gt;</a></th>"
-      + "</tr></thead><tbody>";
+      + "</tr><tr>";
+    for(week_day = 0; week_day <= 6; ++week_day)
+    {
+        day = new Date(selection_year, selection_month, 1 - start_day + week_day);
+        d += "<th>" + day.toLocaleDateString(navigator.language, { weekday: "narrow" }) + "</th>";
+    }
+    d += "</tr></thead><tbody>";
     for(line = 1 - start_day; line <= 31; )
     {
         d += "<tr>";
