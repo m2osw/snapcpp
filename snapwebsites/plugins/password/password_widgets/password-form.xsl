@@ -50,7 +50,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </div>
         </div>
       </xsl:if>
-      <div>
+      <div value="">
         <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
         <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
@@ -92,7 +92,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         test="state = 'read-only'"> read-only</xsl:if><xsl:if
         test="@no-paste"> no-paste</xsl:if></xsl:attribute>
 
-      <div class="editor-content no-hover">
+      <div class="editor-content no-hover" value="">
         <label class="password-confirm-password">Password:</label>
         <xsl:variable name="pc_password">
           <editor-form>

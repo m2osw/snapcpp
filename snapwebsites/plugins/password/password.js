@@ -1,6 +1,6 @@
 /** @preserve
  * Name: password
- * Version: 0.0.1.8
+ * Version: 0.0.1.10
  * Browsers: all
  * Depends: editor (>= 0.0.3.468)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -531,6 +531,9 @@ snapwebsites.EditorWidgetTypePasswordConfirm.prototype.comparePasswords_ = funct
 
     c.find(".password-status-details").toggleClass("good", good);
     c.find(".password-status").html(msg);
+
+    // save the value in the main password widget
+    c.attr("value", snapwebsites.castToString(password, "password value attribute"));
 };
 
 
