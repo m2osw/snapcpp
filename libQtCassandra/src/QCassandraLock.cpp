@@ -9,7 +9,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2013 Made to Order Software Corp.
+ *      Copyright (c) 2013-2016 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -791,12 +791,23 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     appendUInt32Value(my_id, pid);
 
     // mark us as entering (entering[i] = true)
+    //
+    // the TTL uses the time we use in the attempt to obtain a lock plus
+    // five seconds to make sure it does not get deleted too soon
+    //
+    // we use a TTL on top of the autoDrop because the software could
+    // crash (abort() is not C++ safe and Qt uses it... or your process
+    // gets a KILL signal) and never remove the "entering::..."
+    // information which would prevent any further locks from being
+    // obtained for that specific object name
+    //
     QCassandraRow::pointer_t entering_row(f_table->row("entering::" + f_object_name));
     entering_row->clearCache();
     autoDrop auto_drop_entering(entering_row, my_id, f_consistency);
     QCassandraValue boolean;
-    boolean.setCharValue(1);
     boolean.setConsistencyLevel(f_consistency);
+    boolean.setTtl(f_context->lockTimeout() + 5);
+    boolean.setCharValue(1);
     entering_row->cell(my_id)->setValue(boolean);
 
     // get the row specific to that object (that way we don't have to lock

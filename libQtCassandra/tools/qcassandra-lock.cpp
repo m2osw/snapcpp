@@ -1,24 +1,29 @@
 /*
  * Text:
- *      cassandra_lock.cpp
+ *      qcassandra_lock.cpp
  *
  * Description:
- *      Test the QCassandraLock object to make sure that the lock works
- *      as expected when running this test on any number of computers.
+ *      Tool used to setup the lock functionality coming with the
+ *      libQtCassandra library.
  *
  * Documentation:
- *      Start the first instance with the -h option to define the
- *      Cassandra's host (defaults to 127.0.0.1 if undefined) and
- *      the -i to tell the first instance how many instances you
- *      want to run simultaneously. For example, if you have 4
- *      processors, you may want to use -i 4 or -i 8. It also
- *      accepts the number of times the processes will attempt the
- *      lock with -n. By default that count is 60 (1 minute). You
- *      can set it to 86400 for about 1 day test and a multiple
- *      thereof to run the test for multiple days.
+ *      This tool offers you a way to add and remove hosts from the list
+ *      of hosts defined in the libQtCassandraLockTable table. Each
+ *      named host has the ability to lock something in the
+ *      Cassandra cluster with the help of the QCassandraLock object.
+ *      You must add the name in this way (or your own application software)
+ *      before you can lock from that specific host.
+ *
+ *      The tool has three main functions:
+ *
+ *      --add <host>     Add a new host to the cluster.
+ *      --remove <host>  Remove an existing host from the cluster.
+ *      --list           List hosts with their identifier.
+ *
+ *      Use the --help comment for additional details.
  *
  * License:
- *      Copyright (c) 2013-2015 Made to Order Software Corp.
+ *      Copyright (c) 2013-2016 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -75,19 +80,20 @@ namespace
 
 void usage()
 {
-    fprintf(stderr, "Usage: %s <cmd> [<opts>]\n", g_progname.toUtf8().data());
-    fprintf(stderr, "  where <cmd> is one of:\n");
-    fprintf(stderr, "    --add | -a <name>        add the <name> or comma separated <names> of a host to the specified context\n");
-    fprintf(stderr, "    --help                   print out this help screen\n");
-    fprintf(stderr, "    --list | -l              list all the host names\n");
-    fprintf(stderr, "    --remove | -r <name>     remove the <name> or comma separated <names> of a host from the specified context\n");
-    fprintf(stderr, "  where <opts> are:\n");
-    fprintf(stderr, "    --context | -c <name>    use the <name>d context as required\n");
-    fprintf(stderr, "    --host | -h              host IP address\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "IMPORTANT REMINDER: This tool cannot use the lock since it is used to initialize the\n");
-    fprintf(stderr, "                    lock table. You must make sure you're only running one instance\n");
-    fprintf(stderr, "                    at a time.\n");
+    std::cerr << "Usage: " << g_progname.toUtf8().data() << " <cmd> [<opts>]" << std::endl;
+    std::cerr << "  where <cmd> is one of:" << std::endl;
+    std::cerr << "    --add | -a <name>        add the <name> or comma separated <names> of hosts to the specified context" << std::endl;
+    std::cerr << "    --help                   print out this help screen" << std::endl;
+    std::cerr << "    --list | -l              list all the host names" << std::endl;
+    std::cerr << "    --remove | -r <name>     remove the <name> or comma separated <names> of hosts from the specified context" << std::endl;
+    std::cerr << "    --version                display the software version" << std::endl;
+    std::cerr << "  where <opts> are:" << std::endl;
+    std::cerr << "    --context | -c <name>    use the <name>d context as required" << std::endl;
+    std::cerr << "    --host | -h              host IP address" << std::endl;
+    std::cerr << "" << std::endl;
+    std::cerr << "IMPORTANT REMINDER: This tool cannot use the lock since it is used to initialize the" << std::endl;
+    std::cerr << "                    lock table. You must make sure you are only running one instance" << std::endl;
+    std::cerr << "                    at a time." << std::endl;
     exit(0);
 }
 
@@ -97,7 +103,7 @@ void add_host()
 {
     // verify the parameters
     if(g_context_name == NULL) {
-        fprintf(stderr, "error: the context name must be specified for the --add option.\n");
+        std::cerr << "error: the context name must be specified for the --add option." << std::endl;
         exit(1);
     }
 
@@ -106,7 +112,7 @@ void add_host()
     cassandra->connect(g_host);
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context(g_context_name));
     if(!context) {
-        fprintf(stderr, "error: could not retrieve the \"%s\" context from this Cassandra cluster.\n", g_context_name);
+        std::cerr << "error: could not retrieve the \"" << g_context_name << "\" context from this Cassandra cluster." << std::endl;
         exit(1);
     }
 
@@ -123,7 +129,7 @@ void remove_host()
 {
     // verify the parameters
     if(g_context_name == NULL) {
-        fprintf(stderr, "error: the context name must be specified for the --remove option.\n");
+        std::cerr << "error: the context name must be specified for the --remove option." << std::endl;
         exit(1);
     }
 
@@ -132,7 +138,7 @@ void remove_host()
     cassandra->connect(g_host);
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context(g_context_name));
     if(!context) {
-        fprintf(stderr, "error: could not retrieve the \"%s\" context from this Cassandra cluster.\n", g_context_name);
+        std::cerr << "error: could not retrieve the \"" << g_context_name << "\" context from this Cassandra cluster." << std::endl;
         exit(1);
     }
 
@@ -149,7 +155,7 @@ void list_hosts()
 {
     // verify the parameters
     if(g_context_name == NULL) {
-        fprintf(stderr, "error: the context name must be specified for the --list option.\n");
+        std::cerr << "error: the context name must be specified for the --list option." << std::endl;
         exit(1);
     }
 
@@ -158,14 +164,14 @@ void list_hosts()
     cassandra->connect(g_host);
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context(g_context_name));
     if(!context) {
-        fprintf(stderr, "error: could not retrieve the \"%s\" context from this Cassandra cluster.\n", g_context_name);
+        std::cerr << "error: could not retrieve the \"" << g_context_name << "\" context from this Cassandra cluster." << std::endl;
         exit(1);
     }
 
     QtCassandra::QCassandraTable::pointer_t locks_table(context->table(context->lockTableName()));
     QtCassandra::QCassandraRow::pointer_t hosts(locks_table->row("hosts"));
     if(!hosts) {
-        fprintf(stderr, "warning: there are no computer host names defined in this context.\n");
+        std::cerr << "warning: there are no computer host names defined in this context." << std::endl;
     }
     else {
         // show all the computer names in this context
@@ -175,10 +181,10 @@ void list_hosts()
         hosts->readCells(column_predicate);
         QtCassandra::QCassandraCells cells(hosts->cells());
         if(cells.count() == 0) {
-            fprintf(stderr, "warning: there are no computer host names defined in this context.\n");
+            std::cerr << "warning: there are no computer host names defined in this context." << std::endl;
         }
         else {
-            printf("     ID  Host\n");
+            std::cout << "     ID  Host" << std::endl;
             do {
                 for(QtCassandra::QCassandraCells::const_iterator c(cells.begin()); c != cells.end(); ++c) {
                     printf("%7d  %s\n",
@@ -214,7 +220,7 @@ void run_command(cmd c)
         break;
 
     default:
-        fprintf(stderr, "error: a command must be specified, try --help for more information.\n");
+        std::cerr << "error: a command must be specified, try --help for more information." << std::endl;
         exit(1);
 
     }
@@ -224,7 +230,7 @@ void run_command(cmd c)
 void set_command(cmd c)
 {
     if(g_cmd != CMD_UNDEFINED) {
-        fprintf(stderr, "error: you cannot use more than one command at a time.\n");
+        std::cerr << "error: you cannot use more than one command at a time." << std::endl;
         exit(1);
     }
     g_cmd = c;
@@ -234,7 +240,7 @@ void set_command(cmd c)
 void check_max(const char *opt, const int i, const int argc)
 {
     if(i >= argc) {
-        fprintf(stderr, "error: option \"%s\" requires an option.\n", opt);
+        std::cerr << "error: option \"" << opt << "\" requires an option.\n" << std::endl;
         exit(1);
     }
 }
@@ -277,7 +283,7 @@ void parse_arguments(int argc, char *argv[])
                     g_computer_name = argv[i];
                 }
                 else {
-                    fprintf(stderr, "error: unknown option \"%s\".\n", argv[i]);
+                    std::cerr << "error: unknown option \"" <<  argv[i] << "\"." << std::endl;
                     exit(1);
                 }
             }
@@ -316,7 +322,7 @@ void parse_arguments(int argc, char *argv[])
                         break;
 
                     default:
-                        fprintf(stderr, "error: unknown option \"-%c\".\n", argv[i][j]);
+                        std::cerr << "error: unknown option \"-" << argv[i][j] << "\"." << std::endl;
                         exit(1);
                         break;
 
@@ -325,7 +331,7 @@ void parse_arguments(int argc, char *argv[])
             }
         }
         else {
-            fprintf(stderr, "error: unsupported parameter \"%s\".\n", argv[i]);
+            std::cerr << "error: unsupported parameter \"" << argv[i] << "\"." << std::endl;
             exit(1);
         }
     }

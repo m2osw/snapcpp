@@ -10,7 +10,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2013 Made to Order Software Corp.
+ *      Copyright (c) 2011-2016 Made to Order Software Corp.
  *
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -457,14 +457,14 @@ namespace QtCassandra
  * a time to live (TTL). Data with a very small TTL is likely to only
  * live in the memory cache and never make it to the disk.
  *
- * Note that the libQtCassandra library let you create table objects
+ * Note that the libQtCassandra library lets you create table objects
  * that do not exist in the Cassandra system. These are memory only
- * tables (when you quite they're gone!) These can be used to manage
+ * tables (when you quit they're gone!) These can be used to manage
  * run-time globals via the libQtCassandra system. Obviously, it would
- * most certainly be more effective (faster) to just use globals.
- * However, it can be useful to call a function that usually accesses
- * a Cassandra table, but in that case you dynamically generate said
- * data.
+ * most certainly be more effective (faster) to just use normal C/C++
+ * globals. However, it can be useful to call a function that usually
+ * accesses a Cassandra table, but in that case you dynamically
+ * generate said data.
  *
  * A table is identified by a name. At this time, we only offer QString
  * for table names. Table names must be letters, digits and the
@@ -478,7 +478,7 @@ namespace QtCassandra
  * This is because one row may have 10 "columns," and the other may have
  * just 1. Each row is identified by what Cassandra calls a key. The key
  * can either be a string or a binary identifier (i.e. an int64_t for
- * example.)
+ * example, we use QByteArray for those in libQtCassandra.)
  *
  * The name of a row can be typed. In most cases, the default binary
  * type is enough (assuming you save integers in big endians, which
@@ -528,6 +528,74 @@ namespace QtCassandra
  * Actual Cassandra's FAQ: http://wiki.apache.org/cassandra/FAQ
  *
  * \section changes Changes between versions
+ *
+ * \li version 0.5.22
+ *
+ * . Applied a fix to the QCassandraLock so if a process trying to obtain
+ *   a lock crashes (abort) or gets killed (KILL, computer loses power)
+ *   then the entering::... key still gets deleted.
+ *
+ * . Bumped copyright notice to 2016.
+ *
+ * . Fixed the qcassandra-lock top comment which was from the lock test.
+ *
+ * . Finally took care of the debian/copyright file.
+ *
+ * . Changed the README.txt to a README.md file instead.
+ *
+ * \li version 0.5.21
+ *
+ * . Added support for a regular expression to search rows.
+ *
+ * . Note: versions 0.5.8 to 0.5.20 were nightly builds changing the "wrong"
+ *   version number.
+ *
+ * \li version 0.5.7
+ *
+ * . Updated the headers to support the new controlled_vars enum.
+ *
+ * . Tweaked the include_directories() to support system and local headers.
+ *
+ * \li version 0.5.6
+ *
+ * . Repaired warning-as-error regarding strict-overflow. Alexis added the
+ *   special-edge case.
+ *
+ * \li version 0.5.5
+ *
+ * . Added fix for clearTable() to work as expected.
+ *
+ * \li version 0.5.4
+ *
+ * . Added documentation about the fact that the QMap is always started from
+ *   smallest to largest even if you set the reverse flag on.
+ *
+ * \li version 0.5.3
+ *
+ * . Updated the C++ warnings: reduced the strict-overlow to 4 instead of 5,
+ *   tested with -Wconversion and fixed many errors.
+ *
+ * . "Fixed" comparison between floating point numbers (== and !=).
+ *
+ * . Removed some debug code.
+ *
+ * \li version 0.5.2
+ *
+ * . Put the limit size of a buffer inside the throw raised when the limit is
+ *   reached.
+ *
+ * \li version 0.5.0-2
+ *
+ * . Changed all shared pointer with std::share_ptr<> so we can use weak
+ *   pointers properly.
+ *
+ * \li version 0.5.0-1
+ *
+ * . Fixed broken package because of the info file, which was not needed.
+ *
+ * \li version 0.5.0
+ *
+ * . Added support for debian packaging with pbuilder.
  *
  * \li version 0.4.7
  *
