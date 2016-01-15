@@ -1,3 +1,9 @@
+libqtcassandra (0.5.22.1~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 15 Jan 2016 03:02:03 -0800
+
 libqtcassandra (0.5.22) trusty; urgency=high
 
   * Applied a fix to the QCassandraLock so if a process trying to obtain
