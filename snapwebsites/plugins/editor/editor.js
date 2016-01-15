@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.569
+ * Version: 0.0.3.571
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -2458,6 +2458,25 @@ snapwebsites.EditorWidget.prototype.wasModified = function(opt_recheck)
 };
 
 
+/** \brief Validate the widget content.
+ *
+ * This function gets called to validate the widget whenever the user
+ * is ready to save the form.
+ *
+ * In general the validation consists of making sure that the content
+ * is valid as per the programmer's specification. For example, a
+ * line-edit needs to have a minimum and maximum number of characters.
+ * The maximum is checked as new characters are added, but the minimum
+ * is only checked before the save and thus in this validation function.
+ *
+ * @return {boolean}  true if the widget is considered valid.
+ */
+snapwebsites.EditorWidget.prototype.validate = function()
+{
+    return true;
+};
+
+
 /** \brief Get the data to be saved.
  *
  * This function is called whenever the widget is marked as modified
@@ -4215,7 +4234,8 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
     var key,                                    // loop index
         w,                                      // widget being managed
         obj = {},                               // object to send via AJAX
-        save_all = this.mode_ === "save-all";   // whether all fields are sent to the server
+        save_all = this.mode_ === "save-all",   // whether all fields are sent to the server
+        valid = true;                           // whether the data is valid and can be sent
 
     // are we already saving? if so, generate an error
     if(this.isSaving())
@@ -4227,9 +4247,6 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
         return;
     }
 
-    // mark the form as saving, it may use CSS to show the new status
-    this.setSaving(true, false);
-
     this.savedData_ = {};
     for(key in this.editorWidgets_)
     {
@@ -4240,19 +4257,30 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
             // so there is no need for us to save them again here (plus
             // in some cases it would be impossible like for file upload)
             w = this.editorWidgets_[key];
-            if((save_all || w.wasModified(true) || w.getWidget().hasClass("always-save"))
-            && !w.getWidget().hasClass("immediate-save"))
+            valid = valid && w.validate();
+            if(valid)
             {
-                // once saved once in this round, make sure to always save
-                // until we get a successful save otherwise data saved in
-                // the draft may wrongly get used!
-                w.getWidget().addClass("always-save");
+                if((save_all || w.wasModified(true) || w.getWidget().hasClass("always-save"))
+                && !w.getWidget().hasClass("immediate-save"))
+                {
+                    // once saved once in this round, make sure to always save
+                    // until we get a successful save otherwise data saved in
+                    // the draft may wrongly get used!
+                    w.getWidget().addClass("always-save");
 
-                this.savedData_[key] = w.saving();
-                obj[key] = this.savedData_[key].result;
+                    this.savedData_[key] = w.saving();
+                    obj[key] = this.savedData_[key].result;
+                }
             }
         }
     }
+    if(!valid)
+    {
+        return;
+    }
+
+    // mark the form as saving, it may use CSS to show the new status
+    this.setSaving(true, false);
 
     // this test is not 100% correct for the Publish or Create Branch
     // buttons...

@@ -93,6 +93,30 @@ namespace
         },
         {
             '\0',
+            0,
+            "create-row",
+            NULL,
+            "allows the creation of a row when writing a value",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            0,
+            "drop-cell",
+            NULL,
+            "drop the specified cell (specify row and cell)",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            0,
+            "drop-row",
+            NULL,
+            "drop the specified row (specify row)",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
             NULL,
@@ -199,7 +223,7 @@ private:
 };
 
 
-snapdb::snapdb(int argc, char *argv[])
+snapdb::snapdb(int argc, char * argv[])
     : f_cassandra( QCassandra::create() )
     , f_host("localhost")           // default
     , f_port(9160)                  // default
@@ -274,7 +298,7 @@ snapdb::snapdb(int argc, char *argv[])
     if(!f_cell.isEmpty() && (f_row.isEmpty() || f_row.endsWith("%")))
     {
         // it is not likely that a row would need to end with '%'
-        std::cerr << "error: when specifying a cell name, the row name cannot be empty nor end with '%'." << std::endl;
+        std::cerr << "error:snapdb(): when specifying a cell name, the row name cannot be empty nor end with '%'." << std::endl;
         usage(advgetopt::getopt::error);
     }
 }
@@ -327,7 +351,7 @@ void snapdb::display_rows() const
     QCassandraTable::pointer_t table(context->findTable(f_table));
     if(!table)
     {
-        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
+        std::cerr << "error:display_rows(): table \"" << f_table << "\" not found." << std::endl;
         exit(1);
     }
 
@@ -351,7 +375,7 @@ void snapdb::display_rows_wildcard() const
     QCassandraTable::pointer_t table(context->findTable(f_table));
     if(!table)
     {
-        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
+        std::cerr << "error:display_rows_wildcard(): table \"" << f_table << "\" not found." << std::endl;
         exit(1);
     }
     QCassandraRowPredicate row_predicate;
@@ -394,15 +418,21 @@ void snapdb::display_columns() const
     QCassandraTable::pointer_t table(context->findTable(f_table));
     if(!table)
     {
-        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
+        std::cerr << "error:display_columns(): table \"" << f_table << "\" not found." << std::endl;
         exit(1);
     }
     snap::dbutils du( f_table, f_row );
-    const QByteArray row_key( du.get_row_key() );
+    QByteArray const row_key( du.get_row_key() );
     if(!table->exists(row_key))
     {
-        std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
+        std::cerr << "error:display_columns(): row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
         exit(1);
+    }
+
+    if(f_opt->is_defined("drop-row"))
+    {
+        table->dropRow(row_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        return;
     }
 
     QCassandraRow::pointer_t row(table->row(row_key));
@@ -413,7 +443,7 @@ void snapdb::display_columns() const
     {
         row->clearCache();
         row->readCells(column_predicate);
-        const QCassandraCells& cells(row->cells());
+        QCassandraCells const & cells(row->cells());
         if(cells.isEmpty())
         {
             break;
@@ -434,26 +464,34 @@ void snapdb::display_cell() const
     QCassandraTable::pointer_t table(context->findTable(f_table));
     if(!table)
     {
-        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
+        std::cerr << "error:display_cell(): table \"" << f_table << "\" not found." << std::endl;
         exit(1);
     }
     snap::dbutils du( f_table, f_row );
     const QByteArray row_key( du.get_row_key() );
     if(!table->exists(row_key))
     {
-        std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
+        std::cerr << "error:display_cell(): row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
         exit(1);
     }
 
     QCassandraRow::pointer_t row(table->row(row_key));
     if(!row->exists(f_cell))
     {
-        std::cerr << "error: cell \"" << f_cell << "\" not found in table \"" << f_table << "\" and row \"" << f_row << "\"." << std::endl;
+        std::cerr << "error:display_cell(): cell \"" << f_cell << "\" not found in table \"" << f_table << "\" and row \"" << f_row << "\"." << std::endl;
         exit(1);
     }
 
-    QCassandraCell::pointer_t c(row->cell(f_cell));
-    std::cout << du.get_column_value( c, true /*display_only*/ ) << std::endl;
+    // drop or display?
+    if(f_opt->is_defined("drop-cell"))
+    {
+        row->dropCell(f_cell, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+    }
+    else
+    {
+        QCassandraCell::pointer_t c(row->cell(f_cell));
+        std::cout << du.get_column_value( c, true /*display_only*/ ) << std::endl;
+    }
 }
 
 
@@ -465,15 +503,18 @@ void snapdb::set_cell() const
     QCassandraTable::pointer_t table(context->findTable(f_table));
     if(!table)
     {
-        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
+        std::cerr << "error:set_cell(): table \"" << f_table << "\" not found." << std::endl;
         exit(1);
     }
     snap::dbutils du( f_table, f_row );
-    const QByteArray row_key( du.get_row_key() );
-    if(!table->exists(row_key))
+    QByteArray const row_key( du.get_row_key() );
+    if(!f_opt->is_defined("create-row"))
     {
-        std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
-        exit(1);
+        if(!table->exists(row_key))
+        {
+            std::cerr << "error:set_cell(): row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
+            exit(1);
+        }
     }
 
     QCassandraRow::pointer_t row(table->row(row_key));
@@ -511,7 +552,7 @@ void snapdb::display()
 
 
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
     try
     {
@@ -519,7 +560,7 @@ int main(int argc, char *argv[])
         s.display();
         return 0;
     }
-    catch(std::exception const& e)
+    catch(std::exception const & e)
     {
         std::cerr << "snapsiteinfo: exception: " << e.what() << std::endl;
         return 1;

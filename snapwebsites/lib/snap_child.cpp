@@ -6910,8 +6910,7 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
     // system updates run at most once every 10 minutes
     QString const core_last_updated(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
     QString const core_last_dynamic_update(get_name(name_t::SNAP_NAME_CORE_LAST_DYNAMIC_UPDATE));
-    QString const param_name(core_last_updated);
-    QtCassandra::QCassandraValue last_updated(get_site_parameter(param_name));
+    QtCassandra::QCassandraValue last_updated(get_site_parameter(core_last_updated));
     if(last_updated.nullValue())
     {
         // use an "old" date (631152000)
@@ -6933,7 +6932,7 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
         // save that last time we checked for an update
         last_updated.setInt64Value(f_start_date);
         QString const core_plugin_threshold(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
-        set_site_parameter(param_name, last_updated);
+        set_site_parameter(core_last_updated, last_updated);
         QtCassandra::QCassandraValue threshold(get_site_parameter(core_plugin_threshold));
         if(threshold.nullValue())
         {

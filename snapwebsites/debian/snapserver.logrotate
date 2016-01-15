@@ -11,6 +11,7 @@
     compress
     delaycompress
     notifempty
+    create 640 snapwebsites snapwebsites
 }
 /var/log/snapwebsites/secure/snapserver.log {
     weekly
@@ -27,6 +28,7 @@
     notifempty
     shred
     nomail
+    create 600 snapwebsites snapwebsites
 }
 
 # Snap Communicator
@@ -42,6 +44,7 @@
     compress
     delaycompress
     notifempty
+    create 640 snapwebsites snapwebsites
 }
 /var/log/snapwebsites/secure/snapcommunicator.log {
     weekly
@@ -58,6 +61,7 @@
     notifempty
     shred
     nomail
+    create 600 snapwebsites snapwebsites
 }
 
 # Snap Init
@@ -73,6 +77,7 @@
     compress
     delaycompress
     notifempty
+    create 640 snapwebsites snapwebsites
 }
 /var/log/snapwebsites/secure/snapinit.log {
     weekly
@@ -89,6 +94,7 @@
     notifempty
     shred
     nomail
+    create 600 snapwebsites snapwebsites
 }
 
 # Logging Server
@@ -104,6 +110,7 @@
     compress
     delaycompress
     notifempty
+    create 640 snapwebsites snapwebsites
 }
 /var/log/snapwebsites/secure/secure.log {
     weekly
@@ -120,6 +127,7 @@
     notifempty
     shred
     nomail
+    create 600 snapwebsites snapwebsites
 }
 
 # Snap Firewall
@@ -135,6 +143,7 @@
     compress
     delaycompress
     notifempty
+    create 640 snapwebsites snapwebsites
 }
 /var/log/snapwebsites/secure/snapfirewall.log {
     weekly
@@ -151,6 +160,7 @@
     notifempty
     shred
     nomail
+    create 600 snapwebsites snapwebsites
 }
 
 # vim: ts=4 sw=4 et
