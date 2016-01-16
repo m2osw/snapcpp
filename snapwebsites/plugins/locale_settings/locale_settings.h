@@ -46,9 +46,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 //class locale_settings_exception : public snap_exception
 //{
 //public:
-//    locale_settings_exception(char const *        what_msg) : snap_exception("locale_settings", what_msg) {}
-//    locale_settings_exception(std::string const & what_msg) : snap_exception("locale_settings", what_msg) {}
-//    locale_settings_exception(QString const &     what_msg) : snap_exception("locale_settings", what_msg) {}
+//    explicit locale_settings_exception(char const *        what_msg) : snap_exception("locale_settings", what_msg) {}
+//    explicit locale_settings_exception(std::string const & what_msg) : snap_exception("locale_settings", what_msg) {}
+//    explicit locale_settings_exception(QString const &     what_msg) : snap_exception("locale_settings", what_msg) {}
 //};
 
 

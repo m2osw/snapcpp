@@ -35,17 +35,17 @@ namespace mimetype
 class mimetype_exception : public snap_exception
 {
 public:
-    mimetype_exception(char const *        what_msg) : snap_exception("mimetype", what_msg) {}
-    mimetype_exception(std::string const & what_msg) : snap_exception("mimetype", what_msg) {}
-    mimetype_exception(QString const &     what_msg) : snap_exception("mimetype", what_msg) {}
+    explicit mimetype_exception(char const *        what_msg) : snap_exception("mimetype", what_msg) {}
+    explicit mimetype_exception(std::string const & what_msg) : snap_exception("mimetype", what_msg) {}
+    explicit mimetype_exception(QString const &     what_msg) : snap_exception("mimetype", what_msg) {}
 };
 
 class mimetype_exception_invalid_content_xml : public mimetype_exception
 {
 public:
-    mimetype_exception_invalid_content_xml(char const *        what_msg) : mimetype_exception(what_msg) {}
-    mimetype_exception_invalid_content_xml(std::string const & what_msg) : mimetype_exception(what_msg) {}
-    mimetype_exception_invalid_content_xml(QString const &     what_msg) : mimetype_exception(what_msg) {}
+    explicit mimetype_exception_invalid_content_xml(char const *        what_msg) : mimetype_exception(what_msg) {}
+    explicit mimetype_exception_invalid_content_xml(std::string const & what_msg) : mimetype_exception(what_msg) {}
+    explicit mimetype_exception_invalid_content_xml(QString const &     what_msg) : mimetype_exception(what_msg) {}
 };
 
 

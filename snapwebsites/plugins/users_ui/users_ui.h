@@ -29,17 +29,17 @@ namespace users_ui
 class users_ui_exception : public snap_exception
 {
 public:
-    users_ui_exception(char const *        what_msg) : snap_exception("users_ui", what_msg) {}
-    users_ui_exception(std::string const & what_msg) : snap_exception("users_ui", what_msg) {}
-    users_ui_exception(QString const &     what_msg) : snap_exception("users_ui", what_msg) {}
+    explicit users_ui_exception(char const *        what_msg) : snap_exception("users_ui", what_msg) {}
+    explicit users_ui_exception(std::string const & what_msg) : snap_exception("users_ui", what_msg) {}
+    explicit users_ui_exception(QString const &     what_msg) : snap_exception("users_ui", what_msg) {}
 };
 
 class users_ui_exception_invalid_path : public users_ui_exception
 {
 public:
-    users_ui_exception_invalid_path(char const *        what_msg) : users_ui_exception(what_msg) {}
-    users_ui_exception_invalid_path(std::string const & what_msg) : users_ui_exception(what_msg) {}
-    users_ui_exception_invalid_path(QString const &     what_msg) : users_ui_exception(what_msg) {}
+    explicit users_ui_exception_invalid_path(char const *        what_msg) : users_ui_exception(what_msg) {}
+    explicit users_ui_exception_invalid_path(std::string const & what_msg) : users_ui_exception(what_msg) {}
+    explicit users_ui_exception_invalid_path(QString const &     what_msg) : users_ui_exception(what_msg) {}
 };
 
 

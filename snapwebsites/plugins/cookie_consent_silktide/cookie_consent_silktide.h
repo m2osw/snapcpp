@@ -54,9 +54,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 //class cookie_consent_silktide_exception : public snap_exception
 //{
 //public:
-//    cookie_consent_silktide_exception(char const *        what_msg) : snap_exception("locale_settings", what_msg) {}
-//    cookie_consent_silktide_exception(std::string const & what_msg) : snap_exception("locale_settings", what_msg) {}
-//    cookie_consent_silktide_exception(QString const &     what_msg) : snap_exception("locale_settings", what_msg) {}
+//    explicit cookie_consent_silktide_exception(char const *        what_msg) : snap_exception("locale_settings", what_msg) {}
+//    explicit cookie_consent_silktide_exception(std::string const & what_msg) : snap_exception("locale_settings", what_msg) {}
+//    explicit cookie_consent_silktide_exception(QString const &     what_msg) : snap_exception("locale_settings", what_msg) {}
 //};
 
 

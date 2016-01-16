@@ -59,8 +59,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:copy-of select="tooltip"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
-        <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+        <xsl:call-template name="snap:text-field-filters"/>
         <!-- now the actual value ... which for password is always empty on a load -->
       </div>
       <xsl:call-template name="snap:common-parts"/>

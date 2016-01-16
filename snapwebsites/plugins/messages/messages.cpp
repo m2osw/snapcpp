@@ -94,7 +94,7 @@ messages::message::message()
  * \param[in] title  The "title" of the message, it cannot be empty.
  * \param[in] body  The body of the message, it may be empty.
  */
-messages::message::message(message_type_t t, QString const& title, QString const& body)
+messages::message::message(message_type_t t, QString const & title, QString const & body)
     : f_type(t)
     , f_id(++g_message_id)
     , f_title(title)
@@ -111,7 +111,7 @@ messages::message::message(message_type_t t, QString const& title, QString const
  *
  * \param[in] rhs  The message to copy.
  */
-messages::message::message(message const& rhs)
+messages::message::message(message const & rhs)
     : f_type(rhs.f_type)
     , f_id(rhs.f_id)
     , f_title(rhs.f_title)
@@ -162,7 +162,7 @@ int messages::message::get_id() const
  *
  * \return Return the title of the message.
  */
-const QString& messages::message::get_title() const
+QString const & messages::message::get_title() const
 {
     return f_title;
 }
@@ -175,7 +175,7 @@ const QString& messages::message::get_title() const
  *
  * \return The body of the message.
  */
-const QString& messages::message::get_body() const
+QString const & messages::message::get_body() const
 {
     return f_body;
 }
@@ -191,7 +191,7 @@ const QString& messages::message::get_body() const
  *
  * \return The name of the widget associated with this message or "".
  */
-QString const& messages::message::get_widget_name() const
+QString const & messages::message::get_widget_name() const
 {
     return f_widget_name;
 }
@@ -206,7 +206,7 @@ QString const& messages::message::get_widget_name() const
  *
  * \param[in] widget_name  The name of the widget.
  */
-void messages::message::set_widget_name(QString const& widget_name)
+void messages::message::set_widget_name(QString const & widget_name)
 {
     f_widget_name = widget_name;
 }
@@ -222,7 +222,7 @@ void messages::message::set_widget_name(QString const& widget_name)
  *
  * \sa serialize()
  */
-void messages::message::unserialize(QtSerialization::QReader& r)
+void messages::message::unserialize(QtSerialization::QReader & r)
 {
     QtSerialization::QComposite comp;
     int32_t type(static_cast<int32_t>(static_cast<message_type_enum_t>(message_type_enum_t::MESSAGE_TYPE_ERROR)));
@@ -248,7 +248,7 @@ void messages::message::unserialize(QtSerialization::QReader& r)
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void messages::message::readTag(const QString& name, QtSerialization::QReader& r)
+void messages::message::readTag(QString const & name, QtSerialization::QReader & r)
 {
 }
 #pragma GCC diagnostic pop
@@ -263,7 +263,7 @@ void messages::message::readTag(const QString& name, QtSerialization::QReader& r
  *
  * \sa unserialize()
  */
-void messages::message::serialize(QtSerialization::QWriter& w) const
+void messages::message::serialize(QtSerialization::QWriter & w) const
 {
     QtSerialization::QWriter::QTag tag(w, "message");
     QtSerialization::writeTag(w, "type", static_cast<int32_t>(static_cast<message_type_enum_t>(f_type)));
@@ -465,7 +465,7 @@ messages::message& messages::set_http_error(snap_child::http_code_t err_code, QS
  * \sa set_info()
  * \sa set_debug()
  */
-messages::message& messages::set_error(QString err_name, const QString& err_description, const QString& err_details, bool err_security)
+messages::message & messages::set_error(QString err_name, QString const & err_description, QString const & err_details, bool err_security)
 {
     ++f_error_count;
 
@@ -503,7 +503,7 @@ messages::message& messages::set_error(QString err_name, const QString& err_desc
  * \sa set_info()
  * \sa set_debug()
  */
-messages::message& messages::set_warning(QString warning_name, const QString& warning_description, const QString& warning_details)
+messages::message & messages::set_warning(QString warning_name, QString const & warning_description, QString const & warning_details)
 {
     ++f_warning_count;
 
@@ -540,7 +540,7 @@ messages::message& messages::set_warning(QString warning_name, const QString& wa
  * \sa set_warning()
  * \sa set_debug()
  */
-messages::message& messages::set_info(QString info_name, const QString& info_description)
+messages::message & messages::set_info(QString info_name, QString const & info_description)
 {
     if(info_name.isEmpty())
     {
@@ -574,7 +574,7 @@ messages::message& messages::set_info(QString info_name, const QString& info_des
  * \sa set_warning()
  * \sa set_info()
  */
-messages::message& messages::set_debug(QString debug_name, const QString& debug_description)
+messages::message & messages::set_debug(QString debug_name, QString const & debug_description)
 {
     if(debug_name.isEmpty())
     {
@@ -660,7 +660,7 @@ void messages::clear_messages()
  *
  * \return The message is returned.
  */
-const messages::message& messages::get_message(int idx) const
+messages::message const & messages::get_message(int idx) const
 {
     if(idx < 0 || idx >= f_messages.size())
     {
@@ -683,7 +683,7 @@ const messages::message& messages::get_message(int idx) const
  *
  * \return The message is returned.
  */
-const messages::message& messages::get_last_message() const
+messages::message const & messages::get_last_message() const
 {
     if(f_messages.isEmpty())
     {
@@ -702,7 +702,7 @@ const messages::message& messages::get_last_message() const
  *
  * \sa serialize()
  */
-void messages::unserialize(QString const& data)
+void messages::unserialize(QString const & data)
 {
     // QBuffer takes a non-const QByteArray so we have to create a copy
     QByteArray non_const_data(data.toUtf8().data());
@@ -724,7 +724,7 @@ void messages::unserialize(QString const& data)
  * \param[in] name  The name of the tag being read.
  * \param[in] r  The reader used to read the input data.
  */
-void messages::readTag(QString const& name, QtSerialization::QReader& r)
+void messages::readTag(QString const & name, QtSerialization::QReader & r)
 {
     if(name == "messages")
     {

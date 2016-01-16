@@ -37,9 +37,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class favicon_exception : public snap_exception
 {
 public:
-    favicon_exception(char const *        what_msg) : snap_exception("Favorite Icon", what_msg) {}
-    favicon_exception(std::string const & what_msg) : snap_exception("Favorite Icon", what_msg) {}
-    favicon_exception(QString const &     what_msg) : snap_exception("Favorite Icon", what_msg) {}
+    explicit favicon_exception(char const *        what_msg) : snap_exception("Favorite Icon", what_msg) {}
+    explicit favicon_exception(std::string const & what_msg) : snap_exception("Favorite Icon", what_msg) {}
+    explicit favicon_exception(QString const &     what_msg) : snap_exception("Favorite Icon", what_msg) {}
 };
 
 

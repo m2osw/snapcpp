@@ -35,9 +35,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class flash_exception : public snap_exception
 {
 public:
-    flash_exception(char const *        what_msg) : snap_exception("Flash", what_msg) {}
-    flash_exception(std::string const & what_msg) : snap_exception("Flash", what_msg) {}
-    flash_exception(QString const &     what_msg) : snap_exception("Flash", what_msg) {}
+    explicit flash_exception(char const *        what_msg) : snap_exception("Flash", what_msg) {}
+    explicit flash_exception(std::string const & what_msg) : snap_exception("Flash", what_msg) {}
+    explicit flash_exception(QString const &     what_msg) : snap_exception("Flash", what_msg) {}
 };
 
 

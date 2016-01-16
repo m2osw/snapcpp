@@ -100,17 +100,17 @@ char const *get_name(name_t name) __attribute__ ((const));
 class epayment_paypal_exception : public snap_exception
 {
 public:
-    epayment_paypal_exception(char const *        what_msg) : snap_exception("epayment_paypal", what_msg) {}
-    epayment_paypal_exception(std::string const & what_msg) : snap_exception("epayment_paypal", what_msg) {}
-    epayment_paypal_exception(QString const &     what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    explicit epayment_paypal_exception(char const *        what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    explicit epayment_paypal_exception(std::string const & what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    explicit epayment_paypal_exception(QString const &     what_msg) : snap_exception("epayment_paypal", what_msg) {}
 };
 
 class epayment_paypal_exception_io_error : public snap_exception
 {
 public:
-    epayment_paypal_exception_io_error(char const *        what_msg) : snap_exception("epayment_paypal", what_msg) {}
-    epayment_paypal_exception_io_error(std::string const & what_msg) : snap_exception("epayment_paypal", what_msg) {}
-    epayment_paypal_exception_io_error(QString const &     what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    explicit epayment_paypal_exception_io_error(char const *        what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    explicit epayment_paypal_exception_io_error(std::string const & what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    explicit epayment_paypal_exception_io_error(QString const &     what_msg) : snap_exception("epayment_paypal", what_msg) {}
 };
 
 

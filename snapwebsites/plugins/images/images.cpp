@@ -359,6 +359,18 @@ QString images::settings_path() const
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString images::icon() const
+{
+    return "/images/images/images-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -404,7 +416,7 @@ int64_t images::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 10, 2, 16, 17, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 10, 15, 16, 58, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

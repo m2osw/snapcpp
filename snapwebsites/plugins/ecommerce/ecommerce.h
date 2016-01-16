@@ -50,9 +50,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 //class ecommerce_exception : public snap_exception
 //{
 //public:
-//    ecommerce_exception(char const *        what_msg) : snap_exception("ecommerce", what_msg) {}
-//    ecommerce_exception(std::string const & what_msg) : snap_exception("ecommerce", what_msg) {}
-//    ecommerce_exception(QString cons t&     what_msg) : snap_exception("ecommerce", what_msg) {}
+//    explicit ecommerce_exception(char const *        what_msg) : snap_exception("ecommerce", what_msg) {}
+//    explicit ecommerce_exception(std::string const & what_msg) : snap_exception("ecommerce", what_msg) {}
+//    explicit ecommerce_exception(QString cons t&     what_msg) : snap_exception("ecommerce", what_msg) {}
 //};
 
 

@@ -29,49 +29,49 @@ namespace editor
 class editor_exception : public snap_exception
 {
 public:
-    editor_exception(char const *        what_msg) : snap_exception("editor", what_msg) {}
-    editor_exception(std::string const & what_msg) : snap_exception("editor", what_msg) {}
-    editor_exception(QString const &     what_msg) : snap_exception("editor", what_msg) {}
+    explicit editor_exception(char const *        what_msg) : snap_exception("editor", what_msg) {}
+    explicit editor_exception(std::string const & what_msg) : snap_exception("editor", what_msg) {}
+    explicit editor_exception(QString const &     what_msg) : snap_exception("editor", what_msg) {}
 };
 
 class editor_exception_invalid_argument : public editor_exception
 {
 public:
-    editor_exception_invalid_argument(char const *        what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_argument(std::string const & what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_argument(QString const &     what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_argument(char const *        what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_argument(std::string const & what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_argument(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 class editor_exception_invalid_path : public editor_exception
 {
 public:
-    editor_exception_invalid_path(char const *        what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_path(std::string const & what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_path(QString const &     what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_path(char const *        what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_path(std::string const & what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_path(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 class editor_exception_invalid_editor_form_xml : public editor_exception
 {
 public:
-    editor_exception_invalid_editor_form_xml(char const *        what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_editor_form_xml(std::string const & what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_editor_form_xml(QString const &     what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_editor_form_xml(char const *        what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_editor_form_xml(std::string const & what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_editor_form_xml(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 class editor_exception_too_many_tags : public editor_exception
 {
 public:
-    editor_exception_too_many_tags(char const *        what_msg) : editor_exception(what_msg) {}
-    editor_exception_too_many_tags(std::string const & what_msg) : editor_exception(what_msg) {}
-    editor_exception_too_many_tags(QString const &     what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_too_many_tags(char const *        what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_too_many_tags(std::string const & what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_too_many_tags(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 class editor_exception_invalid_xslt_data : public editor_exception
 {
 public:
-    editor_exception_invalid_xslt_data(char const *        what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_xslt_data(std::string const & what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_xslt_data(QString const &     what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_xslt_data(char const *        what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_xslt_data(std::string const & what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_invalid_xslt_data(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 

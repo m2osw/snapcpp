@@ -56,6 +56,7 @@ add_library(header SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    header-logo-64x64.png
 )
 
 target_link_libraries( header ${QT_LIBRARIES} )

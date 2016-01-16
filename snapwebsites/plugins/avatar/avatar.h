@@ -43,9 +43,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class avatar_exception : public snap_exception
 {
 public:
-    avatar_exception(char const *        what_msg) : snap_exception("Avatar", what_msg) {}
-    avatar_exception(std::string const & what_msg) : snap_exception("Avatar", what_msg) {}
-    avatar_exception(QString const &     what_msg) : snap_exception("Avatar", what_msg) {}
+    explicit avatar_exception(char const *        what_msg) : snap_exception("Avatar", what_msg) {}
+    explicit avatar_exception(std::string const & what_msg) : snap_exception("Avatar", what_msg) {}
+    explicit avatar_exception(QString const &     what_msg) : snap_exception("Avatar", what_msg) {}
 };
 
 

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.81
+ * Version: 0.1.5.88
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -807,6 +807,8 @@ snapwebsites.Output.prototype.qsParam = function(name)
  */
 snapwebsites.Output.prototype.handleMessages_ = function()
 {
+    var that = this;
+
     // put a little delay() so we see the fadeIn(), eventually
     jQuery("div.user-messages")
         .each(function()
@@ -820,9 +822,23 @@ snapwebsites.Output.prototype.handleMessages_ = function()
             {
                 if(!(jQuery(e.target).is("a")))
                 {
-                    jQuery(this).fadeOut(300);
+                    that.hideMessages();
                 }
             });
+};
+
+
+/** \brief Hide the message box if it is open.
+ *
+ * This function makes sure that the message box is closed.
+ *
+ * In most cases it is called whenever the system sent a
+ * successful AJAX to the server and no messages were
+ * displayed from it.
+ */
+snapwebsites.Output.prototype.hideMessages = function()
+{
+    jQuery("div.user-messages").fadeOut(300);
 };
 
 
@@ -864,7 +880,7 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
         return;
     }
 
-    if(msg.length == 0)
+    if(!msg.exists())
     {
         // that <div class="user-messages"> does not exist yet so create it
         jQuery("body").append("<div class='user-messages zordered'><div class='close-button'><img src='/images/snap/close-button.png' width='21' height='21'/></div></div>");
@@ -907,20 +923,54 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
 
     jQuery(xml).children("message").each(function()
         {
+            // TODO: handle the id="<widget-name>" information by
+            //       setting the class="errorneous" on that widget
+            //
             // TODO: add debug to test that 'id' and 'type' are valid
             //       for how they get used (i.e. XML TOKEN).
             var m = jQuery(this),
                 title = snapwebsites.xmlToString(m.children("title")),
                 body = snapwebsites.xmlToString(m.children("body")),
+                widget_id = m.attr("id"),
                 id = m.attr("msg-id"),  // WARNING: the "id" attribute represents the name of a widget in the editor
                 type = m.attr("type"),
-                txt = "<div id='" + id
-                      + "' class='message message-" + type
-                      + (body ? "" : " message-" + type + "-title-only")
-                      + "'><h3>"
-                      + title + "</h3>"
-                      + (body ? "<p>" + body + "</p>" : "")
-                      + "</div>";
+                label,
+                txt,
+                re;
+
+            if(widget_id)
+            {
+                // mark widget as erroneous when we have a widget identifier
+                // (when no error occurs, no widget identifiers are returned)
+                jQuery("div[field_name='" + widget_id + "']").addClass("erroneous");
+
+                // TODO: move that part on the server side?
+                //
+                //       replace widget_id in the title and body with the
+                //       widget label
+                //
+                label = jQuery("label[for='" + widget_id + "']").clone();
+                if(label.exists())
+                {
+                    label.clone();
+                    jQuery("span.required", label).remove();
+                    label = "<strong>" + snapwebsites.trim(snapwebsites.castToString(label.html(), "html was expected to return a string for the widget label")) + "</strong>";
+
+                    // Note: The \b does not match many things such as the
+                    //       double quotes we use in our messages...
+                    //re = new RegExp("\b" + widget_id + "\b", "g");
+                    re = new RegExp(widget_id, "g");
+                    title = title.replace(re, label);
+                    body = body.replace(re, label);
+                }
+            }
+            txt = "<div id='" + id
+                  + "' class='message message-" + type
+                  + (body ? "" : " message-" + type + "-title-only")
+                  + "'><h3>"
+                  + title + "</h3>"
+                  + (body ? "<p>" + body + "</p>" : "")
+                  + "</div>";
 
             if(type == "error")
             {
@@ -933,6 +983,11 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
 
             msg.append(txt);
         });
+
+    if(warnings == 0 && errors == 0)
+    {
+        jQuery("div[field_name!='']").removeClass("erroneous");
+    }
 
     msg.toggleClass("warning-messages", warnings > 0);
     msg.toggleClass("error-messages", errors > 0);
@@ -976,19 +1031,31 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
  * corresponding colors in the default version of the message box.
  *
  * @param {!string} title  The title for this error message.
- * @param {string} message  The error message (optional, you may use null).
- * @param {string} type  Whether this is an 'info', 'warning' or 'error' message
+ * @param {!string} message  The error message (optional, you may use null).
+ * @param {string} opt_type  Whether this is an 'info', 'warning' or 'error' message
  *                  (optional, defaults to 'error')
+ * @param {boolean} opt_message_is_html  Whether the message includes safe HTML
+ *        that we want to be displayed (by default we call htmlEscape() on
+ *        the message).
  */
-snapwebsites.Output.prototype.displayOneMessage = function(title, message, type)
+snapwebsites.Output.prototype.displayOneMessage = function(title, message, opt_type, opt_message_is_html)
 {
     // TODO: get a valid identifier from caller?
     var xml = "<?xml version='1.0'?><messages><message msg-id='no-id' type='"
-                + (type ? snapwebsites.htmlEscape(type) : "error")
+                + (opt_type ? snapwebsites.htmlEscape(opt_type) : "error")
                 + "'><title><span class='message-title'>" + snapwebsites.htmlEscape(title) + "</span></title>";
     if(message)
     {
-        xml += "<body><span class='message-body'>" + snapwebsites.htmlEscape(message) + "</span></body>";
+        xml += "<body><span class='message-body'>";
+        if(opt_message_is_html)
+        {
+            xml += message;
+        }
+        else
+        {
+            xml += snapwebsites.htmlEscape(message);
+        }
+        xml += "</span></body>";
     }
     xml += "</message></messages>";
 

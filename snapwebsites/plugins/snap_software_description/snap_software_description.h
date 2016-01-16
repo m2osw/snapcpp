@@ -47,9 +47,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class snap_software_description_exception : public snap_exception
 {
 public:
-    snap_software_description_exception(char const *        what_msg) : snap_exception("snap_software_description", what_msg) {}
-    snap_software_description_exception(std::string const & what_msg) : snap_exception("snap_software_description", what_msg) {}
-    snap_software_description_exception(QString const &     what_msg) : snap_exception("snap_software_description", what_msg) {}
+    explicit snap_software_description_exception(char const *        what_msg) : snap_exception("snap_software_description", what_msg) {}
+    explicit snap_software_description_exception(std::string const & what_msg) : snap_exception("snap_software_description", what_msg) {}
+    explicit snap_software_description_exception(QString const &     what_msg) : snap_exception("snap_software_description", what_msg) {}
 };
 
 

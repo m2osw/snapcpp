@@ -30,32 +30,32 @@ enum class name_t
     SNAP_NAME_MESSAGES_MESSAGES,
     SNAP_NAME_MESSAGES_WARNING_HEADER
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 
 class messages_exception : public snap_exception
 {
 public:
-    messages_exception(char const *        what_msg) : snap_exception("messages", what_msg) {}
-    messages_exception(std::string const & what_msg) : snap_exception("messages", what_msg) {}
-    messages_exception(QString const &     what_msg) : snap_exception("messages", what_msg) {}
+    explicit messages_exception(char const *        what_msg) : snap_exception("messages", what_msg) {}
+    explicit messages_exception(std::string const & what_msg) : snap_exception("messages", what_msg) {}
+    explicit messages_exception(QString const &     what_msg) : snap_exception("messages", what_msg) {}
 };
 
 class messages_exception_invalid_field_name : public messages_exception
 {
 public:
-    messages_exception_invalid_field_name(char const *        what_msg) : messages_exception(what_msg) {}
-    messages_exception_invalid_field_name(std::string const & what_msg) : messages_exception(what_msg) {}
-    messages_exception_invalid_field_name(QString const &     what_msg) : messages_exception(what_msg) {}
+    explicit messages_exception_invalid_field_name(char const *        what_msg) : messages_exception(what_msg) {}
+    explicit messages_exception_invalid_field_name(std::string const & what_msg) : messages_exception(what_msg) {}
+    explicit messages_exception_invalid_field_name(QString const &     what_msg) : messages_exception(what_msg) {}
 };
 
 class messages_exception_already_defined : public messages_exception
 {
 public:
-    messages_exception_already_defined(char const *        what_msg) : messages_exception(what_msg) {}
-    messages_exception_already_defined(std::string const & what_msg) : messages_exception(what_msg) {}
-    messages_exception_already_defined(QString const &     what_msg) : messages_exception(what_msg) {}
+    explicit messages_exception_already_defined(char const *        what_msg) : messages_exception(what_msg) {}
+    explicit messages_exception_already_defined(std::string const & what_msg) : messages_exception(what_msg) {}
+    explicit messages_exception_already_defined(QString const &     what_msg) : messages_exception(what_msg) {}
 };
 
 

@@ -44,9 +44,9 @@ namespace locale
 //class locale_exception : public snap_exception
 //{
 //public:
-//    explicit locale_exception(char const *        what_msg) : snap_exception("locale", what_msg) {}
-//    explicit locale_exception(std::string const & what_msg) : snap_exception("locale", what_msg) {}
-//    explicit locale_exception(QString const &     what_msg) : snap_exception("locale", what_msg) {}
+//    explicit explicit locale_exception(char const *        what_msg) : snap_exception("locale", what_msg) {}
+//    explicit explicit locale_exception(std::string const & what_msg) : snap_exception("locale", what_msg) {}
+//    explicit explicit locale_exception(QString const &     what_msg) : snap_exception("locale", what_msg) {}
 //};
 
 

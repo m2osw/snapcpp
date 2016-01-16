@@ -35,25 +35,25 @@ char const * get_name(name_t name) __attribute__ ((const));
 class attachment_exception : public snap_exception
 {
 public:
-    attachment_exception(char const *        what_msg) : snap_exception("attachment", what_msg) {}
-    attachment_exception(std::string const & what_msg) : snap_exception("attachment", what_msg) {}
-    attachment_exception(QString const &     what_msg) : snap_exception("attachment", what_msg) {}
+    explicit attachment_exception(char const *        what_msg) : snap_exception("attachment", what_msg) {}
+    explicit attachment_exception(std::string const & what_msg) : snap_exception("attachment", what_msg) {}
+    explicit attachment_exception(QString const &     what_msg) : snap_exception("attachment", what_msg) {}
 };
 
 class attachment_exception_invalid_content_xml : public attachment_exception
 {
 public:
-    attachment_exception_invalid_content_xml(char const *        what_msg) : attachment_exception(what_msg) {}
-    attachment_exception_invalid_content_xml(std::string const & what_msg) : attachment_exception(what_msg) {}
-    attachment_exception_invalid_content_xml(QString const &     what_msg) : attachment_exception(what_msg) {}
+    explicit attachment_exception_invalid_content_xml(char const *        what_msg) : attachment_exception(what_msg) {}
+    explicit attachment_exception_invalid_content_xml(std::string const & what_msg) : attachment_exception(what_msg) {}
+    explicit attachment_exception_invalid_content_xml(QString const &     what_msg) : attachment_exception(what_msg) {}
 };
 
 class attachment_exception_invalid_filename : public attachment_exception
 {
 public:
-    attachment_exception_invalid_filename(char const *        what_msg) : attachment_exception(what_msg) {}
-    attachment_exception_invalid_filename(std::string const & what_msg) : attachment_exception(what_msg) {}
-    attachment_exception_invalid_filename(QString const &     what_msg) : attachment_exception(what_msg) {}
+    explicit attachment_exception_invalid_filename(char const *        what_msg) : attachment_exception(what_msg) {}
+    explicit attachment_exception_invalid_filename(std::string const & what_msg) : attachment_exception(what_msg) {}
+    explicit attachment_exception_invalid_filename(QString const &     what_msg) : attachment_exception(what_msg) {}
 };
 
 

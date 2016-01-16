@@ -36,9 +36,9 @@ const char *get_name(name_t name) __attribute__ ((const));
 class header_exception : public snap_exception
 {
 public:
-    header_exception(char const *        what_msg) : snap_exception("Header", what_msg) {}
-    header_exception(std::string const & what_msg) : snap_exception("Header", what_msg) {}
-    header_exception(QString const &     what_msg) : snap_exception("Header", what_msg) {}
+    explicit header_exception(char const *        what_msg) : snap_exception("Header", what_msg) {}
+    explicit header_exception(std::string const & what_msg) : snap_exception("Header", what_msg) {}
+    explicit header_exception(QString const &     what_msg) : snap_exception("Header", what_msg) {}
 };
 
 
@@ -55,9 +55,10 @@ public:
 
     // plugins::plugin implementation
     static header *     instance();
-    virtual QString     dependencies() const;
     virtual QString     settings_path() const;
+    virtual QString     icon() const;
     virtual QString     description() const;
+    virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
     virtual void        bootstrap(snap_child * snap);
 

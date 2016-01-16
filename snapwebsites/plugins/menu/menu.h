@@ -34,41 +34,41 @@ char const * get_name(name_t name) __attribute__ ((const));
 class menu_exception : public snap_exception
 {
 public:
-    menu_exception(char const *        what_msg) : snap_exception("menu", what_msg) {}
-    menu_exception(std::string const & what_msg) : snap_exception("menu", what_msg) {}
-    menu_exception(QString const &     what_msg) : snap_exception("menu", what_msg) {}
+    explicit menu_exception(char const *        what_msg) : snap_exception("menu", what_msg) {}
+    explicit menu_exception(std::string const & what_msg) : snap_exception("menu", what_msg) {}
+    explicit menu_exception(QString const &     what_msg) : snap_exception("menu", what_msg) {}
 };
 
 class menu_exception_missing_links_table : public menu_exception
 {
 public:
-    menu_exception_missing_links_table(char const *        what_msg) : menu_exception(what_msg) {}
-    menu_exception_missing_links_table(std::string const & what_msg) : menu_exception(what_msg) {}
-    menu_exception_missing_links_table(QString const &     what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_missing_links_table(char const *        what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_missing_links_table(std::string const & what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_missing_links_table(QString const &     what_msg) : menu_exception(what_msg) {}
 };
 
 class menu_exception_missing_data_table : public menu_exception
 {
 public:
-    menu_exception_missing_data_table(char const *        what_msg) : menu_exception(what_msg) {}
-    menu_exception_missing_data_table(std::string const & what_msg) : menu_exception(what_msg) {}
-    menu_exception_missing_data_table(QString const &     what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_missing_data_table(char const *        what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_missing_data_table(std::string const & what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_missing_data_table(QString const &     what_msg) : menu_exception(what_msg) {}
 };
 
 class menu_exception_invalid_name : public menu_exception
 {
 public:
-    menu_exception_invalid_name(char const *        what_msg) : menu_exception(what_msg) {}
-    menu_exception_invalid_name(std::string const & what_msg) : menu_exception(what_msg) {}
-    menu_exception_invalid_name(QString const &     what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_invalid_name(char const *        what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_invalid_name(std::string const & what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_invalid_name(QString const &     what_msg) : menu_exception(what_msg) {}
 };
 
 class menu_exception_invalid_db_data : public menu_exception
 {
 public:
-    menu_exception_invalid_db_data(char const *        what_msg) : menu_exception(what_msg) {}
-    menu_exception_invalid_db_data(std::string const & what_msg) : menu_exception(what_msg) {}
-    menu_exception_invalid_db_data(QString const &     what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_invalid_db_data(char const *        what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_invalid_db_data(std::string const & what_msg) : menu_exception(what_msg) {}
+    explicit menu_exception_invalid_db_data(QString const &     what_msg) : menu_exception(what_msg) {}
 };
 
 

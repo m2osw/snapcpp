@@ -36,9 +36,9 @@ char const *get_name(name_t name) __attribute__ ((const));
 class hashtag_exception : public snap_exception
 {
 public:
-    hashtag_exception(char const *        what_msg) : snap_exception("Hashtag", what_msg) {}
-    hashtag_exception(std::string const & what_msg) : snap_exception("Hashtag", what_msg) {}
-    hashtag_exception(QString const &     what_msg) : snap_exception("Hashtag", what_msg) {}
+    explicit hashtag_exception(char const *        what_msg) : snap_exception("Hashtag", what_msg) {}
+    explicit hashtag_exception(std::string const & what_msg) : snap_exception("Hashtag", what_msg) {}
+    explicit hashtag_exception(QString const &     what_msg) : snap_exception("Hashtag", what_msg) {}
 };
 
 

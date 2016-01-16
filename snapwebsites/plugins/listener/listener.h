@@ -27,17 +27,17 @@ namespace listener
 class listener_exception : public snap_exception
 {
 public:
-    listener_exception(char const *        what_msg) : snap_exception("server-access", what_msg) {}
-    listener_exception(std::string const & what_msg) : snap_exception("server-access", what_msg) {}
-    listener_exception(QString const &     what_msg) : snap_exception("server-access", what_msg) {}
+    explicit listener_exception(char const *        what_msg) : snap_exception("server-access", what_msg) {}
+    explicit listener_exception(std::string const & what_msg) : snap_exception("server-access", what_msg) {}
+    explicit listener_exception(QString const &     what_msg) : snap_exception("server-access", what_msg) {}
 };
 
 class listener_exception_status_missing : public listener_exception
 {
 public:
-    listener_exception_status_missing(char const *        what_msg) : listener_exception(what_msg) {}
-    listener_exception_status_missing(std::string const & what_msg) : listener_exception(what_msg) {}
-    listener_exception_status_missing(QString const &     what_msg) : listener_exception(what_msg) {}
+    explicit listener_exception_status_missing(char const *        what_msg) : listener_exception(what_msg) {}
+    explicit listener_exception_status_missing(std::string const & what_msg) : listener_exception(what_msg) {}
+    explicit listener_exception_status_missing(QString const &     what_msg) : listener_exception(what_msg) {}
 };
 
 

@@ -36,9 +36,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class antivirus_exception : public snap_exception
 {
 public:
-    antivirus_exception(char const *        what_msg) : snap_exception("Anti-Virus", what_msg) {}
-    antivirus_exception(std::string const & what_msg) : snap_exception("Anti-Virus", what_msg) {}
-    antivirus_exception(QString const &     what_msg) : snap_exception("Anti-Virus", what_msg) {}
+    explicit antivirus_exception(char const *        what_msg) : snap_exception("Anti-Virus", what_msg) {}
+    explicit antivirus_exception(std::string const & what_msg) : snap_exception("Anti-Virus", what_msg) {}
+    explicit antivirus_exception(QString const &     what_msg) : snap_exception("Anti-Virus", what_msg) {}
 };
 
 

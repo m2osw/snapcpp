@@ -35,6 +35,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </xsl:if>
   </xsl:template>
 
+  <!-- TEXT FIELDS FILTERS -->
+  <xsl:template name="snap:text-field-filters">
+    <xsl:if test="sizes/absolute-min"><xsl:attribute name="data-absoluteminlength"><xsl:value-of select="sizes/absolute-min"/></xsl:attribute></xsl:if>
+    <xsl:if test="sizes/min"><xsl:attribute name="data-minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
+    <xsl:if test="sizes/absolute-max"><xsl:attribute name="data-absolutemaxlength"><xsl:value-of select="sizes/absolute-max"/></xsl:attribute></xsl:if>
+    <xsl:if test="sizes/max"><xsl:attribute name="data-maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+  </xsl:template>
+
   <!-- DROPPED FILE WITH PREVIEW WIDGET -->
   <!-- NOTE: we use a sub-template to allow for composite widgets -->
   <xsl:template name="snap:dropped-file-with-preview">
@@ -198,7 +206,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
         test="state = 'disabled'"> disabled</xsl:if><xsl:if
         test="not(@mode) or @mode = 'select-only'"> read-only</xsl:if></xsl:attribute>
-      <div class="snap-editor-dropdown-reset-value"><xsl:copy-of select="default/node()"/></div>
+      <div class="snap-editor-dropdown-reset-value">
+        <xsl:if test="default[@not-a-value]"><xsl:attribute name="data-not-a-value">not-a-value</xsl:attribute></xsl:if>
+        <xsl:copy-of select="default/node()"/>
+      </div>
       <xsl:if test="background-value">
         <!-- by default "snap-editor-background" has "display: none"
              a script shows them on load once ready AND if the value is
@@ -226,6 +237,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <!-- avoid spellcheck of non-editable widgets -->
           <xsl:attribute name="spellcheck">false</xsl:attribute>
         </xsl:if>
+        <xsl:call-template name="snap:text-field-filters"/>
 
         <!-- WARNING: the order of this xsl:choose is VERY important -->
         <xsl:choose>
@@ -565,8 +577,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="sizes/min"><xsl:attribute name="data-minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
-        <xsl:if test="sizes/max"><xsl:attribute name="data-maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+        <xsl:call-template name="snap:text-field-filters"/>
         <!-- now the actual value of this text widget -->
         <xsl:choose>
           <xsl:when test="post">
@@ -636,8 +647,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:copy-of select="tooltip"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="sizes/min"><xsl:attribute name="data-minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
-        <xsl:if test="sizes/max"><xsl:attribute name="data-maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+        <xsl:call-template name="snap:text-field-filters"/>
+
         <!-- now the actual value of this line -->
         <xsl:choose>
           <xsl:when test="post">
@@ -708,8 +719,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:copy-of select="tooltip"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="sizes/min"><xsl:attribute name="data-minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
-        <xsl:if test="sizes/max"><xsl:attribute name="data-maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+        <xsl:call-template name="snap:text-field-filters"/>
+
         <!-- now the actual value of this line -->
         <xsl:choose>
           <xsl:when test="post">

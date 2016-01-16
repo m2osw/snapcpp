@@ -34,17 +34,17 @@ char const * get_name(name_t name) __attribute__ ((const));
 class versions_exception : public snap_exception
 {
 public:
-    versions_exception(char const *        what_msg) : snap_exception("versions", what_msg) {}
-    versions_exception(std::string const & what_msg) : snap_exception("versions", what_msg) {}
-    versions_exception(QString const &     what_msg) : snap_exception("versions", what_msg) {}
+    explicit versions_exception(char const *        what_msg) : snap_exception("versions", what_msg) {}
+    explicit versions_exception(std::string const & what_msg) : snap_exception("versions", what_msg) {}
+    explicit versions_exception(QString const &     what_msg) : snap_exception("versions", what_msg) {}
 };
 
 class versions_exception_invalid_content_xml : public versions_exception
 {
 public:
-    versions_exception_invalid_content_xml(char const *        what_msg) : versions_exception(what_msg) {}
-    versions_exception_invalid_content_xml(std::string const & what_msg) : versions_exception(what_msg) {}
-    versions_exception_invalid_content_xml(QString const &     what_msg) : versions_exception(what_msg) {}
+    explicit versions_exception_invalid_content_xml(char const *        what_msg) : versions_exception(what_msg) {}
+    explicit versions_exception_invalid_content_xml(std::string const & what_msg) : versions_exception(what_msg) {}
+    explicit versions_exception_invalid_content_xml(QString const &     what_msg) : versions_exception(what_msg) {}
 };
 
 

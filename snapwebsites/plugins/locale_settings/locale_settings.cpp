@@ -19,6 +19,7 @@
 
 #include "../locale/snap_locale.h"
 
+#include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
 
@@ -173,7 +174,7 @@ QString locale_settings::help_uri() const
  */
 QString locale_settings::dependencies() const
 {
-    return "|editor|locale|";
+    return "|editor|locale_widgets|";
 }
 
 
@@ -243,7 +244,7 @@ void locale_settings::bootstrap(snap_child * snap)
  */
 void locale_settings::on_set_locale()
 {
-    locale::locale *locale_plugin(locale::locale::instance());
+    locale::locale * locale_plugin(locale::locale::instance());
     QString const current_locale(locale_plugin->get_current_locale());
 
     if(current_locale.isEmpty())
@@ -254,7 +255,9 @@ void locale_settings::on_set_locale()
         content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
         QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
-        locale_plugin->set_current_locale(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_LOCALE))->value().stringValue());
+        QString const locale_name(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_LOCALE))->value().stringValue());
+        locale_plugin->set_current_locale(locale_name);
+SNAP_LOG_TRACE("*** Set locale_settings/LOCALE [")(locale_name)("]\n");
     }
 }
 
@@ -270,7 +273,7 @@ void locale_settings::on_set_locale()
  */
 void locale_settings::on_set_timezone()
 {
-    locale::locale *locale_plugin(locale::locale::instance());
+    locale::locale * locale_plugin(locale::locale::instance());
     QString const current_timezone(locale_plugin->get_current_timezone());
 
     if(current_timezone.isEmpty())
@@ -278,15 +281,12 @@ void locale_settings::on_set_timezone()
         // check for a locale
         content::path_info_t settings_ipath;
         settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
         QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
         QString const timezone_name(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_TIMEZONE))->value().stringValue());
-        if(!timezone_name.isEmpty())
-        {
-            locale_plugin->set_current_timezone(timezone_name);
-std::cerr << "*** Set locale_settings/LOCALE timezone [" << timezone_name << "]\n";
-        }
+        locale_plugin->set_current_timezone(timezone_name);
+SNAP_LOG_TRACE("*** Set locale_settings/TIMEZONE [")(timezone_name)("]\n");
     }
 }
 

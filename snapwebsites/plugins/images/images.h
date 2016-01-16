@@ -45,9 +45,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class images_exception : public snap_exception
 {
 public:
-    images_exception(char const *        what_msg) : snap_exception("images", what_msg) {}
-    images_exception(std::string const & what_msg) : snap_exception("images", what_msg) {}
-    images_exception(QString const &     what_msg) : snap_exception("images", what_msg) {}
+    explicit images_exception(char const *        what_msg) : snap_exception("images", what_msg) {}
+    explicit images_exception(std::string const & what_msg) : snap_exception("images", what_msg) {}
+    explicit images_exception(QString const &     what_msg) : snap_exception("images", what_msg) {}
 };
 
 class images_exception_no_backend : public images_exception
@@ -85,6 +85,7 @@ public:
     // plugins implementation
     static images *     instance();
     virtual QString     settings_path() const;
+    virtual QString     icon() const;
     virtual QString     description() const;
     virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);

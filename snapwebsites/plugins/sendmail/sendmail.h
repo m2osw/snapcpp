@@ -103,33 +103,33 @@ const char * get_name(name_t name) __attribute__ ((const));
 class sendmail_exception : public snap_exception
 {
 public:
-    sendmail_exception(char const *        what_msg) : snap_exception("sendmail", what_msg) {}
-    sendmail_exception(std::string const & what_msg) : snap_exception("sendmail", what_msg) {}
-    sendmail_exception(QString const &     what_msg) : snap_exception("sendmail", what_msg) {}
+    explicit sendmail_exception(char const *        what_msg) : snap_exception("sendmail", what_msg) {}
+    explicit sendmail_exception(std::string const & what_msg) : snap_exception("sendmail", what_msg) {}
+    explicit sendmail_exception(QString const &     what_msg) : snap_exception("sendmail", what_msg) {}
 };
 
 class sendmail_exception_no_backend : public sendmail_exception
 {
 public:
-    sendmail_exception_no_backend(char const *        what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_no_backend(std::string const & what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_no_backend(QString const &     what_msg) : sendmail_exception(what_msg) {}
+    explicit sendmail_exception_no_backend(char const *        what_msg) : sendmail_exception(what_msg) {}
+    explicit sendmail_exception_no_backend(std::string const & what_msg) : sendmail_exception(what_msg) {}
+    explicit sendmail_exception_no_backend(QString const &     what_msg) : sendmail_exception(what_msg) {}
 };
 
 class sendmail_exception_invalid_argument : public sendmail_exception
 {
 public:
-    sendmail_exception_invalid_argument(char const *        what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_invalid_argument(std::string const & what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_invalid_argument(QString const &     what_msg) : sendmail_exception(what_msg) {}
+    explicit sendmail_exception_invalid_argument(char const *        what_msg) : sendmail_exception(what_msg) {}
+    explicit sendmail_exception_invalid_argument(std::string const & what_msg) : sendmail_exception(what_msg) {}
+    explicit sendmail_exception_invalid_argument(QString const &     what_msg) : sendmail_exception(what_msg) {}
 };
 
 class sendmail_exception_too_many_levels : public sendmail_exception
 {
 public:
-    sendmail_exception_too_many_levels(char const *        what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_too_many_levels(std::string const & what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_too_many_levels(QString const &     what_msg) : sendmail_exception(what_msg) {}
+    explicit sendmail_exception_too_many_levels(char const *        what_msg) : sendmail_exception(what_msg) {}
+    explicit sendmail_exception_too_many_levels(std::string const & what_msg) : sendmail_exception(what_msg) {}
+    explicit sendmail_exception_too_many_levels(QString const &     what_msg) : sendmail_exception(what_msg) {}
 };
 
 

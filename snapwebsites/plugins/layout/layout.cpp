@@ -1399,7 +1399,7 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     // installing a layout can be complex so knowing which one breaks an
     // update can be really useful
     //
-    SNAP_LOG_TRACE("layout::install_layout(): layout name \"")(layout_name)("\" last updated on ")(last_updated);
+    //SNAP_LOG_TRACE("layout::install_layout(): layout name \"")(layout_name)("\" last updated on ")(last_updated);
 
     QtCassandra::QCassandraValue last_updated_value;
     if(layout_name == "default")

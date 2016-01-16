@@ -39,17 +39,17 @@ namespace output
 class output_exception : public snap_exception
 {
 public:
-    output_exception(char const *        what_msg) : snap_exception("output", what_msg) {}
-    output_exception(std::string const & what_msg) : snap_exception("output", what_msg) {}
-    output_exception(QString const &     what_msg) : snap_exception("output", what_msg) {}
+    explicit output_exception(char const *        what_msg) : snap_exception("output", what_msg) {}
+    explicit output_exception(std::string const & what_msg) : snap_exception("output", what_msg) {}
+    explicit output_exception(QString const &     what_msg) : snap_exception("output", what_msg) {}
 };
 
 class output_exception_invalid_content_xml : public output_exception
 {
 public:
-    output_exception_invalid_content_xml(char const *        what_msg) : output_exception(what_msg) {}
-    output_exception_invalid_content_xml(std::string const & what_msg) : output_exception(what_msg) {}
-    output_exception_invalid_content_xml(QString const &     what_msg) : output_exception(what_msg) {}
+    explicit output_exception_invalid_content_xml(char const *        what_msg) : output_exception(what_msg) {}
+    explicit output_exception_invalid_content_xml(std::string const & what_msg) : output_exception(what_msg) {}
+    explicit output_exception_invalid_content_xml(QString const &     what_msg) : output_exception(what_msg) {}
 };
 
 

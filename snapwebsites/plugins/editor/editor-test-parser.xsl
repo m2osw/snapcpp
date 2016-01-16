@@ -96,7 +96,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 						<!-- dropdown widget -->
 						<div class="editor-block">
-							<label for="dropdown_widget" class="editor-title">Dropdown Widget</label>
+							<label for="dropdown_widget" class="editor-title">Dropdown Widget <span class="required">*</span></label>
 							<xsl:copy-of select="page/body/editor/dropdown_widget/node()"/>
 						</div>
 

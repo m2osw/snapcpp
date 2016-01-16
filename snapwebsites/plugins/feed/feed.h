@@ -51,9 +51,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class feed_exception : public snap_exception
 {
 public:
-    feed_exception(char const *        what_msg) : snap_exception("Feed", what_msg) {}
-    feed_exception(std::string const & what_msg) : snap_exception("Feed", what_msg) {}
-    feed_exception(QString const &     what_msg) : snap_exception("Feed", what_msg) {}
+    explicit feed_exception(char const *        what_msg) : snap_exception("Feed", what_msg) {}
+    explicit feed_exception(std::string const & what_msg) : snap_exception("Feed", what_msg) {}
+    explicit feed_exception(QString const &     what_msg) : snap_exception("Feed", what_msg) {}
 };
 
 

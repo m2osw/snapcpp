@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.571
+ * Version: 0.0.3.598
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -751,6 +751,7 @@ snapwebsites.EditorSelection =
  *      virtual function saving(editor_widget: Object, data: EditorWidgetTypeBase.SaveData) : Void;
  *      virtual function resetValue(editor_widget: Object) : Void;
  *      virtual function setValue(editor_widget: Object, value: Object) : Void;
+ *      virtual function validate(editor_widget: Object) : boolean;
  *
  *  private:
  *      var ajaxReason_: string = "";
@@ -967,6 +968,26 @@ snapwebsites.EditorWidgetTypeBase.prototype.setValue = function(editor_widget, v
     // happens
 
     return false;
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Validate the content of a widget.
+ *
+ * This function is expected to check the value of a widget to make
+ * sure it is valid. For example, it will make sure it is not too
+ * short nor too long.
+ *
+ * By default, the function returns true so it validates any data.
+ *
+ * @param {Object} editor_widget  The widget to validate.
+ *
+ * @return {boolean}  true if the widget content is currently considered valid.
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.validate = function(editor_widget) // virtual
+{
+    return true;
 };
 /*jslint unparam: false */
 
@@ -2164,6 +2185,7 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  * public:
  *      function EditorWidget(editor_base: EditorBase, editor_form: EditorForm, widget: jQuery);
  *      final function getName() : string;
+ *      final function getLabel(use_name: boolean) : string;
  *      final function wasModified(opt_recheck: boolean) : boolean;
  *      final function saving() : SaveData;
  *      final function saved(data: SaveData) : boolean;
@@ -2435,6 +2457,46 @@ snapwebsites.EditorWidget.prototype.getName = function()
 };
 
 
+/** \brief Retrieve the label of this widget.
+ *
+ * The label of a widget is expected to be defined in a \<label> tag
+ * with the \em for attribute set to the name of the widget. If such
+ * is found, then the function returns the HTML text defined within
+ * that label (the HTML is kept as is.)
+ *
+ * If no such label exists, the function returns an empty string unless
+ * you set the \p use_name parameter to true, in that case we return
+ * the \em technical widget name (as if you had called the getName()
+ * function.)
+ *
+ * @param {boolean} use_name  Whether to return the widget name if no
+ *                            label is found.
+ *
+ * @return {string}  The label or the name of the widget.
+ */
+snapwebsites.EditorWidget.prototype.getLabel = function(use_name)
+{
+    // TODO: look into a way to avoid searching the entire DOM
+    //       (i.e. in most cases it will be a sibling of this.widget_)
+    //
+    var label = jQuery("label[for='" + this.name_ + "']");
+
+    // got a valid label?
+    if(label.exists())
+    {
+        // if there is a span with an asterisk (or whatnot) to mark
+        // the field as "required", remove it, it is not really
+        // useful within the label
+        //
+        label = label.clone();
+        jQuery("span.required", label).remove();
+        return snapwebsites.trim(snapwebsites.castToString(label.html(), "expected html() to return a string for the widget label"));
+    }
+
+    return use_name ? this.name_ : "";
+};
+
+
 /** \brief Check whether the widget was modified.
  *
  * This function compares the widget old and current data to see
@@ -2473,7 +2535,7 @@ snapwebsites.EditorWidget.prototype.wasModified = function(opt_recheck)
  */
 snapwebsites.EditorWidget.prototype.validate = function()
 {
-    return true;
+    return this.widgetType_.validate(this);
 };
 
 
@@ -4124,6 +4186,11 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
     var key,                    // loop index
         modified = false;       // whether some data was modified while saving
 
+    // request for the existing messages to automatically get hidden if
+    // none were returned from the server
+    //
+    result.hide_messages = true;
+
     snapwebsites.EditorForm.superClass_.serverAccessSuccess.call(this, result);
 
     // success! so it was saved and now that is the new original value
@@ -4257,7 +4324,15 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
             // so there is no need for us to save them again here (plus
             // in some cases it would be impossible like for file upload)
             w = this.editorWidgets_[key];
-            valid = valid && w.validate();
+
+            // WARNING: we do "... && valid", placing the && valid after
+            //          the call because whether a previous validation
+            //          failed, we want to have the function called so
+            //          that way we get errors for all the fields at
+            //          once!
+            //
+            valid = w.validate() && valid;
+
             if(valid)
             {
                 if((save_all || w.wasModified(true) || w.getWidget().hasClass("always-save"))
@@ -6541,6 +6616,92 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.setValue = function(widget, valu
 };
 
 
+/** \brief Validate the content of a widget.
+ *
+ * This function verifies that the text edit has the required minimum
+ * length, does not go over the maximum length, etc.
+ *
+ * @param {Object} widget  The editor widget.
+ *
+ * @return {boolean}  true if the widget content is currently considered valid.
+ */
+snapwebsites.EditorWidgetTypeTextEdit.prototype.validate = function(widget) // virtual
+{
+    var that = this,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        label = "<strong>" + editor_widget.getLabel(true) + "</strong>",
+        value = editor_widget.getValue(),
+        stripped_value = snapwebsites.stripAllTags(value),
+        bound,
+        valid = true;
+
+    // too short?
+    bound = c.data("absoluteminlength");
+    if(jQuery.isNumeric(bound)
+    && value.length < bound)
+    {
+        valid = false;
+        snapwebsites.OutputInstance.displayOneMessage(
+                "Invalid Field",
+                "Entry too short in " + label + ".",
+                "error",
+                true);
+    }
+    else
+    {
+        bound = c.data("minlength");
+        if(jQuery.isNumeric(bound)
+        && stripped_value.length < bound)
+        {
+            valid = false;
+            snapwebsites.OutputInstance.displayOneMessage(
+                    "Invalid Field",
+                    "Entry too short in " + label + ".",
+                    "error",
+                    true);
+        }
+        else
+        {
+            bound = c.data("absolutemaxlength");
+            if(jQuery.isNumeric(bound)
+            && value.length > bound)
+            {
+                valid = false;
+                snapwebsites.OutputInstance.displayOneMessage(
+                        "Invalid Field",
+                        "Entry too long in " + label + ".",
+                        "error",
+                        true);
+            }
+            else
+            {
+                // too long?
+                bound = c.data("maxlength");
+                if(jQuery.isNumeric(bound)
+                && stripped_value.length > bound)
+                {
+                    valid = false;
+                    snapwebsites.OutputInstance.displayOneMessage(
+                            "Invalid Field",
+                            "Entry too long in " + label + ".",
+                            "error",
+                            true);
+                }
+            }
+        }
+    }
+
+    // make sure the "erroneous" class is as expected
+    w.toggleClass("erroneous", !valid);
+
+//console.log("widget: \"" + editor_widget.getName() + "\" (" + label + ") value [" + value + "]:" + value.length + "/" + stripped_value.length + " -> " + (valid ? "VALID!!!" : "invalid?!?!"));
+
+    return valid;
+};
+
+
 
 /** \brief Editor widget type for Text Edit widgets.
  *
@@ -8328,6 +8489,31 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.acceptReturnAsDefaultButton = fu
 };
 
 
+/** \brief Check whether the dropdown is open, if so, prevent auto-send.
+ *
+ * This function checks whether the dropdown is currently open. If so,
+ * make sure that the default button does not get clicked.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget being saved.
+ * @param {Object} data  The data about to be sent to the server.
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.saving = function(editor_widget, data)
+{
+    var w = editor_widget.getWidget();
+
+    snapwebsites.EditorWidgetTypeDropdown.superClass_.saving.call(this, editor_widget, data);
+
+    if(w.children(".snap-editor-dropdown-reset-value").data("not-a-value") == "not-a-value")
+    {
+        // if the user comes here and the default is marked as not-a-value
+        // then the result is "" (i.e. "undefined" or "empty") and not
+        // the default value...
+        //
+        data.result = "";
+    }
+};
+
+
 
 /** \brief Editor widget type for Checkmark widgets.
  *
@@ -8443,7 +8629,7 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
 // *
 //snapwebsites.EditorWidgetTypeCheckmark.prototype.saving = function(editor_widget, data) // virtual
 //{
-//    snapwebsites.EditorWidgetType.prototype.initializeWidget.apply(this, data);
+//    snapwebsites.EditorWidgetTypeCheckmark.superClass_.saving.call(this, editor_widget, data);
 //
 //    data.result = edit_area.find(".checkmark-area").hasClass("checked") ? 1 : 0;
 //}

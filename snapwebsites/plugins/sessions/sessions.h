@@ -47,33 +47,33 @@ char const * get_name(name_t name) __attribute__ ((const));
 class sessions_exception : public snap_exception
 {
 public:
-    sessions_exception(char const *        what_msg) : snap_exception("Sessions", what_msg) {}
-    sessions_exception(std::string const & what_msg) : snap_exception("Sessions", what_msg) {}
-    sessions_exception(QString const &     what_msg) : snap_exception("Sessions", what_msg) {}
+    explicit sessions_exception(char const *        what_msg) : snap_exception("Sessions", what_msg) {}
+    explicit sessions_exception(std::string const & what_msg) : snap_exception("Sessions", what_msg) {}
+    explicit sessions_exception(QString const &     what_msg) : snap_exception("Sessions", what_msg) {}
 };
 
 class sessions_exception_invalid_parameter : public sessions_exception
 {
 public:
-    sessions_exception_invalid_parameter(const char *        what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_invalid_parameter(const std::string & what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_invalid_parameter(const QString &     what_msg) : sessions_exception(what_msg) {}
+    explicit sessions_exception_invalid_parameter(const char *        what_msg) : sessions_exception(what_msg) {}
+    explicit sessions_exception_invalid_parameter(const std::string & what_msg) : sessions_exception(what_msg) {}
+    explicit sessions_exception_invalid_parameter(const QString &     what_msg) : sessions_exception(what_msg) {}
 };
 
 class sessions_exception_invalid_range : public sessions_exception
 {
 public:
-    sessions_exception_invalid_range(const char *        what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_invalid_range(const std::string & what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_invalid_range(const QString &     what_msg) : sessions_exception(what_msg) {}
+    explicit sessions_exception_invalid_range(const char *        what_msg) : sessions_exception(what_msg) {}
+    explicit sessions_exception_invalid_range(const std::string & what_msg) : sessions_exception(what_msg) {}
+    explicit sessions_exception_invalid_range(const QString &     what_msg) : sessions_exception(what_msg) {}
 };
 
 class sessions_exception_no_random_data : public sessions_exception
 {
 public:
-    sessions_exception_no_random_data(const char *        what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_no_random_data(const std::string & what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_no_random_data(const QString &     what_msg) : sessions_exception(what_msg) {}
+    explicit sessions_exception_no_random_data(const char *        what_msg) : sessions_exception(what_msg) {}
+    explicit sessions_exception_no_random_data(const std::string & what_msg) : sessions_exception(what_msg) {}
+    explicit sessions_exception_no_random_data(const QString &     what_msg) : sessions_exception(what_msg) {}
 };
 
 

@@ -40,9 +40,9 @@ namespace locale_widgets
 //class locale_widgets_exception : public snap_exception
 //{
 //public:
-//    locale_widgets_exception(char const *        what_msg) : snap_exception("locale_widgets", what_msg) {}
-//    locale_widgets_exception(std::string const & what_msg) : snap_exception("locale_widgets", what_msg) {}
-//    locale_widgets_exception(QString const &     what_msg) : snap_exception("locale_widgets", what_msg) {}
+//    explicit locale_widgets_exception(char const *        what_msg) : snap_exception("locale_widgets", what_msg) {}
+//    explicit locale_widgets_exception(std::string const & what_msg) : snap_exception("locale_widgets", what_msg) {}
+//    explicit locale_widgets_exception(QString const &     what_msg) : snap_exception("locale_widgets", what_msg) {}
 //};
 
 

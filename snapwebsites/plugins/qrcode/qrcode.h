@@ -39,9 +39,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class qrcode_exception : public snap_exception
 {
 public:
-    qrcode_exception(char const *        what_msg) : snap_exception("qrcode", what_msg) {}
-    qrcode_exception(std::string const & what_msg) : snap_exception("qrcode", what_msg) {}
-    qrcode_exception(QString const &     what_msg) : snap_exception("qrcode", what_msg) {}
+    explicit qrcode_exception(char const *        what_msg) : snap_exception("qrcode", what_msg) {}
+    explicit qrcode_exception(std::string const & what_msg) : snap_exception("qrcode", what_msg) {}
+    explicit qrcode_exception(QString const &     what_msg) : snap_exception("qrcode", what_msg) {}
 };
 
 

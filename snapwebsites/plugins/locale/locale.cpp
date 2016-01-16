@@ -17,6 +17,7 @@
 
 #include "snap_locale.h"
 
+#include "log.h"
 #include "not_used.h"
 #include "qunicodestring.h"
 

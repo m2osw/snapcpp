@@ -40,49 +40,49 @@ char const * get_name(name_t name) __attribute__ ((const));
 class links_exception : public snap_exception
 {
 public:
-    links_exception(char const *        what_msg) : snap_exception("links", what_msg) {}
-    links_exception(std::string const & what_msg) : snap_exception("links", what_msg) {}
-    links_exception(QString const &     what_msg) : snap_exception("links", what_msg) {}
+    explicit links_exception(char const *        what_msg) : snap_exception("links", what_msg) {}
+    explicit links_exception(std::string const & what_msg) : snap_exception("links", what_msg) {}
+    explicit links_exception(QString const &     what_msg) : snap_exception("links", what_msg) {}
 };
 
 class links_exception_missing_links_table : public links_exception
 {
 public:
-    links_exception_missing_links_table(char const *        what_msg) : links_exception(what_msg) {}
-    links_exception_missing_links_table(std::string const & what_msg) : links_exception(what_msg) {}
-    links_exception_missing_links_table(QString const &     what_msg) : links_exception(what_msg) {}
+    explicit links_exception_missing_links_table(char const *        what_msg) : links_exception(what_msg) {}
+    explicit links_exception_missing_links_table(std::string const & what_msg) : links_exception(what_msg) {}
+    explicit links_exception_missing_links_table(QString const &     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_missing_branch_table : public links_exception
 {
 public:
-    links_exception_missing_branch_table(char const *        what_msg) : links_exception(what_msg) {}
-    links_exception_missing_branch_table(std::string const & what_msg) : links_exception(what_msg) {}
-    links_exception_missing_branch_table(QString const &     what_msg) : links_exception(what_msg) {}
+    explicit links_exception_missing_branch_table(char const *        what_msg) : links_exception(what_msg) {}
+    explicit links_exception_missing_branch_table(std::string const & what_msg) : links_exception(what_msg) {}
+    explicit links_exception_missing_branch_table(QString const &     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_invalid_name : public links_exception
 {
 public:
-    links_exception_invalid_name(char const *        what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_name(std::string const & what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_name(QString const &     what_msg) : links_exception(what_msg) {}
+    explicit links_exception_invalid_name(char const *        what_msg) : links_exception(what_msg) {}
+    explicit links_exception_invalid_name(std::string const & what_msg) : links_exception(what_msg) {}
+    explicit links_exception_invalid_name(QString const &     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_invalid_db_data : public links_exception
 {
 public:
-    links_exception_invalid_db_data(char const *        what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_db_data(std::string const & what_msg) : links_exception(what_msg) {}
-    links_exception_invalid_db_data(QString const &     what_msg) : links_exception(what_msg) {}
+    explicit links_exception_invalid_db_data(char const *        what_msg) : links_exception(what_msg) {}
+    explicit links_exception_invalid_db_data(std::string const & what_msg) : links_exception(what_msg) {}
+    explicit links_exception_invalid_db_data(QString const &     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_missing_link : public links_exception
 {
 public:
-    links_exception_missing_link(char const *        what_msg) : links_exception(what_msg) {}
-    links_exception_missing_link(std::string const & what_msg) : links_exception(what_msg) {}
-    links_exception_missing_link(QString const  &    what_msg) : links_exception(what_msg) {}
+    explicit links_exception_missing_link(char const *        what_msg) : links_exception(what_msg) {}
+    explicit links_exception_missing_link(std::string const & what_msg) : links_exception(what_msg) {}
+    explicit links_exception_missing_link(QString const  &    what_msg) : links_exception(what_msg) {}
 };
 
 

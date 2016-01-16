@@ -96,49 +96,49 @@ char const * get_name(name_t name) __attribute__ ((const));
 class users_exception : public snap_exception
 {
 public:
-    users_exception(char const *        what_msg) : snap_exception("users", what_msg) {}
-    users_exception(std::string const & what_msg) : snap_exception("users", what_msg) {}
-    users_exception(QString const &     what_msg) : snap_exception("users", what_msg) {}
+    explicit users_exception(char const *        what_msg) : snap_exception("users", what_msg) {}
+    explicit users_exception(std::string const & what_msg) : snap_exception("users", what_msg) {}
+    explicit users_exception(QString const &     what_msg) : snap_exception("users", what_msg) {}
 };
 
 class users_exception_invalid_email : public users_exception
 {
 public:
-    users_exception_invalid_email(char const *        what_msg) : users_exception(what_msg) {}
-    users_exception_invalid_email(std::string const & what_msg) : users_exception(what_msg) {}
-    users_exception_invalid_email(QString const &     what_msg) : users_exception(what_msg) {}
+    explicit users_exception_invalid_email(char const *        what_msg) : users_exception(what_msg) {}
+    explicit users_exception_invalid_email(std::string const & what_msg) : users_exception(what_msg) {}
+    explicit users_exception_invalid_email(QString const &     what_msg) : users_exception(what_msg) {}
 };
 
 class users_exception_invalid_path : public users_exception
 {
 public:
-    users_exception_invalid_path(char const *        what_msg) : users_exception(what_msg) {}
-    users_exception_invalid_path(std::string const & what_msg) : users_exception(what_msg) {}
-    users_exception_invalid_path(QString const &     what_msg) : users_exception(what_msg) {}
+    explicit users_exception_invalid_path(char const *        what_msg) : users_exception(what_msg) {}
+    explicit users_exception_invalid_path(std::string const & what_msg) : users_exception(what_msg) {}
+    explicit users_exception_invalid_path(QString const &     what_msg) : users_exception(what_msg) {}
 };
 
 class users_exception_size_mismatch : public users_exception
 {
 public:
-    users_exception_size_mismatch(char const *        what_msg) : users_exception(what_msg) {}
-    users_exception_size_mismatch(std::string const & what_msg) : users_exception(what_msg) {}
-    users_exception_size_mismatch(QString const &     what_msg) : users_exception(what_msg) {}
+    explicit users_exception_size_mismatch(char const *        what_msg) : users_exception(what_msg) {}
+    explicit users_exception_size_mismatch(std::string const & what_msg) : users_exception(what_msg) {}
+    explicit users_exception_size_mismatch(QString const &     what_msg) : users_exception(what_msg) {}
 };
 
 class users_exception_digest_not_available : public users_exception
 {
 public:
-    users_exception_digest_not_available(char const *        what_msg) : users_exception(what_msg) {}
-    users_exception_digest_not_available(std::string const & what_msg) : users_exception(what_msg) {}
-    users_exception_digest_not_available(QString const &     what_msg) : users_exception(what_msg) {}
+    explicit users_exception_digest_not_available(char const *        what_msg) : users_exception(what_msg) {}
+    explicit users_exception_digest_not_available(std::string const & what_msg) : users_exception(what_msg) {}
+    explicit users_exception_digest_not_available(QString const &     what_msg) : users_exception(what_msg) {}
 };
 
 class users_exception_encryption_failed : public users_exception
 {
 public:
-    users_exception_encryption_failed(char const *        what_msg) : users_exception(what_msg) {}
-    users_exception_encryption_failed(std::string const & what_msg) : users_exception(what_msg) {}
-    users_exception_encryption_failed(QString const &     what_msg) : users_exception(what_msg) {}
+    explicit users_exception_encryption_failed(char const *        what_msg) : users_exception(what_msg) {}
+    explicit users_exception_encryption_failed(std::string const & what_msg) : users_exception(what_msg) {}
+    explicit users_exception_encryption_failed(QString const &     what_msg) : users_exception(what_msg) {}
 };
 
 

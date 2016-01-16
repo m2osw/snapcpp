@@ -97,6 +97,18 @@ QString header::settings_path() const
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString header::icon() const
+{
+    return "/images/header/header-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -143,7 +155,7 @@ int64_t header::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2013, 12, 13, 17, 12, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 15, 17, 58, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -191,7 +203,7 @@ void header::bootstrap(snap_child * snap)
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool header::on_path_execute(content::path_info_t& ipath)
+bool header::on_path_execute(content::path_info_t & ipath)
 {
     f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
 

@@ -28,17 +28,17 @@ namespace filter
 class filter_exception : public snap_exception
 {
 public:
-    filter_exception(char const *        what_msg) : snap_exception("filter", what_msg) {}
-    filter_exception(std::string const & what_msg) : snap_exception("filter", what_msg) {}
-    filter_exception(QString const &     what_msg) : snap_exception("filter", what_msg) {}
+    explicit filter_exception(char const *        what_msg) : snap_exception("filter", what_msg) {}
+    explicit filter_exception(std::string const & what_msg) : snap_exception("filter", what_msg) {}
+    explicit filter_exception(QString const &     what_msg) : snap_exception("filter", what_msg) {}
 };
 
 class filter_exception_invalid_arguement : public filter_exception
 {
 public:
-    filter_exception_invalid_arguement(char const *        what_msg) : filter_exception(what_msg) {}
-    filter_exception_invalid_arguement(std::string const & what_msg) : filter_exception(what_msg) {}
-    filter_exception_invalid_arguement(QString const &     what_msg) : filter_exception(what_msg) {}
+    explicit filter_exception_invalid_arguement(char const *        what_msg) : filter_exception(what_msg) {}
+    explicit filter_exception_invalid_arguement(std::string const & what_msg) : filter_exception(what_msg) {}
+    explicit filter_exception_invalid_arguement(QString const &     what_msg) : filter_exception(what_msg) {}
 };
 
 

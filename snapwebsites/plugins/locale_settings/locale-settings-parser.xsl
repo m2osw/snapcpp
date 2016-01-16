@@ -45,8 +45,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 					<p><a href="locale/info">More information</a> about the locale library used by this instance of Snap!</p>
 
-					<fieldset class="timezone-selection">
-						<legend>Timezone</legend>
+					<fieldset class="locale-selection">
+						<legend>Locale</legend>
+
+						<!-- locale widget -->
+						<div class="editor-block">
+							<label for="locale_locale" class="editor-title">Locale Name:</label>
+							<xsl:copy-of select="page/body/locale/locale/node()"/>
+						</div>
 
 						<!-- timezone widget -->
 						<div class="editor-block">

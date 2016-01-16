@@ -40,9 +40,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class oauth2_exception : public snap_exception
 {
 public:
-    oauth2_exception(char const *        what_msg) : snap_exception("oauth2", what_msg) {}
-    oauth2_exception(std::string const & what_msg) : snap_exception("oauth2", what_msg) {}
-    oauth2_exception(QString const &     what_msg) : snap_exception("oauth2", what_msg) {}
+    explicit oauth2_exception(char const *        what_msg) : snap_exception("oauth2", what_msg) {}
+    explicit oauth2_exception(std::string const & what_msg) : snap_exception("oauth2", what_msg) {}
+    explicit oauth2_exception(QString const &     what_msg) : snap_exception("oauth2", what_msg) {}
 };
 
 

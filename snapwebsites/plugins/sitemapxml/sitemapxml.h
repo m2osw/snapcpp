@@ -40,33 +40,33 @@ const char * get_name(name_t name) __attribute__ ((const));
 class sitemapxml_exception : public snap_exception
 {
 public:
-    sitemapxml_exception(char const *        what_msg) : snap_exception("sitemap.xml", what_msg) {}
-    sitemapxml_exception(std::string const & what_msg) : snap_exception("sitemap.xml", what_msg) {}
-    sitemapxml_exception(QString const &     what_msg) : snap_exception("sitemap.xml", what_msg) {}
+    explicit sitemapxml_exception(char const *        what_msg) : snap_exception("sitemap.xml", what_msg) {}
+    explicit sitemapxml_exception(std::string const & what_msg) : snap_exception("sitemap.xml", what_msg) {}
+    explicit sitemapxml_exception(QString const &     what_msg) : snap_exception("sitemap.xml", what_msg) {}
 };
 
 class sitemapxml_exception_missing_table : public sitemapxml_exception
 {
 public:
-    sitemapxml_exception_missing_table(char const *        what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_missing_table(std::string const & what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_missing_table(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
+    explicit sitemapxml_exception_missing_table(char const *        what_msg) : sitemapxml_exception(what_msg) {}
+    explicit sitemapxml_exception_missing_table(std::string const & what_msg) : sitemapxml_exception(what_msg) {}
+    explicit sitemapxml_exception_missing_table(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
 };
 
 class sitemapxml_exception_invalid_xslt_data : public sitemapxml_exception
 {
 public:
-    sitemapxml_exception_invalid_xslt_data(char const *        what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_invalid_xslt_data(std::string const & what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_invalid_xslt_data(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
+    explicit sitemapxml_exception_invalid_xslt_data(char const *        what_msg) : sitemapxml_exception(what_msg) {}
+    explicit sitemapxml_exception_invalid_xslt_data(std::string const & what_msg) : sitemapxml_exception(what_msg) {}
+    explicit sitemapxml_exception_invalid_xslt_data(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
 };
 
 class sitemapxml_exception_missing_uri : public sitemapxml_exception
 {
 public:
-    sitemapxml_exception_missing_uri(char const *        what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_missing_uri(std::string const & what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_missing_uri(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
+    explicit sitemapxml_exception_missing_uri(char const *        what_msg) : sitemapxml_exception(what_msg) {}
+    explicit sitemapxml_exception_missing_uri(std::string const & what_msg) : sitemapxml_exception(what_msg) {}
+    explicit sitemapxml_exception_missing_uri(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
 };
 
 
