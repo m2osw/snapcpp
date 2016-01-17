@@ -107,6 +107,18 @@ QString menu::settings_path() const
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString menu::icon() const
+{
+    return "/images/menu/menu-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -154,7 +166,7 @@ int64_t menu::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 20, 0, 49, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 17, 0, 18, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

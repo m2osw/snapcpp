@@ -64,6 +64,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
     <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
   </content>
+  <content path="/images/shorturl">
+    <param name="content::title" revision="revision">Short URL Images</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Set of images offered and used by the shorturl plugin.</p>]]>
+    </param>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="shorturl-logo-64x64" type="attachment/public">
+      <path>:/images/shorturl/shorturl-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
+  </content>
   <content path="/types/taxonomy/system/shorturl">
     <param name="content::title" revision="revision">Short URL Tags</param>
     <param name="content::body" revision="revision">

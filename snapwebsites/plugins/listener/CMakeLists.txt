@@ -74,6 +74,7 @@ add_library(listener SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
     listener.js
+    listener-logo-64x64.png
 )
 
 target_link_libraries( listener ${QT_LIBRARIES} )

@@ -253,6 +253,18 @@ QString password::settings_path() const
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString password::icon() const
+{
+    return "/images/password/password-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -300,7 +312,7 @@ int64_t password::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2016, 1, 14, 3, 21, 51, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 16, 22, 0, 51, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

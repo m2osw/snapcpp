@@ -1159,6 +1159,18 @@ list * list::instance()
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString list::icon() const
+{
+    return "/images/list/list-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -1206,7 +1218,7 @@ int64_t list::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2014, 4, 9, 20, 57, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 16, 21, 10, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

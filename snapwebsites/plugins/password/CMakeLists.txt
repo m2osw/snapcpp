@@ -79,6 +79,7 @@ add_library(password SHARED
     password.css
     password.js
     password_widgets/password-form.xsl
+    password-logo-64x64.png
 )
 
 target_link_libraries( password ${QT_LIBRARIES} )

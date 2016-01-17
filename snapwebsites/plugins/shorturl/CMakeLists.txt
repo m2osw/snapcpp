@@ -60,6 +60,7 @@ add_library(shorturl SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
     settings-form.xml
+    shorturl-logo-64x64.png
 )
 
 target_link_libraries( shorturl ${QT_LIBRARIES} )

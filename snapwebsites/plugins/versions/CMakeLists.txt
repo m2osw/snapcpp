@@ -61,6 +61,7 @@ add_library(versions SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    versions-logo-64x64.png
 )
 
 target_link_libraries( versions ${QT_LIBRARIES} )

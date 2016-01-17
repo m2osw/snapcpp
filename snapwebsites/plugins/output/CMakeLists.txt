@@ -77,6 +77,8 @@ add_library(output SHARED
     progress.gif
     content-logo-64x64.png
     snap-logo-64x64.png
+    layout-logo-64x64.png
+    links-logo-64x64.png
     wait.gif
     wait-rotate.png
     wait-rotate-64x64.png

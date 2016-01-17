@@ -68,6 +68,18 @@ listener * listener::instance()
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString listener::icon() const
+{
+    return "/images/listener/listener-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -79,8 +91,9 @@ listener * listener::instance()
  */
 QString listener::description() const
 {
-    return "Intercept default output and transform it for AJAX responses."
-        " Handle AJAX responses for functions that do it right.";
+    return "Check whether a page or document (when the page represents an"
+          " attachment) is ready for consumption. For example, the listener"
+          " is used by the editor to listen for attachment upload completion.";
 }
 
 
@@ -113,7 +126,7 @@ int64_t listener::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 19, 2, 7, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 16, 21, 41, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -166,7 +179,7 @@ void listener::bootstrap(snap_child * snap)
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void listener::on_process_post(QString const& uri_path)
+void listener::on_process_post(QString const & uri_path)
 {
     // This would impose a huge burden on the server (one session # per
     // page and include that in the resulting HTML) and it does not add
@@ -185,7 +198,7 @@ void listener::on_process_post(QString const& uri_path)
     //    return;
     //}
 
-    // if no listener size, then it's not a POST for us
+    // if no listener size, then it is not a POST for us
     if(!f_snap->postenv_exists("_listener_size"))
     {
         return;
@@ -196,11 +209,11 @@ void listener::on_process_post(QString const& uri_path)
     ipath.set_main_page(true);
     ipath.force_locale("xx");  // ??
 
-    //messages::messages *messages(messages::messages::instance());
-    users::users *users_plugin(users::users::instance());
-    permissions::permissions *permissions_plugin(permissions::permissions::instance());
-    server_access::server_access *server_access_plugin(server_access::server_access::instance());
-    path::path *path_plugin(path::path::instance());
+    //messages::messages * messages(messages::messages::instance());
+    users::users * users_plugin(users::users::instance());
+    permissions::permissions * permissions_plugin(permissions::permissions::instance());
+    server_access::server_access * server_access_plugin(server_access::server_access::instance());
+    path::path * path_plugin(path::path::instance());
 
     QString const size_str(f_snap->postenv("_listener_size"));
     bool ok(false);
@@ -224,8 +237,8 @@ void listener::on_process_post(QString const& uri_path)
         NOTREACHED();
     }
 
-    QString const& user_path(users_plugin->get_user_path());
-    QString const& login_status(permissions_plugin->get_login_status());
+    QString const & user_path(users_plugin->get_user_path());
+    QString const & login_status(permissions_plugin->get_login_status());
     for(int i(0); i < max_uri; ++i)
     {
         QString const name(QString("uri%1").arg(i));
@@ -280,7 +293,7 @@ void listener::on_process_post(QString const& uri_path)
 }
 
 
-bool listener::listener_check_impl(snap_uri const& uri, content::path_info_t& page_ipath, QDomDocument doc, QDomElement result)
+bool listener::listener_check_impl(snap_uri const & uri, content::path_info_t & page_ipath, QDomDocument doc, QDomElement result)
 {
     NOTUSED(uri);
     NOTUSED(page_ipath);

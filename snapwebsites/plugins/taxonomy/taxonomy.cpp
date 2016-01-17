@@ -89,6 +89,18 @@ taxonomy * taxonomy::instance()
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString taxonomy::icon() const
+{
+    return "/images/taxonomy/taxonomy-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -136,7 +148,7 @@ int64_t taxonomy::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 16, 23, 52, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

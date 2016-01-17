@@ -113,6 +113,18 @@ QString versions::settings_path() const
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString versions::icon() const
+{
+    return "/images/versions/versions-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -157,7 +169,7 @@ int64_t versions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 9, 24, 4, 21, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 16, 22, 52, 51, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
