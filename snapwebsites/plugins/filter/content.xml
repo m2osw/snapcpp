@@ -25,6 +25,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
+  <content path="/images/filter">
+    <param name="content::title" revision="revision">Filter Images</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Set of images offered and used by the filter plugin.</p>]]>
+    </param>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="filter-logo-64x64" type="attachment/public">
+      <path>:/images/filter/filter-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
+  </content>
   <content path="/types/filter">
     <param name="content::title" revision="revision">Filter Types</param>
     <param name="content::body" revision="revision">

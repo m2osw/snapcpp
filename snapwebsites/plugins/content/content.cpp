@@ -460,6 +460,18 @@ QString content::settings_path() const
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString content::icon() const
+{
+    return "/images/snap/content-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -1306,7 +1318,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
     {
         // the parent row does not even exist yet...
         //
-        SNAP_LOG_ERROR("user attempted to create an attachment in page \"")(parent_key)("\" that doesn't exist.");
+        SNAP_LOG_ERROR("user attempted to create an attachment in page \"")(parent_key)("\" that does not exist.");
         return false;
     }
 
@@ -1866,7 +1878,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
                     old_attachment_ipath.set_path(old_attachment_key);
                     trash_page(old_attachment_ipath);
 
-                    // TBD if I'm correct, the md5 reference was already dropped
+                    // TBD if I am correct, the md5 reference was already dropped
                     //     in the next if() blocks...
                     //
                     // TODO: we most certainly need to remove all the
@@ -1976,8 +1988,8 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
     // work here...
     if(is_js || is_css)
     {
-        // JavaScripts get added to a list so their dependencies
-        // can be found "instantaneously".
+        // JavaScripts and CSS files get added to a list so their
+        // dependencies can be found "instantaneously".
         //snap_version::versioned_filename js_filename(".js");
         //js_filename.set_filename(attachment_filename);
         // the name is formatted to allow us to quickly find the files

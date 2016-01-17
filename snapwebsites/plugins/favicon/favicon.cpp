@@ -222,7 +222,7 @@ int64_t favicon::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 1, 16, 56, 1, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 16, 13, 3, 1, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

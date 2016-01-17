@@ -67,7 +67,7 @@ SNAP_PLUGIN_START(javascript, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name) {
     case name_t::SNAP_NAME_JAVASCRIPT_MINIMIZED:
@@ -123,9 +123,21 @@ javascript::~javascript()
  *
  * \return A pointer to the javascript plugin.
  */
-javascript *javascript::instance()
+javascript * javascript::instance()
 {
     return g_plugin_javascript_factory.instance();
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString javascript::icon() const
+{
+    return "/images/snap/javascript-logo-64x64.png";
 }
 
 

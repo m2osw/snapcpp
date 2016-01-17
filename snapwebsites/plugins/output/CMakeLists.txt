@@ -75,6 +75,7 @@ add_library(output SHARED
     close-button.png
     plugin-icon-64x64.png
     progress.gif
+    content-logo-64x64.png
     snap-logo-64x64.png
     wait.gif
     wait-rotate.png

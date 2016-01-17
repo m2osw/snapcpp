@@ -289,6 +289,7 @@ void robotstxt::output() const
     }
 }
 
+
 /** \brief Implementation of the generate_robotstxt signal.
  *
  * This function readies the generate_robotstxt signal.
@@ -308,7 +309,7 @@ void robotstxt::output() const
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool robotstxt::generate_robotstxt_impl(robotstxt *r)
+bool robotstxt::generate_robotstxt_impl(robotstxt * r)
 {
     r->add_robots_txt_field("/cgi-bin/");
 

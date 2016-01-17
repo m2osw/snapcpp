@@ -57,6 +57,7 @@ add_library(filter SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    filter-logo-64x64.png
 )
 
 target_link_libraries( filter ${QT_LIBRARIES} )
