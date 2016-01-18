@@ -1461,6 +1461,7 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
     return lock_table;
 }
 
+
 /** \brief Add a new host to the existing list of hosts.
  *
  * This function adds the name of a host and assign it an identifier
@@ -1535,6 +1536,7 @@ void QCassandraContext::addLockHost(const QString& host_name)
     locks_table->row(lockHostsKey())->cell(host_name)->setValue(value);
 }
 
+
 /** \brief Remove a lock host name from the database.
  *
  * This function removes the specified host name from the database.
@@ -1558,6 +1560,7 @@ void QCassandraContext::removeLockHost(const QString& host_name)
     c->setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
     row->dropCell(host_name, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
 }
+
 
 /** \brief Set the name of the host using this instance.
  *
@@ -1694,12 +1697,15 @@ int QCassandraContext::lockTimeout() const
  */
 void QCassandraContext::setLockTtl(int ttl)
 {
+    if(ttl < 0) {
+        throw std::runtime_error("the TTL value cannot be negative");
+    }
     f_lock_ttl = ttl;
 }
 
 /** \brief Retrieve the lock TTL.
  *
- * This function returns the lock TTL as defined by the set_lock_ttl().
+ * This function returns the lock TTL as defined by the setLockTtl().
  * By default the TTL value is set to 1 minute.
  *
  * The value is specified in seconds.

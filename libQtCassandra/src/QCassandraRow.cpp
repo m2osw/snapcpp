@@ -1126,8 +1126,7 @@ void QCassandraRow::dropCell(const QUuid& column_uuid, QCassandraValue::timestam
 void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
 {
     auto table( f_table.lock() );
-    if(!table)
-    {
+    if(!table) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     if(QCassandraValue::TIMESTAMP_MODE_AUTO != mode && QCassandraValue::TIMESTAMP_MODE_DEFINED != mode) {
@@ -1171,8 +1170,7 @@ QCassandraTable::pointer_t QCassandraRow::parentTable() const
 void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraValue& value)
 {
     auto table( f_table.lock() );
-    if(!table)
-    {
+    if(!table) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     table->insertValue(f_key, column_key, value);
@@ -1193,8 +1191,7 @@ void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraVa
 bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& value)
 {
     auto table( f_table.lock() );
-    if(!table)
-    {
+    if(!table) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     return table->getValue(f_key, column_key, value);
@@ -1214,8 +1211,7 @@ bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& valu
 void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
 {
     auto table( f_table.lock() );
-    if(!table)
-    {
+    if(!table) {
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     return table->addValue(f_key, column_key, value);
