@@ -28,6 +28,9 @@
 
 #include "content.h"
 
+#include "dbutils.h"
+#include "log.h"
+
 #include <iostream>
 
 #include "poison.h"
@@ -95,7 +98,7 @@ SNAP_PLUGIN_EXTENSION_START(content)
  */
 bool content::destroy_page_impl(path_info_t & ipath)
 {
-    links::links *links_plugin(links::links::instance());
+    links::links * links_plugin(links::links::instance());
 
     // here we check whether we have children, because if we do
     // we have to delete the children first
@@ -131,6 +134,12 @@ bool content::destroy_page_impl(path_info_t & ipath)
  * This function is called once all the other plugins were called and
  * deleted the data that they are responsible for.
  *
+ * \bug
+ * This function is bogus as it will destroy all the children of the
+ * page without calling the properly destroy_page() event. Although
+ * the children should have been deleted first, we would need to
+ * make sure we do not do that.
+ *
  * \param[in] ipath  The path of the page being deleted.
  */
 void content::destroy_page_done(path_info_t & ipath)
@@ -152,6 +161,15 @@ void content::destroy_page_done(path_info_t & ipath)
 
     // Revisions
     {
+        // WARNING: to destroy all possible revisions, we currently go
+        //          through the list using a full index through the
+        //          entire revision table which is SLOW; remember that
+        //          we cannot hope that predicates would work since our
+        //          rows are not sorted; to palliate we may want to
+        //          have an index ("*index*") that is sorted as we have
+        //          it for the content rows; the one main limit imposed
+        //          by this is 2 billion revisions...
+        //
         snap_string_list revision_keys;
         QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
         QtCassandra::QCassandraRowPredicate row_predicate;
@@ -188,12 +206,26 @@ void content::destroy_page_done(path_info_t & ipath)
         int const max_keys(revision_keys.size());
         for(int idx(0); idx < max_keys; ++idx)
         {
-            revision_table->dropRow(revision_keys[idx]);
+            destroy_revision(revision_keys[idx]);
         }
     }
 
+    // TODO: create a separate signal to destroy branches
+    //       and then a branch has to ask for the destruction
+    //       of all of its revisions and links instead of the
+    //       specialized way I have it now...
+
     // Branches
     {
+        // WARNING: to destroy all possible revisions, we currently go
+        //          through the list using a full index through the
+        //          entire revision table which is SLOW; remember that
+        //          we cannot hope that predicates would work since our
+        //          rows are not sorted; to palliate we may want to
+        //          have an index ("*index*") that is sorted as we have
+        //          it for the content rows; the one main limit imposed
+        //          by this is 2 billion branches...
+        //
         snap_string_list branch_keys;
         QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
         QtCassandra::QCassandraRowPredicate row_predicate;
@@ -238,6 +270,106 @@ void content::destroy_page_done(path_info_t & ipath)
     {
         content_table->dropRow(ipath.get_key());
     }
+}
+
+
+/** \brief This function drops the specified revision.
+ *
+ * This function is used to drop one revision. We have a separate
+ * function because a revision may have a reference to a file
+ * and that reference needs to be managed properly.
+ *
+ * \param[in] revision_key  The Cassandra key directly to the revision
+ *                          to be destroyed.
+ */
+bool content::destroy_revision_impl(QString const & revision_key)
+{
+    QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
+
+    // check whether there is an attachment MD5
+    QtCassandra::QCassandraValue const attachment_md5(revision_table->row(revision_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    if(attachment_md5.size() == 16)
+    {
+        // the name of the cell is the content key, which is the
+        // revision without the '#...', preceded by "content::files::reference::"
+        //
+        int const pos(revision_key.indexOf('#'));
+        if(pos > 0)
+        {
+            QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
+            QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
+            QString const key(revision_key.mid(0, pos));
+
+            // remove reference from the "files" table
+            QString const files_reference(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE));
+            QString const reference_name(QString("%1::%2")
+                                    .arg(files_reference)
+                                    .arg(key));
+            QtCassandra::QCassandraRow::pointer_t files_row(files_table->row(attachment_md5.binaryValue()));
+            files_row->dropCell(reference_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+
+            // remove the reference from the "branch" table
+            QByteArray attachment_ref;
+            attachment_ref.append(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
+            attachment_ref.append("::");
+            attachment_ref.append(attachment_md5.binaryValue()); // binary md5
+
+            // check whether this was the last reference, if so, then we can
+            // drop the file itself too since it won't be useful anymore
+            //
+            QtCassandra::QCassandraColumnRangePredicate column_predicate;
+            column_predicate.setCount(1); // if there is 1 or more, we cannot delete
+            column_predicate.setIndex(); // behave like an index
+            column_predicate.setStartColumnName(files_reference + "::"); // start/end keys are reversed
+            column_predicate.setEndColumnName(files_reference + ":;");
+            files_row->clearCache();
+            files_row->readCells(column_predicate);
+            QtCassandra::QCassandraCells const cells(files_row->cells());
+            if(cells.isEmpty())
+            {
+                // no more references, get rid of the while file
+                files_table->dropRow(attachment_md5.binaryValue(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            }
+
+            // "calculate" the branch key from the revision key
+            int pos_slash(revision_key.indexOf('/', pos + 1));
+            if(pos_slash == -1)
+            {
+                pos_slash = pos + 1;
+            }
+            else
+            {
+                ++pos_slash;
+            }
+            int pos_dot(revision_key.indexOf('.', pos_slash));
+            if(pos_dot == -1)
+            {
+                pos_dot = revision_key.length();
+            }
+            QString const branch_key(QString("%1#%2").arg(key).arg(revision_key.mid(pos_slash, pos_dot - pos_slash)));
+            branch_table->row(branch_key)->dropCell(attachment_ref, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        }
+    }
+
+    // give a chance to other plugins to destroy information related
+    // to this revision in other places
+    return true;
+}
+
+/** \brief Destroy all the remaining fields.
+ *
+ * The done part of the destroy revision drops the row itself
+ * which in effect destroys all the fields in that revision.
+ *
+ * \param[in] revision_key  The Cassandra key directly to the revision
+ *                          to be destroyed.
+ */
+void content::destroy_revision_done(QString const & revision_key)
+{
+    QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
+
+    // this destroys the rest
+    revision_table->dropRow(revision_key);
 }
 
 

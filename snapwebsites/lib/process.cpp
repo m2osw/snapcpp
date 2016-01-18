@@ -29,7 +29,7 @@
 #include "poison.h"
 
 
-extern char **environ;
+extern char ** environ;
 
 namespace snap
 {
@@ -55,6 +55,7 @@ namespace snap
  * in case we have a callback since that requires a lot of memory in one
  * single block.
  */
+
 
 /** \fn process::process_output_callback::output_available();
  * \brief The function called any time output is available.
@@ -136,6 +137,7 @@ namespace snap
  * \endmsc
  */
 
+
 /** \brief Initialize the process object.
  *
  * This function saves the name of the process. The name is generally a
@@ -144,7 +146,7 @@ namespace snap
  *
  * \param[in] name  The name of the process.
  */
-process::process(const QString& name)
+process::process(QString const & name)
     : f_name(name)
     //, f_mode(mode_t::PROCESS_MODE_COMMAND) -- auto-init
     //, f_command("") -- auto-init
@@ -158,6 +160,7 @@ process::process(const QString& name)
 {
 }
 
+
 /** \brief Retrieve the name of this process object.
  *
  * This process object is given a name on creation. In most cases this is
@@ -165,10 +168,11 @@ process::process(const QString& name)
  *
  * \return The name of the process.
  */
-const QString& process::get_name() const
+QString const & process::get_name() const
 {
     return f_name;
 }
+
 
 /** \brief Set the management mode.
  *
@@ -219,6 +223,7 @@ void process::set_mode(mode_t mode)
     f_mode = mode;
 }
 
+
 /** \brief Set how the environment variables are defined in the process.
  *
  * By default all the environment variables from the current process are
@@ -234,6 +239,7 @@ void process::set_forced_environment(bool forced)
     f_forced_environment = forced;
 }
 
+
 /** \brief Define the command to run.
  *
  * The command name may be a full path or just the command filename.
@@ -246,7 +252,7 @@ void process::set_forced_environment(bool forced)
  *
  * \param[in] command  The command to start the new process.
  */
-void process::set_command(const QString& command)
+void process::set_command(QString const & command)
 {
     f_command = command;
 }
@@ -259,7 +265,7 @@ void process::set_command(const QString& command)
  *
  * \param[in] arg  The argument to be added.
  */
-void process::add_argument(const QString& arg)
+void process::add_argument(QString const & arg)
 {
     f_arguments.push_back(arg);
 }
@@ -286,7 +292,7 @@ void process::add_argument(const QString& arg)
  * \param[in] name  The name of the environment variable to add.
  * \param[in] value  The new value of that environment variable.
  */
-void process::add_environ(const QString& name, const QString& value)
+void process::add_environ(QString const & name, QString const & value)
 {
     if(value.isEmpty())
     {
@@ -337,7 +343,7 @@ int process::run()
         //typedef controlled_vars::ptr_need_init<process> mpprocess_t;
         typedef controlled_vars::ptr_auto_init<FILE> zpfile_t;
 
-        raii_pipe(/*process *p,*/ const QString& command, const snap_string_list& arguments)
+        raii_pipe(/*process *p,*/ QString const & command, snap_string_list const & arguments)
             //: f_process(p)
             //, f_file(NULL) -- auto-init
         {
@@ -355,12 +361,12 @@ int process::run()
             close_pipe();
         }
 
-        const QString& command_line() const
+        QString const & command_line() const
         {
             return f_command;
         }
 
-        FILE *open_pipe(bool in)
+        FILE * open_pipe(bool in)
         {
             f_file.reset(popen(f_command.toUtf8().data(), in ? "w" : "r"));
             return f_file;
@@ -406,7 +412,7 @@ int process::run()
 
         case mode_t::PROCESS_MODE_INPUT:
             {
-                FILE *f(rp.open_pipe(true));
+                FILE * f(rp.open_pipe(true));
                 if(f == NULL)
                 {
                     return -1;
@@ -421,7 +427,7 @@ int process::run()
 
         case mode_t::PROCESS_MODE_OUTPUT:
             {
-                FILE *f(rp.open_pipe(false));
+                FILE * f(rp.open_pipe(false));
                 if(f == NULL)
                 {
                     return -1;
@@ -569,10 +575,10 @@ int process::run()
         {
             // convert arguments so we can use them with execvpe()
             std::vector<std::string> args;
-            std::vector<const char *> args_strings;
+            std::vector<char const *> args_strings;
             std::string cmd(f_command.toUtf8().data());
             args_strings.push_back(cmd.c_str());
-            int args_max(f_arguments.size());
+            int const args_max(f_arguments.size());
             for(int i(0); i < args_max; ++i)
             {
                 args.push_back(f_arguments[i].toUtf8().data());
@@ -586,10 +592,10 @@ int process::run()
             {
                 // since we do not limit the child to only the specified
                 // environment, add ours but do not overwrite anything
-                for(char **env(environ); *env != NULL; ++env)
+                for(char ** env(environ); *env != NULL; ++env)
                 {
-                    const char *s(*env);
-                    const char *n(s);
+                    char const * s(*env);
+                    char const * n(s);
                     while(*s != '\0')
                     {
                         if(*s == '=')
@@ -608,7 +614,7 @@ int process::run()
                 }
             }
             std::vector<std::string> envs;
-            std::vector<const char *> envs_strings;
+            std::vector<char const *> envs_strings;
             for(environment_map_t::const_iterator it(src_envs.begin()); it != src_envs.end(); ++it)
             {
                 envs.push_back(it->first + "=" + it->second);
@@ -652,7 +658,7 @@ int process::run()
             class in_t : public snap_thread::snap_runner
             {
             public:
-                in_t(const QByteArray& input, int& pipe)
+                in_t(QByteArray const & input, int & pipe)
                     : snap_runner("process::in")
                     , f_input(input)
                     , f_pipe(pipe)
@@ -682,8 +688,8 @@ int process::run()
                     f_pipe = -1;
                 }
 
-                const QByteArray&  f_input;
-                int&            f_pipe;
+                const QByteArray &  f_input;
+                int &               f_pipe;
             } in(f_input, inout.f_pipes[1]);
             snap_thread in_thread("process::in::thread", &in);
             if(!in_thread.start())
@@ -694,7 +700,7 @@ int process::run()
             class out_t : public snap_thread::snap_runner
             {
             public:
-                out_t(QByteArray& output)
+                out_t(QByteArray & output)
                     : snap_runner("process::out")
                     , f_output(output)
                     //, f_pipe() -- auto-init
@@ -736,7 +742,7 @@ int process::run()
                 typedef controlled_vars::ptr_no_init<process_output_callback>   rp_process_output_callback_t;
                 typedef controlled_vars::ptr_no_init<process>                   rp_process_t;
 
-                QByteArray&                     f_output;
+                QByteArray &                    f_output;
                 controlled_vars::rint32_t       f_pipe;
                 rp_process_output_callback_t    f_callback;
                 rp_process_t                    f_process;
@@ -751,7 +757,7 @@ int process::run()
             }
 
             // wait for the child process first
-            int r( child.wait() );
+            int const r( child.wait() );
             //
             // then wait on the two threads
             in_thread.stop();
@@ -784,7 +790,7 @@ int process::run()
  *
  * \param[in] input  The input of the process (stdin).
  */
-void process::set_input(const QString& input)
+void process::set_input(QString const & input)
 {
     // this is additive!
     f_input += input.toUtf8();
@@ -808,7 +814,7 @@ void process::set_input(const QString& input)
  *
  * \param[in] input  The input of the process (stdin).
  */
-void process::set_input(const QByteArray& input)
+void process::set_input(QByteArray const & input)
 {
     // this is additive!
     f_input += input;
@@ -836,7 +842,7 @@ void process::set_input(const QByteArray& input)
  */
 QString process::get_output(bool reset)
 {
-    QString output(QString::fromUtf8(f_output));
+    QString const output(QString::fromUtf8(f_output));
     if(reset)
     {
         f_output.clear();
@@ -862,7 +868,7 @@ QString process::get_output(bool reset)
  */
 QByteArray process::get_binary_output(bool reset)
 {
-    QByteArray output(f_output);
+    QByteArray const output(f_output);
     if(reset)
     {
         f_output.clear();
@@ -879,7 +885,7 @@ QByteArray process::get_binary_output(bool reset)
  *
  * \param[in] callback  The callback class that is called on output arrival.
  */
-void process::set_output_callback(process_output_callback *callback)
+void process::set_output_callback(process_output_callback * callback)
 {
     f_output_callback = callback;
 }
@@ -948,7 +954,7 @@ pid_t process_list::proc_info::get_ppid() const
  *
  * \return The parent process identifier.
  */
-void process_list::proc_info::get_page_faults(unsigned long& major, unsigned long& minor) const
+void process_list::proc_info::get_page_faults(unsigned long & major, unsigned long & minor) const
 {
     major = f_proc->maj_delta;
     minor = f_proc->min_delta;
@@ -1003,10 +1009,10 @@ char process_list::proc_info::get_status() const
  * \param[out] cstime  The accumulated kernel time of this task
  *                     and its children.
  */
-void process_list::proc_info::get_times(unsigned long long& utime,
-                                         unsigned long long& stime,
-                                         unsigned long long& cutime,
-                                         unsigned long long& cstime) const
+void process_list::proc_info::get_times(unsigned long long & utime,
+                                         unsigned long long & stime,
+                                         unsigned long long & cutime,
+                                         unsigned long long & cstime) const
 {
     utime = f_proc->utime;
     stime = f_proc->stime;
@@ -1106,7 +1112,7 @@ int process_list::proc_info::get_args_size() const
 {
     if(f_count == -1)
     {
-        char **s(f_proc->cmdline);
+        char ** s(f_proc->cmdline);
         if(s != nullptr)
         {
             while(*s != nullptr)
@@ -1315,7 +1321,7 @@ process_list::proc_info_pointer_t process_list::next()
 {
     struct deleters
     {
-        static void delete_proctab(PROCTAB *ptr)
+        static void delete_proctab(PROCTAB * ptr)
         {
             if(ptr != nullptr)
             {
@@ -1323,7 +1329,7 @@ process_list::proc_info_pointer_t process_list::next()
             }
         }
 
-        static void delete_proc(proc_t *ptr)
+        static void delete_proc(proc_t * ptr)
         {
             if(ptr != nullptr)
             {

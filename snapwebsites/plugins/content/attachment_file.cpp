@@ -321,6 +321,64 @@ void attachment_file::set_dependencies(dependency_list_t& dependencies)
 }
 
 
+/** \brief Define the number of revisions to keep.
+ *
+ * By default, user files are all kept around forever. However, we use
+ * attachments for many things, including automatically generated files
+ * which get new versions generated all the time (i.e. if you run
+ * the snapbackend every 5 minutes, which is the default, you could
+ * very well get a new version of your feeds, sitemap.xml, robots.txt,
+ * etc. every 5 minutes.)
+ *
+ * The limit defined here is the number of revisions to keep, including
+ * the new revision. So if you use 1, all revisions except the last
+ * one being created with the create_attachment() function, get deleted.
+ * In most cases, you want a limit of 2 or 3. This way you keep the
+ * previous one which another process may be uploading to a client at
+ * the same time (thus, deleting it under the feet of that other process
+ * would not be really nice.)
+ *
+ * In a case where a system offers multiple files, you will have to be
+ * careful. If it works as with the sitemap.xml, which can reference
+ * the correct revision of each file, you will be in luck. The only
+ * revision you will have to worry about is the sitemap.xml file
+ * revision. All the others can be moved to the latest revision
+ * immediately since the URL to the sub-sitemap.xml files can include
+ * the revision as part of the URL as in:
+ *
+ * \code
+ *      ...
+ *      <url>http://your.site/sitemap3.xml?revision=3</url>
+ *      ...
+ * \endcode
+ *
+ * \warning
+ * At this time, the current revision is immediately forced to the newer
+ * attachment by the create_attachment() and you do not have a choice...
+ * This is a known limitation until we have sufficient UI to allow the
+ * user to really choose what to do when saving new content. So once we
+ * have that implemented, we will be able to setup the revision properly:
+ * leave the current setup as it is until all the new file(s) get saved,
+ * then update it appropriately. That way processes loading the files
+ * will be sent to previous revisions, which will not be touched. Once
+ * all the new revisions are available, then it will be switch to those
+ * and the download will work as expected from all of those new files.
+ *
+ * \param[in] limit  The number of revisions to keep. Use 0 for unlimited.
+ *
+ * \sa get_revision_limit()
+ */
+void attachment_file::set_revision_limit(int limit)
+{
+    if(limit < 0)
+    {
+        throw content_exception_invalid_parameter("the revision limit cannot be set to a negative value");
+    }
+
+    f_revision_limit = limit;
+}
+
+
 /** \brief Set the name of the field the attachment comes from.
  *
  * This function is used by the load_attachment() function to set the
@@ -659,9 +717,30 @@ int64_t attachment_file::get_update_time() const
  *
  * \return The list of dependency of this attachment.
  */
-dependency_list_t const& attachment_file::get_dependencies() const
+dependency_list_t const & attachment_file::get_dependencies() const
 {
     return f_dependencies;
+}
+
+
+/** \brief Get the number of revisions to keep.
+ *
+ * This function returns the number of revisions to be kept in the database
+ * for that attachment. This is used by backends that automatically generate
+ * new files all the time.
+ *
+ * By default, attachments are kept forever (the limit is zero.)
+ *
+ * For additional information about the revision limit, see the
+ * set_revision_limit() function.
+ *
+ * \return The limit number of revisions.
+ *
+ * \sa set_revision_limit()
+ */
+int attachment_file::get_revision_limit() const
+{
+    return f_revision_limit;
 }
 
 

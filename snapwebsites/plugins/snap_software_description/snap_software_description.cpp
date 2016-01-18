@@ -509,7 +509,6 @@ void snap_software_description::save_pad_file_data()
     attachment::attachment * attachment_plugin(attachment::attachment::instance());
 
     // save the padmap.txt
-    // TODO: avoid the save if the file did not change
     //
     {
         QString const filename("padmap.txt");
@@ -532,6 +531,7 @@ void snap_software_description::save_pad_file_data()
         attachment.set_file_index(1);
         attachment.set_file_data(f_padmap_txt.toUtf8());
         attachment.set_file_mime_type("text/plain");
+        attachment.set_revision_limit(3);
 
         content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
     }
@@ -550,9 +550,6 @@ void snap_software_description::save_pad_file_data()
         QString const output(QString("<?xml version=\"1.0\"?>%1").arg(x.evaluate_to_string()));
 
         {
-            // the root file is named "snap-software-description.xml"
-            // and the files further down are named "catalog.xml"
-            //
             QString const filename("list.xml");
             int64_t const start_date(f_snap->get_start_date());
 
@@ -573,6 +570,7 @@ void snap_software_description::save_pad_file_data()
             attachment.set_file_index(1);
             attachment.set_file_data(output.toUtf8());
             attachment.set_file_mime_type("text/xml");
+            attachment.set_revision_limit(3);
 
             content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
         }
@@ -685,6 +683,7 @@ bool snap_software_description::create_publisher()
             attachment.set_file_index(1);
             attachment.set_file_data(output.toUtf8());
             attachment.set_file_mime_type("text/xml");
+            attachment.set_revision_limit(3);
 
             content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
         }
@@ -801,6 +800,7 @@ bool snap_software_description::create_support()
             attachment.set_file_index(1);
             attachment.set_file_data(output.toUtf8());
             attachment.set_file_mime_type("text/xml");
+            attachment.set_revision_limit(3);
 
             content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
         }
@@ -1020,6 +1020,7 @@ bool snap_software_description::create_catalog(content::path_info_t & catalog_ip
             attachment.set_file_index(1);
             attachment.set_file_data(output.toUtf8());
             attachment.set_file_mime_type("text/xml");
+            attachment.set_revision_limit(3);
 
             content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
         }
@@ -1150,6 +1151,7 @@ bool snap_software_description::create_file(content::path_info_t & file_ipath)
             attachment.set_file_index(1);
             attachment.set_file_data(output.toUtf8());
             attachment.set_file_mime_type("text/xml");
+            attachment.set_revision_limit(3);
 
             content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
         }
@@ -1198,6 +1200,7 @@ bool snap_software_description::create_file(content::path_info_t & file_ipath)
             attachment.set_file_index(1);
             attachment.set_file_data(output.toUtf8());
             attachment.set_file_mime_type("text/xml");
+            attachment.set_revision_limit(3);
 
             content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
         }

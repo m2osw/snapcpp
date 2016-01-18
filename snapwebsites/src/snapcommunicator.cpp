@@ -1806,31 +1806,45 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // if we have local messages that were cached, then
                     // forward them now
                     //
-                    if(!f_local_message_cache.empty())
+                    // we use an index to make sure we can cleanly remove
+                    // messages from the cache as we forward them to the
+                    // new service
+                    //
+                    size_t max_messages(f_local_message_cache.size());
+                    for(size_t idx(0); idx < max_messages; )
                     {
-                        for(auto m : f_local_message_cache)
+                        snap::snap_communicator_message const m(f_local_message_cache[idx]);
+                        if(m.get_service() == service_name)
                         {
-                            if(m.get_service() == service_name)
+                            // whether it works, remove the message from
+                            // the cache
+                            //
+                            f_local_message_cache.erase(f_local_message_cache.begin() + idx);
+                            --max_messages;
+                            // no ++idx since we removed the item at 'idx'
+
+                            // TBD: should we remove the service name before forwarding?
+                            //      (we have two instances)
+                            //
+                            //verify_command(base, m); -- we cannot do that here since we did not yet get the COMMANDS reply
+                            if(remote_communicator)
                             {
-                                // TBD: should we remove the service name before forwarding?
-                                //      (we have to instances)
-                                //
-                                //verify_command(base, m); -- we cannot do that here since we did not yet get the COMMANDS reply
-                                if(remote_communicator)
-                                {
-                                    remote_communicator->send_message(m);
-                                }
-                                else if(service_conn)
-                                {
-                                    service_conn->send_message(m);
-                                }
-                                else
-                                {
-                                    // we have to have a remote or service connection here
-                                    //
-                                    throw snap::snap_exception("HELP sent on a \"weird\" connection.");
-                                }
+                                remote_communicator->send_message(m);
                             }
+                            else if(service_conn)
+                            {
+                                service_conn->send_message(m);
+                            }
+                            else
+                            {
+                                // we have to have a remote or service connection here
+                                //
+                                throw snap::snap_exception("REGISTER sent on a \"weird\" connection (3).");
+                            }
+                        }
+                        else
+                        {
+                            ++idx;
                         }
                     }
                     return;
@@ -2099,7 +2113,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
         return;
     }
 
-SNAP_LOG_TRACE("received event for remote service *** not yet implemented! ***\n");
+SNAP_LOG_TRACE("received event for remote service \"")(service)("\" *** not yet implemented! ***");
 
 }
 

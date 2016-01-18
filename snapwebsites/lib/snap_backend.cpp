@@ -561,7 +561,10 @@ bool child_connection::lock(QString const & uri)
     safe_timeout st(f_context);
 
     // we use a special name for the backend to avoid clashes with
-    // standard plugin locks
+    // standard plugin locks; also the URI includes the name of
+    // the action locking the database (i.e. different actions
+    // can work in parallel; but one specific action can only
+    // run once against one website)
     //
     return f_lock.lock(QString("*backend* %1").arg(uri));
 }
@@ -636,6 +639,9 @@ bool snap_backend::stop_received() const
     }
 
     // make sure to process any pending messages
+    //
+    // Note: we definitively are in the child process, so the
+    //       g_child_connection exists
     //
     g_child_connection->process_read();
 
@@ -976,7 +982,7 @@ bool snap_backend::process_timeout()
         // we want to check for the next entry in our backend table
         //
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(5); // read only the first row
+        column_predicate.setCount(1); // read only the first row
         column_predicate.setIndex(); // behave like an index
         QtCassandra::QCassandraRow::pointer_t row(f_backend_table->row(f_action));
         for(;;)
@@ -1278,6 +1284,7 @@ void snap_backend::process_child_message(snap::snap_communicator_message const &
             snap::snap_communicator_message reply;
             reply.set_command("COMMANDS");
             reply.add_parameter("list", "HELP,STOP,UNKNOWN");
+            // we are the in the child so g_child_connection exists
             g_child_connection->send_message(reply);
             return;
         }
@@ -1297,6 +1304,7 @@ void snap_backend::process_child_message(snap::snap_communicator_message const &
             snap::snap_communicator_message reply;
             reply.set_command("UNKNOWN");
             reply.add_parameter("command", command);
+            // we are the in the child so g_child_connection exists
             g_child_connection->send_message(reply);
             return;
         }
@@ -1491,12 +1499,20 @@ bool snap_backend::process_backend_uri(QString const & uri)
     // (especially, we can send the child a STOP if we ourselves receive
     // a STOP.)
     //
-    // We also lock that website while this backend process is running.
-    //
     g_child_connection.reset(new child_connection(this, f_context));
-    if(!g_child_connection->lock(uri))
+
+    // We also lock that website while this backend process is running.
+    // The lock depends on the URI and the action taken.
+    //
+    QString const lock_uri(QString("%1#%2").arg(uri).arg(f_action));
+    if(!g_child_connection->lock(lock_uri))
     {
         g_child_connection.reset();
+
+        // the lock failed, we cannot run against this website
+        //
+        SNAP_LOG_INFO("Lock in order to process website \"")(uri)("\" with action \"")(f_action)("\" failed.");
+
         return false;
     }
     g_communicator->add_connection(g_child_connection);

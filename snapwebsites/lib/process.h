@@ -34,49 +34,49 @@ namespace snap
 class snap_process_exception : public snap_exception
 {
 public:
-    snap_process_exception(const char *        whatmsg) : snap_exception("snap_process", whatmsg) {}
-    snap_process_exception(const std::string & whatmsg) : snap_exception("snap_process", whatmsg) {}
-    snap_process_exception(const QString &     whatmsg) : snap_exception("snap_process", whatmsg) {}
+    explicit snap_process_exception(const char *        whatmsg) : snap_exception("snap_process", whatmsg) {}
+    explicit snap_process_exception(const std::string & whatmsg) : snap_exception("snap_process", whatmsg) {}
+    explicit snap_process_exception(const QString &     whatmsg) : snap_exception("snap_process", whatmsg) {}
 };
 
 class snap_process_exception_invalid_mode_error : public snap_process_exception
 {
 public:
-    snap_process_exception_invalid_mode_error(const char *        whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_invalid_mode_error(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_invalid_mode_error(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_invalid_mode_error(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_invalid_mode_error(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_invalid_mode_error(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 class snap_process_exception_already_initialized : public snap_process_exception
 {
 public:
-    snap_process_exception_already_initialized(const char *        whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_already_initialized(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_already_initialized(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_already_initialized(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_already_initialized(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_already_initialized(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 class snap_process_exception_unknown_flag : public snap_process_exception
 {
 public:
-    snap_process_exception_unknown_flag(const char *        whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_unknown_flag(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_unknown_flag(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_unknown_flag(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_unknown_flag(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_unknown_flag(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 class snap_process_exception_openproc : public snap_process_exception
 {
 public:
-    snap_process_exception_openproc(const char *        whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_openproc(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_openproc(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_openproc(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_openproc(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_openproc(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 class snap_process_exception_data_not_available : public snap_process_exception
 {
 public:
-    snap_process_exception_data_not_available(const char *        whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_data_not_available(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_data_not_available(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_data_not_available(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_data_not_available(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_data_not_available(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 
@@ -105,7 +105,7 @@ public:
 
                                 process(QString const & name);
 
-    QString const&              get_name() const;
+    QString const &             get_name() const;
 
     // setup the process
     void                        set_mode(mode_t mode);

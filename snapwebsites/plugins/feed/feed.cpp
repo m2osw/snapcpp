@@ -717,8 +717,8 @@ void feed::generate_feeds()
             // now generate the actual output (RSS, Atom, etc.)
             // from the data we just gathered
             bool success(true);
-            int const max_feed(feed_formats.size());
-            for(int i(0); i < max_feed; ++i)
+            int const max_formats(feed_formats.size());
+            for(int i(0); i < max_formats; ++i)
             {
                 xslt x;
                 x.set_xsl(feed_formats[i]);
@@ -848,8 +848,9 @@ void feed::generate_feeds()
                     attachment.set_file_index(1);
                     attachment.set_file_data(feed_result.toString(-1).toUtf8());
                     attachment.set_file_mime_type(mimetype);
+                    attachment.set_revision_limit(3);
 
-                    // TODO: we probably want to test the return value
+                    // TODO: we probably want to test the "return value"
                     content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
 
                     {

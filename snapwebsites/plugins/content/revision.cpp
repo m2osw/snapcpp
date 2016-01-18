@@ -158,7 +158,7 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
  *
  * \return The current revision number.
  */
-snap_version::version_number_t content::get_current_revision(QString const& key, snap_version::version_number_t const branch, QString const& locale, bool working_branch)
+snap_version::version_number_t content::get_current_revision(QString const & key, snap_version::version_number_t const branch, QString const & locale, bool working_branch)
 {
     QString revision_key(QString("%1::%2::%3")
             .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))

@@ -114,6 +114,7 @@ enum class name_t
     SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY,
     SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH,
     SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION,
+    SNAP_NAME_CONTENT_REVISION_LIMITS,
     SNAP_NAME_CONTENT_REVISION_TABLE,       // Name of Cassandra table used for revision information
     SNAP_NAME_CONTENT_SECRET_TABLE,         // Name of Cassandra table used for secret content
     SNAP_NAME_CONTENT_SHORT_TITLE,
@@ -210,6 +211,14 @@ public:
     explicit content_exception_invalid_name(char const *        what_msg) : content_exception(what_msg) {}
     explicit content_exception_invalid_name(std::string const & what_msg) : content_exception(what_msg) {}
     explicit content_exception_invalid_name(QString const &     what_msg) : content_exception(what_msg) {}
+};
+
+class content_exception_invalid_parameter : public content_exception
+{
+public:
+    explicit content_exception_invalid_parameter(char const *        what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_parameter(std::string const & what_msg) : content_exception(what_msg) {}
+    explicit content_exception_invalid_parameter(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_unexpected_revision_type : public content_exception
@@ -551,6 +560,7 @@ public:
     void                            set_creation_time(int64_t time);
     void                            set_update_time(int64_t time);
     void                            set_dependencies(dependency_list_t & dependencies);
+    void                            set_revision_limit(int limit);
 
     void                            set_file_name(QString const & name);
     void                            set_file_filename(QString const & filename);
@@ -574,22 +584,24 @@ public:
     int64_t                         get_creation_time() const;
     int64_t                         get_update_time() const;
     dependency_list_t const &       get_dependencies() const;
+    int                             get_revision_limit() const;
     QString const &                 get_name() const;
 
 private:
-    zpsnap_child_t                  f_snap;
+    snap_child *                    f_snap = nullptr;
     snap_child::post_file_t         f_file;
-    controlled_vars::fbool_t        f_multiple;
-    controlled_vars::fbool_t        f_has_cpath;
+    bool                            f_multiple = false;
+    bool                            f_has_cpath = false;
     QString                         f_parent_cpath;
     QString                         f_field_name;
     QString                         f_attachment_cpath;
     QString                         f_attachment_owner;
     QString                         f_attachment_type;
     mutable QString                 f_name;
-    controlled_vars::zint64_t       f_creation_time;
-    controlled_vars::zint64_t       f_update_time;
+    int64_t                         f_creation_time = 0;
+    int64_t                         f_update_time = 0;
     dependency_list_t               f_dependencies;
+    int                             f_revision_limit = 0;
 };
 
 
@@ -769,6 +781,7 @@ public:
     SNAP_SIGNAL(page_cloned, (cloned_tree_t const & tree), (tree));
     SNAP_SIGNAL(copy_branch_cells, (QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch), (source_cells, destination_row, destination_branch));
     SNAP_SIGNAL_WITH_MODE(destroy_page, (path_info_t & ipath), (ipath), START_AND_DONE);
+    SNAP_SIGNAL_WITH_MODE(destroy_revision, (QString const & revision_key), (revision_key), START_AND_DONE);
 
     // add content for addition to the database
     void                add_xml(QString const & plugin_name);
