@@ -879,6 +879,44 @@ void links::init_tables()
 }
 
 
+/** \brief Signal that \p link was modified.
+ *
+ * This signal is triggered any time a link gets created, modified,
+ * or deleted.
+ *
+ * When the link was created or modified, the \p created flag is set
+ * to true. When the link was deleted, the \p created flag is set to
+ * false.
+ *
+ * The signal is often called twice: once for the source link
+ * and once for the destination link.
+ *
+ * Note that since the programmer can easilly interchange the source
+ * and destination link information (i.e. if you want to link nodes
+ * A and B, you can make either A or B the source to any calls of
+ * the links plugin,) which one is called first should not be made
+ * relevant to your plugin implementation.
+ *
+ * \note
+ * The function returns false when Snap! Websites is initializing
+ * a website. This means all the other plugins do not receive the
+ * signal, but at the same time, they do not disturb the
+ * initialization process either. Plugins should know how to handle
+ * this particular case in a different way.
+ *
+ * \param[in] link  The link that was modified or created.
+ * \param[in] created  Whether the link is new (true) or was modified (false).
+ *
+ * \return true if the signal is to be processed by other plugins.
+ */
+bool links::modified_link_impl(link_info const & link, bool const created)
+{
+    NOTUSED(link);
+    NOTUSED(created);
+    return f_snap->is_ready();
+}
+
+
 /** \brief Create a link between two rows.
  *
  * Links are always going both ways: the source links to the destination

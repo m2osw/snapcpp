@@ -19,13 +19,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/admin/settings/locale" owner="output">
-    <param name="content::title" revision="revision">Locale Settings</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>Various settings of the website wide locale information.</p>]]>
-    </param>
+    <!-- the main definition of this page is found in the
+         plugins/output/content.xml file -->
     <param name="editor::layout" revision="global" overwrite="yes">"locale-settings-page";</param>
     <param name="layout::layout" revision="global" overwrite="yes">"locale-settings-parser";</param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/admin/settings/locale/info" owner="output">
     <param name="content::title" revision="revision">Locale Information</param>

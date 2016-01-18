@@ -938,7 +938,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, bool const displ
                 }
                 else
                 {
-                    v = QString("%1").arg(status);
+                    v = QString("%1 (%2)").arg(status & 255).arg((status / 256) & 255);
                 }
             }
             break;
@@ -1208,27 +1208,27 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v )
             {
                 state_name = state_name.left(pos).trimmed();
             }
-            if(v == "0" || state_name == "unknown" || state_name == "unknown state")
+            if(state_name == "0" || state_name == "unknown" || state_name == "unknown state")
             {
                 cv = 0;
             }
-            else if(v == "1" || state_name == "create")
+            else if(state_name == "1" || state_name == "create")
             {
                 cv = 1;
             }
-            else if(v == "2" || state_name == "normal")
+            else if(state_name == "2" || state_name == "normal")
             {
                 cv = 2;
             }
-            else if(v == "3" || state_name == "hidden")
+            else if(state_name == "3" || state_name == "hidden")
             {
                 cv = 3;
             }
-            else if(v == "4" || state_name == "moved")
+            else if(state_name == "4" || state_name == "moved")
             {
                 cv = 4;
             }
-            else if(v == "5" || state_name == "deleted")
+            else if(state_name == "5" || state_name == "deleted")
             {
                 cv = 5;
             }
@@ -1268,6 +1268,11 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v )
                 {
                     cv |= 5 * 256;
                 }
+            }
+            else
+            {
+                // use not working by default
+                cv |= 1 * 256;
             }
             cvalue.setUInt32Value( cv );
         }

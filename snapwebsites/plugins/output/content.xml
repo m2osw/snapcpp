@@ -108,6 +108,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
+  <!-- this is for the locale plugin, however, the editor/layout information
+       for that page are only available in the locale_settings plugin -->
+  <content path="/admin/settings/locale" owner="output">
+    <param name="content::title" revision="revision">Locale Settings</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Various settings of the website wide locale information.</p>]]>
+    </param>
+    <!-- setup some defaults otherwise we get some really weird internal
+         default for websites... -->
+    <param name="locale_settings::locale" revision="revision">en_US</param>
+    <param name="locale_settings::timezone" revision="revision">America/Los_Angeles</param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+  </content>
   <content path="/admin/layouts">
     <param name="content::title" revision="revision">List of Installed Layouts</param>
     <param name="content::body" revision="revision">
@@ -386,8 +399,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <!-- the content plugin depends on the path plugin so it cannot defined a content.xml file -->
   <content path="/admin/settings/path">
     <param name="content::title" revision="revision">Path Settings</param>
+    <!-- we want to support stuff like pathauto, remap, redirect, etc. -->
     <param name="content::body" revision="revision">
-      <!-- we want to support stuff like pathauto, remap, redirect, etc. -->
       <![CDATA[<p>Administer your path environment.</p>]]>
     </param>
   </content>

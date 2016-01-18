@@ -76,12 +76,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="permissions::dynamic" type="int8" revision="global">1</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
-  <content path="/types/permissions/rights/administer/website/info" owner="permissions">
-    <param name="content::title" revision="revision">Administer Basic Website Information Right</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>Administer basic information on the website.</p><p>This right gives the user access to all basic information available on the website.</p>]]>
-    </param>
-  </content>
   <!-- handle the messages settings because messages is too low level for having a form of its own -->
   <content path="/admin/settings/messages" owner="output">
     <param name="content::title" revision="revision">Messages Administration</param>
@@ -90,7 +84,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
   </content>
   <!-- unsubscribe public form -->
-  <content path="unsubscribe" owner="output">
+  <content path="/unsubscribe" owner="output">
     <param name="content::title" revision="revision">Unsubscribe from this Snap! Websites Installation</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Please enter your email address so we can avoid sending you any more emails.</p>]]>

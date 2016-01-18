@@ -1522,7 +1522,14 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     //      that we don't know anything about...
     //content_plugin->add_xml_document(dom, p == nullptr ? content::get_name(content::name_t::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
     content_plugin->add_xml_document(dom, content::get_name(content::name_t::SNAP_NAME_CONTENT_OUTPUT_PLUGIN));
-    f_snap->finish_update();
+
+    // if the snap_child object is ready, then the initialization process
+    // was over for a while and thus we need to ask the system to process
+    // the new content that was just added by the layout system...
+    if(f_snap->is_ready())
+    {
+        f_snap->finish_update();
+    }
 
     // after an update of the content.xml file we expect the layout::boxes
     // field to be defined

@@ -34,11 +34,13 @@ namespace locale
 {
 
 
-//enum class name_t
-//{
-//    SNAP_NAME_LOCALE_NAME
-//};
-//char const * get_name(name_t name) __attribute__ ((const));
+enum class name_t
+{
+    SNAP_NAME_LOCALE_SETTINGS_LOCALE,
+    SNAP_NAME_LOCALE_SETTINGS_TIMEZONE,
+    SNAP_NAME_LOCALE_SETTINGS_PATH
+};
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 //class locale_exception : public snap_exception

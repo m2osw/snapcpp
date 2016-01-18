@@ -75,10 +75,6 @@ public:
     virtual int64_t             do_update(int64_t last_updated);
     virtual void                bootstrap(snap_child * snap);
 
-    // locale signals
-    void                        on_set_locale();
-    void                        on_set_timezone();
-
     // filter signals
     void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
 

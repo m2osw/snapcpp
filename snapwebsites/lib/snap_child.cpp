@@ -3615,7 +3615,7 @@ void snap_child::mark_for_initialization()
  * \param[in] data  The data pointer.
  * \param[in] size  The number of bytes to write from data.
  */
-void snap_child::write(char const *data, ssize_t size)
+void snap_child::write(char const * data, ssize_t size)
 {
     if(f_socket == -1)
     {
@@ -5643,6 +5643,27 @@ bool snap_child::is_debug() const
         throw snap_logic_exception("server pointer is nullptr");
     }
     return server->is_debug();
+}
+
+
+/** \brief This function tells you whether the child is ready or not.
+ *
+ * The child prepares the database using a lot of complicated add_content()
+ * calls in the content plugin. Once all those calls were made, the system
+ * finally tells the world that it is ready and then it triggers the
+ * execute() signal.
+ *
+ * The flag is false up until just before the execute() function of
+ * the server gets called. It is a good way to know whether you are
+ * still in the initialization process or you are already working
+ * from within the path plugin (which is the one plugin that captures
+ * the execute() signal).
+ *
+ * \return true if the snap_child object triggered the execute() signal.
+ */
+bool snap_child::is_ready() const
+{
+    return f_ready;
 }
 
 

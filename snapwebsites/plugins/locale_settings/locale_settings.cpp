@@ -33,35 +33,26 @@
 SNAP_PLUGIN_START(locale_settings, 1, 0)
 
 
-/* \brief Get a fixed locale_settings name.
- *
- * The locale_settings plugin makes use of different names in the database.
- * This function ensures that you get the right spelling for a given name.
- *
- * \param[in] name  The name to retrieve.
- *
- * \return A pointer to the name.
- */
-char const * get_name(name_t name)
-{
-    switch(name)
-    {
-    case name_t::SNAP_NAME_LOCALE_SETTINGS_LOCALE:
-        return "locale_settings::locale";
-
-    case name_t::SNAP_NAME_LOCALE_SETTINGS_TIMEZONE:
-        return "locale_settings::timezone";
-
-    case name_t::SNAP_NAME_LOCALE_SETTINGS_PATH:
-        return "admin/settings/locale";
-
-    default:
-        // invalid index
-        throw snap_logic_exception("invalid name_t::SNAP_NAME_LOCALE_SETTINGS_...");
-
-    }
-    NOTREACHED();
-}
+///* \brief Get a fixed locale_settings name.
+// *
+// * The locale_settings plugin makes use of different names in the database.
+// * This function ensures that you get the right spelling for a given name.
+// *
+// * \param[in] name  The name to retrieve.
+// *
+// * \return A pointer to the name.
+// */
+//char const * get_name(name_t name)
+//{
+//    switch(name)
+//    {
+//    default:
+//        // invalid index
+//        throw snap_logic_exception("invalid name_t::SNAP_NAME_LOCALE_SETTINGS_...");
+//
+//    }
+//    NOTREACHED();
+//}
 
 
 
@@ -227,67 +218,7 @@ void locale_settings::bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN0(locale_settings, "locale", locale::locale, set_locale);
-    SNAP_LISTEN0(locale_settings, "locale", locale::locale, set_timezone);
     SNAP_LISTEN(locale_settings, "filter", filter::filter, replace_token, _1, _2, _3);
-}
-
-
-/** \brief Set locale (language) if not defined yet.
- *
- * This function checks for a locale definition in the locale settings
- * defined for the entire website. If there is such a locale, then it
- * gets used.
- *
- * This is generally the locale used by the website when a non logged in
- * visitor views the website (i.e. website wide locale.)
- */
-void locale_settings::on_set_locale()
-{
-    locale::locale * locale_plugin(locale::locale::instance());
-    QString const current_locale(locale_plugin->get_current_locale());
-
-    if(current_locale.isEmpty())
-    {
-        // check for a locale
-        content::path_info_t settings_ipath;
-        settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
-        content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
-        QString const locale_name(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_LOCALE))->value().stringValue());
-        locale_plugin->set_current_locale(locale_name);
-SNAP_LOG_TRACE("*** Set locale_settings/LOCALE [")(locale_name)("]");
-    }
-}
-
-
-/** \brief Set timezone if not defined yet.
- *
- * This function checks for a timezone definition in the locale settings
- * defined for the entire website. If there is such a timezone, then it
- * gets used.
- *
- * This is generally the timezone used by the website when a non logged in
- * visitor views the website (i.e. website wide timezone.)
- */
-void locale_settings::on_set_timezone()
-{
-    locale::locale * locale_plugin(locale::locale::instance());
-    QString const current_timezone(locale_plugin->get_current_timezone());
-
-    if(current_timezone.isEmpty())
-    {
-        // check for a locale
-        content::path_info_t settings_ipath;
-        settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
-        content::content * content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
-        QString const timezone_name(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_TIMEZONE))->value().stringValue());
-        locale_plugin->set_current_timezone(timezone_name);
-SNAP_LOG_TRACE("*** Set locale_settings/TIMEZONE [")(timezone_name)("]");
-    }
 }
 
 

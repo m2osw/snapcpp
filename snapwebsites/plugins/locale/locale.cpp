@@ -17,6 +17,8 @@
 
 #include "snap_locale.h"
 
+#include "../content/content.h"
+
 #include "log.h"
 #include "not_used.h"
 #include "qunicodestring.h"
@@ -33,29 +35,35 @@
 SNAP_PLUGIN_START(locale, 1, 0)
 
 
-///* \brief Get a fixed locale name.
-// *
-// * The locale plugin makes use of different names in the database. This
-// * function ensures that you get the right spelling for a given name.
-// *
-// * \param[in] name  The name to retrieve.
-// *
-// * \return A pointer to the name.
-// */
-//char const *get_name(name_t name)
-//{
-//    switch(name)
-//    {
-//    case SNAP_NAME_LOCALE_NAME:
-//        return "locale::name";
-//
-//    default:
-//        // invalid index
-//        throw snap_logic_exception("invalid SNAP_NAME_LOCALE_...");
-//
-//    }
-//    NOTREACHED();
-//}
+/* \brief Get a fixed locale name.
+ *
+ * The locale plugin makes use of different names in the database. This
+ * function ensures that you get the right spelling for a given name.
+ *
+ * \param[in] name  The name to retrieve.
+ *
+ * \return A pointer to the name.
+ */
+char const * get_name(name_t name)
+{
+    switch(name)
+    {
+    case name_t::SNAP_NAME_LOCALE_SETTINGS_LOCALE: // this is to retrieve the locale settings even when the locale_settings plugin is not installed
+        return "locale_settings::locale";
+
+    case name_t::SNAP_NAME_LOCALE_SETTINGS_PATH: // this is to retrieve the locale settings even when the locale_settings plugin is not installed
+        return "admin/settings/locale";
+
+    case name_t::SNAP_NAME_LOCALE_SETTINGS_TIMEZONE: // this is to retrieve the locale settings even when the locale_settings plugin is not installed
+        return "locale_settings::timezone";
+
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_LOCALE_...");
+
+    }
+    NOTREACHED();
+}
 
 
 
@@ -147,7 +155,7 @@ QString locale::description() const
  */
 QString locale::dependencies() const
 {
-    return "|server|";
+    return "|server|content|";
 }
 
 
@@ -193,7 +201,7 @@ void locale::bootstrap(snap_child * snap)
  *
  * \return A vector of locale_info_t structures.
  */
-locale::locale_list_t const& locale::get_locale_list()
+locale::locale_list_t const & locale::get_locale_list()
 {
     if(f_locale_list.isEmpty())
     {
@@ -275,7 +283,7 @@ locale::locale_list_t const& locale::get_locale_list()
  *
  * \return The list of timezone defined on this operating system.
  */
-locale::locale::timezone_list_t const& locale::get_timezone_list()
+locale::locale::timezone_list_t const & locale::get_timezone_list()
 {
     // read the file only if empty
     if(f_timezone_list.empty())
@@ -568,8 +576,24 @@ bool locale::set_locale_impl()
  */
 void locale::set_locale_done()
 {
+    if(f_current_locale.isEmpty())
+    {
+        // no other plugin setup the current locale, check out the
+        // global defaults for this website; it should always be
+        // defined
+        //
+        content::path_info_t settings_ipath;
+        settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
+        content::content * content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+        QString const locale_name(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_LOCALE))->value().stringValue());
+        set_current_locale(locale_name);
+    }
+
     // if the timezone was not defined, it is an empty string which is
     // exactly what we want to pass to the child set_timezone() function
+SNAP_LOG_TRACE("*** Set locale_settings::locale [")(f_current_locale)("]");
     f_snap->set_locale(f_current_locale);
 }
 
@@ -610,8 +634,21 @@ bool locale::set_timezone_impl()
  */
 void locale::set_timezone_done()
 {
+    if(f_current_timezone.isEmpty())
+    {
+        // check for a locale
+        content::path_info_t settings_ipath;
+        settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
+        content::content * content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+        QString const timezone_name(revision_row->cell(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_TIMEZONE))->value().stringValue());
+        set_current_timezone(timezone_name);
+    }
+
     // if the timezone was not defined, it is an empty string which is
     // exactly what we want to pass to the child set_timezone() function
+SNAP_LOG_TRACE("*** Set locale_settings::timezone [")(f_current_timezone)("]");
     f_snap->set_timezone(f_current_timezone);
 }
 

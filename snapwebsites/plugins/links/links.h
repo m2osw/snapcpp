@@ -279,7 +279,7 @@ public:
     // server::backend_action implementation
     virtual void        on_backend_action(QString const & action);
 
-    SNAP_SIGNAL_WITH_MODE(modified_link, (link_info const & link, bool const created), (link, created), NEITHER);
+    SNAP_SIGNAL(modified_link, (link_info const & link, bool const created), (link, created));
 
     // TBD should those be events? (they do trigger the modified_link() event already...)
     void                create_link(link_info const & src, link_info const & dst);

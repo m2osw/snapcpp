@@ -779,7 +779,7 @@ QString content::set_branch_key(QString const& key, snap_version::version_number
  *
  * \param[in] key  The path of the page concerned.
  */
-void content::initialize_branch(QString const& key)
+void content::initialize_branch(QString const & key)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 

@@ -2335,6 +2335,11 @@ bool content::load_attachment(QString const & key, attachment_file & file, bool 
  */
 bool content::modified_content_impl(path_info_t & ipath)
 {
+    if(f_snap->is_ready())
+    {
+        return false;
+    }
+
     int64_t const start_date(f_snap->get_start_date());
 
     {
@@ -3463,17 +3468,21 @@ void content::on_save_content()
         }
 
         // TODO: fix the locale... actually the revision for English is
-        //       the default and many we do not have to create the revision
+        //       the default and maybe we do not have to create the revision
         //       field? At the same time, we could call this function with
         //       all the locales defined in the parameters.
         //
         //       Note:
         //       The first reason for adding this initialization is in link
         //       with a problem I had and that problem is now resolved. This
-        //       does not mean it shouldn't be done, however, the revision
+        //       does not mean it should not be done, however, the revision
         //       is problematic because it needs to be incremented each time
-        //       we do an update when at this point it won't be. (Although
-        //       it seems to work fine at this point...)
+        //       we do an update when at this point it will not be. (Although
+        //       it seems to work fine at this point...) -- this is not
+        //       correct: the branch MUST be set to SYSTEM (0) for all data
+        //       added by content.xml. Also the branch does not include the
+        //       locale so I do not see why I mentioned that. Maybe I had
+        //       the locale there at the time.
         initialize_branch(d->f_path);
 
         // TODO: add support to specify the "revision owner" of the parameter
