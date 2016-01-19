@@ -38,7 +38,8 @@ void info::init_plugin_selection_editor_widgets(content::path_info_t & ipath, QS
 
     if(field_id == "plugin_path")
     {
-        QString const plugins_paths( f_snap->get_server_parameter("plugins_path") );
+        QString const plugins_paths( f_snap->get_server_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH)) );
+        QString const site_plugins(f_snap->get_server_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PARAM_PLUGINS)));
 
         QDomDocument doc(widget.ownerDocument());
         QDomNode parent(widget.parentNode());
@@ -87,39 +88,46 @@ void info::init_plugin_selection_editor_widgets(content::path_info_t & ipath, QS
                 QDomElement root(xml.createElement("snap"));
                 xml.appendChild(root);
 
-                // /info/name/...
+                // /snap[@locked=locked]
+                if(!site_plugins.isEmpty())
+                {
+                    // list of plugins is hard coded in snapserver.conf
+                    root.setAttribute("locked", "locked");
+                }
+
+                // /snap/name/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "name"));
                     snap_dom::append_plain_text_to_node(value_tag, name);
                 }
 
-                // /info/filename/...
+                // /snap/filename/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "filename"));
                     snap_dom::append_plain_text_to_node(value_tag, information.get_filename());
                 }
 
-                // /info/last-modification/...
+                // /snap/last-modification/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "last-modification"));
                     snap_dom::append_integer_to_node(value_tag, information.get_last_modification());
                 }
 
-                // /info/last-modification-date/...
+                // /snap/last-modification-date/...
                 {
                     // format this date using the user locale
                     QDomElement value_tag(snap_dom::create_element(root, "last-modification-date"));
                     snap_dom::append_plain_text_to_node(value_tag, locale_plugin->format_date(information.get_last_modification() / 1000000LL) + " " + locale_plugin->format_time(information.get_last_modification() / 1000000LL));
                 }
 
-                // /info/last-updated/...
+                // /snap/last-updated/...
                 if(last_updated > 0)
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "last-updated-date"));
                     snap_dom::append_plain_text_to_node(value_tag, locale_plugin->format_date(last_updated / 1000000LL) + " " + locale_plugin->format_time(last_updated / 1000000LL));
                 }
 
-                // /info/icon/...
+                // /snap/icon/...
                 {
                     QString plugin_icon(information.get_icon());
                     content::path_info_t icon_ipath;
@@ -134,50 +142,50 @@ void info::init_plugin_selection_editor_widgets(content::path_info_t & ipath, QS
                     snap_dom::append_plain_text_to_node(value_tag, plugin_icon);
                 }
 
-                // /info/description/...
+                // /snap/description/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "description"));
                     snap_dom::append_plain_text_to_node(value_tag, information.get_description());
                 }
 
-                // /info/help/...
+                // /snap/help/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "help-uri"));
                     snap_dom::append_plain_text_to_node(value_tag, information.get_help_uri());
                 }
 
-                // /info/dependencies/...
+                // /snap/dependencies/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "dependencies"));
                     snap_string_list deps(information.get_dependencies().split('|', QString::SkipEmptyParts));
                     snap_dom::append_plain_text_to_node(value_tag, deps.join(","));
                 }
 
-                // /info/version-major/...
+                // /snap/version-major/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "version-major"));
                     snap_dom::append_integer_to_node(value_tag, information.get_version_major());
                 }
 
-                // /info/version-minor/...
+                // /snap/version-minor/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "version-minor"));
                     snap_dom::append_integer_to_node(value_tag, information.get_version_minor());
                 }
 
-                // /info/installed/...
+                // /snap/installed/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "installed"));
                     snap_dom::append_plain_text_to_node(value_tag, installed_plugins.contains(name) ? "true" : "false");
                 }
 
-                // /info/core-plugin/...
+                // /snap/core-plugin/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "core-plugin"));
                     snap_dom::append_plain_text_to_node(value_tag, f_snap->is_core_plugin(name) ? "true" : "false");
                 }
 
-                // /info/settings-path/...
+                // /snap/settings-path/...
                 {
                     QDomElement value_tag(snap_dom::create_element(root, "settings-path"));
 
@@ -234,6 +242,22 @@ void info::init_plugin_selection_editor_widgets(content::path_info_t & ipath, QS
 }
 
 
+/** \brief Execute the "install" or "remove" of a plugin.
+ *
+ * This function checks whether it can install or remove the specified
+ * plugin and if so, apply the function.
+ *
+ * The function refuse to do any work if the list of plugins comes
+ * from the "plugins" variable in the snapserver.conf file because
+ * in that case the list of plugins defined in the database is ignored.
+ *
+ * \note
+ * The path is /admin/plugin/install/\<plugin-name> to install a new
+ * plugin, and /admin/plugin/remove/\<plugin-name> to remove it.
+ *
+ * \param[in] ipath  The path to the admin/plugin with the function and
+ *                   name of the plugin appened to it.
+ */
 bool info::plugin_selection_on_path_execute(content::path_info_t & ipath)
 {
     QString const cpath(ipath.get_cpath());
@@ -244,84 +268,76 @@ bool info::plugin_selection_on_path_execute(content::path_info_t & ipath)
 
     server_access::server_access * server_access_plugin(server_access::server_access::instance());
 
-    QtCassandra::QCassandraValue plugins(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS)));
-    QString site_plugins(plugins.stringValue());
-    snap_string_list plugin_list;
+    // forced by .conf?
+    QString site_plugins(f_snap->get_server_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PARAM_PLUGINS)));
     if(!site_plugins.isEmpty())
     {
-        plugin_list = site_plugins.split(',');
+        // list cannot be changed, so do not give hopes to the website administrator
+        messages::messages::instance()->set_error(
+            "Plugin Installation Fixed",
+            QString("You cannot change your plugin installation via the website interface because the list is hard coded in snapserver.conf where you used the plugins=... variable."),
+            "info::plugin_selection_on_path_execute(): the list of plugins is locked by the snapserver configuration.",
+            false
+        );
+        server_access_plugin->create_ajax_result(ipath, false);
     }
-
-    QString const function(cpath.mid(strlen(get_name(name_t::SNAP_NAME_INFO_PLUGIN_SELECTION)) + 1));
-    if(function.startsWith("install/"))
+    else
     {
-        // first make sure the name is valid and indeed represents a
-        // plugin that we can install
-        //
-        QString const plugin_name(function.mid(8));
-        QString const plugins_paths( f_snap->get_server_parameter("plugins_path") );
-        snap_string_list const paths( plugins_paths.split(':') );
-        QString const filename(plugins::find_plugin_filename(paths, plugin_name));
-        if(filename.isEmpty())
+        snap_string_list plugin_list;
+        QtCassandra::QCassandraValue plugins(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS)));
+        site_plugins = plugins.stringValue();
+        if(site_plugins.isEmpty())
         {
-            messages::messages::instance()->set_error(
-                "Plugin Not Found",
-                QString("Could not install plugin \"%1\" since it does not look like it exists.").arg(plugin_name),
-                "info::plugin_selection_on_path_execute(): the name of the plugin was incorrect.",
-                false
-            );
-            server_access_plugin->create_ajax_result(ipath, false);
+            site_plugins = f_snap->get_server_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PARAM_DEFAULT_PLUGINS));
         }
-        else if(!plugin_list.contains(plugin_name))
+        if(!site_plugins.isEmpty())
         {
-            if(install_plugin(plugin_list, plugin_name))
+            plugin_list = site_plugins.split(',');
+
+            // this list may come from the snapserver.conf file so we
+            // want to clean it up
+            for(int i(0); i < plugin_list.length(); ++i)
             {
-                site_plugins = plugin_list.join(",");
-                plugins.setStringValue(site_plugins);
-                f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS), plugins);
-                QString const installed("installed");
-                server_access_plugin->create_ajax_result(ipath, true);
-                server_access_plugin->ajax_append_data("plugin_selection", installed.toUtf8());
-                server_access_plugin->ajax_append_data("installed_plugins", site_plugins.toUtf8());
+                plugin_list[i] = plugin_list[i].trimmed();
+                if(plugin_list.at(i).isEmpty())
+                {
+                    // remove parts that the trimmed() rendered empty
+                    plugin_list.removeAt(i);
+                    --i;
+                }
             }
-            else
+        }
+
+        QString const function(cpath.mid(strlen(get_name(name_t::SNAP_NAME_INFO_PLUGIN_SELECTION)) + 1));
+        if(function.startsWith("install/"))
+        {
+            // first make sure the name is valid and indeed represents a
+            // plugin that we can install
+            //
+            QString const plugin_name(function.mid(8));
+            QString const plugins_paths( f_snap->get_server_parameter( snap::get_name(snap::name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH) ) );
+            snap_string_list const paths( plugins_paths.split(':') );
+            QString const filename(plugins::find_plugin_filename(paths, plugin_name));
+            if(filename.isEmpty())
             {
                 messages::messages::instance()->set_error(
-                    "Plugin Dependencies Missing",
-                    QString("One or more dependencies of plugin \"%1\" is missing.").arg(plugin_name),
-                    "info::plugin_selection_on_path_execute(): the plugin could not be installed because one or more dependency is missing.",
+                    "Plugin Not Found",
+                    QString("Could not install plugin \"%1\" since it does not look like it exists.").arg(plugin_name),
+                    "info::plugin_selection_on_path_execute(): the name of the plugin was incorrect.",
                     false
                 );
                 server_access_plugin->create_ajax_result(ipath, false);
             }
-        }
-        else
-        {
-            messages::messages::instance()->set_warning(
-                "Plugin Already Installed",
-                QString("Plugin \"%1\" is already installed.").arg(plugin_name),
-                "info::plugin_selection_on_path_execute(): the plugin is already installed so we should not have gotten this event."
-            );
-            server_access_plugin->create_ajax_result(ipath, false);
-        }
-    }
-    else if(function.startsWith("remove/"))
-    {
-        // here we do not check the validity of the name from the file system
-        // if the name is not in the list of plugins, we do nothing anyway
-        QString const plugin_name(function.mid(7));
-        if(plugin_list.contains(plugin_name))
-        {
-            if(!f_snap->is_core_plugin(plugin_name))
+            else if(!plugin_list.contains(plugin_name))
             {
-                if(uninstall_plugin(plugin_list, plugin_name))
+                if(install_plugin(plugin_list, plugin_name))
                 {
                     site_plugins = plugin_list.join(",");
                     plugins.setStringValue(site_plugins);
                     f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS), plugins);
-                    QString const removed("removed");
+                    QString const installed("installed");
                     server_access_plugin->create_ajax_result(ipath, true);
-                    server_access_plugin->ajax_append_data("plugin_selection", removed.toUtf8());
+                    server_access_plugin->ajax_append_data("plugin_selection", installed.toUtf8());
                     server_access_plugin->ajax_append_data("installed_plugins", site_plugins.toUtf8());
                 }
                 else
@@ -337,36 +353,77 @@ bool info::plugin_selection_on_path_execute(content::path_info_t & ipath)
             }
             else
             {
-                messages::messages::instance()->set_error(
-                    "Core Plugin Removal is Forbidden",
-                    QString("It is not possible to remove plugin \"%1\" since it is a core plugin.").arg(plugin_name),
-                    "info::plugin_selection_on_path_execute(): a core plugin cannot be removed at all.",
-                    false
+                messages::messages::instance()->set_warning(
+                    "Plugin Already Installed",
+                    QString("Plugin \"%1\" is already installed.").arg(plugin_name),
+                    "info::plugin_selection_on_path_execute(): the plugin is already installed so we should not have gotten this event."
+                );
+                server_access_plugin->create_ajax_result(ipath, false);
+            }
+        }
+        else if(function.startsWith("remove/"))
+        {
+            // here we do not check the validity of the name from the file system
+            // if the name is not in the list of plugins, we do nothing anyway
+            QString const plugin_name(function.mid(7));
+            if(plugin_list.contains(plugin_name))
+            {
+                if(!f_snap->is_core_plugin(plugin_name))
+                {
+                    if(uninstall_plugin(plugin_list, plugin_name))
+                    {
+                        site_plugins = plugin_list.join(",");
+                        plugins.setStringValue(site_plugins);
+                        f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PLUGINS), plugins);
+                        QString const removed("removed");
+                        server_access_plugin->create_ajax_result(ipath, true);
+                        server_access_plugin->ajax_append_data("plugin_selection", removed.toUtf8());
+                        server_access_plugin->ajax_append_data("installed_plugins", site_plugins.toUtf8());
+                    }
+                    else
+                    {
+                        messages::messages::instance()->set_error(
+                            "Plugin Dependencies Missing",
+                            QString("One or more dependencies of plugin \"%1\" is missing.").arg(plugin_name),
+                            "info::plugin_selection_on_path_execute(): the plugin could not be installed because one or more dependency is missing.",
+                            false
+                        );
+                        server_access_plugin->create_ajax_result(ipath, false);
+                    }
+                }
+                else
+                {
+                    messages::messages::instance()->set_error(
+                        "Core Plugin Removal is Forbidden",
+                        QString("It is not possible to remove plugin \"%1\" since it is a core plugin.").arg(plugin_name),
+                        "info::plugin_selection_on_path_execute(): a core plugin cannot be removed at all.",
+                        false
+                    );
+                    server_access_plugin->create_ajax_result(ipath, false);
+                }
+            }
+            else
+            {
+                messages::messages::instance()->set_warning(
+                    "Plugin Not Found",
+                    QString("Could not remove plugin \"%1\" since it does not look like it was installed.").arg(plugin_name),
+                    "info::plugin_selection_on_path_execute(): the plugin could not be found in the list of installed plugins."
                 );
                 server_access_plugin->create_ajax_result(ipath, false);
             }
         }
         else
         {
-            messages::messages::instance()->set_warning(
+            //SNAP_LOG_ERROR("invalid access to page \"")(cpath)("\". Plugin name missing?");
+
+            messages::messages::instance()->set_error(
                 "Plugin Not Found",
-                QString("Could not remove plugin \"%1\" since it does not look like it was installed.").arg(plugin_name),
-                "info::plugin_selection_on_path_execute(): the plugin could not be found in the list of installed plugins."
+                "Invalid access to this Snap! website.",
+                "info::on_path_execute(): the path does not match one of the expected paths (.../install/... or .../remove/...).",
+                false
             );
             server_access_plugin->create_ajax_result(ipath, false);
         }
-    }
-    else
-    {
-        //SNAP_LOG_ERROR("invalid access to page \"")(cpath)("\". Plugin name missing?");
-
-        messages::messages::instance()->set_error(
-            "Plugin Not Found",
-            "Invalid access to this Snap! website.",
-            "info::on_path_execute(): the path does not match one of the expected paths (.../install/... or .../remove/...).",
-            false
-        );
-        server_access_plugin->create_ajax_result(ipath, false);
     }
 
     // create AJAX response
@@ -389,7 +446,7 @@ bool info::install_plugin(snap_string_list & plugin_list, QString const & plugin
 
     plugin_list << plugin_name;
 
-    QString const plugins_paths( f_snap->get_server_parameter("plugins_path") );
+    QString const plugins_paths( f_snap->get_server_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH)) );
     try
     {
         plugins::plugin_info const information(plugins_paths, plugin_name);
@@ -421,7 +478,7 @@ bool info::uninstall_plugin(snap_string_list & plugin_list, QString const & plug
     int const pos(plugin_list.indexOf(plugin_name));
     plugin_list.removeAt(pos);
 
-    QString const plugins_paths( f_snap->get_server_parameter("plugins_path") );
+    QString const plugins_paths( f_snap->get_server_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH)) );
     snap_string_list const plugin_names(plugin_list);
     try
     {

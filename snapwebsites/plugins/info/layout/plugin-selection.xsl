@@ -31,34 +31,41 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<div class="name">
 						<xsl:attribute name="id"><xsl:value-of select="name/node()"/></xsl:attribute>
 						<h3>
+							<xsl:if test="installed/node() = 'true' or core-plugin/node() = 'true'">
+								<xsl:attribute name="class">installed</xsl:attribute>
+								<xsl:attribute name="title">Installed</xsl:attribute>
+							</xsl:if>
+							<span class="installed-checkmark"><xsl:if test="installed/node() = 'true' or core-plugin/node() = 'true'">&#10004;&#160;</xsl:if></span>
 							<xsl:copy-of select="name/node()"/>
 							v<xsl:copy-of select="version-major/node()"/>.<xsl:copy-of select="version-minor/node()"/>
 							<xsl:if test="core-plugin/node() = 'true'"> (Core)</xsl:if>
 						</h3>
 					</div>
 					<ul class="functions">
-						<li>
-							<a href="#" data-plugin-name="{name/node()}">
-								<xsl:attribute name="class">
-									button install
-									<xsl:if test="installed/node() = 'true' or core-plugin/node() = 'true'">
-										disabled
-									</xsl:if>
-								</xsl:attribute>
-								Install
-							</a>
-						</li>
-						<li>
-							<a href="#" data-plugin-name="{name/node()}">
-								<xsl:attribute name="class">
-									button remove
-									<xsl:if test="installed/node() = 'false' or core-plugin/node() = 'true'">
-										disabled
-									</xsl:if>
-								</xsl:attribute>
-								Remove
-							</a>
-						</li>
+						<xsl:if test="not(@locked)">
+							<li>
+								<a href="#" data-plugin-name="{name/node()}">
+									<xsl:attribute name="class">
+										button install
+										<xsl:if test="installed/node() = 'true' or core-plugin/node() = 'true'">
+											disabled
+										</xsl:if>
+									</xsl:attribute>
+									Install
+								</a>
+							</li>
+							<li>
+								<a href="#" data-plugin-name="{name/node()}">
+									<xsl:attribute name="class">
+										button remove
+										<xsl:if test="installed/node() = 'false' or core-plugin/node() = 'true'">
+											disabled
+										</xsl:if>
+									</xsl:attribute>
+									Remove
+								</a>
+							</li>
+						</xsl:if>
 						<li>
 							<xsl:choose>
 								<xsl:when test="settings-path = ''">

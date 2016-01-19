@@ -1,6 +1,6 @@
 /** @preserve
  * Name: plugin-selection
- * Version: 0.0.1.18
+ * Version: 0.0.1.19
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5)
@@ -234,6 +234,8 @@ snapwebsites.PluginSelection.prototype.serverAccessSuccess = function(result) //
                         {
                             var p = jQuery(plugin_tag),
                                 name = p.data("name"),
+                                title = p.find("h3"),
+                                title_span = title.children("span"),
                                 install_button = p.find("div.top-row ul.functions a.install"),
                                 remove_button = p.find("div.top-row ul.functions a.remove"),
                                 settings_button = p.find("div.top-row ul.functions a.settings");
@@ -245,6 +247,9 @@ snapwebsites.PluginSelection.prototype.serverAccessSuccess = function(result) //
                                 if(!install_button.hasClass("disabled"))
                                 {
                                     p.removeClass("newly-removed").addClass("newly-installed");
+                                    title.addClass("installed");
+                                    title.attr("title", "Installed"); // TODO: translation
+                                    title_span.html("&#10004;&#160;");
                                     install_button.addClass("disabled");
                                     remove_button.removeClass("disabled");
                                     settings_button.removeClass("disabled");
@@ -257,6 +262,9 @@ snapwebsites.PluginSelection.prototype.serverAccessSuccess = function(result) //
                                 if(install_button.hasClass("disabled"))
                                 {
                                     p.removeClass("newly-installed").addClass("newly-removed");
+                                    title.removeClass("installed");
+                                    title.attr("title", "");
+                                    title_span.empty();
                                     install_button.removeClass("disabled");
                                     remove_button.addClass("disabled");
                                     settings_button.addClass("disabled");

@@ -162,6 +162,15 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_CORE_ORIGINAL_RULES:
         return "core::original_rules";
 
+    case name_t::SNAP_NAME_CORE_PARAM_DEFAULT_PLUGINS:
+        return "default_plugins";
+
+    case name_t::SNAP_NAME_CORE_PARAM_PLUGINS:
+        return "plugins";
+
+    case name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH:
+        return "plugins_path";
+
     case name_t::SNAP_NAME_CORE_PLUGINS:
         return "core::plugins";
 

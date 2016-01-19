@@ -6807,7 +6807,7 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
 
     // load the plugins for this website
     bool need_cleanup(true);
-    QString site_plugins(server->get_parameter("plugins")); // forced by .conf?
+    QString site_plugins(server->get_parameter(get_name(name_t::SNAP_NAME_CORE_PARAM_PLUGINS))); // forced by .conf?
     if(site_plugins.isEmpty())
     {
         // maybe user defined his list of plugins in his website
@@ -6817,7 +6817,7 @@ snap_string_list snap_child::init_plugins(bool const add_defaults)
         {
             // if the list of plugins is empty in the site parameters
             // then get the default from the server configuration
-            site_plugins = server->get_parameter("default_plugins");
+            site_plugins = server->get_parameter(get_name(name_t::SNAP_NAME_CORE_PARAM_DEFAULT_PLUGINS));
         }
         else
         {

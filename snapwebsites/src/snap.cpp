@@ -148,7 +148,7 @@ public:
                         snap_cgi( int argc, char * argv[] );
                         ~snap_cgi();
 
-    int                 error(char const * code, char const * msg);
+    int                 error(char const * code, char const * msg, char const * details);
     bool                verify();
     int                 process();
 
@@ -186,21 +186,20 @@ snap_cgi::~snap_cgi()
 }
 
 
-int snap_cgi::error(char const * code, char const * msg)
+int snap_cgi::error(char const * code, char const * msg, char const * details)
 {
-    SNAP_LOG_ERROR(msg);
+    if(details == nullptr)
+    {
+        details = "No details.";
+    }
 
-    std::string body;
-    if(strncmp(code, "404 ", 4) == 0)
-    {
-        body = "<h1>Page Not Found</h1>"
-               "<p>The requested page was not found on this server.</p>";
-    }
-    else
-    {
-        body = "<h1>Internal Server Error</h1>"
-               "<p>Sorry! We found an invalid server configuration or some other error occured.</p>";
-    }
+    SNAP_LOG_ERROR("error(\"")(code)("\", \"")(msg)("\", \"")(details)("\")");
+
+    std::string body("<h1>");
+    body += code;
+    body += "</h1><p>";
+    body += (msg == nullptr ? "Sorry! We found an invalid server configuration or some other error occurred." : msg);
+    body += "</p>";
 
     std::cout   << "Status: " << code                       << std::endl
                 << "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
@@ -313,7 +312,7 @@ bool snap_cgi::verify()
     char const * remote_addr(getenv("REMOTE_ADDR"));
     if(remote_addr == nullptr)
     {
-        error("400 Bad Request", "The REMOTE_ADDR parameter is not available.");
+        error("400 Bad Request", nullptr, "The REMOTE_ADDR parameter is not available.");
         return false;
     }
 
@@ -323,7 +322,7 @@ bool snap_cgi::verify()
         char const * http_host(getenv("HTTP_HOST"));
         if(http_host == nullptr)
         {
-            error("400 Bad Request", "The host you want to connect to must be specified.");
+            error("400 Bad Request", "The host you want to connect to must be specified.", nullptr);
             return false;
         }
 #ifdef _DEBUG
@@ -362,7 +361,7 @@ bool snap_cgi::verify()
             // this should NEVER happen because without a path after the method
             // we probably do not have our snap.cgi run anyway...
             //
-            error("400 Bad Request", "The path to the page you want to read must be specified.");
+            error("400 Bad Request", "The path to the page you want to read must be specified.", nullptr);
             return false;
         }
 #ifdef _DEBUG
@@ -374,7 +373,7 @@ bool snap_cgi::verify()
         //
         if(strncasecmp(request_uri, "/cgi-bin/", 9) == 0)
         {
-            error("404 Page Not Found", "The REQUEST_URI cannot start with \"/cgi-bin/\".");
+            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI cannot start with \"/cgi-bin/\".");
             snap::server::block_ip(remote_addr);
             return false;
         }
@@ -385,7 +384,7 @@ bool snap_cgi::verify()
         || strncasecmp(request_uri, "https://", 8) == 0)
         {
             // avoid proxy accesses
-            error("404 Page Not Found", "The REQUEST_URI cannot start with \"http[s]://\".");
+            error("404 Page Not Found", nullptr, "The REQUEST_URI cannot start with \"http[s]://\".");
             snap::server::block_ip(remote_addr);
             return false;
         }
@@ -394,7 +393,7 @@ bool snap_cgi::verify()
         if(strcasestr(request_uri, "phpmyadmin") != nullptr)
         {
             // block myPhpAdmin accessors
-            error("410 Gone", "MySQL left.");
+            error("410 Gone", "MySQL left.", nullptr);
             snap::server::block_ip(remote_addr, "year");
             return false;
         }
@@ -409,7 +408,7 @@ bool snap_cgi::verify()
             // this should NEVER happen because without a path after the method
             // we probably do not have our snap.cgi run anyway...
             //
-            error("400 Bad Request", "The path to the page you want to read must be specified.");
+            error("400 Bad Request", "The path to the page you want to read must be specified.", nullptr);
             snap::server::block_ip(remote_addr, "month");
             return false;
         }
@@ -431,7 +430,7 @@ bool snap_cgi::verify()
         || strcasestr(user_agent, "ZmEu") != nullptr)
         {
             // note that we consider "-" as empty for this test
-            error("400 Bad Request", "The HTTP_USER_AGENT cannot be empty.");
+            error("400 Bad Request", nullptr, "The HTTP_USER_AGENT cannot be empty.");
             snap::server::block_ip(remote_addr, "month");
             return false;
         }
@@ -475,7 +474,7 @@ int snap_cgi::process()
     if(socket.write(START_COMMAND "\n", sizeof(START_COMMAND)) != sizeof(START_COMMAND))
 #undef START_COMMAND
     {
-        return error("504 Gateway Timeout", "error while writing to the child process (1).");
+        return error("504 Gateway Timeout", "error while writing to the child process (1).", nullptr);
     }
     for(char ** e(environ); *e; ++e)
     {
@@ -491,11 +490,11 @@ int snap_cgi::process()
 #endif
         if(socket.write(env.c_str(), len) != len)
         {
-            return error("504 Gateway Timeout", "error while writing to the child process (2).");
+            return error("504 Gateway Timeout", "error while writing to the child process (2).", nullptr);
         }
         if(socket.write("\n", 1) != 1)
         {
-            return error("504 Gateway Timeout", "error while writing to the child process (3).");
+            return error("504 Gateway Timeout", "error while writing to the child process (3).", nullptr);
         }
     }
     if( strcmp(request_method, "POST") == 0 )
@@ -505,7 +504,7 @@ int snap_cgi::process()
 #endif
         if(socket.write("#POST\n", 6) != 6)
         {
-            return error("504 Gateway Timeout", "error while writing to the child process (4).");
+            return error("504 Gateway Timeout", "error while writing to the child process (4).", nullptr);
         }
         // we also want to send the POST variables
         // http://httpd.apache.org/docs/2.4/howto/cgi.html
@@ -531,7 +530,7 @@ int snap_cgi::process()
                     }
                     if(socket.write(var.c_str(), var.length()) != static_cast<int>(var.length()))
                     {
-                        return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str());
+                        return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str(), nullptr);
                     }
 #ifdef _DEBUG
                     SNAP_LOG_DEBUG("wrote var=")(var.c_str());
@@ -555,7 +554,7 @@ int snap_cgi::process()
 #endif
     if(socket.write("#END\n", 5) != 5)
     {
-        return error("504 Gateway Timeout", "error while writing to the child process (4).");
+        return error("504 Gateway Timeout", "error while writing to the child process (5).", nullptr);
     }
 
     // if we get here then we can just copy the output of the child to Apache2
@@ -631,19 +630,19 @@ int main(int argc, char * argv[])
         catch(std::runtime_error const & e)
         {
             // this should never happen!
-            cgi.error("503 Service Unavailable", ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
+            cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
             return 1;
         }
         catch(std::logic_error const & e)
         {
             // this should never happen!
-            cgi.error("503 Service Unavailable", ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
+            cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
             return 1;
         }
         catch(...)
         {
             // this should never happen!
-            cgi.error("503 Service Unavailable", "The Snap! C++ CGI script caught an unknown exception.");
+            cgi.error("503 Service Unavailable", nullptr, "The Snap! C++ CGI script caught an unknown exception.");
             return 1;
         }
     }
