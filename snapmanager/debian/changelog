@@ -6,7 +6,7 @@ snapmanager (1.1.0~trusty) trusty; urgency=high
   * Bump copyright notices to 2016.
   * 1.0.1 to 1.0.13 were nightly builds that used the wrong version number.
 
- -- Alexis Wilke <alexis@m2osw.com>  Tue, 23 Sep 2014 20:33:10 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 19 Jan 2016 17:08:30 -0700
 
 snapmanager (1.0.0m2osw1) saucy; urgency=high
 
