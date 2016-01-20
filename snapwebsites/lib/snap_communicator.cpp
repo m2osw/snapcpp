@@ -428,7 +428,7 @@ QString const snap_communicator_message::get_parameter(QString const & name) con
         return f_parameters[name];
     }
 
-    throw snap_communicator_invalid_message("snap_communicator_message::get_parameter(): parameter not defined, try has_parameter() before calling a get_..._parameter() function.");
+    throw snap_communicator_invalid_message("snap_communicator_message::get_parameter(): parameter not defined, try has_parameter() before calling a get_parameter() function.");
 }
 
 
@@ -447,7 +447,7 @@ int64_t snap_communicator_message::get_integer_parameter(QString const & name) c
         return r;
     }
 
-    throw snap_communicator_invalid_message("snap_communicator_message::get_integer_parameter(): parameter not defined, try has_parameter() before calling a get_..._parameter() function.");
+    throw snap_communicator_invalid_message("snap_communicator_message::get_integer_parameter(): parameter not defined, try has_parameter() before calling a get_integer_parameter() function.");
 }
 
 

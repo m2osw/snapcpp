@@ -1067,10 +1067,14 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
 
         // someone is asking us to restart the child for a specific URI
         //
-        QString const uri(message.get_parameter("uri"));
+        QString uri;
+        if(message.has_parameter("uri"))
+        {
+            uri = message.get_parameter("uri");
+        }
         if(uri.isEmpty())
         {
-            SNAP_LOG_ERROR("PING sent to \"")(f_cron_action)("\" backend without a URI. PING will be ignored.");
+            SNAP_LOG_ERROR("PING sent to \"")(f_action)("\" backend without a URI. PING will be ignored.");
             return;
         }
 
@@ -1450,9 +1454,31 @@ bool snap_backend::is_ready(QString const & uri)
     // which at this time just means having the "core::last_updated"
     // field in the "sites" table
     //
-    return f_sites_table->exists(uri)
-        && f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED))
-        && f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
+    if(f_sites_table->exists(uri))
+    {
+        return f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED))
+            && f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
+    }
+
+    if(!f_cron_action)
+    {
+        SNAP_LOG_ERROR("website URI \"")(uri)("\" does not reference an existing website.");
+
+        // remove the connections so we end up quitting
+        //
+        // TODO: disconnecting these early generates errors we should try to fix:
+        //       (see also SNAP-305)
+        //
+        //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:2999:halk: error: an error occurred while writing to socket of "snap_tcp_client_permanent_message_connection_impl messager" (errno: 9 -- Bad file descriptor).
+        //       2016-01-20 10:14:03 [15201]:snap_communicator.cpp:1126:halk: error: socket 11 of connection "snap_tcp_client_permanent_message_connection_impl messager" was marked as erroneous by the kernel.
+        //
+        g_communicator->remove_connection(g_messager);
+        g_communicator->remove_connection(g_wakeup_timer);
+        g_communicator->remove_connection(g_tick_timer);
+        g_communicator->remove_connection(g_signal_child_death);
+    }
+
+    return false;
 }
 
 
