@@ -644,7 +644,7 @@ void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
 
     QDomElement ol(doc.createElement("ol"));
     ol.setAttribute("vocab", "http://schema.org/");
-    ol.setAttribute("typeOf", "BreadcrumList");
+    ol.setAttribute("typeOf", "BreadcrumbList");
     parent.appendChild(ol);
 
     content::path_info_t info_ipath;

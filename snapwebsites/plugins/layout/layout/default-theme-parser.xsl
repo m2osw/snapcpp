@@ -123,6 +123,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 									<xsl:copy-of select="/snap/page/body/titles/title/node()"/>
 								</xsl:otherwise>
 							</xsl:choose></h2></div></div>
+						<div class="breadcrumb"><xsl:copy-of select="/snap/page/body/breadcrumb/node()"/></div>
 						<xsl:copy-of select="output/node()"/>
 					</div>
 				</div>
