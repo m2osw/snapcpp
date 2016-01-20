@@ -340,6 +340,18 @@ void snapdb::info()
     {
         std::cout << "Working on Cassandra Cluster Named \""    << f_cassandra->clusterName()     << "\"." << std::endl;
         std::cout << "Working on Cassandra Protocol Version \"" << f_cassandra->protocolVersion() << "\"." << std::endl;
+        std::cout << "Using Cassandra Partitioner \"" << f_cassandra->partitioner() << "\"." << std::endl;
+        std::cout << "Using Cassandra Snitch \"" << f_cassandra->snitch() << "\"." << std::endl;
+
+        // At this time the following does not work, we will need CQL support first
+        //const QCassandraClusterInformation& cluster_info(f_cassandra->clusterInformation());
+        //int max(cluster_info.size());
+        //std::cout << "With " << max << " nodes running." << std::endl;
+        //for(int idx(0); idx < max; ++idx)
+        //{
+        //    const QCassandraNode& node(cluster_info.node(idx));
+        //    std::cout << "H:" << node.nodeHost() << " R:" << node.nodeRack() << " DC:" << node.nodeDataCenter() << std::endl;
+        //}
         exit(0);
     }
     else

@@ -289,7 +289,7 @@ namespace
             0,
             "add-host",
             nullptr,
-            "Add a host to the lock table. Remember that you cannot safely do that while any one of the servers are running.",
+            "Add a host to the lock table. Remember that you cannot safely do that while any one of the servers are running. This should not be used anymore since that feature was moved to the snapmanager instead.",
             advgetopt::getopt::optional_argument
         },
         {
@@ -373,6 +373,14 @@ namespace
             nullptr,
             "Define one or more server parameters on the command line (-p name=value).",
             advgetopt::getopt::required_multiple_argument
+        },
+        {
+            '\0',
+            0,
+            "prepare-cassandra",
+            nullptr,
+            "Create the cassandra \"domans\" and \"websites\" tables and exit. This should not be used anymore since that feature was moved to the snapmanager instead.",
+            advgetopt::getopt::optional_argument
         },
         {
             '\0',
@@ -1261,6 +1269,12 @@ void server::prepare_cassandra()
     // create missing tables
     create_table(context, get_name(name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
     create_table(context, get_name(name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
+
+    // --prepare-cassandra used?
+    if(f_opt->is_defined("prepare-cassandra"))
+    {
+        exit(0);
+    }
 
     // --add-host used?
     if(f_opt->is_defined("add-host"))

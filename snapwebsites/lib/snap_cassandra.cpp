@@ -118,6 +118,10 @@ void snap_cassandra::init_context()
         // TODO: add support for replications defined as a % so if we
         //       discover 10 nodes, we user 5 when replication is 50%
         //       (however, once set, we do not change this number...)
+        //
+        // TODO: if the number of nodes is smaller than the number we
+        //       get here, make sure to reduce that number!
+        //
         int rep(3);
         QString replication(f_parameters["cassandra_replication"]);
         if(!replication.isEmpty())
@@ -180,7 +184,7 @@ void snap_cassandra::init_context()
             }
         }
         context->create();
-        // we don't put the tables in here so we can call the create_table()
+        // we do not put the tables in here so we can call the create_table()
         // and have the tables created as required (i.e. as we add new ones
         // they get added as expected, no need for special handling.)
     }

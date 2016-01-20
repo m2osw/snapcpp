@@ -953,6 +953,8 @@ void snap_backend::process_tick()
  * This function is called when the Snap! Communicator main messager
  * connection times out. This generally means the child process needs
  * to be started with a URI.
+ *
+ * \return true if a new backend was started on this call.
  */
 bool snap_backend::process_timeout()
 {
