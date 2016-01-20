@@ -1,3 +1,9 @@
+snapmanager (1.1.0.1~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 20 Jan 2016 03:02:50 -0800
+
 snapmanager (1.1.0~trusty) trusty; urgency=high
 
   * Added support so the snapmanager is able to create the snap_websites
