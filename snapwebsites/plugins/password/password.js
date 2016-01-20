@@ -1,6 +1,6 @@
 /** @preserve
  * Name: password
- * Version: 0.0.1.10
+ * Version: 0.0.1.12
  * Browsers: all
  * Depends: editor (>= 0.0.3.468)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -413,6 +413,7 @@ snapwebsites.EditorWidgetTypePassword.prototype.deleteBullets_ = function(editor
  *
  *      virtual function getType() : string;
  *      virtual function initializeWidget(widget: Object) : void;
+ *      virtual function validate(editor_widget: Object) : boolean;
  *
  *  private:
  *  };
@@ -534,6 +535,40 @@ snapwebsites.EditorWidgetTypePasswordConfirm.prototype.comparePasswords_ = funct
 
     // save the value in the main password widget
     c.attr("value", snapwebsites.castToString(password, "password value attribute"));
+};
+
+
+/** \brief Make sure the password and its confirmation are the same.
+ *
+ * This function verifies that the password and its confirmation are equal.
+ * This is done before you can send the form to the server so as to prevent
+ * sending an invalid password.
+ *
+ * @param {Object} widget  The editor widget.
+ *
+ * @return {boolean}  true if the passwords are both equal.
+ */
+snapwebsites.EditorWidgetTypePasswordConfirm.prototype.validate = function(widget) // virtual
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        label = "<strong>" + editor_widget.getLabel(true) + "</strong>",
+        valid = c.find(".password-status-details").hasClass("good");
+
+    if(!valid)
+    {
+        snapwebsites.OutputInstance.displayOneMessage(
+                "Invalid Password Confirmation",
+                "The confirmation password does not match the main password in " + label + ".",
+                "error",
+                true);
+    }
+
+    // make sure the "erroneous" class is as expected
+    w.toggleClass("erroneous", !valid);
+
+    return valid;
 };
 
 

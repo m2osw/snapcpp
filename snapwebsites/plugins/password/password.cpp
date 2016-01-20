@@ -291,7 +291,7 @@ QString password::description() const
  */
 QString password::dependencies() const
 {
-    return "|permissions|users|";
+    return "|editor|messages|output|permissions|users|";
 }
 
 
@@ -312,7 +312,7 @@ int64_t password::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2016, 1, 16, 22, 0, 51, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 20, 2, 53, 51, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

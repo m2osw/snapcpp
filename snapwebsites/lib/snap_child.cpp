@@ -118,6 +118,7 @@ char const * g_minimum_plugins[] =
     "menu",
     "messages",
     "output",
+    "password",
     "path",
     "permissions",
     "sendmail",
@@ -4659,6 +4660,10 @@ void snap_child::canonicalize_options()
     //    // in a visitor's request, example:
     //    //
     //    //   HTTP_ACCEPT_LANGUAGE=en-us,en;q=0.8,fr-fr;q=0.5,fr;q=0.3
+    //    //
+    //    // To resolve this issue, we do not handle the browser language
+    //    // here, instead of do it in the snap_child::get_language() function,
+    //    // which is important because a plugin may force the language too.
     //    //
     //    if(!f_browser_locales.isEmpty())
     //    {

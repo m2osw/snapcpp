@@ -186,7 +186,7 @@ QString users_ui::help_uri() const
  */
 QString users_ui::dependencies() const
 {
-    return "|editor|form|layout|messages|output|path|sendmail|users|";
+    return "|editor|form|layout|messages|password|output|path|sendmail|users|";
 }
 
 

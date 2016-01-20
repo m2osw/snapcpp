@@ -92,7 +92,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         test="@no-paste"> no-paste</xsl:if></xsl:attribute>
 
       <div class="editor-content no-hover" value="">
-        <label class="password-confirm-password">Password:</label>
+        <label class="password-confirm-password">
+          <xsl:attribute name="for"><xsl:value-of select="$name"/>_password</xsl:attribute>
+          Password:
+        </label>
         <xsl:variable name="pc_password">
           <editor-form>
             <xsl:copy-of select="/editor-form/@*"/>
@@ -114,7 +117,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </xsl:for-each>
         </xsl:for-each>
 
-        <label class="password-confirm-confirm">Confirm:</label>
+        <label class="password-confirm-confirm">
+          <xsl:attribute name="for"><xsl:value-of select="$name"/>_confirm</xsl:attribute>
+          Confirm:
+        </label>
         <xsl:variable name="pc_confirm">
           <editor-form>
             <xsl:copy-of select="/editor-form/@*"/>
