@@ -10,7 +10,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2014 Made to Order Software Corp.
+#      Copyright (c) 2011-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -40,7 +40,7 @@ project( snapmanager )
 ## Version
 ##
 set(SNAPMANAGER_VERSION_MAJOR 1)
-set(SNAPMANAGER_VERSION_MINOR 0)
+set(SNAPMANAGER_VERSION_MINOR 1)
 set(SNAPMANAGER_VERSION_PATCH 0)
 add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGER_VERSION_MAJOR}.${SNAPMANAGER_VERSION_MINOR}.${SNAPMANAGER_VERSION_PATCH}\" )
 
@@ -67,6 +67,7 @@ add_definitions( ${QT_DEFINITIONS} )
 QT4_WRAP_UI(SNAP_MANAGER_UIS_H
     snap-manager-mainwindow.ui
     snap-manager-aboutbox.ui
+    snap-manager-createcontextbox.ui
     snap-manager-helpbox.ui
     snap-manager-initialize-websitebox.ui
     snap-manager-decode-utf8-dialog.ui
@@ -76,6 +77,7 @@ QT4_WRAP_UI(SNAP_MANAGER_UIS_H
 QT4_WRAP_CPP(SNAP_MANAGER_MOC_CXX
     snap-manager.h
     snap-manager-about.h
+    snap-manager-createcontext.h
     snap-manager-help.h
     snap-manager-initialize-website.h
     snap-manager-decode-utf8.h
@@ -97,6 +99,7 @@ include_directories(
 add_executable( ${PROJECT_NAME}
     snap-manager.cpp
     snap-manager-about.cpp
+    snap-manager-createcontext.cpp
     snap-manager-help.cpp
     snap-manager-initialize-website.cpp
     snap-manager-decode-utf8.cpp

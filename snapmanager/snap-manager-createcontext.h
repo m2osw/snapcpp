@@ -16,38 +16,34 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "ui_snap-manager-initialize-websitebox.h"
+#include "ui_snap-manager-createcontextbox.h"
 
-#include <snapwebsites/snap_initialize_website.h>
+#include <QPointer>
 
-class snap_manager_initialize_website : public QDialog, public Ui_initializeWebsiteBox
+class snap_manager_createcontext : public QDialog, public Ui_createContextBox
 {
     Q_OBJECT
 
 public:
-                    snap_manager_initialize_website(QWidget *parent);
-    virtual         ~snap_manager_initialize_website();
+                    snap_manager_createcontext(QWidget *parent);
+    virtual         ~snap_manager_createcontext();
 
     void            add_status(QString const& msg, bool const clear = false);
 
-protected:
-    virtual void    timerEvent(QTimerEvent *event);
-
 private slots:
-    void            close();
-    void            send_request();
+    void            cancel();
+    void            createcontext();
 
 private:
-    void            enableAll(bool enable);
+    void            close();
+    //void            enableAll(bool enable);
 
-    QPointer<QPushButton>                       f_close_button;
-    QPointer<QPushButton>                       f_send_request_button;
-    QPointer<QLineEdit>                         f_snap_server_host;
-    QPointer<QLineEdit>                         f_snap_server_port;
-    QPointer<QLineEdit>                         f_website_url;
-    QPointer<QLineEdit>                         f_port;
-    snap::snap_initialize_website::pointer_t    f_initialize_website;
-    controlled_vars::zint32_t                   f_timer_id;
+    QPointer<QPushButton>                       f_createcontext_button;
+    QPointer<QPushButton>                       f_cancel_button;
+    QPointer<QLineEdit>                         f_replication_factor;
+    QPointer<QComboBox>                         f_strategy;
+    QPointer<QTextEdit>                         f_data_centers;
+    QPointer<QLineEdit>                         f_snap_server_name;
 };
 
 

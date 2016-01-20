@@ -1,5 +1,5 @@
 // Snap Manager -- snap database manager to work on Cassandra's tables
-// Copyright (C) 2011-2015  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -511,7 +511,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
         f_cassandra_port = l->text().toInt();
     }
 
-    // if old != new then disconnect
+    // if old != new then connect to new
     if(f_cassandra_host == old_host && f_cassandra_port == old_port && f_cassandra->isConnected())
     {
         // nothing changed, stay put
@@ -524,6 +524,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     console->addItem("libQtCassandra version: " + QString(f_cassandra->version()));
     console->addItem("Host: " + f_cassandra_host);
     console->addItem("Port: " + QString::number(f_cassandra_port));
+
     f_tabs->setTabEnabled(TAB_HOSTS, false);
     f_tabs->setTabEnabled(TAB_DOMAINS, false);
     f_tabs->setTabEnabled(TAB_WEBSITES, false);
@@ -555,14 +556,16 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     f_context = f_cassandra->findContext(context_name);
     if(!f_context)
     {
-        // we connected to the database, but it is not properly initialized
+        // we connected to the database, but it is not initialized yet
+        // offer the user to do the initialization now
+        //
         console->addItem("The \"" + context_name + "\" context is not defined.");
-        QMessageBox msg(QMessageBox::Critical, "Connection to Cassandra", "Snap! Manager was able to connect to your Cassandra Cluster but it does not include a \"" + context_name + "\" context. The Snap! Server creates the necessary context and tables, have you run it?", QMessageBox::Ok, this);
-        msg.exec();
 
-        // give user a chance to try again with another IP or
-        // possibly to start the Cassandra server
-        on_f_cassandraDisconnectButton_clicked();
+        if(f_createcontext_window == nullptr)
+        {
+            f_createcontext_window = new snap_manager_createcontext(this);
+        }
+        f_createcontext_window->show();
         return;
     }
 
@@ -586,8 +589,12 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
         }
     }
 
-    // we could also check for the sites, content, and links tables
+    context_is_valid();
+}
 
+
+void snap_manager::context_is_valid()
+{
     // allow reseting indexes
     f_reset_domains_index->setEnabled(true);
     f_reset_websites_index->setEnabled(true);
@@ -603,7 +610,14 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     f_cassandraDisconnectButton->setEnabled( true );
 }
 
+
 void snap_manager::on_f_cassandraDisconnectButton_clicked()
+{
+    cassandraDisconnectButton_clicked();
+}
+
+
+void snap_manager::cassandraDisconnectButton_clicked()
 {
     f_cassandraConnectButton->setEnabled( false );
     f_cassandraDisconnectButton->setEnabled( false );
@@ -654,6 +668,126 @@ void snap_manager::on_f_cassandraDisconnectButton_clicked()
 
     f_cassandraConnectButton->setEnabled( true );
 }
+
+
+/** \brief Create the snap_websites context and first few tables.
+ *
+ * This function creates the snap_websites context.
+ *
+ * The strategy is defined as a number which represents the selection
+ * in the QComboBox of the dialog we just shown to the user. The
+ * values are:
+ *
+ * \li 0 -- Simple
+ * \li 1 -- Local
+ * \li 2 -- Network
+ *
+ * \warning
+ * It is assumed that you checked all the input parameters validity:
+ *
+ * \li the replication_factor is under or equal to the number of Cassandra nodes
+ * \li the strategy can only be 0, 1, or 2
+ * \li the data_centers list cannot be empty
+ * \li the host_name must match [a-zA-Z_][a-zA-Z_0-9]*
+ *
+ * \param[in] replication_factor  Number of times the data will be duplicated.
+ * \param[in] strategy  The strategy used to manage the cluster.
+ * \param[in] data_centers  List of data centers, one per line, used if
+ *                          strategy is not Simple (0).
+ * \param[in] host_name  The name of a host to runn a snap server instance.
+ */
+void snap_manager::create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name)
+{
+    // when called here we have f_cassandra defined but no context yet
+
+    QListWidget * console = getChild<QListWidget>(this, "cassandraConsole");
+
+    // create a new context
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+    console->addItem("Create \"" + context_name + "\" context.");
+    f_context = f_cassandra->context(context_name);
+
+    // this is the default for contexts, but just in case we were
+    // to change that default at a later time...
+    f_context->setDurableWrites(true);
+
+    // for developers testing with a few nodes in a single data center,
+    // SimpleStrategy is good enough; for anything larger ("a real
+    // cluster",) it won't work right
+    if(strategy == 0 /*"simple"*/)
+    {
+        f_context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
+
+        // for simple strategy, use the replication_factor parameter
+        // (see http://www.datastax.com/documentation/cql/3.0/cql/cql_reference/create_keyspace_r.html)
+        f_context->setReplicationFactor(replication_factor);
+    }
+    else
+    {
+        if(strategy == 1 /*"local"*/)
+        {
+            f_context->setStrategyClass("org.apache.cassandra.locator.LocalStrategy");
+        }
+        else
+        {
+            // else strategy == 2 /*"network"*/
+            f_context->setStrategyClass("org.apache.cassandra.locator.NetworkTopologyStrategy");
+        }
+
+        // here each data center gets a replication factor
+        QString const replication(QString("%1").arg(replication_factor));
+        int const max_names(data_centers.size());
+        for(int idx(0); idx < max_names; ++idx)
+        {
+            f_context->setDescriptionOption(data_centers[idx], replication);
+        }
+    }
+
+    f_context->create();
+
+    // add the snap server host name to the list of hosts that may
+    // create a lock
+    //
+    f_context->addLockHost(host_name);
+    f_host_list->addItem(host_name);
+
+    // now we want to add the "domains" and "websites" tables to be
+    // complete
+    //
+    create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
+    create_table(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
+
+    // tables were created, we must wait for them to be synchronized
+    //
+    f_context->parentCassandra()->synchronizeSchemaVersions();
+}
+
+
+void snap_manager::create_table(QString const & table_name, QString const & comment)
+{
+    // does table exist?
+    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
+    if(!table)
+    {
+        // table is not there yet, create it
+        table = f_context->table(table_name);
+        table->setComment(comment);
+        table->setColumnType("Standard"); // Standard or Super
+        table->setKeyValidationClass("BytesType");
+        table->setDefaultValidationClass("BytesType");
+        table->setComparatorType("BytesType");
+        table->setKeyCacheSavePeriodInSeconds(14400);
+        table->setMemtableFlushAfterMins(60);
+        //table->setMemtableThroughputInMb(247);
+        //table->setMemtableOperationsInMillions(1.1578125);
+        table->setGcGraceSeconds(864000);
+        table->setMinCompactionThreshold(4);
+        table->setMaxCompactionThreshold(22);
+        table->setReplicateOnWrite(1);
+        table->create();
+    }
+}
+
 
 void snap_manager::reset_domains_index()
 {
@@ -882,11 +1016,13 @@ void snap_manager::on_hostNew_clicked()
 
     hostWithSelection();
     f_host_delete->setEnabled(false);
+
+    f_host_name->setFocus(Qt::OtherFocusReason);
 }
 
 void snap_manager::on_hostSave_clicked()
 {
-    QString name(f_host_name->text());
+    QString const name(f_host_name->text());
     if(name.isEmpty())
     {
         QMessageBox msg(QMessageBox::Critical, "Name Missing", "You cannot create a new host entry without giving the host a valid name.", QMessageBox::Ok, this);
@@ -896,7 +1032,7 @@ void snap_manager::on_hostSave_clicked()
     if(name != f_host_org_name)
     {
         // make sure the host name is correct (i.e. [a-zA-Z0-9_]+)
-        const int max(name.length());
+        int const max(name.length());
         for(int i(0); i < max; ++i)
         {
             int c(name[i].unicode());
@@ -905,7 +1041,7 @@ void snap_manager::on_hostSave_clicked()
             && (c < '0' || c > '9' || i == 0) // cannot start with a digit
             && c != '_')
             {
-                QMessageBox msg(QMessageBox::Critical, "Invalid Host Name", "The host name must only be composed of letters, digits, and underscores although it cannot start with a digit ([0-9a-zA-Z_]+)", QMessageBox::Ok, this);
+                QMessageBox msg(QMessageBox::Critical, "Invalid Host Name", "The host name must only be composed of letters, digits, and underscores, also it cannot start with a digit ([0-9a-zA-Z_]+)", QMessageBox::Ok, this);
                 msg.exec();
                 return;
             }

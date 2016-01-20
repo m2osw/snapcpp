@@ -1,5 +1,5 @@
 // Snap Manager -- Cassandra manager for Snap! Servers
-// Copyright (C) 2011-2012  Made to Order Software Corp.
+// Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,10 +18,12 @@
 #define SNAP_MANAGER_H
 
 #include "snap-manager-initialize-website.h"
+#include "snap-manager-createcontext.h"
 
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/row_model.h>
 #include <snapwebsites/table_model.h>
+#include <snapwebsites/snap_string_list.h>
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
@@ -61,6 +63,11 @@ class snap_manager : public QMainWindow, public Ui_MainWindow
 public:
     snap_manager(QWidget *parent = NULL);
     virtual ~snap_manager();
+
+    void cassandraDisconnectButton_clicked();
+    void create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name);
+    void create_table(QString const & table_name, QString const & comment);
+    void context_is_valid();
 
 private slots:
     void about();
@@ -125,6 +132,7 @@ private:
 
     QPointer<QWidget>               f_about;
     QPointer<QWidget>               f_help;
+    QPointer<snap_manager_createcontext> f_createcontext_window;
     QPointer<snap_manager_initialize_website> f_initialize_website_window;
     QPointer<QWidget>               f_decode_utf8;
     QPointer<QTabWidget>            f_tabs;

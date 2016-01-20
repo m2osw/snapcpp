@@ -22,9 +22,13 @@ At the Cassandra prompt:
 
    list sites;
 
-   del sites[ascii('http://you.site.key/')][ascii('core::last_updated')];
+   del sites[ascii('http://your.site.key/')][ascii('core::last_updated')];
 
    list content;
+
+   list branch;
+
+   list revision;
 
    list links;
 
@@ -36,7 +40,7 @@ you should have a websites 'www.domain.com' entry. The list command can
 be used to list all the entries at once.
 
 When running Snap! Manager, click on the Connect button at the bottom left
-(In the Cassandra area.)
+(In the Cassandra section.)
 
 Click on the Domains tab which should have been highlited (if not, the
 Cassandra connection did not work as expected.)
@@ -70,28 +74,27 @@ to replace the "www" with the sub-domain that you assigned to your domain.
 
 Details can be found on the Help page:
 
-  http://snapwebsites.org/help/snap-manager
+   http://snapwebsites.org/help/snap-manager
 
 
 
 Testing on Apache
 
-Start Server with
+For developers who did not install the result yet, start Server with
 
    ../BUILD/snapwebsites/src/snapserver -c src/snapserver.conf -d
 
    (you may want to edit the snapserver.conf file for your system...)
 
+The -c ... option is not required if you installed everything since
+the file will be under /etc/snapwebsites and automatically found by
+the server (i.e. it will be in the default location.)
+
 Then go to those pages (replace the domain name with yours):
 
-   http://csnap.snapwebsites.com/cgi-bin/snap.cgi?q=/admin
-   http://csnap.snapwebsites.com/cgi-bin/snap.cgi?q=/robots.txt
-
-If Apache is properly setup, then the CGI binary does not need to be
-specified:
-
-   http://csnap.snapwebsites.com/admin
-   http://csnap.snapwebsites.com/robots.txt
+   http://csnap.snapwebsites.com/
+   http://csnap.snapwebsites.com/terms-and-conditions
+   http://csnap.snapwebsites.com/terms-and-conditions/privacy-policy
 
 The following are the Apache rules I use for that purpose. Note that it is
 not yet solid enough for a final version of your server, but it works good
@@ -100,5 +103,5 @@ enough.
    # See http://httpd.apache.org/docs/current/mod/mod_rewrite.html
    RewriteEngine on
    RewriteRule snap\.cgi - [S=1]
-   RewriteRule ^(.*)$ /cgi-bin/snap.cgi?q=/$1 [L,PT,QSA,E=CLEAN_SNAP_URL:1]
+   RewriteRule ^(.*)$ /cgi-bin/snap.cgi [L,PT,QSA]
 
