@@ -87,6 +87,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<xsl:param name="lang"/>
 		<xsl:param name="title"/>
 		<xsl:choose>
+			<!-- TODO: the name of the query string can be changed -->
+			<xsl:when test="$mode = 'query-string'">
+				<link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($page_uri, '?lang=', $lang)}"/>
+			</xsl:when>
 			<xsl:when test="$mode = 'sub-domain'">
 				<link rel="alternate" type="text/html" title="{$title}" hreflang="{$lang}" href="{concat($protocol, '://', $lang, '.', $domain, '/', $full_path)}"/>
 			</xsl:when>

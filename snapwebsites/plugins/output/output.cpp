@@ -302,6 +302,10 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
 {
     NOTUSED(page);
 
+    content::content * content(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content->get_content_table());
+    QString const language(ipath.get_locale());
+
     // if the content is the main page then define the titles and body here
     //
     // titles are defined as HTML; you can output them as plain text
@@ -340,8 +344,96 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
         (content::field_search::command_t::COMMAND_SELF)
         (content::field_search::command_t::COMMAND_SAVE_XML, "description")
 
+        // /snap/page/body/lang
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, language)
+        (content::field_search::command_t::COMMAND_SAVE_XML, "lang")
+
         // generate!
         ;
+
+    // to get alternate translations we have to gather the list of
+    // available translastions which is the list of revisions that
+    // match the revision key in the content except the language
+    //
+    // TODO: at this point I only check the "current revision" when
+    //       we may have to check the list of "current working revision"
+    //
+    // TODO: determining the list of available languages for a page
+    //       should be something in content and not code here...
+    //
+    // TODO: cache the list of languages; it will only change if the
+    //       administrator edits a page, change branch/revision, etc.
+    //       so it can be cached and retrieved quickly
+    //
+    {
+        snap_version::version_number_t const branch(ipath.get_branch());
+        QString const revision_key(QString("%1::%2::%3::")
+                .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
+                .arg(branch));
+        int const revision_key_length(revision_key.length());
+        QtCassandra::QCassandraColumnRangePredicate column_predicate;
+        column_predicate.setCount(100);
+        column_predicate.setIndex(); // behave like an index
+        column_predicate.setStartColumnName(revision_key + "@");
+        column_predicate.setEndColumnName(revision_key + "~");
+        QtCassandra::QCassandraRow::pointer_t page_row(content_table->row(ipath.get_key()));
+        bool first(true);
+        for(;;)
+        {
+            page_row->clearCache();
+            page_row->readCells(column_predicate);
+            QtCassandra::QCassandraCells const cells(page_row->cells());
+            if(cells.isEmpty())
+            {
+                // no script found, error appears at the end of the function
+                break;
+            }
+            for(QtCassandra::QCassandraCells::const_iterator dc(cells.begin());
+                    dc != cells.end();
+                    ++dc)
+            {
+                QtCassandra::QCassandraCell::pointer_t c(*dc);
+
+                QString const key(c->columnName());
+                QString const lang(key.mid(revision_key_length));
+                if(lang != language) // skip this page language, it is not a translation for itself
+                {
+                    if(first)
+                    {
+                        first = false;
+
+                        // TODO: get mode (see below)
+                    }
+
+                    content::path_info_t translated_ipath;
+                    translated_ipath.set_path(ipath.get_cpath());
+                    translated_ipath.force_locale(lang);
+
+                    FIELD_SEARCH
+                        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+                        (content::field_search::command_t::COMMAND_ELEMENT, body)
+                        (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, translated_ipath)
+
+                        // /snap/page/body/translations[@mode="path"]
+                        (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "translations")
+                        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "mode=query-string")  // TODO: need to be defined in the database
+
+                            // /snap/page/body/translations[@mode="path"]/l
+                            (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
+                            (content::field_search::command_t::COMMAND_SELF)
+                            (content::field_search::command_t::COMMAND_SAVE_XML, "l")
+
+                            // /snap/page/body/translations[@mode="path"]/l[@lang="..."]
+                            (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "l")
+                            (content::field_search::command_t::COMMAND_ELEMENT_ATTR, QString("lang=%1").arg(lang))  // TODO: need to be defined in the database
+
+                        // generate!
+                        ;
+                }
+            }
+        }
+    }
 }
 
 
@@ -590,7 +682,7 @@ void output::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, 
     {
         if(token.verify_args(0, 1))
         {
-            content::content *content(content::content::instance());
+            content::content * content(content::content::instance());
             QtCassandra::QCassandraTable::pointer_t content_table(content->get_content_table());
             int64_t const created_date(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
             time_t const unix_time(created_date / 1000000); // transform to seconds

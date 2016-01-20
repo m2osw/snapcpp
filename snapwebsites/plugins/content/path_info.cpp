@@ -638,8 +638,11 @@ snap_version::version_number_t path_info_t::get_revision() const
         //      to find out which locale to use -- at this point the following
         //      does not properly handle the case where the locale was not
         //      specified in the URI
-        f_locale = f_snap->get_language_key();
-        QString default_language(f_locale);
+        if(f_locale.isEmpty())
+        {
+            f_locale = f_snap->get_language_key();
+        }
+        QString const default_language(f_locale);
         f_revision_key.clear();
 
         if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)

@@ -3939,7 +3939,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
         }
         // handle one batch
         //
-        // WARNING: the cells is a map so we want to walk it backward since
+        // WARNING: "cells" is a map so we want to walk it backward since
         //          maps are sorted "in the wrong direction" for a reverse
         //          read...
         //
