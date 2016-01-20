@@ -4633,7 +4633,7 @@ void snap_child::canonicalize_options()
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
-    QString const qs_lang(server->get_parameter("qs_lang"));
+    QString const qs_lang(server->get_parameter("qs_language"));
     QString lang(f_uri.query_option(qs_lang));
     QString country;
 
@@ -4865,7 +4865,7 @@ void snap_child::canonicalize_options()
  * not mandatory so the country can also be define in which case it
  * should not appear in the \p lang parameter.
  */
-bool snap_child::verify_locale(QString& lang, QString& country, bool generate_errors)
+bool snap_child::verify_locale(QString & lang, QString & country, bool generate_errors)
 {
     // search for a '-' or '_' separator as in:
     //
@@ -4873,7 +4873,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
     //    en_US   (Unix environment locale)
     //
     // initialize with 'ptr - 1' so we can ++ on entry of the while loop
-    QChar const *s(lang.data() - 1);
+    QChar const * s(lang.data() - 1);
     ushort c;
     do
     {
@@ -4889,7 +4889,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
         {
             if(generate_errors)
             {
-                // we do not accept entries such as "br-" or "ru_"
+                // country should always be empty on entry
                 die(http_code_t::HTTP_CODE_BAD_REQUEST, "Country Defined Twice",
                         QString("Country is defined twice.").arg(lang).arg(c),
                         "This one may be a programmer mistake. The country parameter was not an empty string on entry of this function.");
@@ -4897,7 +4897,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
             }
             return false;
         }
-        int pos(static_cast<int>(s - lang.data()));
+        int const pos(static_cast<int>(s - lang.data()));
         country = lang.mid(pos + 1);
         lang = lang.left(pos);
         if(lang.isEmpty())
@@ -4947,7 +4947,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
         }
     }
 
-    // country can be empty, that's fine; in most cases we recommend users
+    // country can be empty, that is fine; in most cases we recommend users
     // to not use the country name in their language
     if(!country.isEmpty())
     {
@@ -4980,6 +4980,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
     return true;
 }
 
+
 /** \brief Verify that a name is a language name.
  *
  * This function checks whether \p lang is a valid language name. If so
@@ -4996,7 +4997,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
  *
  * \return true if the language is valid, false in all other cases.
  */
-bool snap_child::verify_language_name(QString& lang)
+bool snap_child::verify_language_name(QString & lang)
 {
     // TODO: make use of a fully optimized search with a binary search like
     //       capability (i.e. a switch on a per character basis in a
@@ -5024,8 +5025,8 @@ bool snap_child::verify_language_name(QString& lang)
         // TBD: do we really want to support long names?
         QString lang_with_commas("," + lang + ",");
         QByteArray lang_with_commas_buffer(lang_with_commas.toUtf8());
-        char const *lwc(lang_with_commas_buffer.data());
-        for(language_name_t const *l(g_language_names); l->f_language; ++l)
+        char const * lwc(lang_with_commas_buffer.data());
+        for(language_name_t const * l(g_language_names); l->f_language; ++l)
         {
             // the multi-name is already semi-optimize so we test it too
             // TBD -- this should maybe not be checked at all
