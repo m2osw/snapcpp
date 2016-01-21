@@ -1,3 +1,9 @@
+snapmanager (1.1.0.2~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 21 Jan 2016 03:02:50 -0800
+
 snapmanager (1.1.0.1~trusty) trusty; urgency=high
 
   * Nightly build.
