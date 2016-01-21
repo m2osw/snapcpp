@@ -1918,7 +1918,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
         {
             // the MD5 is saved in there, get it and compare
             QtCassandra::QCassandraValue const existing_ref(revision_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
-            if(!existing_ref.size() != 16)
+            if(existing_ref.size() == 16)
             {
                 if(existing_ref.binaryValue() == md5)
                 {

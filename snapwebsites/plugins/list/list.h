@@ -286,7 +286,7 @@ public:
     int64_t             get_start_date_offset() const;
 
     list_item_vector_t  read_list(content::path_info_t & ipath, int start, int count);
-    QString             generate_list(content::path_info_t ipath, content::path_info_t list_ipath, int start = 0, int count = -1, QString const & theme = "qrc:/xsl/list/default");
+    QString             generate_list(content::path_info_t & ipath, content::path_info_t list_ipath, int start = 0, int count = -1, QString const & theme = "qrc:/xsl/list/default");
 
     // links test suite
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()

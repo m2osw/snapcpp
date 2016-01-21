@@ -3172,7 +3172,22 @@ void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
 
 
 
-QString list::generate_list(content::path_info_t ipath, content::path_info_t list_ipath, int start, int count, QString const & theme)
+/** \brief Generate a list.
+ *
+ * This function generates the list defined by list_ipath from \p start
+ * up to <code>start + count - 1</code> using the specified \p theme.
+ *
+ * The \p ipath represents the object for which the list is being created.
+ *
+ * \param[in,out] ipath  Object for which the list is being generated.
+ * \param[in,out] list_ipath  The list object from which the list is created.
+ * \param[in] start  The start element.
+ * \param[in] count  The number of items to display.
+ * \param[in] theme  The theme used to generate the output.
+ *
+ * \return The resulting HTML of the list or an empty string.
+ */
+QString list::generate_list(content::path_info_t & ipath, content::path_info_t list_ipath, int start, int count, QString const & theme)
 {
     QString const list_cpath(list_ipath.get_cpath());
     if(list_cpath == "admin"
