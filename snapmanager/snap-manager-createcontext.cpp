@@ -84,7 +84,11 @@ void snap_manager_createcontext::cancel()
     close();
 
     // allow user to try again
-    dynamic_cast<snap_manager *>(parent())->cassandraDisconnectButton_clicked();
+    snap_manager * sm(dynamic_cast<snap_manager *>(parent()));
+    if(sm)
+    {
+        sm->cassandraDisconnectButton_clicked();
+    }
 }
 
 
@@ -156,15 +160,20 @@ void snap_manager_createcontext::createcontext()
         }
     }
 
-    // our parent has all the necessary info about cassandra, so it
-    // implements the actual function to create the context...
-    //
-    dynamic_cast<snap_manager *>(parent())->create_context(replicationFactor->text().toInt(), s, data_centers, host_name);
+    snap_manager * sm(dynamic_cast<snap_manager *>(parent()));
 
-    close();
+    if(sm)
+    {
+        // our parent has all the necessary info about cassandra, so it
+        // implements the actual function to create the context...
+        //
+        sm->create_context(replicationFactor->text().toInt(), s, data_centers, host_name);
 
-    // allow user to try again
-    dynamic_cast<snap_manager *>(parent())->context_is_valid();
+        close();
+
+        // allow user to try again
+        sm->context_is_valid();
+    }
 }
 
 
