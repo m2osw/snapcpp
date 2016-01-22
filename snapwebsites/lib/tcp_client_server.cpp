@@ -892,14 +892,28 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
     case mode_t::MODE_ALWAYS_SECURE:
         {
             // Use TLS v1 only as all versions of SSL are flawed...
-            std::shared_ptr<SSL_CTX> ssl_ctx(SSL_CTX_new(TLSv1_client_method()), ssl_ctx_deleter);
+            std::shared_ptr<SSL_CTX> ssl_ctx(SSL_CTX_new(SSLv23_client_method()), ssl_ctx_deleter);
             if(!ssl_ctx)
             {
                 ERR_print_errors_fp(stderr);
                 throw tcp_client_server_initialization_error("failed initializing an SSL_CTX object");
             }
 
+            // allow up to 4 certificate in the chain otherwise fail
+            // (this is not a very strong security feature though)
+            // TODO: allow user to specify the depth
+            SSL_CTX_set_verify_depth(ssl_ctx.get(), 4);
+
+            // make sure SSL v2/3 is not used, also compression in SSL is
+            // known to have security issues
+            // TODO: allow client to specify some of these options
+            SSL_CTX_set_options(ssl_ctx.get(), SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_COMPRESSION);
+
+            // limit the number of ciphers the connection can use
+            SSL_CTX_set_cipher_list(ssl_ctx.get(), "HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4");
+
             // load root certificates (correct path for Ubuntu?)
+            // TODO: allow client to set the path to certificates
             if(SSL_CTX_load_verify_locations(ssl_ctx.get(), NULL, "/etc/ssl/certs") != 1)
             {
                 ERR_print_errors_fp(stderr);
@@ -963,6 +977,9 @@ bio_client::bio_client(std::string const & addr, int port, mode_t mode)
                 throw tcp_client_server_initialization_error("peer failed presenting a certificate for security verification");
             }
 
+            // XXX: check that the call below is similar to the example
+            //      usage of SSL_CTX_set_verify() which checks the name
+            //      of the certificate, etc.
             if(SSL_get_verify_result(ssl) != X509_V_OK)
             {
                 ERR_print_errors_fp(stderr);
