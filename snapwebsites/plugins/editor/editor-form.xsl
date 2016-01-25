@@ -837,8 +837,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <div field_type="hidden">
       <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="class"><xsl:value-of select="classes"/> snap-editor snap-editor-hidden <xsl:value-of select="$name"/></xsl:attribute>
-      <div class="editor-content">
-        <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+      <div class="editor-content" name="{$name}">
         <xsl:copy-of select="value/node()"/>
       </div>
     </div>

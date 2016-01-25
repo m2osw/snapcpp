@@ -31,7 +31,7 @@
  * $("span:any(\<selectors\>):not(\<selector\>)")
  * \endcode
  *
- * It makes is a little easier to handle the :not() without having to
+ * It makes it a little easier to handle the :not() without having to
  * repeat it many times over.
  *
  * \note

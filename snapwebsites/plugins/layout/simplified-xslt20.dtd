@@ -155,7 +155,8 @@ DTD of the XSLT 2.0.
               name CDATA #IMPLIED
               invoice_number CDATA #IMPLIED
               title CDATA ""
-              value CDATA #IMPLIED>
+              value CDATA #IMPLIED
+              data-item-name CDATA #IMPLIED>
 
 <!ELEMENT form ANY>
 <!ATTLIST form accept-charset CDATA #IMPLIED

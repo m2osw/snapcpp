@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.598
+ * Version: 0.0.3.609
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -2514,7 +2514,17 @@ snapwebsites.EditorWidget.prototype.wasModified = function(opt_recheck)
 {
     if(opt_recheck || !this.modified_)
     {
-        this.modified_ = snapwebsites.trim(this.originalData_) != snapwebsites.trim(snapwebsites.castToString(this.widgetContent_.html(), "expected html() to return a string in this case"));
+        if(this.originalValue_ !== undefined)
+        {
+            // if there is an originalValue_ then we have to check
+            // against the value="..." attribute and not the HTML
+            //
+            this.modified_ = snapwebsites.trim(this.originalValue_) != snapwebsites.trim(snapwebsites.castToString(this.widgetContent_.attr("value"), "expected html() to return a string in this case"));
+        }
+        else
+        {
+            this.modified_ = snapwebsites.trim(this.originalData_) != snapwebsites.trim(snapwebsites.castToString(this.widgetContent_.html(), "expected html() to return a string in this case"));
+        }
     }
     return this.modified_;
 };
@@ -2567,7 +2577,7 @@ snapwebsites.EditorWidget.prototype.saving = function()
     data.html = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in saving()");
 
     value = this.widgetContent_.attr("value");
-    if(typeof value !== "undefined")
+    if(value !== undefined)
     {
         // some widget save their current state as the "value" attribute
         // so we can quickly retrieve that and return it as the result
@@ -2764,7 +2774,7 @@ snapwebsites.EditorWidget.prototype.enable = function(opt_state)
 
         // set contenteditable to false so we know we have to restore it later
         // (but only if it exists)
-        if(typeof editable != "undefined" && editable != "")
+        if(editable != undefined && editable != "")
         {
             this.widgetContent_.attr("contenteditable", "false");
         }
@@ -2778,7 +2788,7 @@ snapwebsites.EditorWidget.prototype.enable = function(opt_state)
         this.widget_.removeClass("disabled");
 
         // restore the contenteditable state to true if present
-        if(typeof editable != "undefined" && editable != "")
+        if(editable != undefined && editable != "")
         {
             // restore contenteditable
             this.widgetContent_.attr("contenteditable", "true");
@@ -2938,7 +2948,7 @@ snapwebsites.EditorWidget.prototype.restoreValue = function()
     // and then retrieve the resulting value and reapply that to
     // make sure we are on the right wave length.
     this.widgetContent_.html(this.originalData_);
-    if(typeof this.originalValue_ !== "undefined")
+    if(this.originalValue_ !== undefined)
     {
         this.widgetContent_.attr("value", this.originalValue_);
     }
@@ -3584,7 +3594,7 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
 snapwebsites.EditorSaveDialog.prototype.setPopup = function(widget, opt_hide_button)
 {
     this.saveDialogPopup_ = jQuery(widget);
-    this.saveDialogPopupAutoHide_ = typeof opt_hide_button === "undefined" || opt_hide_button;
+    this.saveDialogPopupAutoHide_ = opt_hide_button === undefined || opt_hide_button;
     if(this.saveDialogPopupAutoHide_)
     {
         this.saveDialogPopup_.hide();
@@ -4325,11 +4335,9 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
             // in some cases it would be impossible like for file upload)
             w = this.editorWidgets_[key];
 
-            // WARNING: we do "... && valid", placing the && valid after
-            //          the call because whether a previous validation
-            //          failed, we want to have the function called so
-            //          that way we get errors for all the fields at
-            //          once!
+            // WARNING: we do "validate() && valid" in that order because
+            //          placed this way the validate() gets called whether
+            //          the 'valid' variable is true or false
             //
             valid = w.validate() && valid;
 
@@ -5735,6 +5743,21 @@ snapwebsites.EditorWidgetType = function()
 snapwebsites.inherits(snapwebsites.EditorWidgetType, snapwebsites.EditorWidgetTypeBase);
 
 
+/** \brief Hold a timer identifier.
+ *
+ * This variable holds a timer identifier. This is the timer used to
+ * check whether a widget got modified between the time the form was
+ * loaded and now.
+ *
+ * The value is NaN as long as the timer is not set.
+ *
+ * @type {number}
+ *
+ * @private
+ */
+snapwebsites.EditorWidgetType.prototype.changeTimerId_ = NaN;
+
+
 /*jslint unparam: true */
 /** \brief Initialize a widget of this type.
  *
@@ -5781,11 +5804,15 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
         {
             // use a timeout so we execute checkModified()
             // AFTER the changes were made... otherwise we are
-            // way too early
-            setTimeout(function()
-                {
-                    editor_widget.getEditorBase().checkModified(editor_widget);
-                }, 0);
+            // way too early; also make sure we do it just once
+            if(isNaN(that.changeTimerId_))
+            {
+                that.changeTimerId_ = setTimeout(function()
+                    {
+                        that.changeTimerId_ = NaN;
+                        editor_widget.getEditorBase().checkModified(editor_widget);
+                    }, 0);
+            }
         });
 
     // widget gets the focus, make it the active widget
@@ -8317,7 +8344,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.resetValue = function(widget)
         editor_widget.getEditorBase().setActiveElement(c);
 
         // send an event for each change because the user
-        // make want to know even if the value was not actually
+        // may want to know even if the value was not actually
         // modified
         widget_change = jQuery.Event("widgetchange",
             {

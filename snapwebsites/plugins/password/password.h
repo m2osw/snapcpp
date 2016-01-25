@@ -59,9 +59,9 @@ char const * get_name(name_t name) __attribute__ ((const));
 class password_exception : public snap_exception
 {
 public:
-    explicit password_exception(char const *        what_msg) : snap_exception("versions", what_msg) {}
-    explicit password_exception(std::string const & what_msg) : snap_exception("versions", what_msg) {}
-    explicit password_exception(QString const &     what_msg) : snap_exception("versions", what_msg) {}
+    explicit password_exception(char const *        what_msg) : snap_exception("password", what_msg) {}
+    explicit password_exception(std::string const & what_msg) : snap_exception("password", what_msg) {}
+    explicit password_exception(QString const &     what_msg) : snap_exception("password", what_msg) {}
 };
 
 class password_exception_invalid_content_xml : public password_exception

@@ -559,6 +559,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::invoice_grand_total" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::promotion_amount" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::minimum_total" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::atm_fee" // TODO -- remove at some point since that is a cutomer's field
          )
     {
         // 64 bit float
