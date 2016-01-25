@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.609
+ * Version: 0.0.3.615
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -2514,16 +2514,18 @@ snapwebsites.EditorWidget.prototype.wasModified = function(opt_recheck)
 {
     if(opt_recheck || !this.modified_)
     {
-        if(this.originalValue_ !== undefined)
+        value = this.widgetContent_.attr("value");
+        if(this.originalValue_ !== undefined
+        && value !== undefined)
         {
             // if there is an originalValue_ then we have to check
             // against the value="..." attribute and not the HTML
             //
-            this.modified_ = snapwebsites.trim(this.originalValue_) != snapwebsites.trim(snapwebsites.castToString(this.widgetContent_.attr("value"), "expected html() to return a string in this case"));
+            this.modified_ = snapwebsites.trim(this.originalValue_) != snapwebsites.trim(snapwebsites.castToString(value, "expected attr() for \"" + this.name_ + "\" to return a string in this case"));
         }
         else
         {
-            this.modified_ = snapwebsites.trim(this.originalData_) != snapwebsites.trim(snapwebsites.castToString(this.widgetContent_.html(), "expected html() to return a string in this case"));
+            this.modified_ = snapwebsites.trim(this.originalData_) != snapwebsites.trim(snapwebsites.castToString(this.widgetContent_.html(), "expected html() for \"" + this.name_ + "\" to return a string in this case"));
         }
     }
     return this.modified_;
