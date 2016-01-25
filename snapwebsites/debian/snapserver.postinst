@@ -59,6 +59,14 @@ then
         exit 0;
     fi  
 
+    [ -r /etc/default/snapserver ] && . /etc/default/snapserver
+
+    if [ "${SNAPSERVER_ENABLED}" != "yes" ]
+    then
+            echo "Snapwebsites service disabled. Modify your config files in /etc/snapwebsites, and then enable the service in /etc/default/snapserver."
+            exit 0
+    fi
+
     if ! /usr/bin/snapdb layout > /dev/null 2> /dev/null
     then
         echo "Loading layouts into cassandra for the first time."

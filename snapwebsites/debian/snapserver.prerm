@@ -7,6 +7,13 @@ then
 
 	if [ "$1" = "remove" ]
 	then
+		[ -r /etc/default/snapserver ] && . /etc/default/snapserver
+		if [ "${SNAPSERVER_ENABLED}" != "yes" ]
+		then
+				echo "Snapwebsites service disabled, so not attempting to purge db."
+				exit 0
+		fi
+
 		# Ask if the user wishes to purge the database
 		#
 		db_input critical snapwebsites/purge_database || true

@@ -84,7 +84,7 @@ install(
 install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfig.cmake
           ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfigVersion.cmake
-    DESTINATION share/cmake/CSSPP
+    DESTINATION cmake
 )
 
 # Local Variables:

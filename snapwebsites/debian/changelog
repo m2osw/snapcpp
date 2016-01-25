@@ -1,3 +1,9 @@
+snapwebsites (0.1.71.272-1~trusty) trusty; urgency=high
+
+  * Copying cmake module to common place.
+
+ -- Doug Barbieri <doug@dooglo.net>  Sun, 24 Jan 2016 14:22:14 -0800
+
 snapwebsites (0.1.71.272~trusty) trusty; urgency=high
 
   * Nightly build.

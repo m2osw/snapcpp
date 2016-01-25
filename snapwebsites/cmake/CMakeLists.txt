@@ -38,7 +38,7 @@ install(
         SnapXmlLint.cmake
         SnapZipLayout.cmake
     DESTINATION
-        share/cmake-2.8/Modules
+        cmake
     )
 
 # vim: ts=4 sw=4 et nocindent

@@ -33,11 +33,35 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project( snapCMakeModules )
 
-file( GLOB MODULES Modules/*.cmake )
-message( "CMake Modules to install: '${MODULES}'" )
-install( FILES ${MODULES} DESTINATION share/cmake-2.8/Modules )
+# Backwards compatibility for 2.8
+install( FILES Modules/CheckCXXAbstractClass.cmake DESTINATION share/cmake-2.8/Modules )
 
-file( GLOB SCRIPTS Modules/*.sh )
-message( "Shell scripts to install: '${SCRIPTS}'" )
-install( FILES ${SCRIPTS} DESTINATION bin )
+set( MODULES_LIST
+	AdvGetOpt
+	Catch
+	ControlledVars
+	CppUnit
+	ICU
+	LibEvent
+	LibTLD
+	log4cplus
+	ProcPS
+	QREncode
+	QtCassandra
+	QtSerialization
+	QxCppUnit
+	QxRunner
+	SnapBuild
+	SnapCMakeModules
+	SnapDoxygen
+	Thrift
+)
+
+foreach( _module ${MODULES_LIST} )
+	#install( FILES Modules/Find${_module}.cmake DESTINATION share/cmake/${_module} ) # For some reason, cmake 3.2.0 does not find these here...
+	install( FILES Modules/Find${_module}.cmake DESTINATION cmake )
+endforeach()
+
+file( GLOB SCRIPTS Modules/*.sh Modules/*.pl )
+install( FILES ${SCRIPTS} DESTINATION bin PERMISSIONS WORLD_READ WORLD_EXECUTE )
 
