@@ -1,3 +1,4 @@
 usr/include/*
 usr/lib/lib*.so
-usr/cmake/*
+usr/share/cmake-2.8/Modules/*
+usr/share/cmake-3.2/Modules/*

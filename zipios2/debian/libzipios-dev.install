@@ -1,3 +1,4 @@
 usr/include/*
 usr/lib/x86_64-linux-gnu/*.so
-usr/cmake/FindZipIos.cmake
+usr/share/cmake-2.8/Modules/FindZipIos.cmake
+usr/share/cmake-3.2/Modules/FindZipIos.cmake
