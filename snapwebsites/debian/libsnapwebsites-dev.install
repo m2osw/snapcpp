@@ -2,5 +2,4 @@ usr/include/*
 usr/lib/lib*.so
 usr/share/javascript/snapwebsites/*
 usr/share/snapwebsites/dtd/*
-usr/share/cmake-2.8/Modules/*
-usr/share/cmake-3.2/Modules/*
+usr/share/cmake-*/Modules/*
