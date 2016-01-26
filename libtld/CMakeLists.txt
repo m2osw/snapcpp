@@ -56,11 +56,11 @@ find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
-
+add_subdirectory( cmake   )
 add_subdirectory( include )
-add_subdirectory( src )
-add_subdirectory( doc )
-add_subdirectory( tests )
+add_subdirectory( src     )
+add_subdirectory( doc     )
+add_subdirectory( tests   )
 add_subdirectory( package )
 
 # vim: ts=4 sw=4 et

@@ -37,18 +37,13 @@ project( snapCMakeModules )
 install( FILES Modules/CheckCXXAbstractClass.cmake DESTINATION share/cmake-2.8/Modules )
 
 set( MODULES_LIST
-	AdvGetOpt
 	Catch
-	ControlledVars
 	CppUnit
 	ICU
 	LibEvent
-	LibTLD
 	log4cplus
 	ProcPS
 	QREncode
-	QtCassandra
-	QtSerialization
 	QxCppUnit
 	QxRunner
 	SnapBuild
@@ -58,10 +53,12 @@ set( MODULES_LIST
 )
 
 foreach( _module ${MODULES_LIST} )
+	install( FILES Modules/Find${_module}.cmake DESTINATION share/cmake-2.8/Modules )
+	install( FILES Modules/Find${_module}.cmake DESTINATION share/cmake-3.2/Modules )
 	#install( FILES Modules/Find${_module}.cmake DESTINATION share/cmake/${_module} ) # For some reason, cmake 3.2.0 does not find these here...
-	install( FILES Modules/Find${_module}.cmake DESTINATION cmake )
+	#install( FILES Modules/Find${_module}.cmake DESTINATION cmake )
 endforeach()
 
 file( GLOB SCRIPTS Modules/*.sh Modules/*.pl )
-install( FILES ${SCRIPTS} DESTINATION bin PERMISSIONS WORLD_READ WORLD_EXECUTE )
+install( FILES ${SCRIPTS} DESTINATION bin )
 

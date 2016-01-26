@@ -143,9 +143,8 @@ install( FILES ${CMAKE_BINARY_DIR}/zipios/zipios-config.hpp
     DESTINATION ${INCLUDE_INSTALL_DIR}/zipios
 )
 
-install( FILES cmake/FindZipIos.cmake
-    DESTINATION cmake
-)
+install( FILES cmake/FindZipIos.cmake DESTINATION ${DATA_INSTALL_DIR}/cmake-2.8/Modules )
+install( FILES cmake/FindZipIos.cmake DESTINATION ${DATA_INSTALL_DIR}/cmake-3.2/Modules )
 
 add_custom_target(zipios_code_analysis
     # Make sure we have an output folder
