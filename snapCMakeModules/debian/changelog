@@ -1,4 +1,4 @@
-snapcmakemodules (1.0.24-1~trusty) trusty; urgency=high
+snapcmakemodules (1.0.24.246-1~trusty) trusty; urgency=high
 
   * Now modules are stored in the proper cmake place for each name
     (e.g. /usr/share/cmake/<NAME>/Find<NAME>.cmake).
@@ -6,6 +6,12 @@ snapcmakemodules (1.0.24-1~trusty) trusty; urgency=high
     for backward compatiblity.
 
  -- Doug Barbieri <doug@dooglio.com>  Sun, 24 Jan 2016 13:55:58 -0800
+
+snapcmakemodules (1.0.24.246~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 25 Jan 2016 15:19:45 -0800
 
 snapcmakemodules (1.0.24.245~trusty) trusty; urgency=high
 

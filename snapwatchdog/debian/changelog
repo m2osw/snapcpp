@@ -1,8 +1,14 @@
-snapwatchdog (0.2.0.57-1~trusty) trusty; urgency=high
+snapwatchdog (0.2.0.58-1~trusty) trusty; urgency=high
 
   * Copying cmake module to common place.
 
  -- Doug Barbieri <doug@dooglo.net>  Sun, 24 Jan 2016 14:22:14 -0800
+
+snapwatchdog (0.2.0.58~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 25 Jan 2016 15:20:56 -0800
 
 snapwatchdog (0.2.0.57~trusty) trusty; urgency=high
 

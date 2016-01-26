@@ -58,6 +58,7 @@ enum class name_t
     SNAP_NAME_CONTENT_DESTROYPAGE,
     SNAP_NAME_CONTENT_DIRRESOURCES,
     SNAP_NAME_CONTENT_ERROR_FILES,
+    SNAP_NAME_CONTENT_EXTRACTRESOURCE,
     SNAP_NAME_CONTENT_FILES_COMPRESSOR,
     SNAP_NAME_CONTENT_FILES_CREATED,
     SNAP_NAME_CONTENT_FILES_CREATION_TIME,
@@ -853,6 +854,7 @@ private:
     void        backend_process_status();
     void        backend_process_files();
     void        backend_action_dir_resources();
+    void        backend_action_extract_resource();
     void        backend_action_destroy_page();
     void        backend_action_new_file();
     void        backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);

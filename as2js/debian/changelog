@@ -1,8 +1,13 @@
-as2js (0.1.13.505-1~trusty) trusty; urgency=high
+as2js (0.1.13.506-1~trusty) trusty; urgency=high
 
   * Copying cmake module to common place.
 
  -- Doug Barbieri <doug@dooglo.net>  Sun, 24 Jan 2016 14:22:14 -0800
+as2js (0.1.13.506~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 25 Jan 2016 15:20:20 -0800
 
 as2js (0.1.13.505~trusty) trusty; urgency=high
 
