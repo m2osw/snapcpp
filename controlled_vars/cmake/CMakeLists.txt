@@ -1,7 +1,7 @@
 # File:         CMakeLists.txt
-# Object:       Definitions to create the build environment with cmake
+# Object:       Install necessary cmake modules
 #
-# Copyright:    Copyright (c) 2011-2013 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2011-2016 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/
@@ -26,41 +26,8 @@
 # THE SOFTWARE.
 #
 
-set(ADVGETOPT_VERSION_MAJOR 1)
-set(ADVGETOPT_VERSION_MINOR 0)
-set(ADVGETOPT_VERSION_PATCH 16)
+project(controlledvars_cmake)
 
-cmake_minimum_required(VERSION 2.8.4)
-
-project(advgetopt_library)
-
-#
-# Include support modules
-# (must be included in a project even though it is not made
-# specific to that project)
-#
-if( NOT CMAKE_MODULE_PATH )
-    find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS ${CMAKE_SOURCE_DIR}
-        NO_DEFAULT_PATH
-    )
-    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
-    message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
-endif()
-#
-find_package( SnapCMakeModules REQUIRED )
-find_package( ControlledVars   REQUIRED )
-
-if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
-    message("Debug is in effect for advgetopt!")
-    add_definitions( -DDEBUG -D_DEBUG -DCONTROLLED_VARS_DEBUG )
-else()
-    message("Debug is turned OFF")
-    add_definitions( -DNDEBUG )
-endif()
-
-add_subdirectory( cmake )
-add_subdirectory( src   )
-add_subdirectory( doc   )
+install( FILES FindControlledVars.cmake DESTINATION cmake )
 
 # vim: ts=4 sw=4 et nocindent
