@@ -93,6 +93,7 @@ void content::on_register_backend_action(server::backend_action_set & actions)
     actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_RESETSTATUS),      this);
     actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_FORCERESETSTATUS), this);
     actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES),     this);
+    actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_EXTRACTRESOURCE),  this);
     actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_DESTROYPAGE),      this);
     actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_NEWFILE),          this);
     actions.add_action(get_name(name_t::SNAP_NAME_CONTENT_REBUILDINDEX),     this);
@@ -126,6 +127,10 @@ void content::on_backend_action(QString const & action)
     else if(action == get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES))
     {
         backend_action_dir_resources();
+    }
+    else if(action == get_name(name_t::SNAP_NAME_CONTENT_EXTRACTRESOURCE))
+    {
+        backend_action_extract_resource();
     }
     else if(action == get_name(name_t::SNAP_NAME_CONTENT_DESTROYPAGE))
     {
@@ -249,6 +254,26 @@ void content::backend_action_reset_status(bool const force)
 void content::backend_action_dir_resources()
 {
     f_snap->show_resources(std::cout);
+}
+
+
+/** \brief Extract a specific resource file and save it to a file.
+ *
+ * This function is used to read a resource file and save to a file
+ * the user specifies. This is useful to verify that a file made it
+ * to your server.
+ *
+ * The function expects a couple of parameters:
+ *
+ * \li RESOURCE_NAME -- the resource name as it appears in the
+ *                      content::dirresources output.
+ * \li OUTPUT_FILENAME -- the name where the file gets saved.
+ */
+void content::backend_action_extract_resource()
+{
+    QString const resource_name(f_snap->get_server_parameter("RESOURCE_NAME"));
+    QString const output_filename(f_snap->get_server_parameter("OUTPUT_FILENAME"));
+    f_snap->extract_resource(resource_name, output_filename);
 }
 
 

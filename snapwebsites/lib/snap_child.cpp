@@ -8837,6 +8837,40 @@ void snap_child::show_resources(std::ostream & out)
 }
 
 
+void snap_child::extract_resource(QString const & resource_name, QString const & output_filename)
+{
+    // TBD: should we make sure this is a resource?
+    QFile resource(resource_name);
+    if(!resource.open(QIODevice::ReadOnly))
+    {
+        die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                "Resource Unavailable",
+                QString("Somehow resource \"%1\" could not be loaded.").arg(resource_name),
+                "The resource name is wrong, maybe the ':' is missing at the start?");
+        NOTREACHED();
+    }
+
+    // read the entire file
+    QByteArray const data(resource.readAll());
+
+    // create the output file
+    QFile out(output_filename);
+    if(!out.open(QIODevice::WriteOnly))
+    {
+        die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                "I/O Error",
+                QString("Somehow we could not create output file \"%1\".").arg(output_filename),
+                "The resource name is wrong, maybe the ':' is missing at the start?");
+        NOTREACHED();
+    }
+
+    // save the resource
+    out.write(data);
+
+    // Qt closes both files automatically
+}
+
+
 } // namespace snap
 
 // vim: ts=4 sw=4 et

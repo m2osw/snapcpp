@@ -153,6 +153,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_CONTENT_ERROR_FILES:
         return "error_files";
 
+    case name_t::SNAP_NAME_CONTENT_EXTRACTRESOURCE:
+        return "extractresource";
+
     case name_t::SNAP_NAME_CONTENT_DESCRIPTION:
         return "content::description";
 

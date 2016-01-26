@@ -401,6 +401,7 @@ public:
     void                        trace(std::string const & data);
     void                        trace(char const * data);
     void                        show_resources(std::ostream & out);
+    void                        extract_resource(QString const & resource_name, QString const & output_filename);
 
     void                        backend_process();
     void                        udp_ping(char const * name);
