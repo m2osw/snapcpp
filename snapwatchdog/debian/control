@@ -7,7 +7,7 @@ Build-Depends: debhelper, cmake, zip, libqt4-dev (>= 4.8.3), libprocps3-dev,
     libadvgetopt-dev (>= 1.0.15.43~trusty), libtld-dev (>= 1.4.21.92~trusty),
     libqtserialization-dev (>= 0.1.16.43~trusty),
     libqtcassandra-dev (>= 0.5.20.43~trusty),
-    libsnapwebsites-dev (>= 0.1.71.273~trusty), liblog4cplus-dev (>= 1.2.0)
+    libsnapwebsites-dev (>= 0.1.71.274~trusty), liblog4cplus-dev (>= 1.2.0)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
@@ -41,8 +41,7 @@ Section: utils
 Architecture: any
 Depends: adduser, libsnapwatchdog (= ${binary:Version}),
     snapwatchdog-core-plugins, ${shlibs:Depends}, ${misc:Depends}
-Recommends: cassandra (>= 2.0.3)
-Suggests: snapserver (= ${binary:Version})
+Suggests: cassandra (>= 2.0.3), snapserver (= ${binary:Version})
 Description: Track status and health of any number of servers.
  Snap! Watchdog is a tool that works on any number of servers to
  gather various information that let you know how your server is

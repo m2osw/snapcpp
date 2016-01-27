@@ -1,11 +1,10 @@
-#
 # File:         CMakeLists.txt
-# Object:       Definitions to install cmake extensions
+# Object:       Install necessary cmake modules
 #
-# Copyright:    Copyright (c) 2005-2015 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2011-2016 Made to Order Software Corp.
 #               All Rights Reserved.
 #
-# http://snapwebsites.org/project/as2js
+# http://snapwebsites.org/
 # contact@m2osw.com
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,9 +26,8 @@
 # THE SOFTWARE.
 #
 
-project(snap_cmake)
+project(qtserialization_cmake)
 
-install( FILES FindAs2Js.cmake DESTINATION share/cmake-2.8/Modules )
-install( FILES FindAs2Js.cmake DESTINATION share/cmake-3.2/Modules )
+install( FILES QtSerializationConfig.cmake DESTINATION share/cmake/QtSerialization )
 
 # vim: ts=4 sw=4 et nocindent

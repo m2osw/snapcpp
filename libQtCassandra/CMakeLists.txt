@@ -83,6 +83,7 @@ include_directories(
 # Create a configure script
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
+add_subdirectory(cmake)
 add_subdirectory(thrift-gencpp-cassandra)
 add_subdirectory(include)
 add_subdirectory(src)

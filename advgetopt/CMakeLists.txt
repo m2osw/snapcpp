@@ -59,7 +59,8 @@ else()
     add_definitions( -DNDEBUG )
 endif()
 
-add_subdirectory( src )
-add_subdirectory( doc )
+add_subdirectory( cmake )
+add_subdirectory( src   )
+add_subdirectory( doc   )
 
 # vim: ts=4 sw=4 et nocindent
