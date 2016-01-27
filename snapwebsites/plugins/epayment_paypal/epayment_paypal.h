@@ -94,7 +94,7 @@ enum class name_t
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_SANDBOX_SECRET,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_SECRET
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class epayment_paypal_exception : public snap_exception
