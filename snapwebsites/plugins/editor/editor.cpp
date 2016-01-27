@@ -1253,6 +1253,16 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
         return false;
     }
 
+    if(value_info.get_data_type() == "percent64")
+    {
+        value_info.set_type_name("percent number");
+
+        double const v(value_info.get_value().safeDoubleValue());
+        value_info.result() = QString("%1%").arg(v * 100.0);
+        value_info.set_status(value_to_string_info_t::status_t::DONE);
+        return false;
+    }
+
     if(value_info.get_data_type() == "plain")
     {
         value_info.set_type_name("string");
@@ -1392,6 +1402,33 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
         }
 
         value_info.result().setDoubleValue(dbl);
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
+        return false;
+    }
+
+    // floating point of 64 bits followed by "%"
+    if(value_info.get_data_type() == "percent64")
+    {
+        value_info.set_type_name("percent number");
+
+        QString percent(value_info.get_data());
+        if(percent.at(percent.length() - 1) != '%')
+        {
+            value_info.set_status(string_to_value_info_t::status_t::ERROR);
+            return false;
+        }
+        percent = percent.mid(0, percent.length() - 1);
+
+        double dbl;
+        bool ok(false);
+        dbl = percent.toDouble(&ok);
+        if(!ok)
+        {
+            value_info.set_status(string_to_value_info_t::status_t::ERROR);
+            return false;
+        }
+
+        value_info.result().setDoubleValue(dbl / 100.0);
         value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
@@ -3150,6 +3187,16 @@ bool editor::validate_editor_post_for_widget_impl(
                             if(regex_name == "integer")
                             {
                                 re = "^[0-9]+$";
+                            }
+                            break;
+
+                        case 'p':
+                            if(regex_name == "percent")
+                            {
+                                // 0.00% where one set of digits before or
+                                // after the decimal point are optional
+                                //
+                                re = "^[-+]?(?:(?:[0-9]+(?:\\.[0-9]+)?)|(?:[0-9]*\\.[0-9]+))%$";
                             }
                             break;
 
