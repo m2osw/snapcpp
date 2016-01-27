@@ -41,8 +41,7 @@ Section: utils
 Architecture: any
 Depends: adduser, libsnapwatchdog (= ${binary:Version}),
     snapwatchdog-core-plugins, ${shlibs:Depends}, ${misc:Depends}
-Recommends: cassandra (>= 2.0.3)
-Suggests: snapserver (= ${binary:Version})
+Suggests: cassandra (>= 2.0.3), snapserver (= ${binary:Version})
 Description: Track status and health of any number of servers.
  Snap! Watchdog is a tool that works on any number of servers to
  gather various information that let you know how your server is
