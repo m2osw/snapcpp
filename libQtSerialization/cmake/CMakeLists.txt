@@ -28,7 +28,6 @@
 
 project(qtserialization_cmake)
 
-install( FILES FindQtSerialization.cmake DESTINATION share/cmake-2.8/Modules )
-install( FILES FindQtSerialization.cmake DESTINATION share/cmake-3.2/Modules )
+install( FILES QtSerializationConfig.cmake DESTINATION share/cmake/QtSerialization )
 
 # vim: ts=4 sw=4 et nocindent

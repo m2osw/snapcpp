@@ -28,7 +28,6 @@
 
 project(controlledvars_cmake)
 
-install( FILES FindControlledVars.cmake DESTINATION share/cmake-2.8/Modules )
-install( FILES FindControlledVars.cmake DESTINATION share/cmake-3.2/Modules )
+install( FILES ControlledVarsConfig.cmake DESTINATION share/cmake/ControlledVars )
 
 # vim: ts=4 sw=4 et nocindent

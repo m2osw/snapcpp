@@ -53,10 +53,7 @@ set( MODULES_LIST
 )
 
 foreach( _module ${MODULES_LIST} )
-	install( FILES Modules/Find${_module}.cmake DESTINATION share/cmake-2.8/Modules )
-	install( FILES Modules/Find${_module}.cmake DESTINATION share/cmake-3.2/Modules )
-	#install( FILES Modules/Find${_module}.cmake DESTINATION share/cmake/${_module} ) # For some reason, cmake 3.2.0 does not find these here...
-	#install( FILES Modules/Find${_module}.cmake DESTINATION cmake )
+	install( FILES Modules/${_module}Config.cmake DESTINATION share/cmake/${_module} )
 endforeach()
 
 file( GLOB SCRIPTS Modules/*.sh Modules/*.pl )

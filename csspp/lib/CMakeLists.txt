@@ -84,12 +84,7 @@ install(
 install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfig.cmake
           ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfigVersion.cmake
-    DESTINATION share/cmake-2.8/Modules
-)
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfig.cmake
-          ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfigVersion.cmake
-    DESTINATION share/cmake-3.2/Modules
+    DESTINATION share/cmake/CSSPP
 )
 
 # Local Variables:

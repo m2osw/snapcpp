@@ -57,8 +57,9 @@ project( snapwebsites_main )
 set( CMAKE_MODULE_PATH
     ${CMAKE_SOURCE_DIR}/snapCMakeModules/Modules
     ${CMAKE_BINARY_DIR}/dist/share/cmake-2.8/Modules
+    ${CMAKE_BINARY_DIR}/dist/share/cmake
 )
-find_package( SnapBuild        REQUIRED )
+find_package( SnapBuild REQUIRED )
 
 ################################################################################
 # Third party libraries

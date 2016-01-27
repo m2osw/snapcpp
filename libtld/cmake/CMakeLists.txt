@@ -28,7 +28,6 @@
 
 project(libtld_cmake)
 
-install( FILES FindLibTLD.cmake DESTINATION share/cmake-2.8/Modules )
-install( FILES FindLibTLD.cmake DESTINATION share/cmake-3.2/Modules )
+install( FILES LibTLDConfig.cmake DESTINATION share/cmake/LibTLD )
 
 # vim: ts=4 sw=4 et nocindent

@@ -28,7 +28,6 @@
 
 project(qtcassandra_cmake)
 
-install( FILES FindQtCassandra.cmake DESTINATION share/cmake-2.8/Modules )
-install( FILES FindQtCassandra.cmake DESTINATION share/cmake-3.2/Modules )
+install( FILES QtCassandraConfig.cmake DESTINATION share/cmake/QtCassandra )
 
 # vim: ts=4 sw=4 et nocindent

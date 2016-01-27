@@ -28,7 +28,6 @@
 
 project(advgetopt_cmake)
 
-install( FILES FindAdvGetOpt.cmake DESTINATION share/cmake-2.8/Modules )
-install( FILES FindAdvGetOpt.cmake DESTINATION share/cmake-3.2/Modules )
+install( FILES AdvGetOptConfig.cmake DESTINATION share/cmake/AdvGetOpt )
 
 # vim: ts=4 sw=4 et nocindent
