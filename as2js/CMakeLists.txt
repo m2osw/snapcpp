@@ -60,6 +60,9 @@ project(as2js_compiler)
 #    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 #endif()
 
+enable_language( CXX )
+enable_language( C )
+
 #
 # Include support modules
 # (must be included in a project even though it is not made
