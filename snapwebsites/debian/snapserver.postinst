@@ -7,47 +7,47 @@
 
 if [ "$1" = "configure" ]
 then
-	# add snapwebsites user and group if not there already
-	#
-	if ! getent group snapwebsites >/dev/null; then
-		addgroup --system snapwebsites
-	fi
-	#
-	if ! getent passwd snapwebsites >/dev/null
+    # add snapwebsites user and group if not there already
+    #
+    if ! getent group snapwebsites >/dev/null; then
+        addgroup --system snapwebsites
+    fi
+    #
+    if ! getent passwd snapwebsites >/dev/null
     then
-		adduser --quiet \
-			--system \
-			--ingroup snapwebsites \
-			--quiet \
-			--disabled-login \
-			--disabled-password \
-			--home /var/lib/snapwebsites \
-			--no-create-home \
-			-gecos "Snapwebsites installation" \
-			snapwebsites
-	fi
+        adduser --quiet \
+            --system \
+            --ingroup snapwebsites \
+            --quiet \
+            --disabled-login \
+            --disabled-password \
+            --home /var/lib/snapwebsites \
+            --no-create-home \
+            -gecos "Snapwebsites installation" \
+            snapwebsites
+    fi
 
-	# make the snapwebsites log directory
+    # make the snapwebsites log directory
     # make sure that apache2 can write in there because of snapcgi.log
     # (note: we should look into whether we could use root:adm like apache2)
-	#
-	SNAPLOGDIR=/var/log/snapwebsites
-	mkdir -p ${SNAPLOGDIR}
-	chown snapwebsites.www-data ${SNAPLOGDIR}
+    #
+    SNAPLOGDIR=/var/log/snapwebsites
+    mkdir -p ${SNAPLOGDIR}
+    chown snapwebsites.www-data ${SNAPLOGDIR}
     chmod 775 ${SNAPLOGDIR}
 
     # the secure log directory must be writable by www-data for snapcgi.log
     # (note: we should look into whether we could use root:adm like apache2)
     #
-	SECURELOGDIR=/var/log/snapwebsites/secure
-	mkdir -p ${SECURELOGDIR}
-	chown snapwebsites.www-data ${SECURELOGDIR}
+    SECURELOGDIR=/var/log/snapwebsites/secure
+    mkdir -p ${SECURELOGDIR}
+    chown snapwebsites.www-data ${SECURELOGDIR}
     chmod 770 ${SECURELOGDIR}
 
-	# we need a place to write data not directly stored in the cassandra db
-	#
-	mkdir -p /var/lib/snapwebsites
-	chown snapwebsites.snapwebsites /var/lib/snapwebsites
+    # we need a place to write data not directly stored in the cassandra db
+    #
+    mkdir -p /var/lib/snapwebsites
+    chown snapwebsites.snapwebsites /var/lib/snapwebsites
 
     # check to make sure that the layouts have been initialized properly.
     #
