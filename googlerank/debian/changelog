@@ -1,3 +1,9 @@
+googlerank (1.0.15.508~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 27 Jan 2016 17:43:48 -0800
+
 googlerank (1.0.15.507~trusty) trusty; urgency=high
 
   * Nightly build.
