@@ -189,10 +189,10 @@ snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.selectCities_ = function(e
         city = city_widget.getWidget(),
         selected;
 
-    // hide all, then show corresponding to the current continent selection
     if(continent_name)
     {
         city_widget.enable();
+        // hide all, then show corresponding to the current continent selection
         city.find("li").addClass("hidden");
         city.find("li." + continent_name).removeClass("hidden");
         selected = city.find("li.selected");
@@ -204,6 +204,7 @@ snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.selectCities_ = function(e
     }
     else
     {
+        // prevent city selection when there is no continent selected
         city_widget.disable();
         city_widget.resetValue(false);
     }
