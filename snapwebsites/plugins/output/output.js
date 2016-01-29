@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.88
+ * Version: 0.1.5.89
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -1179,7 +1179,7 @@ snapwebsites.Output.parseQueryString = function(query_string, include_domain) //
         query_string = query_string.slice(pos + 1);
     }
 
-    variables = query_string.replace("+", "%20", "gm")
+    variables = query_string.replace(/\+/gm, "%20")
                             .split("&");
     for(v in variables)
     {
