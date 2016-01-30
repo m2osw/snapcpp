@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.615
+ * Version: 0.0.3.620
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -5576,7 +5576,7 @@ snapwebsites.Editor.prototype.checkModified = function(editor_widget) // virtual
     }
 
     // send an event for each change because the user
-    // make want to know even if the value was not actually
+    // may want to know even if the value was not actually
     // modified
     if(editor_widget)
     {

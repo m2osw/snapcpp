@@ -38,7 +38,7 @@
 
 set(AS2JS_VERSION_MAJOR 0)
 set(AS2JS_VERSION_MINOR 1)
-set(AS2JS_VERSION_PATCH 0)
+set(AS2JS_VERSION_PATCH 14)
 
 cmake_minimum_required(VERSION 2.8.4)
 
@@ -59,6 +59,9 @@ project(as2js_compiler)
 #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Werror -Wall -Wextra")
 #    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 #endif()
+
+enable_language( CXX )
+enable_language( C )
 
 #
 # Include support modules

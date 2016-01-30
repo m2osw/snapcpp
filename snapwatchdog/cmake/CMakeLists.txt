@@ -33,9 +33,9 @@ project(snapwatchdog_cmake)
 
 install(
     FILES 
-        FindSnapWatchdog.cmake
+        SnapWatchdogConfig.cmake
     DESTINATION
-        share/cmake-2.8/Modules
+        share/cmake/SnapWatchdog
     )
 
 # vim: ts=4 sw=4 et nocindent

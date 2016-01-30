@@ -36,6 +36,8 @@ set(CONTROLLED_VARS_MAJOR 1)
 set(CONTROLLED_VARS_MINOR 4)
 set(CONTROLLED_VARS_PATCH 16)
 
+add_subdirectory( cmake )
+
 ##
 ## Controlled Variables Generator
 ##

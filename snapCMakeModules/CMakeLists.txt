@@ -33,11 +33,29 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project( snapCMakeModules )
 
-file( GLOB MODULES Modules/*.cmake )
-message( "CMake Modules to install: '${MODULES}'" )
-install( FILES ${MODULES} DESTINATION share/cmake-2.8/Modules )
+# Backwards compatibility for 2.8
+install( FILES Modules/CheckCXXAbstractClass.cmake DESTINATION share/cmake-2.8/Modules )
 
-file( GLOB SCRIPTS Modules/*.sh )
-message( "Shell scripts to install: '${SCRIPTS}'" )
+set( MODULES_LIST
+	Catch
+	CppUnit
+	ICU
+	LibEvent
+	log4cplus
+	ProcPS
+	QREncode
+	QxCppUnit
+	QxRunner
+	SnapBuild
+	SnapCMakeModules
+	SnapDoxygen
+	Thrift
+)
+
+foreach( _module ${MODULES_LIST} )
+	install( FILES Modules/${_module}Config.cmake DESTINATION share/cmake/${_module} )
+endforeach()
+
+file( GLOB SCRIPTS Modules/*.sh Modules/*.pl )
 install( FILES ${SCRIPTS} DESTINATION bin )
 

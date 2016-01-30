@@ -34,7 +34,7 @@
 ##
 set(SNAPWEBSITES_VERSION_MAJOR  0)
 set(SNAPWEBSITES_VERSION_MINOR  1)
-set(SNAPWEBSITES_VERSION_PATCH 71)
+set(SNAPWEBSITES_VERSION_PATCH 72)
 
 cmake_minimum_required(VERSION 2.8)
 
@@ -151,7 +151,7 @@ snap_build_js_targets()
 ##
 ## Install run script
 ##
-install( PROGRAMS reset-db.sh run-server.sh DESTINATION ${CMAKE_INSTALL_PREFIX} )
+install( PROGRAMS reset-db.sh run-server.sh DESTINATION ./ )
 
 ##
 ## Code Analysis

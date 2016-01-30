@@ -1,4 +1,4 @@
-// Snap Websites Server -- handle the Paypal payment facility
+// Snap Websites Server -- handle the PayPal payment facility
 // Copyright (C) 2011-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -1151,7 +1151,7 @@ SNAP_LOG_WARNING("*** token is [")(token)("] [")(main_uri.full_domain())("]");
                 }
                 messages::messages::instance()->set_error(
                     "Payment Failed",
-                    QString("Somehow Paypal refused to process your payment: %1").arg(error),
+                    QString("Somehow PayPal refused to process your payment: %1").arg(error),
                     QString("The payment error type is %1.").arg(error_name),
                     false
                 );
@@ -1325,7 +1325,7 @@ bool epayment_paypal::get_debug()
 /** \brief Get the "maximum repeat failures" the website accepts.
  *
  * This function retrieves the current maximum number of failures that
- * the owner of this website accepts with Paypal recurring fees (plans).
+ * the owner of this website accepts with PayPal recurring fees (plans).
  * After that many, the system gives up and mark the invoice as failed.
  *
  * The function caches the value. Backends have to be careful to either
@@ -2294,7 +2294,7 @@ void epayment_paypal::on_process_post(QString const & uri_path)
                 if(recurring_defined)
                 {
                     // TODO: support a list of "incompatible" processors for
-                    //       an invoice; in this case we'd add Paypal; the
+                    //       an invoice; in this case we'd add PayPal; the
                     //       processing still failed at this point; this
                     //       should not prevent us from attempting to process
                     //       the invoice again
@@ -2328,7 +2328,7 @@ void epayment_paypal::on_process_post(QString const & uri_path)
             if(other_items)
             {
                 // TODO: support a list of "incompatible" processors for
-                //       an invoice; in this case we'd add Paypal; the
+                //       an invoice; in this case we'd add PayPal; the
                 //       processing still failed at this point; this
                 //       should not prevent us from attempting to process
                 //       the invoice again
@@ -2691,7 +2691,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
             if(recurring_fee_defined)
             {
                 // TODO: support a list of "incompatible" processors for
-                //       an invoice; in this case we'd add Paypal; the
+                //       an invoice; in this case we'd add PayPal; the
                 //       processing still failed at this point; this
                 //       should not prevent us from attempting to process
                 //       the invoice again
@@ -3276,19 +3276,19 @@ void epayment_paypal::on_replace_token(content::path_info_t & ipath, QDomDocumen
 
 /** \brief Repeat a payment.
  *
- * This function captures a Paypal payment and if possible process a
+ * This function captures a PayPal payment and if possible process a
  * repeat payment. The payment must have been authorized before by the
  * owner of the account.
  *
- * There can be mainly 3 failures although Paypal checks the dates so
+ * There can be mainly 3 failures although PayPal checks the dates so
  * there are four at this point:
  *
  * \li The user account has never processed such a payment. This should
  *     not happen if your code is all proper.
- * \li The user canceled the repeat payment and thus Paypal refuses to
+ * \li The user canceled the repeat payment and thus PayPal refuses to
  *     process any further money transfers.
- * \li The Paypal website is somehow not currently accessible.
- * \li The Paypal website decided that the charged appeared too soon or
+ * \li The PayPal website is somehow not currently accessible.
+ * \li The PayPal website decided that the charged appeared too soon or
  *     too late.
  *
  * Any other error is probably in this code.
@@ -3320,7 +3320,7 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
     QtCassandra::QCassandraValue agreement_id(first_secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID))->value());
     if(agreement_id.nullValue())
     {
-        // no Paypal agreement, we cannot repeat this payment in this
+        // no PayPal agreement, we cannot repeat this payment in this
         // plugin, just leave and let other plugins eventually do some work
         return;
     }
@@ -3406,7 +3406,7 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
         {
             messages::messages::instance()->set_error(
                 "Plan Not Accessible",
-                "This Paypal Plan is not currently accessible.",
+                "This PayPal Plan is not currently accessible.",
                 QString("Tried to check plan %1 on this user's account and it was not accessible.").arg(agreement_id.stringValue()),
                 false
             );
@@ -3502,7 +3502,7 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
         if(bv <= 0.0)
         {
             // TODO: show invoice number
-            SNAP_LOG_INFO("No outstanding balance according to Paypal. Try again later.");
+            SNAP_LOG_INFO("No outstanding balance according to PayPal. Try again later.");
             return;
         }
     }
@@ -3595,8 +3595,8 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
                 epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 messages::messages::instance()->set_error(
                     "Recurring Fee Failing",
-                    "Somehow we could not process the recurring Paypal payment.",
-                    "When trying to charge a fee at the wrong time a Paypal plan fails... this may be happening here.",
+                    "Somehow we could not process the recurring PayPal payment.",
+                    "When trying to charge a fee at the wrong time a PayPal plan fails... this may be happening here.",
                     false
                 );
                 return;
@@ -3605,10 +3605,10 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
         // else -- we did not try yet so it is zero
     }
 
-    // okay, that looks good, connect to Paypal and then try to process the payment
+    // okay, that looks good, connect to PayPal and then try to process the payment
 
     //
-    // Paypal example:
+    // PayPal example:
     //
     // curl -v POST https://api.sandbox.paypal.com/v1/payments/billing-agreements/I-123/bill-balance
     //      -H 'Content-Type: application/json'
