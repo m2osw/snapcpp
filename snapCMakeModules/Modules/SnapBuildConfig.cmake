@@ -98,7 +98,6 @@ function( ConfigureMakeProject )
 		set( COMMAND_LIST
 			${CMAKE_COMMAND}
 				-DCMAKE_INSTALL_PREFIX:PATH="${SNAP_DIST_DIR}"
-				-DCMAKE_MODULE_PATH:PATH=${SNAP_DIST_DIR}/share/cmake-2.8/Modules
 				-DCMAKE_PREFIX_PATH:PATH=${SNAP_DIST_DIR}
 				${ARG_CONFIG_ARGS}
 				${SRC_DIR}

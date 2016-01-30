@@ -27,9 +27,19 @@
 # THE SOFTWARE.
 #
 
-project(snap_cmake)
+project(as2js_cmake)
 
-install( FILES FindAs2Js.cmake DESTINATION share/cmake-2.8/Modules )
-install( FILES FindAs2Js.cmake DESTINATION share/cmake-3.2/Modules )
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/As2JsConfig.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/As2JsConfig.cmake
+               @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/As2JsConfigVersion.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/As2JsConfigVersion.cmake
+               @ONLY)
+
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/As2JsConfig.cmake
+          ${CMAKE_CURRENT_BINARY_DIR}/As2JsConfigVersion.cmake
+    DESTINATION share/cmake/As2Js
+)
 
 # vim: ts=4 sw=4 et nocindent

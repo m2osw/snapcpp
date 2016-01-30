@@ -7,6 +7,8 @@
 # AS2JS_LIBRARIES    - The libraries needed to use As2Js (none)
 # AS2JS_DEFINITIONS  - Compiler switches required for using As2Js (none)
 
+set(AS2JS_VERSION @AS2JS_VERSION_MAJOR@.@AS2JS_VERSION_MINOR@.@AS2JS_VERSION_PATCH@)
+
 find_path( AS2JS_INCLUDE_DIR as2js/as2js.h
     PATHS $ENV{AS2JS_INCLUDE_DIR}
     PATH_SUFFIXES asj2s

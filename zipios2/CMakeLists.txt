@@ -129,10 +129,11 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/contrib/zipios.spec.in ${CMAKE_CURRE
 
 include_directories( ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} )
 
-add_subdirectory( src )
+add_subdirectory( cmake )
+add_subdirectory( src   )
 add_subdirectory( tools )
 add_subdirectory( tests )
-add_subdirectory( doc )
+add_subdirectory( doc   )
 
 install( DIRECTORY zipios
     DESTINATION ${INCLUDE_INSTALL_DIR}
@@ -142,9 +143,6 @@ install( DIRECTORY zipios
 install( FILES ${CMAKE_BINARY_DIR}/zipios/zipios-config.hpp
     DESTINATION ${INCLUDE_INSTALL_DIR}/zipios
 )
-
-install( FILES cmake/FindZipIos.cmake DESTINATION ${DATA_INSTALL_DIR}/cmake-2.8/Modules )
-install( FILES cmake/FindZipIos.cmake DESTINATION ${DATA_INSTALL_DIR}/cmake-3.2/Modules )
 
 add_custom_target(zipios_code_analysis
     # Make sure we have an output folder

@@ -68,15 +68,11 @@ enable_language( C )
 # (must be included in a project even though it is not made
 # specific to that project)
 #
-if( NOT CMAKE_MODULE_PATH )
-    find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS ${CMAKE_SOURCE_DIR}
-        NO_DEFAULT_PATH
-    )
-    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
-    message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
+if( NOT CMAKE_MODULE_PATH AND CMAKE_PREFIX_PATH )
+    set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+        ${CMAKE_PREFIX_PATH}/share/cmake-2.8/Modules
+        )
 endif()
-#
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 #
 find_package( AdvGetOpt        REQUIRED )
