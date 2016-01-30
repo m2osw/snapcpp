@@ -111,9 +111,9 @@ namespace
         {
             '\0',
             0,
-            "drop-all-tables",
+            "drop-context",
             NULL,
-            "drop absolutely all the tables",
+            "drop the snapwebsites context (and ALL of the tables)",
             advgetopt::getopt::no_argument
         },
         {
@@ -191,7 +191,8 @@ public:
 
     void usage(advgetopt::getopt::status_t status);
     void info();
-    void drop_tables(bool all);
+    void drop_tables();
+    void drop_context();
     void display();
 
 private:
@@ -280,28 +281,42 @@ snapdb::snapdb(int argc, char * argv[])
     {
         usage(advgetopt::getopt::no_error);
     }
-    if( f_opt->is_defined( "info" ) )
+
+    try
     {
-        info();
-        exit(0);
-    }
-    if( f_opt->is_defined( "drop-tables" ) )
-    {
-        if( confirm_drop_check() )
+        if( f_opt->is_defined( "info" ) )
         {
-            drop_tables(false);
+            info();
             exit(0);
         }
-        exit(1);
-    }
-    if( f_opt->is_defined( "drop-all-tables" ) )
-    {
-        if( confirm_drop_check() )
+        if( f_opt->is_defined( "drop-tables" ) )
         {
-            drop_tables(true);
-            exit(0);
+            if( confirm_drop_check() )
+            {
+                drop_tables();
+                exit(0);
+            }
+            exit(1);
         }
-        exit(1);
+        if( f_opt->is_defined( "drop-context" ) )
+        {
+            if( confirm_drop_check() )
+            {
+                drop_context();
+                exit(0);
+            }
+            exit(1);
+        }
+    }
+    catch( const std::exception& except )
+    {
+        std::cerr << "Error connecting to the cassandra server! Reason=[" << except.what() << "]" << std::endl;
+        exit( 1 );
+    }
+    catch( ... )
+    {
+        std::cerr << "Unknown error connecting to the cassandra server!" << std::endl;
+        exit( 1 );
     }
 
     // finally check for parameters
@@ -362,14 +377,16 @@ void snapdb::info()
 }
 
 
-void snapdb::drop_tables(bool all)
+void snapdb::drop_tables()
 {
     f_cassandra->connect(f_host, f_port);
-    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
 
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+    //
     // there are re-created when we connect and refilled when
     // we access a page; obviously this is VERY dangerous on
     // a live system!
+    //
     context->dropTable("antihammering");
     context->dropTable("backend");
     context->dropTable("branch");
@@ -394,16 +411,17 @@ void snapdb::drop_tables(bool all)
     context->dropTable("tracker");
     context->dropTable("users");
 
-    if(all)
-    {
-        // for those who also want to test the snapmanager work too
-        context->dropTable("domains");
-        context->dropTable("websites");
-        context->dropTable("serverstats"); // from snapwatchdog
-    }
-
     // wait until all the tables are 100% dropped
-    context->parentCassandra()->synchronizeSchemaVersions();
+    //
+    f_cassandra->synchronizeSchemaVersions();
+}
+
+
+void snapdb::drop_context()
+{
+    f_cassandra->connect(f_host, f_port);
+    f_cassandra->dropContext( f_context );
+    f_cassandra->synchronizeSchemaVersions();
 }
 
 
