@@ -1048,24 +1048,35 @@ void snap_manager::on_hostSave_clicked()
         }
 
         // host name is considered valid for now
-        f_context->addLockHost(name);
-
-        // the data is now in the database, add it to the table too
-        if(f_host_org_name == "")
+        try
         {
-            f_host_list->addItem(name);
+            f_context->addLockHost(name);
 
-            // make sure we select that item too
-            QList<QListWidgetItem *> items(f_host_list->findItems(name, Qt::MatchExactly));
-            if(items.count() > 0)
+            // the data is now in the database, add it to the table too
+            if(f_host_org_name == "")
             {
-                f_host_list->setCurrentItem(items[0]);
+                f_host_list->addItem(name);
+
+                // make sure we select that item too
+                QList<QListWidgetItem *> items(f_host_list->findItems(name, Qt::MatchExactly));
+                if(items.count() > 0)
+                {
+                    f_host_list->setCurrentItem(items[0]);
+                }
             }
+
+            f_host_org_name = name;
+
+            hostWithSelection();
         }
-
-        f_host_org_name = name;
-
-        hostWithSelection();
+        catch( const std::exception& except )
+        {
+            QMessageBox::critical( this, tr("Thrift Error!"), except.what() );
+        }
+        catch( ... )
+        {
+            QMessageBox::critical( this, tr("Unknown Error!"), tr("The error was undefined!") );
+        }
     }
 }
 
