@@ -49,14 +49,11 @@ add_definitions( -DCASSVIEW_VERSION=\"${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSI
 
 ## Include support modules
 ##
-if( NOT CMAKE_MODULE_PATH )
-    find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS ${CMAKE_SOURCE_DIR}
-        NO_DEFAULT_PATH
-    )
-    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
-    message( "Found cmake in ${CMAKE_MODULE_PATH}" )
-endif()
+set( CMAKE_MODULE_PATH
+    ${CMAKE_PREFIX_PATH}/share/cmake/Modules
+    ${CMAKE_MODULE_PATH}
+)
+
 find_package( SnapCMakeModules REQUIRED )
 find_package( AdvGetOpt        REQUIRED )
 find_package( log4cplus        REQUIRED )

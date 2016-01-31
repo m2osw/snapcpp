@@ -50,14 +50,9 @@ project(controlled_vars)
 
 ## Include support modules
 ##
-if( NOT CMAKE_MODULE_PATH )
-    find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS ${CMAKE_SOURCE_DIR}
-        NO_DEFAULT_PATH
-    )
-    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
-    message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
-endif()
+#if( NOT CMAKE_MODULE_PATH )
+#    set( CMAKE_MODULE_PATH ${CMAKE_PREFIX_PATH}/share/cmake )
+#endif()
 find_package( SnapCMakeModules )
 find_package( SnapDoxygen      )
 

@@ -40,15 +40,6 @@ project(tld_library)
 # (must be included in a project even though it is not made
 # specific to that project)
 #
-if( NOT CMAKE_MODULE_PATH )
-    find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
-        PATHS ${CMAKE_SOURCE_DIR}
-        NO_DEFAULT_PATH
-    )
-    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
-    message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
-endif()
-#
 find_package( SnapCMakeModules )
 find_package( SnapDoxygen )
 find_package( Boost REQUIRED )
