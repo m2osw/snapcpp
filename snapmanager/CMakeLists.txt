@@ -47,6 +47,10 @@ add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGER_VERSION_MAJOR}.${SNAPMANA
 ##
 ## CMake module path
 ##
+if( NOT CMAKE_PREFIX_PATH )
+    set( CMAKE_PREFIX_PATH "/usr" )
+endif()
+
 set( CMAKE_MODULE_PATH
     ${CMAKE_PREFIX_PATH}/share/cmake/Modules
     ${CMAKE_MODULE_PATH}

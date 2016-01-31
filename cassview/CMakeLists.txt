@@ -49,6 +49,10 @@ add_definitions( -DCASSVIEW_VERSION=\"${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSI
 
 ## Include support modules
 ##
+if( NOT CMAKE_PREFIX_PATH )
+    set( CMAKE_PREFIX_PATH "/usr" )
+endif()
+
 set( CMAKE_MODULE_PATH
     ${CMAKE_PREFIX_PATH}/share/cmake/Modules
     ${CMAKE_MODULE_PATH}
