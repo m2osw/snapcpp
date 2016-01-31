@@ -151,7 +151,7 @@ snap_build_js_targets()
 ##
 ## Install run script
 ##
-install( PROGRAMS reset-db.sh run-server.sh DESTINATION ${CMAKE_INSTALL_PREFIX} )
+install( PROGRAMS reset-db.sh run-server.sh DESTINATION ./ )
 
 ##
 ## Code Analysis
