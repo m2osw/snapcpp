@@ -43,7 +43,11 @@ project( snapwatchdog_project )
 
 ## Include support modules
 ##
-set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
+set( CMAKE_MODULE_PATH
+    ${CMAKE_PREFIX_PATH}/share/cmake/Modules
+    ${PROJECT_SOURCE_DIR}/cmake
+    ${CMAKE_MODULE_PATH}
+)
 
 find_package( AdvGetOpt        REQUIRED )
 #find_package( ControlledVars   REQUIRED )

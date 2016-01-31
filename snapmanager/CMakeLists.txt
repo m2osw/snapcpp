@@ -45,6 +45,14 @@ set(SNAPMANAGER_VERSION_PATCH 0)
 add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGER_VERSION_MAJOR}.${SNAPMANAGER_VERSION_MINOR}.${SNAPMANAGER_VERSION_PATCH}\" )
 
 ##
+## CMake module path
+##
+set( CMAKE_MODULE_PATH
+    ${CMAKE_PREFIX_PATH}/share/cmake/Modules
+    ${CMAKE_MODULE_PATH}
+)
+
+##
 ## Find required packages
 ##
 find_package( AdvGetOpt        REQUIRED )

@@ -32,13 +32,13 @@
 project(snap_cmake)
 
 set( INSTALL_FILES
-    FindSnapWebsites.cmake
     SnapJsLint.cmake
     SnapXmlLint.cmake
     SnapZipLayout.cmake
 )
 
-install( FILES ${INSTALL_FILES} DESTINATION share/cmake-2.8/Modules )
-install( FILES ${INSTALL_FILES} DESTINATION share/cmake-3.2/Modules )
+install( FILES SnapWebsitesConfig.cmake DESTINATION share/cmake/SnapWebsites )
+
+install( FILES ${INSTALL_FILES} DESTINATION share/cmake/Modules )
 
 # vim: ts=4 sw=4 et nocindent
