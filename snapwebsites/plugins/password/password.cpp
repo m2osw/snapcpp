@@ -375,10 +375,10 @@ void password::bootstrap(snap_child * snap)
 }
 
 
-/** \brief Add the locale widget to the editor XSLT.
+/** \brief Add the password widgets to the editor XSLT.
  *
- * The editor is extended by the locale plugin by adding a time zone
- * and other various widgets.
+ * The editor is extended by the password plugin by adding a password
+ * and a password + confirm widgets.
  *
  * \param[in] e  A pointer to the editor plugin.
  */

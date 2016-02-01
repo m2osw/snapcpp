@@ -341,7 +341,7 @@ QtCassandra::QCassandraValue & editor::string_to_value_info_t::result()
  * This function is used to initialize the editor plugin object.
  */
 editor::editor()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
     //, f_editor_form() -- auto-init
 {
 }
@@ -441,7 +441,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 28, 19, 38, 56, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 1, 31, 22, 12, 56, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

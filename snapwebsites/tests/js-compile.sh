@@ -22,6 +22,7 @@ OPTIONS="--warning_level VERBOSE"
        #plugins/mimetype/mimetype-basics.js
 
 FILES="plugins/bookkeeping/bookkeeping-client.js
+       plugins/date_widgets/date_widgets/date-widgets.js
        plugins/ecommerce/ecommerce.js
        plugins/editor/editor.js
        plugins/epayment/epayment.js

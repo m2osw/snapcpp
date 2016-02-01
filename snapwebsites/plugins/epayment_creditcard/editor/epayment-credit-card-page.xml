@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<!--
+Snap Websites Server == e-payment credit card settings page widgets
+Copyright (C) 2014-2016  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<editor-form owner="epayment_creditcatd" content-modified="2016-01-28 23:49:49">
+  <auto-reset minutes="10"/> <!-- 10 minutes only on this one, you should not keep credit information out in the wild... -->
+  <mode action="edit"/>
+  <immediate/>
+  <focus refid="card_number"/>
+  <on-save allow-edit="yes"/>
+  <taborder>
+    <tabindex refid="card_number"/>
+    <tabindex refid="security_code"/>
+    <tabindex refid="expiration_year"/>
+    <tabindex refid="expiration_month"/>
+    <tabindex refid="user_name"/>
+    <tabindex refid="address1"/>
+    <tabindex refid="address2"/>
+    <tabindex refid="city"/>
+    <tabindex refid="province"/>
+    <tabindex refid="postal_code"/>
+    <tabindex refid="country"/>
+  </taborder>
+  <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
+  </widget>
+
+  <!-- card details -->
+  <widget id="card_number" type="line-edit" path="epayment/card_number" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter your card number.</tooltip>
+    <help>Enter all the digits of your credit or debit card in this field. You may enter spaces to separate groups of digits.</help>
+    <sizes>
+      <min>10</min>
+      <max>20</max>
+    </sizes>
+    <background-value>card number</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="security_code" type="line-edit" path="epayment/security_code" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter the security code.</tooltip>
+    <help>
+      Depending on your card, you have a security code on the front
+      (American Express) or on the back (Visa, Mastercatd) of the
+      card. This is also called CVV.
+    </help>
+    <sizes>
+      <min>2</min>
+      <max>7</max>
+    </sizes>
+    <background-value>security code</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="expiration_year" type="year" path="epayment/expiration_year" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter the Year of the expiration date.</tooltip>
+    <help>This field must be set to the year on which your credit card will expire.</help>
+    <required>required</required>
+  </widget>
+  <widget id="expiration_month" type="month" path="epayment/expiration_month" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter the Month of the expiration date.</tooltip>
+    <help>This field must be set to the month on which your credit card will expire.</help>
+    <required>required</required>
+  </widget>
+
+  <!-- user name and address -->
+  <widget id="user_name" type="line-edit" path="epayment/user_name" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter the label to use for the Home breadcrumb label.</tooltip>
+    <help>Help</help>
+    <background-value>first and last name</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="address1" type="line-edit" path="epayment/address1" auto-save="no">
+    <tooltip>First line of the address for which the credit card is registered.</tooltip>
+    <help>Enter the first line of your credit card address. This information is required.</help>
+    <background-value>address line 1</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="address2" type="line-edit" path="epayment/address2" auto-save="no">
+    <tooltip>Second line of the address for which the credit catd is registered.</tooltip>
+    <help>Enter the second line of your credit card address. This information is optional.</help>
+    <background-value>address line 2</background-value>
+  </widget>
+  <widget id="city" type="line-edit" path="epayment/city" auto-save="no">
+    <tooltip>The name of the city for which the credit catd is registered.</tooltip>
+    <help>Enter the city name of your credit card address. This information is required.</help>
+    <background-value>city</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="province" type="line-edit" path="epayment/province" auto-save="no">
+    <tooltip>The name of the province for which the credit catd is registered.</tooltip>
+    <help>Enter the name of the province of your credit card address. This information is optional for most countries.</help>
+    <background-value>province or state</background-value>
+  </widget>
+  <widget id="postal_code" type="line-edit" path="epayment/postal_code" auto-save="no">
+    <tooltip>The postal code for which the credit catd is registered.</tooltip>
+    <help>Enter the postal code of your credit card address. This information is required.</help>
+    <background-value>postal code</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="country" type="line-edit" path="epayment/country" auto-save="no">
+    <tooltip>The name of the country in which the credit catd is registered.</tooltip>
+    <help>Enter the name of the country of your credit card address. This field is required.</help>
+    <background-value>province or state</background-value>
+    <required>required</required>
+  </widget>
+
+</editor-form>
+<!-- vim: ts=2 sw=2 et
+-->
