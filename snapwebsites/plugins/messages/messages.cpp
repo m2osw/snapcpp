@@ -53,7 +53,8 @@ controlled_vars::zint32_t        g_message_id;
  */
 const char * get_name(name_t name)
 {
-    switch(name) {
+    switch(name)
+    {
     case name_t::SNAP_NAME_MESSAGES_MESSAGES:
         return "messages::messages";
 
@@ -280,7 +281,7 @@ void messages::message::serialize(QtSerialization::QWriter & w) const
  * This function is used to initialize the messages plugin object.
  */
 messages::messages()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
     //, f_messages() -- auto-init
     //, f_error_count(0) -- auto-init
     //, f_warning_count(0) -- auto-init
@@ -319,6 +320,18 @@ messages * messages::instance()
 QString messages::settings_path() const
 {
     return "/admin/settings/info";
+}
+
+
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString messages::icon() const
+{
+    return "/images/snap/messages-logo-64x64.png";
 }
 
 

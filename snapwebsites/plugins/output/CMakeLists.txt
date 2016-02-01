@@ -79,6 +79,7 @@ add_library(output SHARED
     snap-logo-64x64.png
     layout-logo-64x64.png
     links-logo-64x64.png
+    messages-logo-64x64.png
     wait.gif
     wait-rotate.png
     wait-rotate-64x64.png

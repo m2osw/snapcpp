@@ -290,6 +290,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <path>:/images/output/links-logo-64x64.png</path>
       <mime-type>image/png</mime-type>
     </attachment>
+    <attachment name="messages-logo-64x64" type="attachment/public">
+      <path>:/images/output/messages-logo-64x64.png</path>
+      <mime-type>image/png</mime-type>
+    </attachment>
     <attachment name="javascript-logo-64x64" type="attachment/public">
       <path>:/images/output/javascript-logo-64x64.png</path>
       <mime-type>image/png</mime-type>
