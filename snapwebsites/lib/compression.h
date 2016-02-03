@@ -129,7 +129,7 @@ public:
         time_t              f_mtime;
     };
 
-                            archiver_t(char const *name);
+                            archiver_t(char const * name);
     virtual                 ~archiver_t();
     void                    set_archive(QByteArray const & input);
     QByteArray              get_archive() const;
@@ -142,7 +142,7 @@ protected:
     QByteArray              f_archive;
 };
 
-//void register_compressor(compressor_t *compressor_name); -- automatic at this point
+//void register_compressor(compressor_t * compressor_name); -- automatic at this point
 snap_string_list    compressor_list();
 QByteArray          compress(QString & compressor_name, QByteArray const & input, level_t level, bool text);
 QByteArray          decompress(QString & compressor_name, QByteArray const & input);
