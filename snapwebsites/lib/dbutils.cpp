@@ -446,6 +446,18 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     || (f_tableName == "list" && f_rowName != "*standalone*")
     || n == "users::soft_administrative_session"
     || n == "finball::data_status" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_atm_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_cafe_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_carwash_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_carwashexpress_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_detailshop_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_giftshop_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_lotto_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_lube_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_propane_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_repair_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_retail_holiday" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::data_vendingmachine_holiday" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::number_of_cashiers" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::plan" // TODO -- remove at some point since that is a cutomer's field
     || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
@@ -657,6 +669,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     }
     else if(n.startsWith("content::files::data")
          || f_tableName == "layout"
+         || n.startsWith("finball::mtd_data_") // TODO -- remove at some point since that is a cutomer's field
          )
     {
         // n bit binary value

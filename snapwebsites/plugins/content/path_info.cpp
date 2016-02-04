@@ -296,8 +296,12 @@ void path_info_t::force_extended_revision(QString const & revision, QString cons
  */
 void path_info_t::force_locale(QString const & locale)
 {
-    // TBD: not too sure how valid this is...
-    f_locale = locale;
+    if(f_locale != locale)
+    {
+        // TBD: not too sure how valid this is...
+        f_locale = locale;
+        f_revision_key.clear();
+    }
 }
 
 
