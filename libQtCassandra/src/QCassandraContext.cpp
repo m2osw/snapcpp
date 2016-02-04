@@ -1493,7 +1493,7 @@ void QCassandraContext::addLockHost(const QString& host_name)
     QCassandraTable::pointer_t locks_table(lockTable());
     QCassandraRow::pointer_t hosts_row(locks_table->row(lockHostsKey()));
     hosts_row->clearCache(); // make sure we have a clean slate
-    int hosts_count(hosts_row->cellCount());
+    const int hosts_count(hosts_row->cellCount());
     QCassandraColumnRangePredicate hosts_predicate;
     hosts_predicate.setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
     hosts_predicate.setCount(hosts_count);

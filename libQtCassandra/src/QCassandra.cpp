@@ -1015,7 +1015,7 @@ namespace QtCassandra
  */
 QCassandra::QCassandra()
     : f_private(new QCassandraPrivate(this)),
-      //f_current_context(NULL) -- auto-init
+      //f_current_context(nullptr) -- auto-init
       //f_contexts_read(false) -- auto-init
       //f_contexts() -- auto-init
       //f_cluster_name("") -- auto-init
@@ -1055,6 +1055,7 @@ QCassandra::~QCassandra()
 {
 }
 
+
 /** \brief Internal function to give others access to the Cassandra server.
  *
  * This function internally gives other objects a way to access the private
@@ -1069,6 +1070,7 @@ QCassandraPrivate *QCassandra::getPrivate()
 {
     return f_private.get();
 }
+
 
 /** \brief Connect to a Cassandra Cluster.
  *
@@ -1105,6 +1107,7 @@ bool QCassandra::connect(const QString& host, const int port, const QString& pas
     return f_private->connect(host, port, password);
 }
 
+
 /** \brief Break the connection to Cassandra.
  *
  * This function breaks the connection to Cassandra.
@@ -1130,6 +1133,7 @@ void QCassandra::disconnect()
     //f_schema_synchronization_timeout = SCHEMA_SYNCHRONIZATION_DEFAULT; -- keep current value
 }
 
+
 /** \brief Check whether the object is connected to the server.
  *
  * This function returns true when this object is connected to the
@@ -1144,6 +1148,7 @@ bool QCassandra::isConnected() const
 {
     return f_private->isConnected();
 }
+
 
 /** \brief Wait until all the nodes are synchronized.
  *
@@ -1184,6 +1189,7 @@ void QCassandra::synchronizeSchemaVersions(uint32_t timeout)
     f_private->synchronizeSchemaVersions(timeout);
 }
 
+
 /** \brief Define the default schema synchronization timeout.
  *
  * This function defines the value to use as the default synchronization
@@ -1204,6 +1210,7 @@ void QCassandra::setSchemaSynchronizationTimeout(uint32_t timeout)
     }
     f_schema_synchronization_timeout = timeout;
 }
+
 
 /** \brief Get the name of the Cassandra cluster.
  *
@@ -1231,6 +1238,7 @@ const QString& QCassandra::clusterName() const
     }
     return f_cluster_name;
 }
+
 
 /** \brief Get the version of the cluster protocol.
  *
@@ -1263,6 +1271,45 @@ const QString& QCassandra::protocolVersion() const
     return f_protocol_version;
 }
 
+
+///** \brief Get the cluster information.
+// *
+// * This function reads the ring data from this Cassandra connection.
+// * This data includes information from the various Cassandra node
+// * such as the start and end token of each item
+// *
+// * \todo
+// * At this time this function requires that you first setup
+// * a context as the current context. We may later move this
+// * function from QCassandra to QCassandraContext if it really
+// * is always linked to a context or just make use of any one
+// * context available (or maybe force the context to "system"?)
+// *
+// * \todo
+// * This does not currently work.
+// *
+// * \return An array of node details.
+// *
+// * \sa readRows()
+// */
+//const QCassandraClusterInformation& QCassandra::clusterInformation() const
+//{
+//    if(f_cluster_information.isEmpty()) {
+//        // having to have a context does not make sense for such a
+//        // function; we will have to see whether we can avoid this
+//        // once we use CQL, otherwise it may make more sense to have
+//        // this function called from the context in question instead
+//        //if(!f_current_context)
+//        //{
+//        //    throw std::runtime_error("clusterInformation() cannot be retrieved without a context definition");
+//        //}
+//        // retrieve the cluster information once
+//        f_private->clusterInformation(f_cluster_information);//f_current_context->contextName());
+//    }
+//    return f_cluster_information;
+//}
+
+
 /** \brief Get the partitioner of the cluster.
  *
  * This function retrieves the name of the partitioner in use by the
@@ -1287,6 +1334,7 @@ const QString& QCassandra::partitioner() const
     return f_partitioner;
 }
 
+
 /** \brief Get the snitch of the cluster.
  *
  * This function retrieves the name of the snitch in use by the
@@ -1304,6 +1352,7 @@ const QString& QCassandra::snitch() const
     }
     return f_snitch;
 }
+
 
 /** \brief Retrieve a context by name.
  *
@@ -1359,6 +1408,7 @@ QCassandraContext::pointer_t QCassandra::context(const QString& context_name)
     return c;
 }
 
+
 /** \brief Make the specified context the current context.
  *
  * This function assigns the specified context as the current context
@@ -1403,6 +1453,7 @@ void QCassandra::setCurrentContext(QCassandraContext::pointer_t c)
     }
 }
 
+
 /** \brief Internal function that clears the current context as required.
  *
  * Whenever a context is being dropped, it cannot remain the current context.
@@ -1416,6 +1467,7 @@ void QCassandra::clearCurrentContextIf(const QCassandraContext& c)
         f_current_context.reset();
     }
 }
+
 
 /** \brief Get the map of contexts.
  *
@@ -1442,6 +1494,7 @@ const QCassandraContexts& QCassandra::contexts() const
     }
     return f_contexts;
 }
+
 
 /** \brief Search for a context.
  *
@@ -1476,6 +1529,7 @@ QCassandraContext::pointer_t QCassandra::findContext(const QString& context_name
     return *ci;
 }
 
+
 /** \brief Retrieve a context reference.
  *
  * The array operator searches for a context by name and returns
@@ -1504,6 +1558,7 @@ QCassandraContext& QCassandra::operator [] (const QString& context_name)
     return *context_obj;
 }
 
+
 /** \brief Retrieve a constant context reference.
  *
  * This array operator is the same as the other one, just this one deals
@@ -1531,6 +1586,7 @@ const QCassandraContext& QCassandra::operator [] (const QString& context_name) c
 
     return *context_obj;
 }
+
 
 /** \brief Drop a context from the database and memory.
  *
@@ -1569,6 +1625,7 @@ void QCassandra::dropContext(const QString& context_name)
     f_contexts.remove(context_name);
 }
 
+
 /** \brief Retrieve the current default consistency level.
  *
  * This function returns the current default consistency level used by
@@ -1586,6 +1643,7 @@ consistency_level_t QCassandra::defaultConsistencyLevel() const
 {
     return f_default_consistency_level;
 }
+
 
 /** \brief Change the current default consistency level.
  *
@@ -1625,6 +1683,7 @@ void QCassandra::setDefaultConsistencyLevel(consistency_level_t default_consiste
     f_default_consistency_level = default_consistency_level;
 }
 
+
 /** \brief Retrieve the major version number.
  *
  * This function dynamically returns the library major version.
@@ -1635,6 +1694,7 @@ int QCassandra::versionMajor()
 {
     return QT_CASSANDRA_LIBRARY_VERSION_MAJOR;
 }
+
 
 /** \brief Retrieve the minor version number.
  *
@@ -1647,6 +1707,7 @@ int QCassandra::versionMinor()
     return QT_CASSANDRA_LIBRARY_VERSION_MINOR;
 }
 
+
 /** \brief Retrieve the patch version number.
  *
  * This function dynamically returns the library patch version.
@@ -1657,6 +1718,7 @@ int QCassandra::versionPatch()
 {
     return QT_CASSANDRA_LIBRARY_VERSION_PATCH;
 }
+
 
 /** \brief Retrieve the library version number in the form of a string.
  *
@@ -1670,6 +1732,7 @@ const char *QCassandra::version()
 {
     return QT_CASSANDRA_LIBRARY_VERSION_STRING;
 }
+
 
 /** \brief Get the time of day.
  *
@@ -1688,6 +1751,7 @@ int64_t QCassandra::timeofday()
 
     return static_cast<int64_t>(tv.tv_sec) * 1000000 + static_cast<int64_t>(tv.tv_usec);
 }
+
 
 } // namespace QtCassandra
 // vim: ts=4 sw=4 et

@@ -68,6 +68,7 @@ public:
 
     QString clusterName() const;
     QString protocolVersion() const;
+    //void clusterInformation(QCassandraClusterInformation& cluster_information) const;
     QString partitioner() const;
     QString snitch() const;
 

@@ -41,6 +41,7 @@ get_property( THRIFT_SOURCE_FILES GLOBAL PROPERTY thrift-gencpp-cassandra_SOURCE
 
 add_library(${PROJECT_NAME} SHARED
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraCell.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraClusterInformation.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraColumnDefinition.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraColumnPredicate.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraConsistencyLevel.h
@@ -56,6 +57,7 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraPrivate.cpp
     QCassandraContext.cpp
     QCassandraTable.cpp
+    QCassandraClusterInformation.cpp
     QCassandraColumnDefinition.cpp
     QCassandraColumnPredicate.cpp
     QCassandraLock.cpp

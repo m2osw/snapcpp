@@ -322,6 +322,20 @@ inline void setInt32Value(QByteArray& array, const int32_t value)
     appendInt32Value(array, value);
 }
 
+inline void replaceInt32Value(QByteArray& array, const int32_t value, const int index = 0)
+{
+    if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
+    || static_cast<unsigned int>(index + sizeof(int32_t)) > static_cast<unsigned int>(array.size())) {
+        throw std::runtime_error("buffer too small for this int32Value");
+    }
+    char buf[4];
+    buf[0] = static_cast<char>(value >> 24);
+    buf[1] = static_cast<char>(value >> 16);
+    buf[2] = static_cast<char>(value >> 8);
+    buf[3] = static_cast<char>(value);
+    array.replace(index, 4, buf, 4);
+}
+
 inline int32_t int32Value(const QByteArray& array, const int index = 0)
 {
     if(static_cast<unsigned int>(index) > static_cast<unsigned int>(array.size()) // test to make sure we catch any overflow
@@ -367,6 +381,11 @@ inline void appendUInt32Value(QByteArray& array, const uint32_t value)
 inline void setUInt32Value(QByteArray& array, const uint32_t value)
 {
     setInt32Value(array, value);
+}
+
+inline void replaceUInt32Value(QByteArray& array, const uint32_t value, const int index = 0)
+{
+    replaceInt32Value(array, value, index);
 }
 
 inline uint32_t uint32Value(const QByteArray& array, const int index = 0)

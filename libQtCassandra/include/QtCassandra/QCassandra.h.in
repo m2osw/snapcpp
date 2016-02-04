@@ -38,6 +38,7 @@
 #define QCASSANDRA_H
 
 #include "QtCassandra/QCassandraContext.h"
+#include "QtCassandra/QCassandraClusterInformation.h"
 
 #include <memory>
 
@@ -94,6 +95,7 @@ public:
     void setSchemaSynchronizationTimeout(uint32_t timeout);
     const QString& clusterName() const;
     const QString& protocolVersion() const;
+    //const QCassandraClusterInformation& clusterInformation() const;
     const QString& partitioner() const;
     const QString& snitch() const;
 
@@ -131,6 +133,7 @@ private:
     QCassandraContexts                      f_contexts;
     QString                                 f_cluster_name;
     QString                                 f_protocol_version;
+    //mutable QCassandraClusterInformation    f_cluster_information;
     QString                                 f_partitioner;
     QString                                 f_snitch;
     consistency_level_t                     f_default_consistency_level;

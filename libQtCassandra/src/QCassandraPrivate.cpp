@@ -497,6 +497,64 @@ QString QCassandraPrivate::protocolVersion() const
     return protocol_version.c_str();
 }
 
+
+///** \brief Retrive the Ring information.
+// *
+// * This function calls the describe_ring() function and saves that
+// * information ina cluster information class.
+// *
+// * \param[out] cluster_information  The object where the cluster information
+// *             gathered by this call is saved.
+// */
+//void QCassandraPrivate::clusterInformation(QCassandraClusterInformation& cluster_information) const
+//{
+//    cluster_information.f_start_token.clear();
+//    cluster_information.f_end_token.clear();
+//    cluster_information.f_nodes.clear();
+//
+//    mustBeConnected();
+//    std::vector<org::apache::cassandra::TokenRange> result;
+//    -- this call fails without a "valid" context which defies the
+//    -- concept of getting the number of nodes in a cluster in the
+//    -- first place (i.e. so we can use that number to create the
+//    -- new context)
+//    f_client->describe_ring(result, "system");
+//
+//    -- I had not planned for an array of arrays... so I am not too
+//    -- sure that I got the correct loops below. TBD if we ever make
+//    -- this work
+//    const size_t ranges(result.size());
+//    for(size_t r(0); r < ranges; ++r)
+//    {
+//        const size_t size(result[r].endpoints.size());
+//std::cerr << "***\n*** sizes are " << size
+//                           << ", " << result[r].rpc_endpoints.size()
+//                           << ", " << result[r].endpoint_details.size()
+//                           << "\n***\n";
+//        if(size != result[r].rpc_endpoints.size()
+//        || size != result[r].endpoint_details.size())
+//        {
+//            throw std::runtime_error("endpoint vectors of described ring do not all have the same size");
+//        }
+//
+//        cluster_information.f_start_token = QString::fromUtf8(result[r].start_token.c_str());
+//        cluster_information.f_end_token = QString::fromUtf8(result[r].end_token.c_str());
+//
+//        for(size_t idx(0); idx < size; ++idx)
+//        {
+//            QCassandraNode node;
+//            node.f_node_host = QString::fromUtf8(result[r].endpoint_details[idx].host.c_str());
+//            node.f_node_rack = QString::fromUtf8(result[r].endpoint_details[idx].rack.c_str());
+//            node.f_node_data_center = QString::fromUtf8(result[r].endpoint_details[idx].datacenter.c_str());
+//            node.f_start_token = QString::fromUtf8(result[r].endpoints[idx].c_str());
+//            node.f_end_token = QString::fromUtf8(result[r].endpoints[idx].c_str());
+//            node.f_start_rpc_token = QString::fromUtf8(result[r].rpc_endpoints[idx].c_str());
+//            node.f_end_rpc_token = QString::fromUtf8(result[r].rpc_endpoints[idx].c_str());
+//        }
+//    }
+//}
+
+
 /** \brief Retrieve the partitioner of the cluster.
  *
  * This function sends a message to the Cassandra server to
