@@ -44,6 +44,8 @@
 
 // 3rd party libs
 //
+#include <QFile>
+#include <QTextStream>
 #include <QtCassandra/QCassandra.h>
 #include <controlled_vars/controlled_vars_need_init.h>
 #include <advgetopt/advgetopt.h>
@@ -115,6 +117,22 @@ namespace
             NULL,
             "drop the snapwebsites context (and ALL of the tables)",
             advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            0,
+            "dump-context",
+            NULL,
+            "dump the snapwebsites context to text output",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            0,
+            "restore-context",
+            NULL,
+            "restore the snapwebsites context from text output (required confirmation)",
+            advgetopt::getopt::optional_argument
         },
         {
             '\0',
@@ -193,6 +211,8 @@ public:
     void info();
     void drop_tables();
     void drop_context();
+    void dump_context();
+    void restore_context();
     void display();
 
 private:
@@ -303,6 +323,20 @@ snapdb::snapdb(int argc, char * argv[])
             if( confirm_drop_check() )
             {
                 drop_context();
+                exit(0);
+            }
+            exit(1);
+        }
+        if( f_opt->is_defined( "dump-context" ) )
+        {
+            dump_context();
+            exit(0);
+        }
+        if( f_opt->is_defined( "restore-context" ) )
+        {
+            if( confirm_drop_check() )
+            {
+                restore_context();
                 exit(0);
             }
             exit(1);
@@ -422,6 +456,56 @@ void snapdb::drop_context()
     f_cassandra->connect(f_host, f_port);
     f_cassandra->dropContext( f_context );
     f_cassandra->synchronizeSchemaVersions();
+}
+
+
+void snapdb::dump_context()
+{
+    //std::cout << "dump_context() not implemented (yet)..." << std::endl;
+    f_cassandra->connect(f_host, f_port);
+
+    QStringList out_list;
+    //out_list << "<xml>"; // TODO: output proper preamble...
+
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+    auto snap_table_list( context->tables() );
+    for( auto table : snap_table_list )
+    {
+        //std::cout << "Table name: " << table->tableName() << std::endl;
+        out_list << QString("<table name=\"%1\">").arg(table->tableName());
+        for( auto column_def : table->columnDefinitions() )
+        {
+            out_list << QString("<column name=\"%1\"/>").arg( column_def->columnName() );
+        }
+        out_list << "</table>";
+    }
+
+    const QString outfile( f_opt->get_string( "dump-context" ).c_str() );
+    if( outfile.isEmpty() )
+    {
+        for( auto strline : out_list )
+        {
+            std::cout << strline << std::endl;
+        }
+    }
+    else
+    {
+        QFile of( outfile );
+        of.open( QIODevice::WriteOnly );
+        QTextStream qout( &of );
+        for( auto strline : out_list )
+        {
+            //qout << strline << QChar(static_cast<int>('\n'));
+            qout << strline << QChar('\n');
+        }
+        of.close();
+    }
+}
+
+
+void snapdb::restore_context()
+{
+    std::cout << "restore_context() not implemented (yet)..." << std::endl;
 }
 
 

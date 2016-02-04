@@ -1397,8 +1397,8 @@ void QCassandraContext::synchronizeSchemaVersions()
  */
 void QCassandraContext::unparent()
 {
-    f_cassandra.reset();
     clearCache();
+    f_cassandra.reset();
 }
 
 /** \brief The hosts are listed in the locks table under this name.
