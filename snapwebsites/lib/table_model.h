@@ -34,12 +34,7 @@ class table_model
     Q_OBJECT
 
 public:
-    table_model()
-        : f_rowCount(1000)
-        //, f_rowsRemaining(0) -- auto-init
-        //, f_pos(0) -- auto-init
-    {
-    }
+    table_model( const int32_t row_count = 1000 );
 
     QtCassandra::QCassandraTable::pointer_t getTable() const;
     void                    setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp const & re );

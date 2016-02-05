@@ -461,45 +461,87 @@ void snapdb::drop_context()
 
 void snapdb::dump_context()
 {
-    //std::cout << "dump_context() not implemented (yet)..." << std::endl;
     f_cassandra->connect(f_host, f_port);
 
-    QStringList out_list;
-    //out_list << "<xml>"; // TODO: output proper preamble...
+    const QString outfile( f_opt->get_string( "dump-context" ).c_str() );
+    std::auto_ptr<QFile> of;
+    if( outfile.isEmpty() )
+    {
+        of.reset( new QFile );
+        of->open( stdout, QIODevice::WriteOnly );
+    }
+    else
+    {
+        of.reset( new QFile( outfile ) );
+        of->open( QIODevice::WriteOnly );
+    }
+
+    QTextStream out_list( of.get() );
+
+    out_list << "<?xml version=\"1.0\" encoding=\"utf-8\">\n";
 
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
     auto snap_table_list( context->tables() );
     for( auto table : snap_table_list )
     {
-        //std::cout << "Table name: " << table->tableName() << std::endl;
-        out_list << QString("<table name=\"%1\">").arg(table->tableName());
-        for( auto column_def : table->columnDefinitions() )
+        QCassandraColumnRangePredicate::pointer_t columnp( new QCassandraColumnRangePredicate );
+        columnp->setCount(1000);
+
+        QCassandraRowPredicate rowp;
+        rowp.setStartRowName("");
+        rowp.setEndRowName("");
+        rowp.setCount(100);
+        rowp.setColumnPredicate(columnp);
+
+        out_list << QString("<table name=\"%1\">\n").arg(table->tableName());
+
+        uint32_t rowsRemaining = table->readRows( rowp );
+        while( true )
         {
-            out_list << QString("<column name=\"%1\"/>").arg( column_def->columnName() );
+            for( auto row : table->rows() )
+            {
+                snap::dbutils du( table->tableName(), "" );
+                out_list << QString("\t<row name=\"%1\" key=\"%2\">\n").arg( du.get_row_name(row) ).arg( row->rowKey().data() );
+
+                // This seems to be a bug. The colsRemaining return value never changes with each read.
+                //
+                /*uint32_t colsRemaining =*/ row->readCells( *columnp );
+#if 0
+                while( true )
+                {
+#endif
+                    for( auto col : row->cells() )
+                    {
+                        out_list << QString("\t\t<col name=\"%1\" key=\"%2\">\n").arg(du.get_column_name(col)).arg(col->columnKey().data());
+                        out_list << QString("\t\t\t%1\n").arg(du.get_column_value(col));
+                        out_list << "\t\t</col>\n";
+                    }
+#if 0
+                    //
+                    if( colsRemaining == 0 )
+                    {
+                        break;
+                    }
+                    //
+                    colsRemaining = row->readCells( *columnp ); // Next 100 columns
+                }
+#endif
+
+                out_list << "\t</row>\n";
+            }
+            //
+            if( rowsRemaining == 0 )
+            {
+                break;
+            }
+            //
+            rowsRemaining = table->readRows( rowp ); // Next 100 records
         }
-        out_list << "</table>";
+
+        out_list << "</table>\n";
     }
 
-    const QString outfile( f_opt->get_string( "dump-context" ).c_str() );
-    if( outfile.isEmpty() )
-    {
-        for( auto strline : out_list )
-        {
-            std::cout << strline << std::endl;
-        }
-    }
-    else
-    {
-        QFile of( outfile );
-        of.open( QIODevice::WriteOnly );
-        QTextStream qout( &of );
-        for( auto strline : out_list )
-        {
-            //qout << strline << QChar(static_cast<int>('\n'));
-            qout << strline << QChar('\n');
-        }
-        of.close();
-    }
+    of->close();
 }
 
 
