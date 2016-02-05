@@ -25,8 +25,6 @@
 
 #include <unistd.h>
 
-#include "poison.h"
-
 
 namespace snap
 {
@@ -36,33 +34,33 @@ namespace compression
 class compression_exception : public snap_exception
 {
 public:
-    compression_exception(char const *       whatmsg) : snap_exception("snap_child", whatmsg) {}
-    compression_exception(std::string const& whatmsg) : snap_exception("snap_child", whatmsg) {}
-    compression_exception(QString const&     whatmsg) : snap_exception("snap_child", whatmsg) {}
+    compression_exception(char const *        whatmsg) : snap_exception("compression", whatmsg) {}
+    compression_exception(std::string const & whatmsg) : snap_exception("compression", whatmsg) {}
+    compression_exception(QString const &     whatmsg) : snap_exception("compression", whatmsg) {}
 };
 
 class compression_exception_not_implemented : public compression_exception
 {
 public:
-    compression_exception_not_implemented(char const *       whatmsg) : compression_exception(whatmsg) {}
-    compression_exception_not_implemented(std::string const& whatmsg) : compression_exception(whatmsg) {}
-    compression_exception_not_implemented(QString const&     whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_implemented(char const *        whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_implemented(std::string const & whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_implemented(QString const &     whatmsg) : compression_exception(whatmsg) {}
 };
 
 class compression_exception_not_supported : public compression_exception
 {
 public:
-    compression_exception_not_supported(char const *       whatmsg) : compression_exception(whatmsg) {}
-    compression_exception_not_supported(std::string const& whatmsg) : compression_exception(whatmsg) {}
-    compression_exception_not_supported(QString const&     whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_supported(char const *        whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_supported(std::string const & whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_supported(QString const &     whatmsg) : compression_exception(whatmsg) {}
 };
 
 class compression_exception_not_compatible : public compression_exception
 {
 public:
-    compression_exception_not_compatible(char const *       whatmsg) : compression_exception(whatmsg) {}
-    compression_exception_not_compatible(std::string const& whatmsg) : compression_exception(whatmsg) {}
-    compression_exception_not_compatible(QString const&     whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_compatible(char const *        whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_compatible(std::string const & whatmsg) : compression_exception(whatmsg) {}
+    compression_exception_not_compatible(QString const &     whatmsg) : compression_exception(whatmsg) {}
 };
 
 
@@ -78,12 +76,13 @@ public:
     static char const * BEST_COMPRESSION;
     static char const * NO_COMPRESSION;
 
-                        compressor_t(char const *name);
+                        compressor_t(char const * name);
     virtual             ~compressor_t();
     virtual char const *get_name() const = 0;
-    virtual QByteArray  compress(QByteArray const& input, level_t level, bool text) = 0;
-    virtual bool        compatible(QByteArray const& input) const = 0;
-    virtual QByteArray  decompress(QByteArray const& input) = 0;
+    virtual QByteArray  compress(QByteArray const & input, level_t level, bool text) = 0;
+    virtual bool        compatible(QByteArray const & input) const = 0;
+    virtual QByteArray  decompress(QByteArray const & input) = 0;
+    virtual QByteArray  decompress(QByteArray const & input, size_t uncompressed_size) = 0;
 };
 
 class archiver_t
@@ -144,6 +143,7 @@ protected:
 
 //void register_compressor(compressor_t * compressor_name); -- automatic at this point
 snap_string_list    compressor_list();
+compressor_t *      get_compressor(QString const & compressor_name);
 QByteArray          compress(QString & compressor_name, QByteArray const & input, level_t level, bool text);
 QByteArray          decompress(QString & compressor_name, QByteArray const & input);
 

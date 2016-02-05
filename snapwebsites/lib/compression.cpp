@@ -43,13 +43,13 @@ typedef QMap<QString, archiver_t *>   archiver_map_t;
 // This list only makes use of bare pointers for many good reasons.
 // (i.e. all compressors are defined statitcally, not allocated)
 // Do not try to change it! Thank you.
-compressor_map_t *g_compressors;
+compressor_map_t * g_compressors;
 
 // IMPORTANT NOTE:
 // This list only makes use of bare pointers for many good reasons.
 // (i.e. all archivers are defined statitcally, not allocated)
 // Do not try to change it! Thank you.
-archiver_map_t *g_archivers;
+archiver_map_t * g_archivers;
 
 int bound_level(int level, int min, int max)
 {
@@ -97,9 +97,9 @@ char const *compressor_t::NO_COMPRESSION = "none";
  *
  * \param[in] name  The name of the compressor.
  */
-compressor_t::compressor_t(char const *name)
+compressor_t::compressor_t(char const * name)
 {
-    if(g_compressors == NULL)
+    if(g_compressors == nullptr)
     {
         g_compressors = new compressor_map_t;
     }
@@ -129,7 +129,7 @@ compressor_t::~compressor_t()
     //    }
     //}
     //delete g_compressors;
-    //g_compressors = NULL;
+    //g_compressors = nullptr;
 }
 
 
@@ -151,6 +151,29 @@ snap_string_list compressor_list()
         list.push_back((*it)->get_name());
     }
     return list;
+}
+
+
+/** \brief Return a pointer to the named compressor.
+ *
+ * This function checks whether a compressor named \p compressor_name
+ * exists, if so it gets returned, otherwise a null pointer is returned.
+ *
+ * \param[in] compressor_name  The name of the concerned compressor.
+ *
+ * \return A pointer to a compressor_t object or nullptr.
+ */
+compressor_t * get_compressor(QString const & compressor_name)
+{
+    if(g_compressors != nullptr)
+    {
+        if(g_compressors->contains(compressor_name))
+        {
+            return (*g_compressors)[compressor_name];
+        }
+    }
+
+    return nullptr;
 }
 
 
@@ -213,7 +236,7 @@ SNAP_LOG_TRACE("nothing to compress");
                 QByteArray test((*it)->compress(input, level, text));
                 if(test.size() < best.size())
                 {
-                    best = test;
+                    best.swap(test);
                     compressor_name = (*it)->get_name();
                 }
             }
@@ -232,7 +255,7 @@ SNAP_LOG_TRACE("compressor not found?!");
     }
 
     // avoid the compression if the result is larger or equal to the input!
-    QByteArray result((*g_compressors)[compressor_name]->compress(input, level, text));
+    QByteArray const result((*g_compressors)[compressor_name]->compress(input, level, text));
     if(result.size() >= input.size())
     {
         compressor_name = compressor_t::NO_COMPRESSION;
@@ -241,6 +264,7 @@ SNAP_LOG_TRACE("compression is larger?!");
 #endif
         return input;
     }
+
     return result;
 }
 
@@ -261,24 +285,24 @@ SNAP_LOG_TRACE("compression is larger?!");
  *
  * \return The decompressed buffer.
  */
-QByteArray decompress(QString& compressor_name, const QByteArray& input)
+QByteArray decompress(QString & compressor_name, QByteArray const & input)
 {
     // nothing to decompress if empty
-    if(input.size() == 0)
+    if(input.size() > 0)
     {
-        return input;
-    }
-
-    for(compressor_map_t::const_iterator
-            it(g_compressors->begin());
-            it != g_compressors->end();
-            ++it)
-    {
-        if((*it)->compatible(input))
+        for(compressor_map_t::const_iterator
+                it(g_compressors->begin());
+                it != g_compressors->end();
+                ++it)
         {
-            return (*it)->decompress(input);
+            if((*it)->compatible(input))
+            {
+                compressor_name = (*it)->get_name();
+                return (*it)->decompress(input);
+            }
         }
     }
+
     compressor_name = compressor_t::NO_COMPRESSION;
     return input;
 }
@@ -300,15 +324,15 @@ public:
     {
     }
 
-    virtual char const *get_name() const
+    virtual char const * get_name() const
     {
         return "gzip";
     }
 
-    virtual QByteArray compress(const QByteArray& input, level_t level, bool text)
+    virtual QByteArray compress(QByteArray const & input, level_t level, bool text)
     {
         // transform the 0 to 100 level to the standard 1 to 9 in zlib
-        int zlib_level(bound_level((level * 2 + 25) / 25, Z_BEST_SPEED, Z_BEST_COMPRESSION));
+        int const zlib_level(bound_level((level * 2 + 25) / 25, Z_BEST_SPEED, Z_BEST_COMPRESSION));
         // initialize the zlib stream
         z_stream strm;
         memset(&strm, 0, sizeof(strm));
@@ -329,9 +353,9 @@ public:
         gz_header header;
         memset(&header, 0, sizeof(header));
         header.text = text;
-        header.time = time(NULL);
+        header.time = time(nullptr);
         header.os = 3;
-        header.comment = const_cast<Bytef *>(reinterpret_cast<const Bytef *>("Snap! Websites"));
+        header.comment = const_cast<Bytef *>(reinterpret_cast<Bytef const *>("Snap! Websites"));
         //header.hcrc = 1; -- would that be useful?
         ret = deflateSetHeader(&strm, &header);
         if(ret != Z_OK)
@@ -362,14 +386,14 @@ public:
         return result;
     }
 
-    virtual bool compatible(const QByteArray& input) const
+    virtual bool compatible(QByteArray const & input) const
     {
         // the header is at least 10 bytes
         // the magic code (identification) is 0x1F 0x8B
         return input.size() >= 10 && input[0] == 0x1F && input[1] == static_cast<char>(0x8B);
     }
 
-    virtual QByteArray decompress(const QByteArray& input)
+    virtual QByteArray decompress(QByteArray const & input)
     {
         // initialize the zlib stream
         z_stream strm;
@@ -383,11 +407,12 @@ public:
 #pragma GCC diagnostic pop
         if(ret != Z_OK)
         {
-            // compression failed, return input as is
+            // decompression failed, return input as is assuming it was not
+            // compressed maybe...
             return input;
         }
 
-        // Unfortunately the zlib support for the gzip header doesn't help
+        // Unfortunately the zlib support for the gzip header does not help
         // us getting the ISIZE which is saved as the last 4 bytes of the
         // files (frankly?!)
         //
@@ -406,10 +431,8 @@ public:
                 | (input[strm.avail_in - 2] << 16)
                 | (input[strm.avail_in - 1] << 24));
 
-        // prepare to call the deflate function
+        // prepare to call the inflate function
         // (to do it in one go!)
-        // TODO check the size of the input buffer, if really large
-        //      (256Kb?) then break this up in multiple iterations
         QByteArray result;
         result.resize(static_cast<int>(uncompressed_size));
         strm.avail_out = result.size();
@@ -424,6 +447,13 @@ public:
         }
         inflateEnd(&strm);
         return result;
+    }
+
+    virtual QByteArray decompress(QByteArray const & input, size_t uncompressed_size)
+    {
+        NOTUSED(input);
+        NOTUSED(uncompressed_size);
+        throw compression_exception_not_implemented("gzip decompress() with the uncompressed_size parameter is not implemented.");
     }
 
 } g_gzip; // create statically
@@ -441,18 +471,18 @@ public:
         return "deflate";
     }
 
-    virtual QByteArray compress(QByteArray const& input, level_t level, bool text)
+    virtual QByteArray compress(QByteArray const & input, level_t level, bool text)
     {
         NOTUSED(text);
 
         // transform the 0 to 100 level to the standard 1 to 9 in zlib
-        int zlib_level(bound_level((level * 2 + 25) / 25, Z_BEST_SPEED, Z_BEST_COMPRESSION));
+        int const zlib_level(bound_level((level * 2 + 25) / 25, Z_BEST_SPEED, Z_BEST_COMPRESSION));
         // initialize the zlib stream
         z_stream strm;
         memset(&strm, 0, sizeof(strm));
         // deflateInit2 expects the input to be defined
         strm.avail_in = input.size();
-        strm.next_in = const_cast<Bytef *>(reinterpret_cast<const Bytef *>(input.data()));
+        strm.next_in = const_cast<Bytef *>(reinterpret_cast<Bytef const *>(input.data()));
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
         int ret(deflateInit2(&strm, zlib_level, Z_DEFLATED, 15, 9, Z_DEFAULT_STRATEGY));
@@ -495,9 +525,68 @@ public:
 
     virtual QByteArray decompress(QByteArray const & input)
     {
+        // the decompress function for "deflate" requires the size in
+        // our case so this function is not implemented for now...
         NOTUSED(input);
+        throw compression_exception_not_implemented("gzip decompress() with the uncompressed_size parameter is not implemented.");
+    }
 
-        throw compression_exception_not_implemented("the deflate decompress() function is not yet implemented, mainly because it is not accessible via the compression::decompress() function.");
+    virtual QByteArray decompress(QByteArray const & input, size_t uncompressed_size)
+    {
+        // by default we cannot reach this function, if we get called, then
+        // the caller specifically wanted to call us, in such a case we
+        // expect the size of the uncompressed data to be specified...
+
+        // initialize the zlib stream
+        z_stream strm;
+        memset(&strm, 0, sizeof(strm));
+        // inflateInit expects the input to be defined
+        strm.avail_in = input.size();
+        strm.next_in = const_cast<Bytef *>(reinterpret_cast<Bytef const *>(input.data()));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        int ret(inflateInit(&strm));
+#pragma GCC diagnostic pop
+        if(ret != Z_OK)
+        {
+            // compression failed, return input as is
+            return input;
+        }
+
+        // Unfortunately the zlib support for the gzip header does not help
+        // us getting the ISIZE which is saved as the last 4 bytes of the
+        // files (frankly?!)
+        //
+        // initialize the gzip header
+        //gz_header header;
+        //memset(&header, 0, sizeof(header));
+        //ret = inflateGetHeader(&strm, &header);
+        //if(ret != Z_OK)
+        //{
+        //    inflateEnd(&strm);
+        //    return input;
+        //}
+        // The size is saved in the last 4 bytes in little endian
+        //size_t uncompressed_size(input[strm.avail_in - 4]
+        //        | (input[strm.avail_in - 3] << 8)
+        //        | (input[strm.avail_in - 2] << 16)
+        //        | (input[strm.avail_in - 1] << 24));
+
+        // prepare to call the inflate function
+        // (to do it in one go!)
+        QByteArray result;
+        result.resize(static_cast<int>(uncompressed_size));
+        strm.avail_out = result.size();
+        strm.next_out = reinterpret_cast<Bytef *>(result.data());
+
+        // decompress in one go
+        ret = inflate(&strm, Z_FINISH);
+        inflateEnd(&strm);
+        if(ret != Z_STREAM_END)
+        {
+            return input;
+        }
+        return result;
     }
 
 } g_deflate; // create statically
@@ -557,25 +646,25 @@ archiver_t::file_t::type_t archiver_t::file_t::get_type() const
 }
 
 
-QByteArray const& archiver_t::file_t::get_data() const
+QByteArray const & archiver_t::file_t::get_data() const
 {
     return f_data;
 }
 
 
-QString const& archiver_t::file_t::get_filename() const
+QString const & archiver_t::file_t::get_filename() const
 {
     return f_filename;
 }
 
 
-QString const& archiver_t::file_t::get_user() const
+QString const & archiver_t::file_t::get_user() const
 {
     return f_user;
 }
 
 
-QString const& archiver_t::file_t::get_group() const
+QString const & archiver_t::file_t::get_group() const
 {
     return f_group;
 }
@@ -605,10 +694,10 @@ time_t archiver_t::file_t::get_mtime() const
 }
 
 
-archiver_t::archiver_t(char const *name)
+archiver_t::archiver_t(char const * name)
     //: f_archive() -- auto-init
 {
-    if(g_archivers == NULL)
+    if(g_archivers == nullptr)
     {
         g_archivers = new archiver_map_t;
     }
@@ -618,7 +707,7 @@ archiver_t::archiver_t(char const *name)
 
 archiver_t::~archiver_t()
 {
-    // TBD we probably don't need this code...
+    // TBD we probably do not need this code...
     //     it is rather slow so why waste our time on exit?
     //for(archiver_map_t::iterator
     //        it(g_archivers->begin());
@@ -632,11 +721,11 @@ archiver_t::~archiver_t()
     //    }
     //}
     //delete g_archivers;
-    //g_archivers = NULL;
+    //g_archivers = nullptr;
 }
 
 
-void archiver_t::set_archive(QByteArray const& input)
+void archiver_t::set_archive(QByteArray const & input)
 {
     f_archive = input;
 }
@@ -658,12 +747,12 @@ public:
     {
     }
 
-    virtual char const *get_name() const
+    virtual char const * get_name() const
     {
         return "tar";
     }
 
-    virtual void append_file(file_t const& file)
+    virtual void append_file(file_t const & file)
     {
         QByteArray utf8;
 
@@ -763,7 +852,7 @@ public:
         }
     }
 
-    virtual bool next_file(file_t& file) const
+    virtual bool next_file(file_t & file) const
     {
         // any more files?
         // (make sure there is at least a header for now)
@@ -849,8 +938,8 @@ public:
 
         if(file.get_type() == file_t::type_t::FILE_TYPE_REGULAR)
         {
-            uint32_t size(read_int(&header[124], 12, 8));
-            int total_size((size + 511) & -512);
+            uint32_t const size(read_int(&header[124], 12, 8));
+            int const total_size((size + 511) & -512);
             if(f_pos + total_size > f_archive.size())
             {
                 throw compression_exception_not_supported("file data not available (archive too small)");
@@ -871,7 +960,7 @@ public:
     }
 
 private:
-    void append_int(char *header, int value, unsigned int length, int base, char fill)
+    void append_int(char * header, int value, unsigned int length, int base, char fill)
     {
         // save the number (minimum 1 digit)
         do
@@ -891,7 +980,7 @@ private:
         }
     }
 
-    uint32_t read_int(char const *header, int length, int base) const
+    uint32_t read_int(char const * header, int length, int base) const
     {
         // TODO: add tests
         uint32_t result(0);
@@ -902,12 +991,12 @@ private:
         return result;
     }
 
-    uint32_t tar_check_sum(char const *s) const
+    uint32_t tar_check_sum(char const * s) const
     {
         uint32_t result = 8 * ' '; // the checksum field
 
         // name + mode + uid + gid + size + mtime = 148 bytes
-        for(int n = 148; n > 0; --n, ++s)
+        for(int n(148); n > 0; --n, ++s)
         {
             result += *s;
         }
@@ -915,7 +1004,7 @@ private:
         s += 8; // skip the checksum field
 
         // everything after the checksum is another 356 bytes
-        for(int n = 356; n > 0; --n, ++s)
+        for(int n(356); n > 0; --n, ++s)
         {
             result += *s;
         }

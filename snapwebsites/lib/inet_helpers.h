@@ -19,8 +19,6 @@
 
 #include <iostream>
 
-#include "poison.h"
-
 namespace snap
 {
 namespace snap_inet
