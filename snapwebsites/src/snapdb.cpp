@@ -12,10 +12,10 @@
  *
  * License:
  *      Copyright (c) 2012-2016 Made to Order Software Corp.
- * 
+ *
  *      http://snapwebsites.org/
  *      contact@m2osw.com
- * 
+ *
  *      Permission is hereby granted, free of charge, to any person obtaining a
  *      copy of this software and associated documentation files (the
  *      "Software"), to deal in the Software without restriction, including
@@ -44,8 +44,12 @@
 
 // 3rd party libs
 //
+#include <QDateTime>
 #include <QFile>
+#include <QFileInfo>
 #include <QTextStream>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 #include <QtCassandra/QCassandra.h>
 #include <controlled_vars/controlled_vars_need_init.h>
 #include <advgetopt/advgetopt.h>
@@ -212,7 +216,7 @@ public:
     void drop_tables();
     void drop_context();
     void dump_context();
-    void restore_context();
+    bool restore_context();
     void display();
 
 private:
@@ -334,12 +338,7 @@ snapdb::snapdb(int argc, char * argv[])
         }
         if( f_opt->is_defined( "restore-context" ) )
         {
-            if( confirm_drop_check() )
-            {
-                restore_context();
-                exit(0);
-            }
-            exit(1);
+            exit( restore_context()? 0: 1 );
         }
     }
     catch( const std::exception& except )
@@ -464,7 +463,7 @@ void snapdb::dump_context()
     f_cassandra->connect(f_host, f_port);
 
     const QString outfile( f_opt->get_string( "dump-context" ).c_str() );
-    std::auto_ptr<QFile> of;
+    std::shared_ptr<QFile> of;
     if( outfile.isEmpty() )
     {
         of.reset( new QFile );
@@ -476,9 +475,10 @@ void snapdb::dump_context()
         of->open( QIODevice::WriteOnly );
     }
 
-    QTextStream out_list( of.get() );
-
-    out_list << "<?xml version=\"1.0\" encoding=\"utf-8\">\n";
+    QXmlStreamWriter stream( of.get() );
+    stream.setAutoFormatting( true );
+    stream.writeStartDocument();
+    stream.writeComment( QString("Backup generated on '%1'.").arg(QDateTime::currentDateTime().toString()) );
 
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
     auto snap_table_list( context->tables() );
@@ -493,7 +493,8 @@ void snapdb::dump_context()
         rowp.setCount(100);
         rowp.setColumnPredicate(columnp);
 
-        out_list << QString("<table name=\"%1\">\n").arg(table->tableName());
+        stream.writeStartElement( "table" );
+        stream.writeAttribute( "name", table->tableName() );
 
         uint32_t rowsRemaining = table->readRows( rowp );
         while( true )
@@ -501,7 +502,9 @@ void snapdb::dump_context()
             for( auto row : table->rows() )
             {
                 snap::dbutils du( table->tableName(), "" );
-                out_list << QString("\t<row name=\"%1\" key=\"%2\">\n").arg( du.get_row_name(row) ).arg( row->rowKey().data() );
+                stream.writeStartElement( "row" );
+                stream.writeAttribute( "name", du.get_row_name(row) );
+                //stream.writeAttribute( "key", row->rowKey().data() );
 
                 // This seems to be a bug. The colsRemaining return value never changes with each read.
                 //
@@ -512,9 +515,11 @@ void snapdb::dump_context()
 #endif
                     for( auto col : row->cells() )
                     {
-                        out_list << QString("\t\t<col name=\"%1\" key=\"%2\">\n").arg(du.get_column_name(col)).arg(col->columnKey().data());
-                        out_list << QString("\t\t\t%1\n").arg(du.get_column_value(col));
-                        out_list << "\t\t</col>\n";
+                        stream.writeStartElement( "col" );
+                        stream.writeAttribute( "name", du.get_column_name(col) );
+                        //stream.writeAttribute( "key", col->columnKey().data() );
+                        stream.writeCharacters( du.get_column_value(col) );
+                        stream.writeEndElement();
                     }
 #if 0
                     //
@@ -527,7 +532,7 @@ void snapdb::dump_context()
                 }
 #endif
 
-                out_list << "\t</row>\n";
+                stream.writeEndElement();
             }
             //
             if( rowsRemaining == 0 )
@@ -538,16 +543,94 @@ void snapdb::dump_context()
             rowsRemaining = table->readRows( rowp ); // Next 100 records
         }
 
-        out_list << "</table>\n";
+        stream.writeEndElement();
     }
 
+    stream.writeEndDocument();
     of->close();
 }
 
 
-void snapdb::restore_context()
+bool snapdb::restore_context()
 {
-    std::cout << "restore_context() not implemented (yet)..." << std::endl;
+    f_cassandra->connect(f_host, f_port);
+
+    if( f_cassandra->findContext( f_context ) )
+    {
+        std::cerr << "The " << f_context.toUtf8().data() << " context already exists! This feature will not overwrite existing data. Please drop the context first." << std::endl;
+        return false;
+    }
+
+    QCassandraContext::pointer_t context( f_cassandra->context( f_context ) );
+
+    const QString infile( f_opt->get_string( "restore-context" ).c_str() );
+    std::shared_ptr<QFile> qif;
+    if( infile.isEmpty() )
+    {
+        qif.reset( new QFile );
+        qif->open( stdin, QIODevice::ReadOnly );
+    }
+    else
+    {
+        QFileInfo fi( infile );
+        if( !fi.exists() )
+        {
+            std::cerr << "Input file does not exist!" << std::endl;
+            return false;
+        }
+
+        qif.reset( new QFile( infile ) );
+        qif->open( QIODevice::ReadOnly );
+    }
+
+    QCassandraTable::pointer_t table;
+    QCassandraRow::pointer_t   row;
+    QCassandraCell::pointer_t  cell;
+
+    QXmlStreamReader stream( qif.get() );
+    while( !stream.atEnd() )
+    {
+        QXmlStreamReader::TokenType type = stream.readNext();
+        if( type == QXmlStreamReader::StartElement )
+        {
+            QXmlStreamAttributes attribs( stream.attributes() );
+            if( stream.name() == "table" )
+            {
+                Q_ASSERT(context);
+                table = context->table( attribs.value("name").toString() );
+            }
+            else if( stream.name() == "row" )
+            {
+                Q_ASSERT(table);
+                row = table->row( attribs.value("name").toString() );
+            }
+            else if( stream.name() == "col" )
+            {
+                Q_ASSERT(row);
+                cell = row->cell( attribs.value("name").toString() );
+            }
+        }
+        else if( type == QXmlStreamReader::Characters )
+        {
+            if( !stream.isWhitespace() )
+            {
+                Q_ASSERT(cell);
+                cell->setValue( stream.text().toString() );
+            }
+        }
+    }
+
+    if( stream.hasError() )
+    {
+        std::cerr << "Error in XML: [" << stream.errorString().toUtf8().data() << "]!" << std::endl;
+        std::cerr << "Failed at line "
+                  << stream.lineNumber() << ", token=["
+                  << stream.tokenString().toUtf8().data() << "], name=["
+                  << stream.name().toUtf8().data() << "]" << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
 
