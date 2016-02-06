@@ -487,11 +487,18 @@ void output::on_generate_page_content(content::path_info_t & ipath, QDomElement 
         (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "page-created")
         (content::field_search::command_t::COMMAND_WARNING, "field missing")
 
-        // /snap/page/body/branch-created
+        // /snap/page/body/created
         (content::field_search::command_t::COMMAND_PATH_INFO_BRANCH, ipath)
         (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))
         (content::field_search::command_t::COMMAND_SELF)
         (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "created")
+        (content::field_search::command_t::COMMAND_WARNING, "field missing")
+
+        // /snap/page/body/created-precise
+        (content::field_search::command_t::COMMAND_PATH_INFO_BRANCH, ipath)
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE_AND_TIME, "created-precise")
         (content::field_search::command_t::COMMAND_WARNING, "field missing")
 
         // /snap/page/body/updated
@@ -500,6 +507,14 @@ void output::on_generate_page_content(content::path_info_t & ipath, QDomElement 
         (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))
         (content::field_search::command_t::COMMAND_SELF)
         (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "updated")
+        (content::field_search::command_t::COMMAND_WARNING, "field missing")
+
+        // /snap/page/body/updated-precise
+        // XXX should it be mandatory or just use "created" as the default?
+        // modified in the branch "converted" to updated
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE_AND_TIME, "updated-precise")
         (content::field_search::command_t::COMMAND_WARNING, "field missing")
 
         // /snap/page/body/accepted
@@ -534,10 +549,20 @@ void output::on_generate_page_content(content::path_info_t & ipath, QDomElement 
 
         // /snap/page/body/modified
         // XXX should it be mandatory or just use "created" as the default?
+        // modified is from the revision (opposed to updated that comes from the branch)
         (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
         (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))
         (content::field_search::command_t::COMMAND_SELF)
         (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "modified")
+        (content::field_search::command_t::COMMAND_WARNING, "field missing")
+
+        // /snap/page/body/modified-precise
+        // XXX should it be mandatory or just use "created" as the default?
+        // modified is from the revision (opposed to updated that comes from the branch)
+        (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE_AND_TIME, "modified-precise")
         (content::field_search::command_t::COMMAND_WARNING, "field missing")
 
         // test whether we're dealing with the home page, if not add these links:

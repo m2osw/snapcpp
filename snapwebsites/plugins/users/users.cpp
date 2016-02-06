@@ -1721,6 +1721,29 @@ void users::on_generate_page_content(content::path_info_t & ipath, QDomElement &
         content::path_info_t user_ipath;
         user_ipath.set_path(user_info.key());
 
+        int64_t const user_id(get_user_identifier(user_ipath.get_key()));
+
+        {   // snap/page/body/author[@type="users::identifier"]/data
+            QDomElement author(doc.createElement("author"));
+            author.setAttribute("type", get_name(name_t::SNAP_NAME_USERS_IDENTIFIER));
+            body.appendChild(author);
+            QDomElement data(doc.createElement("data"));
+            author.appendChild(data);
+            QDomText text(doc.createTextNode(QString("%1").arg(user_id)));
+            data.appendChild(text);
+        }
+
+        {   // snap/page/body/author[@type="users::email"]/data
+            QDomElement author(doc.createElement("author"));
+            author.setAttribute("type", get_name(name_t::SNAP_NAME_USERS_IDENTIFIER));
+            body.appendChild(author);
+            QDomElement data(doc.createElement("data"));
+            author.appendChild(data);
+            QString const user_email(get_user_email(user_id));
+            QDomText text(doc.createTextNode(user_email));
+            data.appendChild(text);
+        }
+
         {   // snap/page/body/author[@type="users::name"]/data
             QtCassandra::QCassandraValue const value(content_table->row(user_ipath.get_key())->cell(get_name(name_t::SNAP_NAME_USERS_USERNAME))->value());
             if(!value.nullValue())

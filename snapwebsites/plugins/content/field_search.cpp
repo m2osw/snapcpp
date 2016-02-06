@@ -218,6 +218,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const & str_value)
     case command_t::COMMAND_SAVE_FLOAT64:
     case command_t::COMMAND_SAVE_INT64:
     case command_t::COMMAND_SAVE_INT64_DATE:
+    case command_t::COMMAND_SAVE_INT64_DATE_AND_TIME:
     case command_t::COMMAND_SAVE_PLAIN:
     case command_t::COMMAND_SAVE_XML:
     case command_t::COMMAND_WARNING:
@@ -496,6 +497,7 @@ field_search& field_search::operator () (command_t cmd)
  * \li COMMAND_SAVE_FLOAT64
  * \li COMMAND_SAVE_INT64
  * \li COMMAND_SAVE_INT64_DATE
+ * \li COMMAND_SAVE_INT64_DATE_AND_TIME
  * \li COMMAND_SAVE_PLAIN
  * \li COMMAND_SAVE_XML
  * \li COMMAND_WARNING
@@ -1427,6 +1429,13 @@ void field_search::run()
                     }
                     break;
 
+                case command_t::COMMAND_SAVE_INT64_DATE_AND_TIME:
+                    {
+                        QDomText text(doc.createTextNode(f_snap->date_to_string(f_result[0].safeInt64Value(), f_snap->date_format_t::DATE_FORMAT_LONG)));
+                        child.appendChild(text);
+                    }
+                    break;
+
                 case command_t::COMMAND_SAVE_PLAIN:
                     // the data is expected to be HTML that has to be saved as plain text
                     {
@@ -1610,6 +1619,7 @@ void field_search::run()
                 case command_t::COMMAND_SAVE_FLOAT64:
                 case command_t::COMMAND_SAVE_INT64:
                 case command_t::COMMAND_SAVE_INT64_DATE:
+                case command_t::COMMAND_SAVE_INT64_DATE_AND_TIME:
                 case command_t::COMMAND_SAVE_PLAIN:
                 case command_t::COMMAND_SAVE_XML:
                     cmd_save(f_program[i].get_string(), f_program[i].get_command());

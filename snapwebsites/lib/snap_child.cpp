@@ -3833,7 +3833,6 @@ void snap_child::setup_uri()
     }
 
     // REQUEST URI
-    // Although we ignore the URI, it MUST be there
     if(f_env.count(snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI)) != 1)
     {
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",

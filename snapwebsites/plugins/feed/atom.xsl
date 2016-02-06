@@ -37,26 +37,38 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<xsl:if test="teaser">
 				<summary type="xhtml"><xsl:copy-of select="teaser/node()"/></summary>
 			</xsl:if>
-			<content type="xhtml" xml:lang="{@lang}" base="{/snap/head/metadata/desc[@base_uri]/data/node()}">
+			<!-- the xml:lang fails because Qt XSLT 2.0 does not properly handle
+			     such (or I have no clue how to make it work properly, at least) -->
+			<content type="xhtml" xml_lang="{@lang}" base="{url}">
 				<div ns="xmlns=http://www.w3.org/1999/xhtml" class="content">
 					<xsl:copy-of select="description/div/node()"/>
 				</div>
 			</content>
-			<xsl:copy-of select="author"/>
 			<!--link href="..." rel="enclosure" type=".../..." length="..."/-->
-			<!--author>
-				<name>...</name>
-				<uri>.../user/...</uri>
-				<email>abc@example.com</email>
-			</author-->
-			<id><xsl:value-of select="url/node()"/></id>
-			<published><xsl:value-of select="created/node()"/></published>
 			<xsl:choose>
-				<xsl:when test="modified/node()">
-					<updated><xsl:value-of select="modified/node()"/></updated>
+				<xsl:when test="author">
+					<author>
+						<name><xsl:value-of select="author[@type='users::name']"/></name>
+						<uri><xsl:value-of select="concat(url/node(), '/user/', author[@type='users::identifier'])"/></uri>
+						<email><xsl:value-of select="author[@type='users::email']"/></email>
+					</author>
 				</xsl:when>
 				<xsl:otherwise>
-					<updated><xsl:value-of select="created/node()"/></updated>
+					<author>
+						<name>Unknown</name>
+						<uri><xsl:value-of select="url/node()"/></uri>
+						<email>noreply@example.com</email>
+					</author>
+				</xsl:otherwise>
+			</xsl:choose>
+			<id><xsl:value-of select="url/node()"/></id>
+			<published><xsl:value-of select="created-precise/node()"/></published>
+			<xsl:choose>
+				<xsl:when test="modified-precise/node()">
+					<updated><xsl:value-of select="modified-precise/node()"/></updated>
+				</xsl:when>
+				<xsl:otherwise>
+					<updated><xsl:value-of select="created-precise/node()"/></updated>
 				</xsl:otherwise>
 			</xsl:choose>
 			<!--source url="{/snap/head/metadata/desc[@type='website_uri']/data/node()}"><xsl:copy-of select="/snap/head/metadata/desc[@type='name']/data/node()"/></source-->

@@ -313,30 +313,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<!-- dates -->
 		<xsl:choose>
 			<xsl:when test="page/body/modified">
-				<xsl:variable name="modified" select="page/body/modified"/>
-				<meta name="date" content="{$modified}"/>
+				<meta name="date" content="{page/body/modified}"/>
 				<xsl:if test="$use_dcterms = 'yes'">
-					<meta name="dcterms.date" content="{$modified}"/>
+					<meta name="dcterms.date" content="{page/body/modified-precise}"/>
 				</xsl:if>
 			</xsl:when>
 			<xsl:when test="page/body/updated">
 				<xsl:variable name="updated" select="page/body/updated"/>
-				<meta name="date" content="{$updated}"/>
+				<meta name="date" content="{page/body/updated}"/>
 				<xsl:if test="$use_dcterms = 'yes'">
-					<meta name="dcterms.date" content="{$updated}"/>
+					<meta name="dcterms.date" content="{page/body/updated-precise}"/>
 				</xsl:if>
 			</xsl:when>
 			<xsl:when test="page/body/created">
-				<xsl:variable name="created" select="page/body/created"/>
-				<meta name="date" content="{$created}"/>
+				<meta name="date" content="{page/body/created}"/>
 				<xsl:if test="$use_dcterms = 'yes'">
-					<meta name="dcterms.date" content="{$created}"/>
+					<meta name="dcterms.date" content="{page/body/created-precise}"/>
 				</xsl:if>
 			</xsl:when>
 		</xsl:choose>
-		<xsl:if test="$use_dcterms = 'yes' and page/body/created != ''">
-			<xsl:variable name="created" select="page/body/created"/>
-			<meta name="dcterms.created" content="{$created}"/>
+		<xsl:if test="$use_dcterms = 'yes' and page/body/created-precise != ''">
+			<meta name="dcterms.created" content="{page/body/created-precise}"/>
 		</xsl:if>
 		<xsl:if test="$use_dcterms = 'yes' and page/body/since != '' and page/body/until != ''">
 			<xsl:variable name="since" select="page/body/since"/>
