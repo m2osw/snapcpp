@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.622
+ * Version: 0.0.3.623
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -2090,8 +2090,8 @@ snapwebsites.EditorToolbar.prototype.toggleToolbar = function(force)
  * @param {string} cmd  The command that generated this call.
  * @param {?string} title  The command that generated this call.
  * @param {number} key_n_flags  The command that generated this call.
- * @param {string|number|null} opt_param  The command that generated this call.
- * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} opt_func  The command that generated this call.
+ * @param {string|number|null=} opt_param  The command that generated this call.
+ * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())=} opt_func  The command that generated this call.
  *
  * @private
  */
@@ -2111,8 +2111,8 @@ snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_ = function(cmd, titl
  * @param {string} cmd  The command that generated this call.
  * @param {?string} title  The command that generated this call.
  * @param {number} key_n_flags  The command that generated this call.
- * @param {string|number|null} opt_param  The command that generated this call.
- * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} opt_func  The command that generated this call.
+ * @param {string|number|null=} opt_param  The command that generated this call.
+ * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())=} opt_func  The command that generated this call.
  *
  * @private
  */
@@ -2502,7 +2502,7 @@ snapwebsites.EditorWidget.prototype.getLabel = function(use_name)
  * This function compares the widget old and current data to see
  * whether it changed.
  *
- * @param {?boolean} opt_recheck  Whether we want to force a check of
+ * @param {boolean=} opt_recheck  Whether we want to force a check of
  *                                the current HTML data with the original.
  *
  * @return {boolean}  Whether the widget was modified (true) or not

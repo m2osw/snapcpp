@@ -1,6 +1,6 @@
 /** @preserve
  * Name: date-widgets
- * Version: 0.0.1.8
+ * Version: 0.0.1.9
  * Browsers: all
  * Depends: editor (>= 0.0.3.640)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -654,7 +654,7 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
             {
                 e.preventDefault();
 
-                editor_widget.editorBase_.refocus();
+                snapwebsites.EditorInstance.refocus();
             })
         .mousedown(function(e)
             {
@@ -690,7 +690,7 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
             {
                 var action = this.hash.substr(1);
 
-                editor_widget.editorBase_.refocus();
+                snapwebsites.EditorInstance.refocus();
 
                 // avoid default browser behavior
                 e.preventDefault();
