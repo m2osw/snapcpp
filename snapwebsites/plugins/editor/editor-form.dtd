@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ATTLIST editor-form owner CDATA #REQUIRED
                       content-modified CDATA #REQUIRED>
 
-<!ENTITY % html-data "a|b|br|div|em|i|img|p|small|strong|table|tbody|td|tr|u|ul|ol|li">
+<!ENTITY % html-data "a|b|br|code|div|em|i|img|p|small|strong|table|tbody|td|tr|u|ul|ol|li">
 
 <!ELEMENT timeout EMPTY>
 <!ATTLIST timeout minutes CDATA #REQUIRED>
@@ -142,6 +142,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT b (#PCDATA|%html-data;)*>
 <!ELEMENT br EMPTY>
+<!ELEMENT code (#PCDATA|%html-data;)*>
 <!ELEMENT div (#PCDATA|%html-data;)*>
 <!ELEMENT em (#PCDATA|%html-data;)*>
 <!ELEMENT i (#PCDATA|%html-data;)*>
