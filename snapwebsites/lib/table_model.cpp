@@ -34,6 +34,15 @@
 namespace snap
 {
 
+
+table_model::table_model( const int row_count )
+    : f_rowCount(row_count)
+    //, f_rowsRemaining(0) -- auto-init
+    //, f_pos(0) -- auto-init
+{
+}
+
+
 QtCassandra::QCassandraTable::pointer_t table_model::getTable() const
 {
     return f_table;
