@@ -74,9 +74,9 @@ void snap_manager_initialize_website::close()
 }
 
 
-void snap_manager_initialize_website::add_status(QString const& msg, bool const clear)
+void snap_manager_initialize_website::add_status(QString const & msg, bool const clear)
 {
-    QListWidget *status(getChild<QListWidget>(this, "statusInfo"));
+    QListWidget * status(getChild<QListWidget>(this, "statusInfo"));
     if(clear)
     {
         status->clear();
@@ -89,7 +89,7 @@ void snap_manager_initialize_website::add_status(QString const& msg, bool const 
 void snap_manager_initialize_website::send_request()
 {
     // send info to the console too
-    QListWidget *console = getChild<QListWidget>(parentWidget(), "snapServerConsole");
+    QListWidget * console = getChild<QListWidget>(parentWidget(), "snapServerConsole");
     console->clear();
     QString const version("snap::server version: " + QString(snap::server::version()));
     console->addItem(version);
