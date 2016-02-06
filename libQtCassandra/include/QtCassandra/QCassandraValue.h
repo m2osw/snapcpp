@@ -703,7 +703,7 @@ inline double doubleValueOrNull(const QByteArray& array, const int index = 0, co
     throw std::runtime_error("buffer too small for this doubleValueOrNull");
 }
 
-inline double safeDoubleValue(const QByteArray& array, const int index = 0, const double default_value = 0)
+inline double safeDoubleValue(const QByteArray& array, const int index = 0, const double default_value = 0.0)
 {
     if(static_cast<unsigned int>(index + sizeof(double)) <= static_cast<unsigned int>(array.size())) {
         union switch_t {
