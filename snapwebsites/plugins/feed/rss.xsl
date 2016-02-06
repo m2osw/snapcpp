@@ -84,8 +84,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<image>
 						<title><xsl:copy-of select="head/metadata/desc[@type='name']/data/node()"/></title>
 						<link><xsl:copy-of select="head/metadata/desc[@type='website_uri']/data/node()"/></link>
-						<!-- the description is the img title attribute -->
-						<description feed-cdata="yes"><xsl:copy-of select="head/metadata/desc[@type='description']/data/node()"/></description>
+						<!-- the description becomes the img title attribute -->
+						<description feed-cdata="yes"><xsl:value-of select="head/metadata/desc[@type='description']/data/node()"/></description>
 						<url><xsl:value-of select="head/metadata/desc[@type='feed::default_logo']/data/img/@src"/></url>
 						<width><xsl:value-of select="head/metadata/desc[@type='feed::default_logo']/data/img/@width"/></width>
 						<height><xsl:value-of select="head/metadata/desc[@type='feed::default_logo']/data/img/@height"/></height>

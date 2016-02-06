@@ -157,7 +157,7 @@ void snap_initialize_website::snap_initialize_website_runner::send_init_command(
     ss << get_name(name_t::SNAP_NAME_CORE_REQUEST_METHOD) << "=GET" << std::endl;
 
     // QUERY_STRING
-    ss << "QUERY_STRING=initialize_website=1&q=%2f%2f" << std::endl;
+    ss << "QUERY_STRING=initialize_website=1" << std::endl;
 
     // REQUEST_URI
     ss << snap::get_name(name_t::SNAP_NAME_CORE_REQUEST_URI) << "=/" << std::endl;
@@ -284,7 +284,7 @@ bool snap_initialize_website::start_process()
 {
     if(!f_process_thread->start())
     {
-        SNAP_LOG_FATAL("cannot start thread for initialization website!");
+        SNAP_LOG_FATAL("cannot start thread for website initialization!");
         return false;
     }
 

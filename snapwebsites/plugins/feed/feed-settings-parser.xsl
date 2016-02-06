@@ -90,6 +90,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:copy-of select="page/body/feed/teaser_end_marker/node()"/>
 						</div>
 					</fieldset>
+
+					<p><a href="http://feedvalidator.org/check.cgi">Validate Your Feed</a> &#x2014; click here to validate RSS and Atom feeds</p>
 				</div>
 			</div>
 		</output>

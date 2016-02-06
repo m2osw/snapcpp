@@ -127,9 +127,9 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT author (name|uri|email)*>
 
-<!ELEMENT name (#PCDATA)>
-<!ELEMENT uri (#PCDATA)>
-<!ELEMENT email (#PCDATA)>
+<!ELEMENT name (#PCDATA|xsl:value-of)*>
+<!ELEMENT uri (#PCDATA|xsl:value-of)*>
+<!ELEMENT email (#PCDATA|xsl:value-of)*>
 
 <!ELEMENT updated (#PCDATA|xsl:value-of)*>
 
@@ -144,9 +144,10 @@ DTD of the XSLT 2.0.
 <!ELEMENT summary (#PCDATA|xsl:copy-of)*>
 <!ATTLIST summary type (xhtml) "xhtml">
 
+<!-- here I use xml_lang instead of xml:lang because the XSLT parser has problems with name spaces -->
 <!ELEMENT content (div|xsl:copy-of)>
 <!ATTLIST content type (xhtml) "xhtml"
-                  xml:lang CDATA #IMPLIED
+                  xml_lang CDATA #IMPLIED
                   base CDATA #IMPLIED>
 
 <!ELEMENT div (div|xsl:copy-of)>

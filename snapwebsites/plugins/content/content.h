@@ -456,6 +456,7 @@ public:
         COMMAND_SAVE_FLOAT64,           // + child name
         COMMAND_SAVE_INT64,             // + child name
         COMMAND_SAVE_INT64_DATE,        // + child name
+        COMMAND_SAVE_INT64_DATE_AND_TIME,// + child name
         COMMAND_SAVE_PLAIN,             // + child name
         COMMAND_SAVE_XML,               // + child name
 

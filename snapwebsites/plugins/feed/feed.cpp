@@ -219,7 +219,7 @@ int64_t feed::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 20, 17, 9, 42, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 2, 5, 16, 38, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -406,7 +406,7 @@ void feed::generate_feeds()
     teaser_info.set_max_tags  (feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_TAGS      ))->value().safeInt64Value(0, DEFAULT_TEASER_TAGS));
     teaser_info.set_end_marker(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TEASER_END_MARKER))->value().stringValue());
 
-    QString const default_logo(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_DEFAULT_LOGO))->value().stringValue());
+    QString default_logo(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_DEFAULT_LOGO))->value().stringValue());
     int64_t const top_max_items(feed_settings_row->cell(get_name(name_t::SNAP_NAME_FEED_SETTINGS_TOP_MAXIMUM_NUMBER_OF_ITEMS_IN_ANY_FEED))->value().safeInt64Value(0, 100));
 
     // first loop through the list of feeds defined under /feed
@@ -620,7 +620,16 @@ void feed::generate_feeds()
                 // /snap/head/metadata/desc[@type="feed::now"]/data/...
                 {
                     char date3339[256];
-                    strftime(date3339, sizeof(date3339), "%Y-%m-%d", &t);
+                    strftime(date3339, sizeof(date3339), "%Y-%m-%dT%H:%M:%S%z", &t);
+                    size_t const len(strlen(date3339));
+                    if(len > 3 && len < sizeof(date3339) - 2)
+                    {
+                        // add the missing colon between HH and MM in the timezone
+                        date3339[len + 1] = '\0';
+                        date3339[len] = date3339[len - 1];
+                        date3339[len - 1] = date3339[len - 2];
+                        date3339[len - 2] = ':';
+                    }
                     QDomElement desc(result.createElement("desc"));
                     metadata_tag.appendChild(desc);
                     desc.setAttribute("type", "feed::now");
@@ -648,6 +657,33 @@ void feed::generate_feeds()
                 // /snap/head/metadata/desc[@type="feed::default_logo"]/data/img[@src=...][@width=...][@height=...]
                 if(!default_logo.isEmpty())
                 {
+                    // the default_logo often comes with a src="..." which
+                    // is not a full URL, make sure it is
+                    //
+                    int end(-1);
+                    int pos(default_logo.indexOf("src=\""));
+                    if(pos == -1)
+                    {
+                        pos = default_logo.indexOf("src='");
+                        if(pos != -1)
+                        {
+                            pos += 5;
+                            end = default_logo.indexOf("'", pos);
+                        }
+                    }
+                    else
+                    {
+                        pos += 5;
+                        end = default_logo.indexOf("\"", pos);
+                    }
+                    if(pos != -1)
+                    {
+                        // make sure this is a full URL
+                        content::path_info_t logo_ipath;
+                        logo_ipath.set_path(default_logo.mid(pos, end - pos));
+                        default_logo.replace(pos, end - pos, logo_ipath.get_key());
+                    }
+
                     QDomElement desc(result.createElement("desc"));
                     metadata_tag.appendChild(desc);
                     desc.setAttribute("type", "feed::default_logo");
@@ -755,8 +791,19 @@ void feed::generate_feeds()
                     int const max_content(content_tags.size());
                     for(int j(0); j < max_content; ++j)
                     {
-                        // we found the widget, display its label instead
                         QDomElement e(content_tags[j].toElement());
+
+                        // make sure the lang attribute is correct
+                        QString const lang(e.attribute("xml_lang"));
+                        e.removeAttribute("xml_lang");
+                        if(!lang.isEmpty())
+                        {
+                            // Somehow the NS does not want to work...
+                            //e.setAttributeNS("http://www.w3.org/2000/xml", "lang", base);
+                            e.setAttribute("xml:lang", lang);
+                        }
+
+                        // make sure the base attribute is correct
                         QString const base(e.attribute("base"));
                         e.removeAttribute("base");
                         if(!base.isEmpty())
