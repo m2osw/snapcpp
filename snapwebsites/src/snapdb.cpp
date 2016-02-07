@@ -493,14 +493,15 @@ private:
     void storeRowsByTable( QCassandraTable::pointer_t table );
     void storeCellsByRow( QCassandraRow::pointer_t row );
 
-    typedef QMap<QString,QVariant>            name_to_id_t;
+    typedef QMap<QString,QVariant>            string_to_id_t;
+    typedef QMap<QByteArray,QVariant>         byte_array_to_id_t;
     typedef QList<QCassandraTable::pointer_t> table_list_t;
     typedef QList<QCassandraRow::pointer_t>   row_list_t;
 
     QCassandra::pointer_t        f_cassandra;
     QCassandraContext::pointer_t f_context;
-    name_to_id_t                 f_tableNameToId;
-    name_to_id_t                 f_rowNameToId;
+    string_to_id_t               f_tableKeyToId;
+    byte_array_to_id_t           f_rowKeyToId;
     table_list_t                 f_tableList;
     row_list_t                   f_rowList;
     //
@@ -514,6 +515,7 @@ sqlBackupRestore::sqlBackupRestore( const QCassandra::pointer_t cassandra, const
 {
     createSchema( sqlDbFile );
 
+#if 0
     if( f_cassandra->findContext(context_name) )
     {
         f_colPred.reset( new QCassandraColumnRangePredicate );
@@ -524,6 +526,7 @@ sqlBackupRestore::sqlBackupRestore( const QCassandra::pointer_t cassandra, const
         f_rowPred.setCount(100);
         f_rowPred.setColumnPredicate( f_colPred );
     }
+#endif
 
     f_context = f_cassandra->context(context_name);
 }
@@ -573,9 +576,47 @@ void sqlBackupRestore::createSchema( const QString& sqlDbFile )
                 "replicate_on_write BOOLEAN"
                 ");"
                 );
-    do_query( "CREATE TABLE IF NOT EXISTS snap_rows   (id INTEGER PRIMARY KEY, row_name   TEXT UNIQUE, row_key LONGBLOB  , table_id    INTEGER);" );
-    do_query( "CREATE TABLE IF NOT EXISTS snap_cells  (id INTEGER PRIMARY KEY, cell_name  TEXT UNIQUE, col_key LONGBLOB  , row_id      INTEGER, "
+    do_query( "CREATE TABLE IF NOT EXISTS snap_rows   (id INTEGER PRIMARY KEY, row_name   TEXT, row_key LONGBLOB  , table_id    INTEGER);" );
+    do_query( "CREATE TABLE IF NOT EXISTS snap_cells  (id INTEGER PRIMARY KEY, cell_name  TEXT, col_key LONGBLOB  , row_id      INTEGER, "
         "ttl INTEGER, consistency_level INTEGER, timestamp INTEGER, cell_value LONGBLOB);" ); // TODO: Do we need to have timestamp_mode? There are two timestamps; one for the cell, and one for the value--are they both needed?
+}
+
+
+void sqlBackupRestore::storeContext()
+{
+    QSqlDatabase db( QSqlDatabase::database() );
+
+    // CONTEXT
+    //
+    writeContext();
+
+    // TABLES
+    //
+    db.transaction();
+    storeTables();
+    db.commit();
+    getTableIds();
+
+    // ROWS
+    //
+    db.transaction();
+    //
+    for( auto table : f_tableList )
+    {
+        storeRowsByTable( table );
+    }
+    //
+    db.commit();
+    getRowIds();
+
+    // CELLS
+    //
+    db.transaction();
+    for( auto row : f_rowList )
+    {
+        storeCellsByRow( row );
+    }
+    db.commit();
 }
 
 
@@ -590,7 +631,7 @@ void sqlBackupRestore::getTableIds()
     //
     for( q.first(); q.isValid(); q.next() )
     {
-        f_tableNameToId[q.value(1).toString()] = q.value(0);
+        f_tableKeyToId[q.value(1).toString()] = q.value(0);
     }
 }
 
@@ -598,7 +639,7 @@ void sqlBackupRestore::getTableIds()
 void sqlBackupRestore::getRowIds()
 {
     QSqlQuery q;
-    q.prepare( "SELECT id,row_name FROM snap_rows;" );
+    q.prepare( "SELECT id,row_key FROM snap_rows;" );
     if( !q.exec() )
     {
         throw std::runtime_error( q.lastError().text().toUtf8().data() );
@@ -606,7 +647,7 @@ void sqlBackupRestore::getRowIds()
     //
     for( q.first(); q.isValid(); q.next() )
     {
-        f_rowNameToId[q.value(1).toString()] = q.value(0);
+        f_rowKeyToId[q.value(1).toByteArray()] = q.value(0);
     }
 }
 
@@ -668,44 +709,6 @@ void sqlBackupRestore::writeContext()
 }
 
 
-void sqlBackupRestore::storeContext()
-{
-    QSqlDatabase db( QSqlDatabase::database() );
-
-    // CONTEXT
-    //
-    writeContext();
-
-    // TABLES
-    //
-    db.transaction();
-    storeTables();
-    db.commit();
-    getTableIds();
-
-    // ROWS
-    //
-    db.transaction();
-    //
-    for( auto table : f_tableList )
-    {
-        storeRowsByTable( table );
-    }
-    //
-    db.commit();
-    getRowIds();
-
-    // CELLS
-    //
-    db.transaction();
-    for( auto row : f_rowList )
-    {
-        storeCellsByRow( row );
-    }
-    db.commit();
-}
-
-
 void sqlBackupRestore::restoreContext()
 {
     std::cerr << "--restore-context has not been implemented yet for SQLite. Exiting..." << std::endl;
@@ -714,6 +717,11 @@ void sqlBackupRestore::restoreContext()
 
 void sqlBackupRestore::storeTables()
 {
+    if( f_context->tables().isEmpty() )
+    {
+        throw std::runtime_error("No tables in context!");
+    }
+
     QVariantList    table_names;
     QVariantList    identifiers;
     QVariantList    column_types;
@@ -784,10 +792,25 @@ void sqlBackupRestore::storeTables()
 void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
 {
     QVariantList    row_names;
-    QVariantList    table_ids;
     QVariantList    row_keys;
+    QVariantList    table_ids;
+
+    f_colPred.reset( new QCassandraColumnRangePredicate );
+    f_colPred->setCount(1000);
+    //
+    f_rowPred.setStartRowName("");
+    f_rowPred.setEndRowName("");
+    f_rowPred.setCount(100);
+    f_rowPred.setColumnPredicate( f_colPred );
 
     uint32_t rowsRemaining = table->readRows( f_rowPred );
+
+    if( table->rows().isEmpty() )
+    {
+        std::cout << "Table [" << table->tableName() << "] has no rows, so skipping..." << std::endl;
+        return;
+    }
+
     while( true )
     {
         for( auto row : table->rows() )
@@ -802,7 +825,7 @@ void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
 
             row_names << row->rowName();
             row_keys  << row->rowKey();
-            table_ids << f_tableNameToId[table->tableName()];
+            table_ids << f_tableKeyToId[table->tableName()];
 
             f_rowList << row;
         }
@@ -831,6 +854,9 @@ void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
 
 void sqlBackupRestore::storeCellsByRow( QCassandraRow::pointer_t row )
 {
+    f_colPred.reset( new QCassandraColumnRangePredicate );
+    f_colPred->setCount(1000);
+
     // This seems to be a bug. The colsRemaining return value never changes with each read.
     //
     /*uint32_t colsRemaining =*/ row->readCells( *f_colPred );
@@ -838,6 +864,12 @@ void sqlBackupRestore::storeCellsByRow( QCassandraRow::pointer_t row )
     while( true )
     {
 #endif
+        if( row->cells().isEmpty() )
+        {
+            std::cout << "Row [" << row->rowName() << "] has no cells, so skipping..." << std::endl;
+            return;
+        }
+
         QVariantList row_ids, cell_names, col_keys, ttls, consistency_levels, timestamps, cell_values;
         for( auto col : row->cells() )
         {
@@ -845,7 +877,7 @@ void sqlBackupRestore::storeCellsByRow( QCassandraRow::pointer_t row )
             std::cout << "Processing cell [" << cell_name << "]" << std::endl;
 
             auto& val( col->value() );
-            row_ids            << f_rowNameToId[row->rowName()]             ;
+            row_ids            << f_rowKeyToId[row->rowKey()]               ;
             cell_names         << col->columnName()                         ;
             col_keys           << col->columnKey()                          ;
             ttls               << val.ttl()                                 ;
