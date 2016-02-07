@@ -466,10 +466,11 @@ namespace
 {
     void do_query( const QString& q_str )
     {
-        QSqlQuery query;
-        if( !query.exec( q_str ) )
+        QSqlQuery q;
+        if( !q.exec( q_str ) )
         {
-            throw std::runtime_error( query.lastError().text().toUtf8().data() );
+            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+            throw std::runtime_error( q.lastError().text().toUtf8().data() );
         }
     }
 }
@@ -477,15 +478,17 @@ namespace
 class sqlBackupRestore
 {
 public:
-    sqlBackupRestore( const QCassandraContext::pointer_t context, const QString& sqlDbFile );
+    sqlBackupRestore( const QCassandra::pointer_t context, const QString& context_name, const QString& sqlDbFile );
 
     void storeContext();
+    void restoreContext();
     
 private:
     void getTableIds();
     void getRowIds();
 
     void createSchema( const QString& sqlDbFile );
+    void writeContext();
     void storeTables();
     void storeRowsByTable( QCassandraTable::pointer_t table );
     void storeCellsByRow( QCassandraRow::pointer_t row );
@@ -494,6 +497,7 @@ private:
     typedef QList<QCassandraTable::pointer_t> table_list_t;
     typedef QList<QCassandraRow::pointer_t>   row_list_t;
 
+    QCassandra::pointer_t        f_cassandra;
     QCassandraContext::pointer_t f_context;
     name_to_id_t                 f_tableNameToId;
     name_to_id_t                 f_rowNameToId;
@@ -505,18 +509,23 @@ private:
 };
 
 
-sqlBackupRestore::sqlBackupRestore( const QCassandraContext::pointer_t context, const QString& sqlDbFile )
-    : f_context( context )
+sqlBackupRestore::sqlBackupRestore( const QCassandra::pointer_t cassandra, const QString& context_name, const QString& sqlDbFile )
+    : f_cassandra( cassandra )
 {
     createSchema( sqlDbFile );
 
-    f_colPred.reset( new QCassandraColumnRangePredicate );
-    f_colPred->setCount(1000);
-    //
-    f_rowPred.setStartRowName("");
-    f_rowPred.setEndRowName("");
-    f_rowPred.setCount(100);
-    f_rowPred.setColumnPredicate( f_colPred );
+    if( f_cassandra->findContext(context_name) )
+    {
+        f_colPred.reset( new QCassandraColumnRangePredicate );
+        f_colPred->setCount(1000);
+        //
+        f_rowPred.setStartRowName("");
+        f_rowPred.setEndRowName("");
+        f_rowPred.setCount(100);
+        f_rowPred.setColumnPredicate( f_colPred );
+    }
+
+    f_context = f_cassandra->context(context_name);
 }
 
 
@@ -530,8 +539,40 @@ void sqlBackupRestore::createSchema( const QString& sqlDbFile )
         throw std::runtime_error( error.toUtf8().data() );
     }
 
-    do_query( "CREATE TABLE IF NOT EXISTS snap_info   (id INTEGER PRIMARY KEY, last_update TEXT);" );
-    do_query( "CREATE TABLE IF NOT EXISTS snap_tables (id INTEGER PRIMARY KEY, table_name TEXT UNIQUE, identifier INTEGER, column_type TEXT, comment TEXT);" ); // TODO: add other attributes
+    do_query( "CREATE TABLE IF NOT EXISTS snap_context   ("
+                "id INTEGER PRIMARY KEY, "
+                "context_name TEXT UNIQUE, "
+                "strategy_class TEXT, "
+                "replication_factor INTEGER, "
+                "durable_writes BOOLEAN, "
+                "host_name TEXT, "
+                "last_update TEXT"
+                ");"
+                );
+    do_query( "CREATE TABLE IF NOT EXISTS snap_context_desc_options   ("
+                "id INTEGER PRIMARY KEY, "
+                "context_id INTEGER, "
+                "option TEXT UNIQUE, "
+                "value TEXT"
+                ");"
+                );
+    do_query( "CREATE TABLE IF NOT EXISTS snap_tables ("
+                "id INTEGER PRIMARY KEY, "
+                "table_name TEXT UNIQUE, "
+                "identifier INTEGER, "
+                "column_type TEXT, "
+                "comment TEXT, "
+                "key_validation_class TEXT, "
+                "default_validation_class TEXT, "
+                "comparator_type TEXT, "
+                "key_cache_save_period_secs INTEGER, "
+                "memtable_flush_period_mins INTEGER, "
+                "gc_grace_secs INTEGER, "
+                "min_compaction_threshold INTEGER, "
+                "max_compaction_threshold INTEGER, "
+                "replicate_on_write BOOLEAN"
+                ");"
+                );
     do_query( "CREATE TABLE IF NOT EXISTS snap_rows   (id INTEGER PRIMARY KEY, row_name   TEXT UNIQUE, row_key LONGBLOB  , table_id    INTEGER);" );
     do_query( "CREATE TABLE IF NOT EXISTS snap_cells  (id INTEGER PRIMARY KEY, cell_name  TEXT UNIQUE, col_key LONGBLOB  , row_id      INTEGER, "
         "ttl INTEGER, consistency_level INTEGER, timestamp INTEGER, cell_value LONGBLOB);" ); // TODO: Do we need to have timestamp_mode? There are two timestamps; one for the cell, and one for the value--are they both needed?
@@ -570,9 +611,70 @@ void sqlBackupRestore::getRowIds()
 }
 
 
+void sqlBackupRestore::writeContext()
+{
+    QSqlDatabase db( QSqlDatabase::database() );
+    QSqlQuery q;
+
+    db.transaction();
+    q.prepare( "INSERT OR REPLACE INTO snap_context "
+        "(context_name,strategy_class,replication_factor,durable_writes,host_name,last_update) VALUES "
+        "(:context_name,:strategy_class,:replication_factor,:durable_writes,:host_name,:last_update);"
+        );
+    q.bindValue( ":context_name:",      f_context->contextName()                );
+    q.bindValue( ":strategy_class",     f_context->strategyClass()              );
+    q.bindValue( ":replication_factor", f_context->replicationFactor()          );
+    q.bindValue( ":durable_writes",     f_context->durableWrites()              );
+    q.bindValue( ":host_name",          f_context->hostName()                   );
+    q.bindValue( ":last_update",        QDateTime::currentDateTime().toString() );
+    if( !q.exec() )
+    {
+        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+        throw std::runtime_error( q.lastError().text().toUtf8().data() );
+    }
+    db.commit();
+
+    q.clear();
+    q.prepare( "SELECT id FROM snap_context WHERE context_name = :context_name;" );
+    q.bindValue( ":context_name", f_context->contextName() );
+    if( !q.exec() )
+    {
+        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+        throw std::runtime_error( q.lastError().text().toUtf8().data() );
+    }
+    //
+    q.first();
+    const int context_id = q.value(0).toInt();
+
+    q.clear();
+    db.transaction();
+    q.prepare( "INSERT OR REPLACE INTO snap_context_desc_options (context_id,option,value) VALUES (?,?,?);" );
+    QVariantList context_id_list, option_list, value_list;
+    for( auto option : f_context->descriptionOptions().keys() )
+    {
+        context_id_list << context_id;
+        option_list     << option;
+        value_list      << f_context->descriptionOption(option);
+    }
+    q.addBindValue( context_id_list );
+    q.addBindValue( option_list     );
+    q.addBindValue( value_list      );
+    if( !q.execBatch() )
+    {
+        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+        throw std::runtime_error( q.lastError().text().toUtf8().data() );
+    }
+    db.commit();
+}
+
+
 void sqlBackupRestore::storeContext()
 {
     QSqlDatabase db( QSqlDatabase::database() );
+
+    // CONTEXT
+    //
+    writeContext();
 
     // TABLES
     //
@@ -604,12 +706,27 @@ void sqlBackupRestore::storeContext()
 }
 
 
+void sqlBackupRestore::restoreContext()
+{
+    std::cerr << "--restore-context has not been implemented yet for SQLite. Exiting..." << std::endl;
+}
+
+
 void sqlBackupRestore::storeTables()
 {
     QVariantList    table_names;
     QVariantList    identifiers;
     QVariantList    column_types;
     QVariantList    comments;
+    QVariantList    key_validation_classes;
+    QVariantList    default_validation_classes;
+    QVariantList    comparator_types;
+    QVariantList    key_cache_save_period_secs_list;
+    QVariantList    memtable_flush_period_mins_list;
+    QVariantList    gc_grace_secs_list;
+    QVariantList    min_compaction_thresholds;
+    QVariantList    max_compaction_thresholds;
+    QVariantList    replicate_on_writes;
 
     for( auto table : f_context->tables() )
     {
@@ -621,10 +738,17 @@ void sqlBackupRestore::storeTables()
             continue;
         }
 
-        table_names  << table->tableName();
-        identifiers  << table->identifier();
-        column_types << table->columnType();
-        comments     << table->comment();
+        table_names                     << table->tableName();
+        identifiers                     << table->identifier();
+        column_types                    << table->columnType();
+        comments                        << table->comment();
+        key_validation_classes          << table->keyValidationClass();
+        default_validation_classes      << table->defaultValidationClass();
+        memtable_flush_period_mins_list << table->memtableFlushAfterMins();
+        gc_grace_secs_list              << table->gcGraceSeconds();
+        min_compaction_thresholds       << table->minCompactionThreshold();
+        max_compaction_thresholds       << table->maxCompactionThreshold();
+        replicate_on_writes             << table->replicateOnWrite();
 
         f_tableList << table;
     }
@@ -633,13 +757,25 @@ void sqlBackupRestore::storeTables()
     std::cout << std::endl << "Saving tables to SQL database..." << std::endl;
 
     QSqlQuery q;
-    q.prepare( "INSERT OR REPLACE INTO snap_tables (table_name,identifier,column_type,comment) VALUES (?,?,?,?);" );
-    q.addBindValue( table_names  );
-    q.addBindValue( identifiers  );
-    q.addBindValue( column_types );
-    q.addBindValue( comments     );
+    q.prepare( "INSERT OR REPLACE INTO snap_tables "
+        "(table_name,identifier,column_type,comment,key_validation_class, default_validation_class, "
+        "memtable_flush_period_mins, gc_grace_secs, min_compaction_threshold, max_compaction_threshold, replicate_on_write) VALUES "
+        "(?,?,?,?,?,?,?,?,?,?,?);"
+        );
+    q.addBindValue( table_names                     );
+    q.addBindValue( identifiers                     );
+    q.addBindValue( column_types                    );
+    q.addBindValue( comments                        );
+    q.addBindValue( key_validation_classes          );
+    q.addBindValue( default_validation_classes      );
+    q.addBindValue( memtable_flush_period_mins_list );
+    q.addBindValue( gc_grace_secs_list              );
+    q.addBindValue( min_compaction_thresholds       );
+    q.addBindValue( max_compaction_thresholds       );
+    q.addBindValue( replicate_on_writes             );
     if( !q.execBatch() )
     {
+        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
         throw std::runtime_error( q.lastError().text().toUtf8().data() );
     }
 }
@@ -687,6 +823,7 @@ void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
     q.addBindValue( table_ids );
     if( !q.execBatch() )
     {
+        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
         throw std::runtime_error( q.lastError().text().toUtf8().data() );
     }
 }
@@ -752,18 +889,23 @@ void sqlBackupRestore::storeCellsByRow( QCassandraRow::pointer_t row )
 void snapdb::dump_context()
 {
     f_cassandra->connect(f_host, f_port);
-    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
     const QString outfile( f_opt->get_string( "dump-context" ).c_str() );
 
-    sqlBackupRestore backup( context, outfile );
+    sqlBackupRestore backup( f_cassandra, f_context, outfile );
     backup.storeContext();
 }
 
 
 bool snapdb::restore_context()
 {
-    std::cerr << "--restore-context has not been implemented yet for SQLite. Exiting..." << std::endl;
-    return false;
+    f_cassandra->connect(f_host, f_port);
+    const QString infile( f_opt->get_string( "restore-context" ).c_str() );
+
+    sqlBackupRestore backup( f_cassandra, f_context, infile );
+    backup.restoreContext();
+
+    //std::cerr << "--restore-context has not been implemented yet for SQLite. Exiting..." << std::endl;
+    return true;
 #if 0
     f_cassandra->connect(f_host, f_port);
 
