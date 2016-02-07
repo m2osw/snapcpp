@@ -3187,7 +3187,7 @@ void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
  *
  * \return The resulting HTML of the list or an empty string.
  */
-QString list::generate_list(content::path_info_t & ipath, content::path_info_t list_ipath, int start, int count, QString const & theme)
+QString list::generate_list(content::path_info_t & ipath, content::path_info_t & list_ipath, int start, int count, QString const & theme)
 {
     QString const list_cpath(list_ipath.get_cpath());
     if(list_cpath == "admin"

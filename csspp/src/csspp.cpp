@@ -614,9 +614,9 @@ int pp::compile()
 
 int main(int argc, char *argv[])
 {
-    pp preprocessor(argc, argv);
     try
     {
+        pp preprocessor(argc, argv);
         return preprocessor.compile();
     }
     catch(csspp::csspp_exception_exit const & e)
