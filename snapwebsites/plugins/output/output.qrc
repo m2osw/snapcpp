@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>jquery-rotate.js</file>
     <file>output.js</file>
     <file>popup.js</file>
+    <file>javascript-unicode.js</file>
     <file>fixed-box.js</file>
     <file>rotate-animation.js</file>
   </qresource>

@@ -393,6 +393,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <dependency>output (&gt;= 0.1.5.70)</dependency>
       <dependency>css::output (&gt;= 0.0.1)</dependency>
     </attachment>
+    <attachment name="javascript-unicode" type="attachment/public">
+      <path>:/js/output/javascript-unicode.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>output (&gt;= 0.1.5)</dependency>
+    </attachment>
     <attachment name="rotate-animation" type="attachment/public">
       <path>:/js/output/rotate-animation.js</path>
       <mime-type>text/javascript</mime-type>

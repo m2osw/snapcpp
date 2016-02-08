@@ -4990,7 +4990,7 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
  *
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] page  The XML element named "page".
- * \param[in,out] page  The XML element named "body".
+ * \param[in,out] body  The XML element named "body".
  */
 void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {

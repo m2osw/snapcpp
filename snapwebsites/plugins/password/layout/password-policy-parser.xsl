@@ -39,6 +39,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<fieldset class="site-name">
 						<legend>Minimum Counts</legend>
 
+						<!-- minimum length widget -->
+						<div class="editor-block">
+							<label for="minimum_length" class="editor-title">Overall Minimum Length:</label>
+							<xsl:copy-of select="page/body/password/minimum_length/node()"/>
+						</div>
+
 						<!-- minimum lowercase letters widget -->
 						<div class="editor-block">
 							<label for="minimum_lowercase_letters" class="editor-title">Minimum Lowercase Letters:</label>
@@ -140,16 +146,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:copy-of select="page/body/password/invalid_passwords_counter/node()"/>
 						</div>
 
+						<!-- how long we keep the invalid password counter -->
+						<div class="editor-block">
+							<label for="invalid_passwords_counter_lifetime" class="editor-title">Lifetime of Invalid Passwords Counter (in hours):</label>
+							<xsl:copy-of select="page/body/password/invalid_passwords_counter_lifetime/node()"/>
+						</div>
+
 						<!-- duration of a block once too may attempts were made -->
 						<div class="editor-block">
 							<label for="invalid_passwords_block_duration" class="editor-title">Invalid Passwords Block Duration (in hours):</label>
 							<xsl:copy-of select="page/body/password/invalid_passwords_block_duration/node()"/>
-						</div>
-
-						<!-- how long we keep the invalid password counter -->
-						<div class="editor-block">
-							<label for="invalid_passwords_counter_lifetime" class="editor-title">Invalid Passwords Counter Lifetime (in hours):</label>
-							<xsl:copy-of select="page/body/password/invalid_passwords_counter_lifetime/node()"/>
 						</div>
 
 						<!-- invalid password pause before returning anything to the client -->

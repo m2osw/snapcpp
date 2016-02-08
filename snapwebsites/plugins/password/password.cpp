@@ -172,8 +172,8 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_SPACES:
         return "password::minimum_spaces";
 
-    case name_t::SNAP_NAME_PASSWORD_MINIMUM_SPECIAL:
-        return "password::minimum_special";
+    case name_t::SNAP_NAME_PASSWORD_MINIMUM_SPECIALS:
+        return "password::minimum_specials";
 
     case name_t::SNAP_NAME_PASSWORD_MINIMUM_UNICODE:
         return "password::minimum_unicode";
@@ -312,7 +312,7 @@ int64_t password::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2016, 1, 20, 2, 53, 51, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 2, 8, 0, 6, 51, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -368,6 +368,8 @@ void password::bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(password, "editor", editor::editor, prepare_editor_form, _1);
+    SNAP_LISTEN(password, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(password, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(password, "users", users::users, check_user_security, _1);
     SNAP_LISTEN(password, "users", users::users, user_logged_in, _1);
     SNAP_LISTEN(password, "users", users::users, save_password, _1, _2, _3);
@@ -385,6 +387,30 @@ void password::bootstrap(snap_child * snap)
 void password::on_prepare_editor_form(editor::editor * e)
 {
     e->add_editor_widget_templates_from_file(":/xsl/password_widgets/password-form.xsl");
+}
+
+
+/** \brief Check for a password/confirm widget.
+ *
+ * This function gets called any time a field is initialized for use
+ * in the editor. Here we check for the widget type, if it is
+ * a password/confirm widget, then we add the policy information in
+ * JavaScript.
+ *
+ * \param[in,out] ipath  The path where the form appears.
+ * \param[in] field_id  The name of the field.
+ * \param[in] field_type  The type of the field.
+ * \param[in,out] widget  The concerned widget.
+ * \param[in,out] data_row  The row pointer to by ipath.
+ */
+void password::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t data_row)
+{
+    NOTUSED(ipath);
+    NOTUSED(field_id);
+    NOTUSED(widget);
+    NOTUSED(data_row);
+
+    f_added_policy = f_added_policy || field_type == "password_confirm";
 }
 
 
@@ -442,6 +468,49 @@ bool password::on_path_execute(content::path_info_t & ipath)
 void password::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
     output::output::instance()->on_generate_main_content(ipath, page, body);
+}
+
+
+/** \brief Add the policy if we have a password/confirm widget.
+ *
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] page  The XML element named "page".
+ * \param[in,out] body  The XML element named "body".
+ */
+void password::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
+{
+    NOTUSED(ipath);
+    NOTUSED(body);
+
+    if(f_added_policy)
+    {
+        policy_t const pp("users");
+
+        QString const code(QString(
+            "/* password plugin: policy */"
+            "password__policy__minimum_length=%1;"
+            "password__policy__minimum_lowercase_letters=%2;"
+            "password__policy__minimum_uppercase_letters=%3;"
+            "password__policy__minimum_letters=%4;"
+            "password__policy__minimum_digits=%5;"
+            "password__policy__minimum_spaces=%6;"
+            "password__policy__minimum_specials=%7;"
+            "password__policy__minimum_unicode=%8;"
+            "password__policy__minimum_variation=%9;"
+            "password__policy__minimum_length_of_variations=%10;")
+                    .arg(pp.get_minimum_length())
+                    .arg(pp.get_minimum_lowercase_letters())
+                    .arg(pp.get_minimum_uppercase_letters())
+                    .arg(pp.get_minimum_letters())
+                    .arg(pp.get_minimum_digits())
+                    .arg(pp.get_minimum_spaces())
+                    .arg(pp.get_minimum_specials())
+                    .arg(pp.get_minimum_unicode())
+                    .arg(pp.get_minimum_variation())
+                    .arg(pp.get_minimum_length_of_variations()));
+        content::content * content_plugin(content::content::instance());
+        content_plugin->add_inline_javascript(page.ownerDocument(), code);
+    }
 }
 
 
@@ -905,10 +974,10 @@ QString password::create_password(QString const & policy)
         }
     }
 
-    int64_t const minimum_special(pp.get_minimum_special());
-    if(minimum_special > minimum_spaces)
+    int64_t const minimum_specials(pp.get_minimum_specials());
+    if(minimum_specials > minimum_spaces)
     {
-        for(int64_t idx(minimum_spaces); idx < minimum_special; )
+        for(int64_t idx(minimum_spaces); idx < minimum_specials; )
         {
             ushort const byte(gen.get_byte());
             QChar const c(byte);

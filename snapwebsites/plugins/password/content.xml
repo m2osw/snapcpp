@@ -94,6 +94,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <path>qrc:/js/password/password.js</path>
       <mime-type>text/javascript</mime-type>
       <dependency>editor (&gt;= 0.0.3.468)</dependency>
+      <dependency>javascript-unicode (&gt;= 0.0.1)</dependency>
     </attachment>
     <attachment name="password-blacklist" type="attachment/public">
       <path>qrc:/js/password/password-blacklist.js</path>

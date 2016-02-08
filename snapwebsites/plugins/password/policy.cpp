@@ -60,7 +60,7 @@ policy_t::policy_t(QString const & policy_name)
         f_minimum_letters                    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LETTERS))->value().safeInt64Value(0, 0);
         f_minimum_digits                     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_DIGITS))->value().safeInt64Value(0, 0);
         f_minimum_spaces                     = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPACES))->value().safeInt64Value(0, 0);
-        f_minimum_special                    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPECIAL))->value().safeInt64Value(0, 0);
+        f_minimum_specials                   = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_SPECIALS))->value().safeInt64Value(0, 0);
         f_minimum_unicode                    = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_UNICODE))->value().safeInt64Value(0, 0);
         f_minimum_variation                  = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_VARIATION))->value().safeInt64Value(0, 0);
         f_minimum_length_of_variations       = settings_row->cell(get_name(name_t::SNAP_NAME_PASSWORD_MINIMUM_LENGTH_OF_VARIATIONS))->value().safeInt64Value(0, 1);
@@ -94,9 +94,18 @@ void policy_t::count_password_characters(QString const & user_password)
     // count the various types of characters
     f_minimum_length = user_password.length();
 
+    f_minimum_letters = 0;
+    f_minimum_lowercase_letters = 0;
+    f_minimum_uppercase_letters = 0;
+    f_minimum_digits = 0;
+    f_minimum_spaces = 0;
+    f_minimum_specials = 0;
+    f_minimum_unicode = 0;
+
     for(QChar const * s(user_password.constData()); !s->isNull(); ++s)
     {
 //SNAP_LOG_WARNING("character ")(static_cast<char>(s->unicode))(" -- category ")(static_cast<int>(s->category()));
+        // TODO: handle the high/low surrogates and then use QChar::category(UCS-4)
         switch(s->category())
         {
         case QChar::Letter_Lowercase:
@@ -122,13 +131,13 @@ void policy_t::count_password_characters(QString const & user_password)
         case QChar::Separator_Line:
         case QChar::Separator_Paragraph:
             ++f_minimum_spaces;
-            ++f_minimum_special; // it is also considered special
+            ++f_minimum_specials; // it is also considered special
             break;
 
         default:
             if(s->unicode() < 0x100)
             {
-                ++f_minimum_special;
+                ++f_minimum_specials;
             }
             break;
 
@@ -299,9 +308,9 @@ int64_t policy_t::get_minimum_spaces() const
  *
  * \return The minimum number of special characters.
  */
-int64_t policy_t::get_minimum_special() const
+int64_t policy_t::get_minimum_specials() const
 {
-    return f_minimum_special;
+    return f_minimum_specials;
 }
 
 
@@ -587,6 +596,12 @@ int64_t policy_t::get_invalid_passwords_slowdown() const
 QString policy_t::compare(policy_t const & rhs) const
 {
     // enough lowercase letters?
+    if(f_minimum_length < rhs.f_minimum_length)
+    {
+        return "password is too short";
+    }
+
+    // enough lowercase letters?
     if(f_minimum_lowercase_letters < rhs.f_minimum_lowercase_letters)
     {
         return "not enough lowercase letter characters";
@@ -617,7 +632,7 @@ QString policy_t::compare(policy_t const & rhs) const
     }
 
     // enough special?
-    if(f_minimum_special < rhs.f_minimum_special)
+    if(f_minimum_specials < rhs.f_minimum_specials)
     {
         return "not enough special characters";
     }
@@ -660,9 +675,9 @@ QString policy_t::compare(policy_t const & rhs) const
         {
             set.push_back(f_minimum_spaces);
         }
-        if(f_minimum_special > 0)
+        if(f_minimum_specials > 0)
         {
-            set.push_back(f_minimum_special);
+            set.push_back(f_minimum_specials);
         }
         if(f_minimum_unicode > 0)
         {

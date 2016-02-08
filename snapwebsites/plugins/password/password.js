@@ -1,8 +1,8 @@
 /** @preserve
  * Name: password
- * Version: 0.0.1.12
+ * Version: 0.0.1.24
  * Browsers: all
- * Depends: editor (>= 0.0.3.468)
+ * Depends: editor (>= 0.0.3.468), javascript-unicode (>= 0.0.1)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
@@ -503,20 +503,24 @@ snapwebsites.EditorWidgetTypePasswordConfirm.prototype.comparePasswords_ = funct
         password = password_widget.getValue(),
         confirm_widget = editor_form.getWidgetByName(name + "_confirm"),
         confirm = confirm_widget.getValue(),
-        msg,
+        msg = "",
         good = false;
 
     // show a message about the current status of the password + confirm
     //
     if(password.length == 0)
     {
-        msg = "<li>Please enter a password twice.<li>";
+        msg = "<li>Please enter a password twice.</li>";
         good = confirm.length == 0;
     }
     else if(confirm.length == 0)
     {
-        msg = "<li>Please make sure to enter the password confirmation.</li>";
-        good = true; // TODO: implement policy tests, so "good" may be false
+        msg = this.checkAgainstPolicy(editor_widget);
+        good = msg.length == 0;
+        if(good)
+        {
+            msg = "<li>Please make sure to enter the password confirmation.</li>";
+        }
     }
     else if(password != confirm)
     {
@@ -526,8 +530,12 @@ snapwebsites.EditorWidgetTypePasswordConfirm.prototype.comparePasswords_ = funct
     {
         // TODO: implement the policy tests
         //
-        msg = "<li>The password is acceptable and the confirmation is equal.</li>";
-        good = true; // TODO: implement policy tests, so "good" may be false
+        msg = this.checkAgainstPolicy(editor_widget);
+        good = msg.length == 0;
+        if(good)
+        {
+            msg = "<li>The password is acceptable and the confirmation is equal.</li>";
+        }
     }
 
     c.find(".password-status-details").toggleClass("good", good);
@@ -559,8 +567,8 @@ snapwebsites.EditorWidgetTypePasswordConfirm.prototype.validate = function(widge
     if(!valid)
     {
         snapwebsites.OutputInstance.displayOneMessage(
-                "Invalid Password Confirmation",
-                "The confirmation password does not match the main password in " + label + ".",
+                "Invalid Password",
+                "The password and confirmation in " + label + " are not yet acceptable.",
                 "error",
                 true);
     }
@@ -569,6 +577,184 @@ snapwebsites.EditorWidgetTypePasswordConfirm.prototype.validate = function(widge
     w.toggleClass("erroneous", !valid);
 
     return valid;
+};
+
+
+/** \brief Make sure the password and its confirmation are the same.
+ *
+ * This function verifies that the password and its confirmation are equal.
+ * This is done before you can send the form to the server so as to prevent
+ * sending an invalid password.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The editor widget.
+ *
+ * @return {string}  The message to display, empty if the password is valid.
+ */
+snapwebsites.EditorWidgetTypePasswordConfirm.prototype.checkAgainstPolicy = function(editor_widget) // virtual
+{
+    var editor_form = editor_widget.getEditorForm(),
+        name = editor_widget.getName(),
+        password_widget = editor_form.getWidgetByName(name + "_password"),
+        password = password_widget.getValue(),
+        count_lowercase_letters = 0,
+        count_uppercase_letters = 0,
+        count_letters = 0,
+        count_digits = 0,
+        count_spaces = 0,
+        count_specials = 0,
+        count_unicode = 0,
+        i,
+        c,
+        msg = "",
+        vc = [],
+        max_variation;
+
+    // Setup variable defined by password.cpp as inline JavaScript:
+    //
+    // password__policy__minimum_length=...;
+    // password__policy__minimum_lowercase_letters=...;
+    // password__policy__minimum_uppercase_letters=...;
+    // password__policy__minimum_letters=...;
+    // password__policy__minimum_digits=...;
+    // password__policy__minimum_spaces=...;
+    // password__policy__minimum_specials=...;
+    // password__policy__minimum_unicode=...;
+    // password__policy__minimum_variation=...;
+    // password__policy__minimum_length_of_variations=...;
+    //
+
+    if(password.length < password__policy__minimum_length)
+    {
+        msg += "<li>Password is still too short.</li>";
+    }
+
+    code_points = snapwebsites.stringToUnicodeCodePoints(password);
+    categories = snapwebsites.stringToUnicodeCategories(password);
+
+    for(i = 0; i < categories.length; ++i)
+    {
+        switch(categories[i])
+        {
+        case "Ll":
+        case "Lo":
+            ++count_lowercase_letters;
+            ++count_letters;
+            break;
+
+        case "Lu":
+        case "Lt":
+            ++count_uppercase_letters;
+            ++count_letters;
+            break;
+
+        case "Nd":
+        case "Nl":
+        case "No":
+            ++count_digits;
+            break;
+
+        case "Mc":
+        case "Zs":
+        case "Zl":
+        case "Zp":
+            ++count_spaces;
+            ++count_specials;
+            break;
+
+        default:
+            if(code_points[i] < 256)
+            {
+                ++count_specials;
+            }
+            break;
+
+        }
+
+        if(code_points[i] > 255)
+        {
+            ++count_unicode;
+        }
+    }
+
+    if(count_lowercase_letters < password__policy__minimum_lowercase_letters)
+    {
+        msg += "<li>Password does not yet contain enough lowercase letters.</li>";
+    }
+
+    if(count_uppercase_letters < password__policy__minimum_uppercase_letters)
+    {
+        msg += "<li>Password does not yet contain enough uppercase letters.</li>";
+    }
+
+    if(count_letters < password__policy__minimum_letters)
+    {
+        msg += "<li>Password does not yet contain enough letters.</li>";
+    }
+
+    if(count_digits < password__policy__minimum_digits)
+    {
+        msg += "<li>Password does not yet contain enough digits.</li>";
+    }
+
+    if(count_spaces < password__policy__minimum_spaces)
+    {
+        msg += "<li>Password does not yet contain enough spaces.</li>";
+    }
+
+    if(count_specials < password__policy__minimum_specials)
+    {
+        msg += "<li>Password does not yet contain enough special characters such as punctuation.</li>";
+    }
+
+    if(count_unicode < password__policy__minimum_unicode)
+    {
+        msg += "<li>Password does not yet contain enough unicode characters (characters with code pointer larger to 255).</li>";
+    }
+
+    if(password__policy__minimum_variation > 0)
+    {
+        if(count_lowercase_letters > 0)
+        {
+            vc.push_back(count_lowercase_letters);
+        }
+        if(count_uppercase_letters > 0)
+        {
+            vc.push_back(count_uppercase_letters);
+        }
+        if(count_digits > 0)
+        {
+            vc.push_back(count_digits);
+        }
+        if(count_spaces > 0)
+        {
+            vc.push_back(count_spaces);
+        }
+        if(count_specials > 0)
+        {
+            vc.push_back(count_specials);
+        }
+        if(count_unicode > 0)
+        {
+            vc.push_back(count_unicode);
+        }
+        max_variation = password__policy__minimum_variation;
+        if(vc.length < password__policy__minimum_variation)
+        {
+            msg += "<li>Password does not yet contain enough character variations (try entering uppercase letters, digits, punctuation...).</li>";
+            max_variation = vc.length;
+        }
+        vc.sort(snapwebsites.compareNumbers);
+        for(i = 0; i < max_variation; ++i)
+        {
+            if(vc[i] < password__policy__minimum_length_of_variations)
+            {
+                msg += "<li>Password does not yet contain enough character in each category (try entering more or each type of letters, digits, punctuation...).</li>";
+                break;
+            }
+        }
+    }
+
+    return msg;
 };
 
 

@@ -45,7 +45,7 @@ enum class name_t
     SNAP_NAME_PASSWORD_MINIMUM_LOWERCASE_LETTERS,
     SNAP_NAME_PASSWORD_MINIMUM_OLD_PASSWORDS,
     SNAP_NAME_PASSWORD_MINIMUM_SPACES,
-    SNAP_NAME_PASSWORD_MINIMUM_SPECIAL,
+    SNAP_NAME_PASSWORD_MINIMUM_SPECIALS,
     SNAP_NAME_PASSWORD_MINIMUM_UNICODE,
     SNAP_NAME_PASSWORD_MINIMUM_UPPERCASE_LETTERS,
     SNAP_NAME_PASSWORD_MINIMUM_VARIATION,
@@ -91,7 +91,7 @@ public:
     int64_t         get_minimum_letters() const;
     int64_t         get_minimum_digits() const;
     int64_t         get_minimum_spaces() const;
-    int64_t         get_minimum_special() const;
+    int64_t         get_minimum_specials() const;
     int64_t         get_minimum_unicode() const;
     int64_t         get_minimum_variation() const;
     int64_t         get_minimum_length_of_variations() const;
@@ -118,7 +118,7 @@ private:
     int64_t         f_minimum_letters = 0;
     int64_t         f_minimum_digits = 0;
     int64_t         f_minimum_spaces = 0;
-    int64_t         f_minimum_special = 0;
+    int64_t         f_minimum_specials = 0;
     int64_t         f_minimum_unicode = 0;
     int64_t         f_minimum_variation = 0;
     int64_t         f_minimum_length_of_variations = 0;
@@ -187,9 +187,13 @@ public:
 
     // editor signals
     void                on_prepare_editor_form(editor::editor * e);
+    void                on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t data_row);
 
     // layout::layout_content implementation
     void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
+
+    // layout signals
+    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body);
 
     QtCassandra::QCassandraTable::pointer_t get_password_table();
     QString             check_password_against_policy(QString const & user_key, QString const & user_password, QString const & policy);
@@ -204,6 +208,7 @@ private:
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraTable::pointer_t f_password_table;
+    bool                                    f_added_policy = false;
 };
 
 

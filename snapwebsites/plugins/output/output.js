@@ -495,6 +495,32 @@ snapwebsites.castToNumber = function(n, e) // static
 };
 
 
+/** \brief Compare two numbers for the array sort.
+ *
+ * By default, the JavaScript Array.sort() function sorts as if all
+ * the elements were strings, no matter what. This function can be
+ * used to sort an array of numbers as follow:
+ *
+ * \code
+ *  var numbers = [ 10, 5, 1, 3, 20 ];
+ *  numbers.sort();
+ *  // [ 1, 10, 20, 3, 5 ]
+ *  numbers.sort(snapwebsites.compareNumbers);
+ *  // [ 1, 3, 5, 10, 20 ]
+ * \endcode
+ *
+ * @param {number} a  The left hand side number.
+ * @param {number} b  The right hand side number.
+ *
+ * @return {number}  Zero when 'a' and 'b' are equal, a negative number
+ *         when 'b' is larger, and a positive number when 'a' is larger.
+ */
+snapwebsites.compareNumbers = function(a, b) // static
+{
+    return a - b;
+};
+
+
 
 /** \brief A template used to define a set of buffer to MIME type scanners.
  *
