@@ -88,7 +88,7 @@ Section: web
 Architecture: any
 Depends: adduser, libsnapwebsites (= ${binary:Version}),
     snapserver-core-plugins (= ${binary:Version}), iplock,
-    ${shlibs:Depends}, ${misc:Depends}
+    libqt4-sql-sqlite, ${shlibs:Depends}, ${misc:Depends}
 Suggests: cassandra (>= 2.0.3), snapcgi (= ${binary:Version})
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
@@ -101,6 +101,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  This package installs the server daemon that communicates with the
  Cassandra server.
  iplock require for snapfirewall.
+ libqt4-sql-sqlite required for snapdb.
 
 Package: snapcgi
 Section: web
