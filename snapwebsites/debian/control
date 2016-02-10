@@ -88,8 +88,10 @@ Section: web
 Architecture: any
 Depends: adduser, libsnapwebsites (= ${binary:Version}),
     snapserver-core-plugins (= ${binary:Version}), iplock,
-    libqt4-sql-sqlite, ${shlibs:Depends}, ${misc:Depends}
-Suggests: cassandra (>= 2.0.3), snapcgi (= ${binary:Version})
+    ${shlibs:Depends}, ${misc:Depends}
+Recommends: snapdb (= ${binary:Version})
+Suggests: cassandra (>= 2.0.3), snapcgi (= ${binary:Version}),
+    snaputils (>= ${binary:Version}), snapbounce (>= ${binary:Version})
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -101,7 +103,23 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  This package installs the server daemon that communicates with the
  Cassandra server.
  iplock require for snapfirewall.
- libqt4-sql-sqlite required for snapdb.
+
+Package: snapdb
+Section: web
+Architecture: any
+Depends: libsnapwebsites (= ${binary:Version}),
+    libqt4-sql-sqlite, ${shlibs:Depends}, ${misc:Depends}
+Suggests: cassandra (>= 2.0.3), sqlite3 (>= 3.8.0)
+Description: Fast Websites: powerful CMS for Apache written in C++.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ The basic concept is taken from a large set of Drupal 6.x
+ modules from Drupal Core and necessary 3rd party modules (we've been using
+ over 220 modules on top of the Core modules.) The result is quite
+ extensible as it offers a plug-in mechanism that everyone is welcome to
+ use to create their own extensions.
+ .
+ This package installs the snapdb command-line tool, which maintains the
+ Cassandra server snapwebsites context.
 
 Package: snapcgi
 Section: web
