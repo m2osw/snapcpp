@@ -123,15 +123,23 @@ namespace
             0,
             "dump-context",
             NULL,
-            "dump the snapwebsites context to text output",
+            "dump the snapwebsites context to SQLite database",
             advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
+            0,
+            "tables-to-dump",
+            NULL,
+            "specify the list of tables to dump to SQLite database",
+            advgetopt::getopt::required_multiple_argument
         },
         {
             '\0',
             0,
             "restore-context",
             NULL,
-            "restore the snapwebsites context from text output (required confirmation)",
+            "restore the snapwebsites context from SQLite database (requires confirmation)",
             advgetopt::getopt::optional_argument
         },
         {
@@ -428,8 +436,14 @@ public:
         //, f_canDump    -- auto-init
         //, f_rowsToDump -- auto-init
     {
+    }
+
+    static void initList()
+    {
         if( f_list.isEmpty() )
         {
+            // Set up defaults
+            //
             addEntry("antihammering"           , true,  false );
             addEntry("backend"                 , true,  false );
             addEntry("branch"                  , true,  true  );
@@ -459,6 +473,19 @@ public:
             addEntry("websites"                , false, true  );
 
             f_list["libQtCassandraLockTable"].f_rowsToDump << "hosts";
+        }
+    }
+
+    static void overrideTablesToDump( const QStringList& tables_to_dump )
+    {
+        for( auto entry : f_list )
+        {
+            f_list.f_canDump = false;
+        }
+
+        for( auto table_name : tables_to_dump )
+        {
+            f_list[table_name].f_canDump = true;
         }
     }
 
@@ -520,6 +547,8 @@ snapTableList::name_to_list_t  snapTableList::f_list;
 void snapdb::drop_tables()
 {
     f_cassandra->connect(f_host, f_port);
+
+    snapTableList::initList();
 
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
     //
@@ -907,7 +936,7 @@ void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
     {
         for( auto row : table->rows() )
         {
-            if( dump_list.canDumpRow( table->tableName(), row->rowName() ) )
+            if( !dump_list.canDumpRow( table->tableName(), row->rowName() ) )
             {
                 std::cout << "Skipping the '"
                           << row->rowName()
@@ -918,12 +947,13 @@ void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
                 continue;
             }
 
+            snap::dbutils	du( table->tableName(), row->rowName() );
             std::cout << "Processing table [" << table->tableName()
                       << "], row [" << row->rowName() << "]"
                       << std::endl;
 
-            row_names << row->rowName();
-            row_keys  << row->rowKey();
+            row_names << du.get_row_name( row );
+            row_keys  << du.get_row_key();
             table_ids << f_tableKeyToId[table->tableName()];
 
             f_rowList << row;
@@ -1021,6 +1051,18 @@ void snapdb::dump_context()
 {
     f_cassandra->connect(f_host, f_port);
     const QString outfile( f_opt->get_string( "dump-context" ).c_str() );
+
+    snapTableList::initList();
+
+    if( f_opt->is_defined("tables-to-dump") )
+    {
+        QStringList tables_to_dump;
+        for( int idx = 0; idx < f_opt->size("tables-to-dump"); ++idx )
+        {
+            tables_to_dump << f_opt->get_string("tables-to-dump",idx).c_str();
+        }
+        snapTableList::overrideTablesToDump( tables_to_dump );
+    }
 
     sqlBackupRestore backup( f_cassandra, f_context, outfile );
     backup.storeContext();
