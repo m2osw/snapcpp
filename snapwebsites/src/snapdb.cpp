@@ -414,6 +414,109 @@ void snapdb::info()
 }
 
 
+namespace
+{
+
+class snapTableList
+{
+public:
+    typedef QMap<QString,snapTableList>    name_to_list_t;
+
+    snapTableList()
+        //: f_tableName  -- auto-init
+        //, f_canDrop    -- auto-init
+        //, f_canDump    -- auto-init
+        //, f_rowsToDump -- auto-init
+    {
+        if( f_list.isEmpty() )
+        {
+            addEntry("antihammering"           , true,  false );
+            addEntry("backend"                 , true,  false );
+            addEntry("branch"                  , true,  true  );
+            addEntry("cache"                   , true,  false );
+            addEntry("content"                 , true,  true  );
+            addEntry("domains"                 , false, true  );
+            addEntry("emails"                  , true,  true  );
+            addEntry("epayment_paypal"         , true,  true  );
+            addEntry("files"                   , true,  true  );
+            addEntry("firewall"                , true,  false );
+            addEntry("layout"                  , true,  true  );
+            addEntry("libQtCassandraLockTable" , true,  true  );
+            addEntry("links"                   , true,  true  );
+            addEntry("list"                    , true,  false );
+            addEntry("listref"                 , true,  true  );
+            addEntry("password"                , true,  true  );
+            addEntry("processing"              , true,  true  );
+            addEntry("revision"                , true,  true  );
+            addEntry("secret"                  , true,  true  );
+            addEntry("serverstats"             , true,  false );
+            addEntry("sessions"                , true,  true  );
+            addEntry("shorturl"                , true,  true  );
+            addEntry("sites"                   , true,  true  );
+            addEntry("test_results"            , true,  false );
+            addEntry("tracker"                 , true,  false );
+            addEntry("users"                   , true,  true  );
+            addEntry("websites"                , false, true  );
+
+            f_list["libQtCassandraLockTable"].f_rowsToDump << "hosts";
+        }
+    }
+
+    QStringList tablesToDrop()
+    {
+        QStringList the_list;
+        for( auto entry : f_list )
+        {
+            if( !entry.f_canDrop ) continue;
+            the_list << entry.f_tableName;
+        }
+        return the_list;
+    }
+
+    QStringList tablesToDump()
+    {
+        QStringList the_list;
+        for( auto entry : f_list )
+        {
+            if( !entry.f_canDump ) continue;
+            the_list << entry.f_tableName;
+        }
+        return the_list;
+    }
+
+    bool canDumpRow( const QString& table_name, const QString& row_name )
+    {
+        auto entry(f_list[table_name]);
+        if( !entry.f_canDump )              return false;
+        if( entry.f_rowsToDump.isEmpty() )  return true;
+        return entry.f_rowsToDump.contains( row_name );
+    }
+
+    QString tableName() const { return f_tableName; }
+
+private:
+    static name_to_list_t           f_list;
+    QString                         f_tableName;    // Name of the table
+    controlled_vars::zbool_t        f_canDrop;      // Can drop this table using --drop-tables
+    controlled_vars::zbool_t        f_canDump;      // Can make a backup of this table
+    QStringList                     f_rowsToDump;   // If empty, backup all rows
+
+    static void addEntry( const QString& name, const bool can_drop, const bool can_dump )
+    {
+        snapTableList entry;
+        entry.f_tableName = name;
+        entry.f_canDrop = can_drop;
+        entry.f_canDump = can_dump;
+        f_list[name] = entry;
+    }
+};
+
+snapTableList::name_to_list_t  snapTableList::f_list;
+
+}
+// namespace
+
+
 void snapdb::drop_tables()
 {
     f_cassandra->connect(f_host, f_port);
@@ -424,29 +527,11 @@ void snapdb::drop_tables()
     // we access a page; obviously this is VERY dangerous on
     // a live system!
     //
-    context->dropTable("antihammering");
-    context->dropTable("backend");
-    context->dropTable("branch");
-    context->dropTable("cache");
-    context->dropTable("content");
-    context->dropTable("emails");
-    context->dropTable("epayment_paypal");
-    context->dropTable("files");
-    context->dropTable("firewall");
-    context->dropTable("layout");
-    context->dropTable("libQtCassandraLockTable");
-    context->dropTable("links");
-    context->dropTable("list");
-    context->dropTable("listref");
-    context->dropTable("processing");
-    context->dropTable("revision");
-    context->dropTable("secret");
-    context->dropTable("sessions");
-    context->dropTable("shorturl");
-    context->dropTable("sites");
-    context->dropTable("test_results");
-    context->dropTable("tracker");
-    context->dropTable("users");
+    snapTableList   list;
+    for( auto table_name : list.tablesToDrop() )
+    {
+        context->dropTable( table_name );
+    }
 
     // wait until all the tables are 100% dropped
     //
@@ -722,6 +807,8 @@ void sqlBackupRestore::storeTables()
         throw std::runtime_error("No tables in context!");
     }
 
+    snapTableList   dump_list;
+
     QVariantList    table_names;
     QVariantList    identifiers;
     QVariantList    column_types;
@@ -736,15 +823,18 @@ void sqlBackupRestore::storeTables()
     QVariantList    max_compaction_thresholds;
     QVariantList    replicate_on_writes;
 
-    for( auto table : f_context->tables() )
+    for( auto table_name : dump_list.tablesToDump() ) // f_context->tables() )
     {
-        std::string table_name( table->tableName().toUtf8().data() );
-        std::cout << "Processing table [" << table_name << "]" << std::endl;
-        if( table_name == "cache" )
+        auto table( f_context->table(table_name) );
+        if( table_name != table->tableName() )
         {
-            std::cout << "Skipping the cache table..." << std::endl;
-            continue;
+            QString errmsg( QString("Something is very wrong because the expected table name is '%1', yet Cassandra returned '%2'!")
+                .arg(table_name)
+                .arg(table->tableName())
+                );
+            throw std::runtime_error( errmsg.toUtf8().data() );
         }
+        std::cout << "Processing table [" << table_name << "]" << std::endl;
 
         table_names                     << table->tableName();
         identifiers                     << table->identifier();
@@ -811,17 +901,26 @@ void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
         return;
     }
 
+    snapTableList   dump_list;
+
     while( true )
     {
         for( auto row : table->rows() )
         {
-            std::string row_name( row->rowName().toUtf8().data() );
-            std::cout << "Processing table [" << table->tableName() << "], row [" << row_name << "]" << std::endl;
-            if( table->tableName() == "libQtCassandraLockTable" && row_name == "hosts" )
+            if( dump_list.canDumpRow( table->tableName(), row->rowName() ) )
             {
-                std::cout << "Skipping the 'hosts' row of the 'libQtCassandraLockTable' table." << std::endl;
+                std::cout << "Skipping the '"
+                          << row->rowName()
+                          << "' row of the '"
+                          << table->tableName()
+                          << "' table."
+                          << std::endl;
                 continue;
             }
+
+            std::cout << "Processing table [" << table->tableName()
+                      << "], row [" << row->rowName() << "]"
+                      << std::endl;
 
             row_names << row->rowName();
             row_keys  << row->rowKey();
