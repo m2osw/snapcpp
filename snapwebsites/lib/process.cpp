@@ -343,9 +343,9 @@ int process::run()
         //typedef controlled_vars::ptr_need_init<process> mpprocess_t;
         typedef controlled_vars::ptr_auto_init<FILE> zpfile_t;
 
-        raii_pipe(/*process *p,*/ QString const & command, snap_string_list const & arguments)
+        raii_pipe(/*process * p,*/ QString const & command, snap_string_list const & arguments)
             //: f_process(p)
-            //, f_file(NULL) -- auto-init
+            //, f_file(nullptr) -- auto-init
         {
             QString cmd(command);
             if(!arguments.isEmpty())
@@ -353,12 +353,26 @@ int process::run()
                 cmd += " " + arguments.join(" ");
             }
             f_command = cmd;
+
+            // block the SIGPIPE signal so the process does not end up with
+            // a SIGPIPE error; instead you should be able to detect the
+            // return type as erroneous (i.e. not 0.)
+            //
+            sigset_t set;
+            sigemptyset(&set);
+            sigaddset(&set, SIGPIPE);
+            sigprocmask(SIG_BLOCK, &set, &f_signal_mask);
         }
 
         ~raii_pipe()
         {
             // make sure the f_file gets closed
             close_pipe();
+
+            // restore the status of the process signal mask as it was
+            // before entering the run() function
+            //
+            sigprocmask(SIG_BLOCK, &f_signal_mask, nullptr);
         }
 
         QString const & command_line() const
@@ -379,7 +393,7 @@ int process::run()
             {
                 if(ferror(f_file))
                 {
-                    // must return -1 on error
+                    // must return -1 on error, ignore pclose() return value
                     pclose(f_file);
                     f_file.reset();
                 }
@@ -396,6 +410,7 @@ int process::run()
         //mpprocess_t                 f_process;
         zpfile_t                    f_file;
         QString                     f_command;
+        sigset_t                    f_signal_mask;
     };
 
     raii_pipe rp(/*this,*/ f_command, f_arguments);
