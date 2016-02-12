@@ -1971,7 +1971,7 @@ std::cerr << "***\n*** PLAN JSON BODY: ["
     if(response->get_response_code() != 200
     && response->get_response_code() != 201)
     {
-        SNAP_LOG_ERROR("creating a plan failed");
+        SNAP_LOG_ERROR("creating a plan failed with response code ")(response->get_response_code());
         throw epayment_paypal_exception_io_error("creating a plan failed");
     }
 
@@ -2510,7 +2510,7 @@ void epayment_paypal::on_process_post(QString const & uri_path)
                 char buf[256];
                 time_t now;
                 time(&now);
-                now += 60;  // +1 minute, otherwise PayPal may say it has to be in the future
+                now += 300;  // +5 minutes, otherwise PayPal may say it has to be in the future (yeah, I know...)
                 struct tm t;
                 gmtime_r(&now, &t);
                 strftime(buf, sizeof(buf) - 1, "%Y-%m-%dT%H:%M:%SZ", &t);
@@ -2547,7 +2547,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
             && response->get_response_code() != 201)
             {
                 epayment_plugin->set_invoice_status(invoice_ipath, epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
-                SNAP_LOG_ERROR("creating a plan failed");
+                SNAP_LOG_ERROR("creating a plan failed with response code ")(response->get_response_code());
                 throw epayment_paypal_exception_io_error("creating a plan failed");
             }
 
