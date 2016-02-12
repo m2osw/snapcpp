@@ -1529,7 +1529,10 @@ void service::mark_process_as_dead()
 
             // too many short runs means this service failed
             //
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
             f_failed = f_short_run_count >= MAX_START_COUNT;
+#pragma GCC diagnostic pop
         }
         else
         {

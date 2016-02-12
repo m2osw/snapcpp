@@ -2,16 +2,16 @@ Source: snapwebsites
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake,
-    libqt4-dev (>= 4.8.3), doxygen, graphviz, liblog4cplus-dev (>= 1.2.0.290~trusty),
+    libqt4-dev (>= 4.8.3), doxygen, graphviz, liblog4cplus-dev (>= 1.2.0.292~trusty),
     libssl-dev, libmagic-dev, libmagick++-dev (>= 6.7.7.10-6ubuntu3), libicu-dev,
     libqtwebkit-dev, libboost-dev, libxml2-utils, python-pip (>= 1.4.1-2),
-    libprocps3-dev, libzipios-dev (>= 2.1.2.17~trusty), zip, uuid-dev,
+    libprocps3-dev, libzipios-dev (>= 2.1.2.19~trusty), zip, uuid-dev,
     libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.23.231~trusty),
     libcontrolledvars-dev (>= 1.4.15.231~trusty), libadvgetopt-dev (>= 1.0.15.231~trusty),
-    libtld-dev (>= 1.5.1.207~trusty), libqtcassandra-dev (>= 0.5.22.26~trusty),
-    libqtserialization-dev (>= 0.1.16.521~trusty), closure-linter (>= 2.3.13),
-    libas2js-dev (>= 0.1.14.15~trusty), libssl-dev (>= 1.0.1),
-    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.9.35~trusty),
+    libtld-dev (>= 1.5.1.209~trusty), libqtcassandra-dev (>= 0.5.22.28~trusty),
+    libqtserialization-dev (>= 0.1.16.523~trusty), closure-linter (>= 2.3.13),
+    libas2js-dev (>= 0.1.14.17~trusty), libssl-dev (>= 1.0.1),
+    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.9.37~trusty),
     catch (>= 1.0)
 Standards-Version: 3.9.4
 Section: libs
@@ -89,7 +89,9 @@ Architecture: any
 Depends: adduser, libsnapwebsites (= ${binary:Version}),
     snapserver-core-plugins (= ${binary:Version}), iplock,
     ${shlibs:Depends}, ${misc:Depends}
-Suggests: cassandra (>= 2.0.3), snapcgi (= ${binary:Version})
+Recommends: snapdb (= ${binary:Version})
+Suggests: cassandra (>= 2.0.3), snapcgi (= ${binary:Version}),
+    snaputils (>= ${binary:Version}), snapbounce (>= ${binary:Version})
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -101,6 +103,23 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  This package installs the server daemon that communicates with the
  Cassandra server.
  iplock require for snapfirewall.
+
+Package: snapdb
+Section: web
+Architecture: any
+Depends: libsnapwebsites (= ${binary:Version}),
+    libqt4-sql-sqlite, ${shlibs:Depends}, ${misc:Depends}
+Suggests: cassandra (>= 2.0.3), sqlite3 (>= 3.8.0)
+Description: Fast Websites: powerful CMS for Apache written in C++.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ The basic concept is taken from a large set of Drupal 6.x
+ modules from Drupal Core and necessary 3rd party modules (we've been using
+ over 220 modules on top of the Core modules.) The result is quite
+ extensible as it offers a plug-in mechanism that everyone is welcome to
+ use to create their own extensions.
+ .
+ This package installs the snapdb command-line tool, which maintains the
+ Cassandra server snapwebsites context.
 
 Package: snapcgi
 Section: web

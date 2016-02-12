@@ -123,15 +123,23 @@ namespace
             0,
             "dump-context",
             NULL,
-            "dump the snapwebsites context to text output",
+            "dump the snapwebsites context to SQLite database",
             advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
+            0,
+            "tables-to-dump",
+            NULL,
+            "specify the list of tables to dump to SQLite database",
+            advgetopt::getopt::required_multiple_argument
         },
         {
             '\0',
             0,
             "restore-context",
             NULL,
-            "restore the snapwebsites context from text output (required confirmation)",
+            "restore the snapwebsites context from SQLite database (requires confirmation)",
             advgetopt::getopt::optional_argument
         },
         {
@@ -414,9 +422,133 @@ void snapdb::info()
 }
 
 
+namespace
+{
+
+class snapTableList
+{
+public:
+    typedef QMap<QString,snapTableList>    name_to_list_t;
+
+    snapTableList()
+        //: f_tableName  -- auto-init
+        //, f_canDrop    -- auto-init
+        //, f_canDump    -- auto-init
+        //, f_rowsToDump -- auto-init
+    {
+    }
+
+    static void initList()
+    {
+        if( f_list.isEmpty() )
+        {
+            // Set up defaults
+            //
+            addEntry("antihammering"           , true,  false );
+            addEntry("backend"                 , true,  false );
+            addEntry("branch"                  , true,  true  );
+            addEntry("cache"                   , true,  false );
+            addEntry("content"                 , true,  true  );
+            addEntry("domains"                 , false, true  );
+            addEntry("emails"                  , true,  true  );
+            addEntry("epayment_paypal"         , true,  true  );
+            addEntry("files"                   , true,  true  );
+            addEntry("firewall"                , true,  false );
+            addEntry("layout"                  , true,  true  );
+            addEntry("libQtCassandraLockTable" , true,  true  );
+            addEntry("links"                   , true,  true  );
+            addEntry("list"                    , true,  false );
+            addEntry("listref"                 , true,  true  );
+            addEntry("password"                , true,  true  );
+            addEntry("processing"              , true,  true  );
+            addEntry("revision"                , true,  true  );
+            addEntry("secret"                  , true,  true  );
+            addEntry("serverstats"             , true,  false );
+            addEntry("sessions"                , true,  true  );
+            addEntry("shorturl"                , true,  true  );
+            addEntry("sites"                   , true,  true  );
+            addEntry("test_results"            , true,  false );
+            addEntry("tracker"                 , true,  false );
+            addEntry("users"                   , true,  true  );
+            addEntry("websites"                , false, true  );
+
+            f_list["libQtCassandraLockTable"].f_rowsToDump << "hosts";
+        }
+    }
+
+    static void overrideTablesToDump( const QStringList& tables_to_dump )
+    {
+        for( auto& entry : f_list )
+        {
+            entry.f_canDump = false;
+        }
+
+        for( const auto& table_name : tables_to_dump )
+        {
+            f_list[table_name].f_canDump = true;
+        }
+    }
+
+    QStringList tablesToDrop()
+    {
+        QStringList the_list;
+        for( const auto& entry : f_list )
+        {
+            if( !entry.f_canDrop ) continue;
+            the_list << entry.f_tableName;
+        }
+        return the_list;
+    }
+
+    QStringList tablesToDump()
+    {
+        QStringList the_list;
+        for( const auto& entry : f_list )
+        {
+            if( !entry.f_canDump ) continue;
+            the_list << entry.f_tableName;
+        }
+        return the_list;
+    }
+
+    bool canDumpRow( const QString& table_name, const QString& row_name )
+    {
+        const auto& entry(f_list[table_name]);
+        if( !entry.f_canDump )              return false;
+        if( entry.f_rowsToDump.isEmpty() )  return true;
+        return entry.f_rowsToDump.contains( row_name );
+    }
+
+    QString tableName() const { return f_tableName; }
+
+private:
+    static name_to_list_t           f_list;
+    QString                         f_tableName;    // Name of the table
+    controlled_vars::zbool_t        f_canDrop;      // Can drop this table using --drop-tables
+    controlled_vars::zbool_t        f_canDump;      // Can make a backup of this table
+    QStringList                     f_rowsToDump;   // If empty, backup all rows
+
+    static void addEntry( const QString& name, const bool can_drop, const bool can_dump )
+    {
+        snapTableList entry;
+        entry.f_tableName = name;
+        entry.f_canDrop = can_drop;
+        entry.f_canDump = can_dump;
+        f_list[name] = entry;
+    }
+};
+
+snapTableList::name_to_list_t  snapTableList::f_list;
+
+}
+// namespace
+
+
 void snapdb::drop_tables()
 {
     f_cassandra->connect(f_host, f_port);
+
+    snapTableList::initList();
 
     QCassandraContext::pointer_t context(f_cassandra->context(f_context));
     //
@@ -424,29 +556,11 @@ void snapdb::drop_tables()
     // we access a page; obviously this is VERY dangerous on
     // a live system!
     //
-    context->dropTable("antihammering");
-    context->dropTable("backend");
-    context->dropTable("branch");
-    context->dropTable("cache");
-    context->dropTable("content");
-    context->dropTable("emails");
-    context->dropTable("epayment_paypal");
-    context->dropTable("files");
-    context->dropTable("firewall");
-    context->dropTable("layout");
-    context->dropTable("libQtCassandraLockTable");
-    context->dropTable("links");
-    context->dropTable("list");
-    context->dropTable("listref");
-    context->dropTable("processing");
-    context->dropTable("revision");
-    context->dropTable("secret");
-    context->dropTable("sessions");
-    context->dropTable("shorturl");
-    context->dropTable("sites");
-    context->dropTable("test_results");
-    context->dropTable("tracker");
-    context->dropTable("users");
+    snapTableList   list;
+    for( auto table_name : list.tablesToDrop() )
+    {
+        context->dropTable( table_name );
+    }
 
     // wait until all the tables are 100% dropped
     //
@@ -484,8 +598,12 @@ public:
     void restoreContext();
     
 private:
-    void getTableIds();
-    void getRowIds();
+    typedef QMap<QString,QVariant>            string_to_id_t;
+    typedef QList<QCassandraTable::pointer_t> table_list_t;
+    typedef QList<QCassandraRow::pointer_t>   row_list_t;
+
+    int  getTableId( QCassandraTable::pointer_t table );
+    int  getRowId  ( QCassandraRow::pointer_t   row   );
 
     void createSchema( const QString& sqlDbFile );
     void writeContext();
@@ -493,15 +611,8 @@ private:
     void storeRowsByTable( QCassandraTable::pointer_t table );
     void storeCellsByRow( QCassandraRow::pointer_t row );
 
-    typedef QMap<QString,QVariant>            string_to_id_t;
-    typedef QMap<QByteArray,QVariant>         byte_array_to_id_t;
-    typedef QList<QCassandraTable::pointer_t> table_list_t;
-    typedef QList<QCassandraRow::pointer_t>   row_list_t;
-
     QCassandra::pointer_t        f_cassandra;
     QCassandraContext::pointer_t f_context;
-    string_to_id_t               f_tableKeyToId;
-    byte_array_to_id_t           f_rowKeyToId;
     table_list_t                 f_tableList;
     row_list_t                   f_rowList;
     //
@@ -514,20 +625,6 @@ sqlBackupRestore::sqlBackupRestore( const QCassandra::pointer_t cassandra, const
     : f_cassandra( cassandra )
 {
     createSchema( sqlDbFile );
-
-#if 0
-    if( f_cassandra->findContext(context_name) )
-    {
-        f_colPred.reset( new QCassandraColumnRangePredicate );
-        f_colPred->setCount(1000);
-        //
-        f_rowPred.setStartRowName("");
-        f_rowPred.setEndRowName("");
-        f_rowPred.setCount(100);
-        f_rowPred.setColumnPredicate( f_colPred );
-    }
-#endif
-
     f_context = f_cassandra->context(context_name);
 }
 
@@ -576,8 +673,8 @@ void sqlBackupRestore::createSchema( const QString& sqlDbFile )
                 "replicate_on_write BOOLEAN"
                 ");"
                 );
-    do_query( "CREATE TABLE IF NOT EXISTS snap_rows   (id INTEGER PRIMARY KEY, row_name   TEXT, row_key LONGBLOB  , table_id    INTEGER);" );
-    do_query( "CREATE TABLE IF NOT EXISTS snap_cells  (id INTEGER PRIMARY KEY, cell_name  TEXT, col_key LONGBLOB  , row_id      INTEGER, "
+    do_query( "CREATE TABLE IF NOT EXISTS snap_rows   (id INTEGER PRIMARY KEY, row_name   TEXT, table_id    INTEGER);" );
+    do_query( "CREATE TABLE IF NOT EXISTS snap_cells  (id INTEGER PRIMARY KEY, cell_name  TEXT, row_id      INTEGER, "
         "ttl INTEGER, consistency_level INTEGER, timestamp INTEGER, cell_value LONGBLOB);" ); // TODO: Do we need to have timestamp_mode? There are two timestamps; one for the cell, and one for the value--are they both needed?
 }
 
@@ -588,14 +685,15 @@ void sqlBackupRestore::storeContext()
 
     // CONTEXT
     //
+    db.transaction();
     writeContext();
+    db.commit();
 
     // TABLES
     //
     db.transaction();
     storeTables();
     db.commit();
-    getTableIds();
 
     // ROWS
     //
@@ -607,7 +705,6 @@ void sqlBackupRestore::storeContext()
     }
     //
     db.commit();
-    getRowIds();
 
     // CELLS
     //
@@ -620,44 +717,55 @@ void sqlBackupRestore::storeContext()
 }
 
 
-void sqlBackupRestore::getTableIds()
+int sqlBackupRestore::getTableId( QCassandraTable::pointer_t table )
 {
     QSqlQuery q;
-    q.prepare( "SELECT id,table_name FROM snap_tables;" );
+    q.prepare( "SELECT id FROM snap_tables WHERE table_name = :table_name;" );
+    q.bindValue( ":table_name", table->tableName() );
     if( !q.exec() )
     {
         throw std::runtime_error( q.lastError().text().toUtf8().data() );
     }
     //
-    for( q.first(); q.isValid(); q.next() )
+    q.first();
+    if( !q.isValid() )
     {
-        f_tableKeyToId[q.value(1).toString()] = q.value(0);
+        throw std::runtime_error( "database is inconsistent!" );
     }
+    return q.value(0).toInt();
 }
 
 
-void sqlBackupRestore::getRowIds()
+int sqlBackupRestore::getRowId( QCassandraRow::pointer_t row )
 {
     QSqlQuery q;
-    q.prepare( "SELECT id,row_key FROM snap_rows;" );
+    q.prepare( "SELECT snap_rows.id FROM snap_rows,snap_tables "
+        "WHERE snap_rows.row_name = :row_name "
+            "AND snap_rows.table_id = snap_tables.id "
+            "AND snap_tables.table_name = :table_name;"
+        );
+    const QString tableName( row->parentTable()->tableName() );
+    snap::dbutils du( tableName, row->rowName() );
+    q.bindValue( ":row_name",   du.get_row_name(row) );
+    q.bindValue( ":table_name", tableName            );
     if( !q.exec() )
     {
         throw std::runtime_error( q.lastError().text().toUtf8().data() );
     }
     //
-    for( q.first(); q.isValid(); q.next() )
+    q.first();
+    if( !q.isValid() )
     {
-        f_rowKeyToId[q.value(1).toByteArray()] = q.value(0);
+        throw std::runtime_error( "database is inconsistent!" );
     }
+    return q.value(0).toInt();
 }
 
 
 void sqlBackupRestore::writeContext()
 {
-    QSqlDatabase db( QSqlDatabase::database() );
     QSqlQuery q;
 
-    db.transaction();
     q.prepare( "INSERT OR REPLACE INTO snap_context "
         "(context_name,strategy_class,replication_factor,durable_writes,host_name,last_update) VALUES "
         "(:context_name,:strategy_class,:replication_factor,:durable_writes,:host_name,:last_update);"
@@ -673,7 +781,6 @@ void sqlBackupRestore::writeContext()
         std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
         throw std::runtime_error( q.lastError().text().toUtf8().data() );
     }
-    db.commit();
 
     q.clear();
     q.prepare( "SELECT id FROM snap_context WHERE context_name = :context_name;" );
@@ -687,25 +794,19 @@ void sqlBackupRestore::writeContext()
     q.first();
     const int context_id = q.value(0).toInt();
 
-    q.clear();
-    db.transaction();
-    q.prepare( "INSERT OR REPLACE INTO snap_context_desc_options (context_id,option,value) VALUES (?,?,?);" );
-    QVariantList context_id_list, option_list, value_list;
     for( auto option : f_context->descriptionOptions().keys() )
     {
-        context_id_list << context_id;
-        option_list     << option;
-        value_list      << f_context->descriptionOption(option);
+        q.clear();
+        q.prepare( "INSERT OR REPLACE INTO snap_context_desc_options (context_id,option,value) VALUES (:context_id,:option,:value);" );
+        q.bindValue( ":context_id", context_id                           );
+        q.bindValue( ":option",     option                               );
+        q.bindValue( ":value",      f_context->descriptionOption(option) );
+        if( !q.exec() )
+        {
+            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+            throw std::runtime_error( q.lastError().text().toUtf8().data() );
+        }
     }
-    q.addBindValue( context_id_list );
-    q.addBindValue( option_list     );
-    q.addBindValue( value_list      );
-    if( !q.execBatch() )
-    {
-        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-        throw std::runtime_error( q.lastError().text().toUtf8().data() );
-    }
-    db.commit();
 }
 
 
@@ -722,79 +823,52 @@ void sqlBackupRestore::storeTables()
         throw std::runtime_error("No tables in context!");
     }
 
-    QVariantList    table_names;
-    QVariantList    identifiers;
-    QVariantList    column_types;
-    QVariantList    comments;
-    QVariantList    key_validation_classes;
-    QVariantList    default_validation_classes;
-    QVariantList    comparator_types;
-    QVariantList    key_cache_save_period_secs_list;
-    QVariantList    memtable_flush_period_mins_list;
-    QVariantList    gc_grace_secs_list;
-    QVariantList    min_compaction_thresholds;
-    QVariantList    max_compaction_thresholds;
-    QVariantList    replicate_on_writes;
+    snapTableList   dump_list;
 
-    for( auto table : f_context->tables() )
+    for( auto table_name : dump_list.tablesToDump() ) // f_context->tables() )
     {
-        std::string table_name( table->tableName().toUtf8().data() );
-        std::cout << "Processing table [" << table_name << "]" << std::endl;
-        if( table_name == "cache" )
+        auto table( f_context->table(table_name) );
+        if( table_name != table->tableName() )
         {
-            std::cout << "Skipping the cache table..." << std::endl;
-            continue;
+            QString errmsg( QString("Something is very wrong because the expected table name is '%1', yet Cassandra returned '%2'!")
+                    .arg(table_name)
+                    .arg(table->tableName())
+                    );
+            throw std::runtime_error( errmsg.toUtf8().data() );
         }
-
-        table_names                     << table->tableName();
-        identifiers                     << table->identifier();
-        column_types                    << table->columnType();
-        comments                        << table->comment();
-        key_validation_classes          << table->keyValidationClass();
-        default_validation_classes      << table->defaultValidationClass();
-        memtable_flush_period_mins_list << table->memtableFlushAfterMins();
-        gc_grace_secs_list              << table->gcGraceSeconds();
-        min_compaction_thresholds       << table->minCompactionThreshold();
-        max_compaction_thresholds       << table->maxCompactionThreshold();
-        replicate_on_writes             << table->replicateOnWrite();
-
+        std::cout << "Processing table [" << table_name << "]" << std::endl;
         f_tableList << table;
-    }
 
-
-    std::cout << std::endl << "Saving tables to SQL database..." << std::endl;
-
-    QSqlQuery q;
-    q.prepare( "INSERT OR REPLACE INTO snap_tables "
-        "(table_name,identifier,column_type,comment,key_validation_class, default_validation_class, "
-        "memtable_flush_period_mins, gc_grace_secs, min_compaction_threshold, max_compaction_threshold, replicate_on_write) VALUES "
-        "(?,?,?,?,?,?,?,?,?,?,?);"
-        );
-    q.addBindValue( table_names                     );
-    q.addBindValue( identifiers                     );
-    q.addBindValue( column_types                    );
-    q.addBindValue( comments                        );
-    q.addBindValue( key_validation_classes          );
-    q.addBindValue( default_validation_classes      );
-    q.addBindValue( memtable_flush_period_mins_list );
-    q.addBindValue( gc_grace_secs_list              );
-    q.addBindValue( min_compaction_thresholds       );
-    q.addBindValue( max_compaction_thresholds       );
-    q.addBindValue( replicate_on_writes             );
-    if( !q.execBatch() )
-    {
-        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-        throw std::runtime_error( q.lastError().text().toUtf8().data() );
+        QSqlQuery q;
+        q.prepare( "INSERT OR REPLACE INTO snap_tables "
+                "(table_name,identifier,column_type,comment,key_validation_class, default_validation_class, "
+                "memtable_flush_period_mins,gc_grace_secs,min_compaction_threshold,max_compaction_threshold,replicate_on_write) "
+                "VALUES "
+                "(:table_name,:identifier,:column_type,:comment,:key_validation_class,:default_validation_class,"
+                ":memtable_flush_period_mins,:gc_grace_secs,:min_compaction_threshold,:max_compaction_threshold,:replicate_on_write);"
+                );
+        q.bindValue( ":table_name",                 table->tableName()              );
+        q.bindValue( ":identifier",                 table->identifier()             );
+        q.bindValue( ":column_type",                table->columnType()             );
+        q.bindValue( ":comment",                    table->comment()                );
+        q.bindValue( ":key_validation_class",       table->keyValidationClass()     );
+        q.bindValue( ":default_validation_class",   table->defaultValidationClass() );
+        q.bindValue( ":memtable_flush_period_mins", table->memtableFlushAfterMins() );
+        q.bindValue( ":gc_grace_secs",              table->gcGraceSeconds()         );
+        q.bindValue( ":min_compaction_threshold",   table->minCompactionThreshold() );
+        q.bindValue( ":max_compaction_threshold",   table->maxCompactionThreshold() );
+        q.bindValue( ":replicate_on_write",         table->replicateOnWrite()       );
+        if( !q.exec() )
+        {
+            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+            throw std::runtime_error( q.lastError().text().toUtf8().data() );
+        }
     }
 }
 
 
 void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
 {
-    QVariantList    row_names;
-    QVariantList    row_keys;
-    QVariantList    table_ids;
-
     f_colPred.reset( new QCassandraColumnRangePredicate );
     f_colPred->setCount(1000);
     //
@@ -811,43 +885,48 @@ void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
         return;
     }
 
+    const int       table_id = getTableId( table );
+    snapTableList   dump_list;
+
     while( true )
     {
         for( auto row : table->rows() )
         {
-            std::string row_name( row->rowName().toUtf8().data() );
-            std::cout << "Processing table [" << table->tableName() << "], row [" << row_name << "]" << std::endl;
-            if( table->tableName() == "libQtCassandraLockTable" && row_name == "hosts" )
+            if( !dump_list.canDumpRow( table->tableName(), row->rowName() ) )
             {
-                std::cout << "Skipping the 'hosts' row of the 'libQtCassandraLockTable' table." << std::endl;
+                std::cout << "Skipping the '"
+                          << row->rowName()
+                          << "' row of the '"
+                          << table->tableName()
+                          << "' table."
+                          << std::endl;
                 continue;
             }
 
-            row_names << row->rowName();
-            row_keys  << row->rowKey();
-            table_ids << f_tableKeyToId[table->tableName()];
-
+            snap::dbutils	du( table->tableName(), row->rowName() );
+            const QString	row_name( du.get_row_name(row) );
+            std::cout << "Processing table [" << table->tableName()
+                      << "], row [" << row_name << "]"
+                      << std::endl;
             f_rowList << row;
+
+            QSqlQuery q;
+            q.prepare( "INSERT OR REPLACE INTO snap_rows (row_name,table_id) VALUES (:row_name,:table_id);" );
+            q.bindValue( ":row_name", row_name );
+            q.bindValue( ":table_id", table_id );
+            if( !q.exec() )
+            {
+                std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+                throw std::runtime_error( q.lastError().text().toUtf8().data() );
+            }
         }
+        //
+        rowsRemaining = table->readRows( f_rowPred ); // Next 100 records
         //
         if( rowsRemaining == 0 )
         {
             break;
         }
-        //
-        rowsRemaining = table->readRows( f_rowPred ); // Next 100 records
-    }
-
-    std::cout << std::endl << "Saving rows to SQL database..." << std::endl;
-    QSqlQuery q;
-    q.prepare( "INSERT OR REPLACE INTO snap_rows (row_name,row_key,table_id) VALUES (?,?,?);" );
-    q.addBindValue( row_names );
-    q.addBindValue( row_keys  );
-    q.addBindValue( table_ids );
-    if( !q.execBatch() )
-    {
-        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-        throw std::runtime_error( q.lastError().text().toUtf8().data() );
     }
 }
 
@@ -864,46 +943,42 @@ void sqlBackupRestore::storeCellsByRow( QCassandraRow::pointer_t row )
     while( true )
     {
 #endif
+        const QString tableName( row->parentTable()->tableName() );
+        snap::dbutils du( tableName, row->rowName() );
+        const QString rowName( du.get_row_name(row) );
+
         if( row->cells().isEmpty() )
         {
-            std::cout << "Row [" << row->rowName() << "] has no cells, so skipping..." << std::endl;
+            std::cout << "Row [" << rowName << "] has no cells, so skipping..." << std::endl;
             return;
         }
 
-        QVariantList row_ids, cell_names, col_keys, ttls, consistency_levels, timestamps, cell_values;
+        std::cout << "Processing cells for row [" << rowName << "] in table [" << tableName << "]:" << std::endl;
+        const int row_id = getRowId( row );
+
         for( auto col : row->cells() )
         {
-            std::string cell_name( col->columnName().toUtf8().data() );
+            const QString cell_name( du.get_column_name(col) );
             std::cout << "Processing cell [" << cell_name << "]" << std::endl;
 
             auto& val( col->value() );
-            row_ids            << f_rowKeyToId[row->rowKey()]               ;
-            cell_names         << col->columnName()                         ;
-            col_keys           << col->columnKey()                          ;
-            ttls               << val.ttl()                                 ;
-            consistency_levels << static_cast<int>(col->consistencyLevel()) ;
-            timestamps         << static_cast<qlonglong>(col->timestamp())  ;
-            cell_values        << val.binaryValue()                         ;
-        }
-
-        std::cout << std::endl << "Saving cells to SQL database..." << std::endl;
-        QSqlQuery q;
-        q.prepare(
-                "INSERT OR REPLACE INTO snap_cells "
-                "(cell_name,row_id,col_key,ttl,consistency_level,timestamp,cell_value) "
-                "VALUES (?,?,?,?,?,?,?);"
-                );
-        q.addBindValue( cell_names         );
-        q.addBindValue( row_ids            );
-        q.addBindValue( col_keys           );
-        q.addBindValue( ttls               );
-        q.addBindValue( consistency_levels );
-        q.addBindValue( timestamps         );
-        q.addBindValue( cell_values        );
-        if( !q.execBatch() )
-        {
-            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-            throw std::runtime_error( q.lastError().text().toUtf8().data() );
+            QSqlQuery q;
+            q.prepare(
+                    "INSERT OR REPLACE INTO snap_cells "
+                    "(cell_name,row_id,ttl,consistency_level,timestamp,cell_value) "
+                    "VALUES (:cell_name,:row_id,:ttl,:consistency_level,:timestamp,:cell_value);"
+                    );
+            q.bindValue( ":cell_name",        cell_name                                 );
+            q.bindValue( ":row_id",           row_id                                    );
+            q.bindValue( ":ttl",              val.ttl()                                 );
+            q.bindValue( "consistency_level", static_cast<int>(col->consistencyLevel()) );
+            q.bindValue( ":timestamp",        static_cast<qlonglong>(col->timestamp())  );
+            q.bindValue( ":cell_value",       val.binaryValue()                         );
+            if( !q.exec() )
+            {
+                std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+                throw std::runtime_error( q.lastError().text().toUtf8().data() );
+            }
         }
 
 #if 0
@@ -915,6 +990,8 @@ void sqlBackupRestore::storeCellsByRow( QCassandraRow::pointer_t row )
         colsRemaining = row->readCells( *f_colPred ); // Next 100 columns
     }
 #endif
+
+    std::cout << "Done." << std::endl << std::endl;
 }
 
 
@@ -922,6 +999,18 @@ void snapdb::dump_context()
 {
     f_cassandra->connect(f_host, f_port);
     const QString outfile( f_opt->get_string( "dump-context" ).c_str() );
+
+    snapTableList::initList();
+
+    if( f_opt->is_defined("tables-to-dump") )
+    {
+        QStringList tables_to_dump;
+        for( int idx = 0; idx < f_opt->size("tables-to-dump"); ++idx )
+        {
+            tables_to_dump << f_opt->get_string("tables-to-dump",idx).c_str();
+        }
+        snapTableList::overrideTablesToDump( tables_to_dump );
+    }
 
     sqlBackupRestore backup( f_cassandra, f_context, outfile );
     backup.storeContext();

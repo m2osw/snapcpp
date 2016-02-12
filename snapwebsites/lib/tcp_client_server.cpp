@@ -1697,7 +1697,10 @@ bool is_ipv6(char const * ip)
         // double colon?
         if(ip[1] == ':')
         {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
             if(!found_colon_colon && count < 6)
+#pragma GCC diagnostic pop
             {
                 // we can accept one '::'
                 ++ip;
