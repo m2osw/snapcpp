@@ -49,10 +49,9 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     favicon.qrc
 )
 
+snap_validate_css( favicon.css )
 snap_validate_xml( content.xml                  content/content.dtd )
-
 snap_validate_xml( favicon-settings-page.xml    editor/editor-form.dtd )
-
 snap_validate_xml( favicon-settings-parser.xsl  layout/simplified-xslt20.dtd )
 
 
@@ -60,6 +59,7 @@ add_library(favicon SHARED
     favicon.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
+    favicon.css
     content.xml
     favicon-settings-page.xml
     favicon-settings-parser.xsl

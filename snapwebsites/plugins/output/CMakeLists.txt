@@ -60,9 +60,11 @@ snap_validate_xml( layout/notheme-theme-parser.xsl layout/simplified-xslt20.dtd 
 # Externs are used by the compiler and should be auto generated at some point
 #snap_validate_js( externs/jquery-extensions.js )
 #
-snap_validate_js( jquery-extensions.js         )
-snap_validate_js( output.js                    )
-snap_validate_js( popup.js                     )
+snap_validate_css( output.css               )
+snap_validate_css( layout/notheme-style.css )
+snap_validate_js(  jquery-extensions.js     )
+snap_validate_js(  output.js                )
+snap_validate_js(  popup.js                 )
 
 
 add_library(output SHARED

@@ -59,6 +59,7 @@ snap_validate_xml( content.xml                          content/content.dtd )
 # non-closure compiler compatibility
 #snap_validate_js( sortable.js )
 
+snap_validate_css( sortable.css )
 snap_validate_js( sortable-widgets.js )
 
 

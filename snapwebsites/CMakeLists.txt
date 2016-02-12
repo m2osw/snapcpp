@@ -136,8 +136,9 @@ add_subdirectory(conf)          # Configuration files and samples
 ##
 ## Analyse xml and javascript
 ##
-snap_build_xml_targets()
+snap_build_css_targets()
 snap_build_js_targets()
+snap_build_xml_targets()
 
 ##
 ## Install run script

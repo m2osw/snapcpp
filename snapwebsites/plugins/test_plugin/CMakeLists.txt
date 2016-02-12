@@ -49,6 +49,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     test_plugin.qrc
 )
 
+snap_validate_css( test-plugin.css )
 snap_validate_xml( content.xml                  content/content.dtd )
 snap_validate_xml( test-plugin-parser.xsl       layout/simplified-xslt20.dtd )
 
@@ -57,6 +58,7 @@ add_library(test_plugin SHARED
     test_plugin.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
+    test-plugin.css
     content.xml
     test-plugin-parser.xsl
     test-plugin-logo-64x64.jpg
