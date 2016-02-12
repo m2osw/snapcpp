@@ -51,10 +51,11 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     date_widgets.qrc
 )
 
+## Validate content
+##
+snap_validate_css( date_widgets/date-widgets.css )
 snap_validate_xml( content.xml                      content/content.dtd )
-
 snap_validate_xml( date_widgets/date-form.xsl       layout/simplified-xslt20.dtd )
-
 snap_validate_js( date_widgets/date-widgets.js )
 
 

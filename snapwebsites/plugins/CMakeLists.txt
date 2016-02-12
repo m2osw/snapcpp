@@ -42,6 +42,7 @@ set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
 ## Include xmllint utilties
 ##
 set( DTD_SOURCE_PATH "${snapwebsites_plugins_SOURCE_DIR}" CACHE PATH "Location of the default DTD files" )
+include( SnapCssLint )
 include( SnapJsLint  )
 include( SnapXmlLint )
 

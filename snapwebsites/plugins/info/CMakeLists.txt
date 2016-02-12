@@ -53,17 +53,18 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     info.qrc
 )
 
-snap_validate_xml( content.xml                          content/content.dtd )
 
+## Validate content
+##
+snap_validate_css( info.css )
+snap_validate_xml( content.xml                          content/content.dtd )
 snap_validate_xml( editor/info-settings-page.xml        editor/editor-form.dtd )
 snap_validate_xml( editor/plugin-settings-page.xml      editor/editor-form.dtd )
 snap_validate_xml( editor/unsubscribe-page.xml          editor/editor-form.dtd )
-
 snap_validate_xml( layout/info-settings-parser.xsl      layout/simplified-xslt20.dtd )
 snap_validate_xml( layout/plugin-settings-parser.xsl    layout/simplified-xslt20.dtd )
 snap_validate_xml( layout/unsubscribe-parser.xsl        layout/simplified-xslt20.dtd )
 snap_validate_xml( layout/unsubscribe-theme-parser.xsl  layout/simplified-xslt20.dtd )
-
 snap_validate_js( plugin-selection/plugin-selection.js )
 snap_validate_js( sendmail/unsubscribe.js )
 
@@ -75,6 +76,7 @@ add_library(info SHARED
     tests.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
+    info.css
     content.xml
     editor/info-settings-page.xml
     editor/plugin-settings-page.xml

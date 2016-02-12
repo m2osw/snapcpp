@@ -54,16 +54,13 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     editor.qrc
 )
 
+snap_validate_css( editor.css )
 # Form dependency to be removed.
 snap_validate_xml( new-draft.xml form/snap-form.dtd )
-
 snap_validate_xml( content.xml              content/content.dtd )
-
 snap_validate_xml( default-page.xml         editor/editor-form.dtd )
 snap_validate_xml( editor-test-page.xml     editor/editor-form.dtd )
-
 snap_validate_xml( editor-test-parser.xsl   layout/simplified-xslt20.dtd )
-
 snap_validate_xml( editor-form.xsl          layout/simplified-xslt20.dtd )
 
 # Unfortunate, but at this time this doesn't work too well...
