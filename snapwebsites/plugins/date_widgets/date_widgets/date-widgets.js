@@ -1,6 +1,6 @@
 /** @preserve
  * Name: date-widgets
- * Version: 0.0.1.9
+ * Version: 0.0.1.10
  * Browsers: all
  * Depends: editor (>= 0.0.3.640)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -393,7 +393,6 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
         calendar = editor_widget.getData("calendar"),
         now,                // today's JavaScript Date object
         today,              // day of the month for today
-        selection_value,    // current selection as a string
         selection,          // JavaScript Date object of current selection
         new_selection,      // whether the command generated a new selection which we have to put in the widget
         no_selection,       // if true, the input is invalid so we do not have any real selection
@@ -426,8 +425,7 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.createCalendar = function(editor
     today = now.getDate();
 
     // this is the selected date, we have to show that as selected
-    selection_value = editor_widget.getValue();
-    selection = new Date(snapwebsites.stripAllTags(selection_value));
+    selection = editor_widget.getValueAsDate();
     no_selection = isNaN(selection);
     if(no_selection)
     {

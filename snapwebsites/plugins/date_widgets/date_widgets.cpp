@@ -17,32 +17,9 @@
 
 #include "date_widgets.h"
 
-//#include "../output/output.h"
-//#include "../attachment/attachment.h"
-//#include "../locale/snap_locale.h"
-//#include "../messages/messages.h"
-//#include "../permissions/permissions.h"
-//
-//#include "dbutils.h"
 #include "log.h"
-//#include "mkgmtime.h"
 #include "not_reached.h"
 #include "not_used.h"
-//#include "qdomhelpers.h"
-//#include "qdomreceiver.h"
-//#include "qdomxpath.h"
-//#include "qxmlmessagehandler.h"
-//#include "snap_image.h"
-//#include "xslt.h"
-//
-//#include <QtCassandra/QCassandraLock.h>
-//#include <libtld/tld.h>
-//
-//#include <iostream>
-//
-//#include <QTextDocument>
-//#include <QFile>
-//#include <QFileInfo>
 
 #include "poison.h"
 
@@ -181,7 +158,7 @@ int64_t date_widgets::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 2, 5, 23, 29, 37, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 2, 12, 1, 18, 37, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

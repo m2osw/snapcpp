@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.623
+ * Version: 0.0.3.624
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -2204,6 +2204,7 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      final function checkForBackgroundValue();
  *      static final function isEmptyBlock(html: string|jQuery) : boolean;
  *      function getValue() : string;
+ *      function getValueAsDate() : Date;
  *      function restoreValue() : boolean;
  *      function resetValue(changed: boolean) : Void;
  *      function setValue(value: Object, changed: boolean) : Void;
@@ -2931,6 +2932,41 @@ snapwebsites.EditorWidget.prototype.getValue = function()
 {
     var data = this.saving();
     return data.result;
+};
+
+
+/** \brief Retrieve the current value as a Date object.
+ *
+ * This function returns the current value of the widget as a JavaScript
+ * Date object.
+ *
+ * If a date is considered invalid, the function returns a Date which
+ * returns true when checked against isNaN().
+ *
+ * \code
+ *      var d = my_widget.getValueAsDate();
+ *
+ *      if(isNaN(d))
+ *      {
+ *          // date is not valid
+ *          ...
+ *      }
+ *      else
+ *      {
+ *          // date is good
+ *          ...
+ *      }
+ * \endcode
+ *
+ * The function makes sure to first strips all the tags from the
+ * value, just in case (there is often a trailing \<br/> tag in
+ * line edit widgets.)
+ *
+ * @return {Date}  The value of this widget as a Date object.
+ */
+snapwebsites.EditorWidget.prototype.getValueAsDate = function()
+{
+    return new Date(snapwebsites.stripAllTags(this.getValue()));
 };
 
 
