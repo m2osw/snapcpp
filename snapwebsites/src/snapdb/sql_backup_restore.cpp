@@ -136,35 +136,25 @@ void sqlBackupRestore::storeContext()
 
     // CONTEXT
     //
-    //db.transaction();
     writeContext();
-    //db.commit();
 
     // TABLES
     //
-    //db.transaction();
     storeTables();
-    //db.commit();
 
     // ROWS
-    //
-    //db.transaction();
     //
     for( auto table : f_tableList )
     {
         storeRowsByTable( table );
     }
-    //
-    //db.commit();
 
     // CELLS
     //
-    //db.transaction();
     for( auto row : f_rowList )
     {
         storeCellsByRow( row );
     }
-    //db.commit();
 
     db.commit();
 }
