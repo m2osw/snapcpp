@@ -165,24 +165,25 @@ install(
 #################################################################################
 ## Snap DB process
 ##
-project(snapdb)
-
-add_executable(${PROJECT_NAME}
-    snapdb.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    snapwebsites
-    ${ADVGETOPT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
+add_subdirectory( snapdb )
+#project(snapdb)
+#
+#add_executable(${PROJECT_NAME}
+#    snapdb.cpp
+#)
+#
+#target_link_libraries(${PROJECT_NAME}
+#    snapwebsites
+#    ${ADVGETOPT_LIBRARIES}
+#    ${QTCASSANDRA_LIBRARIES}
+#    ${QT_LIBRARIES}
+#    ${THRIFT_LIBRARIES}
+#    ${LIBTLD_LIBRARIES}
+#)
+#
+#install(
+#    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+#)
 
 
 #################################################################################
