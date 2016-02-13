@@ -32,6 +32,7 @@
 project(snap_cmake)
 
 set( INSTALL_FILES
+    SnapCssLint.cmake
     SnapJsLint.cmake
     SnapXmlLint.cmake
     SnapZipLayout.cmake
