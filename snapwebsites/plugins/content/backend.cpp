@@ -308,6 +308,10 @@ void content::backend_action_destroy_page()
  * The action makes use of the following parameters:
  *
  * \li MD5 -- the md5 of the file to be pinged.
+ *
+ * \todo
+ * Create a version of this action to reset all the files in case something
+ * went wrong and all the files require a kick in the rear.
  */
 void content::backend_action_new_file()
 {
