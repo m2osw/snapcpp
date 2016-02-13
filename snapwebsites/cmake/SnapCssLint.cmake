@@ -30,8 +30,8 @@ find_program( CSSPP  csspp   /usr/bin )
 
 set( css_lint_script ${CMAKE_BINARY_DIR}/do_css_lint.sh CACHE INTERNAL "CSS lint script" FORCE )
 file( WRITE  ${css_lint_script} "#!${BASH}\n"                                                         )
-file( APPEND ${css_lint_script} "export LD_LIBRARY_PATH=${CMAKE_PREFIX_PATH}/lib\n"                       )
-file( APPEND ${css_lint_script} "${CSSPP} ${OPTIONS} $1 -I ${CMAKE_PREFIX_PATH}/lib/csspp/scripts -o $2 && exit 0 || (cat $2; rm $2; exit 1)\n" )
+file( APPEND ${css_lint_script} "export LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib\n"                       )
+file( APPEND ${css_lint_script} "${CSSPP} ${OPTIONS} $1 -I ${CMAKE_INSTALL_PREFIX}/lib/csspp/scripts -o $2 && exit 0 || (cat $2; rm $2; exit 1)\n" )
 
 function( snap_validate_css CSS_FILE )
     get_filename_component( FULL_CSS_PATH ${CSS_FILE} ABSOLUTE )

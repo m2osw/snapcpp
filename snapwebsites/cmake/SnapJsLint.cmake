@@ -35,7 +35,7 @@ find_program( JSLINT gjslint /usr/bin )
 set( OPTIONS "--disable 0002,0110,0120,0131 --jslint_error=blank_lines_at_top_level --jslint_error=unused_private_members" )
 
 set( js_lint_script ${CMAKE_BINARY_DIR}/do_js_lint.sh CACHE INTERNAL "JS lint script" FORCE )
-file( WRITE  ${js_lint_script} "#!${BASH}\n"                                                            )
+file( WRITE  ${js_lint_script} "#!${BASH}\n"                                                         )
 file( APPEND ${js_lint_script} "${JSLINT} ${OPTIONS} $1 > $2 && exit 0 || (cat $2; rm $2; exit 1)\n" )
 
 function( snap_validate_js JS_FILE )

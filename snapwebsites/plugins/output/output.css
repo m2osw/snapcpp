@@ -59,7 +59,6 @@ div.user-messages h3
 	height: 100%;
 	background-color: black;
 	opacity: 0.2;
-	filter: alpha(opacity=20);
 }
 
 #darkenPage.wait
