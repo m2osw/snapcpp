@@ -34,6 +34,7 @@ find_package_handle_standard_args( SnapWebsites DEFAULT_MSG SNAPWEBSITES_INCLUDE
 #
 set( DTD_SOURCE_PATH /usr/share/snapwebsites/dtd CACHE PATH "Default DTD source files." )
 #
+set( CMAKE_MODULE_PATH ${CMAKE_PREFIX_PATH}/share/cmake/SnapWebsites ${CMAKE_MODULE_PATH} )
 include( SnapCssLint   )
 include( SnapJsLint    )
 include( SnapXmlLint   )
