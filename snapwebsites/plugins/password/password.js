@@ -1,6 +1,6 @@
 /** @preserve
  * Name: password
- * Version: 0.0.1.24
+ * Version: 0.0.1.25
  * Browsers: all
  * Depends: editor (>= 0.0.3.468), javascript-unicode (>= 0.0.1)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -21,6 +21,8 @@
 // @js plugins/server_access/server-access.js
 // @js plugins/listener/listener.js
 // @js plugins/editor/editor.js
+// @js plugins/password/externs/password.js
+// @js plugins/output/externs/javascript-unicode.js
 // ==/ClosureCompiler==
 //
 // This is not required and it may not exist at the time you run the
@@ -607,7 +609,9 @@ snapwebsites.EditorWidgetTypePasswordConfirm.prototype.checkAgainstPolicy = func
         c,
         msg = "",
         vc = [],
-        max_variation;
+        max_variation,
+        code_points = snapwebsites.stringToUnicodeCodePoints(password),
+        categories = snapwebsites.stringToUnicodeCategories(password);
 
     // Setup variable defined by password.cpp as inline JavaScript:
     //
@@ -627,9 +631,6 @@ snapwebsites.EditorWidgetTypePasswordConfirm.prototype.checkAgainstPolicy = func
     {
         msg += "<li>Password is still too short.</li>";
     }
-
-    code_points = snapwebsites.stringToUnicodeCodePoints(password);
-    categories = snapwebsites.stringToUnicodeCategories(password);
 
     for(i = 0; i < categories.length; ++i)
     {
@@ -715,27 +716,27 @@ snapwebsites.EditorWidgetTypePasswordConfirm.prototype.checkAgainstPolicy = func
     {
         if(count_lowercase_letters > 0)
         {
-            vc.push_back(count_lowercase_letters);
+            vc.push(count_lowercase_letters);
         }
         if(count_uppercase_letters > 0)
         {
-            vc.push_back(count_uppercase_letters);
+            vc.push(count_uppercase_letters);
         }
         if(count_digits > 0)
         {
-            vc.push_back(count_digits);
+            vc.push(count_digits);
         }
         if(count_spaces > 0)
         {
-            vc.push_back(count_spaces);
+            vc.push(count_spaces);
         }
         if(count_specials > 0)
         {
-            vc.push_back(count_specials);
+            vc.push(count_specials);
         }
         if(count_unicode > 0)
         {
-            vc.push_back(count_unicode);
+            vc.push(count_unicode);
         }
         max_variation = password__policy__minimum_variation;
         if(vc.length < password__policy__minimum_variation)

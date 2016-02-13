@@ -24,6 +24,7 @@
 // @js plugins/server_access/server-access.js
 // @js plugins/listener/listener.js
 // @js plugins/editor/editor.js
+// @js plugins/bookkeeping/bookkeeping-client.js
 // ==/ClosureCompiler==
 //
 
@@ -54,7 +55,7 @@ snapwebsites.BookkeepingAddClient = function()
     if(!bookkeeping_add_client_form)
     {
         // form not present, ignore, we are probably not on a "Day" page
-        return;
+        return this;
     }
 
     save_button = jQuery("div.buttons a.bookkeeping-button.save-button");
@@ -173,7 +174,6 @@ snapwebsites.BookkeepingAddClient.prototype.serverAccessComplete = function(resu
 {
     result.undarken = snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
     snapwebsites.BookkeepingAddClient.superClass_.serverAccessComplete.call(this, result);
-    this.clickedButton_ = null;
 };
 
 

@@ -1,6 +1,6 @@
 /*
  * Name: jquery-extensions
- * Version: 1.0.3
+ * Version: 1.0.4
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery (1.10)
@@ -28,4 +28,9 @@ jQuery.prototype.exists = function() {};
  * @return {jQuery}
  */
 jQuery.prototype.makeButton = function() {};
+
+/**
+ * @typedef ({left: number, top: number})
+ */
+var jQueryPositionOffset;
 

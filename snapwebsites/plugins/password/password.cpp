@@ -312,7 +312,7 @@ int64_t password::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2016, 2, 8, 0, 6, 51, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 2, 13, 13, 11, 51, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

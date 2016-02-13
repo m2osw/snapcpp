@@ -16,6 +16,7 @@
 // @compilation_level ADVANCED_OPTIMIZATIONS
 // @externs $CLOSURE_COMPILER/contrib/externs/jquery-1.9.js
 // @externs plugins/output/externs/jquery-extensions.js
+// @externs plugins/sortable/externs/sortable.js
 // @js plugins/output/output.js
 // @js plugins/output/popup.js
 // @js plugins/server_access/server-access.js
@@ -135,7 +136,7 @@ snapwebsites.EditorWidgetTypeSortable.prototype.initializeWidget = function(widg
         .addClass("snap-sortable-items");
 
     Sortable.create(
-            container.get(0),
+            /** @type {Element} */ (container.get(0)),
             {
                 onSort: function(e)
                     {

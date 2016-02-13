@@ -165,7 +165,7 @@ snapwebsites.FavIcon.prototype.serverAccessSuccess = function(result) // virtual
 
     // TODO: should we not use the widget jQuery content instead?
     //
-    jQuery("div.editor-form div.snap-editor.editable.icon .editor-content").html(this.clickedButton_.html());
+    jQuery("div.editor-form div.snap-editor.editable.icon .editor-content").html(snapwebsites.castToString(this.clickedButton_.html(), "HTML from clicked button is expected to be a string"));
 
     // this is a tad bit ugly, we may want to at least calculate
     // the positions...
