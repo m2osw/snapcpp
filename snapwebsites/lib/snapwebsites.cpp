@@ -266,16 +266,16 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "Usage: %p [-<opt>]",
             advgetopt::getopt::help_argument
         },
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "where -<opt> is one or more of:",
             advgetopt::getopt::help_argument
         },
@@ -2008,7 +2008,7 @@ void server::listen()
     if( getuid() == 0 )
     {
         struct passwd* pswd(getpwnam("snapwebsites"));
-        if( NULL == pswd )
+        if( nullptr == pswd )
         {
             SNAP_LOG_FATAL("Cannot locate user 'snapwebsites'! Create it first, then run the server.");
             exit(1);
@@ -2016,7 +2016,7 @@ void server::listen()
         const int sw_usr_id = pswd->pw_uid;
         //
         struct group* grp(getgrnam("snapwebsites"));
-        if( NULL == grp )
+        if( nullptr == grp )
         {
             SNAP_LOG_FATAL("Cannot locate group 'snapwebsites'! Create it first, then run the server.");
             exit(1);
