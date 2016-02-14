@@ -164,13 +164,13 @@ bool is_arg(const char *a)
  * possible to call the reset() function at any time to parse a new set
  * of parameters.
  *
- * The argv array cannot be NULL and the array cannot be empty. It must have
+ * The argv array cannot be nullptr and the array cannot be empty. It must have
  * at least one entry representing the program name (argv[0]).
  *
  * The configuration_files vector can be empty in which case no configuration
  * files are read.
  *
- * The environment_variable_name can be NULL or the empty string in which case
+ * The environment_variable_name can be nullptr or the empty string in which case
  * it is ignored.
  *
  * \note
@@ -302,7 +302,7 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
             opt_by_short_name[opts[opts_max].f_opt] = opts_max;
             ++count;
         }
-        else if(opts[opts_max].f_name == NULL)
+        else if(opts[opts_max].f_name == nullptr)
         {
             switch(opts[opts_max].f_arg_mode)
             {
@@ -329,7 +329,7 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
 
             }
         }
-        if(opts[opts_max].f_name != NULL)
+        if(opts[opts_max].f_name != nullptr)
         {
             if(strlen(opts[opts_max].f_name) < 2)
             {
@@ -399,7 +399,7 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
                 continue;
             }
             const char *str_name(s);
-            const char *e(NULL);
+            const char *e(nullptr);
             while(*s != '=' && *s != '\0')
             {
                 if(isspace(*s))
@@ -421,7 +421,7 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
                     ++s;
                 }
             }
-            if(e == NULL)
+            if(e == nullptr)
             {
                 e = s;
             }
@@ -488,7 +488,7 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
                 {
                     sub_argv[idx + 2] = const_cast<char *>(values[idx].c_str());
                 }
-                sub_argv[values.size() + 2] = NULL;
+                sub_argv[values.size() + 2] = nullptr;
                 add_options(opts + opt_by_long_name[name.c_str()], sub_i, sub_argc, &sub_argv[0]);
             }
             else
@@ -498,17 +498,17 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
                 char *sub_argv[3];
                 sub_argv[0] = argv[0];
                 sub_argv[1] = const_cast<char *>(name.c_str());
-                sub_argv[2] = NULL;
+                sub_argv[2] = nullptr;
                 add_options(opts + opt_by_long_name[name.c_str()], sub_i, sub_argc, sub_argv);
             }
         }
     }
 
     // check the environment variable if defined
-    if(environment_variable_name != NULL && *environment_variable_name != '\0')
+    if(environment_variable_name != nullptr && *environment_variable_name != '\0')
     {
         const char *s(getenv(environment_variable_name));
-        if(s != NULL)
+        if(s != nullptr)
         {
             // this is exactly like the command line only in an environment variable
             // so parse the parameters just like the shell
@@ -560,7 +560,7 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
             {
                 sub_argv[idx + 1] = const_cast<char *>(args[idx].c_str());
             }
-            sub_argv[args.size() + 1] = NULL;
+            sub_argv[args.size() + 1] = nullptr;
             // IMPORTANT NOTE: the def_opt is passed down so a tool may allow
             //                 the default option to be used in the environment
             //                 variable; it is a good idea NOT to set the
@@ -592,10 +592,10 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
  *
  * \note
  * The function does NOT check whether the list of arguments (argv) is
- * terminated by NULL. The argc parameter must be correct.
+ * terminated by nullptr. The argc parameter must be correct.
  *
  * \param[in] argc  The number of arguments in argv.
- * \param[in] argv  The argument strings terminated by a NULL.
+ * \param[in] argv  The argument strings terminated by a nullptr.
  * \param[in] opts  An array of valid command line options for your program.
  * \param[in] def_opt  The index of default option in opts.
  * \param[in] opt_by_short_name  A map of all the command options by short name (one letter).
@@ -730,8 +730,8 @@ void getopt::parse_arguments(int argc, char *argv[], const option *opts, int def
  *    {
  *       'v',
  *       0,
- *       NULL,
- *       NULL,
+ *       nullptr,
+ *       nullptr,
  *       "increase verbosity",
          advgetopt::getopt::no_argument
  *    },
@@ -790,7 +790,7 @@ int getopt::size(const std::string& name) const
  * default instead. This is actually done automatically when you call the
  * get_string() or get_long() functions.
  *
- * An option without a default has this function returning NULL.
+ * An option without a default has this function returning nullptr.
  *
  * \exception getopt_exception_undefined
  * The getopt_exception_undefined exception is raised if this function is
@@ -799,7 +799,7 @@ int getopt::size(const std::string& name) const
  * \param[in] name  The name of the parameter if which you want to retrieve
  *                  the default value.
  *
- * \return The default value or NULL if no value is defined.
+ * \return The default value or nullptr if no value is defined.
  */
 const char *getopt::get_default(const std::string& name) const
 {
@@ -813,7 +813,7 @@ const char *getopt::get_default(const std::string& name) const
     {
         if(long_option)
         {
-            if(f_options[i].f_name == NULL)
+            if(f_options[i].f_name == nullptr)
             {
                 if(f_options[i].f_opt == '\0')
                 {
@@ -849,7 +849,7 @@ const char *getopt::get_default(const std::string& name) const
         }
     }
 
-    return NULL;    // no default
+    return nullptr;    // no default
 }
 
 
@@ -903,7 +903,7 @@ long getopt::get_long(const std::string& name, int idx, long min, long max)
     if(max_idx == 0)
     {
         const char *d(get_default(name));
-        if(d == NULL)
+        if(d == nullptr)
         {
             throw getopt_exception_undefined("the \"" + name + "\" option was not defined on the command line");
         }
@@ -976,14 +976,14 @@ std::string getopt::get_string(const std::string& name, int idx) const
     if(it == f_map.end())
     {
         const char *d(get_default(name));
-        if(d != NULL)
+        if(d != nullptr)
         {
             return d;
         }
         throw getopt_exception_undefined("the --" + name + " option was not defined on the command line");
     }
 
-    size_t max_idx(it->second.f_val.size());
+    const size_t max_idx(it->second.f_val.size());
     if(static_cast<size_t>(idx) >= max_idx)
     {
         throw getopt_exception_undefined("not this many options were defined on the command line");
@@ -1045,7 +1045,7 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
 
     for( int i(0); f_options[i].f_arg_mode != end_of_options; ++i )
     {
-        // ignore entries with a NULL pointer
+        // ignore entries with a nullptr pointer
         // ignore entries representing an alias
         // only display error marked entries if error status
         if(f_options[i].f_help
@@ -1073,7 +1073,7 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
 
                 }
 
-                if(f_options[i].f_opt != '\0' && f_options[i].f_name != NULL)
+                if(f_options[i].f_opt != '\0' && f_options[i].f_name != nullptr)
                 {
                     // both options!
                     opt_ss << "--" << f_options[i].f_name << " or -" << f_options[i].f_opt;
@@ -1082,7 +1082,7 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
                 {
                     opt_ss << "-" << f_options[i].f_opt;
                 }
-                else if(f_options[i].f_name != NULL)
+                else if(f_options[i].f_name != nullptr)
                 {
                     opt_ss << "--" << f_options[i].f_name;
                 }
@@ -1180,7 +1180,7 @@ void getopt::usage(status_t status, const char *msg, ...)
     if( !no_error_status )
     {
         errflag = GETOPT_FLAG_SHOW_USAGE_ON_ERROR;
-        char const *errstr(nullptr);
+        const char *errstr(nullptr);
         switch(status)
         {
         // other cases are eliminated by the test before this if() block
@@ -1317,7 +1317,7 @@ void getopt::add_options(const option *opt, int& i, int argc, char **argv)
     case required_long:
         if(i + 1 >= argc || is_arg(argv[i + 1]))
         {
-            if(opt->f_name != NULL)
+            if(opt->f_name != nullptr)
             {
                 usage(error, "option --%s expects an argument", opt->f_name);
             }
@@ -1348,7 +1348,7 @@ void getopt::add_options(const option *opt, int& i, int argc, char **argv)
     case required_multiple_long:
         if(i + 1 >= argc || is_arg(argv[i + 1]))
         {
-            if(opt->f_name != NULL)
+            if(opt->f_name != nullptr)
             {
                 usage(error, "option --%s requires at least one argument", opt->f_name);
             }
@@ -1414,7 +1414,7 @@ void getopt::add_options(const option *opt, int& i, int argc, char **argv)
  * variable, and command line options.
  *
  * \note
- * The value pointer can be set to NULL in which case it is considered to
+ * The value pointer can be set to nullptr in which case it is considered to
  * be equivalent to "" (the empty string.)
  *
  * \note
@@ -1432,7 +1432,7 @@ void getopt::add_option(const option *opt, const char *value)
         // use the help string as the alias
         name = opt->f_help;
     }
-    else if(opt->f_name == NULL)
+    else if(opt->f_name == nullptr)
     {
         if(opt->f_opt == '\0')
         {
@@ -1449,8 +1449,8 @@ void getopt::add_option(const option *opt, const char *value)
         name = opt->f_name;
     }
 
-    // NULL is not valid with push_back() for an std::string
-    if(value == NULL)
+    // nullptr is not valid with push_back() for an std::string
+    if(value == nullptr)
     {
         value = "";
     }
