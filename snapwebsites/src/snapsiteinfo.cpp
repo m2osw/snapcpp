@@ -50,6 +50,7 @@
 //
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 
 
@@ -62,16 +63,16 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "Usage: %p [-<opt>] [row [cell [value]]]",
             advgetopt::getopt::help_argument
         },
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "where -<opt> is one or more of:",
             advgetopt::getopt::help_argument
         },
@@ -79,7 +80,7 @@ namespace
             '\0',
             0,
             "context",
-            NULL,
+            nullptr,
             "name of the context from which to read",
             advgetopt::getopt::optional_argument
         },
@@ -87,7 +88,7 @@ namespace
             '\0',
             0,
             "count",
-            NULL,
+            nullptr,
             "specify the number of rows to display",
             advgetopt::getopt::optional_argument
         },
@@ -95,7 +96,7 @@ namespace
             '\0',
             0,
             "create-row",
-            NULL,
+            nullptr,
             "allows the creation of a row when writing a value",
             advgetopt::getopt::optional_argument
         },
@@ -103,7 +104,7 @@ namespace
             '\0',
             0,
             "drop-cell",
-            NULL,
+            nullptr,
             "drop the specified cell (specify row and cell)",
             advgetopt::getopt::no_argument
         },
@@ -111,7 +112,7 @@ namespace
             '\0',
             0,
             "drop-row",
-            NULL,
+            nullptr,
             "drop the specified row (specify row)",
             advgetopt::getopt::no_argument
         },
@@ -119,15 +120,23 @@ namespace
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
-            NULL,
+            nullptr,
             "show this help output",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            0,
+            "full-cell",
+            nullptr,
+            "show all the data from that cell, by default large binary cells get truncated for display",
             advgetopt::getopt::no_argument
         },
         {
             'h',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "host",
-            NULL,
+            nullptr,
             "host IP address or name (defaults to localhost)",
             advgetopt::getopt::optional_argument
         },
@@ -135,7 +144,7 @@ namespace
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "info",
-            NULL,
+            nullptr,
             "print out the cluster name and protocol version",
             advgetopt::getopt::no_argument
         },
@@ -143,15 +152,23 @@ namespace
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "port",
-            NULL,
+            nullptr,
             "port on the host to connect to (defaults to 9160)",
             advgetopt::getopt::optional_argument
         },
         {
             '\0',
             0,
+            "save-cell",
+            nullptr,
+            "save the specified cell to this file",
+            advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
+            0,
             "table",
-            NULL,
+            nullptr,
             "change the table name (default is \"sites\")",
             advgetopt::getopt::optional_argument
         },
@@ -166,17 +183,17 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "[row [cell [value]]]",
             advgetopt::getopt::default_multiple_argument
         },
         {
             '\0',
             0,
-            NULL,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
+            nullptr,
             advgetopt::getopt::end_of_options
         }
     };
@@ -231,7 +248,7 @@ snapdb::snapdb(int argc, char * argv[])
     , f_context("snap_websites")    // default
     , f_table("sites")              // forced to "sites" by default
     //, f_row("") -- auto-init
-    , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, NULL ) )
+    , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, nullptr ) )
 {
     if(f_opt->is_defined("version"))
     {
@@ -487,10 +504,30 @@ void snapdb::display_cell() const
     {
         row->dropCell(f_cell, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
     }
+    else if(f_opt->is_defined("save-cell"))
+    {
+        QCassandraCell::pointer_t c(row->cell(f_cell));
+        std::fstream out;
+        out.open(f_opt->get_string( "save-cell" ), std::fstream::out );
+        if(out.is_open())
+        {
+            QtCassandra::QCassandraValue value(c->value());
+            out.write(value.binaryValue().data(), value.size());
+        }
+        else
+        {
+            std::cerr << "error:display_cell(): could not open \"" << f_opt->get_string( "save-cell" )
+                      << "\" to output content of cell \"" << f_cell
+                      << "\" in table \"" << f_table
+                      << "\" and row \"" << f_row
+                      << "\"." << std::endl;
+            exit(1);
+        }
+    }
     else
     {
         QCassandraCell::pointer_t c(row->cell(f_cell));
-        std::cout << du.get_column_value( c, true /*display_only*/ ) << std::endl;
+        std::cout << du.get_column_value( c, !f_opt->is_defined("full-cell") /*display_only*/ ) << std::endl;
     }
 }
 
