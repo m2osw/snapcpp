@@ -40,6 +40,7 @@ public:
         CT_uint64_value,
         CT_float32_value,
         CT_float64_value,
+        CT_float64_or_empty_value,
         CT_time_microseconds,
         CT_time_seconds,
         CT_time_microseconds_and_string,

@@ -560,8 +560,6 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return column_type_t::CT_float32_value;
     }
     else if(n == "epayment::price"
-         || (n.startsWith("finball::data_") && n.endsWith("_count")) // TODO -- remove at some point since that is a cutomer's field
-         || (n.startsWith("finball::data_") && n.endsWith("_amount")) // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::company_plan1" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::company_plan6" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::company_plan12" // TODO -- remove at some point since that is a cutomer's field
@@ -577,6 +575,12 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         // 64 bit float
         return column_type_t::CT_float64_value;
+    }
+    else if((n.startsWith("finball::data_") && n.endsWith("_count")) // TODO -- remove at some point since that is a cutomer's field
+         || (n.startsWith("finball::data_") && n.endsWith("_amount"))) // TODO -- remove at some point since that is a cutomer's field
+    {
+        // 64 bit float
+        return column_type_t::CT_float64_or_empty_value;
     }
     else if((f_tableName == "backend" && f_rowName.startsWith("*"))
          || (f_tableName == "antihammering" && n == "*blocked*")
@@ -766,6 +770,21 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, bool const displ
                 // 64 bit float
                 double value(c->value().doubleValue());
                 v = QString("%1").arg(value);
+            }
+            break;
+
+            case column_type_t::CT_float64_or_empty_value:
+            {
+                // 64 bit float or empty
+                if(c->value().nullValue())
+                {
+                    v = "";
+                }
+                else
+                {
+                    double value(c->value().doubleValue());
+                    v = QString("%1").arg(value);
+                }
             }
             break;
 
@@ -1039,6 +1058,19 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const & v )
         case column_type_t::CT_float64_value:
         {
             cvalue.setFloatValue( v.toDouble() );
+        }
+        break;
+
+        case column_type_t::CT_float64_or_empty_value:
+        {
+            if(v.isEmpty())
+            {
+                cvalue.setStringValue( "" );
+            }
+            else
+            {
+                cvalue.setFloatValue( v.toDouble() );
+            }
         }
         break;
 
