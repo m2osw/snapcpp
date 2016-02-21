@@ -106,6 +106,7 @@ add_subdirectory(tracker)
 add_subdirectory(users)
 add_subdirectory(users_ui)
 add_subdirectory(versions)
+add_subdirectory(webform)
 
 
 # vim: ts=4 sw=4 nocindent

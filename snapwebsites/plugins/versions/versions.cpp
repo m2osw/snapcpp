@@ -136,7 +136,10 @@ QString versions::icon() const
  */
 QString versions::description() const
 {
-    return "Offers a filter of all the Snap parts Versions";
+    return "The versions plugin displays the version of all the parts used"
+          " by Snap! The parts include the main snap library, the plugins,"
+          " and all the tools that the server may use. It is a filter so it"
+          " can be displayed on any page where the filter is allowed.";
 }
 
 

@@ -1,16 +1,16 @@
 #
 # File:
-#      plugins/mailinglist/CMakeLists.txt
+#      plugins/webform/CMakeLists.txt
 #
 # Description:
-#      Manage lists of emails for systems such as a newsletter or a group of
-#      people who want to communicate via email instead of a sane forum.
+#      Manager dynamic forms for a website so our users can create their
+#      own forms.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2013-2016 Made to Order Software Corp.
+#      Copyright (c) 2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -30,7 +30,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_mailinglist)
+project(plugin_webform)
 
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
@@ -47,32 +47,32 @@ include_directories(
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    mailinglist.qrc
+    webform.qrc
 )
 
 snap_validate_xml( content.xml content/content.dtd )
 
-add_library(mailinglist SHARED
-    mailinglist.cpp
+add_library(webform SHARED
+    webform.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    mailinglist-logo-64x64.png
+    webform-logo-64x64.png
 )
 
-target_link_libraries( mailinglist ${QT_LIBRARIES} )
+target_link_libraries( webform ${QT_LIBRARIES} )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( mailinglist make_controlled_vars_headers )
+    add_dependencies( webform make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS mailinglist LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS webform LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/mailinglist
+    DESTINATION include/snapwebsites/plugins/webform
     FILES_MATCHING PATTERN "*.h"
 )
 

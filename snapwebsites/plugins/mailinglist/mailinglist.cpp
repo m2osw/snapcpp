@@ -39,7 +39,8 @@ SNAP_PLUGIN_START(mailinglist, 1, 0)
  */
 char const * get_name(name_t name)
 {
-    switch(name) {
+    switch(name)
+    {
     case name_t::SNAP_NAME_MAILINGLIST_TABLE:
         return "mailinglist";
 

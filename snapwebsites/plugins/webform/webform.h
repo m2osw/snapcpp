@@ -1,5 +1,5 @@
-// Snap Websites Server -- mailing list system
-// Copyright (C) 2013-2016  Made to Order Software Corp.
+// Snap Websites Server -- dynamically create forms from your website
+// Copyright (C) 2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,59 +18,30 @@
 
 #include "snapwebsites.h"
 #include "plugins.h"
-#include "snap_child.h"
-
-#include <QMap>
-#include <QVector>
-#include <QByteArray>
 
 namespace snap
 {
-namespace mailinglist
+namespace webform
 {
 
 
 enum class name_t
 {
-    SNAP_NAME_MAILINGLIST_TABLE
+    SNAP_NAME_WEBFORM_NAME
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
 
 
-
-class mailinglist
+class webform
         : public plugins::plugin
 {
 public:
-    class list
-    {
-    public:
-        static const int LIST_MAJOR_VERSION = 1;
-        static const int LIST_MINOR_VERSION = 0;
-
-        list(mailinglist * parent, QString const & list_name);
-        virtual ~list();
-
-        QString name() const;
-        virtual QString next();
-
-    private:
-        mailinglist *                                   f_parent;
-        const QString                                   f_name;
-        QtCassandra::QCassandraTable::pointer_t         f_table;
-        QtCassandra::QCassandraRow::pointer_t           f_row;
-        QtCassandra::QCassandraColumnRangePredicate     f_column_predicate;
-        QtCassandra::QCassandraCells                    f_cells;
-        QtCassandra::QCassandraCells::const_iterator    f_c;
-        controlled_vars::fbool_t                        f_done;
-    };
-
-                        mailinglist();
-                        ~mailinglist();
+                        webform();
+                        ~webform();
 
     // plugins::plugin implementation
-    static mailinglist *instance();
+    static webform *    instance();
     virtual QString     settings_path() const;
     virtual QString     icon() const;
     virtual QString     description() const;
@@ -78,16 +49,12 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
     virtual void        bootstrap(snap_child * snap);
 
-    QtCassandra::QCassandraTable::pointer_t get_mailinglist_table();
-
-    SNAP_SIGNAL(name_to_list, (QString const & name, QSharedPointer<list> & emails), (name, emails));
-
 private:
     void                content_update(int64_t variables_timestamp);
 
     zpsnap_child_t      f_snap;
 };
 
-} // namespace mailinglist
+} // namespace webform
 } // namespace snap
 // vim: ts=4 sw=4 et
