@@ -99,6 +99,223 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </widget>
   </xsl:template>
 
+  <!-- DROPDOWN DATE EDIT WIDGET -->
+  <!-- NOTE: we use a sub-template to allow for composite widgets -->
+  <xsl:template name="snap:dropdown-date-edit">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <div field_type="dropdown-date-edit">
+      <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
+      <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable dropdown-date-edit <xsl:value-of
+        select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+        test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
+        select="concat(' ', classes)"/><xsl:if test="state = 'disabled'"> disabled</xsl:if><xsl:if
+        test="state = 'read-only'"> read-only</xsl:if><xsl:if
+        test="state = 'auto-hide'"> auto-hide</xsl:if></xsl:attribute>
+      <xsl:if test="state = 'read-only' or state = 'disabled'">
+        <!-- avoid spellcheck of non-editable widgets -->
+        <xsl:attribute name="spellcheck">false</xsl:attribute>
+      </xsl:if>
+      <xsl:if test="background-value">
+        <!-- by default "snap-editor-background" has "display: none"
+             a script shows them on load once ready AND if the value is empty
+             also it is a "pointer-event: none;" -->
+        <div class="snap-editor-background zordered">
+          <div class="snap-editor-background-content">
+            <!-- this div is placed OVER the next div -->
+            <xsl:copy-of select="background-value/node()"/>
+          </div>
+        </div>
+      </xsl:if>
+      <div>
+        <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+        <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
+        <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
+          <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+        </xsl:if>
+        <xsl:if test="tooltip">
+          <xsl:attribute name="title"><xsl:copy-of select="tooltip"/></xsl:attribute>
+        </xsl:if>
+        <xsl:call-template name="snap:text-field-filters"/>
+
+        <div class="editor-content no-hover" value="">
+
+          <label class="dropdown-date">
+            <xsl:attribute name="for"><xsl:value-of select="$name"/>_month</xsl:attribute>
+            Month:
+          </label>
+          <label class="dropdown-date">
+            <xsl:attribute name="for"><xsl:value-of select="$name"/>_day</xsl:attribute>
+            Day:
+          </label>
+          <label class="dropdown-date">
+            <xsl:attribute name="for"><xsl:value-of select="$name"/>_year</xsl:attribute>
+            Year:
+          </label>
+
+          <xsl:variable name="dd_month">
+            <editor-form>
+              <xsl:copy-of select="/editor-form/@*"/>
+              <xsl:copy-of select="/editor-form/node()[name() != 'widget']"/>
+              <widget path="{$path}">
+                <xsl:copy-of select="@*[name() != 'type' and name() != 'path' and name() != 'auto-save']"/>
+                <xsl:attribute name="type">dropdown</xsl:attribute>
+                <xsl:attribute name="auto-save">no</xsl:attribute>
+                <xsl:copy-of select="*[name() = 'tooltip' or name() = 'help']"/>
+                <xsl:if test="*[name() = 'background-month']">
+                  <background-value><xsl:value-of select="*[name() = 'background-month']"/></background-value>
+                </xsl:if>
+                <preset>
+                  <item value="1">Jan</item>
+                  <item value="2">Feb</item>
+                  <item value="3">Mar</item>
+                  <item value="4">Apr</item>
+                  <item value="5">May</item>
+                  <item value="6">Jun</item>
+                  <item value="7">Jul</item>
+                  <item value="8">Aug</item>
+                  <item value="9">Sep</item>
+                  <item value="10">Oct</item>
+                  <item value="11">Nov</item>
+                  <item value="12">Dec</item>
+                </preset>
+              </widget>
+            </editor-form>
+          </xsl:variable>
+          <xsl:for-each select="$dd_month/editor-form">
+            <xsl:for-each select="widget">
+              <xsl:call-template name="snap:dropdown">
+                <xsl:with-param name="path" select="$path"/>
+                <xsl:with-param name="name" select="concat($name, '_month')"/>
+              </xsl:call-template>
+            </xsl:for-each>
+          </xsl:for-each>
+
+          <xsl:variable name="dd_day">
+            <editor-form>
+              <xsl:copy-of select="/editor-form/@*"/>
+              <xsl:copy-of select="/editor-form/node()[name() != 'widget']"/>
+              <widget path="{$path}">
+                <xsl:copy-of select="@*[name() != 'type' and name() != 'path' and name() != 'auto-save']"/>
+                <xsl:attribute name="type">dropdown</xsl:attribute>
+                <xsl:attribute name="auto-save">no</xsl:attribute>
+                <xsl:copy-of select="*[name() = 'tooltip' or name() = 'help']"/>
+                <xsl:if test="*[name() = 'background-day']">
+                  <background-value><xsl:value-of select="*[name() = 'background-day']"/></background-value>
+                </xsl:if>
+                <preset>
+                  <item>1</item>
+                  <item>2</item>
+                  <item>3</item>
+                  <item>4</item>
+                  <item>5</item>
+                  <item>6</item>
+                  <item>7</item>
+                  <item>8</item>
+                  <item>9</item>
+                  <item>10</item>
+                  <item>11</item>
+                  <item>12</item>
+                  <item>13</item>
+                  <item>14</item>
+                  <item>15</item>
+                  <item>16</item>
+                  <item>17</item>
+                  <item>18</item>
+                  <item>19</item>
+                  <item>20</item>
+                  <item>21</item>
+                  <item>22</item>
+                  <item>23</item>
+                  <item>24</item>
+                  <item>25</item>
+                  <item>26</item>
+                  <item>27</item>
+                  <item>28</item>
+                  <item>29</item>
+                  <item>30</item>
+                  <item>31</item>
+                </preset>
+              </widget>
+            </editor-form>
+          </xsl:variable>
+          <xsl:for-each select="$dd_month/editor-form">
+            <xsl:for-each select="widget">
+              <xsl:call-template name="snap:dropdown">
+                <xsl:with-param name="path" select="$path"/>
+                <xsl:with-param name="name" select="concat($name, '_month')"/>
+              </xsl:call-template>
+            </xsl:for-each>
+          </xsl:for-each>
+
+          <xsl:variable name="dd_year">
+            <editor-form>
+              <xsl:copy-of select="/editor-form/@*"/>
+              <xsl:copy-of select="/editor-form/node()[name() != 'widget']"/>
+              <widget path="{$path}">
+                <xsl:copy-of select="@*[name() != 'type' and name() != 'path' and name() != 'auto-save']"/>
+                <xsl:attribute name="type">dropdown</xsl:attribute>
+                <xsl:attribute name="auto-save">no</xsl:attribute>
+                <xsl:copy-of select="*[name() = 'tooltip' or name() = 'help']"/>
+                <xsl:if test="*[name() = 'background-year']">
+                  <background-value><xsl:value-of select="*[name() = 'background-year']"/></background-value>
+                </xsl:if>
+                <preset>
+                  <item>2015</item>
+                  <item>2016</item>
+                  <item>2017</item>
+                  <item>2018</item>
+                </preset>
+              </widget>
+            </editor-form>
+          </xsl:variable>
+          <xsl:for-each select="$dd_year/editor-form">
+            <xsl:for-each select="widget">
+              <xsl:call-template name="snap:dropdown">
+                <xsl:with-param name="path" select="$path"/>
+                <xsl:with-param name="name" select="concat($name, '_year')"/>
+              </xsl:call-template>
+            </xsl:for-each>
+          </xsl:for-each>
+
+        </div>
+
+        <!-- now the actual value of this line -->
+        <xsl:choose>
+          <xsl:when test="post">
+            <!-- use the post value when there is one, it has priority -->
+            <xsl:copy-of select="post/node()"/>
+          </xsl:when>
+          <xsl:when test="value">
+            <!-- use the current value when there is one -->
+            <xsl:copy-of select="value/node()"/>
+          </xsl:when>
+          <xsl:when test="value/@default">
+            <!-- transform the system default if one was defined -->
+            <xsl:choose>
+              <xsl:when test="value/@default = 'today'">
+                <!-- US format & GMT... this should be a parameter, probably a variable we set in the editor before running the parser? -->
+                <xsl:value-of select="month-from-date(current-date())"/>/<xsl:value-of select="day-from-date(current-date())"/>/<xsl:value-of select="year-from-date(current-date())"/>
+              </xsl:when>
+            </xsl:choose>
+          </xsl:when>
+        </xsl:choose>
+      </div>
+      <xsl:call-template name="snap:common-parts"/>
+    </div>
+    <!-- TODO: I think we should look into a better place for these includes -->
+    <javascript name="date-widgets"/>
+    <css name="date-widgets"/>
+  </xsl:template>
+  <xsl:template match="widget[@type='dropdown-date-edit']">
+    <widget path="{@path}">
+      <xsl:call-template name="snap:dropdown-date-edit">
+        <xsl:with-param name="path" select="@path"/>
+        <xsl:with-param name="name" select="@id"/>
+      </xsl:call-template>
+    </widget>
+  </xsl:template>
+
 </xsl:stylesheet>
 <!-- vim: ts=2 sw=2 et
 -->

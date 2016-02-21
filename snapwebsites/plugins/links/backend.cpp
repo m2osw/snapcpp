@@ -90,7 +90,7 @@ SNAP_PLUGIN_EXTENSION_START(links)
  * \endcode
  *
  * WARNING: If you do not specify the URI of the website you want to work
- * on, snapback runs the process against all the existing websites.
+ * on, snapbackend runs the process against all the existing websites.
  *
  * If you have problems with this action (it does not seem to work,)
  * try with --debug and make sure to look in the syslog and snapserver.log

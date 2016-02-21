@@ -330,6 +330,9 @@ DTD of the XSLT 2.0.
 <!ELEMENT preset ANY>
 
 <!ELEMENT item ANY>
+<!ATTLIST item default (default) #IMPLIED
+               class CDATA ""
+               value CDATA #IMPLIED>
 
 <!ELEMENT attachment ANY>
 

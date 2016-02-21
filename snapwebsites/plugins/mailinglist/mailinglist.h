@@ -72,6 +72,7 @@ public:
     // plugins::plugin implementation
     static mailinglist *instance();
     virtual QString     settings_path() const;
+    virtual QString     icon() const;
     virtual QString     description() const;
     virtual QString     dependencies() const;
     virtual int64_t     do_update(int64_t last_updated);
@@ -82,6 +83,8 @@ public:
     SNAP_SIGNAL(name_to_list, (QString const & name, QSharedPointer<list> & emails), (name, emails));
 
 private:
+    void                content_update(int64_t variables_timestamp);
+
     zpsnap_child_t      f_snap;
 };
 

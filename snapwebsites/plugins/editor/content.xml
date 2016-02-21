@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
   <content path="/admin/settings/editor" owner="output">
-    <param name="content::title" revision="revision">WYSIWYG Editor</param>
+    <param name="content::title" revision="revision">Editor Settings</param>
     <param name="content::body" revision="revision">
       <![CDATA[
         <p>Change your WYSIWYG editor behavior.</p>
@@ -43,10 +43,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>This page is used to test the WYSIWYG editor in view and edit modes.</p>]]>
     </param>
-    <param name="layout::layout" revision="global">"editor-test";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"editor-test";</param>
     <param name="editor::layout" revision="global" overwrite="yes">"editor-test-page";</param>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="permissions::direct::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/admin/drafts">

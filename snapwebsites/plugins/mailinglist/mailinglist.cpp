@@ -28,9 +28,9 @@
 SNAP_PLUGIN_START(mailinglist, 1, 0)
 
 
-/** \brief Get a fixed sendmail plugin name.
+/** \brief Get a fixed mailinglist plugin name.
  *
- * The sendmail plugin makes use of different names in the database. This
+ * The mailinglist plugin makes use of different names in the database. This
  * function ensures that you get the right spelling for a given name.
  *
  * \param[in] name  The name to retrieve.
@@ -186,6 +186,18 @@ QString mailinglist::settings_path() const
 }
 
 
+/** \brief A path or URI to a logo for this plugin.
+ *
+ * This function returns a 64x64 icons representing this plugin.
+ *
+ * \return A path to the logo.
+ */
+QString mailinglist::icon() const
+{
+    return "/images/mailinglist/mailinglist-logo-64x64.png";
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -236,7 +248,25 @@ int64_t mailinglist::do_update(int64_t last_updated)
 
     SNAP_PLUGIN_UPDATE_INIT();
 
+    SNAP_PLUGIN_UPDATE(2016, 2, 20, 20, 16, 56, content_update);
+
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief Update the database with our content references.
+ *
+ * Send our content to the database so the system can find us when a
+ * user references our administration pages, etc.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables
+ *            added to the database by this update (in micro-seconds).
+ */
+void mailinglist::content_update(int64_t variables_timestamp)
+{
+    NOTUSED(variables_timestamp);
+
+    content::content::instance()->add_xml(get_plugin_name());
 }
 
 
@@ -328,7 +358,7 @@ bool mailinglist::name_to_list_impl(QString const & name, QSharedPointer<list> &
     // only set if not already set
     if(!emails)
     {
-        // first make sure that the row exists, if not that is not a maillist
+        // first make sure that the row exists, if not, it is not a mailing list
         QtCassandra::QCassandraTable::pointer_t table(get_mailinglist_table());
         if(table->exists(name))
         {

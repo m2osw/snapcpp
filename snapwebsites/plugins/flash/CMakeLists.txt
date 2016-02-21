@@ -67,6 +67,7 @@ add_library(flash SHARED
     flash-detection.js
     flash-settings-page.xml
     flash-settings-parser.xsl
+    flash-player-logo-64x64.png
 )
 
 target_link_libraries( flash ${QT_LIBRARIES} )

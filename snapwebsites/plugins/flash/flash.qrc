@@ -21,6 +21,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/plugins/flash">
     <file>content.xml</file>
   </qresource>
+  <qresource prefix="/images/flash">
+    <file>flash-player-logo-64x64.png</file>
+  </qresource>
   <qresource prefix="/js/flash">
     <file>flash-detection.js</file>
   </qresource>

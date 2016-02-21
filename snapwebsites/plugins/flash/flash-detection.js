@@ -1,3 +1,13 @@
+/** @preserve
+ * Name: flash-detection
+ * Version: 0.0.1
+ * Browsers: all
+ * Copyright: Copyright 2005-2016 (c) Made to Order Software Corporation  All rights reverved.
+ * Depends: jquery (1.11.2)
+ * License: GPL 2.0
+ */
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // flash_detection.js -- detect what version of the Flash player is available

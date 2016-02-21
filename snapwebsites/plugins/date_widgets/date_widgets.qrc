@@ -21,6 +21,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/plugins/date_widgets">
     <file>content.xml</file>
   </qresource>
+  <qresource prefix="/xml/editor">
+    <file>date-widgets-test-page.xml</file>
+  </qresource>
+  <qresource prefix="/xsl/layout">
+    <file>date-widgets-test-parser.xsl</file>
+  </qresource>
   <qresource prefix="/js">
     <file>date_widgets/date-widgets.js</file>
   </qresource>

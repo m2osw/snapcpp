@@ -1,5 +1,5 @@
 <!--
-Snap Plugin - - snap sendmail plugin resources
+Snap Plugin - - snap mailinglist plugin resources
 Copyright (C) 2013-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -18,8 +18,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/plugins/sendmail">
+  <qresource prefix="/plugins/mailinglist">
     <file>content.xml</file>
+  </qresource>
+  <qresource prefix="/images/mailinglist">
+    <file>mailinglist-logo-64x64.png</file>
   </qresource>
 </RCC>
 <!--

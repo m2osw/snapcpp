@@ -7624,7 +7624,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.resetValue = function(widget)
         widget_change = jQuery.Event("widgetchange",
             {
                 widget: editor_widget,
-                value: null
+                value: null  // see TODO, will be set to default once supported
             });
         w.trigger(widget_change);
 
