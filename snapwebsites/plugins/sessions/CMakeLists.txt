@@ -59,6 +59,7 @@ add_library(sessions SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     ${OPENSSL_LIBRARIES}
     content.xml
+    sessions-logo-64x64.png
 )
 
 target_link_libraries( sessions ${QT_LIBRARIES} )
