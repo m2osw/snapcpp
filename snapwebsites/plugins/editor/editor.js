@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.741
+ * Version: 0.0.3.743
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -7295,7 +7295,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
     {
         // a default algorithm so something happens...
         //
-        algorithm_instructions = "bottom top right bottom-horizontal-columns=*";
+        algorithm_instructions = "bottom top right bottom-vertical-columns=* top-vertical-columns=*";
     }
     algorithm_instructions = algorithm_instructions.split(" ");
     algorithm_instructions.push("forced-bottom"); // make sure we always have a default
@@ -7385,7 +7385,7 @@ console.log("check algorithm [" + algorithm + "]");
                     {
                         // try until column count == number of items
                         // or the width fails
-                        max_count = 100;
+                        max_count = 10;
                         count = 2;
                     }
                     else
