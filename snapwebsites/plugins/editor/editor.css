@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.69
+ * Version: 0.0.1.82
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -248,7 +248,12 @@
 {
 	background-color: #aaaaaa;
 }
-
+.editable.snap-editor.transparent
+{
+	background-color: transparent;
+	border: none;
+	cursor: auto;
+}
 .editable .snap-editor-background
 {
 	position: absolute;
@@ -265,7 +270,7 @@
 	pointer-events: none;
 }
 
-.editable.snap-editor:not(.disabled):not(.no-hover):hover
+.editable.snap-editor:not(.disabled):not(.no-hover):not(.transparent):hover
 {
 	box-shadow: inset 0 0 0 3px rgba(64, 192, 64, 0.5);
 }
@@ -421,13 +426,57 @@
 	/* items are hidden by default */
 	display: none;
 
-	margin: 0 0 0 5px;
-	padding: 0 0 5px 0;
+	margin: 0;
+	padding: 0;
 	background-color: white;
 	border: 1px solid black;
+}
+.editable.dropdown .dropdown-items.algorithm-bottom,
+.top-window.dropdown-items.algorithm-bottom
+{
+	margin-left: 5px;
+	padding-bottom: 5px;
 	border-radius: 5px;
 	border-top-left-radius: 0;
 	border-top-right-radius: 0;
+	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
+}
+.editable.dropdown .dropdown-items.algorithm-top,
+.top-window.dropdown-items.algorithm-top
+{
+	margin-left: 5px;
+	padding-top: 5px;
+	border-radius: 5px;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+	box-shadow: 1px -2px 3px 0px rgba(0, 0, 0, 0.5);
+}
+.editable.dropdown .dropdown-items.algorithm-right,
+.top-window.dropdown-items.algorithm-right
+{
+	padding-top: 5px;
+	padding-bottom: 5px;
+	border-radius: 5px;
+	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
+}
+.editable.dropdown .dropdown-items.algorithm-bottom-horizontal-columns,
+.top-window.dropdown-items.algorithm-bottom-horizontal-columns
+{
+	margin-left: 5px;
+	padding-bottom: 5px;
+	border-radius: 5px;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
+}
+.editable.dropdown .dropdown-items.algorithm-top-horizontal-columns,
+.top-window.dropdown-items.algorithm-top-horizontal-columns
+{
+	margin-left: 5px;
+	padding-top: 5px;
+	border-radius: 5px;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
 	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
 }
 .editable.dropdown .dropdown-items.disabled,

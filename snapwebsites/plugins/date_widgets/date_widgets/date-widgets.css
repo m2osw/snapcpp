@@ -1,6 +1,6 @@
 /*
  * Name: date-widgets
- * Version: 0.0.1.1
+ * Version: 0.0.1.4
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -80,5 +80,18 @@ div.date-edit-calendar td.other-month
 {
 	background-color: #aaaaaa;
 	color: #555555;
+}
+
+/** DROPDOWN DATE EDIT **/
+.dropdown-date-edit .editor-content label
+{
+	display: inline-block;
+	width: 200px;
+}
+.dropdown-date-edit .editor-content div.editable.dropdown
+{
+	float: left;
+	width: 178px;
+	margin-right: 20px;
 }
 

@@ -54,7 +54,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
      (line-edit|text-edit|image-box|...)
      but that would prevent extensions from being used so we keep the
      NMTOKEN in that place... -->
-<!ELEMENT widget (label|tooltip|help|background-value|background-confirm|attachment|sizes|filters|geometry|required|classes|value|preset|default|state|container)*>
+<!ELEMENT widget (label|tooltip|help|background-value|background-confirm|attachment|sizes|filters|geometry|required|classes|value|preset|default|state|container|dropdown-algorithm|dropdown-date-edit)*>
 <!ATTLIST widget id ID #REQUIRED
                  type NMTOKEN #REQUIRED
                  field CDATA #IMPLIED
@@ -103,13 +103,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                class CDATA ""
                value CDATA #IMPLIED> <!-- value is the result, i.e. you could use 0, 1, 2, 3, instead of the string in the dropdown -->
 
-<!ELEMENT regex (#PCDATA)*>
+<!ELEMENT regex (#PCDATA)>
 <!ATTLIST regex name CDATA #IMPLIED
                 match (yes|no) "yes">
 
 <!ELEMENT geometry EMPTY>
 <!ATTLIST geometry width CDATA "-1"
                    height CDATA "-1">
+
+<!ELEMENT dropdown-algorithm (#PCDATA)>
+
+<!ELEMENT dropdown-date-edit (include-month|include-day|include-year)+>
+
+<!ELEMENT include-month EMPTY>
+<!ELEMENT include-day EMPTY>
+<!ELEMENT include-year EMPTY>
 
 <!ELEMENT uri (#PCDATA)>
 <!ATTLIST uri match (yes|no) "yes">

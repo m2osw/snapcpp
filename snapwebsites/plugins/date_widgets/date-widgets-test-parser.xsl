@@ -44,6 +44,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:copy-of select="page/body/editor/date_edit_widget/node()"/>
 						</div>
 
+						<!-- dropdown edit widget -->
+						<div class="editor-block">
+							<label for="dropdown_date_edit_widget" class="editor-title">Dropdown Date Edit Widget <span class="required">*</span></label>
+							<xsl:copy-of select="page/body/editor/dropdown_date_edit_widget/node()"/>
+						</div>
+
 					</fieldset>
 
 				</div>

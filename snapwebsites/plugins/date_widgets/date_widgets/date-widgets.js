@@ -1,6 +1,6 @@
 /** @preserve
  * Name: date-widgets
- * Version: 0.0.1.10
+ * Version: 0.0.1.13
  * Browsers: all
  * Depends: editor (>= 0.0.3.640)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -52,19 +52,30 @@
  *      .
  *      .
  *      |
- *  +---+------------------------------+
- *  |                                  |
- *  | EditorWidgetTypeLineEdit         |
- *  |                                  |
- *  +----------------------------------+
- *      ^
- *      | Inherit
- *      |
- *  +---+------------------------------+
- *  |                                  |
- *  | EditorWidgetTypeDateEdit         |
- *  |                                  |
- *  +----------------------------------+
+ *  +---+--------------------+  Inherit
+ *  |                        |<----------------------+
+ *  |  EditorWidgetType      |                       |
+ *  |  (cannot instantiate)  |                       |
+ *  +------------------------+                       |
+ *      ^                                            |
+ *      |  Inherit                                   |
+ *      .                                            |       .
+ *      .                                            |       .
+ *      .                                            |       .
+ *      |                                            |       |
+ *  +---+------------------------------+             |   +---+----------------------+
+ *  |                                  |             |   |                          |
+ *  | EditorWidgetTypeLineEdit         |             |   | EditorWidgetTypeDropdown |
+ *  |                                  |             |   |                          |
+ *  +----------------------------------+             |   +--------------------------+
+ *      ^                                            |       ^
+ *      | Inherit                                    |       | Ref.
+ *      |                                            |       |
+ *  +---+------------------------------+         +---+-------+----------------------+
+ *  |                                  |         |                                  |
+ *  | EditorWidgetTypeDateEdit         |         | EditorWidgetTypeDropdownDateEdit |
+ *  |                                  |         |                                  |
+ *  +----------------------------------+         +----------------------------------+
  * \endcode
  */
 
@@ -841,12 +852,68 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.dayClicked = function(editor_wid
 
 
 
+/** \brief Editor widget type for Dropdown Date widgets.
+ *
+ * This widget defines the "dropdown-date-edit" in the editor forms. This
+ * is an equivalent to one to three dropdowns that allows one to enter a
+ * date.
+ *
+ * @return {!snapwebsites.EditorWidgetTypeDropdownDateEdit}
+ *
+ * @constructor
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeDropdownDateEdit = function()
+{
+    snapwebsites.EditorWidgetTypeDropdownDateEdit.superClass_.constructor.call(this);
+
+    return this;
+};
+
+
+/** \brief Chain up the extension.
+ *
+ * This is the chain between this class and its super.
+ */
+snapwebsites.inherits(snapwebsites.EditorWidgetTypeDropdownDateEdit, snapwebsites.EditorWidgetType);
+
+
+/** \brief Return "dropdown-date-edit".
+ *
+ * Return the name of the widget type.
+ *
+ * @return {string} The name of the widget type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDropdownDateEdit.prototype.getType = function()
+{
+    return "dropdown-date-edit";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the date-edit widget.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDropdownDateEdit.prototype.initializeWidget = function(widget) // virtual
+{
+    var that = this,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        c = editor_widget.getWidgetContent();
+
+    snapwebsites.EditorWidgetTypeDropdownDateEdit.superClass_.initializeWidget.call(this, widget);
+};
+
 
 
 // auto-initialize
 jQuery(document).ready(function()
     {
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDateEdit());
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDropdownDateEdit());
     });
 
 // vim: ts=4 sw=4 et

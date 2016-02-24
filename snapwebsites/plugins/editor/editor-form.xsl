@@ -206,6 +206,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
         test="state = 'disabled'"> disabled</xsl:if><xsl:if
         test="not(@mode) or @mode = 'select-only'"> read-only</xsl:if></xsl:attribute>
+      <xsl:if test="dropdown-algorithm">
+        <xsl:attribute name="data-algorithm"><xsl:value-of select="dropdown-algorithm"/></xsl:attribute>
+      </xsl:if>
       <div class="snap-editor-dropdown-reset-value">
         <xsl:if test="default[@not-a-value]"><xsl:attribute name="data-not-a-value">not-a-value</xsl:attribute></xsl:if>
         <xsl:copy-of select="default/node()"/>

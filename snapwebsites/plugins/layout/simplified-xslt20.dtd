@@ -325,7 +325,11 @@ DTD of the XSLT 2.0.
 <!ELEMENT widget ANY>
 <!ATTLIST widget path CDATA #REQUIRED>
 
+<!ELEMENT classes ANY>
+
 <!ELEMENT default ANY>
+
+<!ELEMENT dropdown-algorithm ANY>
 
 <!ELEMENT preset ANY>
 

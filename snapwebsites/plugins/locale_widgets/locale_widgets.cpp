@@ -178,7 +178,8 @@ QString locale_widgets::dependencies() const
  * This works for newly installed plugins and older plugins that were
  * updated.
  *
- * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
+ * \param[in] last_updated  The UTC Unix date when the website was last
+ *                          updated (in micro seconds).
  *
  * \return The UTC Unix date of the last update of this plugin.
  */
@@ -186,7 +187,7 @@ int64_t locale_widgets::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 9, 4, 20, 49, 12, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 2, 21, 18, 17, 12, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

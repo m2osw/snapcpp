@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.624
+ * Version: 0.0.3.741
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -7203,43 +7203,64 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
         w = editor_widget.getWidget(),
         c = editor_widget.getWidgetContent(),
         d = w.children(".dropdown-items"),
+        x,
+        y,
         z,
-        pos,
+        pos = w.position(),
         iframe,
         iframe_pos,
-        popup_position;
+        dropdown_position = "absolute",
+        algorithm_instructions = w.data("algorithm"),
+        algorithm,
+        key,
+        width,
+        height,
+        max_count,
+        count,
+        screen_width = $(window.top).innerWidth(),
+        screen_height = $(window.top).innerHeight(),
+        scroll_top = $(window.top).scrollTop(),
+        scroll_left = $(window.top).scrollLeft(),
+        valid = false,
+        new_class;
 
+    // is the window an iframe or the top window?
+    //
     // test with 'window.' so it works in IE
     this.clonedDropdown_ = window.self != window.top;
     if(this.clonedDropdown_)
     {
-        iframe = jQuery(window.frameElement);
-
-        // TODO: As long as we do support showing dropdowns with a sliderbar
-        //       or as multiple columns, we want to make the dropdown
-        //       absolute so one can scroll the whole window to see the rest
-        //       of the dropdown... The code below otherwise works neatly.
-        //
-        popup_position = "absolute"; //iframe.parents("div.snap-popup").css("position");
-        if(popup_position != "fixed")
-        {
-            popup_position = "absolute";
-        }
-
-        this.openDropdown_ = window.top.jQuery("<div class='top-window dropdown-items zordered' style='position: "
-                                + popup_position + ";'>"
-                                + d.html() + "</div>").appendTo("body");
-        pos = c.offset();
-
-        // Just in case, I'm keeping the window.name trick here, but it looks
+        // Just in case, I am keeping the window.name trick here, but it looks
         // like all browsers have the window.frameElement parameter set properly
         //var name = window.name;
         //iframe_pos = window.top.jQuery("#" + name + ".snap-popup .popup-body iframe").offset();
-        iframe_pos = iframe.offset();
 
-        pos.left += iframe_pos.left;
-        pos.top += iframe_pos.top + w.height();
-        this.openDropdown_.offset(pos);
+        // TODO: this works because we have only one layer at this time, we
+        //       want to look at supporting any number of iframe layers though
+        //
+        iframe = jQuery(window.frameElement);
+        iframe_pos = iframe.offset();
+        pos.top += iframe_pos.top - scroll_top;
+        pos.left += iframe_pos.left - scroll_left;
+
+        // At this point I do not understand this one, but this works...
+        scroll_top = 0;
+        scroll_left = 0;
+
+        // if the user is to scroll the page while the dropdown is open
+        // from an iframe, we must make sure it has the same positioning
+        // otherwise it will scroll/not-scroll unaccordingly
+        //
+        if(iframe.parents("div.snap-popup").css("position") == "fixed")
+        {
+            dropdown_position = "fixed";
+        }
+
+        // cloning by converting to text and back to a DOM, this works
+        // across frames without having to deal with fragments
+        //
+        this.openDropdown_ = window.top.jQuery("<div class='top-window dropdown-items zordered'>"
+                                + d.html() + "</div>").appendTo("body");
 
         this.openDropdown_
             .children(".dropdown-selection")
@@ -7252,26 +7273,447 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
 
                     that.itemClicked(editor_widget, jQuery(e.target));
                 });
-
-        // setup z-index
-        // (reset itself first so we do not just +1 each time)
-        this.openDropdown_.css("z-index", 0);
-        z = window.top.jQuery("div.zordered").maxZIndex() + 1;
-        this.openDropdown_.css("z-index", z);
     }
     else
     {
         // the newly visible dropdown
         this.openDropdown_ = d;
-
-        // setup z-index
-        // (reset itself first so we do not just +1 each time)
-        this.openDropdown_.css("z-index", 0);
-        z = jQuery("div.zordered").maxZIndex() + 1;
-        this.openDropdown_.css("z-index", z);
     }
 
+    this.openDropdown_.css("position", dropdown_position);
+
+    // setup z-index
+    // (reset itself first so we do not just +1 each time)
+    this.openDropdown_.css("z-index", 0);
+    z = window.top.jQuery("div.zordered").maxZIndex() + 1;
+    this.openDropdown_.css("z-index", z);
+
+    // position, this makes use of the "dropdown algorithm" that the
+    // user can specified when creating the widget
+    //
+    if(!algorithm_instructions)
+    {
+        // a default algorithm so something happens...
+        //
+        algorithm_instructions = "bottom top right bottom-horizontal-columns=*";
+    }
+    algorithm_instructions = algorithm_instructions.split(" ");
+    algorithm_instructions.push("forced-bottom"); // make sure we always have a default
+
     this.openDropdown_.fadeIn(150);
+
+    // WARNING: position() gives us the top-left corner including the
+    //          top and left margin of the widget. For this reason,
+    //          we have to adjust here to get the top-left corner of
+    //          the border edge instead:
+    pos.top += parseFloat(w.css("margin-top"));
+    pos.left += parseFloat(w.css("margin-left"));
+
+    for(key in algorithm_instructions)
+    {
+        if(algorithm_instructions.hasOwnProperty(key))
+        {
+            algorithm = algorithm_instructions[key];
+console.log("check algorithm [" + algorithm + "]");
+
+            // the dropdown information may vary because of this class
+            new_class = algorithm;
+            if(new_class.substr(0, 7) == "forced-")
+            {
+                new_class = new_class.substr(7);
+            }
+            equal_pos = new_class.indexOf("-");
+            if(equal_pos > 0)
+            {
+                new_class = new_class.substr(0, equal_pos);
+            }
+            new_class = "algorithm-" + new_class;
+            this.openDropdown_.addClass(new_class);
+            width = this.openDropdown_.outerWidth(false);
+            height = this.openDropdown_.outerHeight(false);  // inner height + padding + borders, but not margin nor shadow
+
+            switch(algorithm)
+            {
+            case "bottom":
+                if(pos.top + w.outerHeight(false) + height - scroll_top > screen_height)
+                {
+                    break;
+                }
+            case "forced-bottom":
+                pos.top += w.outerHeight(false);
+                if(pos.left + width > screen_width)
+                {
+                    // adjust the left position so we see the right side of the dropdown
+                    pos.left = screen_width - width;
+                    if(pos.left < 0)
+                    {
+                        pos.left = 0;
+                    }
+                }
+                valid = true;
+                break;
+
+            case "top":
+                if(pos.top + parseFloat(w.css("border-top-width")) - this.openDropdown_.outerHeight(true) < scroll_top)
+                {
+                    break;
+                }
+            case "forced-top":
+                pos.top += parseFloat(w.css("border-top-width")) - this.openDropdown_.outerHeight(true);
+                valid = true;
+                break;
+
+            case "right":
+                if(pos.left + w.outerWidth(false) + width - scroll_left > screen_width
+                || height > screen_height)
+                {
+                    break;
+                }
+            case "forced-right":
+                pos.left += w.outerWidth(false);
+                pos.top = scroll_top + (screen_height - height) / 2;
+                valid = true;
+                break;
+
+            default:
+                // algorithms that include an equal sign are managed here
+                algorithm = algorithm.split("=");
+                switch(algorithm[0])
+                {
+                case "bottom-horizontal-columns":
+                    if(algorithm[1] == "*")
+                    {
+                        // try until column count == number of items
+                        // or the width fails
+                        max_count = 100;
+                        count = 2;
+                    }
+                    else
+                    {
+                        // exact count (count[-max])
+                        column_range = algorithm[1].split("-");
+                        count = parseInt(column_range[0], 10);
+                        if(column_range.length == 1)
+                        {
+                            max_count = count;
+                        }
+                        else
+                        {
+                            max_count = parseInt(column_range[1], 10);
+                        }
+                    }
+                    // TODO: if we have a single item, we fail the for()
+                    //       loop below; that's probably not 100% correct
+                    //       to do so, however...
+                    //
+                    number_of_items = this.openDropdown_.find("li").length;
+                    if(max_count > number_of_items)
+                    {
+                        max_count = number_of_items;
+                    }
+                    for(; count <= max_count; ++count)
+                    {
+                        // to place columns horizontally, we have to use
+                        // float on each li and force a width depending on
+                        // the column
+                        //
+                        col_widths = new Array(count);
+                        col_outer_widths = new Array(count);
+                        this.openDropdown_
+                            .find("li")
+                            .each(function(idx, element)
+                                {
+                                    var col = idx % count,
+                                        width = jQuery(element).width(),
+                                        outer_width = jQuery(element).outerWidth(true);
+
+                                    if(!col_widths[col]
+                                    || width > col_widths[col])
+                                    {
+                                        // largest item in this column
+                                        col_widths[col] = width;
+                                    }
+
+                                    if(!col_outer_widths[col]
+                                    || outer_width > col_outer_widths[col])
+                                    {
+                                        // largest item in this column
+                                        col_outer_widths[col] = outer_width;
+                                    }
+                                });
+                        // get resulting width (necessary to make sure
+                        // the float are moved to the next line)
+                        total_width = 0;
+                        jQuery.each(col_outer_widths, function(name, value)
+                            {
+                                total_width += value;
+                            });
+                        this.openDropdown_
+                            .find("ul")
+                            .width(total_width);
+                        this.openDropdown_
+                            .find("li")
+                            .css("float", "left")
+                            .width(function(idx, element)
+                                {
+                                    var col = idx % count;
+
+                                    return col_widths[col];
+                                });
+
+                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        {
+                            break;
+                        }
+                        if(pos.top + w.outerHeight(false) + this.openDropdown_.outerHeight(false) - scroll_top < screen_height)
+                        {
+                            pos.top += w.outerHeight(false);
+                            if(pos.left + width > screen_width)
+                            {
+                                // adjust the left position so we see the right side of the dropdown
+                                pos.left = screen_width - width;
+                                if(pos.left < 0)
+                                {
+                                    pos.left = 0;
+                                }
+                            }
+                            valid = true;
+                            break;
+                        }
+                    }
+                    if(!valid)
+                    {
+                        // remove the column css on failures
+                        this.openDropdown_.find("ul").css("width", "");
+                        this.openDropdown_.find("li").css("width", "").css("float", "");
+                    }
+                    break;
+
+                case "top-horizontal-columns":
+                    if(algorithm[1] == "*")
+                    {
+                        // try until column count == number of items
+                        // or the width fails
+                        max_count = 100;
+                        count = 2;
+                    }
+                    else
+                    {
+                        // TODO: add a way to offer a range instead of only
+                        //       a fixed value or any number of columns
+                        //
+                        // exact count
+                        count = parseInt(algorithm[1], 10);
+                        max_count = count;
+                    }
+                    // TODO: if we have a single item, we fail the for()
+                    //       loop below; that's probably not 100% correct
+                    //       to do so, however...
+                    //
+                    number_of_items = this.openDropdown_.find("li").length;
+                    if(max_count > number_of_items)
+                    {
+                        max_count = number_of_items;
+                    }
+                    for(; count <= max_count; ++count)
+                    {
+                        // to place columns horizontally, we have to use
+                        // float on each li and force a width depending on
+                        // the column
+                        //
+                        col_widths = new Array(count);
+                        col_outer_widths = new Array(count);
+                        this.openDropdown_
+                            .find("li")
+                            .each(function(idx, element)
+                                {
+                                    var col = idx % count,
+                                        width = jQuery(element).width(),
+                                        outer_width = jQuery(element).outerWidth(true);
+
+                                    if(!col_widths[col]
+                                    || width > col_widths[col])
+                                    {
+                                        // largest item in this column
+                                        col_widths[col] = width;
+                                    }
+
+                                    if(!col_outer_widths[col]
+                                    || outer_width > col_outer_widths[col])
+                                    {
+                                        // largest item in this column
+                                        col_outer_widths[col] = outer_width;
+                                    }
+                                });
+                        // get resulting width (necessary to make sure
+                        // the float are moved to the next line)
+                        total_width = 0;
+                        jQuery.each(col_outer_widths, function(name, value)
+                            {
+                                total_width += value;
+                            });
+                        this.openDropdown_
+                            .find("ul")
+                            .width(total_width);
+                        this.openDropdown_
+                            .find("li")
+                            .css("float", "left")
+                            .width(function(idx, element)
+                                {
+                                    var col = idx % count;
+
+                                    return col_widths[col];
+                                });
+
+                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        {
+                            break;
+                        }
+                        if(pos.top + parseFloat(w.css("border-top-width")) - this.openDropdown_.outerHeight(true) > scroll_top)
+                        {
+                            pos.top += parseFloat(w.css("border-top-width")) - this.openDropdown_.outerHeight(true);
+                            if(pos.left + width > screen_width)
+                            {
+                                // adjust the left position so we see the right side of the dropdown
+                                pos.left = screen_width - width;
+                                if(pos.left < 0)
+                                {
+                                    pos.left = 0;
+                                }
+                            }
+                            valid = true;
+                            break;
+                        }
+                    }
+                    if(!valid)
+                    {
+                        // remove the column css on failures
+                        this.openDropdown_.find("ul").css("width", "");
+                        this.openDropdown_.find("li").css("width", "").css("float", "");
+                    }
+                    break;
+
+                case "bottom-vertical-columns":
+                    if(algorithm[1] == "*")
+                    {
+                        // try until column count == number of items
+                        // or the width fails
+                        max_count = 100;
+                        count = 2;
+                    }
+                    else
+                    {
+                        // exact count (count[-max])
+                        column_range = algorithm[1].split("-");
+                        count = parseInt(column_range[0], 10);
+                        if(column_range.length == 1)
+                        {
+                            max_count = count;
+                        }
+                        else
+                        {
+                            max_count = parseInt(column_range[1], 10);
+                        }
+                    }
+                    for(; count <= max_count; ++count)
+                    {
+                        this.openDropdown_.css("column-count", count);
+                        if(this.openDropdown_.outerHeight(false) > screen_width)
+                        {
+                            break;
+                        }
+                        if(pos.top + w.outerHeight(false) + this.openDropdown_.outerHeight(false) - scroll_top < screen_height)
+                        {
+                            pos.top += w.outerHeight(false);
+                            if(pos.left + width > screen_width)
+                            {
+                                // adjust the left position so we see the right side of the dropdown
+                                pos.left = screen_width - width;
+                                if(pos.left < 0)
+                                {
+                                    pos.left = 0;
+                                }
+                            }
+                            valid = true;
+                            break;
+                        }
+                    }
+                    if(!valid)
+                    {
+                        // remove the column-count on failures
+                        this.openDropdown_.css("column-count", "");
+                    }
+                    break;
+
+                case "top-vertical-columns":
+                    if(algorithm[1] == "*")
+                    {
+                        // try until column count == number of items
+                        // or the width fails
+                        max_count = 100;
+                        count = 2;
+                    }
+                    else
+                    {
+                        // exact count (count[-max])
+                        column_range = algorithm[1].split("-");
+                        count = parseInt(column_range[0], 10);
+                        if(column_range.length == 1)
+                        {
+                            max_count = count;
+                        }
+                        else
+                        {
+                            max_count = parseInt(column_range[1], 10);
+                        }
+                    }
+                    for(; count <= max_count; ++count)
+                    {
+                        this.openDropdown_.css("column-count", count);
+                        if(this.openDropdown_.outerHeight(false) > screen_width)
+                        {
+                            break;
+                        }
+                        if(pos.top + parseFloat(w.css("border-top-width")) - this.openDropdown_.outerHeight(true) > scroll_top)
+                        {
+                            pos.top += parseFloat(w.css("border-top-width")) - this.openDropdown_.outerHeight(true);
+                            if(pos.left + width > screen_width)
+                            {
+                                // adjust the left position so we see the right side of the dropdown
+                                pos.left = screen_width - width;
+                                if(pos.left < 0)
+                                {
+                                    pos.left = 0;
+                                }
+                            }
+                            valid = true;
+                            break;
+                        }
+                    }
+                    if(!valid)
+                    {
+                        // remove the column-count on failures
+                        this.openDropdown_.css("column-count", "");
+                    }
+                    break;
+
+                }
+                break;
+
+            }
+            if(valid)
+            {
+console.log("   accepted [" + algorithm + "]!!!");
+                break;
+            }
+
+            // it was not valid, remove that class
+            this.openDropdown_.removeClass(new_class);
+        }
+    }
+
+    this.openDropdown_.css("left", pos.left + "px");
+    this.openDropdown_.css("top", pos.top + "px");
 };
 
 
@@ -7292,6 +7734,11 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
         }
         else
         {
+            // reset otherwise the z-index increases forever when you have
+            // more than one dropdown and click one after another
+            //
+            this.openDropdown_.css("z-index", 0);
+
             // in case we have items marked as active, remove the class
             this.openDropdown_
                 .children(".dropdown-selection")
@@ -7300,9 +7747,38 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
         }
         this.openDropdown_.fadeOut(150, function()
             {
+                var c;
+
                 if(clone)
                 {
                     clone.remove();
+                }
+                else
+                {
+                    // make sure to remove the algorithm class so that way we can
+                    // avoid having two or more in the same dropdown
+                    //
+                    c = $(this).attr("class");
+                    if(c)
+                    {
+                        c = c.split(" ");
+                        for(n in c)
+                        {
+                            if(c.hasOwnProperty(n))
+                            {
+                                if(c[n].substr(0, 10) == "algorithm-")
+                                {
+                                    $(this).removeClass(c[n]);
+                                }
+                            }
+                        }
+                    }
+                    // remove the column related CSS which we may add if we
+                    // end up using vertical columns
+                    //
+                    $(this).css("column-count", "")
+                        .find("ul").css("width", "")
+                        .find("li").css("width", "").css("float", "");
                 }
             });
         this.openDropdown_ = null;

@@ -42,6 +42,25 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </filters>
     <background-value>date edit</background-value>
   </widget>
+  <widget id="dropdown_date_edit_widget" type="dropdown-date-edit" field="editor::dropdown_date_edit_widget" path="editor/dropdown_date_edit_widget" no-toolbar="no-toolbar" auto-save="plain">
+    <tooltip>Tooltip</tooltip>
+    <help>Help</help>
+    <sizes>
+      <min>1</min>
+      <max>30</max>
+    </sizes>
+    <filters>
+      <regex name="date"/>
+      <min-date>now - 1 year</min-date>
+      <max-date>now + 1 year</max-date>
+    </filters>
+    <background-value>unused</background-value>
+    <dropdown-date-edit>
+      <include-month/>
+      <include-day/>
+      <include-year/>
+    </dropdown-date-edit>
+  </widget>
 </editor-form>
 <!-- vim: ts=2 sw=2 et
 -->

@@ -32,12 +32,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="value"/>
     <div field_type="locale_timezone">
       <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-      <!-- shall we really have the classes here since they will be in the locale_timezone (did I mean dropdown here?) widgets already? -->
-      <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of
+      <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable transparent <xsl:value-of
         select="classes"/> locale_timezone <xsl:value-of select="$name"/><xsl:if
         test="@immediate or /editor-form/immediate"> immediate</xsl:if></xsl:attribute>
 
       <div class="editor-content">
+        <!-- TODO: implement proper tabindex -->
         <!-- WARNING: the order is VERY important -->
         <xsl:choose>
           <!-- search for one @value that matches $value, this is the preferred method of selection -->
@@ -125,7 +125,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </div>
     <!-- TODO: I think we should look into a better place for these includes -->
     <javascript name="locale-timezone"/>
-    <css name="locale-timezone"/>
+    <!--css name="locale-timezone"/-->
   </xsl:template>
   <xsl:template match="widget[@type='locale_timezone']">
     <xsl:variable name="value">
