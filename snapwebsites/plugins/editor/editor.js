@@ -7402,6 +7402,11 @@ console.log("check algorithm [" + algorithm + "]");
                             max_count = parseInt(column_range[1], 10);
                         }
                     }
+                    // limit to a maximum of 20 attempts
+                    if(max_count - count > 20)
+                    {
+                        max_count = count + 20;
+                    }
                     // TODO: if we have a single item, we fail the for()
                     //       loop below; that's probably not 100% correct
                     //       to do so, however...
