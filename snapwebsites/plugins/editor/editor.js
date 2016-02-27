@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.743
+ * Version: 0.0.3.806
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -7295,7 +7295,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
     {
         // a default algorithm so something happens...
         //
-        algorithm_instructions = "bottom top right bottom-vertical-columns=* top-vertical-columns=*";
+        algorithm_instructions = "bottom top right bottom-vertical-columns=* top-vertical-columns=* bottom-vertical-columns-with-scrollbar=* top-vertical-columns-with-scrollbar=* scrollbar";
     }
     algorithm_instructions = algorithm_instructions.split(" ");
     algorithm_instructions.push("forced-bottom"); // make sure we always have a default
@@ -7314,7 +7314,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
         if(algorithm_instructions.hasOwnProperty(key))
         {
             algorithm = algorithm_instructions[key];
-console.log("check algorithm [" + algorithm + "]");
+//console.log(new Date);
+//console.log("check algorithm [" + algorithm + "]");
 
             // the dropdown information may vary because of this class
             new_class = algorithm;
@@ -7322,7 +7323,7 @@ console.log("check algorithm [" + algorithm + "]");
             {
                 new_class = new_class.substr(7);
             }
-            equal_pos = new_class.indexOf("-");
+            equal_pos = new_class.indexOf("=");
             if(equal_pos > 0)
             {
                 new_class = new_class.substr(0, equal_pos);
@@ -7372,6 +7373,49 @@ console.log("check algorithm [" + algorithm + "]");
             case "forced-right":
                 pos.left += w.outerWidth(false);
                 pos.top = scroll_top + (screen_height - height) / 2;
+                valid = true;
+                break;
+
+            case "scrollbar":
+                // we assume that if we reach here the size of the dropdown
+                // is such that it does not really fit up or down so we
+                // display it in fullscreen;
+                //
+                if(height > screen_height)
+                {
+                    height = screen_height;
+                }
+                pos.top = scroll_top;
+                if(pos.left + width > screen_width)
+                {
+                    // adjust the left position so we see the right side of the dropdown
+                    pos.left = screen_width - width;
+                    if(pos.left < 0)
+                    {
+                        pos.left = 0;
+                    }
+                }
+                this.openDropdown_
+                        //.find("ul")
+                        .outerHeight(height)
+                        .width(this.openDropdown_.outerWidth(false) + 20);     // +20 to account for the scrollbar width (TODO: calculate exact size)
+
+                // now scroll toward the existing selection if any
+                selected = this.openDropdown_.find("li.selected");
+                if(selected)
+                {
+                    // TBD: by setting the overflow to hidden, we will force the scrollTop()
+                    // to be recalculated/used as expected (may be required for mobile phones)
+                    //this.openDropdown_.find("ul").css("overflow-y", "hidden");
+                    this.openDropdown_.scrollTop(0);
+                    offset = (height - selected.outerHeight()) / 2;
+                    if(offset < 0)
+                    {
+                        offset = 0;
+                    }
+                    this.openDropdown_.scrollTop(selected.position().top - offset);
+                    //this.openDropdown_.find("ul").css("overflow-y", "");
+                }
                 valid = true;
                 break;
 
@@ -7620,10 +7664,15 @@ console.log("check algorithm [" + algorithm + "]");
                             max_count = parseInt(column_range[1], 10);
                         }
                     }
+                    number_of_items = this.openDropdown_.find("li").length;
+                    if(max_count > number_of_items)
+                    {
+                        max_count = number_of_items;
+                    }
                     for(; count <= max_count; ++count)
                     {
-                        this.openDropdown_.css("column-count", count);
-                        if(this.openDropdown_.outerHeight(false) > screen_width)
+                        this.openDropdown_.find("ul").css("column-count", count);
+                        if(this.openDropdown_.outerWidth(false) > screen_width)
                         {
                             break;
                         }
@@ -7646,7 +7695,7 @@ console.log("check algorithm [" + algorithm + "]");
                     if(!valid)
                     {
                         // remove the column-count on failures
-                        this.openDropdown_.css("column-count", "");
+                        this.openDropdown_.find("ul").css("column-count", "");
                     }
                     break;
 
@@ -7672,10 +7721,15 @@ console.log("check algorithm [" + algorithm + "]");
                             max_count = parseInt(column_range[1], 10);
                         }
                     }
+                    number_of_items = this.openDropdown_.find("li").length;
+                    if(max_count > number_of_items)
+                    {
+                        max_count = number_of_items;
+                    }
                     for(; count <= max_count; ++count)
                     {
-                        this.openDropdown_.css("column-count", count);
-                        if(this.openDropdown_.outerHeight(false) > screen_width)
+                        this.openDropdown_.find("ul").css("column-count", count);
+                        if(this.openDropdown_.outerWidth(false) > screen_width)
                         {
                             break;
                         }
@@ -7698,7 +7752,331 @@ console.log("check algorithm [" + algorithm + "]");
                     if(!valid)
                     {
                         // remove the column-count on failures
-                        this.openDropdown_.css("column-count", "");
+                        this.openDropdown_.find("ul").css("column-count", "");
+                    }
+                    break;
+
+                case "bottom-horizontal-columns-with-scrollbar":
+                    if(algorithm[1] == "*")
+                    {
+                        // try until column count == 1
+                        // and if the width fails, it completely fails
+                        count = 5;
+                    }
+                    else
+                    {
+                        // user specifies how many columns to start with
+                        count = parseInt(algorithm[1], 10);
+                        // limit to a maximum of 20 attempts
+                        if(count > 20)
+                        {
+                            count = 20;
+                        }
+                    }
+                    number_of_items = this.openDropdown_.find("li").length;
+                    if(count > number_of_items)
+                    {
+                        count = number_of_items;
+                    }
+                    for(; count > 0; --count)
+                    {
+                        // to place columns horizontally, we have to use
+                        // float on each li and force a width depending on
+                        // the column
+                        //
+//console.log(new Date);
+                        tallest_line = 0;
+                        col_widths = new Array(count);
+                        col_outer_widths = new Array(count);
+                        this.openDropdown_
+                            .find("li")
+                            .each(function(idx, element)
+                                {
+                                    var col = idx % count,
+                                        width = jQuery(element).width(),
+                                        outer_width = jQuery(element).outerWidth(true),
+                                        outer_height = jQuery(element).outerHeight(true);
+
+                                    if(!col_widths[col]
+                                    || width > col_widths[col])
+                                    {
+                                        // largest item in this column
+                                        col_widths[col] = width;
+                                    }
+
+                                    if(!col_outer_widths[col]
+                                    || outer_width > col_outer_widths[col])
+                                    {
+                                        // largest item in this column
+                                        col_outer_widths[col] = outer_width;
+                                    }
+
+                                    if(outer_height > tallest_line)
+                                    {
+                                        tallest_line = outer_height;
+                                    }
+                                });
+//console.log(new Date);
+                        // get resulting width (necessary to make sure
+                        // the float are moved to the next line)
+                        total_width = 0;
+                        jQuery.each(col_outer_widths, function(name, value)
+                            {
+                                total_width += value;
+                            });
+                        this.openDropdown_
+                            .find("ul")
+                            .width(total_width + 20);   // +20 to account for the scrollbar width
+                        this.openDropdown_
+                            .find("li")
+                            .css("float", "left")
+                            .width(function(idx, element)
+                                {
+                                    var col = idx % count;
+
+                                    return col_widths[col];
+                                });
+
+                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        {
+                            // too large, try with less columns
+                            continue;
+                        }
+                        if(pos.top + w.outerHeight(false) + tallest_line - scroll_top < screen_height)
+                        {
+                            pos.top += w.outerHeight(false);
+                            if(pos.left + width > screen_width)
+                            {
+                                // adjust the left position so we see the right side of the dropdown
+                                pos.left = screen_width - width;
+                                if(pos.left < 0)
+                                {
+                                    pos.left = 0;
+                                }
+                            }
+                            dropdown_height = screen_height - (pos.top - scroll_top);
+                            this.openDropdown_.height(dropdown_height);
+
+                            // now scroll toward the existing selection if any
+                            selected = this.openDropdown_.find("li.selected");
+                            if(selected)
+                            {
+                                // by setting the overflow to hidden, we will force the scrollTop()
+                                // to be recalculated/used as expected (may be required for mobile phones)
+                                //this.openDropdown_.find("ul").css("overflow-y", "hidden");
+                                this.openDropdown_.scrollTop(0);
+                                offset = (dropdown_height - selected.outerHeight()) / 2;
+                                if(offset < 0)
+                                {
+                                    offset = 0;
+                                }
+                                this.openDropdown_.scrollTop(selected.position().top - offset);
+                                //this.openDropdown_.find("ul").css("overflow-y", "");
+                            }
+
+                            valid = true;
+                            break;
+                        }
+                    }
+                    if(!valid)
+                    {
+                        // remove the column css on failures
+                        this.openDropdown_
+                                .css("height", "")
+                                .find("ul").css("width", "")
+                                .find("li").css("width", "").css("float", "");
+                    }
+                    break;
+
+                case "bottom-vertical-columns-with-scrollbar":
+                    if(algorithm[1] == "*")
+                    {
+                        // try until column count == number of items
+                        // or the width fails
+                        count = 5;
+                    }
+                    else
+                    {
+                        // user specified how many columns to start with
+                        count = parseInt(algorithm[1], 10);
+                        if(count > 20)
+                        {
+                            count = 20;
+                        }
+                    }
+                    number_of_items = this.openDropdown_.find("li").length;
+                    if(count > number_of_items)
+                    {
+                        count = number_of_items;
+                    }
+                    for(; count > 0; --count)
+                    {
+                        this.openDropdown_.find("ul").css("column-count", count);
+                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        {
+                            break;
+                        }
+                        // all lines have the same height assuming that the
+                        // user has no <br/>, images, etc.
+                        // (we actually need TWO lines to get a scrollbar)
+                        tallest_line = this.openDropdown_.find("li").outerHeight() * 2
+                                        + parseFloat(this.openDropdown_.css("border-top-width"))
+                                        + parseFloat(this.openDropdown_.css("border-bottom-width"));
+//console.log(new Date);
+//                        this.openDropdown_ -- somehow this takes 5 seconds over 465 elements... dead slow!
+//                            .find("li")
+//                            .each(function(idx, element)
+//                                {
+//                                    var outer_height = jQuery("element").outerHeight();
+//
+//                                    if(outer_height > tallest_line)
+//                                    {
+//                                        tallest_line = outer_height;
+//                                    }
+//                                });
+//console.log(new Date);
+                        if(pos.top + w.outerHeight(false) + tallest_line - scroll_top < screen_height)
+                        {
+                            pos.top += w.outerHeight(false);
+                            if(pos.left + width > screen_width)
+                            {
+                                // adjust the left position so we see the right side of the dropdown
+                                pos.left = screen_width - width;
+                                if(pos.left < 0)
+                                {
+                                    pos.left = 0;
+                                }
+                            }
+                            total_width = this.openDropdown_.outerWidth(false);
+                            dropdown_height = screen_height - (pos.top - scroll_top);
+                            this.openDropdown_
+                                    //.find("ul")
+                                    .height(dropdown_height)
+                                    .width(total_width + 20);     // +20 to account for the scrollbar width (TODO: calculate exact size)
+
+                            // now scroll toward the existing selection if any
+                            selected = this.openDropdown_.find("li.selected");
+                            if(selected)
+                            {
+                                // by setting the overflow to hidden, we will force the scrollTop()
+                                // to be recalculated/used as expected (may be required for mobile phones)
+                                //this.openDropdown_.find("ul").css("overflow-y", "hidden");
+                                this.openDropdown_.scrollTop(0);
+                                offset = (dropdown_height - selected.outerHeight()) / 2;
+                                if(offset < 0)
+                                {
+                                    offset = 0;
+                                }
+                                this.openDropdown_.scrollTop(selected.position().top - offset);
+                                //this.openDropdown_.find("ul").css("overflow-y", "");
+                            }
+
+                            valid = true;
+                            break;
+                        }
+                    }
+                    if(!valid)
+                    {
+                        // remove the column-count on failures
+                        this.openDropdown_
+                                .find("ul").css("column-count", "");
+                    }
+                    break;
+
+                case "top-vertical-columns-with-scrollbar":
+                    if(algorithm[1] == "*")
+                    {
+                        // try until column count == number of items
+                        // or the width fails
+                        count = 5;
+                    }
+                    else
+                    {
+                        // user specified how many columns to start with
+                        count = parseInt(algorithm[1], 10);
+                        if(count > 20)
+                        {
+                            count = 20;
+                        }
+                    }
+                    number_of_items = this.openDropdown_.find("li").length;
+                    if(count > number_of_items)
+                    {
+                        count = number_of_items;
+                    }
+                    for(; count > 0; --count)
+                    {
+                        this.openDropdown_.find("ul").css("column-count", count);
+                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        {
+                            break;
+                        }
+                        // all lines have the same height assuming that the
+                        // user has no <br/>, images, etc.
+                        tallest_line = this.openDropdown_.find("li").outerHeight() * 2
+                                        + parseFloat(this.openDropdown_.css("border-top-width"))
+                                        + parseFloat(this.openDropdown_.css("border-bottom-width"));
+//console.log(new Date);
+//                        this.openDropdown_ -- somehow this takes 5 seconds over 465 elements... dead slow!
+//                            .find("li")
+//                            .each(function(idx, element)
+//                                {
+//                                    var outer_height = jQuery("element").outerHeight();
+//
+//                                    if(outer_height > tallest_line)
+//                                    {
+//                                        tallest_line = outer_height;
+//                                    }
+//                                });
+//console.log(new Date);
+                        if(pos.top + parseFloat(w.css("border-top-width")) - tallest_line > scroll_top)
+                        {
+                            start_top = pos.top + parseFloat(w.css("border-top-width"));
+                            pos.top += parseFloat(w.css("border-top-width")) - this.openDropdown_.outerHeight(true);
+                            if(pos.top < scroll_top)
+                            {
+                                pos.top = scroll_top;
+                            }
+                            if(pos.left + width > screen_width)
+                            {
+                                // adjust the left position so we see the right side of the dropdown
+                                pos.left = screen_width - width;
+                                if(pos.left < 0)
+                                {
+                                    pos.left = 0;
+                                }
+                            }
+                            dropdown_height = start_top - pos.top;
+                            this.openDropdown_
+                                    .outerHeight(dropdown_height)
+                                    .width(this.openDropdown_.outerWidth(false) + 20);     // +20 to account for the scrollbar width (TODO: calculate exact size)
+
+                            // now scroll toward the existing selection if any
+                            selected = this.openDropdown_.find("li.selected");
+                            if(selected)
+                            {
+                                // TBD: by setting the overflow to hidden, we will force the scrollTop()
+                                // to be recalculated/used as expected (may be required for mobile phones)
+                                //this.openDropdown_.find("ul").css("overflow-y", "hidden");
+                                this.openDropdown_.scrollTop(0);
+                                offset = (dropdown_height - selected.outerHeight()) / 2;
+                                if(offset < 0)
+                                {
+                                    offset = 0;
+                                }
+                                this.openDropdown_.scrollTop(selected.position().top - offset);
+                                //this.openDropdown_.find("ul").css("overflow-y", "");
+                            }
+
+                            valid = true;
+                            break;
+                        }
+                    }
+                    if(!valid)
+                    {
+                        // remove the column-count on failures
+                        this.openDropdown_
+                                .find("ul").css("column-count", "");
                     }
                     break;
 
@@ -7708,7 +8086,11 @@ console.log("check algorithm [" + algorithm + "]");
             }
             if(valid)
             {
-console.log("   accepted [" + algorithm + "]!!!");
+//console.log(new Date);
+//if(typeof algorithm === "string")
+//console.log("   accepted [" + algorithm + "]!!!");
+//else
+//console.log("   accepted [" + algorithm[0] + "]!!!");
                 break;
             }
 
@@ -7781,8 +8163,9 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
                     // remove the column related CSS which we may add if we
                     // end up using vertical columns
                     //
-                    $(this).css("column-count", "")
-                        .find("ul").css("width", "")
+                    $(this)
+                        .css("width", "").css("height", "")
+                        .find("ul").css("column-count", "").css("width", "").css("height", "").removeClass("scrollbar")
                         .find("li").css("width", "").css("float", "");
                 }
             });
