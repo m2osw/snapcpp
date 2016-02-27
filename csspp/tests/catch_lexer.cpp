@@ -32,6 +32,7 @@
 #include "csspp/lexer.h"
 #include "csspp/unicode_range.h"
 
+#include <iostream>
 #include <sstream>
 
 #include <string.h>
