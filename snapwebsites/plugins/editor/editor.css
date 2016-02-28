@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.82
+ * Version: 0.0.1.91
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -460,7 +460,9 @@
 	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
 }
 .editable.dropdown .dropdown-items.algorithm-bottom-horizontal-columns,
-.top-window.dropdown-items.algorithm-bottom-horizontal-columns
+.top-window.dropdown-items.algorithm-bottom-horizontal-columns,
+.editable.dropdown .dropdown-items.algorithm-bottom-horizontal-columns-with-scrollbar,
+.top-window.dropdown-items.algorithm-bottom-horizontal-columns-with-scrollbar
 {
 	margin-left: 5px;
 	padding-bottom: 5px;
@@ -470,7 +472,13 @@
 	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
 }
 .editable.dropdown .dropdown-items.algorithm-top-horizontal-columns,
-.top-window.dropdown-items.algorithm-top-horizontal-columns
+.top-window.dropdown-items.algorithm-top-horizontal-columns,
+.editable.dropdown .dropdown-items.algorithm-top-horizontal-columns-with-scrollbar,
+.top-window.dropdown-items.algorithm-top-horizontal-columns-with-scrollbar,
+.editable.dropdown .dropdown-items.algorithm-top-vertical-columns,
+.top-window.dropdown-items.algorithm-top-vertical-columns,
+.editable.dropdown .dropdown-items.algorithm-top-vertical-columns-with-scrollbar,
+.top-window.dropdown-items.algorithm-top-vertical-columns-with-scrollbar
 {
 	margin-left: 5px;
 	padding-top: 5px;
@@ -478,6 +486,27 @@
 	border-bottom-left-radius: 0;
 	border-bottom-right-radius: 0;
 	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
+}
+.editable.dropdown .dropdown-items.algorithm-scrollbar,
+.top-window.dropdown-items.algorithm-scrollbar
+{
+	margin-left: 15px;
+	padding: 5px 0;
+	border-radius: 5px;
+	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
+}
+.editable.dropdown .dropdown-items.algorithm-bottom-horizontal-columns-with-scrollbar,
+.top-window.dropdown-items.algorithm-bottom-horizontal-columns-with-scrollbar,
+.editable.dropdown .dropdown-items.algorithm-top-horizontal-columns-with-scrollbar,
+.top-window.dropdown-items.algorithm-top-horizontal-columns-with-scrollbar,
+.editable.dropdown .dropdown-items.algorithm-bottom-vertical-columns-with-scrollbar,
+.top-window.dropdown-items.algorithm-bottom-vertical-columns-with-scrollbar,
+.editable.dropdown .dropdown-items.algorithm-top-vertical-columns-with-scrollbar,
+.top-window.dropdown-items.algorithm-top-vertical-columns-with-scrollbar,
+.editable.dropdown .dropdown-items.algorithm-scrollbar,
+.top-window.dropdown-items.algorithm-scrollbar
+{
+	overflow-y: scroll;
 }
 .editable.dropdown .dropdown-items.disabled,
 .top-window.dropdown-items.disabled
