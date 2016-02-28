@@ -47,6 +47,7 @@
 
 // 3rd party libs
 //
+#include <cassandra.h>
 #include <QtCore>
 #include <QtSql>
 #include <QtCassandra/QCassandra.h>
@@ -434,7 +435,6 @@ namespace
 
 void snapdb::dump_context()
 {
-    f_cassandra->connect(f_host, f_port);
     const QString outfile( f_opt->get_string( "dump-context" ).c_str() );
 
     snapTableList::initList();
@@ -449,8 +449,20 @@ void snapdb::dump_context()
         snapTableList::overrideTablesToDump( tables_to_dump );
     }
 
-    sqlBackupRestore backup( f_cassandra, f_context, outfile );
-    backup.storeContext();
+    try
+    {
+        sqlBackupRestore backup( f_host, outfile );
+        backup.storeContext();
+    }
+    catch( std::exception except )
+    {
+        std::cerr << "Error while making backup: [" << except.what() << "]!" << std::endl;
+    }
+    catch( ... )
+    {
+        // TODO: add proper catch
+        std::cerr << "Error while making backup!" << std::endl;
+    }
 }
 
 
@@ -459,8 +471,16 @@ bool snapdb::restore_context()
     f_cassandra->connect(f_host, f_port);
     const QString infile( f_opt->get_string( "restore-context" ).c_str() );
 
-    sqlBackupRestore backup( f_cassandra, f_context, infile );
-    backup.restoreContext();
+    try
+    {
+        sqlBackupRestore backup( f_host, infile );
+        backup.restoreContext();
+    }
+    catch( ... )
+    {
+        // TODO: add proper catch
+        std::cerr << "Error while attempting to restore!" << std::endl;
+    }
 
     return true;
 }

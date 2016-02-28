@@ -47,7 +47,6 @@
 //
 #include <QtCore>
 #include <QtSql>
-#include <QtCassandra/QCassandra.h>
 
 // system
 //
@@ -71,14 +70,37 @@ namespace
 }
 
 
-sqlBackupRestore::sqlBackupRestore( const QCassandra::pointer_t cassandra, const QString& context_name, const QString& sqlDbFile )
-    : f_cassandra( cassandra )
+sqlBackupRestore::sqlBackupRestore( const QString& host_name, const QString& sqlDbFile )
+    : f_cluster( cass_cluster_new() )
+    , f_session( cass_session_new() )
 {
-    createSchema( sqlDbFile );
-    f_context = f_cassandra->context(context_name);
+	QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE" );
+	db.setDatabaseName( sqlDbFile );
+	if( !db.open() )
+    {
+        const QString error( QString("Cannot open SQLite database [%1]!").arg(sqlDbFile) );
+        throw std::runtime_error( error.toUtf8().data() );
+    }
+
+    cass_cluster_set_contact_points( f_cluster, host_name.toUtf8().data() );
+    f_connection = cass_session_connect( f_session, f_cluster );
+
+    /* This operation will block until the result is ready */
+    CassError rc = cass_future_error_code(f_connection);
+    std::cout << "Connect result: [" << cass_error_desc(rc) << "]" << std::endl;
+
+    if( rc != CASS_OK )
+    {
+        const char* message;
+        size_t message_length;
+        cass_future_error_message(f_connection, &message, &message_length);
+        std::cerr << "Cannot connect to cassandra server! " << message << std::endl;
+        throw std::runtime_error( message );
+    }
 }
 
 
+#if 0
 void sqlBackupRestore::createSchema( const QString& sqlDbFile )
 {
 	QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE" );
@@ -251,6 +273,20 @@ void sqlBackupRestore::writeContext()
         }
     }
 }
+#endif
+
+
+void sqlBackupRestore::storeContext()
+{
+    QSqlDatabase db( QSqlDatabase::database() );
+    db.transaction();
+
+    // TABLES
+    //
+    storeTables();
+
+    db.commit();
+}
 
 
 void sqlBackupRestore::restoreContext()
@@ -258,58 +294,87 @@ void sqlBackupRestore::restoreContext()
     std::cerr << "--restore-context has not been implemented yet for SQLite. Exiting..." << std::endl;
 }
 
-
 void sqlBackupRestore::storeTables()
 {
-    if( f_context->tables().isEmpty() )
-    {
-        throw std::runtime_error("No tables in context!");
-    }
-
     snapTableList   dump_list;
 
     for( auto table_name : dump_list.tablesToDump() ) // f_context->tables() )
     {
-        auto table( f_context->table(table_name) );
-        if( table_name != table->tableName() )
-        {
-            QString errmsg( QString("Something is very wrong because the expected table name is '%1', yet Cassandra returned '%2'!")
-                    .arg(table_name)
-                    .arg(table->tableName())
-                    );
-            throw std::runtime_error( errmsg.toUtf8().data() );
-        }
-        std::cout << "Processing table [" << table_name << "]" << std::endl;
-        f_tableList << table;
-
+        QString q_str = QString( "CREATE TABLE IF NOT EXISTS %1 ("
+                "id INTEGER PRIMARY KEY, "
+                "key LONGBLOB, "
+                "column1 LONGBLOB, "
+                "value LONGBLOB "
+                ");"
+                ).arg(table_name);
         QSqlQuery q;
-        q.prepare( "INSERT OR REPLACE INTO snap_tables "
-                "(table_name,identifier,column_type,comment,key_validation_class, default_validation_class, "
-                "memtable_flush_period_mins,gc_grace_secs,min_compaction_threshold,max_compaction_threshold,replicate_on_write) "
-                "VALUES "
-                "(:table_name,:identifier,:column_type,:comment,:key_validation_class,:default_validation_class,"
-                ":memtable_flush_period_mins,:gc_grace_secs,:min_compaction_threshold,:max_compaction_threshold,:replicate_on_write);"
-                );
-        q.bindValue( ":table_name",                 table->tableName()              );
-        q.bindValue( ":identifier",                 table->identifier()             );
-        q.bindValue( ":column_type",                table->columnType()             );
-        q.bindValue( ":comment",                    table->comment()                );
-        q.bindValue( ":key_validation_class",       table->keyValidationClass()     );
-        q.bindValue( ":default_validation_class",   table->defaultValidationClass() );
-        q.bindValue( ":memtable_flush_period_mins", table->memtableFlushAfterMins() );
-        q.bindValue( ":gc_grace_secs",              table->gcGraceSeconds()         );
-        q.bindValue( ":min_compaction_threshold",   table->minCompactionThreshold() );
-        q.bindValue( ":max_compaction_threshold",   table->maxCompactionThreshold() );
-        q.bindValue( ":replicate_on_write",         table->replicateOnWrite()       );
+        q.prepare( q_str );
         if( !q.exec() )
         {
             std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+            std::cerr << "query error=[" << q.lastError().text() << "]" << std::endl;
             throw std::runtime_error( q.lastError().text().toUtf8().data() );
         }
+
+        std::cout << "Processing table [" << table_name << "]" << std::endl;
+
+        q_str = QString("SELECT key,column1,value FROM snap_websites.%1").arg(table_name);
+        CassStatement* query_stmt    = cass_statement_new( q_str.toUtf8().data(), 0 );
+        CassFuture*    result_future = cass_session_execute( f_session, query_stmt );
+
+        if( cass_future_error_code( result_future ) != CASS_OK )
+        {
+            const char* message;
+            size_t message_length;
+            cass_future_error_message( result_future, &message, &message_length );
+            std::cerr << "Cassandra query error: " << message << std::endl;
+            throw std::runtime_error( message );
+        }
+
+        const CassResult* result = cass_future_get_result(result_future);
+        CassIterator*     rows   = cass_iterator_from_result(result);
+
+        while( cass_iterator_next(rows) )
+        {
+            const CassRow*   row           = cass_iterator_get_row( rows );
+            const CassValue* key_value     = cass_row_get_column_by_name( row, "key"     );
+            const CassValue* column1_value = cass_row_get_column_by_name( row, "column1" );
+            const CassValue* value_value   = cass_row_get_column_by_name( row, "value"   );
+
+            const char* value;
+            size_t value_len;
+
+            q_str = QString( "INSERT OR REPLACE INTO %1 "
+                    "(key, column1, value) "
+                    "VALUES "
+                    "(:key,:column1,:value);"
+                    ).arg(table_name);
+            q.clear();
+            q.prepare( q_str );
+            //
+            cass_value_get_string( key_value, &value, &value_len );
+            q.bindValue( ":key",     value  );
+            //
+            cass_value_get_string( column1_value, &value, &value_len );
+            q.bindValue( ":column1", value );
+            //
+            cass_value_get_string( value_value, &value, &value_len );
+            q.bindValue( ":value",   value );
+            //
+            if( !q.exec() )
+            {
+                std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+                throw std::runtime_error( q.lastError().text().toUtf8().data() );
+            }
+        }
+
+        cass_result_free(result);
+        cass_iterator_free(rows);
     }
 }
 
 
+#if 0
 void sqlBackupRestore::storeRowsByTable( QCassandraTable::pointer_t table )
 {
     f_colPred.reset( new QCassandraColumnRangePredicate );
@@ -529,6 +594,7 @@ bool snapdb::restore_context()
     return true;
 #endif
 }
+#endif
 #endif
 
 
