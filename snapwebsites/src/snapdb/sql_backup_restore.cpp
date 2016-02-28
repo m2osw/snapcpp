@@ -304,7 +304,9 @@ void sqlBackupRestore::storeTables()
                 "id INTEGER PRIMARY KEY, "
                 "key LONGBLOB, "
                 "column1 LONGBLOB, "
-                "value LONGBLOB "
+                "value LONGBLOB, "
+                "ttl INTEGER, "
+                "writetime INTEGER "
                 ");"
                 ).arg(table_name);
         QSqlQuery q;
@@ -318,7 +320,16 @@ void sqlBackupRestore::storeTables()
 
         std::cout << "Processing table [" << table_name << "]" << std::endl;
 
-        q_str = QString("SELECT key,column1,value FROM snap_websites.%1").arg(table_name);
+        const QString cql_select_string("SELECT key,column1,value,ttl(value),writetime(value) FROM snap_websites.%1");
+        if( table_name == "libQtCassandraLockTable" )
+        {
+            // TODO: ugly hack! We need to correct this in the cassandra table itself.
+            q_str = cql_select_string.arg("\""+table_name+"\"");
+        }
+        else
+        {
+            q_str = cql_select_string.arg(table_name);
+        }
         CassStatement* query_stmt    = cass_statement_new( q_str.toUtf8().data(), 0 );
         CassFuture*    result_future = cass_session_execute( f_session, query_stmt );
 
@@ -336,30 +347,39 @@ void sqlBackupRestore::storeTables()
 
         while( cass_iterator_next(rows) )
         {
-            const CassRow*   row           = cass_iterator_get_row( rows );
-            const CassValue* key_value     = cass_row_get_column_by_name( row, "key"     );
-            const CassValue* column1_value = cass_row_get_column_by_name( row, "column1" );
-            const CassValue* value_value   = cass_row_get_column_by_name( row, "value"   );
+            const CassRow*   row             = cass_iterator_get_row( rows );
+            const CassValue* key_value       = cass_row_get_column_by_name( row, "key"       );
+            const CassValue* column1_value   = cass_row_get_column_by_name( row, "column1"   );
+            const CassValue* value_value     = cass_row_get_column_by_name( row, "value"     );
+            const CassValue* ttl_value       = cass_row_get_column_by_name( row, "ttl"       );
+            const CassValue* writetime_value = cass_row_get_column_by_name( row, "writetime" );
 
-            const char* value;
-            size_t value_len;
+            const char *    byte_value;
+            cass_uint32_t   uint32_value;
+            size_t          value_len;
 
             q_str = QString( "INSERT OR REPLACE INTO %1 "
-                    "(key, column1, value) "
+                    "(key, column1, value, ttl, writetime) "
                     "VALUES "
-                    "(:key,:column1,:value);"
+                    "(:key, :column1, :value, :ttl, :writetime);"
                     ).arg(table_name);
             q.clear();
             q.prepare( q_str );
             //
-            cass_value_get_string( key_value, &value, &value_len );
-            q.bindValue( ":key",     value  );
+            cass_value_get_string( key_value, &byte_value, &value_len );
+            q.bindValue( ":key", QByteArray(byte_value, value_len) );
             //
-            cass_value_get_string( column1_value, &value, &value_len );
-            q.bindValue( ":column1", value );
+            cass_value_get_string( column1_value, &byte_value, &value_len );
+            q.bindValue( ":column1", QByteArray(byte_value,value_len) );
             //
-            cass_value_get_string( value_value, &value, &value_len );
-            q.bindValue( ":value",   value );
+            cass_value_get_string( value_value, &byte_value, &value_len );
+            q.bindValue( ":value", QByteArray(byte_value,value_len) );
+            //
+            cass_value_get_uint32( ttl_value, &uint32_value );
+            q.bindValue( ":ttl", uint32_value );
+            //
+            cass_value_get_uint32( writetime_value, &uint32_value );
+            q.bindValue( ":writetime", uint32_value );
             //
             if( !q.exec() )
             {
