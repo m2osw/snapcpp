@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
-  <widget id="date_edit_widget" type="date-edit" field="editor::date_edit_widget" path="editor/date_edit_widget" no-toolbar="no-toolbar" auto-save="plain">
+  <widget id="date_edit_widget" type="date-edit" field="editor::date_edit_widget" path="editor/date_edit_widget" no-toolbar="no-toolbar" auto-save="date">
     <tooltip>Tooltip</tooltip>
     <help>Help</help>
     <sizes>
@@ -42,7 +42,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </filters>
     <background-value>date edit</background-value>
   </widget>
-  <widget id="dropdown_date_edit_widget" type="dropdown-date-edit" field="editor::dropdown_date_edit_widget" path="editor/dropdown_date_edit_widget" no-toolbar="no-toolbar" auto-save="plain">
+  <widget id="dropdown_date_edit_widget" type="dropdown-date-edit" field="editor::dropdown_date_edit_widget" path="editor/dropdown_date_edit_widget" no-toolbar="no-toolbar" auto-save="dropdown-date">
     <tooltip>Tooltip</tooltip>
     <help>Help</help>
     <sizes>

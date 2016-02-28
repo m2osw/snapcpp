@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.806
+ * Version: 0.0.3.807
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -6726,7 +6726,7 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.validate = function(widget) // v
             valid = false;
             snapwebsites.OutputInstance.displayOneMessage(
                     "Invalid Field",
-                    "Entry too short in " + label + ".",
+                    "Entry \"" + (stripped_value.length > 64 ? substr(stripped_value, 61) + "..." : stripped_value) + "\" is too short for " + label + ".",
                     "error",
                     true);
         }

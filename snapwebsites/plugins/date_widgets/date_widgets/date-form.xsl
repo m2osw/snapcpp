@@ -128,7 +128,30 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         </xsl:if>
         <xsl:call-template name="snap:text-field-filters"/>
 
-        <div class="editor-content" value="">
+        <xsl:variable name="date_value">
+          <!-- now the actual value of this line -->
+          <xsl:choose>
+            <xsl:when test="post">
+              <!-- use the post value when there is one, it has priority -->
+              <xsl:copy-of select="post/node()"/>
+            </xsl:when>
+            <xsl:when test="value">
+              <!-- use the current value when there is one -->
+              <xsl:copy-of select="value/node()"/>
+            </xsl:when>
+            <xsl:when test="value/@default">
+              <!-- transform the system default if one was defined -->
+              <xsl:choose>
+                <xsl:when test="value/@default = 'today'">
+                  <!-- YYYY/MM/DD format -->
+                  <xsl:value-of select="year-from-date(current-date())"/>/<xsl:value-of select="month-from-date(current-date())"/>/<xsl:value-of select="day-from-date(current-date())"/>
+                </xsl:when>
+              </xsl:choose>
+            </xsl:when>
+          </xsl:choose>
+        </xsl:variable>
+
+        <div class="editor-content" value="{$date_value}">
 
           <div class="labels">
             <xsl:if test="dropdown-date-edit/include-month">
@@ -179,6 +202,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                     <item value="11">Nov</item>
                     <item value="12">Dec</item>
                   </preset>
+                  <xsl:if test="$date_value">
+                    <value><xsl:value-of select="string(number(tokenize($date_value, '/')[2]))"/></value>
+                  </xsl:if>
                 </widget>
               </editor-form>
             </xsl:variable>
@@ -187,6 +213,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                 <xsl:call-template name="snap:dropdown">
                   <xsl:with-param name="path" select="$path"/>
                   <xsl:with-param name="name" select="concat($name, '_month')"/>
+                  <xsl:with-param name="value" select="value/node()"/>
                 </xsl:call-template>
               </xsl:for-each>
             </xsl:for-each>
@@ -239,6 +266,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                     <item>30</item>
                     <item>31</item>
                   </preset>
+                  <xsl:if test="$date_value">
+                    <value><xsl:value-of select="string(number(tokenize($date_value, '/')[3]))"/></value>
+                  </xsl:if>
                 </widget>
               </editor-form>
             </xsl:variable>
@@ -247,6 +277,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                 <xsl:call-template name="snap:dropdown">
                   <xsl:with-param name="path" select="$path"/>
                   <xsl:with-param name="name" select="concat($name, '_day')"/>
+                  <xsl:with-param name="value" select="value/node()"/>
                 </xsl:call-template>
               </xsl:for-each>
             </xsl:for-each>
@@ -272,6 +303,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                     <item>2017</item>
                     <item>2018</item>
                   </preset>
+                  <xsl:if test="$date_value">
+                    <value><xsl:value-of select="string(number(tokenize($date_value, '/')[1]))"/></value>
+                  </xsl:if>
                 </widget>
               </editor-form>
             </xsl:variable>
@@ -280,6 +314,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                 <xsl:call-template name="snap:dropdown">
                   <xsl:with-param name="path" select="$path"/>
                   <xsl:with-param name="name" select="concat($name, '_year')"/>
+                  <xsl:with-param name="value" select="value/node()"/>
                 </xsl:call-template>
               </xsl:for-each>
             </xsl:for-each>
@@ -289,26 +324,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
         </div>
 
-        <!-- now the actual value of this line -->
-        <xsl:choose>
-          <xsl:when test="post">
-            <!-- use the post value when there is one, it has priority -->
-            <xsl:copy-of select="post/node()"/>
-          </xsl:when>
-          <xsl:when test="value">
-            <!-- use the current value when there is one -->
-            <xsl:copy-of select="value/node()"/>
-          </xsl:when>
-          <xsl:when test="value/@default">
-            <!-- transform the system default if one was defined -->
-            <xsl:choose>
-              <xsl:when test="value/@default = 'today'">
-                <!-- US format & GMT... this should be a parameter, probably a variable we set in the editor before running the parser? -->
-                <xsl:value-of select="month-from-date(current-date())"/>/<xsl:value-of select="day-from-date(current-date())"/>/<xsl:value-of select="year-from-date(current-date())"/>
-              </xsl:when>
-            </xsl:choose>
-          </xsl:when>
-        </xsl:choose>
       </div>
       <xsl:call-template name="snap:common-parts"/>
     </div>

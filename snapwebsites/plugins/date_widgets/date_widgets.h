@@ -58,6 +58,8 @@ public:
 
     // editor signals
     void                    on_prepare_editor_form(editor::editor * e);
+    void                    on_value_to_string(editor::editor::value_to_string_info_t & value_info);
+    void                    on_string_to_value(editor::editor::string_to_value_info_t & value_info);
 
 private:
     void                    content_update(int64_t variables_timestamp);

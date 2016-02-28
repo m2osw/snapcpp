@@ -1,6 +1,6 @@
 /** @preserve
  * Name: date-widgets
- * Version: 0.0.1.13
+ * Version: 0.0.1.19
  * Browsers: all
  * Depends: editor (>= 0.0.3.640)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -902,9 +902,93 @@ snapwebsites.EditorWidgetTypeDropdownDateEdit.prototype.initializeWidget = funct
 {
     var that = this,
         editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        c = editor_widget.getWidgetContent();
+        editor_form = editor_widget.getEditorForm(),
+        name = editor_widget.getName(),
+        year_widget = editor_form.getWidgetByName(name + "_year"),
+        month_widget = editor_form.getWidgetByName(name + "_month"),
+        day_widget = editor_form.getWidgetByName(name + "_day"),
+        year = year_widget.getWidget(),
+        month = month_widget.getWidget(),
+        day = day_widget.getWidget();
 
     snapwebsites.EditorWidgetTypeDropdownDateEdit.superClass_.initializeWidget.call(this, widget);
+
+    year.bind("widgetchange", function(e)
+        {
+            // define the full date
+            that.retrieveNewValue_(editor_widget);
+        });
+    month.bind("widgetchange", function(e)
+        {
+            // define the full date
+            that.retrieveNewValue_(editor_widget);
+        });
+    day.bind("widgetchange", function(e)
+        {
+            // define the full date
+            that.retrieveNewValue_(editor_widget);
+        });
+};
+
+
+/** \brief Determine the new value of the timezone.
+ *
+ * This function gets the value of the continent and the city and
+ * generates the new value of the timezone widget.
+ *
+ * \todo
+ * Find a way to get the formchange event only if the continent or city
+ * changed, and not on any change to the entire form.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The locale timezone widget.
+ *
+ * @private
+ */
+snapwebsites.EditorWidgetTypeDropdownDateEdit.prototype.retrieveNewValue_ = function(editor_widget)
+{
+    var editor_widget_content = editor_widget.getWidgetContent(),
+        editor_form = editor_widget.getEditorForm(),
+        name = editor_widget.getName(),
+        month_widget = editor_form.getWidgetByName(name + "_month"),
+        day_widget = editor_form.getWidgetByName(name + "_day"),
+        year_widget = editor_form.getWidgetByName(name + "_year"),
+        month = '-',
+        day = '-',
+        year = '-',
+        value,
+        result_value;
+
+    if(month_widget)
+    {
+        value = month_widget.getValue();
+        if(value)
+        {
+            month = value;
+        }
+    }
+    if(day_widget)
+    {
+        value = day_widget.getValue();
+        if(value)
+        {
+            day = value;
+        }
+    }
+    if(year_widget)
+    {
+        value = year_widget.getValue();
+        if(value)
+        {
+            year = value;
+        }
+    }
+
+    if(month != '-' || day != '-' || year != '-')
+    {
+        // Force resulting date to YYYY/MM/DD
+        result_value = year + '/' + month + '/' + day;
+        editor_widget_content.attr("value", result_value);
+    }
 };
 
 

@@ -596,6 +596,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n.startsWith("core::last_updated")
          || n == "core::plugin_threshold"
          || n == "core::site_ready"
+         || n == "editor::date_edit_widget"
+         || n == "editor::dropdown_date_edit_widget"
          || n == "epayment_paypal::last_attempt"
          || n == "epayment_paypal::oauth2_expires"
          || n == "images::modified"

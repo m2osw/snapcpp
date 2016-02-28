@@ -327,6 +327,8 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT classes ANY>
 
+<!ELEMENT value ANY>
+
 <!ELEMENT default ANY>
 
 <!ELEMENT dropdown-algorithm ANY>

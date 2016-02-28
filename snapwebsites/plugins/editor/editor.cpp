@@ -441,7 +441,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 2, 27, 15, 10, 56, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 2, 27, 16, 57, 56, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1457,7 +1457,7 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
         time_info.tm_mon = value_info.get_data().mid(0, 2).toInt() - 1;
         time_info.tm_mday = value_info.get_data().mid(3, 2).toInt();
         time_info.tm_year = value_info.get_data().mid(6, 4).toInt() - 1900;
-        time_t t(mkgmtime(&time_info));
+        time_t const t(mkgmtime(&time_info));
         value_info.result().setInt64Value(t * 1000000); // seconds to microseconds
         value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
@@ -3653,8 +3653,29 @@ bool editor::validate_editor_post_for_widget_impl(
                     //
                     //     <regex name="date"/>
                     //
-                    locale::locale::parse_error_t errcode;
-                    time_t const date_value(locale_plugin->parse_date(value, errcode));
+                    locale::locale::parse_error_t errcode(locale::locale::parse_error_t::PARSE_NO_ERROR);
+                    time_t date_value(0);
+                    // first try a conversion of the value using the
+                    // string_to_value() signal, if that returns a date
+                    // use that date (which is expected to be in microseconds)
+                    //
+                    // TODO: look into whether we could call the
+                    //       string_to_value() before the validation
+                    //       and pass the results to the function;
+                    //       that way we could call it once instead
+                    //       of twice
+                    //
+                    string_to_value_info_t value_info(ipath, widget, value);
+                    string_to_value(value_info);
+                    if(value_info.is_valid()
+                    && value_info.get_type_name() == "date")
+                    {
+                        date_value = value_info.result().safeInt64Value() / 1000000LL;
+                    }
+                    else
+                    {
+                        date_value = locale_plugin->parse_date(value, errcode);
+                    }
                     if(errcode == locale::locale::parse_error_t::PARSE_NO_ERROR)
                     {
                         QString min_str("-1");
