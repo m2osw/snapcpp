@@ -38,40 +38,23 @@
 
 // 3rd party libs
 //
+#include <cassandra.h>
 #include <QtCore>
-#include <QtCassandra/QCassandra.h>
 
 class sqlBackupRestore
 {
 public:
-    sqlBackupRestore( const QtCassandra::QCassandra::pointer_t context
-                    , const QString& context_name, const QString& sqlDbFile
-                    );
+    sqlBackupRestore( const QString& host_name, const QString& sqlDbFile );
 
     void storeContext();
     void restoreContext();
     
 private:
-    typedef QMap<QString,QVariant>                         string_to_id_t;
-    typedef QList<QtCassandra::QCassandraTable::pointer_t> table_list_t;
-    typedef QList<QtCassandra::QCassandraRow::pointer_t>   row_list_t;
-
-    int  getTableId( QtCassandra::QCassandraTable::pointer_t table );
-    int  getRowId  ( QtCassandra::QCassandraRow::pointer_t   row   );
-
-    void createSchema( const QString& sqlDbFile );
-    void writeContext();
     void storeTables();
-    void storeRowsByTable( QtCassandra::QCassandraTable::pointer_t table );
-    void storeCellsByRow ( QtCassandra::QCassandraRow::pointer_t row );
 
-    QtCassandra::QCassandra::pointer_t        f_cassandra;
-    QtCassandra::QCassandraContext::pointer_t f_context;
-    table_list_t                              f_tableList;
-    row_list_t                                f_rowList;
-    //
-    QtCassandra::QCassandraColumnRangePredicate::pointer_t  f_colPred;
-    QtCassandra::QCassandraRowPredicate                     f_rowPred;
+    CassCluster*    f_cluster;
+    CassSession*    f_session;
+    CassFuture*     f_connection;
 };
 
 // vim: ts=4 sw=4 et

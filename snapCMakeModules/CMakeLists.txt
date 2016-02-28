@@ -37,6 +37,7 @@ project( snapCMakeModules )
 install( FILES Modules/CheckCXXAbstractClass.cmake DESTINATION share/cmake-2.8/Modules )
 
 set( MODULES_LIST
+	CassandraCppDriver
 	Catch
 	CppUnit
 	ICU

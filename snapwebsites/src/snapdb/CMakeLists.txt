@@ -35,6 +35,8 @@
 ##
 project(snapdb)
 
+include_directories( ${CASSANDRACPPDRIVER_INCLUDE_DIR} )
+
 add_executable(${PROJECT_NAME}
     snapdb.h
     snapdb.cpp
@@ -48,6 +50,7 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${ADVGETOPT_LIBRARIES}
+    ${CASSANDRACPPDRIVER_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}

@@ -69,7 +69,7 @@ void snapTableList::initList()
         addEntry("files"                   , true,  true  );
         addEntry("firewall"                , true,  false );
         addEntry("layout"                  , true,  true  );
-        addEntry("libQtCassandraLockTable" , true,  true  );
+        addEntry("\"libQtCassandraLockTable\"" , true,  true  );    // TODO: Not sure why, but our implementation is creating this table name in cassandra with quotes.
         addEntry("links"                   , true,  true  );
         addEntry("list"                    , true,  false );
         addEntry("listref"                 , true,  true  );
@@ -86,7 +86,7 @@ void snapTableList::initList()
         addEntry("users"                   , true,  true  );
         addEntry("websites"                , false, true  );
 
-        f_list["libQtCassandraLockTable"].f_rowsToDump << "hosts";
+        f_list["\"libQtCassandraLockTable\""].f_rowsToDump << "hosts";
     }
 }
 
