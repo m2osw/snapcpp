@@ -288,7 +288,16 @@ snapdb::snapdb(int argc, char * argv[])
         }
         if( f_opt->is_defined( "restore-context" ) )
         {
-            exit( restore_context()? 0: 1 );
+            try
+            {
+                restore_context();
+                exit(0);
+            }
+            catch( const std::exception& except )
+            {
+                std::cerr << "Exception caught! what=[" << except.what() << "]" << std::endl;
+                exit(1);
+            }
         }
     }
     catch( const std::exception& except )
@@ -449,40 +458,19 @@ void snapdb::dump_context()
         snapTableList::overrideTablesToDump( tables_to_dump );
     }
 
-    try
-    {
-        sqlBackupRestore backup( f_host, outfile );
-        backup.storeContext();
-    }
-    catch( std::exception except )
-    {
-        std::cerr << "Error while making backup: [" << except.what() << "]!" << std::endl;
-    }
-    catch( ... )
-    {
-        // TODO: add proper catch
-        std::cerr << "Error while making backup!" << std::endl;
-    }
+    sqlBackupRestore backup( f_host, outfile );
+    backup.storeContext();
 }
 
 
-bool snapdb::restore_context()
+void snapdb::restore_context()
 {
-    f_cassandra->connect(f_host, f_port);
     const QString infile( f_opt->get_string( "restore-context" ).c_str() );
 
-    try
-    {
-        sqlBackupRestore backup( f_host, infile );
-        backup.restoreContext();
-    }
-    catch( ... )
-    {
-        // TODO: add proper catch
-        std::cerr << "Error while attempting to restore!" << std::endl;
-    }
+    snapTableList::initList();
 
-    return true;
+    sqlBackupRestore backup( f_host, infile );
+    backup.restoreContext();
 }
 
 

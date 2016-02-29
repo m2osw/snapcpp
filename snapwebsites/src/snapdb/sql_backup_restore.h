@@ -51,6 +51,7 @@ public:
     
 private:
     void storeTables();
+    void restoreTables();
 
     CassCluster*    f_cluster;
     CassSession*    f_session;

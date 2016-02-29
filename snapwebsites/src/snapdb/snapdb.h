@@ -67,7 +67,7 @@ public:
     void drop_tables();
     void drop_context();
     void dump_context();
-    bool restore_context();
+    void restore_context();
     void display();
 
 private:
