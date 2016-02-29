@@ -459,7 +459,7 @@ void snapdb::dump_context()
     }
 
     sqlBackupRestore backup( f_host, outfile );
-    backup.storeContext();
+    backup.storeContext( f_count );
 }
 
 
@@ -592,7 +592,11 @@ void snapdb::display_columns() const
             }
             for( auto c : cells )
             {
-                std::cout << du.get_column_name(c) << " = " << du.get_column_value( c, true /*display_only*/ ) << std::endl;
+                std::cout
+                    << du.get_column_name(c)
+                    << " = "
+                    << du.get_column_value( c, true /*display_only*/ )
+                    << std::endl;
             }
         }
     }

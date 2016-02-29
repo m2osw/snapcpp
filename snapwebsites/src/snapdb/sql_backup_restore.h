@@ -46,11 +46,11 @@ class sqlBackupRestore
 public:
     sqlBackupRestore( const QString& host_name, const QString& sqlDbFile );
 
-    void storeContext();
+    void storeContext( const int count );
     void restoreContext();
     
 private:
-    void storeTables();
+    void storeTables( const int count );
     void restoreTables();
 
     CassCluster*    f_cluster;

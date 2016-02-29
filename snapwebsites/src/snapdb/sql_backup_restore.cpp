@@ -100,11 +100,11 @@ sqlBackupRestore::sqlBackupRestore( const QString& host_name, const QString& sql
 }
 
 
-void sqlBackupRestore::storeContext()
+void sqlBackupRestore::storeContext( const int count )
 {
     QSqlDatabase db( QSqlDatabase::database() );
     db.transaction();
-    storeTables();
+    storeTables( count );
     db.commit();
 }
 
@@ -126,19 +126,17 @@ void sqlBackupRestore::restoreContext()
 //
 // Then you can call this method.
 //
-void sqlBackupRestore::storeTables()
+void sqlBackupRestore::storeTables( const int count )
 {
     snapTableList   dump_list;
 
     for( auto table_name : dump_list.tablesToDump() ) // f_context->tables() )
     {
-        QString q_str = QString( "CREATE TABLE IF NOT EXISTS %1 ("
-                "id INTEGER PRIMARY KEY, "
-                "key LONGBLOB, "
-                "column1 LONGBLOB, "
-                "value LONGBLOB, "
-                "ttl INTEGER, "
-                "writetime INTEGER "
+        QString q_str = QString( "CREATE TABLE IF NOT EXISTS %1 "
+                "( id INTEGER PRIMARY KEY"
+                ", key LONGBLOB"
+                ", column1 LONGBLOB"
+                ", value LONGBLOB"
                 ");"
                 ).arg(table_name);
         QSqlQuery q;
@@ -152,15 +150,15 @@ void sqlBackupRestore::storeTables()
 
         std::cout << "Dumping table [" << table_name << "]" << std::endl;
 
-        const QString cql_select_string("SELECT key,column1,value,ttl(value),writetime(value) FROM snap_websites.%1 LIMIT 10000000");
+        const QString cql_select_string("SELECT key,column1,value FROM snap_websites.%1 LIMIT %2");
         if( table_name == "libQtCassandraLockTable" )
         {
             // TODO: ugly hack! We need to correct this in the cassandra table itself.
-            q_str = cql_select_string.arg("\""+table_name+"\"");
+            q_str = cql_select_string.arg("\""+table_name+"\"").arg(count);
         }
         else
         {
-            q_str = cql_select_string.arg(table_name);
+            q_str = cql_select_string.arg(table_name).arg(count);
         }
         CassStatement* query_stmt    = cass_statement_new( q_str.toUtf8().data(), 0 );
         CassFuture*    result_future = cass_session_execute( f_session, query_stmt );
@@ -185,17 +183,14 @@ void sqlBackupRestore::storeTables()
             const CassValue* key_value       = cass_row_get_column_by_name( row, "key"       );
             const CassValue* column1_value   = cass_row_get_column_by_name( row, "column1"   );
             const CassValue* value_value     = cass_row_get_column_by_name( row, "value"     );
-            const CassValue* ttl_value       = cass_row_get_column_by_name( row, "ttl"       );
-            const CassValue* writetime_value = cass_row_get_column_by_name( row, "writetime" );
 
             const char *    byte_value;
-            cass_uint32_t   uint32_value;
             size_t          value_len;
 
             q_str = QString( "INSERT OR REPLACE INTO %1 "
-                    "(key, column1, value, ttl, writetime) "
+                    "(key, column1, value ) "
                     "VALUES "
-                    "(:key, :column1, :value, :ttl, :writetime);"
+                    "(:key, :column1, :value );"
                     ).arg(table_name);
             q.clear();
             q.prepare( q_str );
@@ -208,12 +203,6 @@ void sqlBackupRestore::storeTables()
             //
             cass_value_get_string( value_value, &byte_value, &value_len );
             q.bindValue( ":value", QByteArray(byte_value,value_len) );
-            //
-            cass_value_get_uint32( ttl_value, &uint32_value );
-            q.bindValue( ":ttl", uint32_value );
-            //
-            cass_value_get_uint32( writetime_value, &uint32_value );
-            q.bindValue( ":writetime", uint32_value );
             //
             if( !q.exec() )
             {
@@ -259,7 +248,7 @@ void sqlBackupRestore::restoreTables()
                 : table_name
             );
 
-        const QString sql_select_string ("SELECT key,column1,value,ttl,writetime FROM %1");
+        const QString sql_select_string ("SELECT key,column1,value FROM %1");
         QString q_str                   ( sql_select_string.arg(table_name) );
         QSqlQuery q;
         q.prepare( q_str );
@@ -270,34 +259,25 @@ void sqlBackupRestore::restoreTables()
             throw std::runtime_error( q.lastError().text().toUtf8().data() );
         }
 
-        // TODO: have to import TTLs, but they are too big for the CQL interface to accept!
         const int key_idx       = q.record().indexOf("key");
         const int column1_idx   = q.record().indexOf("column1");
         const int value_idx     = q.record().indexOf("value");
-        const int ttl_idx       = q.record().indexOf("ttl");
-        const int writetime_idx = q.record().indexOf("writetime");
         for( q.first(); q.isValid(); q.next() )
         {
             const QByteArray key       ( q.value( key_idx       ).toByteArray() );
             const QByteArray column1   ( q.value( column1_idx   ).toByteArray() );
             const QByteArray value     ( q.value( value_idx     ).toByteArray() );
-            const uint32_t   ttl       ( q.value( ttl_idx       ).toUInt()      );
-            const uint32_t   writetime ( q.value( writetime_idx ).toUInt()      );
 
-            const QString cql_insert_string("INSERT INTO snap_websites.%1 (key,column1,value) VALUES (?,?,?) USING TTL ? AND TIMESTAMP ?;");
-            //const QString cql_insert_string("INSERT INTO snap_websites.%1 (key,column1,value) VALUES (?,?,?);");
+            const QString cql_insert_string("INSERT INTO snap_websites.%1 (key,column1,value) VALUES (?,?,?);");
             const QString qstr( cql_insert_string.arg(target_table_name) );
 
             // TODO: put this into RAII class
             //
-            std::cout << "TTL = " << ttl << ", TIMESTAMP = " << writetime << std::endl;
-            CassStatement* query_stmt    = cass_statement_new( qstr.toUtf8().data(), 5 );
+            CassStatement* query_stmt    = cass_statement_new( qstr.toUtf8().data(), 3 );
 
             cass_statement_bind_string_n( query_stmt, 0, key.constData(),     key.size()     );
             cass_statement_bind_string_n( query_stmt, 1, column1.constData(), column1.size() );
             cass_statement_bind_string_n( query_stmt, 2, value.constData(),   value.size()   );
-            cass_statement_bind_uint32  ( query_stmt, 3, ttl       );
-            cass_statement_bind_uint32  ( query_stmt, 4, writetime );
 
             CassFuture*    result_future = cass_session_execute( f_session, query_stmt );
             cass_future_wait( result_future );
