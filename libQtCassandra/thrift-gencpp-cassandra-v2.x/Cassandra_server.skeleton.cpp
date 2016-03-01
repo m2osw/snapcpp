@@ -112,11 +112,6 @@ class CassandraHandler : virtual public CassandraIf {
     printf("truncate\n");
   }
 
-  void get_multi_slice(std::vector<ColumnOrSuperColumn> & _return, const MultiSliceRequest& request) {
-    // Your implementation goes here
-    printf("get_multi_slice\n");
-  }
-
   void describe_schema_versions(std::map<std::string, std::vector<std::string> > & _return) {
     // Your implementation goes here
     printf("describe_schema_versions\n");
@@ -140,11 +135,6 @@ class CassandraHandler : virtual public CassandraIf {
   void describe_ring(std::vector<TokenRange> & _return, const std::string& keyspace) {
     // Your implementation goes here
     printf("describe_ring\n");
-  }
-
-  void describe_local_ring(std::vector<TokenRange> & _return, const std::string& keyspace) {
-    // Your implementation goes here
-    printf("describe_local_ring\n");
   }
 
   void describe_token_map(std::map<std::string, std::string> & _return) {

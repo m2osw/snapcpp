@@ -20,8 +20,7 @@ int _kConsistencyLevelValues[] = {
   ConsistencyLevel::TWO,
   ConsistencyLevel::THREE,
   ConsistencyLevel::SERIAL,
-  ConsistencyLevel::LOCAL_SERIAL,
-  ConsistencyLevel::LOCAL_ONE
+  ConsistencyLevel::LOCAL_SERIAL
 };
 const char* _kConsistencyLevelNames[] = {
   "ONE",
@@ -33,10 +32,9 @@ const char* _kConsistencyLevelNames[] = {
   "TWO",
   "THREE",
   "SERIAL",
-  "LOCAL_SERIAL",
-  "LOCAL_ONE"
+  "LOCAL_SERIAL"
 };
-const std::map<int, const char*> _ConsistencyLevel_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(11, _kConsistencyLevelValues, _kConsistencyLevelNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
+const std::map<int, const char*> _ConsistencyLevel_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(10, _kConsistencyLevelValues, _kConsistencyLevelNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
 
 int _kIndexOperatorValues[] = {
   IndexOperator::EQ,
@@ -2810,8 +2808,8 @@ void swap(TriggerDef &a, TriggerDef &b) {
   swap(a.options, b.options);
 }
 
-const char* CfDef::ascii_fingerprint = "D885AE83382BA6B36ADA00E72F8B71C3";
-const uint8_t CfDef::binary_fingerprint[16] = {0xD8,0x85,0xAE,0x83,0x38,0x2B,0xA6,0xB3,0x6A,0xDA,0x00,0xE7,0x2F,0x8B,0x71,0xC3};
+const char* CfDef::ascii_fingerprint = "3D2F73880CC64DDE3E1F25480C58FD72";
+const uint8_t CfDef::binary_fingerprint[16] = {0x3D,0x2F,0x73,0x88,0x0C,0xC6,0x4D,0xDE,0x3E,0x1F,0x25,0x48,0x0C,0x58,0xFD,0x72};
 
 uint32_t CfDef::read(::apache::thrift::protocol::TProtocol* iprot) {
 
@@ -2951,6 +2949,14 @@ uint32_t CfDef::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 24:
+        if (ftype == ::apache::thrift::protocol::T_BOOL) {
+          xfer += iprot->readBool(this->replicate_on_write);
+          this->__isset.replicate_on_write = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       case 26:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->key_validation_class);
@@ -3045,6 +3051,14 @@ uint32_t CfDef::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 38:
+        if (ftype == ::apache::thrift::protocol::T_BOOL) {
+          xfer += iprot->readBool(this->populate_io_cache_on_flush);
+          this->__isset.populate_io_cache_on_flush = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       case 39:
         if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->memtable_flush_period_in_ms);
@@ -3057,6 +3071,14 @@ uint32_t CfDef::read(::apache::thrift::protocol::TProtocol* iprot) {
         if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->default_time_to_live);
           this->__isset.default_time_to_live = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 41:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          xfer += iprot->readI32(this->index_interval);
+          this->__isset.index_interval = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -3085,30 +3107,6 @@ uint32_t CfDef::read(::apache::thrift::protocol::TProtocol* iprot) {
             xfer += iprot->readListEnd();
           }
           this->__isset.triggers = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 44:
-        if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readString(this->cells_per_row_to_cache);
-          this->__isset.cells_per_row_to_cache = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 45:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          xfer += iprot->readI32(this->min_index_interval);
-          this->__isset.min_index_interval = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 46:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          xfer += iprot->readI32(this->max_index_interval);
-          this->__isset.max_index_interval = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -3169,14 +3167,6 @@ uint32_t CfDef::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 24:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool(this->replicate_on_write);
-          this->__isset.replicate_on_write = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
       case 25:
         if (ftype == ::apache::thrift::protocol::T_DOUBLE) {
           xfer += iprot->readDouble(this->merge_shards_chance);
@@ -3197,22 +3187,6 @@ uint32_t CfDef::read(::apache::thrift::protocol::TProtocol* iprot) {
         if (ftype == ::apache::thrift::protocol::T_I32) {
           xfer += iprot->readI32(this->row_cache_keys_to_save);
           this->__isset.row_cache_keys_to_save = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 38:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool(this->populate_io_cache_on_flush);
-          this->__isset.populate_io_cache_on_flush = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 41:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          xfer += iprot->readI32(this->index_interval);
-          this->__isset.index_interval = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -3459,21 +3433,6 @@ uint32_t CfDef::write(::apache::thrift::protocol::TProtocol* oprot) const {
     }
     xfer += oprot->writeFieldEnd();
   }
-  if (this->__isset.cells_per_row_to_cache) {
-    xfer += oprot->writeFieldBegin("cells_per_row_to_cache", ::apache::thrift::protocol::T_STRING, 44);
-    xfer += oprot->writeString(this->cells_per_row_to_cache);
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.min_index_interval) {
-    xfer += oprot->writeFieldBegin("min_index_interval", ::apache::thrift::protocol::T_I32, 45);
-    xfer += oprot->writeI32(this->min_index_interval);
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.max_index_interval) {
-    xfer += oprot->writeFieldBegin("max_index_interval", ::apache::thrift::protocol::T_I32, 46);
-    xfer += oprot->writeI32(this->max_index_interval);
-    xfer += oprot->writeFieldEnd();
-  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -3494,6 +3453,7 @@ void swap(CfDef &a, CfDef &b) {
   swap(a.id, b.id);
   swap(a.min_compaction_threshold, b.min_compaction_threshold);
   swap(a.max_compaction_threshold, b.max_compaction_threshold);
+  swap(a.replicate_on_write, b.replicate_on_write);
   swap(a.key_validation_class, b.key_validation_class);
   swap(a.key_alias, b.key_alias);
   swap(a.compaction_strategy, b.compaction_strategy);
@@ -3502,13 +3462,12 @@ void swap(CfDef &a, CfDef &b) {
   swap(a.bloom_filter_fp_chance, b.bloom_filter_fp_chance);
   swap(a.caching, b.caching);
   swap(a.dclocal_read_repair_chance, b.dclocal_read_repair_chance);
+  swap(a.populate_io_cache_on_flush, b.populate_io_cache_on_flush);
   swap(a.memtable_flush_period_in_ms, b.memtable_flush_period_in_ms);
   swap(a.default_time_to_live, b.default_time_to_live);
+  swap(a.index_interval, b.index_interval);
   swap(a.speculative_retry, b.speculative_retry);
   swap(a.triggers, b.triggers);
-  swap(a.cells_per_row_to_cache, b.cells_per_row_to_cache);
-  swap(a.min_index_interval, b.min_index_interval);
-  swap(a.max_index_interval, b.max_index_interval);
   swap(a.row_cache_size, b.row_cache_size);
   swap(a.key_cache_size, b.key_cache_size);
   swap(a.row_cache_save_period_in_seconds, b.row_cache_save_period_in_seconds);
@@ -3516,17 +3475,14 @@ void swap(CfDef &a, CfDef &b) {
   swap(a.memtable_flush_after_mins, b.memtable_flush_after_mins);
   swap(a.memtable_throughput_in_mb, b.memtable_throughput_in_mb);
   swap(a.memtable_operations_in_millions, b.memtable_operations_in_millions);
-  swap(a.replicate_on_write, b.replicate_on_write);
   swap(a.merge_shards_chance, b.merge_shards_chance);
   swap(a.row_cache_provider, b.row_cache_provider);
   swap(a.row_cache_keys_to_save, b.row_cache_keys_to_save);
-  swap(a.populate_io_cache_on_flush, b.populate_io_cache_on_flush);
-  swap(a.index_interval, b.index_interval);
   swap(a.__isset, b.__isset);
 }
 
-const char* KsDef::ascii_fingerprint = "7D6A6369147C130D38028C620FFF44A2";
-const uint8_t KsDef::binary_fingerprint[16] = {0x7D,0x6A,0x63,0x69,0x14,0x7C,0x13,0x0D,0x38,0x02,0x8C,0x62,0x0F,0xFF,0x44,0xA2};
+const char* KsDef::ascii_fingerprint = "465E9A5DAAF09390BB3CB86E62BD37E8";
+const uint8_t KsDef::binary_fingerprint[16] = {0x46,0x5E,0x9A,0x5D,0xAA,0xF0,0x93,0x90,0xBB,0x3C,0xB8,0x6E,0x62,0xBD,0x37,0xE8};
 
 uint32_t KsDef::read(::apache::thrift::protocol::TProtocol* iprot) {
 
@@ -4340,238 +4296,6 @@ void swap(CfSplit &a, CfSplit &b) {
   swap(a.start_token, b.start_token);
   swap(a.end_token, b.end_token);
   swap(a.row_count, b.row_count);
-}
-
-const char* ColumnSlice::ascii_fingerprint = "D0297FC5011701BD87898CC36146A565";
-const uint8_t ColumnSlice::binary_fingerprint[16] = {0xD0,0x29,0x7F,0xC5,0x01,0x17,0x01,0xBD,0x87,0x89,0x8C,0xC3,0x61,0x46,0xA5,0x65};
-
-uint32_t ColumnSlice::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readBinary(this->start);
-          this->__isset.start = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 2:
-        if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readBinary(this->finish);
-          this->__isset.finish = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t ColumnSlice::write(::apache::thrift::protocol::TProtocol* oprot) const {
-  uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("ColumnSlice");
-
-  if (this->__isset.start) {
-    xfer += oprot->writeFieldBegin("start", ::apache::thrift::protocol::T_STRING, 1);
-    xfer += oprot->writeBinary(this->start);
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.finish) {
-    xfer += oprot->writeFieldBegin("finish", ::apache::thrift::protocol::T_STRING, 2);
-    xfer += oprot->writeBinary(this->finish);
-    xfer += oprot->writeFieldEnd();
-  }
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-void swap(ColumnSlice &a, ColumnSlice &b) {
-  using ::std::swap;
-  swap(a.start, b.start);
-  swap(a.finish, b.finish);
-  swap(a.__isset, b.__isset);
-}
-
-const char* MultiSliceRequest::ascii_fingerprint = "65D4C6578392956433677091AF9D8B67";
-const uint8_t MultiSliceRequest::binary_fingerprint[16] = {0x65,0xD4,0xC6,0x57,0x83,0x92,0x95,0x64,0x33,0x67,0x70,0x91,0xAF,0x9D,0x8B,0x67};
-
-uint32_t MultiSliceRequest::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readBinary(this->key);
-          this->__isset.key = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 2:
-        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-          xfer += this->column_parent.read(iprot);
-          this->__isset.column_parent = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 3:
-        if (ftype == ::apache::thrift::protocol::T_LIST) {
-          {
-            this->column_slices.clear();
-            uint32_t _size169;
-            ::apache::thrift::protocol::TType _etype172;
-            xfer += iprot->readListBegin(_etype172, _size169);
-            this->column_slices.resize(_size169);
-            uint32_t _i173;
-            for (_i173 = 0; _i173 < _size169; ++_i173)
-            {
-              xfer += this->column_slices[_i173].read(iprot);
-            }
-            xfer += iprot->readListEnd();
-          }
-          this->__isset.column_slices = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 4:
-        if (ftype == ::apache::thrift::protocol::T_BOOL) {
-          xfer += iprot->readBool(this->reversed);
-          this->__isset.reversed = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 5:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          xfer += iprot->readI32(this->count);
-          this->__isset.count = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 6:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          int32_t ecast174;
-          xfer += iprot->readI32(ecast174);
-          this->consistency_level = (ConsistencyLevel::type)ecast174;
-          this->__isset.consistency_level = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t MultiSliceRequest::write(::apache::thrift::protocol::TProtocol* oprot) const {
-  uint32_t xfer = 0;
-  xfer += oprot->writeStructBegin("MultiSliceRequest");
-
-  if (this->__isset.key) {
-    xfer += oprot->writeFieldBegin("key", ::apache::thrift::protocol::T_STRING, 1);
-    xfer += oprot->writeBinary(this->key);
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.column_parent) {
-    xfer += oprot->writeFieldBegin("column_parent", ::apache::thrift::protocol::T_STRUCT, 2);
-    xfer += this->column_parent.write(oprot);
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.column_slices) {
-    xfer += oprot->writeFieldBegin("column_slices", ::apache::thrift::protocol::T_LIST, 3);
-    {
-      xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->column_slices.size()));
-      std::vector<ColumnSlice> ::const_iterator _iter175;
-      for (_iter175 = this->column_slices.begin(); _iter175 != this->column_slices.end(); ++_iter175)
-      {
-        xfer += (*_iter175).write(oprot);
-      }
-      xfer += oprot->writeListEnd();
-    }
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.reversed) {
-    xfer += oprot->writeFieldBegin("reversed", ::apache::thrift::protocol::T_BOOL, 4);
-    xfer += oprot->writeBool(this->reversed);
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.count) {
-    xfer += oprot->writeFieldBegin("count", ::apache::thrift::protocol::T_I32, 5);
-    xfer += oprot->writeI32(this->count);
-    xfer += oprot->writeFieldEnd();
-  }
-  if (this->__isset.consistency_level) {
-    xfer += oprot->writeFieldBegin("consistency_level", ::apache::thrift::protocol::T_I32, 6);
-    xfer += oprot->writeI32((int32_t)this->consistency_level);
-    xfer += oprot->writeFieldEnd();
-  }
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-void swap(MultiSliceRequest &a, MultiSliceRequest &b) {
-  using ::std::swap;
-  swap(a.key, b.key);
-  swap(a.column_parent, b.column_parent);
-  swap(a.column_slices, b.column_slices);
-  swap(a.reversed, b.reversed);
-  swap(a.count, b.count);
-  swap(a.consistency_level, b.consistency_level);
-  swap(a.__isset, b.__isset);
 }
 
 }}} // namespace

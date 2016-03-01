@@ -4,11 +4,15 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
+#pragma once
 #ifndef Cassandra_H
 #define Cassandra_H
+#pragma GCC system_header
 
-#pragma GCC push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
+// --- Snap! Website header additions ---
+// With Thrift 0.8.0, many basic types do not get defined properly
+#include <inttypes.h>
+// --- end ---
 #include <thrift/TDispatchProcessor.h>
 #include "cassandra_types.h"
 
@@ -35,13 +39,11 @@ class CassandraIf {
   virtual void batch_mutate(const std::map<std::string, std::map<std::string, std::vector<Mutation> > > & mutation_map, const ConsistencyLevel::type consistency_level) = 0;
   virtual void atomic_batch_mutate(const std::map<std::string, std::map<std::string, std::vector<Mutation> > > & mutation_map, const ConsistencyLevel::type consistency_level) = 0;
   virtual void truncate(const std::string& cfname) = 0;
-  virtual void get_multi_slice(std::vector<ColumnOrSuperColumn> & _return, const MultiSliceRequest& request) = 0;
   virtual void describe_schema_versions(std::map<std::string, std::vector<std::string> > & _return) = 0;
   virtual void describe_keyspaces(std::vector<KsDef> & _return) = 0;
   virtual void describe_cluster_name(std::string& _return) = 0;
   virtual void describe_version(std::string& _return) = 0;
   virtual void describe_ring(std::vector<TokenRange> & _return, const std::string& keyspace) = 0;
-  virtual void describe_local_ring(std::vector<TokenRange> & _return, const std::string& keyspace) = 0;
   virtual void describe_token_map(std::map<std::string, std::string> & _return) = 0;
   virtual void describe_partitioner(std::string& _return) = 0;
   virtual void describe_snitch(std::string& _return) = 0;
@@ -146,9 +148,6 @@ class CassandraNull : virtual public CassandraIf {
   void truncate(const std::string& /* cfname */) {
     return;
   }
-  void get_multi_slice(std::vector<ColumnOrSuperColumn> & /* _return */, const MultiSliceRequest& /* request */) {
-    return;
-  }
   void describe_schema_versions(std::map<std::string, std::vector<std::string> > & /* _return */) {
     return;
   }
@@ -162,9 +161,6 @@ class CassandraNull : virtual public CassandraIf {
     return;
   }
   void describe_ring(std::vector<TokenRange> & /* _return */, const std::string& /* keyspace */) {
-    return;
-  }
-  void describe_local_ring(std::vector<TokenRange> & /* _return */, const std::string& /* keyspace */) {
     return;
   }
   void describe_token_map(std::map<std::string, std::string> & /* _return */) {
@@ -2869,138 +2865,6 @@ class Cassandra_truncate_presult {
 };
 
 
-class Cassandra_get_multi_slice_args {
- public:
-
-  Cassandra_get_multi_slice_args() {
-  }
-
-  virtual ~Cassandra_get_multi_slice_args() throw() {}
-
-  MultiSliceRequest request;
-
-  void __set_request(const MultiSliceRequest& val) {
-    request = val;
-  }
-
-  bool operator == (const Cassandra_get_multi_slice_args & rhs) const
-  {
-    if (!(request == rhs.request))
-      return false;
-    return true;
-  }
-  bool operator != (const Cassandra_get_multi_slice_args &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const Cassandra_get_multi_slice_args & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-
-class Cassandra_get_multi_slice_pargs {
- public:
-
-
-  virtual ~Cassandra_get_multi_slice_pargs() throw() {}
-
-  const MultiSliceRequest* request;
-
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-typedef struct _Cassandra_get_multi_slice_result__isset {
-  _Cassandra_get_multi_slice_result__isset() : success(false), ire(false), ue(false), te(false) {}
-  bool success;
-  bool ire;
-  bool ue;
-  bool te;
-} _Cassandra_get_multi_slice_result__isset;
-
-class Cassandra_get_multi_slice_result {
- public:
-
-  Cassandra_get_multi_slice_result() {
-  }
-
-  virtual ~Cassandra_get_multi_slice_result() throw() {}
-
-  std::vector<ColumnOrSuperColumn>  success;
-  InvalidRequestException ire;
-  UnavailableException ue;
-  TimedOutException te;
-
-  _Cassandra_get_multi_slice_result__isset __isset;
-
-  void __set_success(const std::vector<ColumnOrSuperColumn> & val) {
-    success = val;
-  }
-
-  void __set_ire(const InvalidRequestException& val) {
-    ire = val;
-  }
-
-  void __set_ue(const UnavailableException& val) {
-    ue = val;
-  }
-
-  void __set_te(const TimedOutException& val) {
-    te = val;
-  }
-
-  bool operator == (const Cassandra_get_multi_slice_result & rhs) const
-  {
-    if (!(success == rhs.success))
-      return false;
-    if (!(ire == rhs.ire))
-      return false;
-    if (!(ue == rhs.ue))
-      return false;
-    if (!(te == rhs.te))
-      return false;
-    return true;
-  }
-  bool operator != (const Cassandra_get_multi_slice_result &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const Cassandra_get_multi_slice_result & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-typedef struct _Cassandra_get_multi_slice_presult__isset {
-  _Cassandra_get_multi_slice_presult__isset() : success(false), ire(false), ue(false), te(false) {}
-  bool success;
-  bool ire;
-  bool ue;
-  bool te;
-} _Cassandra_get_multi_slice_presult__isset;
-
-class Cassandra_get_multi_slice_presult {
- public:
-
-
-  virtual ~Cassandra_get_multi_slice_presult() throw() {}
-
-  std::vector<ColumnOrSuperColumn> * success;
-  InvalidRequestException ire;
-  UnavailableException ue;
-  TimedOutException te;
-
-  _Cassandra_get_multi_slice_presult__isset __isset;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-
-};
-
-
 class Cassandra_describe_schema_versions_args {
  public:
 
@@ -3503,118 +3367,6 @@ class Cassandra_describe_ring_presult {
   InvalidRequestException ire;
 
   _Cassandra_describe_ring_presult__isset __isset;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-
-};
-
-
-class Cassandra_describe_local_ring_args {
- public:
-
-  Cassandra_describe_local_ring_args() : keyspace() {
-  }
-
-  virtual ~Cassandra_describe_local_ring_args() throw() {}
-
-  std::string keyspace;
-
-  void __set_keyspace(const std::string& val) {
-    keyspace = val;
-  }
-
-  bool operator == (const Cassandra_describe_local_ring_args & rhs) const
-  {
-    if (!(keyspace == rhs.keyspace))
-      return false;
-    return true;
-  }
-  bool operator != (const Cassandra_describe_local_ring_args &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const Cassandra_describe_local_ring_args & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-
-class Cassandra_describe_local_ring_pargs {
- public:
-
-
-  virtual ~Cassandra_describe_local_ring_pargs() throw() {}
-
-  const std::string* keyspace;
-
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-typedef struct _Cassandra_describe_local_ring_result__isset {
-  _Cassandra_describe_local_ring_result__isset() : success(false), ire(false) {}
-  bool success;
-  bool ire;
-} _Cassandra_describe_local_ring_result__isset;
-
-class Cassandra_describe_local_ring_result {
- public:
-
-  Cassandra_describe_local_ring_result() {
-  }
-
-  virtual ~Cassandra_describe_local_ring_result() throw() {}
-
-  std::vector<TokenRange>  success;
-  InvalidRequestException ire;
-
-  _Cassandra_describe_local_ring_result__isset __isset;
-
-  void __set_success(const std::vector<TokenRange> & val) {
-    success = val;
-  }
-
-  void __set_ire(const InvalidRequestException& val) {
-    ire = val;
-  }
-
-  bool operator == (const Cassandra_describe_local_ring_result & rhs) const
-  {
-    if (!(success == rhs.success))
-      return false;
-    if (!(ire == rhs.ire))
-      return false;
-    return true;
-  }
-  bool operator != (const Cassandra_describe_local_ring_result &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const Cassandra_describe_local_ring_result & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-typedef struct _Cassandra_describe_local_ring_presult__isset {
-  _Cassandra_describe_local_ring_presult__isset() : success(false), ire(false) {}
-  bool success;
-  bool ire;
-} _Cassandra_describe_local_ring_presult__isset;
-
-class Cassandra_describe_local_ring_presult {
- public:
-
-
-  virtual ~Cassandra_describe_local_ring_presult() throw() {}
-
-  std::vector<TokenRange> * success;
-  InvalidRequestException ire;
-
-  _Cassandra_describe_local_ring_presult__isset __isset;
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
 
@@ -6164,9 +5916,6 @@ class CassandraClient : virtual public CassandraIf {
   void truncate(const std::string& cfname);
   void send_truncate(const std::string& cfname);
   void recv_truncate();
-  void get_multi_slice(std::vector<ColumnOrSuperColumn> & _return, const MultiSliceRequest& request);
-  void send_get_multi_slice(const MultiSliceRequest& request);
-  void recv_get_multi_slice(std::vector<ColumnOrSuperColumn> & _return);
   void describe_schema_versions(std::map<std::string, std::vector<std::string> > & _return);
   void send_describe_schema_versions();
   void recv_describe_schema_versions(std::map<std::string, std::vector<std::string> > & _return);
@@ -6182,9 +5931,6 @@ class CassandraClient : virtual public CassandraIf {
   void describe_ring(std::vector<TokenRange> & _return, const std::string& keyspace);
   void send_describe_ring(const std::string& keyspace);
   void recv_describe_ring(std::vector<TokenRange> & _return);
-  void describe_local_ring(std::vector<TokenRange> & _return, const std::string& keyspace);
-  void send_describe_local_ring(const std::string& keyspace);
-  void recv_describe_local_ring(std::vector<TokenRange> & _return);
   void describe_token_map(std::map<std::string, std::string> & _return);
   void send_describe_token_map();
   void recv_describe_token_map(std::map<std::string, std::string> & _return);
@@ -6278,13 +6024,11 @@ class CassandraProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_batch_mutate(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_atomic_batch_mutate(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_truncate(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
-  void process_get_multi_slice(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_describe_schema_versions(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_describe_keyspaces(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_describe_cluster_name(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_describe_version(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_describe_ring(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
-  void process_describe_local_ring(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_describe_token_map(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_describe_partitioner(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_describe_snitch(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
@@ -6326,13 +6070,11 @@ class CassandraProcessor : public ::apache::thrift::TDispatchProcessor {
     processMap_["batch_mutate"] = &CassandraProcessor::process_batch_mutate;
     processMap_["atomic_batch_mutate"] = &CassandraProcessor::process_atomic_batch_mutate;
     processMap_["truncate"] = &CassandraProcessor::process_truncate;
-    processMap_["get_multi_slice"] = &CassandraProcessor::process_get_multi_slice;
     processMap_["describe_schema_versions"] = &CassandraProcessor::process_describe_schema_versions;
     processMap_["describe_keyspaces"] = &CassandraProcessor::process_describe_keyspaces;
     processMap_["describe_cluster_name"] = &CassandraProcessor::process_describe_cluster_name;
     processMap_["describe_version"] = &CassandraProcessor::process_describe_version;
     processMap_["describe_ring"] = &CassandraProcessor::process_describe_ring;
-    processMap_["describe_local_ring"] = &CassandraProcessor::process_describe_local_ring;
     processMap_["describe_token_map"] = &CassandraProcessor::process_describe_token_map;
     processMap_["describe_partitioner"] = &CassandraProcessor::process_describe_partitioner;
     processMap_["describe_snitch"] = &CassandraProcessor::process_describe_snitch;
@@ -6551,16 +6293,6 @@ class CassandraMultiface : virtual public CassandraIf {
     ifaces_[i]->truncate(cfname);
   }
 
-  void get_multi_slice(std::vector<ColumnOrSuperColumn> & _return, const MultiSliceRequest& request) {
-    size_t sz = ifaces_.size();
-    size_t i = 0;
-    for (; i < (sz - 1); ++i) {
-      ifaces_[i]->get_multi_slice(_return, request);
-    }
-    ifaces_[i]->get_multi_slice(_return, request);
-    return;
-  }
-
   void describe_schema_versions(std::map<std::string, std::vector<std::string> > & _return) {
     size_t sz = ifaces_.size();
     size_t i = 0;
@@ -6608,16 +6340,6 @@ class CassandraMultiface : virtual public CassandraIf {
       ifaces_[i]->describe_ring(_return, keyspace);
     }
     ifaces_[i]->describe_ring(_return, keyspace);
-    return;
-  }
-
-  void describe_local_ring(std::vector<TokenRange> & _return, const std::string& keyspace) {
-    size_t sz = ifaces_.size();
-    size_t i = 0;
-    for (; i < (sz - 1); ++i) {
-      ifaces_[i]->describe_local_ring(_return, keyspace);
-    }
-    ifaces_[i]->describe_local_ring(_return, keyspace);
     return;
   }
 
@@ -6823,6 +6545,5 @@ class CassandraMultiface : virtual public CassandraIf {
 };
 
 }}} // namespace
-// vim: ts=4 sw=4 et
 
 #endif

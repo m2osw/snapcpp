@@ -4,8 +4,16 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
+#pragma once
 #ifndef cassandra_TYPES_H
 #define cassandra_TYPES_H
+
+#pragma GCC system_header
+
+// --- Snap! Website header additions ---
+// With Thrift 0.8.0, many basic types do not get defined properly
+#include <inttypes.h>
+// --- end ---
 
 #include <thrift/Thrift.h>
 #include <thrift/TApplicationException.h>
@@ -13,8 +21,6 @@
 #include <thrift/transport/TTransport.h>
 
 
-#pragma GCC push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
 
 namespace org { namespace apache { namespace cassandra {
 
@@ -29,8 +35,7 @@ struct ConsistencyLevel {
     TWO = 7,
     THREE = 8,
     SERIAL = 9,
-    LOCAL_SERIAL = 10,
-    LOCAL_ONE = 11
+    LOCAL_SERIAL = 10
   };
 };
 
@@ -1633,7 +1638,7 @@ class TriggerDef {
 void swap(TriggerDef &a, TriggerDef &b);
 
 typedef struct _CfDef__isset {
-  _CfDef__isset() : column_type(true), comparator_type(true), subcomparator_type(false), comment(false), read_repair_chance(false), column_metadata(false), gc_grace_seconds(false), default_validation_class(false), id(false), min_compaction_threshold(false), max_compaction_threshold(false), key_validation_class(false), key_alias(false), compaction_strategy(false), compaction_strategy_options(false), compression_options(false), bloom_filter_fp_chance(false), caching(true), dclocal_read_repair_chance(true), memtable_flush_period_in_ms(false), default_time_to_live(false), speculative_retry(true), triggers(false), cells_per_row_to_cache(true), min_index_interval(false), max_index_interval(false), row_cache_size(false), key_cache_size(false), row_cache_save_period_in_seconds(false), key_cache_save_period_in_seconds(false), memtable_flush_after_mins(false), memtable_throughput_in_mb(false), memtable_operations_in_millions(false), replicate_on_write(false), merge_shards_chance(false), row_cache_provider(false), row_cache_keys_to_save(false), populate_io_cache_on_flush(false), index_interval(false) {}
+  _CfDef__isset() : column_type(true), comparator_type(true), subcomparator_type(false), comment(false), read_repair_chance(false), column_metadata(false), gc_grace_seconds(false), default_validation_class(false), id(false), min_compaction_threshold(false), max_compaction_threshold(false), replicate_on_write(false), key_validation_class(false), key_alias(false), compaction_strategy(false), compaction_strategy_options(false), compression_options(false), bloom_filter_fp_chance(false), caching(true), dclocal_read_repair_chance(true), populate_io_cache_on_flush(false), memtable_flush_period_in_ms(false), default_time_to_live(false), index_interval(false), speculative_retry(true), triggers(false), row_cache_size(false), key_cache_size(false), row_cache_save_period_in_seconds(false), key_cache_save_period_in_seconds(false), memtable_flush_after_mins(false), memtable_throughput_in_mb(false), memtable_operations_in_millions(false), merge_shards_chance(false), row_cache_provider(false), row_cache_keys_to_save(false) {}
   bool column_type;
   bool comparator_type;
   bool subcomparator_type;
@@ -1645,6 +1650,7 @@ typedef struct _CfDef__isset {
   bool id;
   bool min_compaction_threshold;
   bool max_compaction_threshold;
+  bool replicate_on_write;
   bool key_validation_class;
   bool key_alias;
   bool compaction_strategy;
@@ -1653,13 +1659,12 @@ typedef struct _CfDef__isset {
   bool bloom_filter_fp_chance;
   bool caching;
   bool dclocal_read_repair_chance;
+  bool populate_io_cache_on_flush;
   bool memtable_flush_period_in_ms;
   bool default_time_to_live;
+  bool index_interval;
   bool speculative_retry;
   bool triggers;
-  bool cells_per_row_to_cache;
-  bool min_index_interval;
-  bool max_index_interval;
   bool row_cache_size;
   bool key_cache_size;
   bool row_cache_save_period_in_seconds;
@@ -1667,21 +1672,18 @@ typedef struct _CfDef__isset {
   bool memtable_flush_after_mins;
   bool memtable_throughput_in_mb;
   bool memtable_operations_in_millions;
-  bool replicate_on_write;
   bool merge_shards_chance;
   bool row_cache_provider;
   bool row_cache_keys_to_save;
-  bool populate_io_cache_on_flush;
-  bool index_interval;
 } _CfDef__isset;
 
 class CfDef {
  public:
 
-  static const char* ascii_fingerprint; // = "D885AE83382BA6B36ADA00E72F8B71C3";
-  static const uint8_t binary_fingerprint[16]; // = {0xD8,0x85,0xAE,0x83,0x38,0x2B,0xA6,0xB3,0x6A,0xDA,0x00,0xE7,0x2F,0x8B,0x71,0xC3};
+  static const char* ascii_fingerprint; // = "3D2F73880CC64DDE3E1F25480C58FD72";
+  static const uint8_t binary_fingerprint[16]; // = {0x3D,0x2F,0x73,0x88,0x0C,0xC6,0x4D,0xDE,0x3E,0x1F,0x25,0x48,0x0C,0x58,0xFD,0x72};
 
-  CfDef() : keyspace(), name(), column_type("Standard"), comparator_type("BytesType"), subcomparator_type(), comment(), read_repair_chance(0), gc_grace_seconds(0), default_validation_class(), id(0), min_compaction_threshold(0), max_compaction_threshold(0), key_validation_class(), key_alias(), compaction_strategy(), bloom_filter_fp_chance(0), caching("keys_only"), dclocal_read_repair_chance(0), memtable_flush_period_in_ms(0), default_time_to_live(0), speculative_retry("NONE"), cells_per_row_to_cache("100"), min_index_interval(0), max_index_interval(0), row_cache_size(0), key_cache_size(0), row_cache_save_period_in_seconds(0), key_cache_save_period_in_seconds(0), memtable_flush_after_mins(0), memtable_throughput_in_mb(0), memtable_operations_in_millions(0), replicate_on_write(0), merge_shards_chance(0), row_cache_provider(), row_cache_keys_to_save(0), populate_io_cache_on_flush(0), index_interval(0) {
+  CfDef() : keyspace(), name(), column_type("Standard"), comparator_type("BytesType"), subcomparator_type(), comment(), read_repair_chance(0), gc_grace_seconds(0), default_validation_class(), id(0), min_compaction_threshold(0), max_compaction_threshold(0), replicate_on_write(0), key_validation_class(), key_alias(), compaction_strategy(), bloom_filter_fp_chance(0), caching("keys_only"), dclocal_read_repair_chance(0), populate_io_cache_on_flush(0), memtable_flush_period_in_ms(0), default_time_to_live(0), index_interval(0), speculative_retry("NONE"), row_cache_size(0), key_cache_size(0), row_cache_save_period_in_seconds(0), key_cache_save_period_in_seconds(0), memtable_flush_after_mins(0), memtable_throughput_in_mb(0), memtable_operations_in_millions(0), merge_shards_chance(0), row_cache_provider(), row_cache_keys_to_save(0) {
   }
 
   virtual ~CfDef() throw() {}
@@ -1699,6 +1701,7 @@ class CfDef {
   int32_t id;
   int32_t min_compaction_threshold;
   int32_t max_compaction_threshold;
+  bool replicate_on_write;
   std::string key_validation_class;
   std::string key_alias;
   std::string compaction_strategy;
@@ -1707,13 +1710,12 @@ class CfDef {
   double bloom_filter_fp_chance;
   std::string caching;
   double dclocal_read_repair_chance;
+  bool populate_io_cache_on_flush;
   int32_t memtable_flush_period_in_ms;
   int32_t default_time_to_live;
+  int32_t index_interval;
   std::string speculative_retry;
   std::vector<TriggerDef>  triggers;
-  std::string cells_per_row_to_cache;
-  int32_t min_index_interval;
-  int32_t max_index_interval;
   double row_cache_size;
   double key_cache_size;
   int32_t row_cache_save_period_in_seconds;
@@ -1721,12 +1723,9 @@ class CfDef {
   int32_t memtable_flush_after_mins;
   int32_t memtable_throughput_in_mb;
   double memtable_operations_in_millions;
-  bool replicate_on_write;
   double merge_shards_chance;
   std::string row_cache_provider;
   int32_t row_cache_keys_to_save;
-  bool populate_io_cache_on_flush;
-  int32_t index_interval;
 
   _CfDef__isset __isset;
 
@@ -1793,6 +1792,11 @@ class CfDef {
     __isset.max_compaction_threshold = true;
   }
 
+  void __set_replicate_on_write(const bool val) {
+    replicate_on_write = val;
+    __isset.replicate_on_write = true;
+  }
+
   void __set_key_validation_class(const std::string& val) {
     key_validation_class = val;
     __isset.key_validation_class = true;
@@ -1833,6 +1837,11 @@ class CfDef {
     __isset.dclocal_read_repair_chance = true;
   }
 
+  void __set_populate_io_cache_on_flush(const bool val) {
+    populate_io_cache_on_flush = val;
+    __isset.populate_io_cache_on_flush = true;
+  }
+
   void __set_memtable_flush_period_in_ms(const int32_t val) {
     memtable_flush_period_in_ms = val;
     __isset.memtable_flush_period_in_ms = true;
@@ -1843,6 +1852,11 @@ class CfDef {
     __isset.default_time_to_live = true;
   }
 
+  void __set_index_interval(const int32_t val) {
+    index_interval = val;
+    __isset.index_interval = true;
+  }
+
   void __set_speculative_retry(const std::string& val) {
     speculative_retry = val;
     __isset.speculative_retry = true;
@@ -1851,21 +1865,6 @@ class CfDef {
   void __set_triggers(const std::vector<TriggerDef> & val) {
     triggers = val;
     __isset.triggers = true;
-  }
-
-  void __set_cells_per_row_to_cache(const std::string& val) {
-    cells_per_row_to_cache = val;
-    __isset.cells_per_row_to_cache = true;
-  }
-
-  void __set_min_index_interval(const int32_t val) {
-    min_index_interval = val;
-    __isset.min_index_interval = true;
-  }
-
-  void __set_max_index_interval(const int32_t val) {
-    max_index_interval = val;
-    __isset.max_index_interval = true;
   }
 
   void __set_row_cache_size(const double val) {
@@ -1903,11 +1902,6 @@ class CfDef {
     __isset.memtable_operations_in_millions = true;
   }
 
-  void __set_replicate_on_write(const bool val) {
-    replicate_on_write = val;
-    __isset.replicate_on_write = true;
-  }
-
   void __set_merge_shards_chance(const double val) {
     merge_shards_chance = val;
     __isset.merge_shards_chance = true;
@@ -1921,16 +1915,6 @@ class CfDef {
   void __set_row_cache_keys_to_save(const int32_t val) {
     row_cache_keys_to_save = val;
     __isset.row_cache_keys_to_save = true;
-  }
-
-  void __set_populate_io_cache_on_flush(const bool val) {
-    populate_io_cache_on_flush = val;
-    __isset.populate_io_cache_on_flush = true;
-  }
-
-  void __set_index_interval(const int32_t val) {
-    index_interval = val;
-    __isset.index_interval = true;
   }
 
   bool operator == (const CfDef & rhs) const
@@ -1983,6 +1967,10 @@ class CfDef {
       return false;
     else if (__isset.max_compaction_threshold && !(max_compaction_threshold == rhs.max_compaction_threshold))
       return false;
+    if (__isset.replicate_on_write != rhs.__isset.replicate_on_write)
+      return false;
+    else if (__isset.replicate_on_write && !(replicate_on_write == rhs.replicate_on_write))
+      return false;
     if (__isset.key_validation_class != rhs.__isset.key_validation_class)
       return false;
     else if (__isset.key_validation_class && !(key_validation_class == rhs.key_validation_class))
@@ -2015,6 +2003,10 @@ class CfDef {
       return false;
     else if (__isset.dclocal_read_repair_chance && !(dclocal_read_repair_chance == rhs.dclocal_read_repair_chance))
       return false;
+    if (__isset.populate_io_cache_on_flush != rhs.__isset.populate_io_cache_on_flush)
+      return false;
+    else if (__isset.populate_io_cache_on_flush && !(populate_io_cache_on_flush == rhs.populate_io_cache_on_flush))
+      return false;
     if (__isset.memtable_flush_period_in_ms != rhs.__isset.memtable_flush_period_in_ms)
       return false;
     else if (__isset.memtable_flush_period_in_ms && !(memtable_flush_period_in_ms == rhs.memtable_flush_period_in_ms))
@@ -2023,6 +2015,10 @@ class CfDef {
       return false;
     else if (__isset.default_time_to_live && !(default_time_to_live == rhs.default_time_to_live))
       return false;
+    if (__isset.index_interval != rhs.__isset.index_interval)
+      return false;
+    else if (__isset.index_interval && !(index_interval == rhs.index_interval))
+      return false;
     if (__isset.speculative_retry != rhs.__isset.speculative_retry)
       return false;
     else if (__isset.speculative_retry && !(speculative_retry == rhs.speculative_retry))
@@ -2030,18 +2026,6 @@ class CfDef {
     if (__isset.triggers != rhs.__isset.triggers)
       return false;
     else if (__isset.triggers && !(triggers == rhs.triggers))
-      return false;
-    if (__isset.cells_per_row_to_cache != rhs.__isset.cells_per_row_to_cache)
-      return false;
-    else if (__isset.cells_per_row_to_cache && !(cells_per_row_to_cache == rhs.cells_per_row_to_cache))
-      return false;
-    if (__isset.min_index_interval != rhs.__isset.min_index_interval)
-      return false;
-    else if (__isset.min_index_interval && !(min_index_interval == rhs.min_index_interval))
-      return false;
-    if (__isset.max_index_interval != rhs.__isset.max_index_interval)
-      return false;
-    else if (__isset.max_index_interval && !(max_index_interval == rhs.max_index_interval))
       return false;
     if (__isset.row_cache_size != rhs.__isset.row_cache_size)
       return false;
@@ -2071,10 +2055,6 @@ class CfDef {
       return false;
     else if (__isset.memtable_operations_in_millions && !(memtable_operations_in_millions == rhs.memtable_operations_in_millions))
       return false;
-    if (__isset.replicate_on_write != rhs.__isset.replicate_on_write)
-      return false;
-    else if (__isset.replicate_on_write && !(replicate_on_write == rhs.replicate_on_write))
-      return false;
     if (__isset.merge_shards_chance != rhs.__isset.merge_shards_chance)
       return false;
     else if (__isset.merge_shards_chance && !(merge_shards_chance == rhs.merge_shards_chance))
@@ -2086,14 +2066,6 @@ class CfDef {
     if (__isset.row_cache_keys_to_save != rhs.__isset.row_cache_keys_to_save)
       return false;
     else if (__isset.row_cache_keys_to_save && !(row_cache_keys_to_save == rhs.row_cache_keys_to_save))
-      return false;
-    if (__isset.populate_io_cache_on_flush != rhs.__isset.populate_io_cache_on_flush)
-      return false;
-    else if (__isset.populate_io_cache_on_flush && !(populate_io_cache_on_flush == rhs.populate_io_cache_on_flush))
-      return false;
-    if (__isset.index_interval != rhs.__isset.index_interval)
-      return false;
-    else if (__isset.index_interval && !(index_interval == rhs.index_interval))
       return false;
     return true;
   }
@@ -2120,8 +2092,8 @@ typedef struct _KsDef__isset {
 class KsDef {
  public:
 
-  static const char* ascii_fingerprint; // = "7D6A6369147C130D38028C620FFF44A2";
-  static const uint8_t binary_fingerprint[16]; // = {0x7D,0x6A,0x63,0x69,0x14,0x7C,0x13,0x0D,0x38,0x02,0x8C,0x62,0x0F,0xFF,0x44,0xA2};
+  static const char* ascii_fingerprint; // = "465E9A5DAAF09390BB3CB86E62BD37E8";
+  static const uint8_t binary_fingerprint[16]; // = {0x46,0x5E,0x9A,0x5D,0xAA,0xF0,0x93,0x90,0xBB,0x3C,0xB8,0x6E,0x62,0xBD,0x37,0xE8};
 
   KsDef() : name(), strategy_class(), replication_factor(0), durable_writes(true) {
   }
@@ -2498,168 +2470,6 @@ class CfSplit {
 
 void swap(CfSplit &a, CfSplit &b);
 
-typedef struct _ColumnSlice__isset {
-  _ColumnSlice__isset() : start(false), finish(false) {}
-  bool start;
-  bool finish;
-} _ColumnSlice__isset;
-
-class ColumnSlice {
- public:
-
-  static const char* ascii_fingerprint; // = "D0297FC5011701BD87898CC36146A565";
-  static const uint8_t binary_fingerprint[16]; // = {0xD0,0x29,0x7F,0xC5,0x01,0x17,0x01,0xBD,0x87,0x89,0x8C,0xC3,0x61,0x46,0xA5,0x65};
-
-  ColumnSlice() : start(), finish() {
-  }
-
-  virtual ~ColumnSlice() throw() {}
-
-  std::string start;
-  std::string finish;
-
-  _ColumnSlice__isset __isset;
-
-  void __set_start(const std::string& val) {
-    start = val;
-    __isset.start = true;
-  }
-
-  void __set_finish(const std::string& val) {
-    finish = val;
-    __isset.finish = true;
-  }
-
-  bool operator == (const ColumnSlice & rhs) const
-  {
-    if (__isset.start != rhs.__isset.start)
-      return false;
-    else if (__isset.start && !(start == rhs.start))
-      return false;
-    if (__isset.finish != rhs.__isset.finish)
-      return false;
-    else if (__isset.finish && !(finish == rhs.finish))
-      return false;
-    return true;
-  }
-  bool operator != (const ColumnSlice &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const ColumnSlice & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-void swap(ColumnSlice &a, ColumnSlice &b);
-
-typedef struct _MultiSliceRequest__isset {
-  _MultiSliceRequest__isset() : key(false), column_parent(false), column_slices(false), reversed(true), count(true), consistency_level(true) {}
-  bool key;
-  bool column_parent;
-  bool column_slices;
-  bool reversed;
-  bool count;
-  bool consistency_level;
-} _MultiSliceRequest__isset;
-
-class MultiSliceRequest {
- public:
-
-  static const char* ascii_fingerprint; // = "65D4C6578392956433677091AF9D8B67";
-  static const uint8_t binary_fingerprint[16]; // = {0x65,0xD4,0xC6,0x57,0x83,0x92,0x95,0x64,0x33,0x67,0x70,0x91,0xAF,0x9D,0x8B,0x67};
-
-  MultiSliceRequest() : key(), reversed(false), count(1000), consistency_level((ConsistencyLevel::type)1) {
-    consistency_level = (ConsistencyLevel::type)1;
-
-  }
-
-  virtual ~MultiSliceRequest() throw() {}
-
-  std::string key;
-  ColumnParent column_parent;
-  std::vector<ColumnSlice>  column_slices;
-  bool reversed;
-  int32_t count;
-  ConsistencyLevel::type consistency_level;
-
-  _MultiSliceRequest__isset __isset;
-
-  void __set_key(const std::string& val) {
-    key = val;
-    __isset.key = true;
-  }
-
-  void __set_column_parent(const ColumnParent& val) {
-    column_parent = val;
-    __isset.column_parent = true;
-  }
-
-  void __set_column_slices(const std::vector<ColumnSlice> & val) {
-    column_slices = val;
-    __isset.column_slices = true;
-  }
-
-  void __set_reversed(const bool val) {
-    reversed = val;
-    __isset.reversed = true;
-  }
-
-  void __set_count(const int32_t val) {
-    count = val;
-    __isset.count = true;
-  }
-
-  void __set_consistency_level(const ConsistencyLevel::type val) {
-    consistency_level = val;
-    __isset.consistency_level = true;
-  }
-
-  bool operator == (const MultiSliceRequest & rhs) const
-  {
-    if (__isset.key != rhs.__isset.key)
-      return false;
-    else if (__isset.key && !(key == rhs.key))
-      return false;
-    if (__isset.column_parent != rhs.__isset.column_parent)
-      return false;
-    else if (__isset.column_parent && !(column_parent == rhs.column_parent))
-      return false;
-    if (__isset.column_slices != rhs.__isset.column_slices)
-      return false;
-    else if (__isset.column_slices && !(column_slices == rhs.column_slices))
-      return false;
-    if (__isset.reversed != rhs.__isset.reversed)
-      return false;
-    else if (__isset.reversed && !(reversed == rhs.reversed))
-      return false;
-    if (__isset.count != rhs.__isset.count)
-      return false;
-    else if (__isset.count && !(count == rhs.count))
-      return false;
-    if (__isset.consistency_level != rhs.__isset.consistency_level)
-      return false;
-    else if (__isset.consistency_level && !(consistency_level == rhs.consistency_level))
-      return false;
-    return true;
-  }
-  bool operator != (const MultiSliceRequest &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const MultiSliceRequest & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-};
-
-void swap(MultiSliceRequest &a, MultiSliceRequest &b);
-
 }}} // namespace
-
-#pragma GCC pop
 
 #endif
