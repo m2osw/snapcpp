@@ -4119,9 +4119,9 @@ void snap_child::connect_cassandra()
     // setup the host name for locks to function properly
     f_context->setHostName(server->get_parameter("server_name"));
 
-    // TBD -- that really the right place for this?
+    // TBD -- Is that really the right place for this?
     //        (in this way it is done once for any plugin using
-    //        the snap expression system)
+    //        the snap expression system; but it looks like a hack!)
     snap_expr::expr::set_cassandra_context(f_context);
 }
 
