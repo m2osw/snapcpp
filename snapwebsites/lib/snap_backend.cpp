@@ -1527,8 +1527,6 @@ bool snap_backend::process_backend_uri(QString const & uri)
         return false;
     }
 
-    SNAP_LOG_INFO("==================================== backend process website \"")(uri)("\" with action \"")(f_action)("\" started.");
-
     // create a child connection so our child and us can communicate
     // (especially, we can send the child a STOP if we ourselves receive
     // a STOP.)
@@ -1584,6 +1582,8 @@ bool snap_backend::process_backend_uri(QString const & uri)
         return true;
     }
 
+    SNAP_LOG_INFO("==================================== backend process website \"")(uri)("\" with ")(f_cron_action ? "cron " : "")("action \"")(f_action)("\" started.");
+
     // make sure that Snap! Communicator is clean in the child,
     // it really cannot be listening on g_messager or g_signal_child_death
     //
@@ -1596,12 +1596,14 @@ bool snap_backend::process_backend_uri(QString const & uri)
     g_communicator->remove_connection(g_signal_child_death);
     g_signal_child_death.reset();
 
+SNAP_LOG_DEBUG("=== backend get server.");
     auto p_server( f_server.lock() );
     if(!p_server)
     {
         throw snap_logic_exception("snap_backend::process_backend_uri(): server pointer is NULL");
     }
 
+SNAP_LOG_DEBUG("=== backend get nice value.");
     QString const nice_value(p_server->get_parameter("backend_nice"));
     if(!nice_value.isEmpty())
     {
@@ -1651,6 +1653,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
 
     // set the URI; if user supplied it, then it can fail!
     //
+SNAP_LOG_DEBUG("=== backend set URI.");
     if(!f_uri.set_uri(uri))
     {
         SNAP_LOG_FATAL("snap_backend::process_backend_uri() called with invalid URI: \"")(uri)("\", URI ignored.");
@@ -1663,12 +1666,18 @@ bool snap_backend::process_backend_uri(QString const & uri)
     // this is already done in process_action() so we have to reset the
     // pointer before we can call this function again otherwise it throws
     //
+SNAP_LOG_DEBUG("=== backend remove cassandra context from snap_expr.");
     snap_expr::expr::set_cassandra_context(nullptr);
+SNAP_LOG_DEBUG("=== backend reset cassandra.");
     f_cassandra.reset();
+SNAP_LOG_DEBUG("=== backend reset sites table.");
     f_sites_table.reset();
+SNAP_LOG_DEBUG("=== backend reset backend table.");
     f_backend_table.reset();
+SNAP_LOG_DEBUG("=== backend reconnect to cassandra.");
     connect_cassandra();
 
+SNAP_LOG_DEBUG("=== backend URI is ready?.");
     if(!is_ready(uri))
     {
         SNAP_LOG_FATAL("snap_backend::process_backend_uri() URI is not ready any more for \"")(uri)("\" once in the child:.");
@@ -1677,8 +1686,11 @@ bool snap_backend::process_backend_uri(QString const & uri)
     }
 
     // process the f_uri parameter
+SNAP_LOG_DEBUG("=== backend canonicalize domain.");
     canonicalize_domain();
+SNAP_LOG_DEBUG("=== backend canonicalize website.");
     canonicalize_website();
+SNAP_LOG_DEBUG("=== backend check redirect.");
     site_redirect();
     if(f_site_key != f_original_site_key)
     {
@@ -1687,15 +1699,19 @@ bool snap_backend::process_backend_uri(QString const & uri)
         NOTREACHED();
     }
 
+SNAP_LOG_DEBUG("=== backend init plugins.");
     init_plugins(true);
 
+SNAP_LOG_DEBUG("=== backend canonicalize options.");
     canonicalize_options();
 
     f_ready = true;
 
+SNAP_LOG_DEBUG("=== backend canonicalize options.");
     server::backend_action_set actions;
     if(f_cron_action)
     {
+SNAP_LOG_DEBUG("=== backend register CRON actions.");
         p_server->register_backend_cron(actions);
 #ifdef DEBUG
         // since we are in control of the content plugin, this should
@@ -1713,6 +1729,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
     }
     else
     {
+SNAP_LOG_DEBUG("=== backend register backend actions.");
         p_server->register_backend_action(actions);
     }
 
@@ -1720,6 +1737,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
     {
         // this is a valid action, execute the corresponding function!
         //
+SNAP_LOG_DEBUG("=== backend execute action.");
         actions.execute_action(f_action);
     }
     else if( f_action == "list" )

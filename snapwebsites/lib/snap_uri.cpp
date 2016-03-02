@@ -271,7 +271,7 @@ bool snap_uri::set_uri(QString const & uri)
         return false;
     }
 
-    // now we're ready to parse further (i.e. path)
+    // now we are ready to parse further (i.e. path)
     snap_string_list uri_path;
     if(!u->isNull())
     {
@@ -349,16 +349,13 @@ bool snap_uri::set_uri(QString const & uri)
                 query_strings[name] = urldecode(value);
 
                 // skip all the & and then reset s and e
-                if(!u->isNull())
+                while(!u->isNull() && u->unicode() == '&')
                 {
-                    do
-                    {
-                        ++u;
-                    }
-                    while(u->unicode() == '&');
+                    ++u;
                 }
                 if(u->isNull() || u->unicode() == '#')
                 {
+                    // reached the end of the query strings
                     break;
                 }
                 s = u;
@@ -372,6 +369,9 @@ bool snap_uri::set_uri(QString const & uri)
     }
 
     // finally check for an anchor
+    // (note that browsers do not send us the anchor data, however, URIs
+    // defined on the server side can very well include such.)
+    //
     QString uri_anchor;
     if(!u->isNull() && u->unicode() == '#')
     {
@@ -413,9 +413,9 @@ bool snap_uri::set_uri(QString const & uri)
     }
 
     // the path may include some ".." which we want to eliminate
-    // note that contrary to Unix we don't accept "/.." as an equivalent
+    // note that contrary to Unix we do not accept "/.." as an equivalent
     // to "/" and we do not verify that all the paths exist... (i.e.
-    // if "c" doesn't exist under "/a/b" (folder /a/b/c), then it should
+    // if "c" does not exist under "/a/b" (folder /a/b/c), then it should
     // be an error to use "/a/b/c/.." since "/a/b/c" cannot be computed.)
     int max_path(uri_path.size());
     for(int i(0); i < max_path; ++i)
