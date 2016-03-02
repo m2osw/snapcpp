@@ -4086,7 +4086,17 @@ void snap_child::connect_cassandra()
         throw snap_logic_exception("server pointer is nullptr");
     }
     f_cassandra = QtCassandra::QCassandra::create();
-    if(!f_cassandra->connect(server->cassandra_host(), server->cassandra_port()))
+    bool connected(false);
+    try
+    {
+        connected = f_cassandra->connect(server->cassandra_host(), server->cassandra_port());
+    }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_FATAL("Could not connect to Cassandra server (")(server->cassandra_host())(":")(server->cassandra_port())("). Reason: ")(e.what());
+        connected = false; // make double sure this is still false
+    }
+    if(!connected)
     {
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database system is temporarilly unavailable.",

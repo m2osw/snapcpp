@@ -1729,16 +1729,28 @@ bool snap_backend::process_backend_uri(QString const & uri)
             {
                 SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown CRON action \"")
                               (f_action)
-                              ("\" even with the plugin is installed \"")
+                              ("\" even with plugin \"")
                               (namespace_name)
-                              ("\".");
+                              ("\" installed.");
+                exit(1);
+                NOTREACHED();
+            }
+            else
+            {
+                SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown CRON action \"")
+                              (f_action)
+                              ("\" (although it could be that you need to install plugin \"")
+                              (namespace_name)
+                              ("\"?)");
                 exit(1);
                 NOTREACHED();
             }
         }
         else
         {
-            SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown action \"")(f_action)("\"");
+            SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown action \"")
+                          (f_action)
+                          ("\".");
             exit(1);
             NOTREACHED();
         }
