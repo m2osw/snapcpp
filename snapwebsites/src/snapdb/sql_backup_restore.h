@@ -39,7 +39,10 @@
 // 3rd party libs
 //
 #include <cassandra.h>
+
 #include <QtCore>
+
+#include <memory>
 
 class sqlBackupRestore
 {
@@ -48,14 +51,16 @@ public:
 
     void storeContext( const int count );
     void restoreContext();
+
+    //void outputSchema();
     
 private:
     void storeTables( const int count );
     void restoreTables();
 
-    CassCluster*    f_cluster;
-    CassSession*    f_session;
-    CassFuture*     f_connection;
+    std::shared_ptr<CassCluster>    f_cluster;
+    std::shared_ptr<CassSession>    f_session;
+    std::shared_ptr<CassFuture>     f_connection;
 };
 
 // vim: ts=4 sw=4 et
