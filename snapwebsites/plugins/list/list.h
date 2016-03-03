@@ -288,6 +288,9 @@ public:
     list_item_vector_t  read_list(content::path_info_t & ipath, int start, int count);
     QString             generate_list(content::path_info_t & ipath, content::path_info_t & list_ipath, int start = 0, int count = -1, QString const & theme = "qrc:/xsl/list/default");
 
+    // list plugin signals
+    SNAP_SIGNAL_WITH_MODE(list_modified, (content::path_info_t & ipath), (ipath), NEITHER);
+
     // links test suite
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()
 

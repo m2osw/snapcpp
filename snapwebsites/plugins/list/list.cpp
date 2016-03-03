@@ -141,69 +141,6 @@ char const * get_name(name_t name)
 
 
 
-/** \class list
- * \brief The list plugin to handle list of pages.
- *
- * The list plugin makes use of many references and links and thus it
- * is documented here:
- *
- *
- * 1) Pages that represent lists are all categorized under the following
- *    system content type:
- *
- * \code
- *     /types/taxonomy/system/list
- * \endcode
- *
- * We use that list to find all the lists defined on a website so we can
- * manage them all in our loops.
- *
- *
- *
- * 2) Items are linked to their list so that way when deleting an item
- *    we can immediately remove that item from that list. Note that an
- *    item may be part of many lists so it is a "multi" on both sides
- *    ("*:*").
- *
- *
- * 3) The list page includes links to all the items that are part of
- *    the list. These links do not use the standard link capability
- *    because the items are expected to be ordered and that is done
- *    using the Cassandra sort capability, in other words, we need
- *    to have a key which includes the sort parameters (i.e. an index).
- *
- * \code
- *    list::items::<sort key>
- * \endcode
- *
- * Important Note: This special link is double linked too, that is, the
- * item page links back to the standard list too (more precisly, it knows
- * of the special ordered key used in the list.) This is important to
- * make sure we can manage lists properly. That is, if the expression
- * used to calculate the key changes, then we could not instantly find
- * the old key anymore (i.e. we'd have to check each item in the list
- * to find the one that points to a given item... in a list with 1 million
- * pages, it would be really slow.)
- *
- *
- * Recap:
- *
- * \li Standard Link: List Page \<-\> /types/taxonomy/system/list
- * \li Standard Link: List Page \<-\> Item Page
- * \li Ordered List: List Page -\> Item Page,
- *                   Item Page includes key used in List Page
- *
- * \note
- * We do not repair list links when a page is cloned. If the clone is
- * to be part of a list the links will be updated accordingly. This
- * means if you do not write specialized code to make sure the clone
- * is a list, the "list::type" link is missing and thus no checks
- * are done to update the list data of the clone which by default will
- * be empty (inexistant may be a better way to describe this one.)
- */
-
-
-
 
 
 /** \brief Initializes an object to access a list with paging capability.
@@ -1116,6 +1053,99 @@ int32_t paging_t::get_page_size() const
     return f_page_size;
 }
 
+
+
+
+
+/** \class list
+ * \brief The list plugin to handle list of pages.
+ *
+ * The list plugin makes use of many references and links and thus it
+ * is documented here:
+ *
+ *
+ * 1) Pages that represent lists are all categorized under the following
+ *    system content type:
+ *
+ * \code
+ *     /types/taxonomy/system/list
+ * \endcode
+ *
+ * We use that list to find all the lists defined on a website so we can
+ * manage them all in our loops.
+ *
+ *
+ *
+ * 2) Items are linked to their list so that way when deleting an item
+ *    we can immediately remove that item from that list. Note that an
+ *    item may be part of many lists so it is a "multi" on both sides
+ *    ("*:*").
+ *
+ *
+ * 3) The list page includes links to all the items that are part of
+ *    the list. These links do not use the standard link capability
+ *    because the items are expected to be ordered and that is done
+ *    using the Cassandra sort capability, in other words, we need
+ *    to have a key which includes the sort parameters (i.e. an index).
+ *
+ * \code
+ *    list::items::<sort key>
+ * \endcode
+ *
+ * Important Note: This special link is double linked too, that is, the
+ * item page links back to the standard list too (more precisly, it knows
+ * of the special ordered key used in the list.) This is important to
+ * make sure we can manage lists properly. That is, if the expression
+ * used to calculate the key changes, then we could not instantly find
+ * the old key anymore (i.e. we'd have to check each item in the list
+ * to find the one that points to a given item... in a list with 1 million
+ * pages, it would be really slow.)
+ *
+ *
+ * Recap:
+ *
+ * \li Standard Link: List Page \<-\> /types/taxonomy/system/list
+ * \li Standard Link: List Page \<-\> Item Page
+ * \li Ordered List: List Page -\> Item Page,
+ *                   Item Page includes key used in List Page
+ *
+ * \note
+ * We do not repair list links when a page is cloned. If the clone is
+ * to be part of a list the links will be updated accordingly. This
+ * means if you do not write specialized code to make sure the clone
+ * is a list, the "list::type" link is missing and thus no checks
+ * are done to update the list data of the clone which by default will
+ * be empty (inexistant may be a better way to describe this one.)
+ */
+
+
+
+
+/** \fn list::list_modified(content::path_info_t & ipath)
+ * \brief Signal that a list was modified.
+ *
+ * In some cases you want to immediately be alerted of a change in a list.
+ * The functions that modify lists (add or remove elements from lists)
+ * end by calling this signal. The parameter is the path to the list that
+ * changed.
+ *
+ * Lists that are newly created get all their elements added and once
+ * and then the list_modified() function gets called.
+ *
+ * Lists that get many pages added at once, but are not new, will get
+ * this signal called once per element added or removed.
+ *
+ * \note
+ * Remember that although you are running in a backend, it is timed
+ * and lists should not take more than 10 seconds to all be worked on
+ * before another website gets a chance to be worked on. It is more
+ * polite to do the work you need to do quickly or memorize what needs
+ * to be done and do it in your backend process instead of the pagelist
+ * process if it is to take a quite long time to finish up.
+ *
+ * \param[in] ipath  The path to the list that was just updated (added/removed
+ *                   an item in that list.)
+ */
 
 
 
@@ -2250,39 +2280,41 @@ int list::generate_new_lists(QString const & site_key)
         QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
         QString const selector(list_row->cell(get_name(name_t::SNAP_NAME_LIST_SELECTOR))->value().stringValue());
 
+        int did_work_on_list(0);
+
         if(selector == "children")
         {
-            did_work |= generate_new_list_for_children(site_key, list_ipath);
+            did_work_on_list |= generate_new_list_for_children(site_key, list_ipath);
         }
         else if(selector.startsWith("children="))
         {
             content::path_info_t root_ipath;
             root_ipath.set_path(selector.mid(9));
-            did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, false);
+            did_work_on_list |= generate_new_list_for_all_descendants(list_ipath, root_ipath, false);
         }
         else if(selector == "descendants")
         {
-            did_work |= generate_new_list_for_descendants(site_key, list_ipath);
+            did_work_on_list |= generate_new_list_for_descendants(site_key, list_ipath);
         }
         else if(selector.startsWith("descendants="))
         {
             content::path_info_t root_ipath;
             root_ipath.set_path(selector.mid(12));
-            did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, true);
+            did_work_on_list |= generate_new_list_for_all_descendants(list_ipath, root_ipath, true);
         }
         else if(selector == "public")
         {
-            did_work |= generate_new_list_for_public(site_key, list_ipath);
+            did_work_on_list |= generate_new_list_for_public(site_key, list_ipath);
         }
         else if(selector.startsWith("type="))
         {
             // user can specify any type!
-            did_work |= generate_new_list_for_type(site_key, list_ipath, selector.mid(5));
+            did_work_on_list |= generate_new_list_for_type(site_key, list_ipath, selector.mid(5));
         }
         else if(selector.startsWith("hand-picked="))
         {
             // user can specify any page directly!
-            did_work |= generate_new_list_for_hand_picked_pages(site_key, list_ipath, selector.mid(12));
+            did_work_on_list |= generate_new_list_for_hand_picked_pages(site_key, list_ipath, selector.mid(12));
         }
         else // "all"
         {
@@ -2304,8 +2336,15 @@ int list::generate_new_lists(QString const & site_key)
                     SNAP_LOG_WARNING("Field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" set to unknown value \"")(selector)("\" in \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
                 }
             }
-            did_work |= generate_new_list_for_all_pages(site_key, list_ipath);
+            did_work_on_list |= generate_new_list_for_all_pages(site_key, list_ipath);
         }
+
+        if(did_work_on_list != 0)
+        {
+            list_modified(list_ipath);
+        }
+
+        did_work |= did_work_on_list;
     }
 
     return did_work;
@@ -2639,7 +2678,13 @@ int list::generate_all_lists_for_page(QString const & site_key, QString const & 
         content::path_info_t list_ipath;
         list_ipath.set_path(key);
 //SNAP_LOG_WARNING("generate list \"")(list_ipath.get_key())("\" for page \"")(page_ipath.get_key());
-        did_work |= generate_list_for_page(page_ipath, list_ipath, update_request_time);
+        int const did_work_on_list(generate_list_for_page(page_ipath, list_ipath, update_request_time));
+        if(did_work_on_list != 0)
+        {
+            did_work |= did_work_on_list;
+
+            list_modified(list_ipath);
+        }
     }
 
     return did_work;
@@ -2888,7 +2933,7 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
     {
         e = snap_expr::expr::expr_pointer_t(new snap_expr::expr);
         QByteArray program;
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
         QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->value());
         if(compiled_script.nullValue())

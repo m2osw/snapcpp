@@ -82,11 +82,23 @@ SNAP_PLUGIN_EXTENSION_START(content)
  * \li rebuildindex -- this action requests the system to rebuild the entire
  *                     '*index*' row of the content table.
  *
+ * \note
+ * To extract the content of one cell, use the snapsiteinfo tool instead:
+ *
+ * \code
+ *      snapsiteinfo --host 127.0.0.1 \
+ *                  --count 20000 \
+ *                  --table revision \
+ *                  http://my-domain.extension/and/path/... field::name \
+ *                  --save-cell a.bin
+ * \endcode
+ *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
 void content::on_register_backend_action(server::backend_action_set & actions)
 {
-    // this first one is a "special case" which is used to run the backend
+    // this first one is a "special case" which is used to run
+    // the CRON-like backend
     //
     actions.add_action(snap::get_name(snap::name_t::SNAP_NAME_CORE_SNAPBACKEND), this);
 
