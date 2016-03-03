@@ -36,15 +36,16 @@
  */
 
 #include "QCassandraPrivate.h"
-#include "QThriftHeaders.h"
 
 #include <iostream>
+#include <sstream>
 
 namespace QtCassandra
 {
 
 
-namespace {
+namespace
+{
 
 /** \brief Value representing a node that's disconnected.
  *
@@ -54,74 +55,38 @@ namespace {
  */
 const char g_unreachable[] = "UNREACHABLE";
 
-/** \brief Factory used to allow our library to specify a password
- * 
- * This class is used to specify a password when conneting to the
- * Cassandra server. This is used to work between servers that
- * are connected over the Internet using SSL.
- */
-class QCassandraSocketFactory : public apache::thrift::transport::TSSLSocketFactory
-{
-public:
-    QCassandraSocketFactory(const char *password);
-    virtual ~QCassandraSocketFactory();
-
-    virtual void getPassword(std::string& password, int max_size);
-
-private:
-    std::string     f_password;
+struct cluster_deleter
+{ 
+    void operator()(CassCluster* p) const
+    {
+        cass_cluster_free(p);
+    }
 };
 
-/** \var QCassandraSocketFactory::f_password
- * \brief The Cassandra password to connect with an SSL socket.
- *
- * The password passed to the SSL socket implementation of thrift which then
- * passes it to OpenSSL. This variable remains defined until the
- * QCassandraSocketFactory destructor is called. At that point it gets
- * cleared for security reasons.
- */
-
-/** \brief Initialize the QCassandraSocketFactory object.
- *
- * This function saves the cassandra_private pointer as the parent of this
- * object.
- *
- * \param[in] password  The password used to authenticate with an SSL connection.
- */
-QCassandraSocketFactory::QCassandraSocketFactory(const char *password)
-    : f_password(password)
-{
-}
-
-/** \brief Clean up the QCassandraSocketFactory object.
- *
- * This function clears the password so we do not keep a copy in memory.
- */
-QCassandraSocketFactory::~QCassandraSocketFactory()
-{
-    for(int i(f_password.length() - 1); i >= 0; --i) {
-        f_password[i] = '*';
+struct session_deleter
+{ 
+    void operator()(CassSession* p) const
+    {
+        cass_session_free(p);
     }
-}
+};
 
-/** \brief Retrieve the Cassandra password.
- *
- * This function copies the password as passed to us via the
- * QCassandraPrivate::connect() function.
- *
- * \note
- * We make a copy of the password in the string passed by thrift,
- * whether thrift properly clears the buffer is not our responsibility,
- * but know that as of thrift 0.8.0 does NOT currently clear its
- * password buffers.
- *
- * \param[out] password  The string where the password is returned.
- * \param[in] max_size  The maximum size for the password.
- */
-void QCassandraSocketFactory::getPassword(std::string& password, int /*max_size*/)
-{
-    password = f_password;
-}
+struct future_deleter
+{ 
+    void operator()(CassFuture* p) const
+    {
+        cass_future_free(p);
+    }
+};
+
+struct statement_deleter
+{ 
+    void operator()(CassStatement* p) const
+    {
+        cass_statement_free(p);
+    }
+};
+
 
 } // no name namespace
 
@@ -193,12 +158,11 @@ void QCassandraSocketFactory::getPassword(std::string& password, int /*max_size*
  *
  * \param[in] parent  The parent pointer (i.e. QCassandra object)
  */
-QCassandraPrivate::QCassandraPrivate(QCassandra *parent)
+QCassandraPrivate::QCassandraPrivate(std::shared_ptr<QCassandra> parent)
     : f_parent(parent)
-      //f_socket(NULL) -- auto-initialized
-      //f_transport(NULL) -- auto-initialized
-      //f_protocol(NULL) -- auto-initialized
-      //f_client(NULL) -- auto-initialized
+    // f_cluster    -- auto-init
+    // f_session    -- auto-init
+    // f_connection -- auto-init
 {
 }
 
@@ -263,54 +227,33 @@ QCassandraPrivate::~QCassandraPrivate()
  *
  * \sa isConnected()
  * \sa disconnect()
- * \sa QCassandraSocketFactory
  */
-bool QCassandraPrivate::connect(const QString& host, const int port, const QString& password)
+bool QCassandraPrivate::connect(const QString& host, const int port )
 {
     // disconnect any existing connection
     disconnect();
 
-    bool worked(true);
-    try {
-        // create a socket, transportation, protocol, and client
-        // the client is what we use to communicate with the Cassandra server
-        if(password.isEmpty()) {
-            f_socket.reset(new apache::thrift::transport::TSocket(host.toUtf8().data(), port));
-        }
-        else {
-            // make sure we keep a reference to the copy so we can
-            // clear it once we're done with it (for security reasons)
-            QByteArray pwd(password.toUtf8());
-            QCassandraSocketFactory socket_factory(pwd.data());
-            for(int i(pwd.size() - 1); i >= 0; --i) {
-                pwd[i] = '*';
-            }
-            socket_factory.overrideDefaultPasswordCallback();
-            socket_factory.authenticate(password != "ignore");
-            boost::shared_ptr<apache::thrift::transport::TSSLSocket> socket(socket_factory.createSocket(host.toUtf8().data(), port));
-            f_socket = boost::static_pointer_cast<apache::thrift::transport::TTransport>(socket);
-        }
+    f_cluster.reset( cass_cluster_new(), cluster_deleter() )
+    cass_cluster_set_contact_points( f_cluster, host.toUtf8().data() );
+    cass_cluster_set_contact_points( f_cluster, port );
+    //
+    f_session.reset( cass_session_new(), session_deleter() )
+    f_connection.reset( cass_session_connect(f_session, f_cluster), future_deleter() );
 
-        f_transport.reset(new apache::thrift::transport::TFramedTransport(f_socket));
-        f_protocol.reset(new apache::thrift::protocol::TBinaryProtocol(f_transport));
-        f_client.reset(new org::apache::cassandra::CassandraClient(f_protocol));
-
-        // once everything is connected as it should, open the transport link
-        // NB: you may get an error here because it tries to open with IPv6
-        //     first, but if we do not catch the error, IPv4 worked
-        f_transport->open();
-    }
-    catch(...) {
-        // TBD: should we check for some specific error here?
-        worked = false;
-    }
-
-    // if it failed, make sure to clear all the pointers
-    if(!worked) {
+    /* This operation will block until the result is ready */
+    CassError rc = cass_future_error_code(f_connection);
+    if( rc != CASS_OK )
+    {
         disconnect();
-    }
 
-    return worked;
+        const char* message;
+        size_t message_length;
+        cass_future_error_message( f_connection, &message, &message_length );
+        const std::string runtime_message = "Cannot connect to cassandra server! ["
+                                          + std::string(message) + "]";
+        throw std::runtime_error( runtime_error.c_str() );
+    }
+    return true;
 }
 
 /** \brief Disconnect from the Cassandra server.
@@ -322,14 +265,17 @@ bool QCassandraPrivate::connect(const QString& host, const int port, const QStri
  */
 void QCassandraPrivate::disconnect()
 {
-    if(f_client.get()) {
-        // this is probably not necessary (it should anyway happen as required)
-        f_transport->close();
+    f_connection.reset();
+    //
+    if( f_session && f_cluster )
+    {
+        CassFuture* result = cass_session_close( f_session, f_cluster );
+        cass_future_wait( result );
+        cass_future_free( result );
     }
-    f_client.reset();
-    f_protocol.reset();
-    f_transport.reset();
-    f_socket.reset();
+    //
+    f_session.reset();
+    f_cluster.reset();
 }
 
 /** \brief Check whether we're connected.
@@ -344,8 +290,73 @@ void QCassandraPrivate::disconnect()
  */
 bool QCassandraPrivate::isConnected() const
 {
-    return f_client.get() != NULL;
+    return f_connection && f_session && f_cluster;
 }
+
+
+namespace
+{
+    void throw_error( CassFuture* future )
+    {
+        const char* message;
+        size_t message_length;
+        cass_future_error_message( future, &message, &message_length );
+        std::stringstream ss;
+        ss << "Cassandra error: [" << message << "], aborting operation!";
+        throw std::runtime_error( ss.str().c_str() );
+    }
+}
+
+
+/// \brief Execute a full query string.
+//
+void QCassandraPrivate::executeQuery( const QString& query ) const
+{
+    std::shared_ptr<CassStatement> statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
+    std::shared_ptr<CassFuture>    future   ( cass_session_execute(session,statement), future_deleter() );
+
+    cass_future_wait(future);
+
+    CassError rc = cass_future_error_code(future);
+    if (rc != CASS_OK)
+    {
+        throw_error( future );
+    }
+}
+
+/// \brief Execute a query based on a table and a single column within. No keyspace is assumed.
+//
+/// \note This assumes a single column query
+//
+void QCassandraPrivate::executeQuery( const QString& table, const QString& column, QStringList& values ) const
+{
+    QString query( QString("SELECT %1 FROM %2").arg(column).arg(table) );
+    std::shared_ptr<CassStatement> statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
+    std::shared_ptr<CassFuture>    future   ( cass_session_execute(session,statement), future_deleter() );
+
+    cass_future_wait(future);
+
+    CassError rc = cass_future_error_code(future);
+    if (rc != CASS_OK)
+    {
+        throw_error( future );
+    }
+
+    values.clear();
+    CassIterator* rows = cass_iterator_from_result( result );
+    while( cass_iterator_next( rows ) )
+    {
+        const CassRow*   row    = cass_iterator_get_row( rows );
+        const CassValue* value  = cass_row_get_column_by_name( row, column.toUtf8().data() );
+
+        const char *    byte_value = 0;
+        size_t          value_len  = 0;
+        cass_value_get_string( value, &byte_value, &value_len );
+        QString str( byte_value );
+        values << str;
+    }
+}
+
 
 /** \brief Synchronize the version of schemas on all nodes.
  *
@@ -399,13 +410,19 @@ bool QCassandraPrivate::isConnected() const
  * happen in the specified amount of time
  *
  * \param[in] timeout  The number of seconds to wait for the synchronization to happen
+ *
+ * \todo the code is remarked out right now. The question is: do we even need to do it
+ *       with the new cpp-driver code for Cassandra?
  */
-void QCassandraPrivate::synchronizeSchemaVersions(int timeout)
+void QCassandraPrivate::synchronizeSchemaVersions(int /*timeout*/)
 {
+    // TODO: find out if we even need to do this.
+#if 0
     uint64_t limit(QCassandra::timeofday()
                  + static_cast<uint64_t>(timeout) * 1000000ULL);
 
-    for(;;) {
+    for(;;)
+    {
         // the versions is composed of a UUID (the version)
         // and an array of IP addresses in text representing the nodes
         //
@@ -413,32 +430,39 @@ void QCassandraPrivate::synchronizeSchemaVersions(int timeout)
         //                 before it returns!
         std::map<std::string, std::vector<std::string> > versions;
         f_client->describe_schema_versions(versions);
-        if(versions.size() == 1) {
+        if(versions.size() == 1)
+        {
             // if all the nodes are in agreement we have one entry
             return;
         }
         std::map<std::string, std::vector<std::string> >::const_iterator it(versions.begin());
         std::string version;
-        for(; it != versions.end(); ++it) {
+        for(; it != versions.end(); ++it)
+        {
             // unreachable nodes are ignored at this point; after all they are
             // down and would slow us down very much if we had to wait on them
-            if(it->first != g_unreachable) {
-                if(version.empty()) {
+            if(it->first != g_unreachable)
+            {
+                if(version.empty())
+                {
                     // we don't have our schema version
                     version = it->first;
                 }
-                else if(version != it->first) {
+                else if(version != it->first)
+                {
                     // versions are not all equal yet
                     break;
                 }
             }
         }
-        if(it == versions.end()) {
+        if(it == versions.end())
+        {
             // all versions are equal!
             // (this should not happen unless we have unreachable nodes)
             return;
         }
-        if( static_cast<uint32_t>(QCassandra::timeofday()) > limit ) {
+        if( static_cast<uint32_t>(QCassandra::timeofday()) > limit )
+        {
             throw std::runtime_error("schema versions synchronization did not happen in 'timeout' seconds");
         }
         // The Cassandra CLI has a tight loop instead!
@@ -448,6 +472,7 @@ void QCassandraPrivate::synchronizeSchemaVersions(int timeout)
         nanosleep(&pause, NULL);
     }
     /*NOTREACHED*/
+#endif
 }
 
 /** \brief Check that we're connected.
@@ -462,7 +487,8 @@ void QCassandraPrivate::synchronizeSchemaVersions(int timeout)
  */
 void QCassandraPrivate::mustBeConnected() const throw(std::runtime_error)
 {
-    if(!isConnected()) {
+    if(!isConnected())
+    {
         throw std::runtime_error("not connected to the Cassandra server.");
     }
 }
@@ -477,9 +503,9 @@ void QCassandraPrivate::mustBeConnected() const throw(std::runtime_error)
 QString QCassandraPrivate::clusterName() const
 {
     mustBeConnected();
-    std::string cluster_name;
-    f_client->describe_cluster_name(cluster_name);
-    return cluster_name.c_str();
+    QStringList values;
+    executeQuery( "cluster_name", "system.local", values );
+    return values[0];
 }
 
 /** \brief Retrieve the version of the protocol.
@@ -492,9 +518,9 @@ QString QCassandraPrivate::clusterName() const
 QString QCassandraPrivate::protocolVersion() const
 {
     mustBeConnected();
-    std::string protocol_version;
-    f_client->describe_version(protocol_version);
-    return protocol_version.c_str();
+    QStringList values;
+    executeQuery( "native_protocol_version", "system.local", values );
+    return values[0];
 }
 
 
@@ -576,9 +602,9 @@ QString QCassandraPrivate::protocolVersion() const
 QString QCassandraPrivate::partitioner() const
 {
     mustBeConnected();
-    std::string partitioner_str;
-    f_client->describe_partitioner(partitioner_str);
-    return partitioner_str.c_str();
+    QStringList values;
+    executeQuery( "partitioner", "system.local", values );
+    return values[0];
 }
 
 /** \brief Retrieve the snitch of the cluster.
@@ -587,13 +613,13 @@ QString QCassandraPrivate::partitioner() const
  * determine the snitch defined for the cluster.
  *
  * \return The snitch used by the cluster.
+ *
+ * \todo I have no idea how to obtain this from CQL
  */
 QString QCassandraPrivate::snitch() const
 {
-    mustBeConnected();
-    std::string snitch_str;
-    f_client->describe_snitch(snitch_str);
-    return snitch_str.c_str();
+    throw std::runtime_error( "cannot get snitch from CQL right now! Don't know how to do it..." );
+    return "TODO!";
 }
 
 /** \brief Set the context keyspace name.
@@ -607,7 +633,8 @@ QString QCassandraPrivate::snitch() const
 void QCassandraPrivate::setContext(const QString& context_name)
 {
     mustBeConnected();
-    f_client->set_keyspace(context_name.toUtf8().data());
+    //f_client->set_keyspace(context_name.toUtf8().data());
+    f_context = context_name;
 }
 
 /** \brief Go through the list of contexts and build a list of such.
@@ -624,22 +651,13 @@ void QCassandraPrivate::setContext(const QString& context_name)
  * on another machine changes the Cassandra cluster structure, it will not
  * be seen until the cache is cleared.
  */
-void QCassandraPrivate::contexts() const
+void QCassandraPrivate::contexts( QStringList& context_list ) const
 {
     mustBeConnected();
-
-    // retrieve the key spaces from Cassandra
-    std::vector<org::apache::cassandra::KsDef> keyspaces;
-    f_client->describe_keyspaces(keyspaces);
-
-    for(std::vector<org::apache::cassandra::KsDef>::const_iterator
-                    ks(keyspaces.begin()); ks != keyspaces.end(); ++ks) {
-        QCassandraContext::pointer_t c(f_parent->context(ks->name.c_str()));
-        const org::apache::cassandra::KsDef& ks_def = *ks;
-        c->parseContextDefinition(&ks_def);
-    }
+    executeQuery( "system.schema_keyspaces", "keyspace_name", context_list );
 }
 
+#if 0
 /** \brief Retrieve the description of a keyspace.
  *
  * This function requests for the descriptions of a specific keyspace
@@ -664,6 +682,7 @@ void QCassandraPrivate::retrieve_context(const QString& context_name) const
     QCassandraContext::pointer_t c(f_parent->context(context_name));
     c->parseContextDefinition(&ks_def);
 }
+#endif
 
 /** \brief Create a new context.
  *
@@ -684,10 +703,9 @@ void QCassandraPrivate::retrieve_context(const QString& context_name) const
 void QCassandraPrivate::createContext(const QCassandraContext& context)
 {
     mustBeConnected();
-    org::apache::cassandra::KsDef ks;
-    context.prepareContextDefinition(&ks);
-    std::string id_ignore;
-    f_client->system_add_keyspace(id_ignore, ks);
+    executeQuery(
+        QString("CREATE KEYSPACE %1 WITH replication = {'class': '%2', 'replication_factor': '%3'}  AND durable_writes = true;")
+        .arg(context.contextName()) );
 }
 
 /** \brief Update an existing context.

@@ -815,8 +815,9 @@ bool QCassandraContext::durableWrites() const
  *
  * \sa prepareContextDefinition()
  */
-void QCassandraContext::parseContextDefinition(const void *data)
+void QCassandraContext::parseContextDefinition(const void * /*data*/)
 {
+#if 0
     const org::apache::cassandra::KsDef *ks = reinterpret_cast<const org::apache::cassandra::KsDef *>(data);
 
     // name
@@ -864,6 +865,7 @@ void QCassandraContext::parseContextDefinition(const void *data)
         const org::apache::cassandra::CfDef& cf_def = *cf;
         t->parseTableDefinition(&cf_def);
     }
+#endif
 }
 
 /** \brief Prepare the context.

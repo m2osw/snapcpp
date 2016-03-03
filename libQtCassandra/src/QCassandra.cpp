@@ -37,12 +37,14 @@
 
 #pragma GCC push
 #pragma GCC diagnostic ignored "-Wundef"
-#include "QCassandraPrivate.h"
-#include <protocol/TBinaryProtocol.h>
-#include <transport/TSocket.h>
-#include <transport/TTransportUtils.h>
-#include <sys/time.h>
+#   include <sys/time.h>
 #pragma GCC pop
+
+#include "QtCassandra/QCassandra.h"
+
+#include <cassandra.h>
+
+#include <sstream>
 
 /** \brief The QtCassandra namespace includes all the Cassandra extensions.
  *
@@ -1053,22 +1055,79 @@ QCassandra::pointer_t QCassandra::create()
  */
 QCassandra::~QCassandra()
 {
+    disconnect();
+}
+
+namespace
+{
+    void throw_error( CassFuture* future )
+    {
+        const char* message;
+        size_t message_length;
+        cass_future_error_message( future, &message, &message_length );
+        std::stringstream msg;
+        msg << "Cassandra error: [" << message << "], aborting operation!";
+        throw std::runtime_error( msg.str().c_str() );
+    }
 }
 
 
-/** \brief Internal function to give others access to the Cassandra server.
- *
- * This function internally gives other objects a way to access the private
- * definitions.
- *
- * For example, the QCassandraContext uses this function to call functions
- * such as createContext().
- *
- * \return A bare pointer to the QCassandraPrivate object attached to this QCassandra instance.
- */
-QCassandraPrivate *QCassandra::getPrivate()
+/// \brief Execute a full query string.
+//
+void QCassandra::executeQuery( const QString& query ) const
 {
-    return f_private.get();
+    std::shared_ptr<CassStatement> statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
+    std::shared_ptr<CassFuture>    future   ( cass_session_execute(session,statement), future_deleter() );
+
+    cass_future_wait(future);
+
+    CassError rc = cass_future_error_code(future);
+    if (rc != CASS_OK)
+    {
+        throw_error( future );
+    }
+}
+
+/// \brief Execute a query based on a table and a single column within. No keyspace is assumed.
+//
+/// \note This assumes a single column query
+//
+void QCassandra::executeQuery( const QString& query, QStringList& values ) const
+{
+    std::shared_ptr<CassStatement> statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
+    std::shared_ptr<CassFuture>    future   ( cass_session_execute(session,statement), future_deleter() );
+
+    cass_future_wait(future);
+
+    CassError rc = cass_future_error_code(future);
+    if (rc != CASS_OK)
+    {
+        throw_error( future );
+    }
+
+    values.clear();
+    CassIterator* rows = cass_iterator_from_result( result );
+    while( cass_iterator_next( rows ) )
+    {
+        const CassRow*   row    = cass_iterator_get_row( rows );
+        const CassValue* value  = cass_row_get_column_by_name( row, column.toUtf8().data() );
+
+        const char *    byte_value = 0;
+        size_t          value_len  = 0;
+        cass_value_get_string( value, &byte_value, &value_len );
+        QString str( byte_value );
+        values << str;
+    }
+}
+
+/// \brief Execute a query based on a table and a single column within. No keyspace is assumed.
+//
+/// \note This assumes a single column query
+//
+void QCassandra::executeQuery( const QString& table, const QString& column, QStringList& values ) const
+{
+    const QString query( QString("SELECT %1 FROM %2").arg(column).arg(table) );
+    executeQuery( query, values );
 }
 
 
@@ -1090,21 +1149,92 @@ QCassandraPrivate *QCassandra::getPrivate()
  * Note that the previous connection is lost whether or not the new one
  * succeeds.
  *
- * \param[in] host  The host, defaults to "localhost" (an IP address, computer
- *                  hostname, domain name, etc.)
- * \param[in] port  The connection port, defaults to 9160.
+ * \param[in] host      The host, defaults to "localhost" (an IP address, computer
+ *                      hostname, domain name, etc.)
+ * \param[in] port      The connection port, defaults to 9042.
  * \param[in] password  Whether the connection makes use of encryption and a
  *                      password (if password is not an empty string).
  *
- * \return true if the connection succeeds, false otherwise
+ * \return true if the connection succeeds, throws otherwise
  */
-bool QCassandra::connect(const QString& host, const int port, const QString& password)
+bool QCassandra::connect( const QString& host, const int port )
 {
-    // first make sure we're disconnected from the other cluster
+    QStringList host_list;
+    host_list << host;
+    return connect( host_list, port );
+}
+
+
+/** \brief Connect to a Cassandra Cluster.
+ *
+ * This function connects to a Cassandra Cluster. Which cluster is determined
+ * by the host and port parameters.
+ *
+ * One cluster may include many database contexts (i.e. keyspaces.) Each database
+ * context (keyspace) has a set of parameters defining its duplication mechanism
+ * among other things. Before working with a database context, one must call the
+ * the setCurrentContext() function.
+ *
+ * The function first disconnects the existing connection when there is one.
+ *
+ * Many other functions require you to call this connect() function first. You
+ * are likely to get a runtime exception if you don't.
+ *
+ * Note that the previous connection is lost whether or not the new one
+ * succeeds.
+ *
+ * \param[in] host_list The list of hosts, AKA contact points (IP addresses, computer
+ *                      hostnames, domain names, etc.)
+ * \param[in] port      The connection port, defaults to 9042.
+ *
+ * \return true if the connection succeeds, throws otherwise
+ */
+bool QCassandra::connect(const QStringList& host_list, const int port )
+{
+    // disconnect any existing connection
     disconnect();
 
-    // then we reconnect
-    return f_private->connect(host, port, password);
+    std::stringstream contact_points;
+    for( QString host : host_list )
+    {
+        if( !contact_points.empty() )
+        {
+            contact_points << ",";
+        }
+        contact_points << host;
+    }
+
+    f_cluster.reset( cass_cluster_new(), cluster_deleter() )
+    cass_cluster_set_contact_points( f_cluster, contact_points.str().c_str() );
+    cass_cluster_set_contact_points( f_cluster, port );
+    //
+    f_session.reset( cass_session_new(), session_deleter() )
+    f_connection.reset( cass_session_connect(f_session, f_cluster), future_deleter() );
+
+    /* This operation will block until the result is ready */
+    CassError rc = cass_future_error_code(f_connection);
+    if( rc != CASS_OK )
+    {
+        f_connection.reset();
+        f_session.reset();
+        f_cluster.reset();
+
+        const char* message;
+        size_t message_length;
+        cass_future_error_message( f_connection, &message, &message_length );
+        std::stringstream msg;
+        msg << "Cannot connect to cassandra server! Reason=[" << std::string(message) << "]";
+        throw std::runtime_error( msg.str().c_str() );
+    }
+
+    QStringList values;
+    executeQuery( "SELECT cluster_name, native_protocol_version, paritioner FROM system.local", values );
+
+    f_cluster_name     = values[0];
+    f_protocol_version = values[1];
+    f_partitioner      = values[2];
+
+    return true;
 }
 
 
@@ -1121,14 +1251,25 @@ bool QCassandra::connect(const QString& host, const int port, const QString& pas
  */
 void QCassandra::disconnect()
 {
-    f_private->disconnect();
+    f_connection.reset();
+    //
+    if( f_session && f_cluster )
+    {
+        CassFuture* result = cass_session_close( f_session, f_cluster );
+        cass_future_wait( result );
+        cass_future_free( result );
+    }
+    //
+    f_session.reset();
+    f_cluster.reset();
+
     f_current_context.reset();
-    f_contexts_read = false;
     f_contexts.clear();
-    f_cluster_name = "";
+    f_contexts_read    = false;
+    f_cluster_name     = "";
     f_protocol_version = "";
-    f_partitioner = "";
-    f_snitch = "";
+    f_partitioner      = "";
+    //f_snitch           = "";
     //f_default_consistency_level = CONSISTENCY_LEVEL_ONE; -- keep current value
     //f_schema_synchronization_timeout = SCHEMA_SYNCHRONIZATION_DEFAULT; -- keep current value
 }
@@ -1146,7 +1287,7 @@ void QCassandra::disconnect()
  */
 bool QCassandra::isConnected() const
 {
-    return f_private->isConnected();
+    return f_connection && f_session && f_cluster;
 }
 
 
@@ -1232,10 +1373,6 @@ void QCassandra::setSchemaSynchronizationTimeout(uint32_t timeout)
  */
 const QString& QCassandra::clusterName() const
 {
-    if(f_cluster_name.isEmpty()) {
-        // retrieve the name of the cluster once
-        const_cast<QString&>(f_cluster_name) = f_private->clusterName();
-    }
     return f_cluster_name;
 }
 
@@ -1264,50 +1401,8 @@ const QString& QCassandra::clusterName() const
  */
 const QString& QCassandra::protocolVersion() const
 {
-    if(f_protocol_version.isEmpty()) {
-        // retrieve the version of the protocol once
-        const_cast<QString&>(f_protocol_version) = f_private->protocolVersion();
-    }
     return f_protocol_version;
 }
-
-
-///** \brief Get the cluster information.
-// *
-// * This function reads the ring data from this Cassandra connection.
-// * This data includes information from the various Cassandra node
-// * such as the start and end token of each item
-// *
-// * \todo
-// * At this time this function requires that you first setup
-// * a context as the current context. We may later move this
-// * function from QCassandra to QCassandraContext if it really
-// * is always linked to a context or just make use of any one
-// * context available (or maybe force the context to "system"?)
-// *
-// * \todo
-// * This does not currently work.
-// *
-// * \return An array of node details.
-// *
-// * \sa readRows()
-// */
-//const QCassandraClusterInformation& QCassandra::clusterInformation() const
-//{
-//    if(f_cluster_information.isEmpty()) {
-//        // having to have a context does not make sense for such a
-//        // function; we will have to see whether we can avoid this
-//        // once we use CQL, otherwise it may make more sense to have
-//        // this function called from the context in question instead
-//        //if(!f_current_context)
-//        //{
-//        //    throw std::runtime_error("clusterInformation() cannot be retrieved without a context definition");
-//        //}
-//        // retrieve the cluster information once
-//        f_private->clusterInformation(f_cluster_information);//f_current_context->contextName());
-//    }
-//    return f_cluster_information;
-//}
 
 
 /** \brief Get the partitioner of the cluster.
@@ -1327,10 +1422,6 @@ const QString& QCassandra::protocolVersion() const
  */
 const QString& QCassandra::partitioner() const
 {
-    if(f_partitioner.isEmpty()) {
-        // retrieve the partitioner once
-        const_cast<QString&>(f_partitioner) = f_private->partitioner();
-    }
     return f_partitioner;
 }
 
@@ -1342,15 +1433,13 @@ const QString& QCassandra::partitioner() const
  *
  * \return The name of the snitch.
  *
+ * \todo I have no idea how to read this using CQL!
+ *
  * \sa readRows()
  */
 const QString& QCassandra::snitch() const
 {
-    if(f_snitch.isEmpty()) {
-        // retrieve the snitch once
-        const_cast<QString&>(f_snitch) = f_private->snitch();
-    }
-    return f_snitch;
+    return "TODO!";
 }
 
 

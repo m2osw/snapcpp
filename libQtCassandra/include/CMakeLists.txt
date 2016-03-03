@@ -35,8 +35,8 @@
 project( libQtCassandra_includes )
 
 configure_file(
-		QtCassandra/QCassandra.h.in
-		${PROJECT_BINARY_DIR}/QtCassandra/QCassandra.h
+		QtCassandra/QCassandraVersion.h.in
+		${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
 		)
 
 install(
@@ -46,7 +46,7 @@ install(
 	PATTERN .svn EXCLUDE
 )
 install(
-	FILES ${PROJECT_BINARY_DIR}/QtCassandra/QCassandra.h
+	FILES ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
 	DESTINATION include/QtCassandra/
 )
 

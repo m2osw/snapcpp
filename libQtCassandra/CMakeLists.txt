@@ -44,11 +44,11 @@ project(libQtCassandra)
 
 ## Include support modules
 ##
-find_package( ControlledVars   )
-find_package( SnapCMakeModules )
-find_package( SnapDoxygen      )
-find_package( Thrift           )
-find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
+find_package( CassandraCppDriver REQUIRED )
+find_package( ControlledVars     REQUIRED )
+find_package( SnapCMakeModules   REQUIRED )
+find_package( SnapDoxygen        REQUIRED )
+find_package( Qt4 4.8.1          REQUIRED QtCore QtXml )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
@@ -56,11 +56,7 @@ add_definitions( ${QT_DEFINITIONS} )
 #
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
-include_directories(
-    SYSTEM
-        ${THRIFT_INCLUDE_DIRS}
-        ${QT_INCLUDES}
-)
+include_directories( SYSTEM ${QT_INCLUDES} )
 
 include_directories(
     ${PROJECT_SOURCE_DIR}
@@ -75,7 +71,7 @@ include_directories(
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 add_subdirectory(cmake)
-add_subdirectory(thrift-gencpp-cassandra)
+#add_subdirectory(thrift-gencpp-cassandra)
 add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(tools)

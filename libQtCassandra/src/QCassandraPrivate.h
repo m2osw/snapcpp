@@ -34,23 +34,14 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #pragma once
-#ifndef QCASSANDRA_PRIVATE_H
-#define QCASSANDRA_PRIVATE_H
 
 #include "QtCassandra/QCassandra.h"
 #include "QtCassandra/QCassandraColumnPredicate.h"
 
-// In thrift 0.8.0
-//   . sockaddr is not defined if we don't include netinet/in.h first
-#include <netinet/in.h>
-#include "thrift-gencpp-cassandra/Cassandra.h"
-#include "thrift-gencpp-cassandra/cassandra_types.h"
+#include <cassandra.h>
 
+#include <memory>
 #include <stdexcept>
-
-namespace apache { namespace thrift { namespace transport {
-    class TSSLSocketFactory;
-} } }
 
 namespace QtCassandra
 {
@@ -58,23 +49,25 @@ namespace QtCassandra
 class QCassandraPrivate
 {
 public:
-    QCassandraPrivate(QCassandra *parent);
+    QCassandraPrivate(std::shared_ptr<QCassandra> parent);
     ~QCassandraPrivate();
 
-    bool connect(const QString& host, int port, const QString& password);
+    bool connect(const QString& host, int port );
     void disconnect();
     bool isConnected() const;
     void synchronizeSchemaVersions(int timeout);
 
     QString clusterName() const;
     QString protocolVersion() const;
-    //void clusterInformation(QCassandraClusterInformation& cluster_information) const;
     QString partitioner() const;
     QString snitch() const;
 
+    void executeQuery( const QString& query ) const;
+    void executeQuery( const QString& table, const QString& column, QStringList& values ) const;
+
     void setContext(const QString& context);
-    void contexts() const;
-    void retrieve_context(const QString& context_name) const;
+    void contexts( QStringList& context_list ) const;
+    //void retrieve_context(const QString& context_name) const;
     void createContext(const QCassandraContext& context);
     void updateContext(const QCassandraContext& context);
     void dropContext(const QCassandraContext& context);
@@ -84,14 +77,14 @@ public:
     void dropTable(const QString& table_name);
     void truncateTable(const QCassandraTable *table);
 
-    void insertValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
-    void getValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
-    void getCounter(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
-    void addValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t value);
-    int32_t getCellCount(const QString& table_name, const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
-    uint32_t getColumnSlice(QCassandraTable& table, const QByteArray& row_key, QCassandraColumnPredicate& column_predicate);
-    void remove(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level);
-    uint32_t getRowSlices(QCassandraTable& table, QCassandraRowPredicate& row_predicate);
+    void        insertValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
+    void        getValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
+    void        getCounter(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
+    void        addValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t value);
+    int32_t     getCellCount(const QString& table_name, const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
+    uint32_t    getColumnSlice(QCassandraTable& table, const QByteArray& row_key, QCassandraColumnPredicate& column_predicate);
+    void        remove(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level);
+    uint32_t    getRowSlices(QCassandraTable& table, QCassandraRowPredicate& row_predicate);
 
 private:
     // forbid direct copies
@@ -100,14 +93,14 @@ private:
     void mustBeConnected() const throw(std::runtime_error);
 
     // we are tightly coupled with our parent so we can use a bare pointer
-    QCassandra *                                                    f_parent;
-    boost::shared_ptr<apache::thrift::transport::TTransport>        f_socket;
-    boost::shared_ptr<apache::thrift::transport::TTransport>        f_transport;
-    boost::shared_ptr<apache::thrift::protocol::TProtocol>          f_protocol;
-    boost::shared_ptr<org::apache::cassandra::CassandraClient>      f_client;
+    std::shared_ptr<QCassandra> f_parent;
+    cluster_pointer_t           f_cluster;
+    session_pointer_t           f_session;
+    future_pointer_t            f_connection;
+
+    QString                     f_context;
 };
 
 } // namespace QtCassandra
-#endif
-//#ifdef QCASSANDRA_PRIVATE_H
+
 // vim: ts=4 sw=4 et

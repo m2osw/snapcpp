@@ -34,39 +34,17 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef QCASSANDRA_H
-#define QCASSANDRA_H
+#pragma once
 
 #include "QtCassandra/QCassandraContext.h"
 #include "QtCassandra/QCassandraClusterInformation.h"
+#include "QtCassandra/QCassandraTools.h"
+#include "QtCassandra/QCassandraVersion.h"
 
 #include <memory>
 
 namespace QtCassandra
 {
-
-static const int   QT_CASSANDRA_LIBRARY_VERSION_MAJOR  = @LIBQTCASSANDRA_VERSION_MAJOR@;
-static const int   QT_CASSANDRA_LIBRARY_VERSION_MINOR  = @LIBQTCASSANDRA_VERSION_MINOR@;
-static const int   QT_CASSANDRA_LIBRARY_VERSION_PATCH  = @LIBQTCASSANDRA_VERSION_PATCH@;
-
-/** \brief The library version as a string.
- *
- * This variable represents the full library version at the time
- * you compile your program. To get the library you are linked
- * to at runtime use QCassandra::version().
- *
- * \warning
- * This variable uses an attribute supported by the GNU C++ compiler
- * which prevents Doxygen from finding this help block if declared
- * in the .cpp file. This is why it is in the header.
- *
- * \sa version()
- */
-static const char *QT_CASSANDRA_LIBRARY_VERSION_STRING __attribute__((unused)) = "@LIBQTCASSANDRA_VERSION_MAJOR@.@LIBQTCASSANDRA_VERSION_MINOR@.@LIBQTCASSANDRA_VERSION_PATCH@";
-
-
-class QCassandraPrivate;
-
 
 // Handling of the transport and CassandraClient objects
 class QCassandra
@@ -87,8 +65,15 @@ public:
     static int versionPatch();
     static const char *version();
 
+    // handle queries
+    //
+    void executeQuery( const QString& query ) const;
+    void executeQuery( const QString& query, QStringList& values ) const;
+    void executeQuery( const QString& table, const QString& column, QStringList& values ) const;
+
     // connection functions
-    bool connect(const QString& host = "localhost", const int port = 9160, const QString& password = "");
+    bool connect(const QString& host = "localhost", const int port = 9042 );
+    bool connect(const QStringList& hosts, const int port = 9042 );
     void disconnect();
     bool isConnected() const;
     void synchronizeSchemaVersions(uint32_t timeout = SCHEMA_SYNCHRONIZATION_USE_DEFAULT);
@@ -97,7 +82,7 @@ public:
     const QString& protocolVersion() const;
     //const QCassandraClusterInformation& clusterInformation() const;
     const QString& partitioner() const;
-    const QString& snitch() const;
+    //const QString& snitch() const;
 
     // context functions (the database [Cassandra keyspace])
     QCassandraContext::pointer_t context(const QString& context_name);
@@ -124,10 +109,12 @@ private:
     void clearCurrentContextIf(const QCassandraContext& c);
     QCassandraPrivate *getPrivate();
 
-    friend class QCassandraPrivate;
     friend class QCassandraContext;
 
-    std::unique_ptr<QCassandraPrivate>      f_private;
+    cluster_pointer_t                       f_cluster;
+    session_pointer_t                       f_session;
+    future_pointer_t                        f_connection;
+
     QCassandraContext::pointer_t            f_current_context;
     mutable controlled_vars::flbool_t       f_contexts_read;
     QCassandraContexts                      f_contexts;
@@ -135,12 +122,11 @@ private:
     QString                                 f_protocol_version;
     //mutable QCassandraClusterInformation    f_cluster_information;
     QString                                 f_partitioner;
-    QString                                 f_snitch;
+    //QString                                 f_snitch;
     consistency_level_t                     f_default_consistency_level;
     schema_synchronization_timeout_t        f_schema_synchronization_timeout;
 };
 
 } // namespace QtCassandra
-#endif
-//#ifndef QCASSANDRA_H
+
 // vim: ts=4 sw=4 et
