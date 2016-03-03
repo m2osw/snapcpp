@@ -1339,7 +1339,18 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
         table->setMemtableFlushAfterMins(60);
         //table->setMemtableThroughputInMb(247);
         //table->setMemtableOperationsInMillions(1.1578125);
-        table->setGcGraceSeconds(864000);
+
+        // about potential problems in regard to Gargbage Collection see:
+        //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html
+        //   http://stackoverflow.com/questions/21755286/what-exactly-happens-when-tombstone-limit-is-reached
+        //   http://cassandra-user-incubator-apache-org.3065146.n2.nabble.com/Crash-with-TombstoneOverwhelmingException-td7592018.html
+        //
+        // Garbage Collection of 1 day (could be a lot shorter for several
+        // tables such as the "list", "backend" and "antihammering"
+        // tables... we will have to fix that once we have our proper per
+        // table definitions)
+        table->setGcGraceSeconds(86400);
+
         table->setMinCompactionThreshold(4);
         table->setMaxCompactionThreshold(22);
         table->setReplicateOnWrite(1);
