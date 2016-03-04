@@ -313,7 +313,7 @@ namespace
 void QCassandraPrivate::executeQuery( const QString& query ) const
 {
     std::shared_ptr<CassStatement> statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
-    std::shared_ptr<CassFuture>    future   ( cass_session_execute(session,statement), future_deleter() );
+    std::shared_ptr<CassFuture>    future   ( cass_session_execute(f_session.get(),statement), future_deleter() );
 
     cass_future_wait(future);
 
@@ -332,7 +332,7 @@ void QCassandraPrivate::executeQuery( const QString& table, const QString& colum
 {
     QString query( QString("SELECT %1 FROM %2").arg(column).arg(table) );
     std::shared_ptr<CassStatement> statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
-    std::shared_ptr<CassFuture>    future   ( cass_session_execute(session,statement), future_deleter() );
+    std::shared_ptr<CassFuture>    future   ( cass_session_execute(f_session.get(),statement), future_deleter() );
 
     cass_future_wait(future);
 

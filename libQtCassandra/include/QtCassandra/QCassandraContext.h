@@ -34,8 +34,6 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #pragma once
-#ifndef QCASSANDRA_CONTEXT_H
-#define QCASSANDRA_CONTEXT_H
 
 #include "QCassandraTable.h"
 #include "QCassandraColumnPredicate.h"
@@ -45,7 +43,6 @@
 namespace QtCassandra
 {
 
-class QCassandraContextPrivate;
 class QCassandra;
 
 // Cassandra KsDef object
@@ -64,14 +61,14 @@ public:
 
     QString contextName() const;
 
-    void setStrategyClass(const QString& strategy_class);
+    void    setStrategyClass(const QString& strategy_class);
     QString strategyClass() const;
 
-    void setDescriptionOptions(const QCassandraContextOptions& options);
-    const QCassandraContextOptions& descriptionOptions() const;
-    void setDescriptionOption(const QString& option, const QString& value);
+    void    setDescriptionOptions(const QCassandraContextOptions& options);
+    const   QCassandraContextOptions& descriptionOptions() const;
+    void    setDescriptionOption(const QString& option, const QString& value);
     QString descriptionOption(const QString& option) const;
-    void eraseDescriptionOption(const QString& option);
+    void    eraseDescriptionOption(const QString& option);
 
     // tables
     QCassandraTable::pointer_t table(const QString& table_name);
@@ -84,14 +81,18 @@ public:
     // replication
     void setReplicationFactor(int32_t factor);
     void unsetReplicationFactor();
+#if 0
     bool hasReplicationFactor() const;
     int32_t replicationFactor() const;
+#endif
     void setDurableWrites(bool durable_writes);
-    void unsetDurableWrites();
-    bool hasDurableWrites() const;
-    bool durableWrites() const;
+    //void unsetDurableWrites();
+    //bool hasDurableWrites() const;
+    //bool durableWrites() const;
 
     // handling
+    QString generateReplicationStanza() const;
+    //
     void create();
     void update();
     void drop();
@@ -122,12 +123,13 @@ private:
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
 
+#if 0
     // internal functions
-    void parseContextDefinition(const void *data);
-    void prepareContextDefinition(void *data) const;
+    //void parseContextDefinition(const void *data);
+    //void prepareContextDefinition(void *data) const;
     void createTable(const QCassandraTable *table);
-    void updateTable(const QCassandraTable *table);
-    void truncateTable(const QCassandraTable *table);
+    //void updateTable(const QCassandraTable *table);
+    //void truncateTable(const QCassandraTable *table);
     void insertValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     bool getValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     bool getCounter(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
@@ -137,15 +139,13 @@ private:
     void remove(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level);
     uint32_t getRowSlices(QCassandraTable& table, QCassandraRowPredicate& row_predicate);
     void synchronizeSchemaVersions();
+#endif
     void unparent();
 
     friend class QCassandra;
-    friend class QCassandraPrivate;
-    friend class QCassandraContextPrivate;
     friend class QCassandraTable;
     friend class QCassandraLock;
 
-    std::unique_ptr<QCassandraContextPrivate>   f_private;
     // f_cassandra is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
@@ -155,17 +155,20 @@ private:
     std::shared_ptr<QCassandra>                 f_cassandra;
     QCassandraContextOptions                    f_options;
     QCassandraTables                            f_tables;
+    QString                                     f_contextName;
     QString                                     f_host_name;
     QString                                     f_lock_table_name;
+    QString                                     f_strategyClass;
+    controlled_vars::zbool_t                    f_durableWrites;                                        
     mutable controlled_vars::flbool_t           f_lock_accessed;
     lock_timeout_t                              f_lock_timeout;
     lock_ttl_t                                  f_lock_ttl;
+    controlled_vars::zint32_t                   f_pagingSize;
 };
 
 typedef QMap<QString, QCassandraContext::pointer_t> QCassandraContexts;
 
 
 } // namespace QtCassandra
-#endif
-//#ifndef QCASSANDRA_CONTEXT_H
+
 // vim: ts=4 sw=4 et

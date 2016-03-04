@@ -1058,34 +1058,19 @@ QCassandra::~QCassandra()
     disconnect();
 }
 
-namespace
-{
-    void throw_error( CassFuture* future )
-    {
-        const char* message;
-        size_t message_length;
-        cass_future_error_message( future, &message, &message_length );
-        std::stringstream msg;
-        msg << "Cassandra error: [" << message << "], aborting operation!";
-        throw std::runtime_error( msg.str().c_str() );
-    }
-}
-
 
 /// \brief Execute a full query string.
 //
-void QCassandra::executeQuery( const QString& query ) const
+QCassandra::future_pointer_t QCassandra::executeQuery( const QString& query ) const
 {
-    std::shared_ptr<CassStatement> statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
-    std::shared_ptr<CassFuture>    future   ( cass_session_execute(session,statement), future_deleter() );
+    statement_pointer_t statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
+    future_pointer_t    future   ( cass_session_execute(f_session.get(),statement), future_deleter() );
 
     cass_future_wait(future);
 
-    CassError rc = cass_future_error_code(future);
-    if (rc != CASS_OK)
-    {
-        throw_error( future );
-    }
+    throwIfError( future, QString("Query [%1] failed").arg(query) );
+
+    return future;
 }
 
 /// \brief Execute a query based on a table and a single column within. No keyspace is assumed.
@@ -1094,19 +1079,10 @@ void QCassandra::executeQuery( const QString& query ) const
 //
 void QCassandra::executeQuery( const QString& query, QStringList& values ) const
 {
-    std::shared_ptr<CassStatement> statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
-    std::shared_ptr<CassFuture>    future   ( cass_session_execute(session,statement), future_deleter() );
-
-    cass_future_wait(future);
-
-    CassError rc = cass_future_error_code(future);
-    if (rc != CASS_OK)
-    {
-        throw_error( future );
-    }
+    future_pointer_t    future( executeQuery(query) );
 
     values.clear();
-    CassIterator* rows = cass_iterator_from_result( result );
+    CassIterator* rows = cass_iterator_from_result( future );
     while( cass_iterator_next( rows ) )
     {
         const CassRow*   row    = cass_iterator_get_row( rows );
@@ -1129,6 +1105,23 @@ void QCassandra::executeQuery( const QString& table, const QString& column, QStr
     const QString query( QString("SELECT %1 FROM %2").arg(column).arg(table) );
     executeQuery( query, values );
 }
+
+
+cluster_pointer_t QCassandra::cluster()    const
+{
+    return f_cluster;
+}
+
+session_pointer_t QCassandra::session()    const
+{
+    return f_session;
+}
+
+future_pointer_t  QCassandra::connection() const
+{
+    return f_connection;
+}
+
 
 
 /** \brief Connect to a Cassandra Cluster.
@@ -1255,6 +1248,8 @@ void QCassandra::disconnect()
     //
     if( f_session && f_cluster )
     {
+        // Does this need to be done? Or is it sufficient to just delete the object?
+        //
         CassFuture* result = cass_session_close( f_session, f_cluster );
         cass_future_wait( result );
         cass_future_free( result );
@@ -1291,6 +1286,10 @@ bool QCassandra::isConnected() const
 }
 
 
+#if 0
+// TODO: I don't think we need this any more with Cassandra v2+ and CQL,
+// but it would be good to look into to be sure.
+//
 /** \brief Wait until all the nodes are synchronized.
  *
  * This function waits for the nodes to be synchronized. This means
@@ -1351,6 +1350,7 @@ void QCassandra::setSchemaSynchronizationTimeout(uint32_t timeout)
     }
     f_schema_synchronization_timeout = timeout;
 }
+#endif
 
 
 /** \brief Get the name of the Cassandra cluster.
@@ -1534,8 +1534,9 @@ QCassandraContext::pointer_t QCassandra::context(const QString& context_name)
 void QCassandra::setCurrentContext(QCassandraContext::pointer_t c)
 {
     // emit the change only if not the same context
-    if(f_current_context != c) {
-        f_private->setContext(c->contextName());
+    if(f_current_context != c)
+    {
+        //f_private->setContext( c->contextName() );
         // we save the current context only AFTER the call to setContext()
         // in case it throws (and then the current context would be wrong)
         f_current_context = c;
@@ -1552,7 +1553,8 @@ void QCassandra::setCurrentContext(QCassandraContext::pointer_t c)
  */
 void QCassandra::clearCurrentContextIf(const QCassandraContext& c)
 {
-    if(f_current_context.get() == &c) {
+    if(f_current_context.get() == &c)
+    {
         f_current_context.reset();
     }
 }
@@ -1577,10 +1579,6 @@ void QCassandra::clearCurrentContextIf(const QCassandraContext& c)
  */
 const QCassandraContexts& QCassandra::contexts() const
 {
-    if(!f_contexts_read) {
-        f_contexts_read = true;
-        f_private->contexts();
-    }
     return f_contexts;
 }
 
@@ -1611,7 +1609,8 @@ const QCassandraContexts& QCassandra::contexts() const
 QCassandraContext::pointer_t QCassandra::findContext(const QString& context_name) const
 {
     QCassandraContexts::const_iterator ci(contexts().find(context_name));
-    if(ci == f_contexts.end()) {
+    if(ci == f_contexts.end())
+    {
         QCassandraContext::pointer_t null;
         return null;
     }
@@ -1640,7 +1639,8 @@ QCassandraContext::pointer_t QCassandra::findContext(const QString& context_name
 QCassandraContext& QCassandra::operator [] (const QString& context_name)
 {
     QCassandraContext::pointer_t context_obj( findContext(context_name) );
-    if( !context_obj ) {
+    if( !context_obj )
+    {
         throw std::runtime_error("named context was not found, cannot return a reference");
     }
 
@@ -1669,7 +1669,8 @@ QCassandraContext& QCassandra::operator [] (const QString& context_name)
 const QCassandraContext& QCassandra::operator [] (const QString& context_name) const
 {
     const QCassandraContext::pointer_t context_obj( findContext(context_name) );
-    if( !context_obj ) {
+    if( !context_obj )
+    {
         throw std::runtime_error("named context was not found, cannot return a reference");
     }
 

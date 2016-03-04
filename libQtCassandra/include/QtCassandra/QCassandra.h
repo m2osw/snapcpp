@@ -67,17 +67,21 @@ public:
 
     // handle queries
     //
-    void executeQuery( const QString& query ) const;
+    future_pointer_t executeQuery( const QString& query ) const;
     void executeQuery( const QString& query, QStringList& values ) const;
     void executeQuery( const QString& table, const QString& column, QStringList& values ) const;
+
+    cluster_pointer_t cluster()    const;
+    session_pointer_t session()    const;
+    future_pointer_t  connection() const;
 
     // connection functions
     bool connect(const QString& host = "localhost", const int port = 9042 );
     bool connect(const QStringList& hosts, const int port = 9042 );
     void disconnect();
     bool isConnected() const;
-    void synchronizeSchemaVersions(uint32_t timeout = SCHEMA_SYNCHRONIZATION_USE_DEFAULT);
-    void setSchemaSynchronizationTimeout(uint32_t timeout);
+    //void synchronizeSchemaVersions(uint32_t timeout = SCHEMA_SYNCHRONIZATION_USE_DEFAULT);
+    //void setSchemaSynchronizationTimeout(uint32_t timeout);
     const QString& clusterName() const;
     const QString& protocolVersion() const;
     //const QCassandraClusterInformation& clusterInformation() const;
@@ -116,7 +120,7 @@ private:
     future_pointer_t                        f_connection;
 
     QCassandraContext::pointer_t            f_current_context;
-    mutable controlled_vars::flbool_t       f_contexts_read;
+    //mutable controlled_vars::flbool_t       f_contexts_read;
     QCassandraContexts                      f_contexts;
     QString                                 f_cluster_name;
     QString                                 f_protocol_version;
@@ -124,7 +128,7 @@ private:
     QString                                 f_partitioner;
     //QString                                 f_snitch;
     consistency_level_t                     f_default_consistency_level;
-    schema_synchronization_timeout_t        f_schema_synchronization_timeout;
+    //schema_synchronization_timeout_t        f_schema_synchronization_timeout;
 };
 
 } // namespace QtCassandra

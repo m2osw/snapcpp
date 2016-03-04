@@ -45,19 +45,16 @@ class CassStatement;
 
 namespace QtCassandra
 {
-    typedef std::shared_ptr<CassCluster>   cluster_pointer_t;
-    typedef std::shared_ptr<CassSession>   session_pointer_t;
-    typedef std::shared_ptr<CassFuture>    future_pointer_t;
-    typedef std::shared_ptr<CassStatement> statement_pointer_t;
+    typedef std::shared_ptr<CassCluster>      cluster_pointer_t;
+    typedef std::shared_ptr<CassFuture>       future_pointer_t;
+    typedef std::shared_ptr<CassIterator>     iterator_pointer_t;
+    typedef std::shared_ptr<const CassResult> result_pointer_t;
+    typedef std::shared_ptr<CassSession>      session_pointer_t;
+    typedef std::shared_ptr<CassStatement>    statement_pointer_t;
 
     struct clusterDeleter
     { 
         void operator()(CassCluster* p) const;
-    };
-
-    struct sessionDeleter
-    { 
-        void operator()(CassSession* p) const;
     };
 
     struct futureDeleter
@@ -65,10 +62,22 @@ namespace QtCassandra
         void operator()(CassFuture* p) const;
     };
 
+    struct resultDeleter
+    {
+        void operator()(const CassResult* p) const;
+    }
+
+    struct sessionDeleter
+    { 
+        void operator()(CassSession* p) const;
+    };
+
     struct statementDeleter
     { 
         void operator()(CassStatement* p) const;
     };
+
+    void throwIfError( future_pointer_t result_future, const QString& msg = "Cassandra error" );
 }
 // namespace QtCassandra
 

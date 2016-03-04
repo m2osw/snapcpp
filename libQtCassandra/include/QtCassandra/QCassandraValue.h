@@ -33,8 +33,7 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef QCASSANDRA_VALUE_H
-#define QCASSANDRA_VALUE_H
+#pragma once
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
@@ -962,6 +961,5 @@ private:
 
 
 } // namespace QtCassandra
-#endif
-//#ifndef QCASSANDRA_VALUE_H
+
 // vim: ts=4 sw=4 et

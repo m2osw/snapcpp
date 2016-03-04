@@ -67,10 +67,12 @@ public:
     // column family name & identifier
     //void setTableName(const QString& name);
     QString tableName() const;
+#if 0
     void setIdentifier(int32_t identifier);
     void unsetIdentifier();
     bool hasIdentifier() const;
     int32_t identifier() const;
+#endif
     void setComment(QString comment);
     void unsetComment();
     bool hasComment() const;
@@ -266,8 +268,9 @@ private:
     friend class QCassandraTablePrivate;
     friend class QCassandraRow;
 
+    QString                                     f_tableName;
+    QString                                     f_comment;
     controlled_vars::flbool_t                   f_from_cassandra;
-    std::unique_ptr<QCassandraTablePrivate>     f_private;
     // f_context is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)

@@ -84,17 +84,6 @@ namespace QtCassandra
  */
 
 
-/** \brief Overload the CfDef to handle details.
- *
- * This class is used to handle the CfDef class through the
- * QCassandraTable but hides all the thrift definition
- * from the libQtCassandra user.
- */
-class QCassandraTablePrivate : public org::apache::cassandra::CfDef {};
-
-
-
-
 
 /** \var QCassandraTable::f_from_cassandra
  * \brief Whether the table is a memory table or a server table.
@@ -178,11 +167,10 @@ class QCassandraTablePrivate : public org::apache::cassandra::CfDef {};
  * \param[in] table_name  The name of the table definition being created.
  */
 QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QString& table_name)
-    : //f_from_cassandra(false) -- auto-init
-      f_private(new QCassandraTablePrivate),
-      f_context(context)
-      //f_column_definitions() -- auto-init
-      //f_rows() -- auto-init
+    //f_from_cassandra(false) -- auto-init
+    : f_context(context)
+    //f_column_definitions() -- auto-init
+    //f_rows() -- auto-init
 {
     // verify the name here (faster than waiting for the server and good documentation)
     QRegExp re("[A-Za-z][A-Za-z0-9_]*");
@@ -193,10 +181,10 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
     // we save the context name (keyspace) and since it's forbidden to change it
     // in the context, we know it won't change here either
     const QString keyspace = context->contextName();
-    f_private->__set_keyspace(keyspace.toUtf8().data());
+    //f_private->__set_keyspace(keyspace.toUtf8().data());
 
     // we save the name and at this point we prevent it from being changed.
-    f_private->__set_name(table_name.toUtf8().data());
+    //f_private->__set_name(table_name.toUtf8().data());
 }
 
 /** \brief Clean up the QCassandraTable object.
@@ -227,7 +215,7 @@ QCassandraTable::~QCassandraTable()
  */
 QString QCassandraTable::contextName() const
 {
-    return f_private->keyspace.c_str();
+    return f_context->contextName();
 }
 
 /** \brief Retrieve the name of this table.
@@ -239,9 +227,10 @@ QString QCassandraTable::contextName() const
  */
 QString QCassandraTable::tableName() const
 {
-    return f_private->name.c_str();
+    return f_tableName;
 }
 
+#if 0
 /** \brief Define the table identifier.
  *
  * This function is provided to let the user choose an identifier
@@ -300,6 +289,7 @@ int32_t QCassandraTable::identifier() const
     }
     return 0;
 }
+#endif
 
 /** \brief Set the table comment.
  *
@@ -312,7 +302,7 @@ int32_t QCassandraTable::identifier() const
  */
 void QCassandraTable::setComment(QString val)
 {
-    f_private->__set_comment(val.toUtf8().data());
+    f_comment = val;
 }
 
 /** \brief Unset a comment.
@@ -321,7 +311,7 @@ void QCassandraTable::setComment(QString val)
  */
 void QCassandraTable::unsetComment()
 {
-    f_private->__isset.comment = false;
+    //f_private->__isset.comment = false;
 }
 
 /** \brief Check whether the comment is defined.
@@ -332,7 +322,7 @@ void QCassandraTable::unsetComment()
  */
 bool QCassandraTable::hasComment() const
 {
-    return f_private->__isset.comment;
+    return true; //f_private->__isset.comment;
 }
 
 /** \brief Retrieve the table comment.
@@ -346,10 +336,7 @@ bool QCassandraTable::hasComment() const
  */
 QString QCassandraTable::comment() const
 {
-    if(f_private->__isset.comment) {
-        return f_private->comment.c_str();
-    }
-    return "";
+    return f_comment;
 }
 
 /** \brief Set the column type on this table.
@@ -364,11 +351,13 @@ QString QCassandraTable::comment() const
  */
 void QCassandraTable::setColumnType(const QString& column_type)
 {
+#if 0
     if(column_type != "Standard" && column_type != "Super") {
         throw std::runtime_error("the type of a column can be either \"Standard\" or \"Super\".");
     }
 
     f_private->__set_column_type(column_type.toUtf8().data());
+#endif
 }
 
 /** \brief Unset the column type on this table.
@@ -377,7 +366,7 @@ void QCassandraTable::setColumnType(const QString& column_type)
  */
 void QCassandraTable::unsetColumnType()
 {
-    f_private->__isset.column_type = false;
+    //f_private->__isset.column_type = false;
 }
 
 /** \brief Check whether the comlumn type is defined.
@@ -388,7 +377,7 @@ void QCassandraTable::unsetColumnType()
  */
 bool QCassandraTable::hasColumnType() const
 {
-    return f_private->__isset.column_type;
+    //return f_private->__isset.column_type;
 }
 
 /** \brief Retrieve the current column type.
@@ -399,10 +388,12 @@ bool QCassandraTable::hasColumnType() const
  */
 QString QCassandraTable::columnType() const
 {
+#if 0
     if(f_private->__isset.column_type) {
         return f_private->column_type.c_str();
     }
     return "";
+#endif
 }
 
 /** \brief Set the default validation class to create a counters table.
@@ -415,7 +406,7 @@ QString QCassandraTable::columnType() const
  */
 void QCassandraTable::setDefaultValidationClassForCounters()
 {
-    setDefaultValidationClass("CounterColumnType");
+    //setDefaultValidationClass("CounterColumnType");
 }
 
 /** \brief Set the default validation class.
@@ -434,7 +425,7 @@ void QCassandraTable::setDefaultValidationClassForCounters()
  */
 void QCassandraTable::setDefaultValidationClass(const QString& validation_class)
 {
-    f_private->__set_default_validation_class(validation_class.toUtf8().data());
+    //f_private->__set_default_validation_class(validation_class.toUtf8().data());
 }
 
 /** \brief Unset the default validation class.
@@ -443,7 +434,7 @@ void QCassandraTable::setDefaultValidationClass(const QString& validation_class)
  */
 void QCassandraTable::unsetDefaultValidationClass()
 {
-    f_private->__isset.default_validation_class = false;
+    //f_private->__isset.default_validation_class = false;
 }
 
 /** \brief Check whether the default validation class is defined.
@@ -454,7 +445,7 @@ void QCassandraTable::unsetDefaultValidationClass()
  */
 bool QCassandraTable::hasDefaultValidationClass() const
 {
-    return f_private->__isset.default_validation_class;
+    return true; //f_private->__isset.default_validation_class;
 }
 
 /** \brief Retrieve the default validation class.
@@ -466,9 +457,11 @@ bool QCassandraTable::hasDefaultValidationClass() const
  */
 QString QCassandraTable::defaultValidationClass() const
 {
+#if 0
     if(f_private->__isset.default_validation_class) {
         return f_private->default_validation_class.c_str();
     }
+#endif
     return "";
 }
 
@@ -488,7 +481,7 @@ QString QCassandraTable::defaultValidationClass() const
  */
 void QCassandraTable::setKeyValidationClass(const QString& validation_class)
 {
-    f_private->__set_key_validation_class(validation_class.toUtf8().data());
+    //f_private->__set_key_validation_class(validation_class.toUtf8().data());
 }
 
 /** \brief Unset the table name validation class.
@@ -498,7 +491,7 @@ void QCassandraTable::setKeyValidationClass(const QString& validation_class)
  */
 void QCassandraTable::unsetKeyValidationClass()
 {
-    f_private->__isset.key_validation_class = false;
+    //f_private->__isset.key_validation_class = false;
 }
 
 /** \brief Check whether the key validation class is defined.
@@ -509,7 +502,7 @@ void QCassandraTable::unsetKeyValidationClass()
  */
 bool QCassandraTable::hasKeyValidationClass() const
 {
-    return f_private->__isset.key_validation_class;
+    return true; //f_private->__isset.key_validation_class;
 }
 
 /** \brief Retrieve the current validation class for the table name.
@@ -520,9 +513,11 @@ bool QCassandraTable::hasKeyValidationClass() const
  */
 QString QCassandraTable::keyValidationClass() const
 {
+#if 0
     if(f_private->__isset.key_validation_class) {
         return f_private->key_validation_class.c_str();
     }
+#endif
     return "";
 }
 
@@ -538,7 +533,7 @@ QString QCassandraTable::keyValidationClass() const
  */
 void QCassandraTable::setKeyAlias(const QString& key_alias)
 {
-    f_private->__set_key_alias(key_alias.toUtf8().data());
+    //f_private->__set_key_alias(key_alias.toUtf8().data());
 }
 
 /** \brief Unset the alias for the key.
@@ -547,7 +542,7 @@ void QCassandraTable::setKeyAlias(const QString& key_alias)
  */
 void QCassandraTable::unsetKeyAlias()
 {
-    f_private->__isset.key_alias = false;
+    //f_private->__isset.key_alias = false;
 }
 
 /** \brief Check whether the key alias is defined.
@@ -558,7 +553,7 @@ void QCassandraTable::unsetKeyAlias()
  */
 bool QCassandraTable::hasKeyAlias() const
 {
-    return f_private->__isset.key_alias;
+    return true; //f_private->__isset.key_alias;
 }
 
 /** \brief Retrieve the key alias for this table.
@@ -574,9 +569,11 @@ bool QCassandraTable::hasKeyAlias() const
  */
 QString QCassandraTable::keyAlias() const
 {
+#if 0
     if(f_private->__isset.key_alias) {
         return f_private->key_alias.c_str();
     }
+#endif
     return "";
 }
 
@@ -643,7 +640,7 @@ QString QCassandraTable::keyAlias() const
  */
 void QCassandraTable::setComparatorType(const QString& comparator_type)
 {
-    f_private->__set_comparator_type(comparator_type.toUtf8().data());
+    //f_private->__set_comparator_type(comparator_type.toUtf8().data());
 }
 
 /** \brief Cancel calls to the setComparatorType() function.
@@ -653,7 +650,7 @@ void QCassandraTable::setComparatorType(const QString& comparator_type)
  */
 void QCassandraTable::unsetComparatorType()
 {
-    f_private->__isset.comparator_type = false;
+    //f_private->__isset.comparator_type = false;
 }
 
 /** \brief Check whether the comparator type is defined.
@@ -664,7 +661,7 @@ void QCassandraTable::unsetComparatorType()
  */
 bool QCassandraTable::hasComparatorType() const
 {
-    return f_private->__isset.comparator_type;
+    return true; //f_private->__isset.comparator_type;
 }
 
 /** \brief Retrieve the comparator type for this table name.
@@ -675,9 +672,11 @@ bool QCassandraTable::hasComparatorType() const
  */
 QString QCassandraTable::comparatorType() const
 {
+#if 0
     if(f_private->__isset.comparator_type) {
         return f_private->comparator_type.c_str();
     }
+#endif
     return "";
 }
 
@@ -695,7 +694,7 @@ QString QCassandraTable::comparatorType() const
  */
 void QCassandraTable::setSubcomparatorType(const QString& subcomparator_type)
 {
-    f_private->__set_subcomparator_type(subcomparator_type.toUtf8().data());
+    //f_private->__set_subcomparator_type(subcomparator_type.toUtf8().data());
 }
 
 /** \brief Unset the sub-comparator type specification.
@@ -704,7 +703,7 @@ void QCassandraTable::setSubcomparatorType(const QString& subcomparator_type)
  */
 void QCassandraTable::unsetSubcomparatorType()
 {
-    f_private->__isset.subcomparator_type = false;
+    //f_private->__isset.subcomparator_type = false;
 }
 
 /** \brief Check whether the sub-comparator type is defined.
@@ -715,7 +714,7 @@ void QCassandraTable::unsetSubcomparatorType()
  */
 bool QCassandraTable::hasSubcomparatorType() const
 {
-    return f_private->__isset.subcomparator_type;
+    return true; //f_private->__isset.subcomparator_type;
 }
 
 /** \brief Return the current sub-comparator type.
@@ -728,9 +727,11 @@ bool QCassandraTable::hasSubcomparatorType() const
  */
 QString QCassandraTable::subcomparatorType() const
 {
+#if 0
     if(f_private->__isset.subcomparator_type) {
         return f_private->subcomparator_type.c_str();
     }
+#endif
     return "";
 }
 

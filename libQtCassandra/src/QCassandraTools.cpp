@@ -36,6 +36,7 @@
 
 #include "QCassandraTools.h"
 #include <cassandra.h>
+#include <sstream>
 
 namespace QtCassandra
 {
@@ -45,9 +46,9 @@ void clusterDeleter::operator()(CassCluster* p) const
     cass_cluster_free(p);
 }
 
-void sessionDeleter::operator()(CassSession* p) const
+void resultDeleter::operator()(const CassResult* p) const
 {
-    cass_session_free(p);
+    cass_result_free(p);
 }
 
 void futureDeleter::operator()(CassFuture* p) const
@@ -58,6 +59,22 @@ void futureDeleter::operator()(CassFuture* p) const
 void statementDeleter::operator()(CassStatement* p) const
 {
     cass_statement_free(p);
+}
+
+void sessionDeleter::operator()(CassSession* p) const
+{
+    cass_session_free(p);
+}
+
+void throwIfError( future_pointer_t result_future, const QString& msg = "Cassandra error" )
+{
+    const CassError code( cass_future_error_code( result_future.get() ) );
+    if( code != CASS_OK )
+    {
+        std::stringstream ss;
+        ss << msg << "! Cassandra error: code=" << static_cast<unsigned int>(code) << ", message={" << cass_error_desc(code) << "}, aborting operation!";
+        throw std::runtime_error( ss.str().c_str() );
+    }
 }
 
 }
