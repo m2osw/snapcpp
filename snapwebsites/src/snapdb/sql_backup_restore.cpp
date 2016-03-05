@@ -190,6 +190,46 @@ void sqlBackupRestore::outputSchema()
 #endif
 
 
+
+void sqlBackupRestore::appendRowsToSqliteDb( result_pointer_t result, const QString& table_name )
+{
+    iterator_pointer_t  rows( cass_iterator_from_result(result.get()), iterator_deleter() );
+    //
+    while( cass_iterator_next(rows.get()) )
+    {
+        const CassRow*   row             = cass_iterator_get_row( rows.get() );
+        const CassValue* key_value       = cass_row_get_column_by_name( row, "key"       );
+        const CassValue* column1_value   = cass_row_get_column_by_name( row, "column1"   );
+        const CassValue* value_value     = cass_row_get_column_by_name( row, "value"     );
+
+        const char *    byte_value;
+        size_t          value_len;
+
+        QString q_str = QString( "INSERT OR REPLACE INTO %1 "
+                "(key, column1, value ) "
+                "VALUES "
+                "(:key, :column1, :value );"
+                ).arg(table_name);
+        QSqlQuery q;
+        q.prepare( q_str );
+        //
+        cass_value_get_string( key_value, &byte_value, &value_len );
+        q.bindValue( ":key", QByteArray(byte_value, value_len) );
+        //
+        cass_value_get_string( column1_value, &byte_value, &value_len );
+        q.bindValue( ":column1", QByteArray(byte_value,value_len) );
+        //
+        cass_value_get_string( value_value, &byte_value, &value_len );
+        q.bindValue( ":value", QByteArray(byte_value,value_len) );
+        //
+        if( !q.exec() )
+        {
+            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+            throw std::runtime_error( q.lastError().text().toUtf8().data() );
+        }
+    }
+}
+
 /// \brief Backup snap_websites tables.
 //
 // This does not dump the Cassandra schema. In order to obtain this, run the following command on a
@@ -225,56 +265,31 @@ void sqlBackupRestore::storeTables( const int count )
 
         std::cout << "Dumping table [" << table_name << "]" << std::endl;
 
-        const QString cql_select_string("SELECT key,column1,value FROM snap_websites.%1 LIMIT %2");
+        const QString cql_select_string("SELECT key,column1,value FROM snap_websites.%1");
         if( table_name == "libQtCassandraLockTable" )
         {
             // TODO: ugly hack! We need to correct this in the cassandra table itself.
-            q_str = cql_select_string.arg("\""+table_name+"\"").arg(count);
+            q_str = cql_select_string.arg("\""+table_name+"\"");
         }
         else
         {
-            q_str = cql_select_string.arg(table_name).arg(count);
+            q_str = cql_select_string.arg(table_name);
         }
-        std::shared_ptr<CassStatement> query_stmt    ( cass_statement_new( q_str.toUtf8().data(), 0 ), statement_deleter() );
-        std::shared_ptr<CassFuture>    result_future ( cass_session_execute( f_session.get(), query_stmt.get() ) , future_deleter()    );
+        statement_pointer_t query_stmt( cass_statement_new( q_str.toUtf8().data(), 0 ), statement_deleter() );
+        cass_statement_set_paging_size( query_stmt.get(), count );
 
+        future_pointer_t result_future( cass_session_execute( f_session.get(), query_stmt.get() ) , future_deleter()    );
         throw_if_error( result_future, QString("Cannot select from table '%1'!").arg(table_name) );
 
-        std::shared_ptr<const CassResult> result ( cass_future_get_result(result_future.get()), result_deleter() );
-        std::shared_ptr<CassIterator>     rows   ( cass_iterator_from_result(result.get())    , iterator_deleter() );
+        result_pointer_t result( cass_future_get_result(result_future.get()), result_deleter() );
+        appendRowsToSqliteDb( result, table_name );
 
-        while( cass_iterator_next(rows.get()) )
+        while( cass_result_has_more_pages(result.get()) )
         {
-            const CassRow*   row             = cass_iterator_get_row( rows.get() );
-            const CassValue* key_value       = cass_row_get_column_by_name( row, "key"       );
-            const CassValue* column1_value   = cass_row_get_column_by_name( row, "column1"   );
-            const CassValue* value_value     = cass_row_get_column_by_name( row, "value"     );
-
-            const char *    byte_value;
-            size_t          value_len;
-
-            q_str = QString( "INSERT OR REPLACE INTO %1 "
-                    "(key, column1, value ) "
-                    "VALUES "
-                    "(:key, :column1, :value );"
-                    ).arg(table_name);
-            q.clear();
-            q.prepare( q_str );
-            //
-            cass_value_get_string( key_value, &byte_value, &value_len );
-            q.bindValue( ":key", QByteArray(byte_value, value_len) );
-            //
-            cass_value_get_string( column1_value, &byte_value, &value_len );
-            q.bindValue( ":column1", QByteArray(byte_value,value_len) );
-            //
-            cass_value_get_string( value_value, &byte_value, &value_len );
-            q.bindValue( ":value", QByteArray(byte_value,value_len) );
-            //
-            if( !q.exec() )
-            {
-                std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-                throw std::runtime_error( q.lastError().text().toUtf8().data() );
-            }
+            cass_statement_set_paging_state( query_stmt.get(), result.get() );
+            result_future.reset ( cass_session_execute( f_session.get(), query_stmt.get() ) , future_deleter()    );
+            result.reset        ( cass_future_get_result(result_future.get()), result_deleter() );
+            appendRowsToSqliteDb( result, table_name );
         }
     }
 }
@@ -332,13 +347,13 @@ void sqlBackupRestore::restoreTables()
             const QString cql_insert_string("INSERT INTO snap_websites.%1 (key,column1,value) VALUES (?,?,?);");
             const QString qstr( cql_insert_string.arg(target_table_name) );
 
-            std::shared_ptr<CassStatement> query_stmt( cass_statement_new( qstr.toUtf8().data(), 3 ), statement_deleter() );
+            statement_pointer_t query_stmt( cass_statement_new( qstr.toUtf8().data(), 3 ), statement_deleter() );
 
             cass_statement_bind_string_n( query_stmt.get(), 0, key.constData(),     key.size()     );
             cass_statement_bind_string_n( query_stmt.get(), 1, column1.constData(), column1.size() );
             cass_statement_bind_string_n( query_stmt.get(), 2, value.constData(),   value.size()   );
 
-            std::shared_ptr<CassFuture> result_future( cass_session_execute( f_session.get(), query_stmt.get() ), future_deleter() );
+            future_pointer_t result_future( cass_session_execute( f_session.get(), query_stmt.get() ), future_deleter() );
             cass_future_wait( result_future.get() );
             //
             throw_if_error( result_future, QString("Cannot insert into table 'snap_websites.%1'").arg(table_name) );

@@ -55,6 +55,14 @@ public:
     //void outputSchema();
     
 private:
+    typedef std::shared_ptr<CassCluster>      cluster_pointer_t;
+    typedef std::shared_ptr<CassFuture>       future_pointer_t;
+    typedef std::shared_ptr<CassIterator>     iterator_pointer_t;
+    typedef std::shared_ptr<const CassResult> result_pointer_t;
+    typedef std::shared_ptr<CassSession>      session_pointer_t;
+    typedef std::shared_ptr<CassStatement>    statement_pointer_t;
+
+    void appendRowsToSqliteDb( result_pointer_t result, const QString& table_name );
     void storeTables( const int count );
     void restoreTables();
 

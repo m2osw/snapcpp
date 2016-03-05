@@ -55,7 +55,6 @@
 #include <openssl/md5.h>
 
 #include <QFile>
-#include <QUuid>
 #include <QTextStream>
 
 #include "poison.h"
