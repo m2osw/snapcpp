@@ -202,7 +202,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                     <item value="11">Nov</item>
                     <item value="12">Dec</item>
                   </preset>
-                  <xsl:if test="$date_value">
+                  <xsl:if test="string-length($date_value) > 0">
                     <value><xsl:value-of select="string(number(tokenize($date_value, '/')[2]))"/></value>
                   </xsl:if>
                 </widget>
@@ -266,7 +266,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                     <item>30</item>
                     <item>31</item>
                   </preset>
-                  <xsl:if test="$date_value">
+                  <xsl:if test="string-length($date_value) > 0">
                     <value><xsl:value-of select="string(number(tokenize($date_value, '/')[3]))"/></value>
                   </xsl:if>
                 </widget>
@@ -297,13 +297,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                     <background-value><xsl:value-of select="*[name() = 'background-year']"/></background-value>
                   </xsl:if>
                   <dropdown-algorithm>bottom top right columns=2v columns=3v</dropdown-algorithm>
-                  <preset>
-                    <item>2015</item>
-                    <item>2016</item>
-                    <item>2017</item>
-                    <item>2018</item>
-                  </preset>
-                  <xsl:if test="$date_value">
+                  <xsl:variable name="from" select="dropdown-date-edit/include-year/@from"/>
+                  <xsl:variable name="to" select="dropdown-date-edit/include-year/@to"/>
+                  <xsl:if test="string-length($from) > 0 and string-length($to) > 0">
+                    <preset>
+                      <xsl:for-each select="$from to $to">
+                        <item><xsl:value-of select="."/></item>
+                      </xsl:for-each>
+                    </preset>
+                  </xsl:if>
+                  <xsl:if test="string-length($date_value) > 0">
                     <value><xsl:value-of select="string(number(tokenize($date_value, '/')[1]))"/></value>
                   </xsl:if>
                 </widget>

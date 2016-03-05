@@ -117,7 +117,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT include-month EMPTY>
 <!ELEMENT include-day EMPTY>
+
 <!ELEMENT include-year EMPTY>
+<!ATTLIST include-year from CDATA #IMPLIED
+                       to CDATA #IMPLIED>
 
 <!ELEMENT uri (#PCDATA)>
 <!ATTLIST uri match (yes|no) "yes">

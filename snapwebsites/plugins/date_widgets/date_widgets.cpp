@@ -17,10 +17,13 @@
 
 #include "date_widgets.h"
 
+#include "../locale/snap_locale.h"
+
 #include "log.h"
 #include "mkgmtime.h"
 #include "not_reached.h"
 #include "not_used.h"
+#include "qdomxpath.h"
 
 #include "poison.h"
 
@@ -31,29 +34,29 @@ SNAP_PLUGIN_START(date_widgets, 1, 0)
 
 
 
-///** \brief Get a fixed date_widgets plugin name.
-// *
-// * The date_widgets plugin makes use of different names in the database. This
-// * function ensures that you get the right spelling for a given name.
-// *
-// * \param[in] name  The name to retrieve.
-// *
-// * \return A pointer to the name.
-// */
-//char const * get_name(name_t name)
-//{
-//    switch(name)
-//    {
-//    case name_t::SNAP_NAME_DATE_WIDGETS_...:
-//        return "date_widgets::...";
-//
-//    default:
-//        // invalid index
-//        throw snap_logic_exception("Invalid name_t::SNAP_NAME_DATE_WIDGETS_...");
-//
-//    }
-//    NOTREACHED();
-//}
+/** \brief Get a fixed date_widgets plugin name.
+ *
+ * The date_widgets plugin makes use of different names in the database. This
+ * function ensures that you get the right spelling for a given name.
+ *
+ * \param[in] name  The name to retrieve.
+ *
+ * \return A pointer to the name.
+ */
+char const * get_name(name_t name)
+{
+    switch(name)
+    {
+    case name_t::SNAP_NAME_DATE_WIDGETS_DROPDOWN_TYPE:
+        return "dropdown-date-edit";
+
+    default:
+        // invalid index
+        throw snap_logic_exception("Invalid name_t::SNAP_NAME_DATE_WIDGETS_...");
+
+    }
+    NOTREACHED();
+}
 
 
 
@@ -195,6 +198,7 @@ void date_widgets::bootstrap(snap_child * snap)
     SNAP_LISTEN(date_widgets, "editor", editor::editor, prepare_editor_form, _1);
     SNAP_LISTEN(date_widgets, "editor", editor::editor, value_to_string, _1);
     SNAP_LISTEN(date_widgets, "editor", editor::editor, string_to_value, _1);
+    SNAP_LISTEN(date_widgets, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
 }
 
 
@@ -339,6 +343,77 @@ void date_widgets::on_string_to_value(editor::editor::string_to_value_info_t & v
     value_info.set_status(editor::editor::string_to_value_info_t::status_t::DONE);
 }
 
+
+/** \brief Finalize the dynamic part of the widget data.
+ *
+ * This function will transform the range defined in the \<include-year> tag
+ * so it is easy to use in the XSLT parser.
+ *
+ * \param[in] ipath  The ipath to the page being worked on.
+ * \param[in] field_id  The identifier of the field we are working on.
+ * \param[in] field_type  The type of fields, we are interested in date widgets.
+ * \param[in] widget  The DOM element representing this widget.
+ * \param[in] row  The row where the user data is available.
+ */
+void date_widgets::on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row)
+{
+    NOTUSED(ipath);
+    NOTUSED(field_id);
+    NOTUSED(row);
+
+    if(field_type == get_name(name_t::SNAP_NAME_DATE_WIDGETS_DROPDOWN_TYPE))
+    {
+        QDomXPath dom_xpath;
+        dom_xpath.setXPath("dropdown-date-edit/include-year");
+        QDomXPath::node_vector_t include_year_tag(dom_xpath.apply(widget));
+        if(include_year_tag.size() == 1)
+        {
+            // there is an <include-year> tag, check the attributes
+            QDomElement e(include_year_tag[0].toElement());
+
+            e.setAttribute("from", range_to_year(e.attribute("from")));
+            e.setAttribute("to", range_to_year(e.attribute("to")));
+        }
+    }
+}
+
+
+QString date_widgets::range_to_year(QString const range_date)
+{
+    // to properly deal with a date, make sure the locale is
+    // defined as expected
+    //
+    locale::locale * locale_plugin(locale::locale::instance());
+    locale_plugin->set_locale();
+    locale_plugin->set_timezone();
+
+    // do we have a value number?
+    bool ok(false);
+    int const value(range_date.toInt(&ok, 10));
+    if(ok
+    && value >= 1
+    && value <= 3000)
+    {
+        return QString("%1").arg(value);
+    }
+
+    // not a valid standalone number, try to convert as a date
+    locale::locale::parse_error_t errcode;
+    time_t const user_time(locale_plugin->parse_date(range_date, errcode));
+    if(errcode == locale::locale::parse_error_t::PARSE_NO_ERROR)
+    {
+        // just return the year
+        struct tm tm_user;
+        localtime_r(&user_time, &tm_user);
+        return QString("%1").arg(tm_user.tm_year + 1900);
+    }
+
+    // otherwise return the current year (i.e. "year(now)")
+    time_t now(time(nullptr));
+    struct tm tm_now;
+    localtime_r(&now, &tm_now);
+    return QString("%1").arg(tm_now.tm_year + 1900);
+}
 
 
 

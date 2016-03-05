@@ -52,13 +52,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <filters>
       <regex name="date"/>
       <min-date>now - 1 year</min-date>
-      <max-date>now + 1 year</max-date>
+      <max-date>now + 19 year</max-date>
     </filters>
     <background-value>unused</background-value>
     <dropdown-date-edit>
       <include-month/>
       <include-day/>
-      <include-year/>
+      <include-year from="now" to="now + 19 years"/> <!-- 19 means 20 years displayed -->
     </dropdown-date-edit>
   </widget>
 </editor-form>
