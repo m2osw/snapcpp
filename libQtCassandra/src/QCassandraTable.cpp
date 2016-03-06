@@ -809,6 +809,7 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
         return true;
     }
 
+#if 0
     // in this case we're not given a column name so we cannot just
     // use the getValue() function to find out whether the row exists
     // instead we need to get a slice using this row key as the
@@ -829,7 +830,42 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
     row_predicate.setColumnPredicate(column_predicate);
 
     return const_cast<QCassandraTable *>(this)->readRows(row_predicate) != 0;
+#endif
+    const QString query( QString("SELECT COUNT(*) AS count FROM %1.%2 WHERE key = ?").arg(f_context->contextName()).arg(f_tableName) );
+    //f_context->parentCassandra()->executeQuery( query );
+    //
+    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 0 ), statement_deleter() );
+    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(), row_key.size() );
+    cass_statement_set_paging_size( query_stmt.get(), 100 );
+
+    future_pointer_t result_future( cass_session_execute( f_context->parentCassandra().session().get(), query_stmt.get() ) , future_deleter()    );
+    throw_if_error( result_future, QString("Cannot select from table '%1'!").arg(table_name) );
+
+    result_pointer_t   result( cass_future_get_result(result_future.get()), result_deleter() );
+    iterator_pointer_t rows  ( cass_iterator_from_result(result.get()), iterator_deleter()   );
+
+    cass_iterator_next(rows.get());
+    const CassRow*   row         = cass_iterator_get_row( rows.get() );
+    const CassValue* count_value = cass_row_get_column_by_name( row, "count" );
+    int32_t count;
+    cass_value_get_int32( count_value, &count );
+
+    while( cass_result_has_more_pages(result.get()) )
+    {
+        cass_statement_set_paging_state( query_stmt.get(), result.get() );
+        result_future.reset ( cass_session_execute( f_session.get(), query_stmt.get() ) , future_deleter()    );
+        result.reset        ( cass_future_get_result(result_future.get()), result_deleter() );
+
+        rows.reset( cass_iterator_from_result(result.get()), iterator_deleter() );
+        cass_iterator_next(rows.get());
+        const CassRow*   row         = cass_iterator_get_row( rows.get() );
+        const CassValue* count_value = cass_row_get_column_by_name( row, "count" );
+        cass_value_get_int32( count_value, &count );
+    }
+    
+    return count > 0;
 }
+
 
 /** \brief Retrieve a table row.
  *
@@ -1075,57 +1111,9 @@ const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) con
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
  * \param[in] consistency_level  Specify the timestamp to remove only rows that are have that timestamp or are older.
  */
-void QCassandraTable::dropRow(const char *row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level)
-{
-    dropRow(QByteArray::fromRawData(row_name, qstrlen(row_name)), mode, timestamp, consistency_level);
-}
-
-/** \brief Drop the named row.
- *
- * This function is the same as the dropRow() that takes a row_key parameter.
- * It simply transforms the row name into a row key and calls that other
- * function.
- *
- * \param[in] row_name  Specify the name of the row to drop.
- * \param[in] mode  Specify the timestamp mode.
- * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
- * \param[in] consistency_level  Specify the timestamp to remove only rows that are have that timestamp or are older.
- */
-void QCassandraTable::dropRow(const wchar_t *row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level)
-{
-    dropRow(QString::fromWCharArray(row_name, (row_name ? wcslen(row_name) : 0)), mode, timestamp, consistency_level);
-}
-
-/** \brief Drop the named row.
- *
- * This function is the same as the dropRow() that takes a row_key parameter.
- * It simply transforms the row name into a row key and calls that other
- * function.
- *
- * \param[in] row_name  Specify the name of the row to drop.
- * \param[in] mode  Specify the timestamp mode.
- * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
- * \param[in] consistency_level  Specify the timestamp to remove only rows that are have that timestamp or are older.
- */
 void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level)
 {
     dropRow(row_name.toUtf8(), mode, timestamp, consistency_level);
-}
-
-/** \brief Drop the named row.
- *
- * This function is the same as the dropRow() that takes a row_key parameter.
- * It simply transforms the row UUID into a row key and calls that other
- * function.
- *
- * \param[in] row_uuid  Specify the UUID of the row to drop.
- * \param[in] mode  Specify the timestamp mode.
- * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
- * \param[in] consistency_level  Specify the timestamp to remove only rows that are have that timestamp or are older.
- */
-void QCassandraTable::dropRow(const QUuid& row_uuid, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level)
-{
-    dropRow(row_uuid.toRfc4122(), mode, timestamp, consistency_level);
 }
 
 /** \brief Drop the row from the Cassandra database.
@@ -1215,7 +1203,7 @@ void QCassandraTable::dropRow(const QByteArray& row_key, QCassandraValue::timest
  */
 QCassandraContext::pointer_t QCassandraTable::parentContext() const
 {
-    return f_context.lock();
+    return f_context;
 }
 
 
@@ -1230,16 +1218,12 @@ QCassandraContext::pointer_t QCassandraTable::parentContext() const
  */
 void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value)
 {
-    auto context( f_context.lock() );
-    if(!context)
+    if(f_from_cassandra)
     {
-        throw std::runtime_error("table was dropped and is not attached to a context anymore");
-    }
-    if(f_from_cassandra) {
         if(f_private->default_validation_class == "CounterColumnType") {
             // we cannot "set" a counter, but we can simulate that function
             QCassandraValue v;
-            context->getCounter(tableName(), row_key, column_key, v);
+            f_context->getCounter(tableName(), row_key, column_key, v);
             // new value = user value - current value
             int64_t add(-v.int64Value());
             switch(value.size()) {
@@ -1267,10 +1251,10 @@ void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& c
                 throw std::runtime_error("value has an invalid size for a counter value");
 
             }
-            context->addValue(tableName(), row_key, column_key, add);
+            f_context->addValue(tableName(), row_key, column_key, add);
         }
         else {
-            context->insertValue(tableName(), row_key, column_key, value);
+            f_context->insertValue(tableName(), row_key, column_key, value);
         }
     }
 }
@@ -1291,17 +1275,13 @@ void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& c
  */
 bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
 {
-    auto context( f_context.lock() );
-    if(!context)
+    if(f_from_cassandra)
     {
-        throw std::runtime_error("table was dropped and is not attached to a context anymore");
-    }
-    if(f_from_cassandra) {
         if(f_private->default_validation_class == "CounterColumnType") {
-            return context->getCounter(tableName(), row_key, column_key, value);
+            return f_context->getCounter(tableName(), row_key, column_key, value);
         }
         else {
-            return context->getValue(tableName(), row_key, column_key, value);
+            return f_context->getValue(tableName(), row_key, column_key, value);
         }
     }
     return false;
@@ -1323,13 +1303,9 @@ void QCassandraTable::addValue(const QByteArray& row_key, const QByteArray& colu
     if(f_private->default_validation_class != "CounterColumnType") {
         throw std::runtime_error("the add() function and operators cannot be used on a standard table, only on tables defined as counters");
     }
-    auto context( f_context.lock() );
-    if(!context)
+    if( f_from_cassandra )
     {
-        throw std::runtime_error("table was dropped and is not attached to a context anymore");
-    }
-    if(f_from_cassandra) {
-        context->addValue(tableName(), row_key, column_key, value);
+        //f_context->addValue(tableName(), row_key, column_key, value);
     }
     // else -- we don't currently handle in memory counters!?
 }
