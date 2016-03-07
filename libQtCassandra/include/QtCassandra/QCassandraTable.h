@@ -101,6 +101,8 @@ public:
 private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 
+    int32_t QCassandraTable::rowCount( const QByteArray& row_key ) const
+
     void setFromCassandra();
     void parseTableDefinition(const void *data);
     void prepareTableDefinition(void *data) const;

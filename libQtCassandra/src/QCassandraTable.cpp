@@ -463,6 +463,46 @@ void QCassandraTable::truncate()
 }
 #endif
 
+
+/// \brief Return the full count of the entire table.
+//
+int32_t QCassandraTable::rowCount( const QByteArray& row_key ) const
+{
+    const QString query( QString("SELECT COUNT(*) AS count FROM %1.%2 WHERE key = ?").arg(f_context->contextName()).arg(f_tableName) );
+    //
+    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 0 ), statement_deleter() );
+    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(), row_key.size() );
+    cass_statement_set_paging_size( query_stmt.get(), 100 );
+
+    future_pointer_t result_future( cass_session_execute( f_context->parentCassandra().session().get(), query_stmt.get() ) , future_deleter()    );
+    throw_if_error( result_future, QString("Cannot select from table '%1'!").arg(table_name) );
+
+    result_pointer_t   result( cass_future_get_result(result_future.get()), result_deleter() );
+    iterator_pointer_t rows  ( cass_iterator_from_result(result.get()), iterator_deleter()   );
+
+    cass_iterator_next(rows.get());
+    const CassRow*   row         = cass_iterator_get_row( rows.get() );
+    const CassValue* count_value = cass_row_get_column_by_name( row, "count" );
+    int32_t count;
+    cass_value_get_int32( count_value, &count );
+
+    while( cass_result_has_more_pages(result.get()) )
+    {
+        cass_statement_set_paging_state( query_stmt.get(), result.get() );
+        result_future.reset ( cass_session_execute( f_session.get(), query_stmt.get() ) , future_deleter()    );
+        result.reset        ( cass_future_get_result(result_future.get()), result_deleter() );
+
+        rows.reset( cass_iterator_from_result(result.get()), iterator_deleter() );
+        cass_iterator_next(rows.get());
+        const CassRow*   row         = cass_iterator_get_row( rows.get() );
+        const CassValue* count_value = cass_row_get_column_by_name( row, "count" );
+        cass_value_get_int32( count_value, &count );
+    }
+
+    return count > 0;
+}
+
+
 /** \brief Read a set of rows as defined by the row predicate.
  *
  * This function reads a set of rows as defined by the row predicate.
@@ -726,49 +766,11 @@ QCassandraRow::pointer_t QCassandraTable::findRow(const QByteArray& row_key) con
  *
  * \return true if the row exists in memory or the Cassandra database.
  */
-bool QCassandraTable::exists(const char *row_name) const
-{
-    return exists(QByteArray(row_name, qstrlen(row_name)));
-}
-
-/** \brief Check whether a row exists.
- *
- * This function checks whether the named row exists.
- *
- * \param[in] row_name  The row name to transform to UTF-8.
- *
- * \return true if the row exists in memory or the Cassandra database.
- */
-bool QCassandraTable::exists(const wchar_t *row_name) const
-{
-    return exists(QString::fromWCharArray(row_name, (row_name ? wcslen(row_name) : 0)).toUtf8());
-}
-
-/** \brief Check whether a row exists.
- *
- * This function checks whether the named row exists.
- *
- * \param[in] row_name  The row name to transform to UTF-8.
- *
- * \return true if the row exists in memory or the Cassandra database.
- */
 bool QCassandraTable::exists(const QString& row_name) const
 {
     return exists(row_name.toUtf8());
 }
 
-/** \brief Check whether a row exists.
- *
- * This function checks whether the named row exists.
- *
- * \param[in] row_uuid  The row name in the form of a UUID.
- *
- * \return true if the row exists in memory or the Cassandra database.
- */
-bool QCassandraTable::exists(const QUuid& row_uuid) const
-{
-    return exists(row_uuid.toRfc4122());
-}
 
 /** \brief Check whether a row exists.
  *
@@ -831,79 +833,8 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
 
     return const_cast<QCassandraTable *>(this)->readRows(row_predicate) != 0;
 #endif
-    const QString query( QString("SELECT COUNT(*) AS count FROM %1.%2 WHERE key = ?").arg(f_context->contextName()).arg(f_tableName) );
-    //f_context->parentCassandra()->executeQuery( query );
-    //
-    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 0 ), statement_deleter() );
-    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(), row_key.size() );
-    cass_statement_set_paging_size( query_stmt.get(), 100 );
 
-    future_pointer_t result_future( cass_session_execute( f_context->parentCassandra().session().get(), query_stmt.get() ) , future_deleter()    );
-    throw_if_error( result_future, QString("Cannot select from table '%1'!").arg(table_name) );
-
-    result_pointer_t   result( cass_future_get_result(result_future.get()), result_deleter() );
-    iterator_pointer_t rows  ( cass_iterator_from_result(result.get()), iterator_deleter()   );
-
-    cass_iterator_next(rows.get());
-    const CassRow*   row         = cass_iterator_get_row( rows.get() );
-    const CassValue* count_value = cass_row_get_column_by_name( row, "count" );
-    int32_t count;
-    cass_value_get_int32( count_value, &count );
-
-    while( cass_result_has_more_pages(result.get()) )
-    {
-        cass_statement_set_paging_state( query_stmt.get(), result.get() );
-        result_future.reset ( cass_session_execute( f_session.get(), query_stmt.get() ) , future_deleter()    );
-        result.reset        ( cass_future_get_result(result_future.get()), result_deleter() );
-
-        rows.reset( cass_iterator_from_result(result.get()), iterator_deleter() );
-        cass_iterator_next(rows.get());
-        const CassRow*   row         = cass_iterator_get_row( rows.get() );
-        const CassValue* count_value = cass_row_get_column_by_name( row, "count" );
-        cass_value_get_int32( count_value, &count );
-    }
-    
-    return count > 0;
-}
-
-
-/** \brief Retrieve a table row.
- *
- * This function retrieves a table row. If the named row doesn't exist yet,
- * then it is created first.
- *
- * The reference is writable so you make write to a cell in this row.
- *
- * This function accepts a UTF-8 name for this row reference.
- *
- * \param[in] row_name  The name of the row to retrieve.
- *
- * \return A reference to a QCassandraRow.
- */
-QCassandraRow& QCassandraTable::operator [] (const char *row_name)
-{
-    // in this case we may create the row and that's fine!
-    return *row(row_name);
-}
-
-/** \brief Retrieve a table row.
- *
- * This function retrieves a table row. If the named row doesn't exist yet,
- * then it is created first.
- *
- * The reference is writable so you make write to a cell in this row.
- *
- * This function accepts a UCS-4 (Unix) or UCS-2 (MS-Windows) name
- * for this row reference.
- *
- * \param[in] row_name  The name of the row to retrieve.
- *
- * \return A reference to a QCassandraRow.
- */
-QCassandraRow& QCassandraTable::operator [] (const wchar_t *row_name)
-{
-    // in this case we may create the row and that's fine!
-    return *row(row_name);
+    return rowCount( row_key ) > 0;
 }
 
 /** \brief Retrieve a table row.
@@ -923,100 +854,6 @@ QCassandraRow& QCassandraTable::operator [] (const QString& row_name)
 {
     // in this case we may create the row and that's fine!
     return *row(row_name);
-}
-
-/** \brief Retrieve a table row.
- *
- * This function retrieves a table row. If the named row doesn't exist yet,
- * then it is created first.
- *
- * The reference is writable so you make write to a cell in this row.
- *
- * This function accepts a UUID as the name of this row.
- *
- * \param[in] row_uuid  The name of the row to retrieve as a UUID.
- *
- * \return A reference to a QCassandraRow.
- */
-QCassandraRow& QCassandraTable::operator [] (const QUuid& row_uuid)
-{
-    // in this case we may create the row and that's fine!
-    return *row(row_uuid);
-}
-
-/** \brief Retrieve a table row.
- *
- * This function retrieves a table row. If the keyed row doesn't exist yet,
- * then it is created first.
- *
- * The reference is writable so you make write to a cell in this row.
- *
- * This function accepts a binary key for this row reference.
- *
- * \param[in] row_key  The binary key of the row to retrieve.
- *
- * \return A reference to a QCassandraRow.
- */
-QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key)
-{
-    // in this case we may create the row and that's fine!
-    return *row(row_key);
-}
-
-/** \brief Retrieve a table row.
- *
- * This function retrieves a table row. If the named row doesn't exist yet,
- * then the function raises an error.
- *
- * The reference is read-only (constant) so you may retrieve a cell value
- * from it, but not modify the cell.
- *
- * This function accepts a name as the row reference. The name is viewed as
- * a UTF-8 string.
- *
- * \exception std::runtime_error
- * The function checks whether the named row exists. If not, then this error
- * is raised because the function is constant and cannot create a new row.
- *
- * \param[in] row_name  The name of the row to retrieve.
- *
- * \return A constant reference to a QCassandraRow.
- */
-const QCassandraRow& QCassandraTable::operator[] (const char *row_name) const
-{
-    const QCassandraRow::pointer_t p_row(findRow(row_name));
-    if(!p_row) {
-        throw std::runtime_error("row does not exist so it cannot be read from");
-    }
-    return *p_row;
-}
-
-/** \brief Retrieve a table row.
- *
- * This function retrieves a table row. If the named row doesn't exist yet,
- * then the function raises an error.
- *
- * The reference is read-only (constant) so you may retrieve a cell value
- * from it, but not modify the cell.
- *
- * This function accepts a name as the row reference. The name is viewed as
- * a UCS-4 (most Unix) or UCS-2 (MS-Windows) string.
- *
- * \exception std::runtime_error
- * The function checks whether the named row exists. If not, then this error
- * is raised because the function is constant and cannot create a new row.
- *
- * \param[in] row_name  The name of the row to retrieve.
- *
- * \return A constant reference to a QCassandraRow.
- */
-const QCassandraRow& QCassandraTable::operator[] (const wchar_t *row_name) const
-{
-    const QCassandraRow::pointer_t p_row(findRow(row_name));
-    if( !p_row ) {
-        throw std::runtime_error("row does not exist so it cannot be read from");
-    }
-    return *p_row;
 }
 
 /** \brief Retrieve a table row.
@@ -1048,29 +885,21 @@ const QCassandraRow& QCassandraTable::operator[] (const QString& row_name) const
 
 /** \brief Retrieve a table row.
  *
- * This function retrieves a table row. If the named row doesn't exist yet,
- * then the function raises an error.
+ * This function retrieves a table row. If the keyed row doesn't exist yet,
+ * then it is created first.
  *
- * The reference is read-only (constant) so you may retrieve a cell value
- * from it, but not modify the cell.
+ * The reference is writable so you make write to a cell in this row.
  *
- * This function accepts a name as the row reference.
+ * This function accepts a binary key for this row reference.
  *
- * \exception std::runtime_error
- * The function checks whether the named row exists. If not, then this error
- * is raised because the function is constant and cannot create a new row.
+ * \param[in] row_key  The binary key of the row to retrieve.
  *
- * \param[in] row_uuid  The name of the row to retrieve as a UUID.
- *
- * \return A constant reference to a QCassandraRow.
+ * \return A reference to a QCassandraRow.
  */
-const QCassandraRow& QCassandraTable::operator[] (const QUuid& row_uuid) const
+QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key)
 {
-    const QCassandraRow::pointer_t p_row(findRow(row_uuid));
-    if(!p_row) {
-        throw std::runtime_error("row does not exist so it cannot be read from");
-    }
-    return *p_row;
+    // in this case we may create the row and that's fine!
+    return *row(row_key);
 }
 
 /** \brief Retrieve a table row.
@@ -1099,6 +928,7 @@ const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) con
     }
     return *p_row;
 }
+
 
 /** \brief Drop the named row.
  *
