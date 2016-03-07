@@ -1,4 +1,4 @@
-// Snap Websites Server -- listener check and response management
+// Snap Websites Server -- epayment credit card extension
 // Copyright (C) 2014-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -20,24 +20,24 @@
 
 namespace snap
 {
-namespace listener
+namespace epayment_creditcard
 {
 
 
-class listener_exception : public snap_exception
-{
-public:
-    explicit listener_exception(char const *        what_msg) : snap_exception("server-access", what_msg) {}
-    explicit listener_exception(std::string const & what_msg) : snap_exception("server-access", what_msg) {}
-    explicit listener_exception(QString const &     what_msg) : snap_exception("server-access", what_msg) {}
-};
-
-class listener_exception_status_missing : public listener_exception
+class epayment_creditcard_exception : public snap_exception
 {
 public:
-    explicit listener_exception_status_missing(char const *        what_msg) : listener_exception(what_msg) {}
-    explicit listener_exception_status_missing(std::string const & what_msg) : listener_exception(what_msg) {}
-    explicit listener_exception_status_missing(QString const &     what_msg) : listener_exception(what_msg) {}
+    explicit epayment_creditcard_exception(char const *        what_msg) : snap_exception("server-access", what_msg) {}
+    explicit epayment_creditcard_exception(std::string const & what_msg) : snap_exception("server-access", what_msg) {}
+    explicit epayment_creditcard_exception(QString const &     what_msg) : snap_exception("server-access", what_msg) {}
+};
+
+class epayment_creditcard_exception_status_missing : public epayment_creditcard_exception
+{
+public:
+    explicit epayment_creditcard_exception_status_missing(char const *        what_msg) : epayment_creditcard_exception(what_msg) {}
+    explicit epayment_creditcard_exception_status_missing(std::string const & what_msg) : epayment_creditcard_exception(what_msg) {}
+    explicit epayment_creditcard_exception_status_missing(QString const &     what_msg) : epayment_creditcard_exception(what_msg) {}
 };
 
 
@@ -46,15 +46,16 @@ public:
 
 
 
-class listener
+class epayment_creditcard
         : public plugins::plugin
 {
 public:
-                                listener();
-                                ~listener();
+                                epayment_creditcard();
+                                ~epayment_creditcard();
 
     // plugins::plugin implementation
-    static listener *           instance();
+    static epayment_creditcard *instance();
+    virtual QString             settings_path() const;
     virtual QString             icon() const;
     virtual QString             description() const;
     virtual QString             dependencies() const;
@@ -64,8 +65,6 @@ public:
     // server signals
     void                        on_process_post(QString const & uri_path);
 
-    SNAP_SIGNAL(listener_check, (snap_uri const & uri, content::path_info_t & page_ipath, QDomDocument doc, QDomElement result), (uri, page_ipath, doc, result));
-
 private:
     void                        content_update(int64_t variables_timestamp);
 
@@ -73,6 +72,6 @@ private:
 };
 
 
-} // namespace listener
+} // namespace epayment_creditcard
 } // namespace snap
 // vim: ts=4 sw=4 et

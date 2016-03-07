@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.33
+ * Version: 0.0.1.40
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -1090,19 +1090,52 @@ snapwebsites.ServerAccess.prototype.onComplete_ = function(result)
  */
 snapwebsites.ServerAccess.appendQueryString = function(uri, query_string) // static
 {
-    var o,                      // loop index
+    var o,                      // attribute name
+        idx,                    // index
+        pos,                    // the position where the '?' is or -1
+        equal_pos,              // the position of the '=' in each attribute
+        existing_query_string,  // the existing query string in 'uri'
         separator;              // the next separator to use (? or &)
 
     // TBD: we should never have a # in the URI here, correct?
     if(query_string)
     {
+        // first get the existing parameters and make sure to replace
+        // existing parameters if the new query_string object includes
+        // them already
+        //
         // append the options, if we already have a ?, use & from the start
-        separator = uri.indexOf("?") >= 0 ? "&" : "?";
+        for(o in query_string)
+        {
+            query_string[o] = encodeURIComponent(query_string[o]);
+        }
+        pos = uri.indexOf("?");// >= 0 ? "&" : "?";
+        if(pos >= 0)
+        {
+            existing_query_string = uri.substr(pos + 1).split("&");
+            for(idx in existing_query_string)
+            {
+                if(existing_query_string.hasOwnProperty(idx))
+                {
+                    equal_pos = existing_query_string[idx].indexOf("=");
+                    if(equal_pos >= 0)
+                    {
+                        o = existing_query_string[idx].substr(0, equal_pos);
+                        if(!query_string.hasOwnProperty(o))
+                        {
+                            query_string[o] = existing_query_string[idx].substr(equal_pos + 1);
+                        }
+                    }
+                }
+            }
+            uri = uri.substr(0, pos);
+        }
+        separator = "?";
         for(o in query_string)
         {
             if(query_string.hasOwnProperty(o))
             {
-                uri += separator + o + "=" + encodeURIComponent(query_string[o]);
+                uri += separator + o + "=" + query_string[o];
                 separator = "&";
             }
         }

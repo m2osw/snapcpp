@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.807
+ * Version: 0.0.3.811
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -2491,7 +2491,9 @@ snapwebsites.EditorWidget.prototype.getLabel = function(use_name)
         //
         label = label.clone();
         jQuery("span.required", label).remove();
-        return snapwebsites.trim(snapwebsites.castToString(label.html(), "expected html() to return a string for the widget label"));
+        label = /** @type {string} */ (label.html());
+        label = snapwebsites.trim(label.replace(/[\s]*:[\s]*$/, ""));
+        return snapwebsites.trim(snapwebsites.castToString(label, "expected html() to return a string for the widget label"));
     }
 
     return use_name ? this.name_ : "";

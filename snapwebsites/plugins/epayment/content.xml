@@ -73,8 +73,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="list::selector">children</param>
     <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
-    <param name="editor::layout" revision="global" overwrite="yes">"epayment-settings-page";</param>
-    <param name="layout::layout" revision="global" overwrite="yes">"epayment-settings-parser";</param>
+    <!--param name="editor::layout" revision="global" overwrite="yes">"epayment-settings-page";</param-->
+    <!--param name="layout::layout" revision="global" overwrite="yes">"epayment-settings-parser";</param-->
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/css/epayment" owner="output">

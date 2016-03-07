@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.89
+ * Version: 0.1.5.92
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.2)
@@ -980,7 +980,9 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
                 {
                     label.clone();
                     jQuery("span.required", label).remove();
-                    label = "<strong>" + snapwebsites.trim(snapwebsites.castToString(label.html(), "html was expected to return a string for the widget label")) + "</strong>";
+                    label = snapwebsites.castToString(label.html(), "html was expected to return a string for the widget label");
+                    label = snapwebsites.trim(label.replace(/[\s]*:[\s]*$/, ""));
+                    label = "<strong>" + label + "</strong>";
 
                     // Note: The \b does not match many things such as the
                     //       double quotes we use in our messages...

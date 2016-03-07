@@ -26,8 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <taborder>
     <tabindex refid="card_number"/>
     <tabindex refid="security_code"/>
-    <tabindex refid="expiration_year"/>
-    <tabindex refid="expiration_month"/>
+    <tabindex refid="expiration_date"/>
     <tabindex refid="user_name"/>
     <tabindex refid="address1"/>
     <tabindex refid="address2"/>
@@ -64,15 +63,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <background-value>security code</background-value>
     <required>required</required>
   </widget>
-  <widget id="expiration_year" type="year" path="epayment/expiration_year" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>Enter the Year of the expiration date.</tooltip>
-    <help>This field must be set to the year on which your credit card will expire.</help>
+  <widget id="expiration_date" type="dropdown-date-edit" path="epayment/expiration_date" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter the Month and Year of your card expiration date.</tooltip>
+    <help>This field must be set to the month and year on which your credit card will expire.</help>
     <required>required</required>
-  </widget>
-  <widget id="expiration_month" type="month" path="epayment/expiration_month" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>Enter the Month of the expiration date.</tooltip>
-    <help>This field must be set to the month on which your credit card will expire.</help>
-    <required>required</required>
+    <filters>
+      <regex name="date"/>
+      <min-date>now - 1 year</min-date>
+      <max-date>now + 19 year</max-date>
+    </filters>
+    <dropdown-date-edit>
+      <include-month/>
+      <include-year from="now" to="now + 19 years"/> <!-- +19 means 20 years displayed -->
+    </dropdown-date-edit>
   </widget>
 
   <!-- user name and address -->
@@ -82,35 +85,35 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <background-value>first and last name</background-value>
     <required>required</required>
   </widget>
-  <widget id="address1" type="line-edit" path="epayment/address1" auto-save="no">
+  <widget id="address1" type="line-edit" path="epayment/address1" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>First line of the address for which the credit card is registered.</tooltip>
     <help>Enter the first line of your credit card address. This information is required.</help>
     <background-value>address line 1</background-value>
     <required>required</required>
   </widget>
-  <widget id="address2" type="line-edit" path="epayment/address2" auto-save="no">
+  <widget id="address2" type="line-edit" path="epayment/address2" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Second line of the address for which the credit catd is registered.</tooltip>
     <help>Enter the second line of your credit card address. This information is optional.</help>
     <background-value>address line 2</background-value>
   </widget>
-  <widget id="city" type="line-edit" path="epayment/city" auto-save="no">
+  <widget id="city" type="line-edit" path="epayment/city" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>The name of the city for which the credit catd is registered.</tooltip>
     <help>Enter the city name of your credit card address. This information is required.</help>
     <background-value>city</background-value>
     <required>required</required>
   </widget>
-  <widget id="province" type="line-edit" path="epayment/province" auto-save="no">
+  <widget id="province" type="line-edit" path="epayment/province" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>The name of the province for which the credit catd is registered.</tooltip>
     <help>Enter the name of the province of your credit card address. This information is optional for most countries.</help>
     <background-value>province or state</background-value>
   </widget>
-  <widget id="postal_code" type="line-edit" path="epayment/postal_code" auto-save="no">
+  <widget id="postal_code" type="line-edit" path="epayment/postal_code" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>The postal code for which the credit catd is registered.</tooltip>
     <help>Enter the postal code of your credit card address. This information is required.</help>
     <background-value>postal code</background-value>
     <required>required</required>
   </widget>
-  <widget id="country" type="line-edit" path="epayment/country" auto-save="no">
+  <widget id="country" type="line-edit" path="epayment/country" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>The name of the country in which the credit catd is registered.</tooltip>
     <help>Enter the name of the country of your credit card address. This field is required.</help>
     <background-value>province or state</background-value>

@@ -57,13 +57,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						</div>
 
 						<div class="editor-block">
-							<label for="expiration_year" class="editor-title">Expiration Year:</label>
-							<xsl:copy-of select="page/body/epayment/expiration_year/node()"/>
-						</div>
-
-						<div class="editor-block">
-							<label for="expiration_month" class="editor-title">Expiration Month:</label>
-							<xsl:copy-of select="page/body/epayment/expiration_month/node()"/>
+							<xsl:copy-of select="page/body/epayment/expiration_date/node()"/>
 						</div>
 					</fieldset>
 

@@ -1,5 +1,5 @@
 <!--
-Snap Plugin - - listener plugin resources
+Snap Plugin - - epayment credit card plugin extension resources
 Copyright (C) 2014-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -18,14 +18,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/plugins/listener">
+  <qresource prefix="/plugins/epayment_creditcard">
     <file>content.xml</file>
   </qresource>
-  <qresource prefix="/js/listener">
-    <file>listener.js</file>
+  <qresource prefix="/images/epayment">
+    <file>epayment-credit-card-logo-64x64.png</file>
   </qresource>
-  <qresource prefix="/images/listener">
-    <file>listener-logo-64x64.png</file>
+  <qresource prefix="/xsl">
+    <file>layout/epayment-credit-card-parser.xsl</file>
+  </qresource>
+  <qresource prefix="/xml">
+    <file>editor/epayment-credit-card-page.xml</file>
   </qresource>
 </RCC>
 <!--

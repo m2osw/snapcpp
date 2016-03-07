@@ -1500,7 +1500,7 @@ int64_t epayment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 20, 21, 59, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 5, 21, 51, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

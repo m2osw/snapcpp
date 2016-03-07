@@ -1,6 +1,6 @@
 /** @preserve
  * Name: date-widgets
- * Version: 0.0.1.19
+ * Version: 0.0.1.20
  * Browsers: all
  * Depends: editor (>= 0.0.3.640)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -907,27 +907,38 @@ snapwebsites.EditorWidgetTypeDropdownDateEdit.prototype.initializeWidget = funct
         year_widget = editor_form.getWidgetByName(name + "_year"),
         month_widget = editor_form.getWidgetByName(name + "_month"),
         day_widget = editor_form.getWidgetByName(name + "_day"),
-        year = year_widget.getWidget(),
-        month = month_widget.getWidget(),
-        day = day_widget.getWidget();
+        w;
+
 
     snapwebsites.EditorWidgetTypeDropdownDateEdit.superClass_.initializeWidget.call(this, widget);
 
-    year.bind("widgetchange", function(e)
-        {
-            // define the full date
-            that.retrieveNewValue_(editor_widget);
-        });
-    month.bind("widgetchange", function(e)
-        {
-            // define the full date
-            that.retrieveNewValue_(editor_widget);
-        });
-    day.bind("widgetchange", function(e)
-        {
-            // define the full date
-            that.retrieveNewValue_(editor_widget);
-        });
+    if(year_widget)
+    {
+        w = year_widget.getWidget(),
+        w.bind("widgetchange", function(e)
+            {
+                // define the full date
+                that.retrieveNewValue_(editor_widget);
+            });
+    }
+    if(month_widget)
+    {
+        w = month_widget.getWidget(),
+        w.bind("widgetchange", function(e)
+            {
+                // define the full date
+                that.retrieveNewValue_(editor_widget);
+            });
+    }
+    if(day_widget)
+    {
+        w = day_widget.getWidget();
+        w.bind("widgetchange", function(e)
+            {
+                // define the full date
+                that.retrieveNewValue_(editor_widget);
+            });
+    }
 };
 
 

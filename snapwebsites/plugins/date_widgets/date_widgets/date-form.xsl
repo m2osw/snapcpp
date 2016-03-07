@@ -296,7 +296,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                   <xsl:if test="*[name() = 'background-year']">
                     <background-value><xsl:value-of select="*[name() = 'background-year']"/></background-value>
                   </xsl:if>
-                  <dropdown-algorithm>bottom top right columns=2v columns=3v</dropdown-algorithm>
+                  <dropdown-algorithm>bottom top right bottom-vertical-columns=2 top-vertical-columns=2 bottom-vertical-columns=3 top-vertical-columns=3 bottom-vertical-columns-with-scrollbar=* top-vertical-columns-with-scrollbar=*</dropdown-algorithm>
                   <xsl:variable name="from" select="dropdown-date-edit/include-year/@from"/>
                   <xsl:variable name="to" select="dropdown-date-edit/include-year/@to"/>
                   <xsl:if test="string-length($from) > 0 and string-length($to) > 0">

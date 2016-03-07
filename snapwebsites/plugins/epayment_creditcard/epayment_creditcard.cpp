@@ -66,6 +66,16 @@ epayment_creditcard * epayment_creditcard::instance()
 }
 
 
+/** \brief Send users to the plugin settings.
+ *
+ * This path represents this plugin settings.
+ */
+QString epayment_creditcard::settings_path() const
+{
+    return "/admin/settings/epayment/creditcard";
+}
+
+
 /** \brief A path or URI to a logo for this plugin.
  *
  * This function returns a 64x64 icons representing this plugin.
@@ -74,7 +84,7 @@ epayment_creditcard * epayment_creditcard::instance()
  */
 QString epayment_creditcard::icon() const
 {
-    return "/images/epayment/epayment-creditcard-logo-64x64.png";
+    return "/images/epayment/epayment-credit-card-logo-64x64.png";
 }
 
 
@@ -105,7 +115,7 @@ QString epayment_creditcard::description() const
  */
 QString epayment_creditcard::dependencies() const
 {
-    return "|editor|epayment|messages|path|permissions|users|";
+    return "|date_widgets|editor|epayment|messages|path|permissions|users|";
 }
 
 
@@ -125,7 +135,7 @@ int64_t epayment_creditcard::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 5, 21, 43, 16, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -180,6 +190,7 @@ void epayment_creditcard::bootstrap(snap_child * snap)
  */
 void epayment_creditcard::on_process_post(QString const & uri_path)
 {
+    NOTUSED(uri_path);
 }
 
 

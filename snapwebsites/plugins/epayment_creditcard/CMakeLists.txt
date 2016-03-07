@@ -54,7 +54,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content/content.dtd )
 
-snap_validate_js( epayment-creditcard.js )
+#snap_validate_js( epayment-creditcard.js )
 
 
 add_library(epayment_creditcard SHARED
@@ -63,8 +63,8 @@ add_library(epayment_creditcard SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    epayment_creditcard.js
-    epayment-creditcard-logo-64x64.png
+    #epayment_creditcard.js
+    epayment-credit-card-logo-64x64.png
 )
 
 target_link_libraries( epayment_creditcard ${QT_LIBRARIES} )
@@ -83,11 +83,11 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
-install(
-    FILES
-        epayment-creditcard.js
-    DESTINATION
-        share/javascript/snapwebsites/epayment_creditcard
-)
+#install(
+#    FILES
+#        epayment-creditcard.js
+#    DESTINATION
+#        share/javascript/snapwebsites/epayment_creditcard
+#)
 
 # vim: ts=4 sw=4 et

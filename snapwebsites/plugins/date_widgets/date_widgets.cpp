@@ -162,7 +162,7 @@ int64_t date_widgets::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 2, 27, 23, 8, 37, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 5, 22, 19, 37, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

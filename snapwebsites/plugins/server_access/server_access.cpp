@@ -19,6 +19,7 @@
 
 #include "../messages/messages.h"
 
+#include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
 #include "qdomhelpers.h"
@@ -156,7 +157,7 @@ int64_t server_access::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 16, 0, 42, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 6, 23, 9, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -337,7 +338,7 @@ void server_access::ajax_output()
         for(int i(0); i < max_messages; ++i)
         {
             QString type;
-            messages::messages::message const& msg(messages->get_message(i));
+            messages::messages::message const & msg(messages->get_message(i));
             switch(msg.get_type())
             {
             case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_ERROR:

@@ -58,7 +58,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <dropdown-date-edit>
       <include-month/>
       <include-day/>
-      <include-year from="now" to="now + 19 years"/> <!-- 19 means 20 years displayed -->
+      <include-year from="now" to="now + 19 years"/> <!-- +19 means 20 years displayed -->
     </dropdown-date-edit>
   </widget>
 </editor-form>

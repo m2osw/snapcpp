@@ -80,6 +80,7 @@ messages::message::message()
     , f_id(++g_message_id)
     //, f_title("") -- auto-init
     //, f_body("") -- auto-init
+    //, f_widget_name("") -- auto-init
 {
 }
 
@@ -100,6 +101,7 @@ messages::message::message(message_type_t t, QString const & title, QString cons
     , f_id(++g_message_id)
     , f_title(title)
     , f_body(body)
+    //, f_widget_name("") -- auto-init
 {
 }
 
@@ -117,6 +119,7 @@ messages::message::message(message const & rhs)
     , f_id(rhs.f_id)
     , f_title(rhs.f_title)
     , f_body(rhs.f_body)
+    , f_widget_name(rhs.f_widget_name)
 {
 }
 

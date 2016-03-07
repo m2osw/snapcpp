@@ -1,6 +1,6 @@
 /** @preserve
  * Name: users
- * Version: 0.0.1.5
+ * Version: 0.0.1.10
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -127,8 +127,8 @@ snapwebsites.Users.prototype.startAutoLogout = function()
     if(!isNaN(this.auto_logout_id_))
     {
         clearTimeout(this.auto_logout_id_);
+        this.auto_logout_id_ = NaN;
     }
-    this.auto_logout_id_ = NaN;
 
     // A JavaScript timer is limited to 2^31 - 1 which is about 24.8 days.
     // So here we want to make sure that we do not break the limit if
@@ -170,7 +170,11 @@ snapwebsites.Users.prototype.startAutoLogout = function()
  */
 snapwebsites.Users.prototype.preventAutoLogout = function()
 {
-    clearTimeout(this.auto_logout_id_);
+    if(!isNaN(this.auto_logout_id_))
+    {
+        clearTimeout(this.auto_logout_id_);
+        this.auto_logout_id_ = NaN;
+    }
 };
 
 
@@ -208,7 +212,7 @@ snapwebsites.Users.prototype.autoLogout_ = function()
     redirect_uri = redirect_uri.replace(/\?a=edit$/, "")
                                .replace(/\?a=edit&/, "?")
                                .replace(/&a=edit&/, "&");
-    snapwebsites.ServerAccess.appendQueryString(redirect_uri, { hit: "transparent" });
+    redirect_uri = snapwebsites.ServerAccess.appendQueryString(redirect_uri, { hit: "transparent" });
     doc.location = redirect_uri;
 };
 
