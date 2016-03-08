@@ -991,9 +991,6 @@ const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) 
  */
 void QCassandraRow::clearCache()
 {
-    for(QCassandraCells::iterator ci(f_cells.begin()); ci != f_cells.end(); ++ci) {
-        (*ci)->unparent();
-    }
     f_cells.clear();
 }
 
@@ -1145,7 +1142,6 @@ void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::time
     }
     table->remove(f_key, column_key, timestamp, c->consistencyLevel());
     f_cells.remove(column_key);
-    c->unparent();
 }
 
 
@@ -1215,22 +1211,6 @@ void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
         throw std::runtime_error("row was dropped and is not attached to a table anymore");
     }
     return table->addValue(f_key, column_key, value);
-}
-
-/** \brief This internal function marks the row as unusable.
- *
- * This function is called whenever you drop a row which means that all the
- * data in that row is now not accessible (at least not on Cassandra.)
- *
- * Any future function call that require the parent will fail with an
- * exception.
- *
- * Further, this call releases its cells also calling unparent() on them.
- */
-void QCassandraRow::unparent()
-{
-    f_table.reset();
-    clearCache();
 }
 
 } // namespace QtCassandra

@@ -64,42 +64,22 @@ public:
     uint32_t readCells();
     uint32_t readCells(QCassandraColumnPredicate& column_predicate);
 
-    QCassandraCell::pointer_t cell(const char *column_name);
-    QCassandraCell::pointer_t cell(const wchar_t *column_name);
     QCassandraCell::pointer_t cell(const QString& column_name);
-    QCassandraCell::pointer_t cell(const QUuid& column_name);
     QCassandraCell::pointer_t cell(const QByteArray& column_key);
     const QCassandraCells& cells() const;
-    QCassandraCell& compositeCell(const composite_column_names_t& composite_names);
-    const QCassandraCell& compositeCell(const composite_column_names_t& composite_names) const;
 
-    QCassandraCell::pointer_t findCell(const char *column_name) const;
-    QCassandraCell::pointer_t findCell(const wchar_t *column_name) const;
     QCassandraCell::pointer_t findCell(const QString& column_name) const;
-    QCassandraCell::pointer_t findCell(const QUuid& column_name) const;
     QCassandraCell::pointer_t findCell(const QByteArray& column_key) const;
-    bool exists(const char *column_name) const;
-    bool exists(const wchar_t *column_name) const;
     bool exists(const QString& column_name) const;
-    bool exists(const QUuid& column_name) const;
     bool exists(const QByteArray& column_key) const;
-    QCassandraCell& operator [] (const char *column_name);
-    QCassandraCell& operator [] (const wchar_t *column_name);
     QCassandraCell& operator [] (const QString& column_name);
-    QCassandraCell& operator [] (const QUuid& column_name);
     QCassandraCell& operator [] (const QByteArray& column_key);
-    const QCassandraCell& operator [] (const char *column_name) const;
-    const QCassandraCell& operator [] (const wchar_t *column_name) const;
     const QCassandraCell& operator [] (const QString& column_name) const;
-    const QCassandraCell& operator [] (const QUuid& column_name) const;
     const QCassandraCell& operator [] (const QByteArray& column_key) const;
 
     void clearCache();
 
-    void dropCell(const char *column_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
-    void dropCell(const wchar_t *column_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
     void dropCell(const QString& column_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
-    void dropCell(const QUuid& column_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
     void dropCell(const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
 
     std::shared_ptr<QCassandraTable> parentTable() const;
@@ -110,7 +90,6 @@ private:
     void insertValue(const QByteArray& column_key, const QCassandraValue& value);
     bool getValue(const QByteArray& column_key, QCassandraValue& value);
     void addValue(const QByteArray& column_key, int64_t value);
-    void unparent();
 
     friend class QCassandraTable;
     friend class QCassandraCell;
@@ -118,9 +97,9 @@ private:
     // f_table is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
-    std::weak_ptr<QCassandraTable> f_table;
-    QByteArray                     f_key;
-    QCassandraCells                f_cells;
+    QCassandraTable::pointer_t  f_table;
+    QByteArray                  f_key;
+    QCassandraCells             f_cells;
 };
 
 // array of rows

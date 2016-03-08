@@ -171,6 +171,7 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
     : f_context(context)
     //f_column_definitions() -- auto-init
     //f_rows() -- auto-init
+    , f_currentPredicate(0)
 {
     // verify the name here (faster than waiting for the server and good documentation)
     QRegExp re("[A-Za-z][A-Za-z0-9_]*");
@@ -413,27 +414,7 @@ void QCassandraTable::update()
 }
 #endif
 
-/** \brief Clear the memory cache.
- *
- * This function clears the memory cache. This means all the rows and
- * their cells will be deleted from this table. The memory cache doesn't
- * affect the Cassandra database.
- *
- * After a clear, you can retrieve fresh data (i.e. by directly loading the
- * data from the Cassandra database.)
- *
- * Note that if you kept shared pointers to rows and cells defined in
- * this table, accessing those is likely going to generate an exception.
- */
-void QCassandraTable::clearCache()
-{
-    for(QCassandraRows::iterator ri(f_rows.begin()); ri != f_rows.end(); ++ri) {
-        (*ri)->unparent();
-    }
-    f_rows.clear();
-}
 
-#if 0
 /** \brief Truncate a Cassandra table.
  *
  * The truncate() function removes all the rows from a Cassandra table
@@ -450,18 +431,34 @@ void QCassandraTable::clearCache()
  */
 void QCassandraTable::truncate()
 {
-    auto context( f_context.lock() );
-    if(!context) {
-        throw std::runtime_error("table was dropped and is not attached to a context anymore");
-    }
-    if(f_from_cassandra) {
-        context->truncateTable(this);
-    }
+    const QString query(
+        QString("TRUNCATE %1.%2;")
+            .arg(f_context->contextName())
+            .arg(f_tableName)
+            );
 
-    // delete the memory cache too
+    f_context->parentCassandra()->executeQuery( query );
+
     clearCache();
 }
-#endif
+
+
+/** \brief Clear the memory cache.
+ *
+ * This function clears the memory cache. This means all the rows and
+ * their cells will be deleted from this table. The memory cache doesn't
+ * affect the Cassandra database.
+ *
+ * After a clear, you can retrieve fresh data (i.e. by directly loading the
+ * data from the Cassandra database.)
+ *
+ * Note that if you kept shared pointers to rows and cells defined in
+ * this table, accessing those is likely going to generate an exception.
+ */
+void QCassandraTable::clearCache()
+{
+    f_rows.clear();
+}
 
 
 /// \brief Return the full count of the entire table.
@@ -470,7 +467,7 @@ int32_t QCassandraTable::rowCount( const QByteArray& row_key ) const
 {
     const QString query( QString("SELECT COUNT(*) AS count FROM %1.%2 WHERE key = ?").arg(f_context->contextName()).arg(f_tableName) );
     //
-    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 0 ), statement_deleter() );
+    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 1 ), statement_deleter() );
     cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(), row_key.size() );
     cass_statement_set_paging_size( query_stmt.get(), 100 );
 
@@ -500,6 +497,24 @@ int32_t QCassandraTable::rowCount( const QByteArray& row_key ) const
     }
 
     return count > 0;
+}
+
+
+int32_t QCassandraTable::getCurrentCount()
+{
+    if( !f_currentQueryResult )
+    {
+        throw std::runtime_error( "There is no query active!" );
+    }
+
+    iterator_pointer_t rows( cass_iterator_from_result(f_currentQueryResult.get()), iterator_deleter()   );
+    cass_iterator_next(rows.get());
+    const CassRow*   row         = cass_iterator_get_row( rows.get() );
+    const CassValue* count_value = cass_row_get_column_by_name( row, "count" );
+    int32_t count;
+    cass_value_get_int32( count_value, &count );
+
+    return count;
 }
 
 
@@ -542,16 +557,41 @@ int32_t QCassandraTable::rowCount( const QByteArray& row_key ) const
  * \sa QCassandraColumnPredicate::setConsistencyLevel()
  * \sa dropRow()
  */
-uint32_t QCassandraTable::readRows(QCassandraRowPredicate& row_predicate)
+uint32_t QCassandraTable::readRows( QCassandraRowPredicate& row_predicate )
 {
-#if 0
-    if(f_from_cassandra)
+    f_rows.clear();
+
+    if( &row_predicate != f_currentPredicate )
     {
-        return context->getRowSlices(*this, row_predicate);
+        f_queryStmt.reset();
     }
-#endif
-    // TODO: add query guts
-    return 0;
+
+    f_currentPredicate = &row_predicate;
+
+    if( f_queryStmt )
+    {
+        if( !cass_result_has_more_pages(f_currentQueryResult.get()) )
+        {
+            f_queryStmt.reset();
+            return 0;
+        }
+
+        cass_statement_set_paging_state( f_queryStmt.get(), f_currentQueryResult.get() );
+    }
+    else
+    {
+        const QString query( QString("SELECT COUNT(*) AS count,key,column1,value FROM %1.%2").arg(f_context->contextName()).arg(f_tableName) );
+        //
+        f_queryStmt.reset( cass_statement_new( query.toUtf8().data(), 0 ), statement_deleter() );
+        cass_statement_set_paging_size( query_stmt.get(), row_predicate.count() );
+    }
+
+    f_sessionExecute.reset( cass_session_execute( f_context->parentCassandra().session().get(), f_queryStmt.get() ) , future_deleter()    );
+    throw_if_error( f_sessionExecute, QString("Cannot select from table '%1'!").arg(table_name) );
+
+    f_currentQueryResult.reset( cass_future_get_result(f_sessionExecute.get()), result_deleter() );
+
+    return getCurrentCount();
 }
 
 /** \brief Search for a row or create a new one.
@@ -591,7 +631,8 @@ QCassandraRow::pointer_t QCassandraTable::row(const QByteArray& row_key)
 {
     // row already exists?
     QCassandraRows::iterator ri(f_rows.find(row_key));
-    if(ri != f_rows.end()) {
+    if(ri != f_rows.end())
+    {
         return ri.value();
     }
 
@@ -613,63 +654,44 @@ QCassandraRow::pointer_t QCassandraTable::row(const QByteArray& row_key)
  */
 const QCassandraRows& QCassandraTable::rows() const
 {
+    if( !f_queryStmt )
+    {
+        throw std::runtime_error( "No query is in effect!" );
+    }
+
+    if( !f_rows.empty() )
+    {
+        // We already read these, so we don't need to do it again.
+        //
+        // TODO:
+        // Not sure how the cpp driver works--if it caches this stuff up, so this might be
+        // a premature optimization.
+        return;
+    }
+
+    iterator_pointer_t  rows( cass_iterator_from_result(f_currentQueryResult.get()), iterator_deleter() );
+    while( cass_iterator_next(rows.get()) )
+    {
+        const CassRow*   row             = cass_iterator_get_row( rows.get() );
+        const CassValue* key_value       = cass_row_get_column_by_name( row, "key"       );
+        const CassValue* column1_value   = cass_row_get_column_by_name( row, "column1"   );
+        const CassValue* value_value     = cass_row_get_column_by_name( row, "value"     );
+
+        const char *    byte_value;
+        size_t          value_len;
+        //
+        cass_value_get_string( key_value, &byte_value, &value_len );
+        QCassandraRow::pointer_t new_row( row( QByteArray(byte_value,value_len) ) );
+
+        cass_value_get_string( column1_value, &byte_value, &value_len );
+        QCassandraCell::pointer_t new_cell( new_row->cell( QByteArray(byte_value,value_len) ) );
+
+        cass_value_get_string( value_value, &byte_value, &value_len );
+        QCassandraValue val( QByteArray(byte_value,value_len) );
+        new_cell->assignValue( val );
+    }
+
     return f_rows;
-}
-
-/** \brief Search for a row.
- *
- * This function searches for a row. If it doesn't exist, then a NULL
- * pointer is returned (use the operator bool() function on the shared pointer.)
- *
- * The function can be used to check whether a given row was already created
- * in memory without actually creating it.
- *
- * This function accepts a row name viewed as a UTF-8 string.
- *
- * \warning
- * This function does NOT attempt to read the row from the Cassandra database
- * system. It only checks whether the row already exists in memory. To check
- * whether the row exists in the database, use the exists() function instead.
- *
- * \param[in] row_name  The name of the row to check for.
- *
- * \return A shared pointer to the row, may be NULL (operator bool() returning true)
- *
- * \sa exists()
- * \sa row()
- */
-QCassandraRow::pointer_t QCassandraTable::findRow(const char *row_name) const
-{
-    return findRow(QByteArray::fromRawData(row_name, qstrlen(row_name)));
-}
-
-/** \brief Search for a row.
- *
- * This function searches for a row. If it doesn't exist, then a NULL
- * pointer is returned (use the operator bool() function on the shared pointer.)
- *
- * The function can be used to check whether a given row was already created
- * in memory without actually creating it.
- *
- * This function accepts a row name viewed as a UCS-4 string (most Unix)
- * or a UCS-2 string (MS-Windows). If you have a UTF-16 string, make sure
- * to use QString::fromUtf16() instead.
- *
- * \warning
- * This function does NOT attempt to read the row from the Cassandra database
- * system. It only checks whether the row already exists in memory. To check
- * whether the row exists in the database, use the exists() function instead.
- *
- * \param[in] row_name  The name of the row to check for.
- *
- * \return A shared pointer to the row, may be NULL (operator bool() returning true)
- *
- * \sa exists()
- * \sa row()
- */
-QCassandraRow::pointer_t QCassandraTable::findRow(const wchar_t *row_name) const
-{
-    return findRow(QString::fromWCharArray(row_name, (row_name ? wcslen(row_name) : 0)));
 }
 
 /** \brief Search for a row.
@@ -707,33 +729,6 @@ QCassandraRow::pointer_t QCassandraTable::findRow(const QString& row_name) const
  * The function can be used to check whether a given row was already created
  * in memory without actually creating it.
  *
- * This function accepts a row uuid viewed as a binary UUID code.
- *
- * \warning
- * This function does NOT attempt to read the row from the Cassandra database
- * system. It only checks whether the row already exists in memory. To check
- * whether the row exists in the database, use the exists() function instead.
- *
- * \param[in] row_uuid  The uuid of the row to check for.
- *
- * \return A shared pointer to the row, may be NULL (operator bool() returning true)
- *
- * \sa exists()
- * \sa row()
- */
-QCassandraRow::pointer_t QCassandraTable::findRow(const QUuid& row_uuid) const
-{
-    return findRow(row_uuid.toRfc4122());
-}
-
-/** \brief Search for a row.
- *
- * This function searches for a row. If it doesn't exist, then a NULL
- * pointer is returned (use the operator bool() function on the shared pointer.)
- *
- * The function can be used to check whether a given row was already created
- * in memory without actually creating it.
- *
  * This function accepts a row key which is a binary buffer.
  *
  * \warning
@@ -751,7 +746,8 @@ QCassandraRow::pointer_t QCassandraTable::findRow(const QUuid& row_uuid) const
 QCassandraRow::pointer_t QCassandraTable::findRow(const QByteArray& row_key) const
 {
     QCassandraRows::iterator ri(f_rows.find(row_key));
-    if(ri == f_rows.end()) {
+    if(ri == f_rows.end())
+    {
         QCassandraRow::pointer_t null;
         return null;
     }
@@ -801,38 +797,17 @@ bool QCassandraTable::exists(const QString& row_name) const
 bool QCassandraTable::exists(const QByteArray& row_key) const
 {
     // an empty key cannot represent a valid row
-    if(row_key.size() == 0) {
+    if(row_key.size() == 0)
+    {
         return false;
     }
 
     QCassandraRows::iterator ri(f_rows.find(row_key));
-    if(ri != f_rows.end()) {
+    if(ri != f_rows.end())
+    {
         // row exists in memory
         return true;
     }
-
-#if 0
-    // in this case we're not given a column name so we cannot just
-    // use the getValue() function to find out whether the row exists
-    // instead we need to get a slice using this row key as the
-    // slice parameter
-
-    QCassandraRowPredicate row_predicate;
-    row_predicate.setStartRowKey(row_key);
-    row_predicate.setEndRowKey(row_key);
-
-    // define a key range that is quite unlikely to match any column
-    QCassandraColumnRangePredicate::pointer_t column_predicate(new QCassandraColumnRangePredicate);
-    QByteArray key;
-    setInt32Value(key, 0x00000000);
-    column_predicate->setStartColumnKey(key);
-    setInt32Value(key, 0x00000001);
-    column_predicate->setEndColumnKey(key);
-    column_predicate->setCount(1);
-    row_predicate.setColumnPredicate(column_predicate);
-
-    return const_cast<QCassandraTable *>(this)->readRows(row_predicate) != 0;
-#endif
 
     return rowCount( row_key ) > 0;
 }
@@ -1000,30 +975,13 @@ void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestam
  *
  * \param[in] row_key  Specify the key of the row.
  * \param[in] mode  Specify the timestamp mode.
- * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
- * \param[in] consistency_level  Specify the consistency of the row removal across your clusters.
+ * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older. Ignored.
+ * \param[in] consistency_level  Specify the consistency of the row removal across your clusters. Ignored.
  */
-void QCassandraTable::dropRow(const QByteArray& row_key, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level)
+void QCassandraTable::dropRow( const QByteArray& row_key, QCassandraValue::timestamp_mode_t mode, int64_t /*timestamp*/, consistency_level_t /*consistency_level*/ )
 {
-    if(QCassandraValue::TIMESTAMP_MODE_AUTO != mode && QCassandraValue::TIMESTAMP_MODE_DEFINED != mode) {
-        throw std::runtime_error("invalid timestamp mode in dropRow()");
-    }
-
-    // default to the timestamp of the value (which is most certainly
-    // what people want in 99.9% of the cases.)
-    if(QCassandraValue::TIMESTAMP_MODE_AUTO == mode) {
-        // at this point I think the best default for the drop is now
-        timestamp = QCassandra::timeofday();
-    }
-
-    // use an empty key as the column key so the entire row gets removed
-    QByteArray empty_key;
-    remove(row_key, empty_key, timestamp, consistency_level);
-
-    QCassandraRow::pointer_t r(row(row_key));
-    r->unparent();
-
-    f_rows.remove(row_key);
+    remove( row_key );
+    f_rows.remove( row_key );
 }
 
 
@@ -1202,6 +1160,7 @@ int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandr
  */
 uint32_t QCassandraTable::getColumnSlice(const QByteArray& row_key, QCassandraColumnPredicate& column_predicate)
 {
+#if 0
     auto context( f_context.lock() );
     if(!context)
     {
@@ -1211,6 +1170,46 @@ uint32_t QCassandraTable::getColumnSlice(const QByteArray& row_key, QCassandraCo
         return context->getColumnSlice(*this, row_key, column_predicate);
     }
     return 0;
+#endif
+    return 0;
+}
+
+/** \brief Delete a Cell from a table row.
+ *
+ * This function removes a cell from the Cassandra database as specified
+ * by the parameters.
+ *
+ * \param[in] row_key  The row in which the cell is to be removed.
+ * \param[in] column_key  The cell to be removed.
+ * \param[in] timestamp  The time when the key to be removed was created. Ignored.
+ * \param[in] consistency_level  The consistency level to use to remove this cell. Ignored.
+ */
+void QCassandraTable::remove(const QByteArray& row_key, const QByteArray& column_key, int64_t /*timestamp*/, consistency_level_t /*consistency_level*/)
+{
+    remove( row_key, column_key );
+}
+
+/** \brief Delete a Cell from a table row.
+ *
+ * This function removes a cell from the Cassandra database as specified
+ * by the parameters.
+ *
+ * \param[in] row_key  The row in which the cell is to be removed.
+ * \param[in] column_key  The cell to be removed.
+ */
+void QCassandraTable::remove( const QByteArray& row_key, const QByteArray& column_key )
+{
+    const QString query(
+        QString("DELETE FROM %1.%2 WHERE key=? AND column1=?;")
+            .arg(f_context->contextName())
+            .arg(f_tableName)
+            );
+
+    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 2 ), statement_deleter() );
+    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(),    row_key.size()    );
+    cass_statement_bind_string_n( query_stmt.get(), 1, column_key.constData(), column_key.size() );
+    future_pointer_t result_future( cass_session_execute( f_context->parentCassandra().session().get(), query_stmt.get() ) , future_deleter()    );
+    throw_if_error( result_future, QString("Cannot select from table '%1'!").arg(table_name) );
 }
 
 /** \brief Delete a Cell from a table row.
@@ -1223,33 +1222,18 @@ uint32_t QCassandraTable::getColumnSlice(const QByteArray& row_key, QCassandraCo
  * \param[in] timestamp  The time when the key to be removed was created.
  * \param[in] consistency_level  The consistency level to use to remove this cell.
  */
-void QCassandraTable::remove(const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level)
+void QCassandraTable::remove( const QByteArray& row_key )
 {
-    auto context( f_context.lock() );
-    if(!context)
-    {
-        throw std::runtime_error("table was dropped and is not attached to a context anymore");
-    }
-    if(f_from_cassandra) {
-        context->remove(tableName(), row_key, column_key, timestamp, consistency_level);
-    }
-}
+    const QString query(
+        QString("DELETE FROM %1.%2 WHERE key=?;")
+            .arg(f_context->contextName())
+            .arg(f_tableName)
+            );
 
-/** \brief This internal function marks the table as unusable.
- *
- * This function is called whenever you drop a table which means that all the
- * data in that table is now not accessible (at least not on Cassandra.)
- *
- * Any future function call that require the parent will fail with an
- * exception.
- *
- * Further, this call releases its rows (and consequently cells) also
- * calling unparent() on them.
- */
-void QCassandraTable::unparent()
-{
-    f_context.reset();
-    clearCache();
+    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 1 ), statement_deleter() );
+    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(),    row_key.size()    );
+    future_pointer_t result_future( cass_session_execute( f_context->parentCassandra().session().get(), query_stmt.get() ) , future_deleter()    );
+    throw_if_error( result_future, QString("Cannot select from table '%1'!").arg(table_name) );
 }
 
 } // namespace QtCassandra

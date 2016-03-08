@@ -88,7 +88,6 @@ public:
 private:
     QCassandraCell(std::shared_ptr<QCassandraRow> row, const QByteArray& column_key);
     void assignValue(const QCassandraValue& value);
-    void unparent();
 
     friend class QCassandraRow;
     friend class QCassandraTable;

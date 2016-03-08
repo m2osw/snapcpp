@@ -562,19 +562,6 @@ void QCassandraCell::clearCache()
     f_value.setNullValue();
 }
 
-/** \brief Internal function used to remove the parent row.
- *
- * This function is used to mark the cell as "lost". It is used
- * whenever the user calls QCassandraRow::dropCell(). It is
- * expected that after such a call the cell will not be used
- * again.
- */
-void QCassandraCell::unparent()
-{
-    f_row.reset();
-    clearCache();
-}
-
 /** \brief Retrieve the current consistency level of this value.
  *
  * This function returns the consistency level of this value. By default

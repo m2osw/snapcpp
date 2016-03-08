@@ -33,8 +33,7 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef QCASSANDRA_TABLE_H
-#define QCASSANDRA_TABLE_H
+#pragma once
 
 #include "QCassandraColumnDefinition.h"
 #include "QCassandraRowPredicate.h"
@@ -79,7 +78,7 @@ public:
     // handling
     void create();
     //void update();
-    //void truncate();
+    void truncate();
     void clearCache();
 
     // row handling
@@ -103,17 +102,18 @@ private:
 
     int32_t QCassandraTable::rowCount( const QByteArray& row_key ) const
 
-    void setFromCassandra();
-    void parseTableDefinition(const void *data);
-    void prepareTableDefinition(void *data) const;
-    void insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
-    bool getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
-    void addValue(const QByteArray& row_key, const QByteArray& column_key, int64_t value);
-    void assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
-    int32_t getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
-    uint32_t getColumnSlice(const QByteArray& row_key, QCassandraColumnPredicate& column_predicate);
-    void remove(const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level);
-    void unparent();
+    void        setFromCassandra();
+    void        parseTableDefinition(const void *data);
+    void        prepareTableDefinition(void *data) const;
+    void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
+    bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
+    void        addValue(const QByteArray& row_key, const QByteArray& column_key, int64_t value);
+    void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
+    int32_t     getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
+    uint32_t    getColumnSlice(const QByteArray& row_key, QCassandraColumnPredicate& column_predicate);
+    void        remove(const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level);
+
+    int32_t getCurrentCount();
 
     friend class QCassandraPrivate;
     friend class QCassandraContext;
@@ -133,13 +133,16 @@ private:
     QCassandraContext::pointer_t                f_context;
     QCassandraColumnDefinitions                 f_column_definitions;
     QCassandraRows                              f_rows;
+    QCassandraRowPredicate*                     f_currentPredicate;
+
+    statement_pointer_t                         f_queryStmt;
+    future_pointer_t                            f_sessionExecute;
+    result_pointer_t                            f_currentQueryResult;
 };
+
 // list of table definitions mapped against their name (see tableName())
 typedef QMap<QString, QCassandraTable::pointer_t > QCassandraTables;
 
-
-
 } // namespace QtCassandra
-#endif
-//#ifndef QCASSANDRA_TABLE_H
+
 // vim: ts=4 sw=4 et
