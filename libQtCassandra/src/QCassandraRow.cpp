@@ -38,8 +38,6 @@
 
 #include "QtCassandra/QCassandraRow.h"
 #include "QtCassandra/QCassandraTable.h"
-#include "QCassandraPrivate.h"
-#include "thrift-gencpp-cassandra/cassandra_types.h"
 #include <stdexcept>
 
 namespace QtCassandra

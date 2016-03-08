@@ -125,17 +125,6 @@ namespace QtCassandra
  * being raised.
  */
 
-/** \var QCassandraTable::f_column_definitions
- * \brief Set of column definitions.
- *
- * Column definitions are used to define a type for the data saved in that
- * row. These definitions are not currently used by the libQtCassandra
- * itself. It is used by the Cassandra server however.
- *
- * Column definitions are generally required on columns you want to use
- * to index your data.
- */
-
 /** \var QCassandraTable::f_rows
  * \brief Set of rows.
  *
@@ -169,7 +158,6 @@ namespace QtCassandra
 QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QString& table_name)
     //f_from_cassandra(false) -- auto-init
     : f_context(context)
-    //f_column_definitions() -- auto-init
     //f_rows() -- auto-init
     , f_currentPredicate(0)
 {

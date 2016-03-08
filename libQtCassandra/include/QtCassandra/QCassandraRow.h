@@ -35,7 +35,8 @@
  */
 #pragma once
 
-#include "QCassandraCell.h"
+#include "QtCassandra/QCassandraCell.h"
+#include "QtCassandra/QCassandraColumnPredicate.h"
 
 #include <memory>
 

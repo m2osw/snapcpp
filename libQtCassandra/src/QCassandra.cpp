@@ -42,6 +42,8 @@
 
 #include "QtCassandra/QCassandra.h"
 
+#include <QtCore>
+
 #include <cassandra.h>
 
 #include <sstream>
@@ -1016,16 +1018,6 @@ namespace QtCassandra
  * \sa setSchemaSynchronizationTimeout()
  */
 QCassandra::QCassandra()
-    : f_private(new QCassandraPrivate(this)),
-      //f_current_context(nullptr) -- auto-init
-      //f_contexts_read(false) -- auto-init
-      //f_contexts() -- auto-init
-      //f_cluster_name("") -- auto-init
-      //f_protocol_version("") -- auto-init
-      //f_partitioner("") -- auto-init
-      //f_snitch("") -- auto-init
-      f_default_consistency_level(CONSISTENCY_LEVEL_ONE), // default is CONSISTENCY_LEVEL_DEFAULT
-      f_schema_synchronization_timeout(SCHEMA_SYNCHRONIZATION_DEFAULT)
 {
     // we are passing this to the private object that we control
     // so we make make sure it is used wisely; at this time it is
@@ -1061,12 +1053,12 @@ QCassandra::~QCassandra()
 
 /// \brief Execute a full query string.
 //
-QCassandra::future_pointer_t QCassandra::executeQuery( const QString& query ) const
+future_pointer_t QCassandra::executeQuery( const QString& query ) const
 {
-    statement_pointer_t statement( cass_statement_new(query.toUtf8().data(),0), statement_deleter() );
-    future_pointer_t    future   ( cass_session_execute(f_session.get(),statement), future_deleter() );
+    statement_pointer_t statement( cass_statement_new(query.toUtf8().data(),0),           statementDeleter() );
+    future_pointer_t    future   ( cass_session_execute(f_session.get(),statement.get()), futureDeleter()    );
 
-    cass_future_wait(future);
+    cass_future_wait(future.get());
 
     throwIfError( future, QString("Query [%1] failed").arg(query) );
 
@@ -1080,13 +1072,14 @@ QCassandra::future_pointer_t QCassandra::executeQuery( const QString& query ) co
 void QCassandra::executeQuery( const QString& query, QStringList& values ) const
 {
     future_pointer_t    future( executeQuery(query) );
+    result_pointer_t	result( cass_future_get_result(future.get()), resultDeleter() );
 
     values.clear();
-    CassIterator* rows = cass_iterator_from_result( future );
+    CassIterator* rows = cass_iterator_from_result( result.get() );
     while( cass_iterator_next( rows ) )
     {
         const CassRow*   row    = cass_iterator_get_row( rows );
-        const CassValue* value  = cass_row_get_column_by_name( row, column.toUtf8().data() );
+        const CassValue* value  = cass_row_get_column( row, 0 );
 
         const char *    byte_value = 0;
         size_t          value_len  = 0;
@@ -1190,33 +1183,36 @@ bool QCassandra::connect(const QStringList& host_list, const int port )
     std::stringstream contact_points;
     for( QString host : host_list )
     {
-        if( !contact_points.empty() )
+        if( contact_points.str() != "" )
         {
             contact_points << ",";
         }
-        contact_points << host;
+        contact_points << host.toUtf8().data();
     }
 
-    f_cluster.reset( cass_cluster_new(), cluster_deleter() )
-    cass_cluster_set_contact_points( f_cluster, contact_points.str().c_str() );
-    cass_cluster_set_contact_points( f_cluster, port );
+    f_cluster.reset( cass_cluster_new(), clusterDeleter() );
+    cass_cluster_set_contact_points( f_cluster.get(), contact_points.str().c_str() );
+
+    std::stringstream port_str;
+    port_str << port;
+    cass_cluster_set_contact_points( f_cluster.get(), port_str.str().c_str() );
     //
-    f_session.reset( cass_session_new(), session_deleter() )
-    f_connection.reset( cass_session_connect(f_session, f_cluster), future_deleter() );
+    f_session.reset( cass_session_new(), sessionDeleter() );
+    f_connection.reset( cass_session_connect(f_session.get(), f_cluster.get()), futureDeleter() );
 
     /* This operation will block until the result is ready */
-    CassError rc = cass_future_error_code(f_connection);
+    CassError rc = cass_future_error_code(f_connection.get());
     if( rc != CASS_OK )
     {
+        const char* message;
+        size_t message_length;
+        cass_future_error_message( f_connection.get(), &message, &message_length );
+        std::stringstream msg;
+        msg << "Cannot connect to cassandra server! Reason=[" << std::string(message) << "]";
+
         f_connection.reset();
         f_session.reset();
         f_cluster.reset();
-
-        const char* message;
-        size_t message_length;
-        cass_future_error_message( f_connection, &message, &message_length );
-        std::stringstream msg;
-        msg << "Cannot connect to cassandra server! Reason=[" << std::string(message) << "]";
         throw std::runtime_error( msg.str().c_str() );
     }
 
@@ -1246,13 +1242,10 @@ void QCassandra::disconnect()
 {
     f_connection.reset();
     //
-    if( f_session && f_cluster )
+    if( f_session )
     {
-        // Does this need to be done? Or is it sufficient to just delete the object?
-        //
-        CassFuture* result = cass_session_close( f_session, f_cluster );
-        cass_future_wait( result );
-        cass_future_free( result );
+        future_pointer_t result( cass_session_close( f_session.get() ), futureDeleter() );
+        cass_future_wait( result.get() );
     }
     //
     f_session.reset();
@@ -1260,7 +1253,6 @@ void QCassandra::disconnect()
 
     f_current_context.reset();
     f_contexts.clear();
-    f_contexts_read    = false;
     f_cluster_name     = "";
     f_protocol_version = "";
     f_partitioner      = "";
@@ -1437,7 +1429,7 @@ const QString& QCassandra::partitioner() const
  *
  * \sa readRows()
  */
-const QString& QCassandra::snitch() const
+QString QCassandra::snitch() const
 {
     return "TODO!";
 }
@@ -1707,9 +1699,6 @@ void QCassandra::dropContext(const QString& context_name)
 
     // first do the context drop in Cassandra
     c->drop();
-
-    // now unparent so the memory is returned to the user
-    c->unparent();
 
     // forget about this context in the QCassandra object
     f_contexts.remove(context_name);

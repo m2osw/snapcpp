@@ -34,11 +34,16 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "QtCassandra/QCassandraContext.h"
+#include "QtCassandra/QCassandra.h"
+
 #include <stdexcept>
 #include <unistd.h>
 
-#include <QRegExp>
-#include <QDebug>
+#include <sstream>
+
+#include <QtCore>
+//#include <QDebug>
 
 
 namespace QtCassandra
@@ -275,11 +280,11 @@ namespace QtCassandra
  * \sa QCassandra::synchronizeSchemaVersions()
  */
 QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
-    : f_cassandra(cassandra),
+    : f_cassandra(cassandra)
       //f_options() -- auto-init
       //f_tables() -- auto-init
       //f_host_name() -- auto-init
-      f_lock_table_name("libQtCassandraLockTable")
+    , f_lock_table_name("libQtCassandraLockTable")
       //f_lock_accessed(false) -- auto-init
       //f_lock_timeout(5) -- auto-init
       //f_lock_ttl(60) -- auto-init
@@ -955,7 +960,7 @@ QString QCassandraContext::generateReplicationStanza() const
     else
     {
         std::stringstream ss;
-        ss << "This strategy class, '" << f_strategyClass << "', is not currently supported!";
+        ss << "This strategy class, '" << f_strategyClass.toUtf8().data() << "', is not currently supported!";
         throw std::runtime_error( ss.str().c_str() );
     }
 
@@ -1145,7 +1150,6 @@ void QCassandraContext::dropTable(const QString& table_name)
             );
 
     // disconnect all the cached data from this table
-    t->unparent();
     f_tables.remove(table_name);
 }
 
@@ -1490,27 +1494,7 @@ void QCassandraContext::synchronizeSchemaVersions()
  */
 void QCassandraContext::clearCache()
 {
-    // lose all the tables
-    for( auto table : f_tables )
-    {
-        table->unparent();
-    }
-    //
     f_tables.clear();
-}
-
-/** \brief Unparent the context.
- *
- * This function is called internally to mark the context as unparented.
- * This means you cannot use it anymore. This happens whenever you
- * call the dropContext() funtion on a QCassandra object.
- *
- * \sa QCassandra::dropContext()
- */
-void QCassandraContext::unparent()
-{
-    clearCache();
-    f_cassandra.reset();
 }
 
 /** \brief The hosts are listed in the locks table under this name.
@@ -1553,6 +1537,7 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
 
     // TODO: determine what the best parameters are for a session table
     QCassandraTable::pointer_t lock_table(table(table_name));
+#if 0
     lock_table->setColumnType("Standard");
     lock_table->setKeyValidationClass("BytesType");
     lock_table->setDefaultValidationClass("BytesType");
@@ -1563,6 +1548,11 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
     lock_table->setMinCompactionThreshold(4);
     lock_table->setMaxCompactionThreshold(22);
     lock_table->setReplicateOnWrite(1);
+#endif
+    lock_table->option( "general", "comment" )          = "Lock Table";
+    lock_table->option( "general", "gc_grace_seconds" ) = "3600";
+    lock_table->option( "compaction", "min_threshold" ) = "4";
+    lock_table->option( "compaction", "max_threshold" ) = "22";
     lock_table->create();
 
     // we create the table when needed and then use it ASAP so we need

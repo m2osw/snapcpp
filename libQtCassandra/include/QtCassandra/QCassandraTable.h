@@ -35,10 +35,10 @@
  */
 #pragma once
 
-#include "QCassandraColumnDefinition.h"
-#include "QCassandraRowPredicate.h"
-#include "QCassandraRow.h"
-#include <QPointer>
+#include "QtCassandra/QCassandraRowPredicate.h"
+#include "QtCassandra/QCassandraRow.h"
+#include "QtCassandra/QCassandraTools.h"
+
 // GNU does not officially offer cstdint yet
 #include <stdint.h>
 #include <memory>
@@ -46,7 +46,6 @@
 namespace QtCassandra
 {
 
-class QCassandraTablePrivate;
 class QCassandraContext;
 
 
@@ -100,7 +99,7 @@ public:
 private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 
-    int32_t QCassandraTable::rowCount( const QByteArray& row_key ) const
+    int32_t rowCount( const QByteArray& row_key ) const;
 
     void        setFromCassandra();
     void        parseTableDefinition(const void *data);
@@ -115,9 +114,7 @@ private:
 
     int32_t getCurrentCount();
 
-    friend class QCassandraPrivate;
     friend class QCassandraContext;
-    friend class QCassandraTablePrivate;
     friend class QCassandraRow;
 
     typedef QMap<QString,QString>       option_map_t;
@@ -127,11 +124,7 @@ private:
     QString                                     f_comment;
     type_option_map_t                           f_options;
     controlled_vars::flbool_t                   f_from_cassandra;
-    // f_context is a parent that has a strong shared pointer over us so it
-    // cannot disappear before we do, thus only a bare pointer is enough here
-    // (there isn't a need to use a QWeakPointer or QPointer either)
-    QCassandraContext::pointer_t                f_context;
-    QCassandraColumnDefinitions                 f_column_definitions;
+    std::shared_ptr<QCassandraContext>          f_context;
     QCassandraRows                              f_rows;
     QCassandraRowPredicate*                     f_currentPredicate;
 

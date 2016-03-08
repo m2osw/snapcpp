@@ -213,11 +213,24 @@ namespace QtCassandra
  */
 QCassandraRowPredicate::QCassandraRowPredicate()
     : f_count(100)
-    // f_statement          // auto-init
-    // f_executeFuture      // auto-init
-    // f_pageResult         // auto-init
 {
 }
+
+
+// All of these are stubs:
+//
+QString			  QCassandraRowPredicate::startRowName() const  { return QString(); }
+void 			  QCassandraRowPredicate::setStartRowName(const QString& /*row_name*/) {}
+const QByteArray& QCassandraRowPredicate::startRowKey() const   { return QString(); }
+void 		      QCassandraRowPredicate::setStartRowKey(const QByteArray& /*row_key*/) {}
+
+QString			  QCassandraRowPredicate::endRowName() const { return QString(); }
+void			  QCassandraRowPredicate::setEndRowName(const QString& /*row_name*/) {}
+const QByteArray& QCassandraRowPredicate::endRowKey() const { return QString(); }
+void			  QCassandraRowPredicate::setEndRowKey(const QByteArray& /*row_key*/) {}
+
+QCassandraColumnPredicate::pointer_t columnPredicate() const { return f_column_predicate; }
+void                                 setColumnPredicate(QCassandraColumnPredicate::pointer_t column_predicate) { f_column_predicate = column_predicate; }
 
 
 

@@ -38,6 +38,8 @@
 #include "QCassandraTable.h"
 #include "QCassandraColumnPredicate.h"
 
+#include <controlled_vars/controlled_vars_auto_init.h>
+
 #include <memory>
 
 namespace QtCassandra
@@ -45,7 +47,6 @@ namespace QtCassandra
 
 class QCassandra;
 
-// Cassandra KsDef object
 class QCassandraContext
     : public QObject
     , public std::enable_shared_from_this<QCassandraContext>
@@ -140,8 +141,6 @@ private:
     uint32_t getRowSlices(QCassandraTable& table, QCassandraRowPredicate& row_predicate);
     void synchronizeSchemaVersions();
 #endif
-    void unparent();
-
     friend class QCassandra;
     friend class QCassandraTable;
     friend class QCassandraLock;
@@ -159,7 +158,7 @@ private:
     QString                                     f_host_name;
     QString                                     f_lock_table_name;
     QString                                     f_strategyClass;
-    controlled_vars::zbool_t                    f_durableWrites;                                        
+    controlled_vars::auto_init<bool>            f_durableWrites;
     mutable controlled_vars::flbool_t           f_lock_accessed;
     lock_timeout_t                              f_lock_timeout;
     lock_ttl_t                                  f_lock_ttl;

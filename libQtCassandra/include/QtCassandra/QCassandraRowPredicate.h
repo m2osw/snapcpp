@@ -36,8 +36,7 @@
  */
 #pragma once
 
-#include <controlled_vars/controlled_vars_limited_auto_init.h>
-#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+#include "QtCassandra/QCassandraColumnPredicate.h"
 
 #include <memory>
 
@@ -49,12 +48,33 @@ class QCassandraRowPredicate
 public:
     QCassandraRowPredicate();
 
+    QString			  startRowName() const;
+    void 			  setStartRowName(const QString& row_name);
+    const QByteArray& startRowKey() const;
+    void 		      setStartRowKey(const QByteArray& row_key);
+
+    QString			  endRowName() const;
+    void			  setEndRowName(const QString& row_name);
+    const QByteArray& endRowKey() const;
+    void			  setEndRowKey(const QByteArray& row_key);
+
+    //QRegExp rowNameMatch() const;
+    //void setRowNameMatch(QRegExp const& re);
+
     int32_t count() const;
-    void setCount( const int32_t count = 100 );
+    void    setCount( const int32_t count = 100 );
+
+    //bool wrap() const;
+    //void setWrap(bool wrap = true);
+
+    QCassandraColumnPredicate::pointer_t columnPredicate() const;
+    void                                 setColumnPredicate(QCassandraColumnPredicate::pointer_t column_predicate);
 
 private:
     typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_count_t;
     cassandra_count_t                       f_count;
+
+    QCassandraColumnPredicate::pointer_t    f_column_predicate;
 };
 
 } // namespace QtCassandra

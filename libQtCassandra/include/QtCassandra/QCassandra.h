@@ -86,7 +86,7 @@ public:
     const QString& protocolVersion() const;
     //const QCassandraClusterInformation& clusterInformation() const;
     const QString& partitioner() const;
-    //const QString& snitch() const;
+    QString snitch() const;
 
     // context functions (the database [Cassandra keyspace])
     QCassandraContext::pointer_t context(const QString& context_name);

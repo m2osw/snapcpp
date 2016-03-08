@@ -38,10 +38,7 @@
 
 #include <memory>
 
-class CassCluster;
-class CassSession;
-class CassFuture;
-class CassStatement;
+#include <cassandra.h>
 
 namespace QtCassandra
 {
@@ -65,7 +62,7 @@ namespace QtCassandra
     struct resultDeleter
     {
         void operator()(const CassResult* p) const;
-    }
+    };
 
     struct sessionDeleter
     { 
