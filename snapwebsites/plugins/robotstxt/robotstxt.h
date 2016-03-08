@@ -76,7 +76,7 @@ public:
 
     // plugins::plugin
     static robotstxt *  instance();
-    virtual QString     settings_path() const;
+    //virtual QString     settings_path() const;
     virtual QString     icon() const;
     virtual QString     description() const;
     virtual QString     dependencies() const;
