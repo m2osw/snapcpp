@@ -36,6 +36,9 @@
  */
 #pragma once
 
+#include <controlled_vars/controlled_vars_limited_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+
 #include <memory>
 
 namespace QtCassandra
@@ -50,6 +53,7 @@ public:
     void setCount( const int32_t count = 100 );
 
 private:
+    typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_count_t;
     cassandra_count_t                       f_count;
 };
 

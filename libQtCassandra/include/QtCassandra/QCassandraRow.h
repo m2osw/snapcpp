@@ -33,12 +33,10 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef QCASSANDRA_ROW_H
-#define QCASSANDRA_ROW_H
+#pragma once
 
 #include "QCassandraCell.h"
-#include "QCassandraColumnPredicate.h"
-#include <QUuid>
+
 #include <memory>
 
 namespace QtCassandra
@@ -97,9 +95,9 @@ private:
     // f_table is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
-    QCassandraTable::pointer_t  f_table;
-    QByteArray                  f_key;
-    QCassandraCells             f_cells;
+    std::shared_ptr<QCassandraTable>  f_table;
+    QByteArray                  	  f_key;
+    QCassandraCells                   f_cells;
 };
 
 // array of rows
@@ -108,6 +106,5 @@ typedef QMap<QByteArray, QCassandraRow::pointer_t > QCassandraRows;
 
 
 } // namespace QtCassandra
-#endif
-//#ifndef QCASSANDRA_ROW_H
+
 // vim: ts=4 sw=4 et

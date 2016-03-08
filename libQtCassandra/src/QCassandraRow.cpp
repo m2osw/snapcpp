@@ -200,14 +200,9 @@ const QByteArray& QCassandraRow::rowKey() const
  *
  * \sa cells()
  */
-int QCassandraRow::cellCount(const QCassandraColumnPredicate& column_predicate)
+int QCassandraRow::cellCount(const QCassandraColumnPredicate& /*column_predicate*/)
 {
-    auto table( f_table.lock() );
-    if(!table)
-    {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
-    return table->getCellCount(f_key, column_predicate);
+    return static_cast<int>(f_cells.size());
 }
 
 /** \brief Read the cells as defined by a default column predicate.
@@ -242,13 +237,7 @@ int QCassandraRow::cellCount(const QCassandraColumnPredicate& column_predicate)
  */
 uint32_t QCassandraRow::readCells()
 {
-    auto table( f_table.lock() );
-    if(!table)
-    {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
-    QCassandraColumnPredicate column_predicate;
-    return table->getColumnSlice(f_key, column_predicate);
+    return f_cells.size();
 }
 
 /** \brief Read the cells as defined by the predicate.
@@ -276,12 +265,7 @@ uint32_t QCassandraRow::readCells()
  */
 uint32_t QCassandraRow::readCells(QCassandraColumnPredicate& column_predicate)
 {
-    auto table( f_table.lock() );
-    if(!table)
-    {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
-    return table->getColumnSlice(f_key, column_predicate);
+    return f_cells.size();
 }
 
 /** \brief Retrieve a cell from the row.
