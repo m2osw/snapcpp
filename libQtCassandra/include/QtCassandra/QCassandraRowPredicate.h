@@ -48,15 +48,15 @@ class QCassandraRowPredicate
 public:
     QCassandraRowPredicate();
 
-    QString			  startRowName() const;
-    void 			  setStartRowName(const QString& row_name);
-    const QByteArray& startRowKey() const;
-    void 		      setStartRowKey(const QByteArray& row_key);
+    QString	   startRowName() const;
+    void 	   setStartRowName(const QString& row_name);
+    QByteArray startRowKey() const;
+    void 	   setStartRowKey(const QByteArray& row_key);
 
-    QString			  endRowName() const;
-    void			  setEndRowName(const QString& row_name);
-    const QByteArray& endRowKey() const;
-    void			  setEndRowKey(const QByteArray& row_key);
+    QString	   endRowName() const;
+    void	   setEndRowName(const QString& row_name);
+    QByteArray endRowKey() const;
+    void	   setEndRowKey(const QByteArray& row_key);
 
     //QRegExp rowNameMatch() const;
     //void setRowNameMatch(QRegExp const& re);

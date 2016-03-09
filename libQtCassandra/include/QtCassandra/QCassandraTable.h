@@ -70,9 +70,9 @@ public:
     //
     // See https://cassandra.apache.org/doc/cql3/CQL.html#createTableStmt
     //
-    const QString&  option      ( const QString& option_type, const QString& option_name) const;
-    QString&        option      ( const QString& option_type, const QString& option_name);
-    void            unsetOption ( const QString& option_type, const QString& option_name);
+    QString   option      ( const QString& option_type, const QString& option_name) const;
+    QString&  option      ( const QString& option_type, const QString& option_name);
+    void      unsetOption ( const QString& option_type, const QString& option_name);
 
     // handling
     void create();
@@ -109,8 +109,8 @@ private:
     void        addValue(const QByteArray& row_key, const QByteArray& column_key, int64_t value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     int32_t     getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
-    uint32_t    getColumnSlice(const QByteArray& row_key, QCassandraColumnPredicate& column_predicate);
-    void        remove(const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level);
+    void 		remove( const QByteArray& row_key, const QByteArray& column_key );
+    void 		remove( const QByteArray& row_key );
 
     int32_t getCurrentCount();
 
@@ -120,11 +120,10 @@ private:
     typedef QMap<QString,QString>       option_map_t;
     typedef QMap<QString,option_map_t>  type_option_map_t;
 
-    QString                                     f_tableName;
-    QString                                     f_comment;
-    type_option_map_t                           f_options;
-    controlled_vars::flbool_t                   f_from_cassandra;
     std::shared_ptr<QCassandraContext>          f_context;
+    QString                                     f_tableName;
+    type_option_map_t                           f_options;
+    //controlled_vars::flbool_t                   f_from_cassandra;
     QCassandraRows                              f_rows;
     QCassandraRowPredicate*                     f_currentPredicate;
 

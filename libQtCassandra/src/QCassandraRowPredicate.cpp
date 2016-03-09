@@ -219,18 +219,18 @@ QCassandraRowPredicate::QCassandraRowPredicate()
 
 // All of these are stubs:
 //
-QString			  QCassandraRowPredicate::startRowName() const  { return QString(); }
-void 			  QCassandraRowPredicate::setStartRowName(const QString& /*row_name*/) {}
-const QByteArray& QCassandraRowPredicate::startRowKey() const   { return QString(); }
-void 		      QCassandraRowPredicate::setStartRowKey(const QByteArray& /*row_key*/) {}
+QString	   QCassandraRowPredicate::startRowName() const  { return QString(); }
+void 	   QCassandraRowPredicate::setStartRowName(const QString& /*row_name*/) {}
+QByteArray QCassandraRowPredicate::startRowKey() const   { return QByteArray(); }
+void       QCassandraRowPredicate::setStartRowKey(const QByteArray& /*row_key*/) {}
 
-QString			  QCassandraRowPredicate::endRowName() const { return QString(); }
-void			  QCassandraRowPredicate::setEndRowName(const QString& /*row_name*/) {}
-const QByteArray& QCassandraRowPredicate::endRowKey() const { return QString(); }
-void			  QCassandraRowPredicate::setEndRowKey(const QByteArray& /*row_key*/) {}
+QString	   QCassandraRowPredicate::endRowName() const { return QString(); }
+void	   QCassandraRowPredicate::setEndRowName(const QString& /*row_name*/) {}
+QByteArray QCassandraRowPredicate::endRowKey() const { return QByteArray(); }
+void	   QCassandraRowPredicate::setEndRowKey(const QByteArray& /*row_key*/) {}
 
-QCassandraColumnPredicate::pointer_t columnPredicate() const { return f_column_predicate; }
-void                                 setColumnPredicate(QCassandraColumnPredicate::pointer_t column_predicate) { f_column_predicate = column_predicate; }
+QCassandraColumnPredicate::pointer_t QCassandraRowPredicate::columnPredicate() const { return f_column_predicate; }
+void                                 QCassandraRowPredicate::setColumnPredicate(QCassandraColumnPredicate::pointer_t column_predicate) { f_column_predicate = column_predicate; }
 
 
 
