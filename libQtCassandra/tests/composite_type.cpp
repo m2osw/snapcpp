@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_ct"));
     try {
         context->drop();
-        cassandra->synchronizeSchemaVersions();
+        //cassandra->synchronizeSchemaVersions();
     }
     catch(...) {
         // ignore errors, this happens when the context doesn't exist yet
@@ -80,7 +80,9 @@ int main(int argc, char *argv[])
     context->setReplicationFactor(1); // by default this is undefined
 
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
+    table->option("general", "comment" ) = "Our test table.";
     //table->setComment("Our test table.");
+#if 0
     table->setColumnType("Standard"); // Standard or Super
     table->setKeyValidationClass("BytesType");
     table->setDefaultValidationClass("BytesType");
@@ -94,19 +96,27 @@ int main(int argc, char *argv[])
     table->setMinCompactionThreshold(4);
     table->setMaxCompactionThreshold(22);
     table->setReplicateOnWrite(1);
+#endif
+    table->option("general","gc_grace_seconds") = 3600;
+    table->option("compaction","min_threshold") = 4;
+    table->option("compaction","max_threshold") = 22;
 
-    try {
+    try
+    {
         context->create();
-        cassandra->synchronizeSchemaVersions();
+        table->create();
+        //cassandra->synchronizeSchemaVersions();
         qDebug() << "Context and its table were created!";
     }
-    catch(org::apache::cassandra::InvalidRequestException& e) {
+    catch(org::apache::cassandra::InvalidRequestException& e)
+    {
         qDebug() << "Exception is [" << e.why.c_str() << "]";
         exit(1);
     }
 
     //try {  // by default the rest should not generate an exception
     // now that it's created, we can access it with the [] operator
+#if 1
     QtCassandra::QCassandraValue value1(-1005);
     QtCassandra::QCassandraValue a1(QString("size"));
     QtCassandra::QCassandraValue a2(static_cast<int32_t>(123));
@@ -148,6 +158,7 @@ int main(int argc, char *argv[])
     cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"].clearCache();
     QtCassandra::QCassandraValue v2_2 = cass["qt_cassandra_test_ct"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].compositeCell(names2);
     qDebug() << "Read 5678 value again as:" << v2_2.int32Value();
+#endif
 
     context->drop();
     cassandra->synchronizeSchemaVersions();

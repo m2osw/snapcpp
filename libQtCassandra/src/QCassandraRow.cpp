@@ -124,10 +124,10 @@ namespace QtCassandra
  * \param[in] table  The parent table of this row.
  * \param[in] row_key  The key of this row.
  */
-QCassandraRow::QCassandraRow(QCassandraTable::pointer_t table, const QByteArray& row_key)
-    : f_table(table),
-      f_key(row_key)
-      //f_cells() -- auto-init
+QCassandraRow::QCassandraRow(std::shared_ptr<QCassandraTable> table, const QByteArray& row_key)
+    : f_table(table)
+    , f_key(row_key)
+    //f_cells() -- auto-init
 {
     if(f_key.size() == 0) {
         throw std::runtime_error("row key cannot be empty");
@@ -283,6 +283,10 @@ uint32_t QCassandraRow::readCells(QCassandraColumnPredicate& /*column_predicate*
  *
  * \return A shared pointer to the cell.
  */
+QCassandraCell::pointer_t QCassandraRow::cell(const char* column_name)
+{
+    return cell(QString(column_name));
+}
 QCassandraCell::pointer_t QCassandraRow::cell(const QString& column_name)
 {
     return cell(column_name.toUtf8());
@@ -712,6 +716,7 @@ bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& valu
     return f_table->getValue(f_key, column_key, value);
 }
 
+#if 0
 /** \brief Add a value to a Cassandra counter.
  *
  * This function calls the table addValue() function to add the specified
@@ -727,6 +732,7 @@ void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
 {
     return f_table->addValue(f_key, column_key, value);
 }
+#endif
 
 } // namespace QtCassandra
 

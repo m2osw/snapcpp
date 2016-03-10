@@ -83,16 +83,21 @@ public:
     // row handling
     uint32_t readRows(QCassandraRowPredicate& row_predicate);
 
+    QCassandraRow::pointer_t    row(const char*       row_name);
     QCassandraRow::pointer_t    row(const QString&    row_name);
     QCassandraRow::pointer_t    row(const QByteArray& row_name);
-    const QCassandraRows&       rows() const;
+    const QCassandraRows&       rows();
 
-    QCassandraRow::pointer_t    findRow(const QString& row_name) const;
-    bool                        exists(const QString& row_name) const;
+    QCassandraRow::pointer_t    findRow(const QString& row_name);
+    QCassandraRow::pointer_t    findRow(const QByteArray& row_name);
+    bool                        exists(const QString& row_name);
+    bool                        exists(const QByteArray& row_name);
     QCassandraRow&              operator[] (const QString& row_name);
-    const QCassandraRow&        operator[] (const QString& row_name) const;
+    QCassandraRow&              operator[] (const QByteArray& row_name);
+    //const QCassandraRow&        operator[] (const QString& row_name) const;
 
     void dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_ALL);
+    void dropRow(const QByteArray& row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_ALL);
 
     std::shared_ptr<QCassandraContext> parentContext() const;
 
@@ -101,12 +106,12 @@ private:
 
     int32_t rowCount( const QByteArray& row_key ) const;
 
-    void        setFromCassandra();
+    //void        setFromCassandra();
     void        parseTableDefinition(const void *data);
     void        prepareTableDefinition(void *data) const;
     void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
-    void        addValue(const QByteArray& row_key, const QByteArray& column_key, int64_t value);
+    //void        addValue(const QByteArray& row_key, const QByteArray& column_key, int64_t value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     int32_t     getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
     void 		remove( const QByteArray& row_key, const QByteArray& column_key );

@@ -1035,6 +1035,7 @@ void QCassandraContext::create()
                                  .arg(f_durableWrites? "true": "false")
                              );
 
+#if 0
     // TODO: is this still needed?!
     // If the user defined tables, we must mark them as loaded from Cassandra
     // which in this case would not otherwise happen!
@@ -1045,6 +1046,7 @@ void QCassandraContext::create()
     {
         (*t)->setFromCassandra();
     }
+#endif
 
     // TBD: Should we then call describe_keyspace() to make sure we've
     //      got the right data (defaults) in this object, tables, and
@@ -1659,7 +1661,7 @@ void QCassandraContext::removeLockHost(const QString& host_name)
     QCassandraTable::pointer_t locks_table(table(f_lock_table_name));
     QCassandraRow::pointer_t row(locks_table->row(lockHostsKey()));
     QCassandraCell::pointer_t c(row->cell(host_name));
-    c->setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
+    //c->setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
     row->dropCell(host_name, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
 }
 

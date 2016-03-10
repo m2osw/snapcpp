@@ -34,7 +34,10 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "QCassandraTools.h"
+#include "QtCassandra/QCassandraTools.h"
+
+#include <QtCore>
+
 #include <cassandra.h>
 #include <sstream>
 
@@ -56,6 +59,11 @@ void futureDeleter::operator()(CassFuture* p) const
     cass_future_free(p);
 }
 
+void iteratorDeleter::operator()(CassIterator* p) const
+{
+    cass_iterator_free(p);
+}
+
 void statementDeleter::operator()(CassStatement* p) const
 {
     cass_statement_free(p);
@@ -66,13 +74,13 @@ void sessionDeleter::operator()(CassSession* p) const
     cass_session_free(p);
 }
 
-void throwIfError( future_pointer_t result_future, const QString& msg = "Cassandra error" )
+void throwIfError( future_pointer_t result_future, const QString& msg )
 {
     const CassError code( cass_future_error_code( result_future.get() ) );
     if( code != CASS_OK )
     {
         std::stringstream ss;
-        ss << msg << "! Cassandra error: code=" << static_cast<unsigned int>(code) << ", message={" << cass_error_desc(code) << "}, aborting operation!";
+        ss << msg.toUtf8().data() << "! Cassandra error: code=" << static_cast<unsigned int>(code) << ", message={" << cass_error_desc(code) << "}, aborting operation!";
         throw std::runtime_error( ss.str().c_str() );
     }
 }

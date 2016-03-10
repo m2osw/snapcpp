@@ -77,8 +77,8 @@ int main(int argc, char *argv[])
         {
             qDebug() << "    + Option" << o.key() << "=" << o.value();
         }
-        qDebug() << "    Replication Factor:" << (*c)->replicationFactor();
-        qDebug() << "    Durable Writes:" << (*c)->durableWrites();
+        //qDebug() << "    Replication Factor:" << (*c)->replicationFactor();
+        //qDebug() << "    Durable Writes:" << (*c)->durableWrites();
         // Test to make sure we get a NULL pointer when we try to retrieve an undefined table
         //QSharedPointer<QtCassandra::QCassandraTable> tbl = (*c)->table("random");
         //qDebug() << " --- tbl" << tbl.isNull();
@@ -86,7 +86,8 @@ int main(int argc, char *argv[])
         for(QtCassandra::QCassandraTables::const_iterator
                 t = tables.begin(); t != tables.end(); ++t)
         {
-            qDebug() << "    + Table" << (*t)->tableName() << "/" << (*t)->identifier() << " (From Context" << (*t)->contextName() << ")";
+            qDebug() << "    + Table" << (*t)->tableName() /*<< "/" << (*t)->identifier()*/ << " (From Context" << (*t)->contextName() << ")";
+#if 0
             QString comment = (*t)->comment();
             if(!comment.isEmpty()) {
                 qDebug() << "      Comment:" << comment;
@@ -146,6 +147,7 @@ int main(int argc, char *argv[])
                 qDebug() << "        Index Name" << (*col)->indexName();
 #pragma GCC pop
             }
+#endif
         }
     }
 }

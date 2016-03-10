@@ -207,12 +207,7 @@ const QCassandraValue& QCassandraCell::value() const
 {
     if(!f_cached)
     {
-        auto row( f_row.lock() );
-        if( !row )
-        {
-            throw std::runtime_error("this cell was dropped, it cannot be used anymore.");
-        }
-        row->getValue(f_key, const_cast<QCassandraValue&>(f_value));
+        f_row->getValue(f_key, const_cast<QCassandraValue&>(f_value));
         f_cached = true;
     }
 //printf("reading [%s]\n", f_key.data());
@@ -243,15 +238,10 @@ void QCassandraCell::setValue(const QCassandraValue& val)
 {
     if(!f_cached || f_value != val)
     {
-        auto row( f_row.lock() );
-        if( !row )
-        {
-            throw std::runtime_error("this cell was dropped, it cannot be used anymore.");
-        }
         // TODO: if the cell represents a counter, it should be resized
         //       to a 64 bit value to work in all places
         f_value = val;
-        row->insertValue(f_key, f_value);
+        f_row->insertValue(f_key, f_value);
     }
     f_cached = true;
 }
@@ -350,6 +340,7 @@ QCassandraCell::operator QCassandraValue () const
     return value();
 }
 
+#if 0
 /** \brief Add a value to a counter.
  *
  * This function is used to add a value to a counter.
@@ -538,6 +529,7 @@ QCassandraCell& QCassandraCell::operator -- (int)
     add(-1);
     return *this;
 }
+#endif
 
 /** \brief The value of a cell is automatically cached in memory.
  *
@@ -601,6 +593,7 @@ void QCassandraCell::setConsistencyLevel(consistency_level_t level)
     f_value.setConsistencyLevel(level);
 }
 
+#if 0
 /** \brief Retrieve the current timestamp of this cell value.
  *
  * This function returns the timestamp of the value variable member defined
@@ -630,6 +623,7 @@ void QCassandraCell::setTimestamp(int64_t val)
 {
     f_value.setTimestamp(val);
 }
+#endif
 
 
 /** \brief Get the pointer to the parent object.
@@ -638,7 +632,7 @@ void QCassandraCell::setTimestamp(int64_t val)
  */
 QCassandraRow::pointer_t QCassandraCell::parentRow() const
 {
-    return f_row.lock();
+    return f_row;
 }
 
 

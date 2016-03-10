@@ -63,6 +63,7 @@ public:
     uint32_t readCells();
     uint32_t readCells(QCassandraColumnPredicate& column_predicate);
 
+    QCassandraCell::pointer_t cell(const char* column_name);
     QCassandraCell::pointer_t cell(const QString& column_name);
     QCassandraCell::pointer_t cell(const QByteArray& column_key);
     const QCassandraCells& cells() const;
@@ -88,7 +89,7 @@ private:
 
     void insertValue(const QByteArray& column_key, const QCassandraValue& value);
     bool getValue(const QByteArray& column_key, QCassandraValue& value);
-    void addValue(const QByteArray& column_key, int64_t value);
+    //void addValue(const QByteArray& column_key, int64_t value);
 
     friend class QCassandraTable;
     friend class QCassandraCell;

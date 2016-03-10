@@ -35,8 +35,6 @@
  */
 
 #include "QtCassandra/QCassandraColumnPredicate.h"
-//#include "QtCassandra/QCassandraTable.h"
-#include "thrift-gencpp-cassandra/cassandra_types.h"
 #include <stdexcept>
 
 namespace QtCassandra
@@ -156,6 +154,7 @@ void QCassandraColumnPredicate::setConsistencyLevel(consistency_level_t consiste
     f_consistency_level = consistency_level;
 }
 
+#if 0
 /** \brief Transform to a Thrift predicate.
  *
  * This function is used to transform a QCassandraColumnPredicate object to
@@ -176,6 +175,7 @@ void QCassandraColumnPredicate::toPredicate(void *data) const
     // a limit and the reversed flag...
     slice_predicate->__isset.slice_range = true;
 }
+#endif
 
 
 
@@ -279,6 +279,7 @@ const QCassandraColumnNamePredicate::QCassandraColumnKeys& QCassandraColumnNameP
     return f_column_keys;
 }
 
+#if 0
 /** \brief Transform to a Thrift predicate.
  *
  * This function is used to transform a QCassandraColumnNamePredicate object to
@@ -306,6 +307,7 @@ void QCassandraColumnNamePredicate::toPredicate(void *data) const
     slice_predicate->__isset.column_names = true;
     slice_predicate->__isset.slice_range = false;
 }
+#endif
 
 
 
@@ -752,6 +754,8 @@ void QCassandraColumnRangePredicate::setIndex(bool new_index)
     f_index = new_index;
 }
 
+
+#if 0
 /** \brief Transform to a Thrift predicate.
  *
  * This function is used to transform a QCassandraColumnRangePredicate object to
@@ -784,6 +788,7 @@ void QCassandraColumnRangePredicate::toPredicate(void *data) const
     slice_predicate->__isset.slice_range = true;
     slice_predicate->__isset.column_names = false;
 }
+#endif
 
 /** \brief Set the last key found in a getColumnSlice() call.
  *

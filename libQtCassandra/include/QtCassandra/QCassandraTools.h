@@ -36,6 +36,8 @@
 
 #pragma once
 
+#include <QString>
+
 #include <memory>
 
 #include <cassandra.h>
@@ -57,6 +59,11 @@ namespace QtCassandra
     struct futureDeleter
     { 
         void operator()(CassFuture* p) const;
+    };
+
+    struct iteratorDeleter
+    {
+        void operator()(CassIterator* p) const;
     };
 
     struct resultDeleter

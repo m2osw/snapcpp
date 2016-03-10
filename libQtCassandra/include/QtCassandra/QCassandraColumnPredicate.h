@@ -48,8 +48,6 @@
 namespace QtCassandra
 {
 
-class QCassandraPrivate;
-
 // count must be positive and defaults to 100
 typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_count_t;
 
@@ -78,9 +76,7 @@ public:
     void setConsistencyLevel(consistency_level_t consistency_level);
 
 private:
-    virtual void toPredicate(void *data) const;
-
-    friend class QCassandraPrivate;
+    //virtual void toPredicate(void *data) const;
 
     consistency_level_t         f_consistency_level;
 };
@@ -100,7 +96,7 @@ public:
     const QCassandraColumnKeys& columnKeys() const;
 
 private:
-    virtual void toPredicate(void *data) const;
+    //virtual void toPredicate(void *data) const;
 
     QCassandraColumnKeys        f_column_keys;
 };
@@ -131,11 +127,9 @@ public:
     void setIndex(bool new_index = true);
 
 private:
-    virtual void toPredicate(void *data) const;
+    //virtual void toPredicate(void *data) const;
     void setLastKey(const QByteArray& column_key);
     bool excludeFirst() const;
-
-    friend class QCassandraPrivate;
 
     QByteArray                  f_start_column;
     QByteArray                  f_end_column;

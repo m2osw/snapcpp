@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
         QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
         try {
             context->drop();
-            cassandra->synchronizeSchemaVersions();
+            //cassandra->synchronizeSchemaVersions();
         }
         catch(...) {
             // ignore error, the context probably doesn't exist yet
@@ -183,6 +183,7 @@ int main(int argc, char *argv[])
         context->setReplicationFactor(replication_factor); // by default this is undefined
 
         QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
+#if 0
         //table->setComment("Our test table.");
         table->setColumnType("Standard"); // Standard or Super
         table->setKeyValidationClass("BytesType");
@@ -197,6 +198,13 @@ int main(int argc, char *argv[])
         table->setMinCompactionThreshold(4);
         table->setMaxCompactionThreshold(22);
         table->setReplicateOnWrite(1);
+#endif
+
+        table->option( "general", "comment" )          = "Test Table";
+        table->option( "general", "gc_grace_seconds" ) = "3600";
+        table->option( "compaction", "min_threshold" ) = "4";
+        table->option( "compaction", "max_threshold" ) = "22";
+        table->create();
 
         try {
             context->create();
@@ -206,7 +214,7 @@ int main(int argc, char *argv[])
             throw;
         }
         // attempt a synchronization so when we quit we can immediately use the context
-        cassandra->synchronizeSchemaVersions();
+        //cassandra->synchronizeSchemaVersions();
         exit(0);
     }
 
