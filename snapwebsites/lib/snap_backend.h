@@ -36,7 +36,7 @@ public:
 
     bool                        stop_received() const;
     void                        add_uri_for_processing(QString const & cron_action, int64_t date, QString const & website_uri);
-    void                        remove_processed_uri(QString const & action, QString const & website_uri);
+    void                        remove_processed_uri(QString const & action, QByteArray const & key, QString const & website_uri);
 
     void                        run_backend();
 

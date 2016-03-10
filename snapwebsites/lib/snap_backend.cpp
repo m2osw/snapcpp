@@ -703,7 +703,7 @@ void snap_backend::add_uri_for_processing(QString const & action, int64_t date, 
  * \param[in] action  The action where a website URI is to be removed.
  * \param[in] website_uri  The URI to be removed.
  */
-void snap_backend::remove_processed_uri(QString const & action, QString const & website_uri)
+void snap_backend::remove_processed_uri(QString const & action, QByteArray const & key, QString const & website_uri)
 {
     QString const action_reference(QString("*%1*").arg(action));
     int64_t const previous_entry(f_backend_table->row(action_reference)->cell(website_uri)->value().safeInt64Value(0, -1));
@@ -713,8 +713,17 @@ void snap_backend::remove_processed_uri(QString const & action, QString const & 
         QByteArray column_key;
         QtCassandra::appendInt64Value(column_key, previous_entry);
         f_backend_table->row(action)->dropCell(column_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-        f_backend_table->row(action_reference)->dropCell(website_uri, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
     }
+
+    // just in case, alway sforce a drop on this cell (it should not
+    // exist if previous_entry was -1)
+    //
+    f_backend_table->row(action_reference)->dropCell(website_uri, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+
+    // also remove the processed entry (which is the one we really use
+    // to find what has to be worked on)
+    //
+    f_backend_table->row(action)->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
 }
 
 
@@ -848,7 +857,7 @@ void snap_backend::process_action()
 
     // start our event loop
     //
-SNAP_LOG_WARNING("entering run() loop with action: ")(f_action);
+//SNAP_LOG_WARNING("entering run() loop with action: ")(f_action);
     g_communicator->run();
 }
 
@@ -992,7 +1001,12 @@ bool snap_backend::process_timeout()
         // we want to check for the next entry in our backend table
         //
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(1); // read only the first row
+        //
+        // TODO: we should have a setCount() of 1 but the tombstones
+        //       create problems and for now (until CQL?) we use 100
+        //       See SNAP-327
+        //
+        column_predicate.setCount(100); // read only the first row
         column_predicate.setIndex(); // behave like an index
         QtCassandra::QCassandraRow::pointer_t row(f_backend_table->row(f_action));
         for(;;)
@@ -1021,7 +1035,7 @@ bool snap_backend::process_timeout()
                 //
                 QtCassandra::QCassandraCell::pointer_t cell(*cells.begin());
                 QString const website_uri(cell->value().stringValue());
-                remove_processed_uri(f_action, website_uri);
+                remove_processed_uri(f_action, key, website_uri);
                 if(process_backend_uri(website_uri))
                 {
                     return true;
@@ -1353,6 +1367,7 @@ void snap_backend::capture_zombies(pid_t pid)
     }
     else
     {
+//SNAP_LOG_WARNING("child process (pid: ")(pid)(") for backend \"")(f_action)("\" returned.");
         if(WIFEXITED(status))
         {
             int const exit_code(WEXITSTATUS(status));
