@@ -1201,12 +1201,30 @@ bool QCassandra::connect(const QStringList& host_list, const int port )
         throw std::runtime_error( msg.str().c_str() );
     }
 
-    QStringList values;
-    executeQuery( "SELECT cluster_name, native_protocol_version, paritioner FROM system.local", values );
+    future_pointer_t    future( executeQuery( "SELECT cluster_name, native_protocol_version, partitioner FROM system.local" ) );
+    result_pointer_t	result( cass_future_get_result(future.get()), resultDeleter() );
 
-    f_cluster_name     = values[0];
-    f_protocol_version = values[1];
-    f_partitioner      = values[2];
+    CassIterator* rows = cass_iterator_from_result( result.get() );
+    if( !cass_iterator_next( rows ) )
+    {
+        throw std::runtime_error( "Error in database table system.local!" );
+    }
+
+    const char *    byte_value = 0;
+    size_t          value_len  = 0;
+    const CassRow*   row    = cass_iterator_get_row( rows );
+    //
+    const CassValue* value  = cass_row_get_column( row, 0 );
+    cass_value_get_string( value, &byte_value, &value_len );
+    f_cluster_name = byte_value;
+    //
+    value  = cass_row_get_column( row, 1 );
+    cass_value_get_string( value, &byte_value, &value_len );
+    f_protocol_version = byte_value;
+    //
+    value  = cass_row_get_column( row, 2 );
+    cass_value_get_string( value, &byte_value, &value_len );
+    f_partitioner = byte_value;
 
     return true;
 }

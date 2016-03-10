@@ -155,7 +155,11 @@ target_link_libraries(cassandra_lock
 project(run_cassandra_tests)
 
 # Change the IP as required by your environment
-set(CASSANDRA_IP localhost)
+set( DEFAULT_CASSANDRA_IP "$ENV{CASSANDRA_IP}" )
+if( NOT DEFAULT_CASSANDRA_IP )
+    set( DEFAULT_CASSANDRA_IP "localhost" )
+endif()
+set( CASSANDRA_IP "${DEFAULT_CASSANDRA_IP}" CACHE STRING "IP address of the cassandra server" )
 
 add_custom_target(run_cassandra_tests
     COMMAND echo "========================================="
