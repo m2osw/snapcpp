@@ -177,7 +177,6 @@ void list_hosts()
         // show all the computer names in this context
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
         column_predicate.setIndex();
-        column_predicate.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
         hosts->readCells(column_predicate);
         QtCassandra::QCassandraCells cells(hosts->cells());
         if(cells.count() == 0) {

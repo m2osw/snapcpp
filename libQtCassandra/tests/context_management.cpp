@@ -40,7 +40,6 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
-#include <thrift-gencpp-cassandra/cassandra_types.h>
 
 int main(int argc, char *argv[])
 {
@@ -68,7 +67,7 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_context"));
     try {
         context->drop();
-        cassandra->synchronizeSchemaVersions();
+        //cassandra->synchronizeSchemaVersions();
     }
     catch(...) {
         // ignore errors, this happens when the context doesn't exist yet
@@ -79,6 +78,7 @@ int main(int argc, char *argv[])
     context->setReplicationFactor(1); // by default this is undefined
 
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
+#if 0
     //table->setComment("Our test table.");
     table->setColumnType("Standard"); // Standard or Super
     table->setKeyValidationClass("BytesType");
@@ -92,30 +92,37 @@ int main(int argc, char *argv[])
     table->setMinCompactionThreshold(4);
     table->setMaxCompactionThreshold(22);
     table->setReplicateOnWrite(1);
+#endif
+    table->option("general","gc_grace_seconds") = "3600";
+    table->option("compaction","min_threshold") = "4";
+    table->option("compaction","max_threshold") = "22";
 
     // Column definitions can be used to make sure the content is valid.
     // It is also required if you want to index on such and such column
     // using the internal Cassandra indexing mechanism.
-    QtCassandra::QCassandraColumnDefinition::pointer_t column1(table->columnDefinition("qt_cassandra_test_column1"));
-    column1->setValidationClass("UTF8Type");
+    //QtCassandra::QCassandraColumnDefinition::pointer_t column1(table->columnDefinition("qt_cassandra_test_column1"));
+    //column1->setValidationClass("UTF8Type");
 
-    QtCassandra::QCassandraColumnDefinition::pointer_t column2(table->columnDefinition("qt_cassandra_test_column2"));
-    column2->setValidationClass("IntegerType");
+    //QtCassandra::QCassandraColumnDefinition::pointer_t column2(table->columnDefinition("qt_cassandra_test_column2"));
+    //column2->setValidationClass("IntegerType");
 
-    try {
+    try
+    {
         context->create();
-        cassandra->synchronizeSchemaVersions();
+        table->create();
+        //cassandra->synchronizeSchemaVersions();
         qDebug() << "Done!";
     }
-    catch(org::apache::cassandra::InvalidRequestException& e) {
-        qDebug() << "Exception is [" << e.why.c_str() << "]";
+    catch(const std::exception& e)
+    {
+        qDebug() << "Exception is [" << e.what() << "]";
     }
 
     // now that it's created, we can access it with the [] operator
     //QtCassandra::QCassandraTable& t((*cassandra)["qt_cassandra_test_context"]["qt_cassandra_test_table"]);
 
     context->drop();
-    cassandra->synchronizeSchemaVersions();
+    //cassandra->synchronizeSchemaVersions();
 
     return 0;
 }

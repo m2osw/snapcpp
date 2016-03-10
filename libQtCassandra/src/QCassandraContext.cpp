@@ -1421,12 +1421,11 @@ uint32_t QCassandraContext::getColumnSlice(QCassandraTable& rtable, const QByteA
  * \param[in] row_key  The row in which the cell is to be removed, if empty all the rows.
  * \param[in] column_key  The cell to be removed, if empty all the cells.
  * \param[in] timestamp  The time when the key to be removed was created.
- * \param[in] consistency_level  The consistency level to use to remove this cell.
  */
-void QCassandraContext::remove(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level)
+void QCassandraContext::remove(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp)
 {
     makeCurrent();
-    f_cassandra->getPrivate()->remove(table_name, row_key, column_key, timestamp, consistency_level);
+    f_cassandra->getPrivate()->remove(table_name, row_key, column_key, timestamp);
 }
 
 /** \brief Retrieve a slice of rows from Cassandra.
@@ -1599,7 +1598,6 @@ void QCassandraContext::addLockHost(const QString& host_name)
     hosts_row->clearCache(); // make sure we have a clean slate
     const int hosts_count(hosts_row->cellCount());
     QCassandraColumnRangePredicate hosts_predicate;
-    hosts_predicate.setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
     hosts_predicate.setCount(hosts_count);
     hosts_row->readCells(hosts_predicate);
     const QCassandraCells& hosts(hosts_row->cells());
@@ -1636,7 +1634,6 @@ void QCassandraContext::addLockHost(const QString& host_name)
         new_id = it - set.begin();
     }
     QCassandraValue value(new_id);
-    value.setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
     locks_table->row(lockHostsKey())->cell(host_name)->setValue(value);
 }
 
@@ -1661,7 +1658,6 @@ void QCassandraContext::removeLockHost(const QString& host_name)
     QCassandraTable::pointer_t locks_table(table(f_lock_table_name));
     QCassandraRow::pointer_t row(locks_table->row(lockHostsKey()));
     QCassandraCell::pointer_t c(row->cell(host_name));
-    //c->setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
     row->dropCell(host_name, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
 }
 

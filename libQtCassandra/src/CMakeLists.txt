@@ -42,7 +42,6 @@ add_library(${PROJECT_NAME} SHARED
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandra.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraCell.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraColumnPredicate.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraConsistencyLevel.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraContext.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraLock.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraRow.h
@@ -54,7 +53,6 @@ add_library(${PROJECT_NAME} SHARED
     ${libQtCassandra_includes_BINARY_DIR}/QtCassandra/QCassandraVersion.h
     QCassandra.cpp
     QCassandraCell.cpp
-    QCassandraConsistencyLevel.cpp
     QCassandraContext.cpp
     QCassandraColumnPredicate.cpp
     QCassandraLock.cpp

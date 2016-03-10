@@ -40,7 +40,6 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
-#include <thrift-gencpp-cassandra/cassandra_types.h>
 
 int main(int argc, char *argv[])
 {
@@ -69,7 +68,7 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_rw"));
     try {
         context->drop();
-        cassandra->synchronizeSchemaVersions();
+        //cassandra->synchronizeSchemaVersions();
     }
     catch(...) {
         // ignore errors, this happens when the context doesn't exist yet
@@ -80,6 +79,7 @@ int main(int argc, char *argv[])
     context->setReplicationFactor(1); // by default this is undefined
 
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
+#if 0
     //table->setComment("Our test table.");
     table->setColumnType("Standard"); // Standard or Super
     table->setKeyValidationClass("BytesType");
@@ -94,14 +94,20 @@ int main(int argc, char *argv[])
     table->setMinCompactionThreshold(4);
     table->setMaxCompactionThreshold(22);
     table->setReplicateOnWrite(1);
+#endif
+    table->option("general","comment")          = "Our test table.";
+    table->option("general","gc_grace_seconds") = "3600";
+    table->option("compaction","min_threshold") = "4";
+    table->option("compaction","max_threshold") = "22";
 
     try {
         context->create();
-        cassandra->synchronizeSchemaVersions();
+        table->create();
+        //cassandra->synchronizeSchemaVersions();
         qDebug() << "Context and its table were created!";
     }
-    catch(org::apache::cassandra::InvalidRequestException& e) {
-        qDebug() << "Exception is [" << e.why.c_str() << "]";
+    catch(const std::exception& e) {
+        qDebug() << "Exception is [" << e.what() << "]";
         exit(1);
     }
 
@@ -225,7 +231,9 @@ int main(int argc, char *argv[])
 
     qDebug() << "cellCount()" << (*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].cellCount();
 
-    (*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"].dropRow(QString("http://www.snapwebsites.org/page/3"), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday() + 10000000, QtCassandra::CONSISTENCY_LEVEL_ONE);
+    (*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"]
+            .dropRow(QString("http://www.snapwebsites.org/page/3")
+              , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday() + 10000000);
     //if((*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"].exists(QString("http://www.snapwebsites.org/page/3"))) {
     //    qDebug() << "error: dropped row still exists...";
     //}
@@ -234,13 +242,13 @@ int main(int argc, char *argv[])
     //}
 
     //}
-    //catch(org::apache::cassandra::InvalidRequestException& e) {
-    //    qDebug() << "While Working: exception is [" << e.why.c_str() << "]";
+    //catch(const std::exception& e) {
+    //    qDebug() << "While Working: exception is [" << e.what() << "]";
     //}
 
 
     context->drop();
-    cassandra->synchronizeSchemaVersions();
+    //cassandra->synchronizeSchemaVersions();
 
     exit(0);
 }

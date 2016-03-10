@@ -48,8 +48,8 @@ namespace QtCassandra
 class QCassandraLock : public QObject
 {
 public:
-    QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name = "", const cassandra_consistency_level_t consistency_level = CONSISTENCY_LEVEL_QUORUM);
-    QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_key, const cassandra_consistency_level_t consistency_level = CONSISTENCY_LEVEL_QUORUM);
+    QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name = "");
+    QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_key   );
     virtual ~QCassandraLock();
 
     bool lock(const QString& object_name);
@@ -64,7 +64,6 @@ private:
     QByteArray                     f_object_name;
     QByteArray                     f_ticket_id;
     controlled_vars::flbool_t      f_locked;
-    const consistency_level_t      f_consistency;
 };
 
 } // namespace QtCassandra

@@ -34,10 +34,8 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef QCASSANDRA_COLUMN_PREDICATE_H
-#define QCASSANDRA_COLUMN_PREDICATE_H
+#pragma once
 
-#include "QCassandraConsistencyLevel.h"
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <QByteArray>
@@ -72,13 +70,8 @@ public:
     static const QChar first_char;
     static const QChar last_char;
 
-    consistency_level_t consistencyLevel() const;
-    void setConsistencyLevel(consistency_level_t consistency_level);
-
 private:
     //virtual void toPredicate(void *data) const;
-
-    consistency_level_t         f_consistency_level;
 };
 
 // name based predicate (specific names)
@@ -140,6 +133,5 @@ private:
 };
 
 } // namespace QtCassandra
-#endif
-//#ifndef QCASSANDRA_COLUMN_PREDICATE_H
+
 // vim: ts=4 sw=4 et

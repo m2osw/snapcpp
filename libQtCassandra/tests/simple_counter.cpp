@@ -40,7 +40,6 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
-#include <thrift-gencpp-cassandra/cassandra_types.h>
 
 int main(int argc, char *argv[])
 {
@@ -70,7 +69,7 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_sc"));
     try {
         context->drop();
-        cassandra->synchronizeSchemaVersions();
+        //cassandra->synchronizeSchemaVersions();
     }
     catch(...) {
         // ignore errors, this happens when the context doesn't exist yet
@@ -81,6 +80,7 @@ int main(int argc, char *argv[])
     context->setReplicationFactor(1); // by default this is undefined
 
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
+#if 0
     //table->setComment("Our test table.");
     table->setColumnType("Standard"); // Standard or Super
     table->setKeyValidationClass("BytesType");
@@ -95,14 +95,20 @@ int main(int argc, char *argv[])
     table->setMinCompactionThreshold(4);
     table->setMaxCompactionThreshold(22);
     table->setReplicateOnWrite(1);
+#endif
+    table->option("general","comment")          = "Our test table.";
+    table->option("general","gc_grace_seconds") = "3600";
+    table->option("compaction","min_threshold") = "4";
+    table->option("compaction","max_threshold") = "22";
 
     try {
         context->create();
-        cassandra->synchronizeSchemaVersions();
+        table->create();
+        //cassandra->synchronizeSchemaVersions();
         qDebug() << "Context and its table were created!";
     }
-    catch(org::apache::cassandra::InvalidRequestException& e) {
-        qDebug() << "Exception is [" << e.why.c_str() << "]";
+    catch(const std::exception& e) {
+        qDebug() << "Exception is [" << e.what() << "]";
         exit(1);
     }
 
@@ -158,7 +164,7 @@ int main(int argc, char *argv[])
 #pragma GCC pop
 
     context->drop();
-    cassandra->synchronizeSchemaVersions();
+    //cassandra->synchronizeSchemaVersions();
 
     exit(err == 0 ? 0 : 1);
 }

@@ -67,7 +67,6 @@ public:
     QCassandraCell& operator = (const QCassandraValue& value);
     operator QCassandraValue () const;
 
-#if 0
     // for counters handling
     void add(int64_t value);
     QCassandraCell& operator += (int64_t value);
@@ -76,16 +75,8 @@ public:
     QCassandraCell& operator -= (int64_t value);
     QCassandraCell& operator -- ();
     QCassandraCell& operator -- (int);
-#endif
 
     void clearCache();
-
-    consistency_level_t consistencyLevel() const;
-    void setConsistencyLevel(consistency_level_t level);
-#if 0
-    int64_t timestamp() const;
-    void setTimestamp(int64_t timestamp);
-#endif
 
     std::shared_ptr<QCassandraRow> parentRow() const;
 

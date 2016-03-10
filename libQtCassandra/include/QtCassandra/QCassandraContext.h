@@ -137,7 +137,7 @@ private:
     void addValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t value);
     int32_t getCellCount(const QString& table_name, const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
     uint32_t getColumnSlice(QCassandraTable& table, const QByteArray& row_key, QCassandraColumnPredicate& column_predicate);
-    void remove(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level);
+    void remove(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp);
     uint32_t getRowSlices(QCassandraTable& table, QCassandraRowPredicate& row_predicate);
     void synchronizeSchemaVersions();
 #endif

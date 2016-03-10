@@ -641,7 +641,6 @@ void QCassandraRow::dropCell(const QString& column_name, QCassandraValue::timest
  *
  * \code
  *     QCassandraCell::pointer_t c(f_row->cell(f_cell));
- *     c->setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
  * \endcode
  *
  * These 2 lines of code do NOT create the cell in the Cassandra cluster.
@@ -666,7 +665,6 @@ void QCassandraRow::dropCell(const QString& column_name, QCassandraValue::timest
  * \sa cell()
  * \sa cells()
  * \sa QCassandra::timeofday()
- * \sa QCassandraCell::setConsistencyLevel()
  */
 void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::timestamp_mode_t /*mode*/, int64_t /*timestamp*/)
 {

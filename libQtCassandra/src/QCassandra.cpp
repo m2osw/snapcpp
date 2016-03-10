@@ -985,21 +985,6 @@ namespace QtCassandra
  * Cassandra cluster.
  */
 
-/** \var QCassandra::f_default_consistency_level
- * \brief The consistency level used by default.
- *
- * Whenever a value or some other function makes use of the special
- * consistency named CONSISTENCY_LEVEL_DEFAULT this default value is
- * used instead.
- *
- * By default, the default consistency is set to CONSISTENCY_LEVEL_ONE which is
- * great for reads which do not need full synchronization.
- *
- * It is not uncommon to change this default value to CONSISTENCY_LEVEL_QUORUM
- * (quorum among your entire system) or CONSISTENCY_LEVEL_LOCAL_QUORUM
- * (local to a data center).
- */
-
 /** \brief Initialize the QCassandra object.
  *
  * This function makes the QCassandra object ready.
@@ -1385,10 +1370,6 @@ const QString& QCassandra::clusterName() const
  * is a const. This is a cache so it makes sense. The variable is
  * NOT marked mutable because this is the only case where it happens.
  *
- * \note
- * The protocol version is actually this constant string:
- * org::apache::cassandra::cassandraConstants::VERSION
- *
  * \return The version of the protocol.
  */
 const QString& QCassandra::protocolVersion() const
@@ -1702,64 +1683,6 @@ void QCassandra::dropContext(const QString& context_name)
 
     // forget about this context in the QCassandra object
     f_contexts.remove(context_name);
-}
-
-
-/** \brief Retrieve the current default consistency level.
- *
- * This function returns the current default consistency level used by
- * most of the server functions. You may change the default from the
- * default Cassandra value of ONE (which is good for reads.) In many cases,
- * it is recommended that you use QUORUM, or at least LOCAL QUORUM.
- *
- * Different predicate and the value object have their own consistency
- * levels. If those are set to DEFAULT, then this very value is used
- * instead.
- *
- * \return The current default consistency level.
- */
-consistency_level_t QCassandra::defaultConsistencyLevel() const
-{
-    return f_default_consistency_level;
-}
-
-
-/** \brief Change the current default consistency level.
- *
- * This function changes the current default consistency level used by
- * most of the server functions. In many cases, it is recommended that
- * you use QUORUM, but it very much depends on your application and
- * node setup.
- *
- * Different predicate and the value object have their own consistency
- * levels. If those are set to DEFAULT (their default,) then this very
- * value is used instead.
- *
- * \note
- * This function does not accept the CONSISTENCY_LEVEL_DEFAULT since
- * that is not a valid Cassandra consistency level.
- *
- * \exception std::runtime_error
- * This exception is raised if the value passed to this function is not
- * a valid consistency level.
- *
- * \param[in] default_consistency_level  The new default consistency level.
- */
-void QCassandra::setDefaultConsistencyLevel(consistency_level_t default_consistency_level)
-{
-    // make sure the consistency level exists
-    if(default_consistency_level != CONSISTENCY_LEVEL_ONE
-    && default_consistency_level != CONSISTENCY_LEVEL_QUORUM
-    && default_consistency_level != CONSISTENCY_LEVEL_LOCAL_QUORUM
-    && default_consistency_level != CONSISTENCY_LEVEL_EACH_QUORUM
-    && default_consistency_level != CONSISTENCY_LEVEL_ALL
-    && default_consistency_level != CONSISTENCY_LEVEL_ANY
-    && default_consistency_level != CONSISTENCY_LEVEL_TWO
-    && default_consistency_level != CONSISTENCY_LEVEL_THREE) {
-        throw std::runtime_error("invalid default server consistency level");
-    }
-
-    f_default_consistency_level = default_consistency_level;
 }
 
 

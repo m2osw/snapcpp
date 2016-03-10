@@ -118,42 +118,6 @@ QCassandraColumnPredicate::~QCassandraColumnPredicate()
 {
 }
 
-/** \brief Retrieve the consistency level.
- *
- * This function returns the current consistency level defined in this
- * column predicate. By default it is set to DEFAULT. You may want to
- * change it with a call to the setConsistencyLevel() function.
- *
- * To setup the default consistency, see the setConsistencyLevel()
- * function of your QCassandra object.
- *
- * \return The current consistency level.
- *
- * \sa setConsistencyLevel()
- * \sa QCassandra::setConsistencyLevel()
- */
-consistency_level_t QCassandraColumnPredicate::consistencyLevel() const
-{
-    return f_consistency_level;
-}
-
-/** \brief Set the consistency level.
- *
- * This function changes the consistency level you want to use when
- * you use this predicate.
- *
- * The consistency levels are probably better on the Cassandra system.
- * The default is ONE and the usual best choice is QUORUM.
- *
- * \param[in] consistency_level  One of the consistency levels.
- *
- * \sa consistencyLevel()
- */
-void QCassandraColumnPredicate::setConsistencyLevel(consistency_level_t consistency_level)
-{
-    f_consistency_level = consistency_level;
-}
-
 #if 0
 /** \brief Transform to a Thrift predicate.
  *

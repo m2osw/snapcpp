@@ -37,7 +37,6 @@
 #pragma once
 
 #include "QtCassandra/QCassandraContext.h"
-#include "QtCassandra/QCassandraClusterInformation.h"
 #include "QtCassandra/QCassandraTools.h"
 #include "QtCassandra/QCassandraVersion.h"
 
@@ -98,10 +97,6 @@ public:
 
     void dropContext(const QString& context_name);
 
-    // default consistency level
-    consistency_level_t defaultConsistencyLevel() const;
-    void setDefaultConsistencyLevel(consistency_level_t default_consistency_level);
-
     // time stamp helper
     static int64_t timeofday();
 
@@ -127,7 +122,6 @@ private:
     //mutable QCassandraClusterInformation    f_cluster_information;
     QString                                 f_partitioner;
     //QString                                 f_snitch;
-    consistency_level_t                     f_default_consistency_level;
     //schema_synchronization_timeout_t        f_schema_synchronization_timeout;
 };
 

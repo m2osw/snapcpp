@@ -49,7 +49,7 @@ namespace QtCassandra
 class QCassandraContext;
 
 
-// Cassandra Column Family (org::apache::cassandra::CfDef)
+// Cassandra Column Family
 class QCassandraTable
     : public QObject
     , public std::enable_shared_from_this<QCassandraTable>
@@ -96,8 +96,8 @@ public:
     QCassandraRow&              operator[] (const QByteArray& row_name);
     //const QCassandraRow&        operator[] (const QString& row_name) const;
 
-    void dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_ALL);
-    void dropRow(const QByteArray& row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_ALL);
+    void dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
+    void dropRow(const QByteArray& row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
 
     std::shared_ptr<QCassandraContext> parentContext() const;
 

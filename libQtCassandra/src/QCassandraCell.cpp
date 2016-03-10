@@ -340,7 +340,7 @@ QCassandraCell::operator QCassandraValue () const
     return value();
 }
 
-#if 0
+#if 1
 /** \brief Add a value to a counter.
  *
  * This function is used to add a value to a counter.
@@ -385,7 +385,7 @@ void QCassandraCell::add(int64_t val)
         f_cached = true;
     }
 
-    f_row.lock()->addValue(f_key, val);
+    f_row->insertValue(f_key, val);
 }
 
 /** \brief Add to a counter.
@@ -552,45 +552,6 @@ void QCassandraCell::clearCache()
 {
     f_cached = false;
     f_value.setNullValue();
-}
-
-/** \brief Retrieve the current consistency level of this value.
- *
- * This function returns the consistency level of this value. By default
- * it is set to one (CONSISTENCY_LEVEL_ONE.)
- *
- * The consistency level can be set using the setConsistencyLevel() function.
- *
- * \return The consistency level of this value.
- *
- * \sa setConsistencyLevel()
- * \sa QCassandraValue::consistencyLevel()
- */
-consistency_level_t QCassandraCell::consistencyLevel() const
-{
-    return f_value.consistencyLevel();
-}
-
-/** \brief Define the consistency level of this cell.
- *
- * This function sets the consistency of the f_value field of this cell.
- * This can be used to ensure the proper consistency on a read. In case
- * of a write, the consistency is always taken from the input value
- * parameter. For a read this is the only way to specify the consistency.
- *
- * By default, the consistency level is set to CONSISTENCY_LEVEL_DEFAULT
- * which means: use the consistency level defined in the QCassandra object
- * linked with this cell. It is possible to set the consistency level
- * back to CONSISTENCY_LEVEL_DEFAULT.
- *
- * \param[in] level  The new consistency level for this cell next read.
- *
- * \sa consistencyLevel()
- * \sa QCassandraValue::setConsistencyLevel()
- */
-void QCassandraCell::setConsistencyLevel(consistency_level_t level)
-{
-    f_value.setConsistencyLevel(level);
 }
 
 #if 0

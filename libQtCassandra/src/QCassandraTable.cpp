@@ -832,6 +832,26 @@ QCassandraRow& QCassandraTable::operator [] (const QString& row_name)
     return *row(row_name);
 }
 
+
+/** \brief Retrieve a table row.
+ *
+ * This function retrieves a table row. If the keyed row doesn't exist yet,
+ * then it is created first.
+ *
+ * The reference is writable so you make write to a cell in this row.
+ *
+ * This function accepts a binary key for this row reference.
+ *
+ * \param[in] row_key  The binary key of the row to retrieve.
+ *
+ * \return A reference to a QCassandraRow.
+ */
+QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key)
+{
+    // in this case we may create the row and that's fine!
+    return *row(row_key);
+}
+
 #if 0
 /** \brief Retrieve a table row.
  *
@@ -919,11 +939,10 @@ const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) con
  * \param[in] row_name  Specify the name of the row to drop.
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
- * \param[in] consistency_level  Specify the timestamp to remove only rows that are have that timestamp or are older.
  */
-void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level)
+void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
 {
-    dropRow(row_name.toUtf8(), mode, timestamp, consistency_level);
+    dropRow(row_name.toUtf8(), mode, timestamp);
 }
 
 /** \brief Drop the row from the Cassandra database.
@@ -981,9 +1000,8 @@ void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestam
  * \param[in] row_key  Specify the key of the row.
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older. Ignored.
- * \param[in] consistency_level  Specify the consistency of the row removal across your clusters. Ignored.
  */
-void QCassandraTable::dropRow( const QByteArray& row_key, QCassandraValue::timestamp_mode_t /*mode*/, int64_t /*timestamp*/, consistency_level_t /*consistency_level*/ )
+void QCassandraTable::dropRow( const QByteArray& row_key, QCassandraValue::timestamp_mode_t /*mode*/, int64_t /*timestamp*/)
 {
     remove( row_key );
     f_rows.remove( row_key );
@@ -1251,7 +1269,6 @@ void QCassandraTable::remove( const QByteArray& row_key, const QByteArray& colum
  * \param[in] row_key  The row in which the cell is to be removed.
  * \param[in] column_key  The cell to be removed.
  * \param[in] timestamp  The time when the key to be removed was created.
- * \param[in] consistency_level  The consistency level to use to remove this cell.
  */
 void QCassandraTable::remove( const QByteArray& row_key )
 {
