@@ -106,6 +106,7 @@ private:
 
     void        parseTableDefinition(const void *data);
     void        prepareTableDefinition(void *data) const;
+    bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     int32_t     getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);

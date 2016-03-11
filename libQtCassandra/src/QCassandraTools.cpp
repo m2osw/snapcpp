@@ -109,8 +109,15 @@ void throwIfError( future_pointer_t result_future, const QString& msg )
     const CassError code( cass_future_error_code( result_future.get() ) );
     if( code != CASS_OK )
     {
+        const char* message = 0;
+        size_t length       = 0;
+        cass_future_error_message( result_future.get(), &message, &length );
+        QByteArray errmsg( message, length );
         std::stringstream ss;
-        ss << msg.toUtf8().data() << "! Cassandra error: code=" << static_cast<unsigned int>(code) << ", message={" << cass_error_desc(code) << "}, aborting operation!";
+        ss << msg.toUtf8().data() << "! Cassandra error: code=" << static_cast<unsigned int>(code)
+           << ", error={" << cass_error_desc(code)
+           << "}, message={" << errmsg.data()
+           << "} aborting operation!";
         throw std::runtime_error( ss.str().c_str() );
     }
 }

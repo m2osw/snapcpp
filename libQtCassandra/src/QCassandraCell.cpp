@@ -83,6 +83,18 @@ namespace QtCassandra
  * The key is saved in binary form only.
  */
 
+/** \var QCassandraCell::f_cached
+ * \brief Whether a cell is a cache.
+ *
+ * This flag mark the cell as being a cache for the value defined in it.
+ * By default a cell is marked as not caching anything. It becomes a cached
+ * value once the value was saved in the Cassandra database or read from
+ * the Cassandra system.
+ *
+ * Note however that the cell is no aware of whether the table is a memory
+ * or Cassandra table. As such, the cache flag may be lying.
+ */
+
 /** \var QCassandraCell::f_value
  * \brief A cell value.
  *
@@ -192,6 +204,11 @@ const QByteArray& QCassandraCell::columnKey() const
  */
 const QCassandraValue& QCassandraCell::value() const
 {
+    if(!f_cached)
+    {
+        f_row->getValue( f_key, const_cast<QCassandraValue&>(f_value) );
+        f_cached = true;
+    }
     return f_value;
 }
 
@@ -217,10 +234,14 @@ const QCassandraValue& QCassandraCell::value() const
  */
 void QCassandraCell::setValue(const QCassandraValue& val)
 {
-    // TODO: if the cell represents a counter, it should be resized
-    //       to a 64 bit value to work in all places
-    f_value = val;
-    f_row->insertValue(f_key, f_value);
+    if(!f_cached || f_value != val)
+    {
+        // TODO: if the cell represents a counter, it should be resized
+        //       to a 64 bit value to work in all places
+        f_value = val;
+        f_row->insertValue(f_key, f_value);
+    }
+    f_cached = true;
 }
 
 /** \brief Change the value as if read from Cassandra.
@@ -262,6 +283,7 @@ void QCassandraCell::setValue(const QCassandraValue& val)
 void QCassandraCell::assignValue(const QCassandraValue& val)
 {
     f_value = val;
+    f_cached = true;
 }
 
 /** \brief Set the cell value.
@@ -332,11 +354,13 @@ QCassandraCell::operator QCassandraValue () const
 void QCassandraCell::add(int64_t val)
 {
     // if cached, we update the value in memory as it is expected to be
-    if(!f_value.nullValue()) {
+    if(!f_value.nullValue())
+    {
         // if the value is not defined, we'd have to read it before we can
         // increment it in memory; for this reason we don't do it at this point
         int64_t r(0);
-        switch(f_value.size()) {
+        switch(f_value.size())
+        {
         case 8:
             r = f_value.int64Value() + val;
             break;
@@ -358,9 +382,10 @@ void QCassandraCell::add(int64_t val)
 
         }
         f_value.setInt64Value(r);
+        f_cached = true;
     }
 
-    f_row->insertValue(f_key, val);
+    f_row->insertValue( f_key, val );
 }
 
 /** \brief Add to a counter.
@@ -525,6 +550,7 @@ QCassandraCell& QCassandraCell::operator -- (int)
  */
 void QCassandraCell::clearCache()
 {
+    f_cached = false;
     f_value.setNullValue();
 }
 

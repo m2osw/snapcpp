@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")] = 8;
     // In order to be able to read the value as a 64 bit value we clear the
     // cache that just saved the number 8 in an 'int' which is likely 32 bits
-    //(*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
+    (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
     qDebug() << "Size of counter should be 8, it is"
              << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
     qDebug() << "Read value should be 8, it is"

@@ -88,6 +88,7 @@ private:
     friend class QCassandraTable;
 
     std::shared_ptr<QCassandraRow>      f_row;
+    mutable controlled_vars::flbool_t   f_cached;
     QByteArray                          f_key;
     QCassandraValue                     f_value;
 };

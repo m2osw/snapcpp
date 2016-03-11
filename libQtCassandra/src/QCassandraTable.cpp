@@ -855,6 +855,32 @@ QCassandraContext::pointer_t QCassandraTable::parentContext() const
 }
 
 
+bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
+{
+    const QString query( QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
+                         .arg(f_context->contextName()).arg(f_tableName) );
+    //
+    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 2 ), statementDeleter() );
+    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(),    row_key.size()    );
+    cass_statement_bind_string_n( query_stmt.get(), 1, column_key.constData(), column_key.size() );
+
+    future_pointer_t session( cass_session_execute( f_context->parentCassandra()->session().get(), query_stmt.get() ) , futureDeleter()    );
+    throwIfError( session, QString("Cannot select from table '%1'!").arg(f_tableName) );
+
+    result_pointer_t query_result( cass_future_get_result(session.get()), resultDeleter() );
+
+    iterator_pointer_t rows( cass_iterator_from_result(query_result.get()), iteratorDeleter()   );
+    if( !cass_iterator_next(rows.get()) )
+    {
+        return false;
+    }
+    const CassRow* row( cass_iterator_get_row(rows.get()));
+    value = getByteArrayFromRow( row, "value"   );
+
+    return true;
+}
+
+
 /** \brief Save a cell value that changed.
  *
  * This function calls the context insertValue() function to save the new value that
@@ -867,16 +893,6 @@ QCassandraContext::pointer_t QCassandraTable::parentContext() const
  */
 void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value )
 {
-#if 0
-    if( f_rows.find( row_key ) == f_rows.end() )
-    {
-        QString msg( QString("You are trying to update a row_key [%1], column_key=[%2], that is not in the current set of rows! Did you forget to call readRows()?")
-            .arg(row_key.data()).arg(column_key.data())
-            );
-        throw std::runtime_error( msg.toUtf8().data() );
-    }
-#endif
-
     // Insert or update the row values.
     //
     const QString query_string(QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?);")
