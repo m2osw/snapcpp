@@ -104,6 +104,15 @@ int32_t getIntFromRow( const CassRow* row, const QString& column_name )
 }
 
 
+int64_t getCounterFromRow( const CassRow* row, const QString& column_name )
+{
+    int64_t return_val = 0;
+    const CassValue* value = cass_row_get_column_by_name( row, column_name.toUtf8().data() );
+    cass_value_get_int64( value, &return_val );
+    return return_val;
+}
+
+
 void throwIfError( future_pointer_t result_future, const QString& msg )
 {
     const CassError code( cass_future_error_code( result_future.get() ) );

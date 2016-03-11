@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
     table->option( "compaction",  "min_threshold"       ) = "4";
     table->option( "compaction",  "max_threshold"       ) = "22";
     table->option( "compression", "sstable_compression" ) = "org.apache.cassandra.io.compress.LZ4Compressor";
+    table->setDefaultValidationClassForCounters();
 
     try {
         context->create();

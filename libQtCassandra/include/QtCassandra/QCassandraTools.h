@@ -83,8 +83,9 @@ namespace QtCassandra
     };
 
     QByteArray getByteArrayFromRow ( const CassRow* row, const QString& column_name );
-    QByteArray getByteArrayFromRow ( const CassRow* row, const int column_num       );
+    QByteArray getByteArrayFromRow ( const CassRow* row, const int      column_num  );
     int32_t    getIntFromRow       ( const CassRow* row, const QString& column_name );
+    int64_t    getCounterFromRow   ( const CassRow* row, const QString& column_name );
 
     void throwIfError( future_pointer_t result_future, const QString& msg = "Cassandra error" );
 }

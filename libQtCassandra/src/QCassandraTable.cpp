@@ -163,6 +163,7 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
     , f_tableName(table_name)
     //f_rows() -- auto-init
     , f_currentPredicate(0)
+    , f_defaultValidationClass("BytesType")
 {
     // verify the name here (faster than waiting for the server and good documentation)
     QRegExp re("[A-Za-z][A-Za-z0-9_]*");
@@ -303,18 +304,23 @@ void QCassandraTable::unsetOption( const QString& option_type, const QString& op
  */
 void QCassandraTable::create()
 {
-    //f_from_cassandra = true;
-
     // TBD: Should we then call describe_keyspace() on our Context
     //      to make sure we have got the right data (defaults) in this
     //      object and column definitions?
+    
+    QString value_type("BLOB");
+    if( f_defaultValidationClass == "CounterColumnType" )
+    {
+        value_type = "COUNTER";
+    }
 
     QString query( QString( "CREATE TABLE IF NOT EXISTS %1.%2 \n"
-        "(key BLOB, column1 BLOB, value BLOB, PRIMARY KEY (key, column1) ) \n"
+        "(key BLOB, column1 BLOB, value %3, PRIMARY KEY (key, column1) ) \n"
         "WITH COMPACT STORAGE\n"
         "AND CLUSTERING ORDER BY (column1 ASC)\n" )
             .arg(f_context->contextName())
             .arg(f_tableName)
+            .arg(value_type)
             );
     for( const auto& type : f_options.keys() )
     {
@@ -875,7 +881,14 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
         return false;
     }
     const CassRow* row( cass_iterator_get_row(rows.get()));
-    value = getByteArrayFromRow( row, "value"   );
+    if( f_defaultValidationClass == "CounterColumnType" )
+    {
+        value = getCounterFromRow( row, "value" );
+    }
+    else
+    {
+        value = getByteArrayFromRow( row, "value" );
+    }
 
     return true;
 }
@@ -891,8 +904,43 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
  * \param[in] column_key  The key used to identify the column.
  * \param[in] value       The new value of the cell.
  */
-void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value )
+void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& p_value )
 {
+    QCassandraValue value( p_value );
+    if( f_defaultValidationClass == "CounterColumnType" )
+    {
+        QCassandraValue v;
+        getValue( row_key, column_key, v );
+        // new value = user value - current value
+        int64_t add(-v.int64Value());
+        switch( value.size() )
+        {
+            case 0:
+                // accept NULL as zero
+                break;
+
+            case 1:
+                add += value.signedCharValue();
+                break;
+
+            case 2:
+                add += value.int16Value();
+                break;
+
+            case 4:
+                add += value.int32Value();
+                break;
+
+            case 8:
+                add += value.int64Value();
+                break;
+
+            default:
+                throw std::runtime_error("value has an invalid size for a counter value");
+        }
+        value.setInt64Value( add );
+    }
+
     // Insert or update the row values.
     //
     const QString query_string(QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?);")
@@ -902,10 +950,18 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
 
     statement_pointer_t query_stmt( cass_statement_new( query_string.toUtf8().data(), 3 ), statementDeleter() );
 
-    auto binary_val( value.binaryValue() );
     cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(),    row_key.size()    );
     cass_statement_bind_string_n( query_stmt.get(), 1, column_key.constData(), column_key.size() );
-    cass_statement_bind_string_n( query_stmt.get(), 2, binary_val.constData(), binary_val.size() );
+
+    if( f_defaultValidationClass == "CounterColumnType" )
+    {
+        cass_statement_bind_int64( query_stmt.get(), 2, value.int64Value() );
+    }
+    else
+    {
+        auto binary_val( value.binaryValue() );
+        cass_statement_bind_string_n( query_stmt.get(), 2, binary_val.constData(), binary_val.size() );
+    }
 
     future_pointer_t result_future( cass_session_execute( f_context->parentCassandra()->session().get(), query_stmt.get() ), futureDeleter() );
     cass_future_wait( result_future.get() );
@@ -979,6 +1035,47 @@ void QCassandraTable::remove( const QByteArray& row_key )
     cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(),    row_key.size()    );
     future_pointer_t result_future( cass_session_execute( f_context->parentCassandra()->session().get(), query_stmt.get() ) , futureDeleter()    );
     throwIfError( result_future, QString("Cannot select from table '%1'!").arg(f_tableName) );
+}
+
+/** \brief Set the default validation class to create a counters table.
+ *
+ * This function is a specialized version of the setDefaultValidationClass()
+ * with the name of the class necessary to create a table of counters. Remember
+ * that once in this state a table cannot be converted.
+ *
+ * This is equivalent to setDefaultValidationClass("CounterColumnType").
+ */
+void QCassandraTable::setDefaultValidationClassForCounters()
+{
+    setDefaultValidationClass("CounterColumnType");
+}
+
+/** \brief Set the default validation class.
+ *
+ * This function defines the default validation class for the table columns.
+ * By default it is set to binary (BytesType), which is similar to saying
+ * no validation is required.
+ *
+ * The CLI documentation says that the following are valid as a default
+ * validation class:
+ *
+ * AsciiType, BytesType, CounterColumnType, IntegerType, LexicalUUIDType,
+ * LongType, UTF8Type
+ *
+ * \param[in] validation_class  The default validation class for columns data.
+ */
+void QCassandraTable::setDefaultValidationClass(const QString& validation_class)
+{
+    f_defaultValidationClass = validation_class;
+}
+
+/** \brief Unset the default validation class.
+ *
+ * This function removes the effects of setDefaultValidationClass() calls.
+ */
+void QCassandraTable::unsetDefaultValidationClass()
+{
+    f_defaultValidationClass = QString("BytesType");
 }
 
 } // namespace QtCassandra

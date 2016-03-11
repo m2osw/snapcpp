@@ -74,6 +74,10 @@ public:
     QString&  option      ( const QString& option_type, const QString& option_name);
     void      unsetOption ( const QString& option_type, const QString& option_name);
 
+    void setDefaultValidationClassForCounters();
+    void setDefaultValidationClass(const QString& validation_class);
+    void unsetDefaultValidationClass();
+
     // handling
     void create();
     //void update();
@@ -131,6 +135,8 @@ private:
     statement_pointer_t                         f_queryStmt;
     future_pointer_t                            f_sessionExecute;
     result_pointer_t                            f_currentQueryResult;
+
+    QString                                     f_defaultValidationClass;
 };
 
 // list of table definitions mapped against their name (see tableName())
