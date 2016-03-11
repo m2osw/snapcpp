@@ -697,6 +697,8 @@ void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraVa
     f_table->insertValue(f_key, column_key, value);
 }
 
+
+#if 0
 /** \brief Get a cell value from Cassandra.
  *
  * This function calls the table getValue() function to retrieve the currrent
@@ -714,7 +716,6 @@ bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& valu
     return f_table->getValue(f_key, column_key, value);
 }
 
-#if 0
 /** \brief Add a value to a Cassandra counter.
  *
  * This function calls the table addValue() function to add the specified

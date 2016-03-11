@@ -72,24 +72,18 @@ public:
     void    eraseDescriptionOption(const QString& option);
 
     // tables
-    QCassandraTable::pointer_t table(const QString& table_name);
-    const QCassandraTables& tables() const;
+    QCassandraTable::pointer_t createTable( const QString& table_name );
 
-    QCassandraTable::pointer_t findTable(const QString& table_name) const;
+    QCassandraTable::pointer_t table(const QString& table_name);
+    const QCassandraTables& tables();
+
+    QCassandraTable::pointer_t findTable(const QString& table_name);
     QCassandraTable& operator[] (const QString& table_name);
-    const QCassandraTable& operator[] (const QString& table_name) const;
 
     // replication
     void setReplicationFactor(int32_t factor);
     void unsetReplicationFactor();
-#if 0
-    bool hasReplicationFactor() const;
-    int32_t replicationFactor() const;
-#endif
     void setDurableWrites(bool durable_writes);
-    //void unsetDurableWrites();
-    //bool hasDurableWrites() const;
-    //bool durableWrites() const;
 
     // handling
     QString generateReplicationStanza() const;
@@ -99,6 +93,7 @@ public:
     void drop();
     void dropTable(const QString& table_name);
     void clearCache();
+    void loadTables();
 
     // locks
     QString lockHostsKey() const;
@@ -124,23 +119,6 @@ private:
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
 
-#if 0
-    // internal functions
-    //void parseContextDefinition(const void *data);
-    //void prepareContextDefinition(void *data) const;
-    void createTable(const QCassandraTable *table);
-    //void updateTable(const QCassandraTable *table);
-    //void truncateTable(const QCassandraTable *table);
-    void insertValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
-    bool getValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
-    bool getCounter(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
-    void addValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t value);
-    int32_t getCellCount(const QString& table_name, const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
-    uint32_t getColumnSlice(QCassandraTable& table, const QByteArray& row_key, QCassandraColumnPredicate& column_predicate);
-    void remove(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp);
-    uint32_t getRowSlices(QCassandraTable& table, QCassandraRowPredicate& row_predicate);
-    void synchronizeSchemaVersions();
-#endif
     friend class QCassandra;
     friend class QCassandraTable;
     friend class QCassandraLock;
@@ -153,7 +131,7 @@ private:
     // std::enabled_shared_from_this<>.
     std::shared_ptr<QCassandra>                 f_cassandra;
     QCassandraContextOptions                    f_options;
-    QCassandraTables                            f_tables;
+    QCassandraTables                   			f_tables;
     QString                                     f_contextName;
     QString                                     f_host_name;
     QString                                     f_lock_table_name;

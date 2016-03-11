@@ -83,18 +83,6 @@ namespace QtCassandra
  * The key is saved in binary form only.
  */
 
-/** \var QCassandraCell::f_cached
- * \brief Whether a cell is a cache.
- *
- * This flag mark the cell as being a cache for the value defined in it.
- * By default a cell is marked as not caching anything. It becomes a cached
- * value once the value was saved in the Cassandra database or read from
- * the Cassandra system.
- *
- * Note however that the cell is no aware of whether the table is a memory
- * or Cassandra table. As such, the cache flag may be lying.
- */
-
 /** \var QCassandraCell::f_value
  * \brief A cell value.
  *
@@ -126,7 +114,6 @@ namespace QtCassandra
 QCassandraCell::QCassandraCell(QCassandraRow::pointer_t row, const QByteArray& column_key)
     : f_row(row)
     , f_key(column_key)
-    //, f_cached(false) -- auto-init
     //, f_value() -- auto-init to "NULL" (nullValue() == true)
 {
     if(f_key.size() == 0) {
@@ -205,12 +192,6 @@ const QByteArray& QCassandraCell::columnKey() const
  */
 const QCassandraValue& QCassandraCell::value() const
 {
-    if(!f_cached)
-    {
-        f_row->getValue(f_key, const_cast<QCassandraValue&>(f_value));
-        f_cached = true;
-    }
-//printf("reading [%s]\n", f_key.data());
     return f_value;
 }
 
@@ -236,14 +217,10 @@ const QCassandraValue& QCassandraCell::value() const
  */
 void QCassandraCell::setValue(const QCassandraValue& val)
 {
-    if(!f_cached || f_value != val)
-    {
-        // TODO: if the cell represents a counter, it should be resized
-        //       to a 64 bit value to work in all places
-        f_value = val;
-        f_row->insertValue(f_key, f_value);
-    }
-    f_cached = true;
+    // TODO: if the cell represents a counter, it should be resized
+    //       to a 64 bit value to work in all places
+    f_value = val;
+    f_row->insertValue(f_key, f_value);
 }
 
 /** \brief Change the value as if read from Cassandra.
@@ -285,7 +262,6 @@ void QCassandraCell::setValue(const QCassandraValue& val)
 void QCassandraCell::assignValue(const QCassandraValue& val)
 {
     f_value = val;
-    f_cached = true;
 }
 
 /** \brief Set the cell value.
@@ -340,7 +316,7 @@ QCassandraCell::operator QCassandraValue () const
     return value();
 }
 
-#if 1
+
 /** \brief Add a value to a counter.
  *
  * This function is used to add a value to a counter.
@@ -382,7 +358,6 @@ void QCassandraCell::add(int64_t val)
 
         }
         f_value.setInt64Value(r);
-        f_cached = true;
     }
 
     f_row->insertValue(f_key, val);
@@ -529,7 +504,7 @@ QCassandraCell& QCassandraCell::operator -- (int)
     add(-1);
     return *this;
 }
-#endif
+
 
 /** \brief The value of a cell is automatically cached in memory.
  *
@@ -550,7 +525,6 @@ QCassandraCell& QCassandraCell::operator -- (int)
  */
 void QCassandraCell::clearCache()
 {
-    f_cached = false;
     f_value.setNullValue();
 }
 

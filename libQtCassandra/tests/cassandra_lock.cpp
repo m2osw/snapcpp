@@ -128,7 +128,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    if(replication_factor > 0) {
+    if(replication_factor > 0)
+    {
         // each child must have a separate connection, so we have a specific
         // connection for the context handling
         cassandra->connect(host);
@@ -148,37 +149,59 @@ int main(int argc, char *argv[])
         //context->setDurableWrites(false); // by default this is 'true'
         context->setReplicationFactor(replication_factor); // by default this is undefined
 
-        QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-#if 0
-        //table->setComment("Our test table.");
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        //table->setMemtableThroughputInMb(247);
-        //table->setMemtableOperationsInMillions(1.1578125);
-        //table->setGcGraceSeconds(864000); // 10 days (default)
-        table->setGcGraceSeconds(3600); // 1h.
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
-#endif
-
-        table->option( "general", "comment" )          = "Test Table";
-        table->option( "general", "gc_grace_seconds" ) = "3600";
-        table->option( "compaction", "min_threshold" ) = "4";
-        table->option( "compaction", "max_threshold" ) = "22";
-        table->create();
-
-        try {
+        try
+        {
             context->create();
         }
-        catch(...) {
+        catch(...)
+        {
             qDebug() << "error: could not create the context, an exception occured.";
             throw;
         }
+
+        bool caught = false;
+        try
+        {
+            context->table("qt_cassandra_test_table");
+        }
+        catch( const std::exception& ex )
+        {
+            qDebug() << "This is expected: table should not exist. Error=[" << ex.what() << "]";
+            caught = true;
+        }
+
+        if( !caught )
+        {
+            qDebug() << "error: this should not have found a non-existent table!";
+            throw;
+        }
+
+        QtCassandra::QCassandraTable::pointer_t table(context->createTable("qt_cassandra_test_table"));
+        table->option( "general",     "comment"             ) = "Test Table";
+        table->option( "general",     "gc_grace_seconds"    ) = "3600";
+        table->option( "compaction",  "class"               ) = "org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy";
+        table->option( "compaction",  "min_threshold"       ) = "4";
+        table->option( "compaction",  "max_threshold"       ) = "22";
+        table->option( "compression", "sstable_compression" ) = "org.apache.cassandra.io.compress.LZ4Compressor";
+        table->create();
+
+        caught = false;
+        try
+        {
+            context->createTable("qt_cassandra_test_table");
+        }
+        catch( const std::exception& ex )
+        {
+            qDebug() << "This is expected: table should exist. Error=[" << ex.what() << "]";
+            caught = true;
+        }
+
+        if( !caught )
+        {
+            qDebug() << "error: this should not create a table that existents!";
+            throw;
+        }
+
         // attempt a synchronization so when we quit we can immediately use the context
         //cassandra->synchronizeSchemaVersions();
         exit(0);

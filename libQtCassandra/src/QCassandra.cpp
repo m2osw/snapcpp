@@ -1064,13 +1064,7 @@ void QCassandra::executeQuery( const QString& query, QStringList& values ) const
     while( cass_iterator_next( rows ) )
     {
         const CassRow*   row    = cass_iterator_get_row( rows );
-        const CassValue* value  = cass_row_get_column( row, 0 );
-
-        const char *    byte_value = 0;
-        size_t          value_len  = 0;
-        cass_value_get_string( value, &byte_value, &value_len );
-        QString str( byte_value );
-        values << str;
+        values << QString(getByteArrayFromRow( row, 0 ).data());
     }
 }
 
@@ -1212,7 +1206,7 @@ bool QCassandra::connect(const QStringList& host_list, const int port )
 
     const char *    byte_value = 0;
     size_t          value_len  = 0;
-    const CassRow*   row    = cass_iterator_get_row( rows );
+    const CassRow*  row        = cass_iterator_get_row( rows );
     //
     const CassValue* value  = cass_row_get_column( row, 0 );
     cass_value_get_string( value, &byte_value, &value_len );
@@ -1225,6 +1219,13 @@ bool QCassandra::connect(const QStringList& host_list, const int port )
     value  = cass_row_get_column( row, 2 );
     cass_value_get_string( value, &byte_value, &value_len );
     f_partitioner = byte_value;
+
+    QStringList keyspaces;
+    executeQuery( "SELECT keyspace_name FROM system.schema_keyspaces;", keyspaces );
+    for( auto keyspace : keyspaces )
+    {
+        context( keyspace );
+    }
 
     return true;
 }

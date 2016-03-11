@@ -74,6 +74,36 @@ void sessionDeleter::operator()(CassSession* p) const
     cass_session_free(p);
 }
 
+
+QByteArray getByteArrayFromRow( const CassRow* row, const int column_num )
+{
+    const char *    byte_value = 0;
+    size_t          value_len  = 0;
+    const CassValue* value = cass_row_get_column( row, column_num );
+    cass_value_get_string( value, &byte_value, &value_len );
+    return QByteArray::fromRawData( byte_value, value_len );
+}
+
+
+QByteArray getByteArrayFromRow( const CassRow* row, const QString& column_name )
+{
+    const char *    byte_value = 0;
+    size_t          value_len  = 0;
+    const CassValue* value = cass_row_get_column_by_name( row, column_name.toUtf8().data() );
+    cass_value_get_string( value, &byte_value, &value_len );
+    return QByteArray::fromRawData( byte_value, value_len );
+}
+
+
+int32_t getIntFromRow( const CassRow* row, const QString& column_name )
+{
+    int32_t return_val = 0;
+    const CassValue* value = cass_row_get_column_by_name( row, column_name.toUtf8().data() );
+    cass_value_get_int32( value, &return_val );
+    return return_val;
+}
+
+
 void throwIfError( future_pointer_t result_future, const QString& msg )
 {
     const CassError code( cass_future_error_code( result_future.get() ) );

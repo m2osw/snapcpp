@@ -104,20 +104,15 @@ public:
 private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 
-    int32_t rowCount( const QByteArray& row_key ) const;
-
-    //void        setFromCassandra();
     void        parseTableDefinition(const void *data);
     void        prepareTableDefinition(void *data) const;
     void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
-    bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
-    //void        addValue(const QByteArray& row_key, const QByteArray& column_key, int64_t value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     int32_t     getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
     void 		remove( const QByteArray& row_key, const QByteArray& column_key );
     void 		remove( const QByteArray& row_key );
-
-    int32_t getCurrentCount();
+    void 		loadTables();
+    void		addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data );
 
     friend class QCassandraContext;
     friend class QCassandraRow;

@@ -88,7 +88,7 @@ private:
     QCassandraRow(std::shared_ptr<QCassandraTable> table, const QByteArray& row_key);
 
     void insertValue(const QByteArray& column_key, const QCassandraValue& value);
-    bool getValue(const QByteArray& column_key, QCassandraValue& value);
+    //bool getValue(const QByteArray& column_key, QCassandraValue& value);
     //void addValue(const QByteArray& column_key, int64_t value);
 
     friend class QCassandraTable;

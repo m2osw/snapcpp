@@ -37,6 +37,7 @@
 #pragma once
 
 #include <QString>
+#include <QByteArray>
 
 #include <memory>
 
@@ -80,6 +81,10 @@ namespace QtCassandra
     { 
         void operator()(CassStatement* p) const;
     };
+
+    QByteArray getByteArrayFromRow ( const CassRow* row, const QString& column_name );
+    QByteArray getByteArrayFromRow ( const CassRow* row, const int column_num       );
+    int32_t    getIntFromRow       ( const CassRow* row, const QString& column_name );
 
     void throwIfError( future_pointer_t result_future, const QString& msg = "Cassandra error" );
 }

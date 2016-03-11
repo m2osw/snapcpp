@@ -300,9 +300,24 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
 
     // get the computer name as the host name
     char hostname[HOST_NAME_MAX + 1];
-    if(gethostname(hostname, sizeof(hostname)) == 0) {
+    if(gethostname(hostname, sizeof(hostname)) == 0)
+    {
         f_host_name = hostname;
     }
+
+#if 0
+    // *We cannot do this in the constructor because the shared_from_this() method needs the object to be fully constructed.*
+
+    // Load tables from schema
+    QStringList tables;
+    f_cassandra->executeQuery(
+                QString("SELECT columnfamily_name FROM system.schema_columnfamilies WHERE keyspace_name = '%1';").arg(f_contextName)
+                , tables );
+    for( auto table_name : tables )
+    {
+        table( table_name );
+    }
+#endif
 }
 
 /** \brief Clean up the QCassandraContext object.
@@ -510,17 +525,47 @@ void QCassandraContext::eraseDescriptionOption(const QString& option)
  */
 QCassandraTable::pointer_t QCassandraContext::table(const QString& table_name)
 {
-    // table already exists?
-    QCassandraTables::iterator ti(f_tables.find(table_name));
-    if(ti != f_tables.end()) {
-        return ti.value();
+    QCassandraTable::pointer_t t( findTable( table_name ) );
+    if( t == QCassandraTable::pointer_t() )
+    {
+        throw std::runtime_error( "You must create the table first!" );
     }
-
-    // this is a new table, allocate it
-    QCassandraTable::pointer_t t(new QCassandraTable(shared_from_this(), table_name));
-    f_tables.insert(table_name, t);
     return t;
 }
+
+/// \brief New table generator
+///
+/// Make sure you call QCassandraTable::create(), otherwise it won't be added to the database!
+///
+QCassandraTable::pointer_t QCassandraContext::createTable( const QString& table_name )
+{
+    QCassandraTable::pointer_t t( findTable( table_name ) );
+    if( t != QCassandraTable::pointer_t() )
+    {
+        throw std::runtime_error( QString("Table %1 already exists!").arg(table_name).toUtf8().data() );
+    }
+
+    // Note that this does not add it to the table map yet. This will be done in the QCassandraTable::create() method.
+    //
+    return QCassandraTable::pointer_t( new QCassandraTable(shared_from_this(), table_name) );
+}
+
+void QCassandraContext::loadTables()
+{
+    f_tables.clear();
+
+    // Load tables from schema
+    QStringList tables;
+    f_cassandra->executeQuery(
+                QString("SELECT columnfamily_name FROM system.schema_columnfamilies WHERE keyspace_name = '%1';").arg(f_contextName)
+                , tables );
+    for( auto table_name : tables )
+    {
+        QCassandraTable::pointer_t t(new QCassandraTable(shared_from_this(), table_name));
+        f_tables.insert(table_name, t);
+    }
+}
+
 
 /** \brief Retrieve a reference to the tables.
  *
@@ -531,8 +576,13 @@ QCassandraTable::pointer_t QCassandraContext::table(const QString& table_name)
  *
  * \return A reference to the table definitions of this context.
  */
-const QCassandraTables& QCassandraContext::tables() const
+const QCassandraTables& QCassandraContext::tables()
 {
+    if( f_tables.empty() )
+    {
+        loadTables();
+    }
+
     return f_tables;
 }
 
@@ -550,8 +600,13 @@ const QCassandraTables& QCassandraContext::tables() const
  *
  * \return A shared pointer to the table.
  */
-QCassandraTable::pointer_t QCassandraContext::findTable(const QString& table_name) const
+QCassandraTable::pointer_t QCassandraContext::findTable(const QString& table_name)
 {
+    if( f_tables.empty() )
+    {
+        loadTables();
+    }
+
     QCassandraTables::const_iterator it(f_tables.find(table_name));
     if(it == f_tables.end()) {
         QCassandraTable::pointer_t null;
@@ -581,34 +636,6 @@ QCassandraTable::pointer_t QCassandraContext::findTable(const QString& table_nam
 QCassandraTable& QCassandraContext::operator [] (const QString& table_name)
 {
     QCassandraTable::pointer_t ptable( findTable(table_name) );
-    if( !ptable ) {
-        throw std::runtime_error("named table was not found, cannot return a reference");
-    }
-
-    return *ptable;
-}
-
-/** \brief Retrieve a constant table reference.
- *
- * This array operator is the same as the other one, just this one deals
- * with constant tables. It can be used to retrieve values from the
- * Cassandra cluster you're connected to:
- *
- * \code
- * value = context[table_name][column_name];
- * \endcode
- *
- * \exception std::runtime_error
- * If the table doesn't exist, this function raises an exception
- * since otherwise the reference would be a NULL pointer.
- *
- * \param[in] table_name  The name of the table to retrieve.
- *
- * \return A constant reference to the named table.
- */
-const QCassandraTable& QCassandraContext::operator [] (const QString& table_name) const
-{
-    const QCassandraTable::pointer_t ptable( findTable(table_name) );
     if( !ptable ) {
         throw std::runtime_error("named table was not found, cannot return a reference");
     }

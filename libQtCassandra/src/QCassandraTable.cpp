@@ -38,6 +38,7 @@
 #include "QtCassandra/QCassandraTable.h"
 #include "QtCassandra/QCassandraContext.h"
 
+#include <iostream>
 #include <stdexcept>
 #include <sstream>
 
@@ -171,7 +172,7 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
 
     // we save the context name (keyspace) and since it's forbidden to change it
     // in the context, we know it won't change here either
-    const QString keyspace = context->contextName();
+    //const QString keyspace = context->contextName();
     //f_private->__set_keyspace(keyspace.toUtf8().data());
 
     // we save the name and at this point we prevent it from being changed.
@@ -230,7 +231,8 @@ QString QCassandraTable::option( const QString& option_type, const QString& opti
 
 QString& QCassandraTable::option( const QString& option_type, const QString& option_name)
 {
-    return f_options[option_type][option_name];
+    option_map_t& opt( f_options[option_type] );
+    return opt[option_name];
 }
 
 
@@ -316,30 +318,34 @@ void QCassandraTable::create()
             );
     for( const auto& type : f_options.keys() )
     {
+        auto& option( f_options[type] );
         if( type.toLower() == "general" )
         {
-            for( const auto& key : f_options[type] )
+            for( const auto& key : option.keys() )
             {
-                query += QString("AND %1 = %2\n").arg(key.toLower()).arg(f_options[type][key]);
+                query += QString("AND %1 = '%2'\n").arg(key.toLower()).arg(option[key]);
             }
         }
         else
         {
-            auto& option( f_options[type] );
-            query += QString("AND %1 = '{").arg(type.toLower());
+            query += QString("AND %1 = {").arg(type.toLower());
             QString comma;
             for( const auto& key : option.keys() )
             {
                 query += QString("%1'%2':'%3'").arg(comma).arg(key.toLower()).arg(option[key]);
                 comma = ", ";
             }
-            query += "}'\n";
+            query += "}\n";
         }
     }
 
-    // Create the table using the query string
+    // 1) Load exiting tables from the database,
+    // 2) Create the table using the query string,
+    // 3) Add this object into the list.
     //
+    f_context->loadTables();
     f_context->parentCassandra()->executeQuery( query );
+    f_context->f_tables[f_tableName] = shared_from_this();
 
 #if 0
 CREATE TABLE snap_websites.firewall (
@@ -365,45 +371,6 @@ CREATE TABLE snap_websites.firewall (
 #endif
 
 }
-
-#if 0
-/** \brief Update a Cassandra table.
- *
- * This function is used to update a table with changes that
- * you made in memory (i.e. calling functions such as
- * setDefaultValidationClass().)
- *
- * Note that you must synchronize your Cassandra schema in your
- * entire cluster with a call to the QCassandra::synchornizeSchemaVersions()
- * function before you use an updated table.
- *
- * This function is most often used to define new column types or
- * changing existing columns (although changing existing columns
- * may not work as expected, from what I understand, TBD. I
- * suggest you create new columns and copy the data if you run
- * into problems.)
- *
- * \sa setDefaultValidationClass()
- * \sa QCassandra::synchronizeSchemaVersions()
- */
-void QCassandraTable::update()
-{
-    auto context( f_context.lock() );
-    if(!context) {
-        throw std::runtime_error("table was dropped and is not attached to a context anymore");
-    }
-    if(!f_from_cassandra) {
-        // you cannot update a table that's not from Cassandra
-        throw std::runtime_error("table is not defined in Cassandra, it cannot be updated there");
-    }
-
-    context->updateTable(this);
-
-    // TBD: Should we then call describe_keyspace() on our Context
-    //      to make sure we've got the right data (defaults) in this
-    //      object and column definitions?
-}
-#endif
 
 
 /** \brief Truncate a Cassandra table.
@@ -452,62 +419,15 @@ void QCassandraTable::clearCache()
 }
 
 
-/// \brief Return the full count of the entire table.
-//
-int32_t QCassandraTable::rowCount( const QByteArray& row_key ) const
+void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data )
 {
-    const QString query( QString("SELECT COUNT(*) AS count FROM %1.%2 WHERE key = ?").arg(f_context->contextName()).arg(f_tableName) );
+    QCassandraRow::pointer_t  new_row  ( new QCassandraRow( shared_from_this(), row_key ) );
+    QCassandraCell::pointer_t new_cell ( new_row->cell( column_key ) );
+    new_cell->assignValue( QCassandraValue(data) );
+
+    // Now add to the map.
     //
-    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 1 ), statementDeleter() );
-    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(), row_key.size() );
-    cass_statement_set_paging_size( query_stmt.get(), 100 );
-
-    future_pointer_t result_future( cass_session_execute( f_context->parentCassandra()->session().get(), query_stmt.get() ) , futureDeleter()    );
-    throwIfError( result_future, QString("Cannot select from table '%1'!").arg(f_tableName) );
-
-    result_pointer_t   result( cass_future_get_result(result_future.get()), resultDeleter() );
-    iterator_pointer_t rows  ( cass_iterator_from_result(result.get()), iteratorDeleter()   );
-
-    cass_iterator_next(rows.get());
-    const CassRow*   row         = cass_iterator_get_row( rows.get() );
-    const CassValue* count_value = cass_row_get_column_by_name( row, "count" );
-    int32_t count;
-    cass_value_get_int32( count_value, &count );
-
-    auto session( f_context->parentCassandra()->session() );
-
-    while( cass_result_has_more_pages(result.get()) )
-    {
-        cass_statement_set_paging_state( query_stmt.get(), result.get() );
-        result_future.reset ( cass_session_execute( session.get(), query_stmt.get() ) , futureDeleter()    );
-        result.reset        ( cass_future_get_result(result_future.get()), resultDeleter() );
-
-        rows.reset( cass_iterator_from_result(result.get()), iteratorDeleter() );
-        cass_iterator_next(rows.get());
-        row         = cass_iterator_get_row( rows.get() );
-        count_value = cass_row_get_column_by_name( row, "count" );
-        cass_value_get_int32( count_value, &count );
-    }
-
-    return count > 0;
-}
-
-
-int32_t QCassandraTable::getCurrentCount()
-{
-    if( !f_currentQueryResult )
-    {
-        throw std::runtime_error( "There is no query active!" );
-    }
-
-    iterator_pointer_t rows( cass_iterator_from_result(f_currentQueryResult.get()), iteratorDeleter()   );
-    cass_iterator_next(rows.get());
-    const CassRow*   row         = cass_iterator_get_row( rows.get() );
-    const CassValue* count_value = cass_row_get_column_by_name( row, "count" );
-    int32_t count;
-    cass_value_get_int32( count_value, &count );
-
-    return count;
+    f_rows[row_key] = new_row;
 }
 
 
@@ -573,7 +493,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate& row_predicate )
     }
     else
     {
-        const QString query( QString("SELECT COUNT(*) AS count,key,column1,value FROM %1.%2").arg(f_context->contextName()).arg(f_tableName) );
+        const QString query( QString("SELECT key,column1,value FROM %1.%2").arg(f_context->contextName()).arg(f_tableName) );
         //
         f_queryStmt.reset( cass_statement_new( query.toUtf8().data(), 0 ), statementDeleter() );
         cass_statement_set_paging_size( f_queryStmt.get(), row_predicate.count() );
@@ -584,7 +504,17 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate& row_predicate )
 
     f_currentQueryResult.reset( cass_future_get_result(f_sessionExecute.get()), resultDeleter() );
 
-    return getCurrentCount();
+    iterator_pointer_t rows( cass_iterator_from_result(f_currentQueryResult.get()), iteratorDeleter()   );
+    while( cass_iterator_next(rows.get()) )
+    {
+        const CassRow* row( cass_iterator_get_row(rows.get()) );
+        const QByteArray row_key   ( getByteArrayFromRow( row, "key"     ) );
+        const QByteArray column_key( getByteArrayFromRow( row, "column1" ) );
+        const QByteArray data      ( getByteArrayFromRow( row, "value"   ) );
+        addRow( row_key, column_key, data );
+    }
+
+    return f_rows.size();
 }
 
 
@@ -625,7 +555,9 @@ QCassandraRow::pointer_t QCassandraTable::row(const QString& row_name)
  *
  * \param[in] row_key  The name of the row to search or create.
  *
- * \return A shared pointer to the matching row or a null pointer.
+ * \return A shared pointer to the matching row. Throws if not found in the map.
+ *
+ * \sa readRows()
  */
 QCassandraRow::pointer_t QCassandraTable::row(const QByteArray& row_key)
 {
@@ -636,11 +568,11 @@ QCassandraRow::pointer_t QCassandraTable::row(const QByteArray& row_key)
         return ri.value();
     }
 
-    // this is a new row, allocate it
-    QCassandraRow::pointer_t c(new QCassandraRow(shared_from_this(), row_key));
-    f_rows.insert(row_key, c);
-    return c;
+    std::stringstream msg;
+    msg << "Cannot locate row_key [" << row_key.data() << "] in the " << f_tableName.toUtf8().data() << " table!";
+    throw std::runtime_error( msg.str().c_str() );
 }
+
 
 /** \brief Retrieve the entire set of rows defined in this table.
  *
@@ -650,7 +582,7 @@ QCassandraRow::pointer_t QCassandraTable::row(const QByteArray& row_key)
  * This can be used to determine how many rows are defined in memory
  * and to scan all the data.
  *
- * \return A constant reference to a map of rows.
+ * \return A constant reference to a map of rows. Throws if readRows() has not first been called.
  */
 const QCassandraRows& QCassandraTable::rows()
 {
@@ -659,41 +591,16 @@ const QCassandraRows& QCassandraTable::rows()
         throw std::runtime_error( "No query is in effect!" );
     }
 
-    if( !f_rows.empty() )
+    if( f_rows.empty() )
     {
-        // We already read these, so we don't need to do it again.
-        //
-        // TODO:
-        // Not sure how the cpp driver works--if it caches this stuff up, so this might be
-        // a premature optimization.
-        return f_rows;
-    }
-
-    iterator_pointer_t  rows( cass_iterator_from_result(f_currentQueryResult.get()), iteratorDeleter() );
-    while( cass_iterator_next(rows.get()) )
-    {
-        const CassRow*   iter_row        = cass_iterator_get_row( rows.get() );
-        const CassValue* key_value       = cass_row_get_column_by_name( iter_row, "key"       );
-        const CassValue* column1_value   = cass_row_get_column_by_name( iter_row, "column1"   );
-        const CassValue* value_value     = cass_row_get_column_by_name( iter_row, "value"     );
-
-        const char *    byte_value;
-        size_t          value_len;
-        QByteArray		ba( byte_value, value_len );
-        //
-        cass_value_get_string( key_value, &byte_value, &value_len );
-        QCassandraRow::pointer_t new_row( row( ba ) );
-
-        cass_value_get_string( column1_value, &byte_value, &value_len );
-        QCassandraCell::pointer_t new_cell( new_row->cell( QByteArray(byte_value,value_len) ) );
-
-        cass_value_get_string( value_value, &byte_value, &value_len );
-        QCassandraValue val( QByteArray(byte_value,value_len) );
-        new_cell->assignValue( val );
+        std::stringstream msg;
+        msg << "You must first call readRows() on table " << f_tableName.toUtf8().data() << " before trying to access the rows!";
+        throw std::runtime_error( msg.str().c_str() );
     }
 
     return f_rows;
 }
+
 
 /** \brief Search for a row.
  *
@@ -721,6 +628,7 @@ QCassandraRow::pointer_t QCassandraTable::findRow(const QString& row_name)
 {
     return findRow(row_name.toUtf8());
 }
+
 
 /** \brief Search for a row.
  *
@@ -810,7 +718,7 @@ bool QCassandraTable::exists(const QByteArray& row_key)
         return true;
     }
 
-    return rowCount( row_key ) > 0;
+    return false;
 }
 
 /** \brief Retrieve a table row.
@@ -851,83 +759,6 @@ QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key)
     // in this case we may create the row and that's fine!
     return *row(row_key);
 }
-
-#if 0
-/** \brief Retrieve a table row.
- *
- * This function retrieves a table row. If the named row doesn't exist yet,
- * then the function raises an error.
- *
- * The reference is read-only (constant) so you may retrieve a cell value
- * from it, but not modify the cell.
- *
- * This function accepts a name as the row reference.
- *
- * \exception std::runtime_error
- * The function checks whether the named row exists. If not, then this error
- * is raised because the function is constant and cannot create a new row.
- *
- * \param[in] row_name  The name of the row to retrieve.
- *
- * \return A constant reference to a QCassandraRow.
- */
-const QCassandraRow& QCassandraTable::operator[] (const QString& row_name) const
-{
-    const QCassandraRow::pointer_t p_row( findRow(row_name) );
-    if( !p_row )
-    {
-        throw std::runtime_error("row does not exist so it cannot be read from");
-    }
-    return *p_row;
-}
-
-
-/** \brief Retrieve a table row.
- *
- * This function retrieves a table row. If the keyed row doesn't exist yet,
- * then it is created first.
- *
- * The reference is writable so you make write to a cell in this row.
- *
- * This function accepts a binary key for this row reference.
- *
- * \param[in] row_key  The binary key of the row to retrieve.
- *
- * \return A reference to a QCassandraRow.
- */
-QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key)
-{
-    // in this case we may create the row and that's fine!
-    return *row(row_key);
-}
-
-/** \brief Retrieve a table row.
- *
- * This function retrieves a table row. If the named row doesn't exist yet,
- * then the function raises an error.
- *
- * The reference is read-only (constant) so you may retrieve a cell value
- * from it, but not modify the cell.
- *
- * This function accepts a binary key as the row reference.
- *
- * \exception std::runtime_error
- * The function checks whether the named row exists. If not, then this error
- * is raised because the function is constant and cannot create a new row.
- *
- * \param[in] row_key  The binary key of the row to retrieve.
- *
- * \return A constant reference to a QCassandraRow.
- */
-const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) const
-{
-    const QCassandraRow::pointer_t p_row(findRow(row_key));
-    if(!p_row) {
-        throw std::runtime_error("row does not exist so it cannot be read from");
-    }
-    return *p_row;
-}
-#endif
 
 
 /** \brief Drop the named row.
@@ -1021,56 +852,25 @@ QCassandraContext::pointer_t QCassandraTable::parentContext() const
 /** \brief Save a cell value that changed.
  *
  * This function calls the context insertValue() function to save the new value that
- * was defined in a cell.
+ * was defined in a cell. The idea is so that when the user alters the value of a cell,
+ * it directly updates the database. If the row does not exist, an exception is thrown.
  *
- * \param[in] row_key  The key used to identify the row.
+ * \param[in] row_key     The key used to identify the row.
  * \param[in] column_key  The key used to identify the column.
- * \param[in] value  The new value of the cell.
+ * \param[in] value       The new value of the cell.
  */
-void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value)
+void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value )
 {
-#if 0
-    if(f_from_cassandra)
+    if( f_rows.find( row_key ) == f_rows.end() )
     {
-        if(f_private->default_validation_class == "CounterColumnType") {
-            // we cannot "set" a counter, but we can simulate that function
-            QCassandraValue v;
-            f_context->getCounter(tableName(), row_key, column_key, v);
-            // new value = user value - current value
-            int64_t add(-v.int64Value());
-            switch(value.size()) {
-            case 0:
-                // accept NULL as zero
-                break;
-
-            case 1:
-                add += value.signedCharValue();
-                break;
-
-            case 2:
-                add += value.int16Value();
-                break;
-
-            case 4:
-                add += value.int32Value();
-                break;
-
-            case 8:
-                add += value.int64Value();
-                break;
-
-            default:
-                throw std::runtime_error("value has an invalid size for a counter value");
-
-            }
-            f_context->addValue(tableName(), row_key, column_key, add);
-        }
-        else {
-            f_context->insertValue(tableName(), row_key, column_key, value);
-        }
+        QString msg( QString("You are trying to update a row_key [%1], column_key=[%2], that is not in the current set of rows! Did you forget to call readRows()?")
+            .arg(row_key.data()).arg(column_key.data())
+            );
+        throw std::runtime_error( msg.toUtf8().data() );
     }
-#endif
 
+    // Insert or update the row values.
+    //
     const QString query_string(QString("INSERT OR UPDATE %1.%2 (key,column1,value) VALUES (?,?,?);")
             .arg(f_context->contextName())
             .arg(f_tableName)
@@ -1089,123 +889,6 @@ void QCassandraTable::insertValue(const QByteArray& row_key, const QByteArray& c
     throwIfError( result_future, QString("Cannot insert into table '%1.%2'").arg(f_context->contextName()).arg(f_tableName) );
 }
 
-/** \brief Get a cell value from Cassandra.
- *
- * This function calls the context getValue() function to retrieve a value
- * from Cassandra.
- *
- * The \p value parameter is not modified unless some data can be retrieved
- * from Cassandra.
- *
- * \param[in] row_key  The key used to identify the row.
- * \param[in] column_key  The key used to identify the column.
- * \param[out] value  The new value of the cell.
- *
- * \return false when the value was not found in the database, true otherwise
- */
-bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
-{
-#if 0
-    if(f_from_cassandra)
-    {
-        if(f_private->default_validation_class == "CounterColumnType") {
-            return f_context->getCounter(tableName(), row_key, column_key, value);
-        }
-        else {
-            return f_context->getValue(tableName(), row_key, column_key, value);
-        }
-    }
-    return false;
-#endif
-    const QString query_string(QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?;")
-            .arg(f_context->contextName())
-            .arg(f_tableName)
-            );
-
-    statement_pointer_t query_stmt( cass_statement_new( query_string.toUtf8().data(), 2 ), statementDeleter() );
-
-    auto binary_val( value.binaryValue() );
-    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(),    row_key.size()    );
-    cass_statement_bind_string_n( query_stmt.get(), 1, column_key.constData(), column_key.size() );
-
-    std::shared_ptr<CassFuture> result_future( cass_session_execute( f_context->parentCassandra()->session().get(), query_stmt.get() ), futureDeleter() );
-    cass_future_wait( result_future.get() );
-
-    //throwIfError( result_future, QString("Cannot select key/column from table '%1.%2'").arg(f_contextName).arg(f_tableName) );
-
-    const CassError code( cass_future_error_code( result_future.get() ) );
-    if( code == CASS_OK )
-    {
-        result_pointer_t    result ( cass_future_get_result(result_future.get()), resultDeleter()   );
-        //
-        if( cass_result_row_count( result.get() ) > 1 )
-        {
-            std::stringstream ss;
-            ss << "Query [" << query_stmt << "] returned more than one row!";
-            throw std::runtime_error( ss.str().c_str() );
-        }
-
-        iterator_pointer_t  rows   ( cass_iterator_from_result(result.get())    , iteratorDeleter() );
-        cass_iterator_next(rows.get());
-
-        const CassRow*   row     = cass_iterator_get_row       ( rows.get()   );
-        const CassValue* q_value = cass_row_get_column_by_name ( row, "value" );
-        //
-        const char *    byte_value;
-        size_t          value_len;
-        cass_value_get_string( q_value, &byte_value, &value_len );
-        value.setBinaryValue( QByteArray(byte_value, value_len) );
-
-        return true;
-    }
-
-    return false;
-}
-
-#if 0
-/** \brief Add a value to a Cassandra counter.
- *
- * This function calls the context addValue() function to add a value
- * to a Cassandra counter.
- *
- * \param[in] row_key  The key used to identify the row.
- * \param[in] column_key  The key used to identify the column.
- * \param[in] value  The value to add to the counter. It may be negative.
- *
- * \return false when the value was not found in the database, true otherwise
- */
-void QCassandraTable::addValue(const QByteArray& row_key, const QByteArray& column_key, int64_t value)
-{
-    if(f_private->default_validation_class != "CounterColumnType") {
-        throw std::runtime_error("the add() function and operators cannot be used on a standard table, only on tables defined as counters");
-    }
-    if( f_from_cassandra )
-    {
-        //f_context->addValue(tableName(), row_key, column_key, value);
-    }
-    // else -- we don't currently handle in memory counters!?
-}
-#endif
-
-/** \brief Assign a value to a cell in a row of this table.
- *
- * This function assigns the specified value to a cell in a row of this table.
- * It is an internal function used to save the results of a get_slice()
- * or get_range_slices() function calls.
- *
- * It also marks the data as coming from Cassandra so it remains cached as
- * expected (i.e. we avoid further reads until the cache gets cleared.)
- *
- * \param[in] row_key  The binary key of the row.
- * \param[in] column_key  The binary key of the cell.
- * \param[in] value  The value to assign to the named cell.
- */
-void QCassandraTable::assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value)
-{
-    QCassandraRow::pointer_t r(row(row_key));
-    QCassandraCell::pointer_t c(r->cell(column_key));
-    c->assignValue(value); // assign the value to the cell so we avoid re-reading it
-}
 
 /** \brief Count columns.
  *
@@ -1219,16 +902,6 @@ void QCassandraTable::assignRow(const QByteArray& row_key, const QByteArray& col
  */
 int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& /*column_predicate*/)
 {
-#if 0
-    auto context( f_context.lock() );
-    if(!context)
-    {
-        throw std::runtime_error("table was dropped and is not attached to a context anymore");
-    }
-    if(f_from_cassandra) {
-        return context->getCellCount(tableName(), row_key, column_predicate);
-    }
-#endif
     if( f_rows.find( row_key ) == f_rows.end() )
     {
         throw std::runtime_error("Key not found--you need to call readRows()!");

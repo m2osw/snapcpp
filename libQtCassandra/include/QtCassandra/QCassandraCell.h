@@ -89,7 +89,6 @@ private:
 
     std::shared_ptr<QCassandraRow>      f_row;
     QByteArray                          f_key;
-    mutable controlled_vars::flbool_t   f_cached;
     QCassandraValue                     f_value;
 };
 
