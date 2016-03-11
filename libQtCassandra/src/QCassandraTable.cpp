@@ -878,6 +878,14 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
     iterator_pointer_t rows( cass_iterator_from_result(query_result.get()), iteratorDeleter()   );
     if( !cass_iterator_next(rows.get()) )
     {
+        if( f_defaultValidationClass == "CounterColumnType" )
+        {
+            value.setInt64Value(0);
+        }
+        else
+        {
+            value.setNullValue();
+        }
         return false;
     }
     const CassRow* row( cass_iterator_get_row(rows.get()));
@@ -907,6 +915,10 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
 void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& p_value )
 {
     QCassandraValue value( p_value );
+    int row_id    = 0;
+    int column_id = 0;
+    int value_id  = 0;
+    QString query_string;
     if( f_defaultValidationClass == "CounterColumnType" )
     {
         QCassandraValue v;
@@ -939,28 +951,38 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
                 throw std::runtime_error("value has an invalid size for a counter value");
         }
         value.setInt64Value( add );
+
+        query_string = QString("UPDATE %1.%2 SET value = value + ? WHERE key = ? AND column1 = ?;")
+            .arg(f_context->contextName())
+            .arg(f_tableName)
+            ;
+        value_id  = 0;
+        row_id    = 1;
+        column_id = 2;
+    }
+    else
+    {
+        query_string = QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?);")
+            .arg(f_context->contextName())
+            .arg(f_tableName)
+            ;
     }
 
     // Insert or update the row values.
     //
-    const QString query_string(QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?);")
-            .arg(f_context->contextName())
-            .arg(f_tableName)
-            );
-
     statement_pointer_t query_stmt( cass_statement_new( query_string.toUtf8().data(), 3 ), statementDeleter() );
 
-    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(),    row_key.size()    );
-    cass_statement_bind_string_n( query_stmt.get(), 1, column_key.constData(), column_key.size() );
+    cass_statement_bind_string_n( query_stmt.get(), row_id,    row_key.constData(),    row_key.size()    );
+    cass_statement_bind_string_n( query_stmt.get(), column_id, column_key.constData(), column_key.size() );
 
     if( f_defaultValidationClass == "CounterColumnType" )
     {
-        cass_statement_bind_int64( query_stmt.get(), 2, value.int64Value() );
+        cass_statement_bind_int64( query_stmt.get(), value_id, value.int64Value() );
     }
     else
     {
         auto binary_val( value.binaryValue() );
-        cass_statement_bind_string_n( query_stmt.get(), 2, binary_val.constData(), binary_val.size() );
+        cass_statement_bind_string_n( query_stmt.get(), value_id, binary_val.constData(), binary_val.size() );
     }
 
     future_pointer_t result_future( cass_session_execute( f_context->parentCassandra()->session().get(), query_stmt.get() ), futureDeleter() );
