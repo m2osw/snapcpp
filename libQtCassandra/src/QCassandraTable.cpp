@@ -568,9 +568,15 @@ QCassandraRow::pointer_t QCassandraTable::row(const QByteArray& row_key)
         return ri.value();
     }
 
+#if 0
     std::stringstream msg;
     msg << "Cannot locate row_key [" << row_key.data() << "] in the " << f_tableName.toUtf8().data() << " table!";
     throw std::runtime_error( msg.str().c_str() );
+#endif
+    // this is a new row, allocate it
+    QCassandraRow::pointer_t c(new QCassandraRow(shared_from_this(), row_key));
+    f_rows.insert(row_key, c);
+    return c;
 }
 
 
@@ -861,6 +867,7 @@ QCassandraContext::pointer_t QCassandraTable::parentContext() const
  */
 void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value )
 {
+#if 0
     if( f_rows.find( row_key ) == f_rows.end() )
     {
         QString msg( QString("You are trying to update a row_key [%1], column_key=[%2], that is not in the current set of rows! Did you forget to call readRows()?")
@@ -868,10 +875,11 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
             );
         throw std::runtime_error( msg.toUtf8().data() );
     }
+#endif
 
     // Insert or update the row values.
     //
-    const QString query_string(QString("INSERT OR UPDATE %1.%2 (key,column1,value) VALUES (?,?,?);")
+    const QString query_string(QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?);")
             .arg(f_context->contextName())
             .arg(f_tableName)
             );

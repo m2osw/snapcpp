@@ -66,11 +66,13 @@ int main(int argc, char *argv[])
     qDebug() << "Working on Cassandra Protocol Version" << cassandra->protocolVersion();
 
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_ct"));
-    try {
+    try
+    {
         context->drop();
         //cassandra->synchronizeSchemaVersions();
     }
-    catch(...) {
+    catch(...)
+    {
         // ignore errors, this happens when the context doesn't exist yet
     }
 
@@ -78,27 +80,13 @@ int main(int argc, char *argv[])
     //context->setDurableWrites(false); // by default this is 'true'
     context->setReplicationFactor(1); // by default this is undefined
 
-    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-    table->option("general", "comment" ) = "Our test table.";
-    //table->setComment("Our test table.");
-#if 0
-    table->setColumnType("Standard"); // Standard or Super
-    table->setKeyValidationClass("BytesType");
-    table->setDefaultValidationClass("BytesType");
-    table->setComparatorType("CompositeType(UTF8Type, IntegerType)");
-    table->setKeyCacheSavePeriodInSeconds(14400);
-    table->setMemtableFlushAfterMins(60);
-    //table->setMemtableThroughputInMb(247);
-    //table->setMemtableOperationsInMillions(1.1578125);
-    //table->setGcGraceSeconds(864000); // 10 days (default)
-    table->setGcGraceSeconds(3600); // 1h.
-    table->setMinCompactionThreshold(4);
-    table->setMaxCompactionThreshold(22);
-    table->setReplicateOnWrite(1);
-#endif
-    table->option("general","gc_grace_seconds") = "3600";
-    table->option("compaction","min_threshold") = "4";
-    table->option("compaction","max_threshold") = "22";
+    QtCassandra::QCassandraTable::pointer_t table(context->createTable("qt_cassandra_test_table"));
+    table->option( "general",     "comment"             ) = "Our test table.";
+    table->option( "general",     "gc_grace_seconds"    ) = "3600";
+    table->option( "compaction",  "class"               ) = "org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy";
+    table->option( "compaction",  "min_threshold"       ) = "4";
+    table->option( "compaction",  "max_threshold"       ) = "22";
+    table->option( "compression", "sstable_compression" ) = "org.apache.cassandra.io.compress.LZ4Compressor";
 
     try
     {
