@@ -36,7 +36,11 @@
 
 project( QtCassandra )
 
-include_directories( ${CASSANDRACPPDRIVER_INCLUDE_DIR} )
+include_directories(
+    ${CASSANDRACPPDRIVER_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_BINARY_DIR}
+)
 
 configure_file(
 		QtCassandra/QCassandraVersion.h.in
