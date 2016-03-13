@@ -249,19 +249,21 @@ QString xml_children_to_string(QDomNode & node)
 }
 
 
-/** \brief Useful function that transforms a QString to XML.
+/** \brief Useful function that transforms a QString to HTML.
  *
- * When inserting a string in the XML document and that string may include
- * HTML code, call this function, it will first convert the string to XML
+ * When inserting a string in the HTML document and that string may include
+ * HTML code, call this function, it will first convert the string to HTML
  * then insert the result as children of the \p child element.
  *
+ * The HTML has to be 100% XML compatible.
+ *
  * \param[in,out] child  DOM element receiving the result as children nodes.
- * \param[in] xml  The input XML string.
+ * \param[in] html  The input HTML string.
  */
-void replace_node_with_html_string(QDomNode & replace, QString const & xml)
+void replace_node_with_html_string(QDomNode & replace, QString const & html)
 {
     // parsing the XML can be slow, try to avoid that if possible
-    for(QChar const * s(xml.data()); !s->isNull(); ++s)
+    for(QChar const * s(html.data()); !s->isNull(); ++s)
     {
         switch(s->unicode())
         {
@@ -271,7 +273,7 @@ void replace_node_with_html_string(QDomNode & replace, QString const & xml)
             // this requires the full XML round trip
             {
                 QDomDocument xml_doc("wrapper");
-                xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
+                xml_doc.setContent("<wrapper>" + html + "</wrapper>", true, nullptr, nullptr, nullptr);
                 replace_node_with_elements(replace, xml_doc.documentElement());
             }
             return;
@@ -281,7 +283,7 @@ void replace_node_with_html_string(QDomNode & replace, QString const & xml)
 
     // plain text is faster
     QDomText text(replace.toText());
-    text.setData(xml);
+    text.setData(html);
 }
 
 
@@ -295,7 +297,7 @@ void replace_node_with_html_string(QDomNode & replace, QString const & xml)
  * \param[in,out] replace  The node to be replaced.
  * \param[in] node  The source node to copy in place of \p replace.
  */
-void replace_node_with_elements(QDomNode& replace, QDomNode const& node)
+void replace_node_with_elements(QDomNode & replace, QDomNode const & node)
 {
     QDomNode parent(replace.parentNode());
 

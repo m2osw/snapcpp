@@ -4193,7 +4193,7 @@ QString editor::format_uri(QString const & format, content::path_info_t & ipath,
     public:
         typedef ushort char_t;
 
-        parser(editor *e, QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params)
+        parser(editor * e, QString const & format, content::path_info_t & ipath, QString const & page_name, params_map_t const & params)
             : f_editor(e)
             , f_format(format)
             //, f_pos(0)
@@ -4266,7 +4266,7 @@ QString editor::format_uri(QString const & format, content::path_info_t & ipath,
 
     private:
         editor *                    f_editor;
-        QString const&              f_format;
+        QString const &             f_format;
         controlled_vars::zint32_t   f_pos;
         editor_uri_token            f_token_info;
         QString                     f_result;
@@ -4308,7 +4308,7 @@ QString editor::format_uri(QString const & format, content::path_info_t & ipath,
  * \return true if the token was not an editor basic token, false otherwise
  *         so other plugins get a chance to transform the token themselves
  */
-bool editor::replace_uri_token_impl(editor_uri_token& token_info)
+bool editor::replace_uri_token_impl(editor_uri_token & token_info)
 {
     //
     // TITLE

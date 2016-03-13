@@ -31,8 +31,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="sitemapxml::frequency">always</param>
     <!--param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param-->
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
-    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <!-- the home page is marked as "deletable" although it is not while
          being the home page, but it could be swapped out with another page
@@ -47,8 +47,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="sitemapxml::priority" type="float">0.15</param>
     <param name="sitemapxml::frequency">yearly</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
-    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <param name="content::prevent_delete" type="int8" revision="global">0</param>
   </content>
@@ -63,8 +63,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="sitemapxml::priority" type="float">0.2</param>
     <param name="sitemapxml::frequency">yearly</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
-    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <param name="content::prevent_delete" type="int8" revision="global">0</param>
   </content>
@@ -86,8 +86,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="list::selector">children</param>
     <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
-    <link name="permissions::direct::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::edit" to="permissions::link_back::edit" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="robotstxt::forbidden" to="robotstxt::forbidden" mode="1:*">/types/taxonomy/system/robotstxt/forbidden</link>
   </content>
   <content path="/admin/settings">
@@ -106,7 +106,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="list::selector">children</param>
     <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <!-- this is for the locale plugin, however, the editor/layout information
        for that page are only available in the locale_settings plugin -->
@@ -119,7 +119,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
          default for websites... -->
     <param name="locale_settings::locale" revision="revision">en_US</param>
     <param name="locale_settings::timezone" revision="revision">America/Los_Angeles</param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/admin/layouts">
     <param name="content::title" revision="revision">List of Installed Layouts</param>
@@ -142,11 +142,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="layout::theme" revision="global">"type_theme";</param>
     <!-- the root content-types requires root privileges -->
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
-    <link name="permissions::action::create" to="permissions::link_back" mode="*:*">/types/permissions/rights/create</link>
-    <link name="permissions::action::delete" to="permissions::link_back" mode="*:*">/types/permissions/rights/delete</link>
-    <link name="permissions::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::action::create" to="permissions::link_back::create" mode="*:*">/types/permissions/rights/create</link>
+    <link name="permissions::action::delete" to="permissions::link_back::delete" mode="*:*">/types/permissions/rights/delete</link>
+    <link name="permissions::action::edit" to="permissions::link_back::edit" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view</link>
   </content>
   <content path="/types/taxonomy/system/content-types/administration-page">
     <param name="taxonomy::name">content::administration_page</param>
@@ -154,7 +154,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Internal pages created by plugins to manage your website are considered administration pages.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/system-page</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/system-page</link>
   </content>
   <content path="/types/taxonomy/system/content-types/layout-page">
     <param name="taxonomy::name">content::layout_page</param>
@@ -168,31 +168,31 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>By default pages you create are of this type. You can change the type of your pages in order to group them differently, give them a different look or environment, etc.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/public">
     <param name="content::title" revision="revision">Public Page Content Type</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Public pages can be viewed by anyone including anonymous users.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/public</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/private">
     <param name="content::title" revision="revision">Private Page Content Type</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Private pages can be viewed by users who registered an account and are logged in, recently or not.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/private</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/secure">
     <param name="content::title" revision="revision">Secure Page Content Type</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Secure pages can be viewed by users who registered an account and recently logged in.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/private</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/taxonomy/system/content-types/system-page">
     <param name="taxonomy::name">content::system_page</param>
@@ -264,16 +264,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Different images offered with Snap! Mostly used to make the system function as expected.</p>]]>
     </param>
-    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/images/snap">
     <param name="content::title" revision="revision">Images Offered by Core</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Set of images offered and used by Core.</p>]]>
     </param>
-    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="content-logo-64x64" type="attachment/public">
       <path>:/images/output/content-logo-64x64.png</path>
       <mime-type>image/png</mime-type>
@@ -333,14 +333,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>All our Cascading Style Sheets are installed under /css.</p>]]>
     </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/css/snap">
     <param name="content::title" revision="revision">System CSS</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>System or Global CSS such as the popup script CSS support.</p>]]>
     </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="output" type="attachment/public">
       <path>qrc:/css/output/output.css</path>
       <mime-type>text/css</mime-type>
@@ -352,7 +352,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>All our JavaScripts are installed under /js.</p>]]>
     </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/js/snap">
     <!-- System JavaScript are the global scripts that are not really specific to one plugin -->
@@ -360,7 +360,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>System or Global JavaScripts such as the jQuery library.</p>]]>
     </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="jquery" type="attachment/public">
       <path>:/js/output/jquery.js</path>
       <mime-type>text/javascript</mime-type>

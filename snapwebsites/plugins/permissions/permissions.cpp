@@ -2519,7 +2519,7 @@ void permissions::on_backend_action(QString const & action)
     if(action == get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR)
     || action == get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ROOT))
     {
-        // make specified user root
+        // make specified user an administrator or root user
         users::users * users_plugin(users::users::instance());
         QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
         QString const email(f_snap->get_server_parameter("ROOT_USER_EMAIL"));

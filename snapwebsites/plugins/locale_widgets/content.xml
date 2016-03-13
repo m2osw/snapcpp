@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>JavaScript code for the locale extension.</p>]]>
     </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="locale-timezone" type="attachment/public">
       <path>qrc:/js/locale_widgets/locale-timezone.js</path>
       <mime-type>text/javascript</mime-type>
@@ -36,7 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>CSS for the locale extension.</p>]]>
     </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="locale-timezone" type="attachment/public">
       <path>qrc:/css/locale_widgets/locale-timezone.css</path>
       <mime-type>text/css</mime-type>

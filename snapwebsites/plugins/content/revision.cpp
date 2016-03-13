@@ -322,7 +322,7 @@ snap_version::version_number_t content::get_new_branch(QString const & key, QStr
  *                                branch itself does not need to already
  *                                exist in the database.)
  */
-void content::copy_branch(QString const& key, snap_version::version_number_t const source_branch, snap_version::version_number_t const destination_branch)
+void content::copy_branch(QString const & key, snap_version::version_number_t const source_branch, snap_version::version_number_t const destination_branch)
 {
     QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
 
@@ -350,9 +350,6 @@ void content::copy_branch(QString const& key, snap_version::version_number_t con
 
     QtCassandra::QCassandraRow::pointer_t destination_row(branch_table->row(destination_uri.get_branch_key()));
 
-    QString const links_namespace(QString("%1::").arg(links::get_name(links::name_t::SNAP_NAME_LINKS_NAMESPACE)));
-    QByteArray const links_bytearray(links_namespace.toAscii());
-
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
     column_predicate.setIndex(); // behave like an index
@@ -371,11 +368,11 @@ void content::copy_branch(QString const& key, snap_version::version_number_t con
 }
 
 
-bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
 {
     // we handle the links here because the links cannot include the
     // content.h header file...
-    links::links *link_plugin(links::links::instance());
+    links::links * link_plugin(links::links::instance());
     QString const links_namespace(QString("%1::").arg(links::get_name(links::name_t::SNAP_NAME_LINKS_NAMESPACE)));
     QByteArray const links_bytearray(links_namespace.toAscii());
 

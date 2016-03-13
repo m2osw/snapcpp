@@ -276,20 +276,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>The very first user created in Snap! is assigned to the root group. This user can do anything in the entire set of websites.</p>]]>
     </param>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/permissions/groups/root/administrator">
     <param name="content::title" revision="revision">Administrator Group</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Group used by managers. Managers are linked to one specific website and they can do pretty much anything they want in that website except editing some top level system pages. In most cases, site owners are assigned the administrator group.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
-    <link name="permissions::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
-    <link name="permissions::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</link>
-    <link name="permissions::action::restore" to="permissions::link_back" mode="*:*">/types/permissions/rights/restore</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/administer/form</link>
+    <link name="permissions::action::edit" to="permissions::link_back::edit" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::edit" to="permissions::link_back::edit" mode="*:*">/types/permissions/rights/administer/form</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/form</link>
+    <link name="permissions::action::restore" to="permissions::link_back::restore" mode="*:*">/types/permissions/rights/restore</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor">
     <param name="content::title" revision="revision">Editor Group</param>
@@ -308,7 +308,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Group used by authors. Authors are people who can create and edit their own content on your website. Authors cannot modify someone else content.</p>]]>
     </param>
-    <link name="permissions::direct::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/edit/page</link>
+    <link name="permissions::direct::action::edit" to="permissions::link_back::edit" mode="*:*">/types/permissions/rights/edit/page</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter">
     <param name="content::title" revision="revision">Commenter Group</param>
@@ -322,17 +322,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Group of all the people who registered an account. In most cases registered users have just a little more rights than an anonymous user: he can see pages that are otherwise hidden from anonymous users.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/secure</link>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/secure</link>
-    <remove-link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/form</remove-link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/secure</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/attachment/secure</link>
+    <remove-link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/form</remove-link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user">
     <param name="content::title" revision="revision">Returning Registered User Group</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Groups that can be used to manager permissions on the set of users who are registered, came back, and are not currently logged in.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/private</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/private</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/attachment/private</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor">
     <param name="content::title" revision="revision">Returning Visitor Group</param>
@@ -345,12 +345,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Groups that can be used to manager permissions on a set of users.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/system-page</link>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
-    <link name="permissions::action::submit" to="permissions::link_back" mode="*:*">/types/permissions/rights/submit/form</link>
-    <link name="permissions::action::submit" to="permissions::link_back" mode="*:*">/types/permissions/rights/submit/survey</link>
-    <link name="permissions::action::submit" to="permissions::link_back" mode="*:*">/types/permissions/rights/submit/application</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/public</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/system-page</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::action::submit" to="permissions::link_back::submit" mode="*:*">/types/permissions/rights/submit/form</link>
+    <link name="permissions::action::submit" to="permissions::link_back::submit" mode="*:*">/types/permissions/rights/submit/survey</link>
+    <link name="permissions::action::submit" to="permissions::link_back::submit" mode="*:*">/types/permissions/rights/submit/application</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer">
     <param name="content::title" revision="revision">Spammer Group</param>
@@ -446,14 +446,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>This page is used to force the removal of the IFRAME before a login. The permission plugin detects such when a request is made with a query string defined as "iframe=true".</p>]]>
     </param>
-    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
   </content>
   <content path="/js/permissions">
     <param name="content::title" revision="revision">Permissions JavaScripts</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>JavaScripts for the permissions plugin.</p>]]>
     </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="remove-iframe-for-login" type="attachment/public">
       <path>:/js/permissions/remove-iframe-for-login.js</path>
       <mime-type>text/javascript</mime-type>

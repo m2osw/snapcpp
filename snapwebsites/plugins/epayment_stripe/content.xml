@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="editor::layout" revision="global" overwrite="yes">"epayment-stripe-settings-page";</param>
     <param name="layout::layout" revision="global" overwrite="yes">"epayment-stripe-settings-parser";</param>
     <param name="content::cache_control" revision="global" overwrite="yes">no-store</param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/epayment/stripe" owner="epayment_stripe">
     <param name="content::title" revision="revision">Various Stripe Specific Pages</param>

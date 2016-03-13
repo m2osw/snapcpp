@@ -995,6 +995,14 @@ void links::create_link(link_info const & src, link_info const & dst)
     // define the column names
     QString src_col, dst_col;
 
+    if(src.name() == "permissions::link_back"
+    || dst.name() == "permissions::link_back")
+    {
+        throw links_exception_invalid_name(QString("the link name must be more precise (\"%1\" or \"%2\" cannot just be \"permissions::link_back\".")
+                    .arg(src.name())
+                    .arg(dst.name()));
+    }
+
     // there is one special case: if a page is linked to itself (yes, it
     // happens, the page type of the system-page...); then the source and
     // destination names must differ otherwise we cannot read the link back

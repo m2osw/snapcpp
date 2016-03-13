@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Snap! Software Description Catalog.</p>]]>
     </param>
-    <link name="permissions::direct::action::administrer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::direct::action::administrer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content-->
   <content path="/types/snap-software-description" owner="output">
@@ -461,7 +461,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="editor::layout" revision="global" overwrite="yes">"snap_software_description-settings-page";</param>
     <param name="layout::layout" revision="global" overwrite="yes">"snap_software_description-settings-parser";</param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
 
   <!-- the following is test data for the only purpose of testing this plugin -->

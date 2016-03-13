@@ -29,14 +29,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </content>
   <content path="/sitemap.txt">
     <param name="content::final" type="int8" revision="global">1</param>
-    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/public</link>
   </content>
   <content path="/admin/settings/sitemapxml" owner="output">
     <param name="content::title" revision="revision">sitemap.xml settings</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Administer the different sitemap.xml files of your website. These files are for robots only. In most cases the default works as is.</p>]]>
     </param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/types/taxonomy/system/sitemapxml">
     <param name="content::title" revision="revision">XML Sitemap</param>
