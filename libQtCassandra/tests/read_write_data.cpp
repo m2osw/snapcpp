@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     //context->setDurableWrites(false); // by default this is 'true'
     context->setReplicationFactor(1); // by default this is undefined
 
-    QtCassandra::QCassandraTable::pointer_t table(context->createTable("qt_cassandra_test_table"));
+    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
     table->option( "general",     "comment"             ) = "Our test table.";
     table->option( "general",     "gc_grace_seconds"    ) = "3600";
     table->option( "compaction",  "class"               ) = "org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy";
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 
     // clear the cache, test that we can find all the cells
     (*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"].clearCache();
-    QtCassandra::QCassandraColumnPredicate column_predicate;
+    QtCassandra::QCassandraCellPredicate column_predicate;
     (*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].readCells(column_predicate);
     const QtCassandra::QCassandraCells& cells((*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].cells());
     qDebug() << "cells in 1st row" << cells.size();

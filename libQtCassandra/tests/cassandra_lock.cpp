@@ -159,24 +159,7 @@ int main(int argc, char *argv[])
             throw;
         }
 
-        bool caught = false;
-        try
-        {
-            context->table("qt_cassandra_test_table");
-        }
-        catch( const std::exception& ex )
-        {
-            qDebug() << "This is expected: table should not exist. Error=[" << ex.what() << "]";
-            caught = true;
-        }
-
-        if( !caught )
-        {
-            qDebug() << "error: this should not have found a non-existent table!";
-            throw;
-        }
-
-        QtCassandra::QCassandraTable::pointer_t table(context->createTable("qt_cassandra_test_table"));
+        QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
         table->option( "general",     "comment"             ) = "Test Table";
         table->option( "general",     "gc_grace_seconds"    ) = "3600";
         table->option( "compaction",  "class"               ) = "org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy";
@@ -184,23 +167,6 @@ int main(int argc, char *argv[])
         table->option( "compaction",  "max_threshold"       ) = "22";
         table->option( "compression", "sstable_compression" ) = "org.apache.cassandra.io.compress.LZ4Compressor";
         table->create();
-
-        caught = false;
-        try
-        {
-            context->createTable("qt_cassandra_test_table");
-        }
-        catch( const std::exception& ex )
-        {
-            qDebug() << "This is expected: table should exist. Error=[" << ex.what() << "]";
-            caught = true;
-        }
-
-        if( !caught )
-        {
-            qDebug() << "error: this should not create a table that existents!";
-            throw;
-        }
 
         // attempt a synchronization so when we quit we can immediately use the context
         //cassandra->synchronizeSchemaVersions();

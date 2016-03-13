@@ -197,9 +197,11 @@ const QByteArray& QCassandraRow::rowKey() const
  *
  * \return The number of cells defined in this row.
  *
- * \sa cells()
+ * \note This method no longer changes the row set from the query!
+ *
+ * \sa cells(), QCassandraTable::readRows()
  */
-int QCassandraRow::cellCount(const QCassandraColumnPredicate& /*column_predicate*/)
+int QCassandraRow::cellCount( const QCassandraCellPredicate::pointer_t column_predicate )
 {
     return static_cast<int>(f_cells.size());
 }
@@ -242,14 +244,14 @@ uint32_t QCassandraRow::readCells()
 /** \brief Read the cells as defined by the predicate.
  *
  * This function reads a set of cells as specified by the specified
- * predicate. If you use the default QCassandraColumnPredicate, then
+ * predicate. If you use the default QCassandraCellPredicate, then
  * the first 100 cells are read.
  *
  * If you are using columns as an index, then the column_predicate
  * parameter gets modified by this function. The start column name
  * is updated with the name of the last row read on each iteration.
  *
- * See the QCassandraColumnPredicate for more information on how to
+ * See the QCassandraCellPredicate for more information on how to
  * select columns.
  *
  * This function is often called to read an entire row in memory all
@@ -260,9 +262,11 @@ uint32_t QCassandraRow::readCells()
  *
  * \param[in,out] column_predicate  The predicate used to select which columns to read.
  *
- * \sa setIndex()
+ * \note This method no longer changes the row set from the query!
+ *
+ * \sa setIndex(), QCassandraTable::readRows()
  */
-uint32_t QCassandraRow::readCells(QCassandraColumnPredicate& /*column_predicate*/)
+uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t /*column_predicate*/ )
 {
     return f_cells.size();
 }

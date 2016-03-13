@@ -36,7 +36,7 @@
 #pragma once
 
 #include "QtCassandra/QCassandraCell.h"
-#include "QtCassandra/QCassandraColumnPredicate.h"
+#include "QtCassandra/QCassandraPredicate.h"
 
 #include <memory>
 
@@ -59,9 +59,9 @@ public:
     QString rowName() const;
     const QByteArray& rowKey() const;
 
-    int cellCount(const QCassandraColumnPredicate& column_predicate = QCassandraColumnPredicate());
+    int cellCount(const QCassandraCellPredicate::pointer_t column_predicate = QCassandraCellPredicate::pointer_t());
     uint32_t readCells();
-    uint32_t readCells(QCassandraColumnPredicate& column_predicate);
+    uint32_t readCells(QCassandraCellPredicate::pointer_t column_predicate);
 
     QCassandraCell::pointer_t cell(const char* column_name);
     QCassandraCell::pointer_t cell(const QString& column_name);

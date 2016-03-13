@@ -41,11 +41,10 @@ include_directories( ${CASSANDRACPPDRIVER_INCLUDE_DIR} )
 add_library(${PROJECT_NAME} SHARED
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandra.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraCell.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraColumnPredicate.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraContext.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraLock.h
+    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraPredicate.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraRow.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraRowPredicate.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraTable.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraTools.h
     ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraValue.h
@@ -54,10 +53,9 @@ add_library(${PROJECT_NAME} SHARED
     QCassandra.cpp
     QCassandraCell.cpp
     QCassandraContext.cpp
-    QCassandraColumnPredicate.cpp
     QCassandraLock.cpp
+    QCassandraPredicate.cpp
     QCassandraRow.cpp
-    QCassandraRowPredicate.cpp
     QCassandraTable.cpp
     QCassandraTools.cpp
     QCassandraValue.cpp

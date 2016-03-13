@@ -10,10 +10,10 @@
  *
  * License:
  *      Copyright (c) 2011-2016 Made to Order Software Corp.
- * 
+ *
  *      http://snapwebsites.org/
  *      contact@m2osw.com
- * 
+ *
  *      Permission is hereby granted, free of charge, to any person obtaining a
  *      copy of this software and associated documentation files (the
  *      "Software"), to deal in the Software without restriction, including
@@ -526,28 +526,15 @@ void QCassandraContext::eraseDescriptionOption(const QString& option)
 QCassandraTable::pointer_t QCassandraContext::table(const QString& table_name)
 {
     QCassandraTable::pointer_t t( findTable( table_name ) );
-    if( t == QCassandraTable::pointer_t() )
-    {
-        throw std::runtime_error( "You must create the table first!" );
-    }
-    return t;
-}
-
-/// \brief New table generator
-///
-/// Make sure you call QCassandraTable::create(), otherwise it won't be added to the database!
-///
-QCassandraTable::pointer_t QCassandraContext::createTable( const QString& table_name )
-{
-    QCassandraTable::pointer_t t( findTable( table_name ) );
     if( t != QCassandraTable::pointer_t() )
     {
-        throw std::runtime_error( QString("Table %1 already exists!").arg(table_name).toUtf8().data() );
+        return t;
     }
 
-    // Note that this does not add it to the table map yet. This will be done in the QCassandraTable::create() method.
-    //
-    return QCassandraTable::pointer_t( new QCassandraTable(shared_from_this(), table_name) );
+    // this is a new table, allocate it
+    t.reset( new QCassandraTable(shared_from_this(), table_name) );
+    f_tables.insert( table_name, t );
+    return t;
 }
 
 void QCassandraContext::loadTables()
@@ -1247,10 +1234,11 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
     lock_table->setMaxCompactionThreshold(22);
     lock_table->setReplicateOnWrite(1);
 #endif
-    lock_table->option( "general", "comment" )          = "Lock Table";
-    lock_table->option( "general", "gc_grace_seconds" ) = "3600";
-    lock_table->option( "compaction", "min_threshold" ) = "4";
-    lock_table->option( "compaction", "max_threshold" ) = "22";
+    lock_table->option( "general",    "comment"          ) = "Lock Table";
+    lock_table->option( "general",    "gc_grace_seconds" ) = "3600";
+    lock_table->option( "compaction", "class"            ) = "org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy";
+    lock_table->option( "compaction", "min_threshold"    ) = "4";
+    lock_table->option( "compaction", "max_threshold"    ) = "22";
     lock_table->create();
 
     // we create the table when needed and then use it ASAP so we need

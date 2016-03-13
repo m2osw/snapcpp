@@ -36,7 +36,7 @@
 #pragma once
 
 #include "QCassandraTable.h"
-#include "QCassandraColumnPredicate.h"
+#include "QCassandraPredicate.h"
 
 #include <controlled_vars/controlled_vars_auto_init.h>
 
@@ -72,8 +72,6 @@ public:
     void    eraseDescriptionOption(const QString& option);
 
     // tables
-    QCassandraTable::pointer_t createTable( const QString& table_name );
-
     QCassandraTable::pointer_t table(const QString& table_name);
     const QCassandraTables& tables();
 

@@ -126,17 +126,17 @@ target_link_libraries(simple_counter
 )
 
 ################################################################################
-project(composite_type)
-
-add_executable(composite_type
-    composite_type.cpp
-)
-
-target_link_libraries(composite_type
-    QtCassandra
-    ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
-)
+#project(composite_type)
+#
+#add_executable(composite_type
+#    composite_type.cpp
+#)
+#
+#target_link_libraries(composite_type
+#    QtCassandra
+#    ${QT_LIBRARIES}
+#    ${THRIFT_LIBRARIES}
+#)
 
 ################################################################################
 project(cassandra_lock)
@@ -183,9 +183,9 @@ add_custom_target(run_cassandra_tests
     COMMAND echo "========================================="
     COMMAND echo "simple_counter -h ${CASSANDRA_IP}"
     COMMAND simple_counter -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "composite_type -h ${CASSANDRA_IP}"
-    COMMAND composite_type -h ${CASSANDRA_IP}
+    #COMMAND echo "========================================="
+    #COMMAND echo "composite_type -h ${CASSANDRA_IP}"
+    #COMMAND composite_type -h ${CASSANDRA_IP}
     COMMAND echo "========================================="
     COMMAND echo "cassandra_lock -h ${CASSANDRA_IP}"
     COMMAND cassandra_lock -h ${CASSANDRA_IP} -i 4 -n 5
@@ -197,7 +197,7 @@ add_custom_target(run_cassandra_tests
         read_write_data
         million_rows
         simple_counter
-        composite_type
+        #composite_type
         cassandra_lock
 )
 

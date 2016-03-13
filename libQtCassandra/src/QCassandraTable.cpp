@@ -427,13 +427,25 @@ void QCassandraTable::clearCache()
 
 void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data )
 {
-    QCassandraRow::pointer_t  new_row  ( new QCassandraRow( shared_from_this(), row_key ) );
-    QCassandraCell::pointer_t new_cell ( new_row->cell( column_key ) );
-    new_cell->assignValue( QCassandraValue(data) );
+#if 0
+    auto row_iter( f_rows.find(row_key) );
+    if( row_iter == f_rows.end() )
+    {
+#endif
+        QCassandraRow::pointer_t  new_row  ( new QCassandraRow( shared_from_this(), row_key ) );
+        QCassandraCell::pointer_t new_cell ( new_row->cell( column_key ) );
+        new_cell->assignValue( QCassandraValue(data) );
 
-    // Now add to the map.
-    //
-    f_rows[row_key] = new_row;
+        // Now add to the map.
+        //
+        f_rows[row_key] = new_row;
+#if 0
+    }
+    else
+    {
+        row_iter->cell(column_key)->assignValue( QCassandraValue(data) );
+    }
+#endif
 }
 
 
@@ -442,7 +454,7 @@ void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& colum
  * This function reads a set of rows as defined by the row predicate.
  *
  * To change the consistency for this read, check out the
- * QCassandraColumnPredicate::setConsistencyLevel() function.
+ * QCassandraCellPredicate::setConsistencyLevel() function.
  *
  * If the table is not connected to Cassandra (i.e. the table is
  * a memory table) then nothing happens.
@@ -473,19 +485,12 @@ void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& colum
  * \return The number of rows read.
  *
  * \sa QCassandraRowPredicate (see detailed description of row predicate for an example)
- * \sa QCassandraColumnPredicate::setConsistencyLevel()
+ * \sa QCassandraCellPredicate::setConsistencyLevel()
  * \sa dropRow()
  */
-uint32_t QCassandraTable::readRows( QCassandraRowPredicate& row_predicate )
+uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predicate )
 {
     f_rows.clear();
-
-    if( &row_predicate != f_currentPredicate )
-    {
-        f_queryStmt.reset();
-    }
-
-    f_currentPredicate = &row_predicate;
 
     if( f_queryStmt )
     {
@@ -499,10 +504,23 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate& row_predicate )
     }
     else
     {
-        const QString query( QString("SELECT key,column1,value FROM %1.%2").arg(f_context->contextName()).arg(f_tableName) );
+        QString query( QString("SELECT key,column1,value FROM %1.%2").arg(f_context->contextName()).arg(f_tableName) );
+        int bind_count = 0;
+        if( row_predicate )
+        {
+            row_predicate->appendQuery( query, bind_count );
+        }
+        query += " ALLOW FILTERING";
         //
-        f_queryStmt.reset( cass_statement_new( query.toUtf8().data(), 0 ), statementDeleter() );
-        cass_statement_set_paging_size( f_queryStmt.get(), row_predicate.count() );
+        std::cout << "query=[" << query.toUtf8().data() << "]" << std::endl;
+        f_queryStmt.reset( cass_statement_new( query.toUtf8().data(), bind_count ), statementDeleter() );
+        //
+        if( row_predicate )
+        {
+            int bind_num = 0;
+            row_predicate->bindQuery( f_queryStmt, bind_num );
+            cass_statement_set_paging_size( f_queryStmt.get(), row_predicate->count() );
+        }
     }
 
     f_sessionExecute.reset( cass_session_execute( f_context->parentCassandra()->session().get(), f_queryStmt.get() ) , futureDeleter()    );
@@ -683,7 +701,7 @@ QCassandraRow::pointer_t QCassandraTable::findRow(const QByteArray& row_key)
  *
  * \return true if the row exists in memory or the Cassandra database.
  */
-bool QCassandraTable::exists(const QString& row_name)
+bool QCassandraTable::exists(const QString& row_name) const
 {
     return exists(row_name.toUtf8());
 }
@@ -715,7 +733,7 @@ bool QCassandraTable::exists(const QString& row_name)
  *
  * \return true if the row exists in memory or in Cassandra.
  */
-bool QCassandraTable::exists(const QByteArray& row_key)
+bool QCassandraTable::exists(const QByteArray& row_key) const
 {
     // an empty key cannot represent a valid row
     if(row_key.size() == 0)
@@ -730,7 +748,19 @@ bool QCassandraTable::exists(const QByteArray& row_key)
         return true;
     }
 
-    return false;
+    QCassandraRowPredicate::pointer_t row_predicate( new QCassandraRowPredicate );
+    row_predicate.setrowKey(row_key);
+
+    // define a key range that is quite unlikely to match any column
+    QCassandraCellRangePredicate::pointer_t cell_pred( new QCassandraCellRangePredicate );
+    QByteArray key;
+    setInt32Value(key, 0x00000000);
+    cell_pred->setStartCellKey(key);
+    setInt32Value(key, 0x00000001);
+    cell_pred->setEndCellKey(key);
+    row_predicate->setCellPredicate( std::static_pointer_cast<QCassandraCellPredicate>( cell_pred ) );
+
+    return const_cast<QCassandraTable *>(this)->readRows( row_predicate ) != 0;
 }
 
 /** \brief Retrieve a table row.
@@ -916,8 +946,8 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
 {
     QCassandraValue value( p_value );
     int row_id    = 0;
-    int column_id = 0;
-    int value_id  = 0;
+    int column_id = 1;
+    int value_id  = 2;
     QString query_string;
     if( f_defaultValidationClass == "CounterColumnType" )
     {
@@ -1002,7 +1032,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
  *
  * \return The number of columns in this row.
  */
-int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& /*column_predicate*/)
+int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandraCellPredicate& /*column_predicate*/)
 {
     if( f_rows.find( row_key ) == f_rows.end() )
     {

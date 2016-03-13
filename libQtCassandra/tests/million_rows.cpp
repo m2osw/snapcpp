@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     //context->setDurableWrites(false); // by default this is 'true'
     context->setReplicationFactor(2); // by default this is undefined
 
-    QtCassandra::QCassandraTable::pointer_t table(context->createTable("qt_cassandra_test_table"));
+    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
     table->option( "general",     "comment"             ) = "Our test table.";
     table->option( "general",     "gc_grace_seconds"    ) = "3600";
     table->option( "compaction",  "class"               ) = "org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy";

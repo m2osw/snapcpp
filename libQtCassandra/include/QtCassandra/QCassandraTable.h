@@ -35,7 +35,7 @@
  */
 #pragma once
 
-#include "QtCassandra/QCassandraRowPredicate.h"
+#include "QtCassandra/QCassandraPredicate.h"
 #include "QtCassandra/QCassandraRow.h"
 #include "QtCassandra/QCassandraTools.h"
 
@@ -85,7 +85,7 @@ public:
     void clearCache();
 
     // row handling
-    uint32_t readRows(QCassandraRowPredicate& row_predicate);
+    uint32_t readRows(QCassandraRowPredicate::pointer_t row_predicate = QCassandraRowPredicate::pointer_t() );
 
     QCassandraRow::pointer_t    row(const char*       row_name);
     QCassandraRow::pointer_t    row(const QString&    row_name);
@@ -94,8 +94,8 @@ public:
 
     QCassandraRow::pointer_t    findRow(const QString& row_name);
     QCassandraRow::pointer_t    findRow(const QByteArray& row_name);
-    bool                        exists(const QString& row_name);
-    bool                        exists(const QByteArray& row_name);
+    bool                        exists(const QString& row_name) const;
+    bool                        exists(const QByteArray& row_name) const;
     QCassandraRow&              operator[] (const QString& row_name);
     QCassandraRow&              operator[] (const QByteArray& row_name);
     //const QCassandraRow&        operator[] (const QString& row_name) const;
@@ -113,7 +113,7 @@ private:
     bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
-    int32_t     getCellCount(const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate);
+    int32_t     getCellCount(const QByteArray& row_key, const QCassandraCellPredicate& column_predicate);
     void 		remove( const QByteArray& row_key, const QByteArray& column_key );
     void 		remove( const QByteArray& row_key );
     void 		loadTables();
@@ -130,7 +130,7 @@ private:
     type_option_map_t                           f_options;
     //controlled_vars::flbool_t                   f_from_cassandra;
     QCassandraRows                              f_rows;
-    QCassandraRowPredicate*                     f_currentPredicate;
+    //QCassandraRowPredicate::pointer_t           f_currentPredicate;
 
     statement_pointer_t                         f_queryStmt;
     future_pointer_t                            f_sessionExecute;
