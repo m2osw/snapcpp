@@ -38,18 +38,27 @@ project( QtCassandra )
 
 include_directories( ${CASSANDRACPPDRIVER_INCLUDE_DIR} )
 
+configure_file(
+		QtCassandra/QCassandraVersion.h.in
+		${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+		)
+
+set( HEADER_FILES
+    QtCassandra/QCassandra.h
+    QtCassandra/QCassandraCell.h
+    QtCassandra/QCassandraContext.h
+    QtCassandra/QCassandraLock.h
+    QtCassandra/QCassandraPredicate.h
+    QtCassandra/QCassandraRow.h
+    QtCassandra/QCassandraTable.h
+    QtCassandra/QCassandraTools.h
+    QtCassandra/QCassandraValue.h
+    QtCassandra/QCassandraVersion.h.in
+    ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+)
+
 add_library(${PROJECT_NAME} SHARED
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandra.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraCell.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraContext.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraLock.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraPredicate.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraRow.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraTable.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraTools.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraValue.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraVersion.h.in
-    ${libQtCassandra_includes_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+    ${HEADER_FILES}
     QCassandra.cpp
     QCassandraCell.cpp
     QCassandraContext.cpp
@@ -78,6 +87,16 @@ endif()
 
 install(
     TARGETS QtCassandra LIBRARY DESTINATION lib
+)
+
+install(
+	FILES ${HEADER_FILES}
+	DESTINATION include/QtCassandra
+)
+
+install(
+	FILES ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+	DESTINATION include/QtCassandra/
 )
 
 # vim: ts=4 sw=4 et
