@@ -1104,6 +1104,16 @@ void snap_backend::process_message(snap::snap_communicator_message const & messa
         if(f_website.isEmpty())
         {
             add_uri_for_processing(f_action, get_current_date(), uri);
+
+            // if no child is currently running, wake up the messager ASAP
+            //
+            if(!g_child_connection)
+            {
+#ifdef DEBUG
+                SNAP_LOG_TRACE("Run the child now since it was not running.");
+#endif
+                g_wakeup_timer->set_timeout_date(snap_communicator::get_current_date());
+            }
         }
         else
         {

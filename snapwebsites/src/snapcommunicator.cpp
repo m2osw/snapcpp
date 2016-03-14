@@ -68,7 +68,7 @@
  * |      | Connect         |     |      | Connect      +----------------+  |
  * |      | (TCP/IP)        |     |      | (TCP/IP)     |   Snap Child   |  |
  * |      |                 |     |      |              |    Process     |  |
- * |      |                 |     |      |              +----------------+  |
+ * |      v                 |     |      |              +----------------+  |
  * |  +----------------+    |     |  +----------------+        ^            |
  * |  |     Images     |    |     |  |     Snap!      |        |            |
  * |  |    Backend     |    |     |  |    Server      |--------+            |
@@ -2090,7 +2090,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                 {
                     // ignore the error because this can come from an
                     // external source (i.e. snapsignal) where an end
-                    // user may break the whole system!
+                    // user may try to break the whole system!
                 }
                 return;
             }
