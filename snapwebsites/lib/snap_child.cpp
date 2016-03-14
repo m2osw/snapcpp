@@ -8603,7 +8603,10 @@ void snap_child::udp_ping(char const * service_name)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
-    server->udp_ping_server(service_name, f_uri.get_uri());
+    // the URI to be used with PING is the website URI, not the full page
+    // URI (otherwise it does not work as expected)
+    //
+    server->udp_ping_server(service_name, f_uri.get_website_uri());
 }
 
 

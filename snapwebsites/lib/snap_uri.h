@@ -100,6 +100,7 @@ public:
     bool                set_uri(QString const & uri);
     QString const &     get_original_uri() const;
     QString             get_uri(bool use_hash_bang = false) const;
+    QString             get_website_uri(bool include_port = false) const;
 
     // get a part by name
     QString             get_part(QString const & name, int part = -1) const;

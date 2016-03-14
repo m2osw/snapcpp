@@ -187,9 +187,6 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_SENDMAIL_NEW:
         return "new";
 
-    case name_t::SNAP_NAME_SENDMAIL_PING:
-        return "PING";
-
     case name_t::SNAP_NAME_SENDMAIL_PRECEDENCE:
         return "Precedence";
 
@@ -1907,7 +1904,7 @@ void sendmail::post_email(email const & e)
     value.setStringValue(data);
     emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW))->cell(key)->setValue(value);
 
-    // signal the listening server if IP is available (send PING)
+    // signal the sendmail backend server with a PING
     f_snap->udp_ping(get_name(name_t::SNAP_NAME_SENDMAIL));
 }
 

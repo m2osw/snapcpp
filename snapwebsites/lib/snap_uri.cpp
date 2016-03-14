@@ -580,6 +580,39 @@ QString snap_uri::get_uri(bool use_hash_bang) const
 }
 
 
+/** \brief Retrieve the URI of the website.
+ *
+ * This function returns the URI of the website, without any path,
+ * query string options, anchor. The port is included only if it
+ * does not correspond to the protocol and the \p include_port flag
+ * is set to true.
+ *
+ * \param[in] include_port  Whether the port should be included.
+ *
+ * \return The domain name with the protocol and optionally the port.
+ */
+QString snap_uri::get_website_uri(bool include_port) const
+{
+    QString result(f_protocol);
+
+    result += "://";
+    result += full_domain();
+
+    // only include the port if the caller wants it and if it does not
+    // match the default protocol port
+    //
+    if(include_port
+    && protocol_to_port(f_protocol) != f_port)
+    {
+        result += QString(":%1").arg(f_port);
+    }
+
+    result += "/";
+
+    return result;
+}
+
+
 /** \brief Retrieve a part by name.
  *
  * This function allows you to retrieve a part by name.
@@ -1026,7 +1059,7 @@ QString snap_uri::sub_domain(int part) const
  *
  * \return A list of strings representing the sub-domains.
  */
-snap_string_list const& snap_uri::sub_domains_list() const
+snap_string_list const & snap_uri::sub_domains_list() const
 {
     return f_sub_domains;
 }
@@ -1049,7 +1082,7 @@ snap_string_list const& snap_uri::sub_domains_list() const
  *
  * \param[in] port  The new port for this Snap URI object.
  */
-void snap_uri::set_port(QString const& port)
+void snap_uri::set_port(QString const & port)
 {
     bool ok;
     int p = port.toInt(&ok);
@@ -1297,7 +1330,7 @@ QString snap_uri::path_folder_name(int part) const
  *
  * \return A constant reference to the list of string forming the path.
  */
-snap_string_list const& snap_uri::path_list() const
+snap_string_list const & snap_uri::path_list() const
 {
     return f_path;
 }
@@ -2021,7 +2054,7 @@ QString snap_uri::urldecode(QString const& uri, bool relax)
  * \return The corresponding port number or -1 if the function cannot
  *         determine that number.
  */
-int snap_uri::protocol_to_port(const QString& protocol)
+int snap_uri::protocol_to_port(QString const & protocol)
 {
     if(protocol == "http") // 99% so put it first
     {

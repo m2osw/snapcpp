@@ -1436,6 +1436,11 @@ void server::detach()
  * The \p upd_addr_port parameter is an IP address (IPv4 or IPv6)
  * which must be followed by a colon and a port number.
  *
+ * \warning
+ * The URI is expected to NOT include any port, path, query string
+ * options, anchor information. Only the protocol and full domain
+ * name ended by a slash.
+ *
  * \param[in] service  The name of the service to ping.
  * \param[in] uri  The website generating the ping.
  */
