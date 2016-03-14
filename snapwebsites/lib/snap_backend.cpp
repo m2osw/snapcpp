@@ -655,6 +655,12 @@ bool snap_backend::stop_received() const
  * processed on a certain date. The URIs are first organized by actions
  * and then by date.
  *
+ * \warning
+ * The action MUST include the namespace. So if you call from a plugin
+ * named "list", for example, the action name must start with "list::"
+ * as in "list::pagelist". Otherwise it will not match the f_action
+ * parameter used in other places and the data will be ignored.
+ *
  * \param[in] action  The action concerned by this.
  * \param[in] date  The date when this action should next be applied.
  * \param[in] website_uri  The URI of the website on which the \p action should
@@ -1001,12 +1007,7 @@ bool snap_backend::process_timeout()
         // we want to check for the next entry in our backend table
         //
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        //
-        // TODO: we should have a setCount() of 1 but the tombstones
-        //       create problems and for now (until CQL?) we use 100
-        //       See SNAP-327
-        //
-        column_predicate.setCount(100); // read only the first row
+        column_predicate.setCount(1); // read only the first row -- WARNING: if you increase that number you MUST add a sub-loop
         column_predicate.setIndex(); // behave like an index
         QtCassandra::QCassandraRow::pointer_t row(f_backend_table->row(f_action));
         for(;;)

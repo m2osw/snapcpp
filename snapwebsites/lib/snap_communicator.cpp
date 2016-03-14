@@ -868,7 +868,7 @@ void snap_communicator::snap_connection::calculate_next_tick()
  * may overload this function to return a different value so your
  * version can time out.
  *
- * \return This function returns the timeout date.
+ * \return This function returns the timeout date in microseconds.
  */
 int64_t snap_communicator::snap_connection::get_timeout_date() const
 {

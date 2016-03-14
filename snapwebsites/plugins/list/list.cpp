@@ -2003,8 +2003,8 @@ void list::on_backend_action(QString const & action)
         // Calculate when we want to be awaken again and transmit that
         // information to the backend process via the database
         //
-        int64_t date_limit(f_date_limit - f_snap->get_current_date());
-        if(date_limit < 0
+        int64_t date_limit(f_date_limit);
+        if(date_limit < f_snap->get_current_date()
         || did_work != 0)
         {
             date_limit = f_snap->get_start_date();
@@ -2023,7 +2023,7 @@ void list::on_backend_action(QString const & action)
         snap_backend * sb(dynamic_cast<snap_backend *>(f_snap.get()));
         if(sb != nullptr)
         {
-            sb->add_uri_for_processing(action, date_limit, site_key);
+            sb->add_uri_for_processing(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_NAMESPACE)).arg(action), date_limit, site_key);
         }
     }
     else if(action == get_name(name_t::SNAP_NAME_LIST_PROCESSLIST))
@@ -2496,16 +2496,33 @@ int list::generate_all_lists(QString const & site_key)
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     QtCassandra::QCassandraRow::pointer_t list_row(list_table->row(site_key));
 
-    // note that we do not loop over all the lists, instead we work on
-    // 100 items and then exit; we do so because the cells get deleted
-    // and thus we work on less entries on the next call, but give a
-    // chance to the main process to create new entries each time
+    // the algorithm makes use of multiple limits to keep the time as
+    // low as possible and give other websites a chance to update their
+    // own lists:
+    //
+    // . we read 100 items and start work on them; if there are less items
+    //   to work on, then we work on as many as available
+    //
+    // . on large websites, checking a single list can take seconds so we
+    //   also limit the algorithm with time; we work on items for up to
+    //   one minute, if that deadline is reached, we return (albeit only
+    //   after we are done working on a certain item)
+    //
+    // . on small websites, checking 100 lists can be very fast, in that
+    //   case we may try the next 100, but only if the time spent on the
+    //   first 100 was less than 10 seconds
+    //
+    // note that systems with a really large number of website (and "really
+    // large" is currently totally open to interpretation) you may want
+    // multiple backends running the list process; this means multiple
+    // websites can then be updated in parallel; note, however, that one
+    // website cannot be update by more than one process at a time.
     //
     // Note: because it is sorted by timestamp,
     //       the oldest entries are automatically worked on first
     //
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100); // do one round then exit (we also check time and run at most 10ms too)
+    column_predicate.setCount(100);
     column_predicate.setIndex(); // behave like an index
 
     int did_work(0);
@@ -2604,6 +2621,15 @@ int list::generate_all_lists(QString const & site_key)
             did_work |= 1; // since we delete an entry, we did something and we have to return did_work != 0
 
             SNAP_LOG_TRACE("list is done working on this column.");
+
+            // limit the time on the 100 items to 1 minute
+            //
+            int64_t const loop_current_time(f_snap->get_current_date());
+            if(loop_current_time - loop_start_time > 60 * 1000000)
+            {
+                continue_work = false;
+                break;
+            }
         }
 
         // run for a max. of 10 seconds
