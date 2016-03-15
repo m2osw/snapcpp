@@ -297,15 +297,6 @@ bool QCassandraPrivate::connect(const QStringList& host_list, const int port )
     cass_value_get_string( value, &byte_value, &value_len );
     f_partitioner = byte_value;
 
-#if 0
-    QStringList keyspaces;
-    executeQuery( "SELECT keyspace_name FROM system.schema_keyspaces;", keyspaces );
-    for( auto keyspace : keyspaces )
-    {
-        context( keyspace );
-    }
-#endif
-
     return true;
 }
 
