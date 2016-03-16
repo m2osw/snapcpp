@@ -53,9 +53,9 @@ set( HEADER_FILES
     QtCassandra/QCassandraContext.h
     QtCassandra/QCassandraLock.h
     QtCassandra/QCassandraPredicate.h
+    QtCassandra/QCassandraQuery.h
     QtCassandra/QCassandraRow.h
     QtCassandra/QCassandraTable.h
-    QtCassandra/QCassandraTools.h
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
     ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
@@ -73,10 +73,12 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraCell.cpp
     QCassandraContext.cpp
     QCassandraLock.cpp
+    QCassandraPrivate.h
+    QCassandraPrivate.cpp
     QCassandraPredicate.cpp
+    QCassandraQuery.cpp
     QCassandraRow.cpp
     QCassandraTable.cpp
-    QCassandraTools.cpp
     QCassandraValue.cpp
 )
 

@@ -7,97 +7,123 @@
 
 #include <algorithm>
 
-namespace org { namespace apache { namespace cassandra {
+namespace org
+{
+namespace apache
+{
+namespace cassandra
+{
 
 #if 0
 int _kIndexTypeValues[] = {
-  IndexType::KEYS,
-  IndexType::CUSTOM,
-  IndexType::COMPOSITES
+    IndexType::KEYS,
+    IndexType::CUSTOM,
+    IndexType::COMPOSITES
 };
 const char* _kIndexTypeNames[] = {
-  "KEYS",
-  "CUSTOM",
-  "COMPOSITES"
+    "KEYS",
+    "CUSTOM",
+    "COMPOSITES"
 };
 const std::map<int, const char*> _IndexType_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(3, _kIndexTypeValues, _kIndexTypeNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
 #endif
 
-const char* ColumnDef::ascii_fingerprint = "0D89CE83D7EDAD079AC3213ED1DCAA58";
-const uint8_t ColumnDef::binary_fingerprint[16] = {0x0D,0x89,0xCE,0x83,0xD7,0xED,0xAD,0x07,0x9A,0xC3,0x21,0x3E,0xD1,0xDC,0xAA,0x58};
+const char *ColumnDef::ascii_fingerprint = "0D89CE83D7EDAD079AC3213ED1DCAA58";
+const uint8_t ColumnDef::binary_fingerprint[16] = {
+    0x0D, 0x89, 0xCE, 0x83, 0xD7, 0xED, 0xAD, 0x07,
+    0x9A, 0xC3, 0x21, 0x3E, 0xD1, 0xDC, 0xAA, 0x58};
 
-void swap(ColumnDef &a, ColumnDef &b) {
-  using ::std::swap;
-  swap(a.name, b.name);
-  swap(a.validation_class, b.validation_class);
-  swap(a.index_type, b.index_type);
-  swap(a.index_name, b.index_name);
-  swap(a.index_options, b.index_options);
-  swap(a.__isset, b.__isset);
-}
-
-const char* CfDef::ascii_fingerprint = "3D2F73880CC64DDE3E1F25480C58FD72";
-const uint8_t CfDef::binary_fingerprint[16] = {0x3D,0x2F,0x73,0x88,0x0C,0xC6,0x4D,0xDE,0x3E,0x1F,0x25,0x48,0x0C,0x58,0xFD,0x72};
-
-void swap(CfDef &a, CfDef &b)
+void swap( ColumnDef &a, ColumnDef &b )
 {
-  using ::std::swap;
-  swap(a.keyspace, b.keyspace);
-  swap(a.name, b.name);
-  swap(a.column_type, b.column_type);
-  swap(a.comparator_type, b.comparator_type);
-  swap(a.subcomparator_type, b.subcomparator_type);
-  swap(a.comment, b.comment);
-  swap(a.read_repair_chance, b.read_repair_chance);
-  swap(a.column_metadata, b.column_metadata);
-  swap(a.gc_grace_seconds, b.gc_grace_seconds);
-  swap(a.default_validation_class, b.default_validation_class);
-  swap(a.id, b.id);
-  swap(a.min_compaction_threshold, b.min_compaction_threshold);
-  swap(a.max_compaction_threshold, b.max_compaction_threshold);
-  swap(a.replicate_on_write, b.replicate_on_write);
-  swap(a.key_validation_class, b.key_validation_class);
-  swap(a.key_alias, b.key_alias);
-  swap(a.compaction_strategy, b.compaction_strategy);
-  swap(a.compaction_strategy_options, b.compaction_strategy_options);
-  swap(a.compression_options, b.compression_options);
-  swap(a.bloom_filter_fp_chance, b.bloom_filter_fp_chance);
-  swap(a.caching, b.caching);
-  swap(a.dclocal_read_repair_chance, b.dclocal_read_repair_chance);
-  swap(a.populate_io_cache_on_flush, b.populate_io_cache_on_flush);
-  swap(a.memtable_flush_period_in_ms, b.memtable_flush_period_in_ms);
-  swap(a.default_time_to_live, b.default_time_to_live);
-  swap(a.index_interval, b.index_interval);
-  swap(a.speculative_retry, b.speculative_retry);
-  swap(a.triggers, b.triggers);
-  swap(a.row_cache_size, b.row_cache_size);
-  swap(a.key_cache_size, b.key_cache_size);
-  swap(a.row_cache_save_period_in_seconds, b.row_cache_save_period_in_seconds);
-  swap(a.key_cache_save_period_in_seconds, b.key_cache_save_period_in_seconds);
-  swap(a.memtable_flush_after_mins, b.memtable_flush_after_mins);
-  swap(a.memtable_throughput_in_mb, b.memtable_throughput_in_mb);
-  swap(a.memtable_operations_in_millions, b.memtable_operations_in_millions);
-  swap(a.merge_shards_chance, b.merge_shards_chance);
-  swap(a.row_cache_provider, b.row_cache_provider);
-  swap(a.row_cache_keys_to_save, b.row_cache_keys_to_save);
-  swap(a.__isset, b.__isset);
+    using ::std::swap;
+    swap( a.name, b.name );
+    swap( a.validation_class, b.validation_class );
+    swap( a.index_type, b.index_type );
+    swap( a.index_name, b.index_name );
+    swap( a.index_options, b.index_options );
+    swap( a.__isset, b.__isset );
 }
 
-const char* KsDef::ascii_fingerprint = "465E9A5DAAF09390BB3CB86E62BD37E8";
-const uint8_t KsDef::binary_fingerprint[16] = {0x46,0x5E,0x9A,0x5D,0xAA,0xF0,0x93,0x90,0xBB,0x3C,0xB8,0x6E,0x62,0xBD,0x37,0xE8};
+const char *TriggerDef::ascii_fingerprint = "F7C641917C22B35AE581CCD54910B00D";
+const uint8_t TriggerDef::binary_fingerprint[16] = {
+    0xF7, 0xC6, 0x41, 0x91, 0x7C, 0x22, 0xB3, 0x5A,
+    0xE5, 0x81, 0xCC, 0xD5, 0x49, 0x10, 0xB0, 0x0D};
 
-
-void swap(KsDef &a, KsDef &b)
+void swap( TriggerDef &a, TriggerDef &b )
 {
-  using ::std::swap;
-  swap(a.name, b.name);
-  swap(a.strategy_class, b.strategy_class);
-  swap(a.strategy_options, b.strategy_options);
-  swap(a.replication_factor, b.replication_factor);
-  swap(a.cf_defs, b.cf_defs);
-  swap(a.durable_writes, b.durable_writes);
-  swap(a.__isset, b.__isset);
+    using ::std::swap;
+    swap( a.name, b.name );
+    swap( a.options, b.options );
 }
 
+const char *CfDef::ascii_fingerprint = "3D2F73880CC64DDE3E1F25480C58FD72";
+const uint8_t CfDef::binary_fingerprint[16] = {
+    0x3D, 0x2F, 0x73, 0x88, 0x0C, 0xC6, 0x4D, 0xDE,
+    0x3E, 0x1F, 0x25, 0x48, 0x0C, 0x58, 0xFD, 0x72};
 
-}}} // namespace
+void swap( CfDef &a, CfDef &b )
+{
+    using ::std::swap;
+    swap( a.keyspace, b.keyspace );
+    swap( a.name, b.name );
+    swap( a.column_type, b.column_type );
+    swap( a.comparator_type, b.comparator_type );
+    swap( a.subcomparator_type, b.subcomparator_type );
+    swap( a.comment, b.comment );
+    swap( a.read_repair_chance, b.read_repair_chance );
+    swap( a.column_metadata, b.column_metadata );
+    swap( a.gc_grace_seconds, b.gc_grace_seconds );
+    swap( a.default_validation_class, b.default_validation_class );
+    swap( a.id, b.id );
+    swap( a.min_compaction_threshold, b.min_compaction_threshold );
+    swap( a.max_compaction_threshold, b.max_compaction_threshold );
+    swap( a.replicate_on_write, b.replicate_on_write );
+    swap( a.key_validation_class, b.key_validation_class );
+    swap( a.key_alias, b.key_alias );
+    swap( a.compaction_strategy, b.compaction_strategy );
+    swap( a.compaction_strategy_options, b.compaction_strategy_options );
+    swap( a.compression_options, b.compression_options );
+    swap( a.bloom_filter_fp_chance, b.bloom_filter_fp_chance );
+    swap( a.caching, b.caching );
+    swap( a.dclocal_read_repair_chance, b.dclocal_read_repair_chance );
+    swap( a.populate_io_cache_on_flush, b.populate_io_cache_on_flush );
+    swap( a.memtable_flush_period_in_ms, b.memtable_flush_period_in_ms );
+    swap( a.default_time_to_live, b.default_time_to_live );
+    swap( a.index_interval, b.index_interval );
+    swap( a.speculative_retry, b.speculative_retry );
+    swap( a.triggers, b.triggers );
+    swap( a.row_cache_size, b.row_cache_size );
+    swap( a.key_cache_size, b.key_cache_size );
+    swap( a.row_cache_save_period_in_seconds,
+          b.row_cache_save_period_in_seconds );
+    swap( a.key_cache_save_period_in_seconds,
+          b.key_cache_save_period_in_seconds );
+    swap( a.memtable_flush_after_mins, b.memtable_flush_after_mins );
+    swap( a.memtable_throughput_in_mb, b.memtable_throughput_in_mb );
+    swap( a.memtable_operations_in_millions,
+          b.memtable_operations_in_millions );
+    swap( a.merge_shards_chance, b.merge_shards_chance );
+    swap( a.row_cache_provider, b.row_cache_provider );
+    swap( a.row_cache_keys_to_save, b.row_cache_keys_to_save );
+    swap( a.__isset, b.__isset );
+}
+
+const char *KsDef::ascii_fingerprint = "465E9A5DAAF09390BB3CB86E62BD37E8";
+const uint8_t KsDef::binary_fingerprint[16] = {
+    0x46, 0x5E, 0x9A, 0x5D, 0xAA, 0xF0, 0x93, 0x90,
+    0xBB, 0x3C, 0xB8, 0x6E, 0x62, 0xBD, 0x37, 0xE8};
+
+void swap( KsDef &a, KsDef &b )
+{
+    using ::std::swap;
+    swap( a.name, b.name );
+    swap( a.strategy_class, b.strategy_class );
+    swap( a.strategy_options, b.strategy_options );
+    swap( a.replication_factor, b.replication_factor );
+    swap( a.cf_defs, b.cf_defs );
+    swap( a.durable_writes, b.durable_writes );
+    swap( a.__isset, b.__isset );
+}
+}
+}
+} // namespace

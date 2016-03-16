@@ -75,6 +75,16 @@ void sessionDeleter::operator()(CassSession* p) const
 }
 
 
+QByteArray getByteArrayFromRow( const CassRow* row, const QString& column_name )
+{
+    const char *    byte_value = 0;
+    size_t          value_len  = 0;
+    const CassValue* value = cass_row_get_column_by_name( row, column_name.toUtf8().data() );
+    cass_value_get_string( value, &byte_value, &value_len );
+    return QByteArray::fromRawData( byte_value, value_len );
+}
+
+
 QByteArray getByteArrayFromRow( const CassRow* row, const int column_num )
 {
     const char *    byte_value = 0;
@@ -85,6 +95,18 @@ QByteArray getByteArrayFromRow( const CassRow* row, const int column_num )
 }
 
 
+QString getStringFromRow( const CassRow* row, const QString& column_name )
+{
+    return getByteArrayFromRow( row, column_name ).data();
+}
+
+
+QString getStringFromRow( const CassRow* row, const int column_num )
+{
+    return getByteArrayFromRow( row, column_num ).data();
+}
+
+
 QByteArray getByteArrayFromRow( const CassRow* row, const QString& column_name )
 {
     const char *    byte_value = 0;
@@ -92,6 +114,15 @@ QByteArray getByteArrayFromRow( const CassRow* row, const QString& column_name )
     const CassValue* value = cass_row_get_column_by_name( row, column_name.toUtf8().data() );
     cass_value_get_string( value, &byte_value, &value_len );
     return QByteArray::fromRawData( byte_value, value_len );
+}
+
+
+bool getBoolFromRow( const CassRow* row, const QString& column_name )
+{
+    bool return_val = 0;
+    const CassValue* value = cass_row_get_column_by_name( row, column_name.toUtf8().data() );
+    cass_value_get_bool( value, &return_val );
+    return return_val;
 }
 
 

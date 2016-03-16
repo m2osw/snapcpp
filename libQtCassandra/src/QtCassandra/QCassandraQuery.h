@@ -1,9 +1,9 @@
 /*
  * Text:
- *      QCassandraTools.h
+ *      QCassandraQuery.h
  *
  * Description:
- *      Helper code for the cassandra-cpp-driver tools.
+ *      Handling of the cassandra::CfDef (Column Family Definition).
  *
  * Documentation:
  *      See each function below.
@@ -36,14 +36,15 @@
 
 #pragma once
 
+#include "QtCassandra/QCassandraTools.h"
+
 #include <QString>
 #include <QByteArray>
 
-#include <memory>
-
-#include <cassandra.h>
-
 namespace QtCassandra
+{
+
+namespace CassTools
 {
     typedef std::shared_ptr<CassCluster>      cluster_pointer_t;
     typedef std::shared_ptr<CassFuture>       future_pointer_t;
@@ -81,17 +82,75 @@ namespace QtCassandra
     { 
         void operator()(CassStatement* p) const;
     };
+}
 
-    QByteArray getByteArrayFromRow ( const CassRow* row, const QString& column_name );
-    QByteArray getByteArrayFromRow ( const CassRow* row, const int      column_num  );
-    QString    getStringFromRow    ( const CassRow* row, const QString& column_name );
-    QString    getStringFromRow    ( const CassRow* row, const int      column_num  );
-    bool       getBoolFromRow      ( const CassRow* row, const QString& column_name );
-    int32_t    getIntFromRow       ( const CassRow* row, const QString& column_name );
-    int64_t    getCounterFromRow   ( const CassRow* row, const QString& column_name );
 
-    void throwIfError( future_pointer_t result_future, const QString& msg = "Cassandra error" );
+class QCassandraSession
+{
+public:
+    typedef std::shared_ptr<QCassandraSession> pointer_t;
+
+    QCassandraSession();
+    ~QCassandraSession();
+
+    void connect( const QString& host = "localhost", const int port = 9042 );
+    void connect( const QStringList& hosts         , const int port = 9042 );
+    void disconnect();
+    bool isConnected() const;
+
+    CassTools::cluster_pointer_t cluster()    const;
+    CassTools::session_pointer_t session()    const;
+    CassTools::future_pointer_t  connection() const;
+
+private:
+    CassTools::cluster_pointer_t       f_cluster;
+    CassTools::session_pointer_t       f_session;
+    CassTools::future_pointer_t        f_connection;
+};
+
+class QCassandraQuery
+{
+public:
+    std::shared_ptr<QCassandraQuery> pointer_t;
+
+    QCassandraQuery( QCassandraSession::pointer_t session );
+
+    void       query         ( const QString& query_string, const int bind_count = 0 );
+    void       setPagingSize ( const int size );
+    void       bindInt       ( const int num, const int         value );
+    void       bindString    ( const int num, const QString&    value );
+    void       bindByteArray ( const int num, const QByteArray& value );
+
+    void       start();
+    bool       next();
+
+    bool       getBoolColumn      ( const QString& name ) const;
+    bool       getBoolColumn      ( const int      num  ) const;
+    int32_t    getIntColumn       ( const QString& name ) const;
+    int32_t    getIntColumn       ( const int      num  ) const;
+    int64_t    getCounter         ( const QString& name ) const;
+    int64_t    getCounter         ( const int      num  ) const;
+    QString    getStringColumn    ( const QString& name ) const;
+    QString    getStringColumn    ( const int      num  ) const;
+    QByteArray getByteArrayColumn ( const QString& name ) const;
+    QByteArray getByteArrayColumn ( const int      num  ) const;
+
+private:
+    // Current query
+    //
+    QCassandraSession::pointer_t   f_session;
+    QString                        f_queryString;
+    CassTools::statement_pointer_t f_queryStmt;
+    CassTools::future_pointer_t    f_sessionFuture;
+    CassTools::result_pointer_t    f_queryResult;
+    CassTools::iterator_pointer_t  f_rowsIterator;
+
+    void throwIfError( const QString& msg )
+};
+
+
 }
 // namespace QtCassandra
 
+    
 // vim: ts=4 sw=4 et

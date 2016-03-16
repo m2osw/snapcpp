@@ -45,6 +45,8 @@
 namespace QtCassandra
 {
 
+class QCassandraPrivate;
+
 // Handling of the transport and CassandraClient objects
 class QCassandra
     : public QObject
@@ -79,13 +81,13 @@ public:
     bool connect(const QStringList& hosts, const int port = 9042 );
     void disconnect();
     bool isConnected() const;
-    //void synchronizeSchemaVersions(uint32_t timeout = SCHEMA_SYNCHRONIZATION_USE_DEFAULT);
-    //void setSchemaSynchronizationTimeout(uint32_t timeout);
+    void synchronizeSchemaVersions(uint32_t timeout = SCHEMA_SYNCHRONIZATION_USE_DEFAULT);
+    void setSchemaSynchronizationTimeout(uint32_t timeout);
     const QString& clusterName() const;
     const QString& protocolVersion() const;
     //const QCassandraClusterInformation& clusterInformation() const;
     const QString& partitioner() const;
-    QString snitch() const;
+    const QString& snitch() const;
 
     // context functions (the database [Cassandra keyspace])
     QCassandraContext::pointer_t context(const QString& context_name);
@@ -97,6 +99,10 @@ public:
 
     void dropContext(const QString& context_name);
 
+    // default consistency level
+    consistency_level_t defaultConsistencyLevel() const;
+    void setDefaultConsistencyLevel(consistency_level_t default_consistency_level);
+
     // time stamp helper
     static int64_t timeofday();
 
@@ -106,23 +112,26 @@ private:
     //QCassandraContext::pointer_t currentContext() const;
     void setCurrentContext(QCassandraContext::pointer_t c);
     void clearCurrentContextIf(const QCassandraContext& c);
-    QCassandraPrivate *getPrivate();
+    std::unique_ptr<QCassandraPrivate> getPrivate();
 
+    friend class QCassandraPrivate;
     friend class QCassandraContext;
 
     cluster_pointer_t                       f_cluster;
     session_pointer_t                       f_session;
     future_pointer_t                        f_connection;
 
+    std::unique_ptr<QCassandraPrivate>      f_private;
     QCassandraContext::pointer_t            f_current_context;
-    //mutable controlled_vars::flbool_t       f_contexts_read;
+    mutable controlled_vars::flbool_t       f_contexts_read;
     QCassandraContexts                      f_contexts;
     QString                                 f_cluster_name;
     QString                                 f_protocol_version;
     //mutable QCassandraClusterInformation    f_cluster_information;
     QString                                 f_partitioner;
-    //QString                                 f_snitch;
-    //schema_synchronization_timeout_t        f_schema_synchronization_timeout;
+    QString                                 f_snitch;
+    consistency_level_t                     f_default_consistency_level;
+    schema_synchronization_timeout_t        f_schema_synchronization_timeout;
 };
 
 } // namespace QtCassandra

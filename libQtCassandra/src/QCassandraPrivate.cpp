@@ -36,10 +36,12 @@
  */
 
 #include "QCassandraPrivate.h"
+#include "legacy/cassandra_types.h"
 
-#include <stdexcept>
+#include <as2js/json.h>
 
 #include <iostream>
+#include <stdexcept>
 
 #include <QtCore>
 
@@ -156,6 +158,79 @@ QCassandraPrivate::QCassandraPrivate( QCassandra::pointer_t parent )
 QCassandraPrivate::~QCassandraPrivate()
 {
     disconnect();
+}
+
+
+/** \brief Execute a full query string.
+ *
+ */
+future_pointer_t QCassandraPrivate::executeQuery( const QString &query ) const
+{
+    statement_pointer_t statement(
+        cass_statement_new( query.toUtf8().data(), 0 ), statementDeleter() );
+    future_pointer_t future(
+        cass_session_execute( f_session.get(), statement.get() ),
+        futureDeleter() );
+
+    cass_future_wait( future.get() );
+
+    throwIfError( future, QString( "Query [%1] failed" ).arg( query ) );
+
+    return future;
+}
+
+/// \brief Execute a query based on a table and a single column within. No
+/// keyspace is assumed.
+//
+/// \note This assumes a single column query
+//
+void QCassandraPrivate::executeQuery( const QString &query, QStringList &values ) const
+{
+    future_pointer_t future( executeQuery( query ) );
+    result_pointer_t result( cass_future_get_result( future.get() ),
+                             resultDeleter() );
+
+    values.clear();
+    CassIterator *rows = cass_iterator_from_result( result.get() );
+    while ( cass_iterator_next( rows ) )
+    {
+        const CassRow *row = cass_iterator_get_row( rows );
+        values << QString( getByteArrayFromRow( row, 0 ).data() );
+    }
+}
+
+/// \brief Execute a query based on a table and a single column within. No
+/// keyspace is assumed.
+//
+/// \note This assumes a single column query
+//
+void QCassandraPrivate::executeQuery( const QString &table, const QString &column,
+                               QStringList &values ) const
+{
+    const QString query(
+        QString( "SELECT %1 FROM %2" ).arg( column ).arg( table ) );
+    executeQuery( query, values );
+}
+
+
+/// \brief Execute a query based on a table and a single column within. No
+/// keyspace is assumed.
+//
+/// \note This assumes a single column query
+//
+void QCassandraPrivate::executeQuery( const QString &query, QStringList &values ) const
+{
+    future_pointer_t future( executeQuery( query ) );
+    result_pointer_t result( cass_future_get_result( future.get() ),
+                             resultDeleter() );
+
+    values.clear();
+    CassIterator *rows = cass_iterator_from_result( result.get() );
+    while ( cass_iterator_next( rows ) )
+    {
+        const CassRow *row = cass_iterator_get_row( rows );
+        values << QString( getByteArrayFromRow( row, 0 ).data() );
+    }
 }
 
 
@@ -297,6 +372,10 @@ bool QCassandraPrivate::connect(const QStringList& host_list, const int port )
     cass_value_get_string( value, &byte_value, &value_len );
     f_partitioner = byte_value;
 
+    // I have no idea how to get this from the new CQL-based c++ interface.
+    //
+    f_snitch = "TODO!";
+
     return true;
 }
 
@@ -324,6 +403,7 @@ void QCassandraPrivate::disconnect()
     f_cluster_name     = "";
     f_protocol_version = "";
     f_partitioner      = "";
+    f_snitch           = "";
 }
 
 /** \brief Check whether we're connected.
@@ -393,6 +473,8 @@ bool QCassandraPrivate::isConnected() const
  * happen in the specified amount of time
  *
  * \param[in] timeout  The number of seconds to wait for the synchronization to happen
+ *
+ * \todo I have no idea if this is even required with the newer CQL interface...
  */
 void QCassandraPrivate::synchronizeSchemaVersions(int /*timeout*/)
 {
@@ -458,7 +540,8 @@ void QCassandraPrivate::synchronizeSchemaVersions(int /*timeout*/)
  */
 void QCassandraPrivate::mustBeConnected() const throw(std::runtime_error)
 {
-    if(!isConnected()) {
+    if(!isConnected())
+    {
         throw std::runtime_error("not connected to the Cassandra server.");
     }
 }
@@ -577,9 +660,9 @@ QString QCassandraPrivate::partitioner() const
  *
  * \note CQL does not support querying the snitch
  */
-QString QCassandraPrivate::snitch() const
+const QString& QCassandraPrivate::snitch() const
 {
-    return "TODO!";
+    return f_snitch;
 }
 
 /** \brief Set the context keyspace name.
@@ -621,6 +704,110 @@ void QCassandraPrivate::contexts() const
     }
 }
 
+
+/** \brief Retrieve the description of all tables.
+ *
+ * \param[in]  context_name  The name of the context in which the tables are located.
+ * \param[out] cf_def_list   Definition of all of the tables
+ */
+void QCassandraPrivate::retrieve_tables( const QString& context_name, std::vector<org::apache::cassandra::CfDef>& cf_def_list ) const
+{
+    using ::org::apache::cassandra;
+
+#if 0
+    string name;
+    std::string column_type;
+    std::string comparator_type;
+    std::string subcomparator_type;
+    std::string comment;
+    double read_repair_chance;
+    std::vector<ColumnDef> column_metadata;
+    int32_t gc_grace_seconds;
+    std::string default_validation_class;
+    int32_t id;
+    int32_t min_compaction_threshold;
+    int32_t max_compaction_threshold;
+    bool replicate_on_write;
+    std::string key_validation_class;
+    std::string key_alias;
+    std::string compaction_strategy;
+    std::map<std::string, std::string> compaction_strategy_options;
+    std::map<std::string, std::string> compression_options;
+    double bloom_filter_fp_chance;
+    std::string caching;
+    double dclocal_read_repair_chance;
+    bool populate_io_cache_on_flush;
+    int32_t memtable_flush_period_in_ms;
+    int32_t default_time_to_live;
+    int32_t index_interval;
+    std::string speculative_retry;
+    std::vector<TriggerDef> triggers;
+    double row_cache_size;
+    double key_cache_size;
+    int32_t row_cache_save_period_in_seconds;
+    int32_t key_cache_save_period_in_seconds;
+    int32_t memtable_flush_after_mins;
+    int32_t memtable_throughput_in_mb;
+    double memtable_operations_in_millions;
+    double merge_shards_chance;
+    std::string row_cache_provider;
+    int32_t row_cache_keys_to_save;
+#endif
+
+    const QString query( QString("SELECT columnfamily_name, type, comparator, subcomparator, "
+                                 "comment, read_repair_chance, gc_grace_seconds, default_validator, "
+                                 "cf_id, min_compaction_threshold, max_compaction_threshold, "
+                                 "key_validator, key_aliases, compaction_strategy_class, "
+                                 "compaction_strategy_options, bloom_filter_fp_chance, caching, "
+                                 "read_repair_chance, memtable_flush_period_in_ms, default_time_to_live, "
+                                 "max_index_interval, speculative_retry "
+                                 "FROM system.schema_columnfamilies "
+                                 "WHERE keyspace_name = '%1'")
+                         .arg(f_contextName)
+                         );
+    //
+    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 0 ), statementDeleter() );
+    future_pointer_t session( cass_session_execute( f_session.get(), query_stmt.get() ) , futureDeleter()    );
+    throwIfError( session, "Cannot select from system.schema_columnfamilies!" );
+
+    result_pointer_t query_result( cass_future_get_result(session.get()), resultDeleter() );
+    iterator_pointer_t rows( cass_iterator_from_result(query_result.get()), iteratorDeleter()   );
+    while( cass_iterator_next(rows.get()) )
+    {
+        const CassRow* row( cass_iterator_get_row(rows.get()));
+        const bool     durable_writes   ( getBoolFromRow   ( row, "durable_writes"   ) );
+        const QString  strategy_class   ( getStringFromRow ( row, "strategy_class"   ) );
+        const QString  strategy_options ( getStringFromRow ( row, "strategy_options" ) );
+
+        ks_def.__set_name ( f_contextName.toUtf8().data() );
+        ks_def.__set_strategy_class ( strategy_class.toUtf8().data() );
+
+        as2js::JSON::pointer_t load_json( std::make_shared<as2js::JSON>() );
+        as2js::StringInput::pointer_t in( std::make_shared<as2js::StringInput>(strategy_options.toUtf8().data()) );
+        as2js::JSON::JSONValue::pointer_t opts( load_json->parse(in) );
+
+        auto options( opts->get_object() );
+        std::map<std::string,std::string> the_map;
+        for( const auto& elm : options )
+        {
+            the_map[*elm.first] = *elm.second;
+        }
+        ks_def.__set_strategy_options( the_map );
+
+        auto iter = options.find( "replication_factor" );
+        if( iter != options.end() )
+        {
+            ks_def.__set_replication_factor( static_cast<int32_t>( iter->first->get_int64() ) );
+        }
+
+        retrieve_tables( context_name, ks_def.cf_defs );
+
+        ks_def.__set_durable_writes( durable_writes );
+    }
+
+}
+
+
 /** \brief Retrieve the description of a keyspace.
  *
  * This function requests for the descriptions of a specific keyspace
@@ -636,15 +823,63 @@ void QCassandraPrivate::contexts() const
  */
 void QCassandraPrivate::retrieve_context(const QString& context_name) const
 {
+    using ::org::apache::cassandra;
+
     mustBeConnected();
 
     // retrieve this keyspace from Cassandra
-    org::apache::cassandra::KsDef ks_def;
-    f_client->describe_keyspace(ks_def, context_name.toUtf8().data());
+    KsDef ks_def;
+    //f_client->describe_keyspace(ks_def, context_name.toUtf8().data());
+
+    const QString query( QString("SELECT durable_writes, strategy_class, strategy_options "
+                                 "FROM system.schema_keyspaces "
+                                 "WHERE keyspace_name = '%1'")
+                         .arg(f_contextName)
+                         );
+    //
+    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 0 ), statementDeleter() );
+    future_pointer_t session( cass_session_execute( f_session.get(), query_stmt.get() ) , futureDeleter()    );
+    throwIfError( session, "Cannot select from system.schema_keyspaces!" );
+
+    result_pointer_t query_result( cass_future_get_result(session.get()), resultDeleter() );
+    iterator_pointer_t rows( cass_iterator_from_result(query_result.get()), iteratorDeleter()   );
+    while( cass_iterator_next(rows.get()) )
+    {
+        const CassRow* row( cass_iterator_get_row(rows.get()));
+        const bool     durable_writes   ( getBoolFromRow   ( row, "durable_writes"   ) );
+        const QString  strategy_class   ( getStringFromRow ( row, "strategy_class"   ) );
+        const QString  strategy_options ( getStringFromRow ( row, "strategy_options" ) );
+
+        ks_def.__set_name ( f_contextName.toUtf8().data() );
+        ks_def.__set_strategy_class ( strategy_class.toUtf8().data() );
+
+        as2js::JSON::pointer_t load_json( std::make_shared<as2js::JSON>() );
+        as2js::StringInput::pointer_t in( std::make_shared<as2js::StringInput>(strategy_options.toUtf8().data()) );
+        as2js::JSON::JSONValue::pointer_t opts( load_json->parse(in) );
+
+        auto options( opts->get_object() );
+        std::map<std::string,std::string> the_map;
+        for( const auto& elm : options )
+        {
+            the_map[*elm.first] = *elm.second;
+        }
+        ks_def.__set_strategy_options( the_map );
+
+        auto iter = options.find( "replication_factor" );
+        if( iter != options.end() )
+        {
+            ks_def.__set_replication_factor( static_cast<int32_t>( iter->first->get_int64() ) );
+        }
+
+        retrieve_tables( context_name, ks_def.cf_defs );
+
+        ks_def.__set_durable_writes( durable_writes );
+    }
 
     QCassandraContext::pointer_t c(f_parent->context(context_name));
-    c->parseContextDefinition(&ks_def);
+    c->parseContextDefinition( &ks_def );
 }
+
 
 /** \brief Create a new context.
  *
