@@ -54,6 +54,8 @@ public:
     void simpleInsert();
     void simpleSelect();
 
+    void largeTableTest();
+
 private:
     QCassandraSession::pointer_t f_session;
 };
@@ -103,6 +105,17 @@ void QueryTest::createSchema()
         );
     q.start();
     q.end();
+
+    std::cout << "Creating table 'large_table'..." << std::endl;
+    q.query( "CREATE TABLE IF NOT EXISTS qtcassandra_query_test.large_table \n"
+                "( id INT\n"                      //  0
+                ", name TEXT\n"                   //  2
+                ", blob_value BLOB\n"             //  3
+                ", PRIMARY KEY (id, name)\n"
+                ") WITH CLUSTERING ORDER BY (name ASC);"
+        );
+    q.start();
+    q.end();
 }
 
 
@@ -113,7 +126,6 @@ void QueryTest::dropSchema()
     QCassandraQuery q( f_session );
     q.query( "DROP KEYSPACE qtcassandra_query_test" );
     q.start();
-    q.end();
 }
 
 
@@ -151,7 +163,6 @@ void QueryTest::simpleInsert()
     cass_map["fun"]  = "work";
     q.bindMap( bind_num++, json_map );
     q.start();
-    q.end();
 }
 
 
@@ -173,13 +184,13 @@ void QueryTest::simpleSelect()
         const QCassandraQuery::string_map_t json_value   = q.getJsonMapColumn   ( "json_value"   );
         const QCassandraQuery::string_map_t map_value    = q.getMapColumn       ( "map_value"    );
 
-        std::cout   << "id =" << id << std::endl
-                    << "name=" << name << std::endl
-                    << "test=" << test << std::endl
-                    << "count=" << count << std::endl
-                    << "float_value=" << float_value << std::endl
-                    << "double_value=" << double_value << std::endl
-                    << "blob_value=" << blob_value.data() << std::endl;
+        std::cout   << "id ="          << id                << std::endl
+                    << "name="         << name              << std::endl
+                    << "test="         << test              << std::endl
+                    << "count="        << count             << std::endl
+                    << "float_value="  << float_value       << std::endl
+                    << "double_value=" << double_value      << std::endl
+                    << "blob_value="   << blob_value.data() << std::endl;
 
         std::cout << "json_value:" << std::endl;
         for( auto pair : json_value )
@@ -193,7 +204,49 @@ void QueryTest::simpleSelect()
             std::cout << "\tkey=" << pair.first << ", value=" << pair.second << std::endl;
         }
     }
-    q.end();
+}
+
+
+void QueryTest::largeTableTest()
+{
+    std::cout << "Insert into table 'large_table'..." << std::endl;
+    QCassandraQuery q( f_session );
+
+    for( int i = 0; i < 10000; ++i )
+    {
+        q.query( "INSERT INTO qtcassandra_query_test.large_table "
+                "(id, name, blob_value) "
+                "VALUES "
+                "(?,?,?)"
+                , 3
+               );
+        int bind_num = 0;
+        q.bindInt32  ( bind_num++, i );
+        q.bindString ( bind_num++, QString("This is test %1.").arg(i) );
+
+        QString blob;
+        blob.fill( 'b', 10000 );
+        q.bindByteArray( bind_num++, blob.toUtf8() );
+
+        q.start();
+        q.end();
+    }
+
+    std::cout << "Select from 'large_table' and test paging functionality..." << std::endl;
+    q.query( "SELECT id,name FROM qtcassandra_query_test.large_table" );
+    q.setPagingSize( 10 );
+    q.start();
+    do
+    {
+        std::cout << "Iterate through page..." << std::endl;
+        while( q.nextRow() )
+        {
+            std::cout << "id=" << q.getInt32Column( "id" ) << ", name=" << q.getStringColumn("name").toStdString() << std::endl;
+        }
+    }
+    while( q.nextPage() );
+
+    std::cout << "Process done!" << std::endl;
 }
 
 
@@ -224,6 +277,7 @@ int main( int argc, char *argv[] )
     test.createSchema();
     test.simpleInsert();
     test.simpleSelect();
+    test.largeTableTest();
 }
 
 // vim: ts=4 sw=4 et
