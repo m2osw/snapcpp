@@ -38,6 +38,7 @@
 #include "QtCassandra/QCassandraQuery.h"
 #include <QtCore>
 
+#include <exception>
 #include <iostream>
 
 using namespace QtCassandra;
@@ -209,10 +210,12 @@ void QueryTest::simpleSelect()
 
 void QueryTest::largeTableTest()
 {
+    const int32_t row_count = 10000;
+
     std::cout << "Insert into table 'large_table'..." << std::endl;
     QCassandraQuery q( f_session );
 
-    for( int i = 0; i < 10000; ++i )
+    for( int32_t i = 0; i < row_count; ++i )
     {
         q.query( "INSERT INTO qtcassandra_query_test.large_table "
                 "(id, name, blob_value) "
@@ -252,18 +255,18 @@ void QueryTest::largeTableTest()
     while( q.nextPage() );
 
     std::cout << "Check order of recovered records:" << std::endl;
-    int32_t idx = 0;
-    for( const auto& pair : string_map )
+    if( string_map.size() != static_cast<size_t>(row_count) )
     {
-        if( pair.first != idx )
-        {
-            std::cerr << "Error! We expected " << idx << ", but we got " << pair.first << " instead!" << std::endl;
-            exit( 1 );
-        }
-        //std::cout << "key=" << pair.first << ", val=" << pair.second.toStdString() << std::endl;
-        idx++;
+        throw std::runtime_error( "Row count is not correct!" );
     }
-    std::cout << "idx=" << idx << std::endl;
+
+    for( int32_t idx = 0; idx < row_count; ++idx )
+    {
+        if( string_map.find(idx) == string_map.end() )
+        {
+            throw std::runtime_error( QString("Index %1 not found in map!").arg(idx).toStdString().c_str() );
+        }
+    }
 
     std::cout << "Process done!" << std::endl;
 }
@@ -291,12 +294,22 @@ int main( int argc, char *argv[] )
         }
     }
 
-    QueryTest test( host );
-    test.dropSchema();
-    test.createSchema();
-    test.simpleInsert();
-    test.simpleSelect();
-    test.largeTableTest();
+    try
+    {
+        QueryTest test( host );
+        test.dropSchema();
+        test.createSchema();
+        test.simpleInsert();
+        test.simpleSelect();
+        test.largeTableTest();
+    }
+    catch( const std::exception& ex )
+    {
+        std::cerr << "Exception caught! what=[" << ex.what() << "]" << std::endl;
+        return 1;
+    }
+
+    return 0;
 }
 
 // vim: ts=4 sw=4 et
