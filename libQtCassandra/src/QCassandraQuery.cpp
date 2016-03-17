@@ -141,6 +141,11 @@ QCassandraSession::~QCassandraSession()
 }
 
 
+pointer_t QCassandraSession::create()
+{
+    return std::make_shared<QCassandraSession>();
+}
+
 /** \brief Connect to a Cassandra Cluster.
  *
  * This function connects to a Cassandra Cluster. Which cluster is determined
@@ -507,6 +512,10 @@ void QCassandraQuery::throwIfError( const QString& msg )
 }
 
 
+/** \brief Get named Boolean column value
+ *
+ * \param name[in] name of column
+ */
 bool QCassandraQuery::getBoolColumn( const QString &name ) const
 {
     bool return_val = 0;
@@ -516,6 +525,10 @@ bool QCassandraQuery::getBoolColumn( const QString &name ) const
 }
 
 
+/** \brief Get Boolean column value by number
+ *
+ * \param num[in] position of column in the result set
+ */
 bool QCassandraQuery::getBoolColumn( const int num ) const
 {
     bool return_val = 0;
@@ -525,6 +538,10 @@ bool QCassandraQuery::getBoolColumn( const int num ) const
 }
 
 
+/** \brief Get named integer column value
+ *
+ * \param name[in] name of column
+ */
 int32_t QCassandraQuery::getIntColumn( const QString &name ) const
 {
     int32_t return_val = 0;
@@ -534,6 +551,10 @@ int32_t QCassandraQuery::getIntColumn( const QString &name ) const
 }
 
 
+/** \brief Get integer column value by position
+ *
+ * \param num[in] position of column in the result set
+ */
 int32_t QCassandraQuery::getIntColumn( const int num ) const
 {
     int32_t return_val = 0;
@@ -543,6 +564,10 @@ int32_t QCassandraQuery::getIntColumn( const int num ) const
 }
 
 
+/** \brief Get named counter column value
+ *
+ * \param name[in] name of column
+ */
 int64_t QCassandraQuery::getCounterColumn( const QString &name ) const
 {
     int64_t return_val = 0;
@@ -552,6 +577,10 @@ int64_t QCassandraQuery::getCounterColumn( const QString &name ) const
 }
 
 
+/** \brief Get counter column value by position
+ *
+ * \param num[in] position of column in the result set
+ */
 int64_t QCassandraQuery::getCounterColumn( const int num ) const
 {
     int64_t return_val = 0;
@@ -561,6 +590,10 @@ int64_t QCassandraQuery::getCounterColumn( const int num ) const
 }
 
 
+/** \brief Get named float column value
+ *
+ * \param name[in] name of column
+ */
 float QCassandraQuery::getFloatColumn( const QString &name ) const
 {
     float return_val = 0;
@@ -570,6 +603,10 @@ float QCassandraQuery::getFloatColumn( const QString &name ) const
 }
 
 
+/** \brief Get float column value by position
+ *
+ * \param num[in] position of column in the result set
+ */
 float QCassandraQuery::getFloatColumn( const int num ) const
 {
     float return_val = 0;
@@ -579,6 +616,10 @@ float QCassandraQuery::getFloatColumn( const int num ) const
 }
 
 
+/** \brief Get named double column value
+ *
+ * \param name[in] name of column
+ */
 double QCassandraQuery::getDoubleColumn( const QString &name ) const
 {
     double return_val = 0;
@@ -588,6 +629,10 @@ double QCassandraQuery::getDoubleColumn( const QString &name ) const
 }
 
 
+/** \brief Get double column value by position
+ *
+ * \param num[in] position of column in the result set
+ */
 double QCassandraQuery::getDoubleColumn( const int num ) const
 {
     double return_val = 0;
@@ -597,18 +642,10 @@ double QCassandraQuery::getDoubleColumn( const int num ) const
 }
 
 
-QString QCassandraQuery::getStringColumn( const QString &name ) const
-{
-    return getByteArrayColumn( name ).data();
-}
-
-
-QString QCassandraQuery::getStringColumn( const int num ) const
-{
-    return getByteArrayColumn( num ).data();
-}
-
-
+/** \brief Internal method to extract a byte array from a CassValue
+ *
+ * \param value[in] pointer to a Cassandra value
+ */
 QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue* value ) const
 {
     const char *    byte_value = 0;
@@ -618,6 +655,30 @@ QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue* value ) cons
 }
 
 
+/** \brief Get named string column value
+ *
+ * \param name[in] name of column
+ */
+QString QCassandraQuery::getStringColumn( const QString &name ) const
+{
+    return getByteArrayColumn( name ).data();
+}
+
+
+/** \brief Get string column value by position
+ *
+ * \param num[in] position of column in the result set
+ */
+QString QCassandraQuery::getStringColumn( const int num ) const
+{
+    return getByteArrayColumn( num ).data();
+}
+
+
+/** \brief Get named byte array column value
+ *
+ * \param name[in] name of column
+ */
 QByteArray QCassandraQuery::getByteArrayColumn( const QString &name ) const
 {
     const CassValue* value = cass_row_get_column_by_name( f_rowsIterator.get(), name.toUtf8().data() );
@@ -625,6 +686,10 @@ QByteArray QCassandraQuery::getByteArrayColumn( const QString &name ) const
 }
 
 
+/** \brief Get byte array column value by position
+ *
+ * \param num[in] position of column in the result set
+ */
 QByteArray QCassandraQuery::getByteArrayColumn( const int num ) const
 {
     const CassValue* value = cass_row_get_column( f_rowsIterator.get(), num );
@@ -650,18 +715,30 @@ namespace
 }
 
 
+/** \brief Get named JSON map column value
+ *
+ * \param name[in] name of column
+ */
 QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const QString& name ) const
 {
     return getMapFromJsonObject( getStringColumn( name ) );
 }
 
 
+/** \brief Get JSON map column value by position
+ *
+ * \param num[in] position of column in the result set
+ */
 QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const int num ) const
 {
     return getMapFromJsonObject( getStringColumn( num ) );
 }
 
 
+/** \brief Get Cassandra map column value from CassValue
+ *
+ * \param value[in] pointer to Cassandra value
+ */
 QCassandraQuery::string_map_t QCassandraQuery::getMapFromValue( const CassValue* value ) const
 {
     iterator_pointer_t map_iter( cass_iterator_from_map( value ), iteratorDeleter() );
@@ -685,6 +762,10 @@ QCassandraQuery::string_map_t QCassandraQuery::getMapFromValue( const CassValue*
 }
 
 
+/** \brief Get named Cassandra map column value
+ *
+ * \param name[in] name of column
+ */
 QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const QString& name ) const
 {
     const CassValue* value = cass_row_get_column_by_name( f_rowsIterator.get(), name );
@@ -692,6 +773,10 @@ QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const QString& nam
 }
 
 
+/** \brief Get Cassandra map column value by position
+ *
+ * \param num[in] position of column in the result set
+ */
 QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const int num ) const
 {
     const CassValue* value = cass_row_get_column( f_rowsIterator.get(), num );

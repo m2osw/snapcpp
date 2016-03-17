@@ -92,7 +92,7 @@ class QCassandraSession
 public:
     typedef std::shared_ptr<QCassandraSession> pointer_t;
 
-    QCassandraSession();
+    static pointer_t create();
     ~QCassandraSession();
 
     void connect( const QString& host = "localhost", const int port = 9042 );
@@ -105,6 +105,8 @@ public:
     CassTools::future_pointer_t  connection() const;
 
 private:
+    QCassandraSession();
+
     CassTools::cluster_pointer_t       f_cluster;
     CassTools::session_pointer_t       f_session;
     CassTools::future_pointer_t        f_connection;

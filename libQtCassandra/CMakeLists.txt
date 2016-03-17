@@ -44,16 +44,20 @@ project(libQtCassandra)
 
 ## Include support modules
 ##
+find_package( As2Js              REQUIRED )
 find_package( CassandraCppDriver REQUIRED )
 find_package( ControlledVars     REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapDoxygen        REQUIRED )
 find_package( Qt4 4.8.1          REQUIRED QtCore QtXml )
+
+## Qt4
+##
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
-# This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
-#
+## This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
+##
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
 include_directories( SYSTEM ${QT_INCLUDES} )
