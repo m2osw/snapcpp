@@ -83,8 +83,59 @@ namespace QtCassandra
 {
 
 
+namespace
+{
+    const CassRow* getRowFromIterator( CassTools::iterator_pointer_t iter )
+    {
+        return cass_iterator_get_row( iter.get() );
+    }
+
+    void getMapFromJsonObject( QCassandraQuery::string_map_t& json_map, const QString& data )
+    {
+        as2js::JSON::pointer_t load_json( std::make_shared<as2js::JSON>() );
+        as2js::StringInput::pointer_t in( std::make_shared<as2js::StringInput>(data.toStdString()) );
+        as2js::JSON::JSONValue::pointer_t opts( load_json->parse(in) );
+        const auto& options( opts->get_object() );
+        json_map.clear();
+        for( const auto& elm : options )
+        {
+            json_map[elm.first.to_utf8()] = elm.second->get_string().to_utf8();
+        }
+    }
+
+    void getDataFromJsonMap( const QCassandraQuery::string_map_t& json_map, std::string& data )
+    {
+        as2js::Position pos;
+        as2js::JSON::JSONValue::object_t   json_obj;
+        as2js::JSON::JSONValue::pointer_t  top_level_val( std::make_shared<as2js::JSON::JSONValue>(pos,json_obj) );
+
+        for( const auto& elm : json_map )
+        {
+            as2js::String key( elm.first  );
+            as2js::String val( elm.second );
+            top_level_val->set_member( key,
+                std::make_shared<as2js::JSON::JSONValue>( pos, val )
+            );
+        }
+
+        as2js::StringOutput::pointer_t out( std::make_shared<as2js::StringOutput>() );
+        as2js::JSON::pointer_t save_json( std::make_shared<as2js::JSON>() );
+        save_json->set_value( top_level_val );
+        as2js::String header("");
+        save_json->output( out, header );
+        data = out->get_string().to_utf8();
+    }
+}
+
+
 namespace CassTools
 {
+
+
+void collectionDeleter::operator()(CassCollection* p) const
+{
+    cass_collection_free(p);
+}
 
 void clusterDeleter::operator()(CassCluster* p) const
 {
@@ -334,6 +385,15 @@ QCassandraQuery::QCassandraQuery( QCassandraSession::pointer_t session )
 }
 
 
+/** \brief Destruct a query object.
+ *
+ * \sa end()
+ */
+QCassandraQuery::~QCassandraQuery()
+{
+    end();
+}
+
 /** \brief Create a query statement.
  *
  * In order to use the CQL interface, you need to first specify a query string,
@@ -376,6 +436,21 @@ void QCassandraQuery::setPagingSize( const int size )
 }
 
 
+/** \brief Bind a Boolean to the numbered place holder
+ *
+ * This binds a value to the numbered placeholder in the current query.
+ *
+ * \param num[in]   placeholder number
+ * \param value[in] value to bind to the query
+ *
+ * \sa query()
+ */
+void QCassandraQuery::bindBool( const size_t num, const bool value )
+{
+   cass_statement_bind_bool( f_queryStmt.get(), num, value? cass_true: cass_false );
+}
+
+
 /** \brief Bind a 32-bit signed integer to the numbered place holder
  *
  * This binds a value to the numbered placeholder in the current query.
@@ -385,7 +460,7 @@ void QCassandraQuery::setPagingSize( const int size )
  *
  * \sa query()
  */
-void QCassandraQuery::bindInt32( const int num, const int32_t value )
+void QCassandraQuery::bindInt32( const size_t num, const int32_t value )
 {
    cass_statement_bind_int32( f_queryStmt.get(), num, value );
 }
@@ -400,9 +475,39 @@ void QCassandraQuery::bindInt32( const int num, const int32_t value )
  *
  * \sa query()
  */
-void QCassandraQuery::bindInt64( const int num, const int64_t value )
+void QCassandraQuery::bindInt64( const size_t num, const int64_t value )
 {
    cass_statement_bind_int64( f_queryStmt.get(), num, value );
+}
+
+
+/** \brief Bind a floating point value to the numbered place holder
+ *
+ * This binds a value to the numbered placeholder in the current query.
+ *
+ * \param num[in]   placeholder number
+ * \param value[in] value to bind to the query
+ *
+ * \sa query()
+ */
+void QCassandraQuery::bindFloat( const size_t num, const float value )
+{
+   cass_statement_bind_float( f_queryStmt.get(), num, value );
+}
+
+
+/** \brief Bind a double value to the numbered place holder
+ *
+ * This binds a value to the numbered placeholder in the current query.
+ *
+ * \param num[in]   placeholder number
+ * \param value[in] value to bind to the query
+ *
+ * \sa query()
+ */
+void QCassandraQuery::bindDouble( const size_t num, const double value )
+{
+   cass_statement_bind_double( f_queryStmt.get(), num, value );
 }
 
 
@@ -415,7 +520,7 @@ void QCassandraQuery::bindInt64( const int num, const int64_t value )
  *
  * \sa query()
  */
-void QCassandraQuery::bindString( const int num, const QString &value )
+void QCassandraQuery::bindString( const size_t num, const QString &value )
 {
     bindByteArray( num, value.toUtf8() );
 }
@@ -430,9 +535,30 @@ void QCassandraQuery::bindString( const int num, const QString &value )
  *
  * \sa query()
  */
-void QCassandraQuery::bindByteArray( const int num, const QByteArray &value )
+void QCassandraQuery::bindByteArray( const size_t num, const QByteArray &value )
 {
     cass_statement_bind_string_n( f_queryStmt.get(), num, value.constData(), value.size() );
+}
+
+
+void QCassandraQuery::bindJsonMap( const size_t num, const string_map_t& value )
+{
+    std::string data;
+    getDataFromJsonMap( value, data );
+    cass_statement_bind_string( f_queryStmt.get(), num, data.c_str() );
+}
+
+
+void QCassandraQuery::bindMap( const size_t num, const string_map_t& value )
+{
+    collection_pointer_t map( cass_collection_new( CASS_COLLECTION_TYPE_MAP, value.size() ), collectionDeleter() );
+    for( const auto& pair : value )
+    {
+        cass_collection_append_string( map.get(), pair.first.c_str()  );
+        cass_collection_append_string( map.get(), pair.second.c_str() );
+    }
+    //
+    cass_statement_bind_collection( f_queryStmt.get(), num, map.get() );
 }
 
 
@@ -451,6 +577,21 @@ void QCassandraQuery::start()
     f_rowsIterator.reset( cass_iterator_from_result(f_queryResult.get()), iteratorDeleter() );
 }
 
+
+/** \brief End the query and reset all of the pointers
+ *
+ * Call this to reset the query and destroy all of the cassandra-cpp object.
+ *
+ * \sa start()
+ */
+void QCassandraQuery::end()
+{
+    f_queryString.clear();
+    f_rowsIterator.reset();
+    f_queryResult.reset();
+    f_sessionFuture.reset();
+    f_queryStmt.reset();
+}
 
 /** \brief Get the next row in the result set
  *
@@ -510,14 +651,6 @@ void QCassandraQuery::throwIfError( const QString& msg )
            << "}, message={" << errmsg.data()
            << "} aborting operation!";
         throw std::runtime_error( ss.str().c_str() );
-    }
-}
-
-namespace
-{
-    const CassRow* getRowFromIterator( iterator_pointer_t iter )
-    {
-        return cass_iterator_get_row( iter.get() );
     }
 }
 
@@ -713,31 +846,15 @@ QByteArray QCassandraQuery::getByteArrayColumn( const int num ) const
 }
 
 
-namespace
-{
-    QCassandraQuery::string_map_t getMapFromJsonObject( const QString& data )
-    {
-        as2js::JSON::pointer_t load_json( std::make_shared<as2js::JSON>() );
-        as2js::StringInput::pointer_t in( std::make_shared<as2js::StringInput>(data.toStdString()) );
-        as2js::JSON::JSONValue::pointer_t opts( load_json->parse(in) );
-        const auto& options( opts->get_object() );
-        QCassandraQuery::string_map_t the_map;
-        for( const auto& elm : options )
-        {
-            the_map[elm.first.to_utf8()] = elm.second->get_string().to_utf8();
-        }
-        return the_map;
-    }
-}
-
-
 /** \brief Get named JSON map column value
  *
  * \param name[in] name of column
  */
 QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const QString& name ) const
 {
-    return getMapFromJsonObject( getStringColumn( name ) );
+    string_map_t json_map;
+    getMapFromJsonObject( json_map, getStringColumn( name ) );
+    return json_map;
 }
 
 
@@ -747,7 +864,9 @@ QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const QString&
  */
 QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const int num ) const
 {
-    return getMapFromJsonObject( getStringColumn( num ) );
+    string_map_t json_map;
+    getMapFromJsonObject( json_map, getStringColumn( num ) );
+    return json_map;
 }
 
 

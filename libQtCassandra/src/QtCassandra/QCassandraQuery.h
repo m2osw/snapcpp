@@ -50,11 +50,17 @@ namespace QtCassandra
 namespace CassTools
 {
     typedef std::shared_ptr<CassCluster>      cluster_pointer_t;
+    typedef std::shared_ptr<CassCollection>   collection_pointer_t;
     typedef std::shared_ptr<CassFuture>       future_pointer_t;
     typedef std::shared_ptr<CassIterator>     iterator_pointer_t;
     typedef std::shared_ptr<const CassResult> result_pointer_t;
     typedef std::shared_ptr<CassSession>      session_pointer_t;
     typedef std::shared_ptr<CassStatement>    statement_pointer_t;
+
+    struct collectionDeleter
+    {
+        void operator()(CassCollection* p) const;
+    };
 
     struct clusterDeleter
     { 
@@ -117,20 +123,29 @@ private:
 class QCassandraQuery
 {
 public:
-    std::shared_ptr<QCassandraQuery> pointer_t;
+    typedef std::shared_ptr<QCassandraQuery>  pointer_t;
+    typedef std::map<std::string,std::string> string_map_t;
 
     QCassandraQuery( QCassandraSession::pointer_t session );
+    ~QCassandraQuery();
 
     void       query         ( const QString& query_string, const int bind_count = 0 );
     void       setPagingSize ( const int size );
-    void       bindInt32     ( const int num, const int32_t     value );
-    void       bindInt64     ( const int num, const int64_t     value );
-    void       bindString    ( const int num, const QString&    value );
-    void       bindByteArray ( const int num, const QByteArray& value );
+
+    void       bindBool      ( const size_t num, const bool          value );
+    void       bindInt32     ( const size_t num, const int32_t       value );
+    void       bindInt64     ( const size_t num, const int64_t       value );
+    void       bindFloat     ( const size_t num, const float         value );
+    void       bindDouble    ( const size_t num, const double        value );
+    void       bindString    ( const size_t num, const QString&      value );
+    void       bindByteArray ( const size_t num, const QByteArray&   value );
+    void       bindJsonMap   ( const size_t num, const string_map_t& value );
+    void       bindMap       ( const size_t num, const string_map_t& value );
 
     void       start();
     bool       nextRow();
     bool       nextPage();
+    void       end();
 
     bool       getBoolColumn      ( const QString& name  ) const;
     bool       getBoolColumn      ( const int      num   ) const;
@@ -147,7 +162,6 @@ public:
     QByteArray getByteArrayColumn ( const QString& name  ) const;
     QByteArray getByteArrayColumn ( const int      num   ) const;
 
-    typedef std::map<std::string,std::string> string_map_t;
     string_map_t getJsonMapColumn ( const QString& name ) const;
     string_map_t getJsonMapColumn ( const int num ) const;
     string_map_t getMapColumn     ( const QString& name ) const;

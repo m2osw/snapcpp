@@ -821,7 +821,9 @@ JSON::JSONValue::pointer_t JSON::parse(Input::pointer_t in)
     {
         Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_CANNOT_COMPILE, in->get_position());
         msg << "could not interpret this JSON input \"" << in->get_position().get_filename() << "\".";
-        // should we throw here?
+        // Alexis: should we throw here?
+        // Doug: YES!!!!
+        throw exception_invalid_data(msg.str());
     }
 
     f_lexer.reset(); // release 'in' and 'options' pointers
@@ -1118,10 +1120,15 @@ bool JSON::output(Output::pointer_t out, String const& header) const
         throw exception_invalid_data("this JSON has no value to output");
     }
 
-    // start with a BOM so the file is clearly marked as being UTF-8
-    as2js::String bom;
-    bom += String::STRING_BOM;
-    out->write(bom);
+    if( std::dynamic_pointer_cast<FileOutput>(out) )
+    {
+        // Only do this if we are outputting to a file!
+        // start with a BOM so the file is clearly marked as being UTF-8
+        //
+        as2js::String bom;
+        bom += String::STRING_BOM;
+        out->write(bom);
+    }
 
     if(!header.empty())
     {
