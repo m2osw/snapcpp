@@ -143,8 +143,10 @@ public:
     QByteArray getByteArrayColumn ( const int      num   ) const;
 
     typedef std::map<std::string,std::string> string_map_t;
-    string_map_t getMapColumn ( const QString& name ) const;
-    string_map_t getMapColumn ( const int num ) const;
+    string_map_t getJsonMapColumn ( const QString& name ) const;
+    string_map_t getJsonMapColumn ( const int num ) const;
+    string_map_t getMapColumn     ( const QString& name ) const;
+    string_map_t getMapColumn     ( const int num ) const;
 
 private:
     // Current query
@@ -156,7 +158,9 @@ private:
     CassTools::result_pointer_t    f_queryResult;
     CassTools::iterator_pointer_t  f_rowsIterator;
 
-    void throwIfError( const QString& msg )
+    QByteArray      getByteArrayFromValue ( const CassValue* value ) const;
+    string_map_t    getMapFromValue       ( const CassValue* value ) const;
+    void            throwIfError          ( const QString& msg     );
 };
 
 

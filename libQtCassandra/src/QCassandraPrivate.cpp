@@ -580,20 +580,93 @@ void QCassandraPrivate::contexts() const
 }
 
 
+/** \brief Retrieve the description of all columns for each table
+ *
+ * \param[in,out]  cf_def  The "columnfamily" (i.e. table) information structure that we will populate from the query.
+ */
 void QCassandraPrivate::retrieve_columns( org::apache::cassandra::CfDef& cf_def ) const
 {
+    using ::org::apache::cassandra;
+
+    const QString query( QString("SELECT column_name, index_name, "
+                                 "index_options, index_type, type, validator "
+                                 "FROM system.schema_columns "
+                                 "WHERE keyspace_name = '%1' "
+                                 "AND columnfamily_name = '%2'")
+                         .arg(cf_def.keyspace)
+                         .arg(cf_def.name)
+                         );
+
+    QCassandraQuery the_query( f_session );
+    the_query.query( query );
+    the_query.start();
+
+    std::vector<ColumnDef> col_def_list;
+    while( the_query.nextRow() )
+    {
+        ColumnDef col_def;
+        col_def.__set_name             ( the_query.getStringColumn  ("column_name").toStdString() );
+        col_def.__set_index_name       ( the_query.getStringColumn  ("index_name").toStdString()  );
+        col_def.__set_validation_class ( the_query.getStringColumn  ("validator").toStdString()   );
+        col_def.__set_index_options    ( the_query.getJsonMapColumn ("index_options")             );
+
+        const QString index_type( the_query.getStringColumn( "index_type" ).toLower() );
+        if( index_type == "keys" )
+        {
+            col_def.__set_index_type( IndexType::KEYS );
+        }
+        else if( index_type == "custom" )
+        {
+            col_def.__set_index_type( IndexType::CUSTOM );
+        }
+        else if( index_type == "composites" )
+        {
+            col_def.__set_index_type( IndexType::COMPOSITES );
+        }
+
+        col_def_list.push_back( cf_def );
+    }
+
+    cf_def.__set_columns( col_def_list );
 }
 
 
+/** \brief Retrieve the description of all triggers for each table
+ *
+ * \param[in,out]  cf_def  The "columnfamily" (i.e. table) information structure that we will populate from the query.
+ */
 void QCassandraPrivate::retrieve_triggers( org::apache::cassandra::CfDef& cf_def ) const
 {
+    using ::org::apache::cassandra;
+
+    const QString query( QString("SELECT trigger_name, trigger_options "
+                                 "FROM system.schema_triggers "
+                                 "WHERE keyspace_name = '%1' "
+                                 "AND columnfamily_name = '%2'")
+                         .arg(cf_def.keyspace)
+                         .arg(cf_def.name)
+                         );
+
+    QCassandraQuery the_query( f_session );
+    the_query.query( query );
+    the_query.start();
+
+    std::vector<TriggerDef> trig_def_list;
+    while( the_query.nextRow() )
+    {
+        TriggerDef trig_def;
+        trig_def.__set_name    ( the_query.getStringColumn ("trigger_name").toStdString() );
+        trig_def.__set_options ( the_query.getMapColumn    ("trigger_options")            );
+        trig_def_list.push_back( cf_def );
+    }
+
+    cf_def.__set_triggers( trig_def_list );
 }
 
 
 /** \brief Retrieve the description of all tables.
  *
- * \param[in]  context_name  The name of the context in which the tables are located.
- * \param[out] cf_def_list   Definition of all of the tables
+ * \param[in,out]  ks_def  The keyspace information structure that we will populate from the query.
  */
 void QCassandraPrivate::retrieve_tables( org::apache::cassandra::KsDef& ks_def ) const
 {
@@ -608,7 +681,7 @@ void QCassandraPrivate::retrieve_tables( org::apache::cassandra::KsDef& ks_def )
                                  "speculative_retry "
                                  "FROM system.schema_columnfamilies "
                                  "WHERE keyspace_name = '%1'")
-                         .arg(f_contextName)
+                         .arg(ks_def.name)
                          );
 
     QCassandraQuery the_query( f_session );
@@ -619,29 +692,29 @@ void QCassandraPrivate::retrieve_tables( org::apache::cassandra::KsDef& ks_def )
     while( the_query.nextRow() )
     {
         CfDef cf_def;
-        cf_def.__set_keyspace                    ( ks_def.name );
-        cf_def.__set_name                        ( the_query.getStringColumn ("columnfamily_name")                    .toStdString() );
-        cf_def.__set_column_type                 ( the_query.getStringColumn ("type")                                 .toStdString() );
-        cf_def.__set_comparator_type             ( the_query.getStringColumn ("comparator")                           .toStdString() );
-        cf_def.__set_subcomparator_type          ( the_query.getStringColumn ("subcomparator")                        .toStdString() );
-        cf_def.__set_comment                     ( the_query.getStringColumn ("comment")                              .toStdString() );
-        cf_def.__set_read_repair_chance          ( the_query.getDoubleColumn ("read_repair_chance")                   );
-        cf_def.__set_gc_grace_seconds            ( the_query.getIntColumn    ("gc_grace_seconds")                     );
-        cf_def.__set_default_validation_class    ( the_query.getStringColumn ("default_validator")                    .toStdString() );
-        cf_def.__set_id                          ( the_query.getIntColumn    ("cf_id")                                );
-        cf_def.__set_min_compaction_threshold    ( the_query.getIntColumn    ("min_compaction_threshold")             );
-        cf_def.__set_max_compaction_threshold    ( the_query.getIntColumn    ("max_compaction_threshold")             );
-        cf_def.__set_key_validation_class        ( the_query.getStringColumn ("key_validator")                        .toStdString() );
-        cf_def.__set_key_alias                   ( the_query.getStringColumn ("key_aliases")                          .toStdString() );
-        cf_def.__set_compaction_strategy         ( the_query.getStringColumn ("compaction_strategy_class")            .toStdString() );
-        cf_def.__set_compaction_strategy_options ( the_query.getMapColumn    ("compaction_strategy_options")          );
-        cf_def.__set_compression_options         ( the_query.getMapColumn    ("compression_parameters")               );
-        cf_def.__set_bloom_filter_fp_chance      ( the_query.getDoubleColumn ("bloom_filter_fp_chance")               );
-        cf_def.__set_caching                     ( the_query.getStringColumn ("bloom_filter_fp_chance").toStdString() );
-        cf_def.__set_caching                     ( the_query.getStringColumn ("bloom_filter_fp_chance").toStdString() );
-        cf_def.__set_memtable_flush_period_in_ms ( the_query.getIntColumn    ("memtable_flush_period_in_ms")          );
-        cf_def.__set_default_time_to_live        ( the_query.getIntColumn    ("default_time_to_live")                 );
-        cf_def.__set_speculative_retry           ( the_query.getStringColumn ("speculative_retry")                    .toStdString() );
+        cf_def.__set_keyspace                    ( ks_def.name                );
+        cf_def.__set_name                        ( the_query.getStringColumn  ("columnfamily_name")                    .toStdString() );
+        cf_def.__set_column_type                 ( the_query.getStringColumn  ("type")                                 .toStdString() );
+        cf_def.__set_comparator_type             ( the_query.getStringColumn  ("comparator")                           .toStdString() );
+        cf_def.__set_subcomparator_type          ( the_query.getStringColumn  ("subcomparator")                        .toStdString() );
+        cf_def.__set_comment                     ( the_query.getStringColumn  ("comment")                              .toStdString() );
+        cf_def.__set_read_repair_chance          ( the_query.getDoubleColumn  ("read_repair_chance")                   );
+        cf_def.__set_gc_grace_seconds            ( the_query.getIntColumn     ("gc_grace_seconds")                     );
+        cf_def.__set_default_validation_class    ( the_query.getStringColumn  ("default_validator")                    .toStdString() );
+        cf_def.__set_id                          ( the_query.getIntColumn     ("cf_id")                                );
+        cf_def.__set_min_compaction_threshold    ( the_query.getIntColumn     ("min_compaction_threshold")             );
+        cf_def.__set_max_compaction_threshold    ( the_query.getIntColumn     ("max_compaction_threshold")             );
+        cf_def.__set_key_validation_class        ( the_query.getStringColumn  ("key_validator")                        .toStdString() );
+        cf_def.__set_key_alias                   ( the_query.getStringColumn  ("key_aliases")                          .toStdString() );
+        cf_def.__set_compaction_strategy         ( the_query.getStringColumn  ("compaction_strategy_class")            .toStdString() );
+        cf_def.__set_compaction_strategy_options ( the_query.getJsonMapColumn ("compaction_strategy_options")          );
+        cf_def.__set_compression_options         ( the_query.getJsonMapColumn ("compression_parameters")               );
+        cf_def.__set_bloom_filter_fp_chance      ( the_query.getDoubleColumn  ("bloom_filter_fp_chance")               );
+        cf_def.__set_caching                     ( the_query.getStringColumn  ("bloom_filter_fp_chance").toStdString() );
+        cf_def.__set_caching                     ( the_query.getStringColumn  ("bloom_filter_fp_chance").toStdString() );
+        cf_def.__set_memtable_flush_period_in_ms ( the_query.getIntColumn     ("memtable_flush_period_in_ms")          );
+        cf_def.__set_default_time_to_live        ( the_query.getIntColumn     ("default_time_to_live")                 );
+        cf_def.__set_speculative_retry           ( the_query.getStringColumn  ("speculative_retry")                    .toStdString() );
         //
         retrieve_columns  ( cf_def );
         retrieve_triggers ( cf_def );
@@ -649,12 +722,7 @@ void QCassandraPrivate::retrieve_tables( org::apache::cassandra::KsDef& ks_def )
         cf_def_list.push_back( cf_def );
     }
 
-    ks_def.__set_cf_defs( cf_def );
-
-#if 0
-    std::vector<ColumnDef> column_metadata;
-    std::vector<TriggerDef> triggers;
-#endif
+    ks_def.__set_cf_defs( cf_def_list );
 }
 
 
@@ -699,8 +767,8 @@ void QCassandraPrivate::retrieve_context(const QString& context_name) const
     const QString strategy_options ( the_query.getStringColumn ( "strategy_options" ) );
 
     ks_def.__set_name             ( context_name.toStdString() );
-    ks_def.__set_strategy_class   ( the_query.getStringColumn   (  "strategy_class"   ).toStdString() );
-    ks_def.__set_strategy_options ( the_query.getMapColumn      (  "strategy_options" )               );
+    ks_def.__set_strategy_class   ( the_query.getStringColumn  (  "strategy_class"   ).toStdString() );
+    ks_def.__set_strategy_options ( the_query.getJsonMapColumn (  "strategy_options" )               );
 
     auto iter = options.find( "replication_factor" );
     if( iter != options.end() )

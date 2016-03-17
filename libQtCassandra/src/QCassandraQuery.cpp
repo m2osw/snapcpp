@@ -44,6 +44,41 @@
 
 #include <QtCore>
 
+
+/** \class QCassandraSession
+ * \brief Creates and maintains a CQL session with the Cassandra server
+ *
+ * This class handles such things as the connection to the Cassandra
+ * server and hiding all of the cassandra-cpp library interface.
+ *
+ * The interface does not seem to manage lifetimes of objects it creates,
+ * so we put in many smart pointers with customer deleters to make sure
+ * that object are returned to the free store upon destruction.
+ *
+ * Also, this class, in conjuction with QCassandraQuery, provide a set of façades
+ * to hide and encapuslate the details of the cassandra-cpp driver. This allows
+ * us to use the CQL interface seemlessly, but without having to worry about
+ * object lifetimes and garbage collection.
+ *
+ * \sa QCassandraQuery
+ */
+
+/** \class QCassandraQuery
+ * \brief Encapulates the cassandra-cpp driver to handle query and retrieval.
+ *
+ * The cassandra-cpp driver interface does not manage lifetimes of objects
+ * it creates, leaving it up to the user to remember to return heap objects
+ * to the free store. This, of course, isn't thread safe at all, nor is it
+ * consistent with good OO design principles and patterns like the RAII paradigm.
+ *
+ * Here, we provide an object that encapsulates all of the cass_* calls and
+ * bare pointers returned by those calls using std::share_pointers and
+ * custom deleters. This should help us avoid memory leaks in addition to being
+ * thread-safe and exception-safe.
+ *
+ * \sa QCassandraSession
+ */
+
 namespace QtCassandra
 {
 
@@ -86,15 +121,6 @@ void sessionDeleter::operator()(CassSession* p) const
 
 using namespace CassTools;
 
-/** \class QCassandraSession
- * \brief TODO
- *
- */
-
-/** \class QCassandraQuery
- * \brief TODO
- *
- */
 
 /** \brief Initialize a QCassandraSession object
  *
@@ -268,28 +294,54 @@ bool QCassandraSession::isConnected() const
 }
 
 
+/** \brief Return a smart pointer to the cassandra-cpp cluster object.
+ */
 cluster_pointer_t QCassandraSession::cluster() const
 {
     return f_cluster;
 }
 
+/** \brief Return a smart pointer to the cassandra-cpp session object.
+ */
 session_pointer_t QCassandraSession::session() const
 {
     return f_session;
 }
 
+/** \brief Return a smart pointer to the cassandra-cpp connection future object.
+ */
 future_pointer_t QCassandraSession::connection() const
 {
     return f_connection;
 }
 
 
+/** \brief Construct a query object and manage the lifetime of the query session.
+ *
+ * \sa QCassandraQuery
+ */
 QCassandraQuery::QCassandraQuery( QCassandraSession::pointer_t session )
     : f_session( session )
 {
 }
 
 
+/** \brief Create a query statement.
+ *
+ * In order to use the CQL interface, you need to first specify a query string,
+ * along with a bind_count (for (?) placeholders.
+ *
+ * For example:
+ *
+ *  SELECT id, name, description FROM inventory WHERE id = ? AND name = ?;
+ *
+ * You would pass in the select string above in the query_string parameter,
+ * then specify a bind_count of 2.
+ *
+ * \param query_string[in]  CQL query string
+ * \param bind_count[in]    number of parameters to bind
+ * 
+ */
 void QCassandraQuery::query( const QString &query_string,
                              const int bind_count = 0 )
 {
@@ -301,36 +353,89 @@ void QCassandraQuery::query( const QString &query_string,
 }
 
 
+/** \brief Set the paging size for the current query.
+ *
+ * Call this method after you have called the query() method, but before
+ * calling the start() method. If you do not go in order, then your query
+ * will not be paged properly (it will default to a LIMIT of 10000 records.
+ * See the cassandra-cpp docs).
+ *
+ * \sa query()
+ *
+ */
 void QCassandraQuery::setPagingSize( const int size )
 {
     cass_statement_set_paging_size( f_queryStmt.get(), size );
 }
 
 
+/** \brief Bind a 32-bit signed integer to the numbered place holder
+ *
+ * This binds a value to the numbered placeholder in the current query.
+ *
+ * \param num[in]   placeholder number
+ * \param value[in] value to bind to the query
+ *
+ * \sa query()
+ */
 void QCassandraQuery::bindInt32( const int num, const int32_t value )
 {
    cass_statement_bind_int32( f_queryStmt.get(), num, value );
 }
 
 
+/** \brief Bind a 64-bit signed integer to the numbered place holder
+ *
+ * This binds a value to the numbered placeholder in the current query.
+ *
+ * \param num[in]   placeholder number
+ * \param value[in] value to bind to the query
+ *
+ * \sa query()
+ */
 void QCassandraQuery::bindInt64( const int num, const int64_t value )
 {
    cass_statement_bind_int64( f_queryStmt.get(), num, value );
 }
 
 
+/** \brief Bind a Qt string to the numbered place holder
+ *
+ * This binds a value to the numbered placeholder in the current query.
+ *
+ * \param num[in]   placeholder number
+ * \param value[in] value to bind to the query
+ *
+ * \sa query()
+ */
 void QCassandraQuery::bindString( const int num, const QString &value )
 {
     bindByteArray( num, value.toUtf() );
 }
 
 
+/** \brief Bind a Qt byte-array to the numbered place holder
+ *
+ * This binds a value to the numbered placeholder in the current query.
+ *
+ * \param num[in]   placeholder number
+ * \param value[in] value to bind to the query
+ *
+ * \sa query()
+ */
 void QCassandraQuery::bindByteArray( const int num, const QByteArray &value )
 {
     cass_statement_bind_string_n( f_queryStmt.get(), num, value.constData(), value.size() );
 }
 
 
+/** \brief Start the query
+ *
+ * This method assumes that you have called the query() method already, and
+ * optionally specified the paging size and any binding values to the query.
+ *
+ * \sa query(), setPagingSize(), bindInt32(), bindInt64(), bindString(), bindByteArray()
+ */
 void QCassandraQuery::start()
 {
     f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
@@ -340,12 +445,28 @@ void QCassandraQuery::start()
 }
 
 
+/** \brief Get the next row in the result set
+ *
+ * After you start your query, call this method to get the first/next row
+ * in the result set. When you reach the end of the result set (or the current page),
+ * it will return false.
+ *
+ * \sa query(), start(), nextPage()
+ */
 bool QCassandraQuery::nextRow()
 {
     return cass_iterator_next( f_rowsIterator.get() );
 }
 
 
+/** \brief Get the next page in the result set
+ *
+ * Once nextRow() returns false, and you have paging turned on, then call this
+ * method to get the next page of results. When there are no more pages, this
+ * will return false.
+ *
+ * \sa query(), start(), setPagingSize(), nextRow()
+ */
 bool QCassandraQuery::nextPage()
 {
     if( !cass_result_has_more_pages( f_queryResult.get() ) )
@@ -363,6 +484,10 @@ bool QCassandraQuery::nextPage()
 }
 
 
+/** \brief Internal method for throwing after the query fails.
+ *
+ * \sa start()
+ */
 void QCassandraQuery::throwIfError( const QString& msg )
 {
     const CassError code( cass_future_error_code( f_queryResult.get() ) );
@@ -484,23 +609,26 @@ QString QCassandraQuery::getStringColumn( const int num ) const
 }
 
 
-QByteArray QCassandraQuery::getByteArrayColumn( const QString &name ) const
+QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue* value ) const
 {
     const char *    byte_value = 0;
     size_t          value_len  = 0;
-    const CassValue* value = cass_row_get_column_by_name( f_rowsIterator.get(), name.toUtf8().data() );
     cass_value_get_string( value, &byte_value, &value_len );
     return QByteArray::fromRawData( byte_value, value_len );
 }
 
 
+QByteArray QCassandraQuery::getByteArrayColumn( const QString &name ) const
+{
+    const CassValue* value = cass_row_get_column_by_name( f_rowsIterator.get(), name.toUtf8().data() );
+    return getByteArrayFromValue( value );
+}
+
+
 QByteArray QCassandraQuery::getByteArrayColumn( const int num ) const
 {
-    const char *    byte_value = 0;
-    size_t          value_len  = 0;
     const CassValue* value = cass_row_get_column( f_rowsIterator.get(), num );
-    cass_value_get_string( value, &byte_value, &value_len );
-    return QByteArray::fromRawData( byte_value, value_len );
+    return getByteArrayFromValue( value );
 }
 
 
@@ -522,15 +650,52 @@ namespace
 }
 
 
-QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const QString& name ) const
+QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const QString& name ) const
 {
     return getMapFromJsonObject( getStringColumn( name ) );
 }
 
 
-QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const int num ) const
+QCassandraQuery::string_map_t QCassandraQuery::getJsonMapColumn ( const int num ) const
 {
     return getMapFromJsonObject( getStringColumn( num ) );
+}
+
+
+QCassandraQuery::string_map_t QCassandraQuery::getMapFromValue( const CassValue* value ) const
+{
+    iterator_pointer_t map_iter( cass_iterator_from_map( value ), iteratorDeleter() );
+    while( cass_iterator_next( map_iter.get() ) )
+    {
+        const CassValue* key( cass_value_get_map_key   ( map_iter.get() ) );
+        const CassValue* val( cass_value_get_map_value ( map_iter.get() ) );
+
+        const char *    byte_value = 0;
+        size_t          value_len  = 0;
+        cass_value_get_string( key, &byte_value, &value_len );
+        QByteArray ba_key( QByteArray::fromRawData( byte_value, value_len ) );
+        //
+        cass_value_get_string( val, &byte_value, &value_len );
+        QByteArray ba_val( QByteArray::fromRawData( byte_value, value_len ) );
+
+        ret_map[ba_key.data()] = ba_val.data();
+    }
+
+    return ret_map;
+}
+
+
+QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const QString& name ) const
+{
+    const CassValue* value = cass_row_get_column_by_name( f_rowsIterator.get(), name );
+    return getMapFromValue( value );
+}
+
+
+QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const int num ) const
+{
+    const CassValue* value = cass_row_get_column( f_rowsIterator.get(), num );
+    return getMapFromValue( value );
 }
 
 
