@@ -161,79 +161,6 @@ QCassandraPrivate::~QCassandraPrivate()
 }
 
 
-/** \brief Execute a full query string.
- *
- */
-future_pointer_t QCassandraPrivate::executeQuery( const QString &query ) const
-{
-    statement_pointer_t statement(
-        cass_statement_new( query.toUtf8().data(), 0 ), statementDeleter() );
-    future_pointer_t future(
-        cass_session_execute( f_session.get(), statement.get() ),
-        futureDeleter() );
-
-    cass_future_wait( future.get() );
-
-    throwIfError( future, QString( "Query [%1] failed" ).arg( query ) );
-
-    return future;
-}
-
-/// \brief Execute a query based on a table and a single column within. No
-/// keyspace is assumed.
-//
-/// \note This assumes a single column query
-//
-void QCassandraPrivate::executeQuery( const QString &query, QStringList &values ) const
-{
-    future_pointer_t future( executeQuery( query ) );
-    result_pointer_t result( cass_future_get_result( future.get() ),
-                             resultDeleter() );
-
-    values.clear();
-    CassIterator *rows = cass_iterator_from_result( result.get() );
-    while ( cass_iterator_next( rows ) )
-    {
-        const CassRow *row = cass_iterator_get_row( rows );
-        values << QString( getByteArrayFromRow( row, 0 ).data() );
-    }
-}
-
-/// \brief Execute a query based on a table and a single column within. No
-/// keyspace is assumed.
-//
-/// \note This assumes a single column query
-//
-void QCassandraPrivate::executeQuery( const QString &table, const QString &column,
-                               QStringList &values ) const
-{
-    const QString query(
-        QString( "SELECT %1 FROM %2" ).arg( column ).arg( table ) );
-    executeQuery( query, values );
-}
-
-
-/// \brief Execute a query based on a table and a single column within. No
-/// keyspace is assumed.
-//
-/// \note This assumes a single column query
-//
-void QCassandraPrivate::executeQuery( const QString &query, QStringList &values ) const
-{
-    future_pointer_t future( executeQuery( query ) );
-    result_pointer_t result( cass_future_get_result( future.get() ),
-                             resultDeleter() );
-
-    values.clear();
-    CassIterator *rows = cass_iterator_from_result( result.get() );
-    while ( cass_iterator_next( rows ) )
-    {
-        const CassRow *row = cass_iterator_get_row( rows );
-        values << QString( getByteArrayFromRow( row, 0 ).data() );
-    }
-}
-
-
 /** \brief Connect to a Cassandra Cluster.
  *
  * This function connects to a Cassandra Cluster. Which cluster is determined
@@ -311,67 +238,22 @@ bool QCassandraPrivate::connect(const QStringList& host_list, const int port )
     // disconnect any existing connection
     disconnect();
 
-    std::stringstream contact_points;
-    for( QString host : host_list )
-    {
-        if( contact_points.str() != "" )
-        {
-            contact_points << ",";
-        }
-        contact_points << host.toUtf8().data();
-    }
+    f_session = std::make_shared<QCassandraSession>();
+    f_session->connect( host_list, port ); // throws on failure!
 
-    f_cluster.reset( cass_cluster_new(), clusterDeleter() );
-    cass_cluster_set_contact_points( f_cluster.get(), contact_points.str().c_str() );
-
-    std::stringstream port_str;
-    port_str << port;
-    cass_cluster_set_contact_points( f_cluster.get(), port_str.str().c_str() );
+    QCassandraQuery local_table( f_session );
+    local_table.query( "SELECT cluster_name, native_protocol_version, partitioner FROM system.local" );
+    local_table.start();
     //
-    f_session.reset( cass_session_new(), sessionDeleter() );
-    f_connection.reset( cass_session_connect(f_session.get(), f_cluster.get()), futureDeleter() );
-
-    /* This operation will block until the result is ready */
-    CassError rc = cass_future_error_code(f_connection.get());
-    if( rc != CASS_OK )
-    {
-        const char* message;
-        size_t message_length;
-        cass_future_error_message( f_connection.get(), &message, &message_length );
-        std::stringstream msg;
-        msg << "Cannot connect to cassandra server! Reason=[" << std::string(message) << "]";
-
-        f_connection.reset();
-        f_session.reset();
-        f_cluster.reset();
-        throw std::runtime_error( msg.str().c_str() );
-    }
-
-    future_pointer_t    future( executeQuery( "SELECT cluster_name, native_protocol_version, partitioner FROM system.local" ) );
-    result_pointer_t	result( cass_future_get_result(future.get()), resultDeleter() );
-
-    CassIterator* rows = cass_iterator_from_result( result.get() );
-    if( !cass_iterator_next( rows ) )
+    if( !local_table.nextRow() )
     {
         throw std::runtime_error( "Error in database table system.local!" );
     }
 
-    const char *    byte_value = 0;
-    size_t          value_len  = 0;
-    const CassRow*  row        = cass_iterator_get_row( rows );
+    f_cluster_name     = local_table.getStringColumn ( "cluster_name"            );
+    f_protocol_version = local_table.getStringColumn ( "native_protocol_version" );
+    f_partitioner      = local_table.getStringColumn ( "partitioner"             );
     //
-    const CassValue* value  = cass_row_get_column( row, 0 );
-    cass_value_get_string( value, &byte_value, &value_len );
-    f_cluster_name = byte_value;
-    //
-    value  = cass_row_get_column( row, 1 );
-    cass_value_get_string( value, &byte_value, &value_len );
-    f_protocol_version = byte_value;
-    //
-    value  = cass_row_get_column( row, 2 );
-    cass_value_get_string( value, &byte_value, &value_len );
-    f_partitioner = byte_value;
-
     // I have no idea how to get this from the new CQL-based c++ interface.
     //
     f_snitch = "TODO!";
@@ -388,23 +270,13 @@ bool QCassandraPrivate::connect(const QStringList& host_list, const int port )
  */
 void QCassandraPrivate::disconnect()
 {
-    f_connection.reset();
-    //
     if( f_session )
     {
-        future_pointer_t result( cass_session_close( f_session.get() ), futureDeleter() );
-        cass_future_wait( result.get() );
+        f_session->disconnect();
     }
-    //
     f_session.reset();
-    f_cluster.reset();
-
-    f_current_context.reset();
-    f_cluster_name     = "";
-    f_protocol_version = "";
-    f_partitioner      = "";
-    f_snitch           = "";
 }
+
 
 /** \brief Check whether we're connected.
  *
@@ -696,12 +568,25 @@ void QCassandraPrivate::contexts() const
 {
     mustBeConnected();
 
-    QStringList keyspaces;
-    executeQuery( "SELECT keyspace_name FROM system.schema_keyspaces;", keyspaces );
-    for( auto keyspace : keyspaces )
+    f_parent->clearCache();
+
+    QCassandraQuery keyspace_query( f_session );
+    keyspace_query.query( "SELECT keyspace_name FROM system.schema_keyspaces;" );
+    keyspace_query.start();
+    while( keyspace_query.nextRow() )
     {
-        f_parent->context( keyspace );
+        f_parent->context( keyspace_query.getStringColumn("keyspace_name") );
     }
+}
+
+
+void QCassandraPrivate::retrieve_columns( org::apache::cassandra::CfDef& cf_def ) const
+{
+}
+
+
+void QCassandraPrivate::retrieve_triggers( org::apache::cassandra::CfDef& cf_def ) const
+{
 }
 
 
@@ -710,101 +595,66 @@ void QCassandraPrivate::contexts() const
  * \param[in]  context_name  The name of the context in which the tables are located.
  * \param[out] cf_def_list   Definition of all of the tables
  */
-void QCassandraPrivate::retrieve_tables( const QString& context_name, std::vector<org::apache::cassandra::CfDef>& cf_def_list ) const
+void QCassandraPrivate::retrieve_tables( org::apache::cassandra::KsDef& ks_def ) const
 {
     using ::org::apache::cassandra;
-
-#if 0
-    string name;
-    std::string column_type;
-    std::string comparator_type;
-    std::string subcomparator_type;
-    std::string comment;
-    double read_repair_chance;
-    std::vector<ColumnDef> column_metadata;
-    int32_t gc_grace_seconds;
-    std::string default_validation_class;
-    int32_t id;
-    int32_t min_compaction_threshold;
-    int32_t max_compaction_threshold;
-    bool replicate_on_write;
-    std::string key_validation_class;
-    std::string key_alias;
-    std::string compaction_strategy;
-    std::map<std::string, std::string> compaction_strategy_options;
-    std::map<std::string, std::string> compression_options;
-    double bloom_filter_fp_chance;
-    std::string caching;
-    double dclocal_read_repair_chance;
-    bool populate_io_cache_on_flush;
-    int32_t memtable_flush_period_in_ms;
-    int32_t default_time_to_live;
-    int32_t index_interval;
-    std::string speculative_retry;
-    std::vector<TriggerDef> triggers;
-    double row_cache_size;
-    double key_cache_size;
-    int32_t row_cache_save_period_in_seconds;
-    int32_t key_cache_save_period_in_seconds;
-    int32_t memtable_flush_after_mins;
-    int32_t memtable_throughput_in_mb;
-    double memtable_operations_in_millions;
-    double merge_shards_chance;
-    std::string row_cache_provider;
-    int32_t row_cache_keys_to_save;
-#endif
 
     const QString query( QString("SELECT columnfamily_name, type, comparator, subcomparator, "
                                  "comment, read_repair_chance, gc_grace_seconds, default_validator, "
                                  "cf_id, min_compaction_threshold, max_compaction_threshold, "
                                  "key_validator, key_aliases, compaction_strategy_class, "
-                                 "compaction_strategy_options, bloom_filter_fp_chance, caching, "
-                                 "read_repair_chance, memtable_flush_period_in_ms, default_time_to_live, "
-                                 "max_index_interval, speculative_retry "
+                                 "compaction_strategy_options, compression_parameters, bloom_filter_fp_chance, caching, "
+                                 "memtable_flush_period_in_ms, default_time_to_live, "
+                                 "speculative_retry "
                                  "FROM system.schema_columnfamilies "
                                  "WHERE keyspace_name = '%1'")
                          .arg(f_contextName)
                          );
-    //
-    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 0 ), statementDeleter() );
-    future_pointer_t session( cass_session_execute( f_session.get(), query_stmt.get() ) , futureDeleter()    );
-    throwIfError( session, "Cannot select from system.schema_columnfamilies!" );
 
-    result_pointer_t query_result( cass_future_get_result(session.get()), resultDeleter() );
-    iterator_pointer_t rows( cass_iterator_from_result(query_result.get()), iteratorDeleter()   );
-    while( cass_iterator_next(rows.get()) )
+    QCassandraQuery the_query( f_session );
+    the_query.query( query );
+    the_query.start();
+
+    std::vector<CfDef> cf_def_list;
+    while( the_query.nextRow() )
     {
-        const CassRow* row( cass_iterator_get_row(rows.get()));
-        const bool     durable_writes   ( getBoolFromRow   ( row, "durable_writes"   ) );
-        const QString  strategy_class   ( getStringFromRow ( row, "strategy_class"   ) );
-        const QString  strategy_options ( getStringFromRow ( row, "strategy_options" ) );
-
-        ks_def.__set_name ( f_contextName.toUtf8().data() );
-        ks_def.__set_strategy_class ( strategy_class.toUtf8().data() );
-
-        as2js::JSON::pointer_t load_json( std::make_shared<as2js::JSON>() );
-        as2js::StringInput::pointer_t in( std::make_shared<as2js::StringInput>(strategy_options.toUtf8().data()) );
-        as2js::JSON::JSONValue::pointer_t opts( load_json->parse(in) );
-
-        auto options( opts->get_object() );
-        std::map<std::string,std::string> the_map;
-        for( const auto& elm : options )
-        {
-            the_map[*elm.first] = *elm.second;
-        }
-        ks_def.__set_strategy_options( the_map );
-
-        auto iter = options.find( "replication_factor" );
-        if( iter != options.end() )
-        {
-            ks_def.__set_replication_factor( static_cast<int32_t>( iter->first->get_int64() ) );
-        }
-
-        retrieve_tables( context_name, ks_def.cf_defs );
-
-        ks_def.__set_durable_writes( durable_writes );
+        CfDef cf_def;
+        cf_def.__set_keyspace                    ( ks_def.name );
+        cf_def.__set_name                        ( the_query.getStringColumn ("columnfamily_name")                    .toStdString() );
+        cf_def.__set_column_type                 ( the_query.getStringColumn ("type")                                 .toStdString() );
+        cf_def.__set_comparator_type             ( the_query.getStringColumn ("comparator")                           .toStdString() );
+        cf_def.__set_subcomparator_type          ( the_query.getStringColumn ("subcomparator")                        .toStdString() );
+        cf_def.__set_comment                     ( the_query.getStringColumn ("comment")                              .toStdString() );
+        cf_def.__set_read_repair_chance          ( the_query.getDoubleColumn ("read_repair_chance")                   );
+        cf_def.__set_gc_grace_seconds            ( the_query.getIntColumn    ("gc_grace_seconds")                     );
+        cf_def.__set_default_validation_class    ( the_query.getStringColumn ("default_validator")                    .toStdString() );
+        cf_def.__set_id                          ( the_query.getIntColumn    ("cf_id")                                );
+        cf_def.__set_min_compaction_threshold    ( the_query.getIntColumn    ("min_compaction_threshold")             );
+        cf_def.__set_max_compaction_threshold    ( the_query.getIntColumn    ("max_compaction_threshold")             );
+        cf_def.__set_key_validation_class        ( the_query.getStringColumn ("key_validator")                        .toStdString() );
+        cf_def.__set_key_alias                   ( the_query.getStringColumn ("key_aliases")                          .toStdString() );
+        cf_def.__set_compaction_strategy         ( the_query.getStringColumn ("compaction_strategy_class")            .toStdString() );
+        cf_def.__set_compaction_strategy_options ( the_query.getMapColumn    ("compaction_strategy_options")          );
+        cf_def.__set_compression_options         ( the_query.getMapColumn    ("compression_parameters")               );
+        cf_def.__set_bloom_filter_fp_chance      ( the_query.getDoubleColumn ("bloom_filter_fp_chance")               );
+        cf_def.__set_caching                     ( the_query.getStringColumn ("bloom_filter_fp_chance").toStdString() );
+        cf_def.__set_caching                     ( the_query.getStringColumn ("bloom_filter_fp_chance").toStdString() );
+        cf_def.__set_memtable_flush_period_in_ms ( the_query.getIntColumn    ("memtable_flush_period_in_ms")          );
+        cf_def.__set_default_time_to_live        ( the_query.getIntColumn    ("default_time_to_live")                 );
+        cf_def.__set_speculative_retry           ( the_query.getStringColumn ("speculative_retry")                    .toStdString() );
+        //
+        retrieve_columns  ( cf_def );
+        retrieve_triggers ( cf_def );
+        //
+        cf_def_list.push_back( cf_def );
     }
 
+    ks_def.__set_cf_defs( cf_def );
+
+#if 0
+    std::vector<ColumnDef> column_metadata;
+    std::vector<TriggerDef> triggers;
+#endif
 }
 
 
@@ -829,52 +679,38 @@ void QCassandraPrivate::retrieve_context(const QString& context_name) const
 
     // retrieve this keyspace from Cassandra
     KsDef ks_def;
-    //f_client->describe_keyspace(ks_def, context_name.toUtf8().data());
 
     const QString query( QString("SELECT durable_writes, strategy_class, strategy_options "
                                  "FROM system.schema_keyspaces "
                                  "WHERE keyspace_name = '%1'")
                          .arg(f_contextName)
                          );
-    //
-    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 0 ), statementDeleter() );
-    future_pointer_t session( cass_session_execute( f_session.get(), query_stmt.get() ) , futureDeleter()    );
-    throwIfError( session, "Cannot select from system.schema_keyspaces!" );
 
-    result_pointer_t query_result( cass_future_get_result(session.get()), resultDeleter() );
-    iterator_pointer_t rows( cass_iterator_from_result(query_result.get()), iteratorDeleter()   );
-    while( cass_iterator_next(rows.get()) )
+    QCassandraQuery the_query( f_session );
+    the_query.query( query );
+    the_query.start();
+    if( !the_query.nextRow() )
     {
-        const CassRow* row( cass_iterator_get_row(rows.get()));
-        const bool     durable_writes   ( getBoolFromRow   ( row, "durable_writes"   ) );
-        const QString  strategy_class   ( getStringFromRow ( row, "strategy_class"   ) );
-        const QString  strategy_options ( getStringFromRow ( row, "strategy_options" ) );
-
-        ks_def.__set_name ( f_contextName.toUtf8().data() );
-        ks_def.__set_strategy_class ( strategy_class.toUtf8().data() );
-
-        as2js::JSON::pointer_t load_json( std::make_shared<as2js::JSON>() );
-        as2js::StringInput::pointer_t in( std::make_shared<as2js::StringInput>(strategy_options.toUtf8().data()) );
-        as2js::JSON::JSONValue::pointer_t opts( load_json->parse(in) );
-
-        auto options( opts->get_object() );
-        std::map<std::string,std::string> the_map;
-        for( const auto& elm : options )
-        {
-            the_map[*elm.first] = *elm.second;
-        }
-        ks_def.__set_strategy_options( the_map );
-
-        auto iter = options.find( "replication_factor" );
-        if( iter != options.end() )
-        {
-            ks_def.__set_replication_factor( static_cast<int32_t>( iter->first->get_int64() ) );
-        }
-
-        retrieve_tables( context_name, ks_def.cf_defs );
-
-        ks_def.__set_durable_writes( durable_writes );
+        throw std::runtime_error("database is inconsistent!");
     }
+
+    const bool    durable_writes   ( the_query.getBoolColumn   ( "durable_writes"   ) );
+    const QString strategy_class   ( the_query.getStringColumn ( "strategy_class"   ) );
+    const QString strategy_options ( the_query.getStringColumn ( "strategy_options" ) );
+
+    ks_def.__set_name             ( context_name.toStdString() );
+    ks_def.__set_strategy_class   ( the_query.getStringColumn   (  "strategy_class"   ).toStdString() );
+    ks_def.__set_strategy_options ( the_query.getMapColumn      (  "strategy_options" )               );
+
+    auto iter = options.find( "replication_factor" );
+    if( iter != options.end() )
+    {
+        ks_def.__set_replication_factor( static_cast<int32_t>( iter->first->get_int64() ) );
+    }
+
+    retrieve_tables( ks_def );
+
+    ks_def.__set_durable_writes( durable_writes );
 
     QCassandraContext::pointer_t c(f_parent->context(context_name));
     c->parseContextDefinition( &ks_def );

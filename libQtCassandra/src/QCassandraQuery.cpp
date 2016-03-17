@@ -36,6 +36,8 @@
 
 #include "QtCassandra/QCassandraQuery.h"
 
+#include <as2js/json.h>
+
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -338,7 +340,7 @@ void QCassandraQuery::start()
 }
 
 
-bool QCassandraQuery::next()
+bool QCassandraQuery::nextRow()
 {
     return cass_iterator_next( f_rowsIterator.get() );
 }
@@ -416,7 +418,7 @@ int32_t QCassandraQuery::getIntColumn( const int num ) const
 }
 
 
-int64_t QCassandraQuery::getCounter( const QString &name ) const
+int64_t QCassandraQuery::getCounterColumn( const QString &name ) const
 {
     int64_t return_val = 0;
     const CassValue* value = cass_row_get_column_by_name( f_rowsIterator.get(), name.toUtf8().data() );
@@ -425,11 +427,47 @@ int64_t QCassandraQuery::getCounter( const QString &name ) const
 }
 
 
-int64_t QCassandraQuery::getCounter( const int num ) const
+int64_t QCassandraQuery::getCounterColumn( const int num ) const
 {
     int64_t return_val = 0;
     const CassValue* value = cass_row_get_column( f_rowsIterator.get(), num );
     cass_value_get_int64( value, &return_val );
+    return return_val;
+}
+
+
+float QCassandraQuery::getFloatColumn( const QString &name ) const
+{
+    float return_val = 0;
+    const CassValue* value = cass_row_get_column_by_name( f_rowsIterator.get(), name.toUtf8().data() );
+    cass_value_get_float( value, &return_val );
+    return return_val;
+}
+
+
+float QCassandraQuery::getFloatColumn( const int num ) const
+{
+    float return_val = 0;
+    const CassValue* value = cass_row_get_column( f_rowsIterator.get(), num );
+    cass_value_get_float( value, &return_val );
+    return return_val;
+}
+
+
+double QCassandraQuery::getDoubleColumn( const QString &name ) const
+{
+    double return_val = 0;
+    const CassValue* value = cass_row_get_column_by_name( f_rowsIterator.get(), name.toUtf8().data() );
+    cass_value_get_double( value, &return_val );
+    return return_val;
+}
+
+
+double QCassandraQuery::getDoubleColumn( const int num ) const
+{
+    double return_val = 0;
+    const CassValue* value = cass_row_get_column( f_rowsIterator.get(), num );
+    cass_value_get_double( value, &return_val );
     return return_val;
 }
 
@@ -463,6 +501,36 @@ QByteArray QCassandraQuery::getByteArrayColumn( const int num ) const
     const CassValue* value = cass_row_get_column( f_rowsIterator.get(), num );
     cass_value_get_string( value, &byte_value, &value_len );
     return QByteArray::fromRawData( byte_value, value_len );
+}
+
+
+namespace
+{
+    QCassandraQuery::string_map_t getMapFromJsonObject( const QString& data )
+    {
+        as2js::JSON::pointer_t load_json( std::make_shared<as2js::JSON>() );
+        as2js::StringInput::pointer_t in( std::make_shared<as2js::StringInput>(data.toStdString()) );
+        as2js::JSON::JSONValue::pointer_t opts( load_json->parse(in) );
+        const auto& options( opts->get_object() );
+        qstring_map_t the_map;
+        for( const auto& elm : options )
+        {
+            the_map[*elm.first.c_str()] = *elm.second.c_str();
+        }
+        return the_map;
+    }
+}
+
+
+QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const QString& name ) const
+{
+    return getMapFromJsonObject( getStringColumn( name ) );
+}
+
+
+QCassandraQuery::string_map_t QCassandraQuery::getMapColumn ( const int num ) const
+{
+    return getMapFromJsonObject( getStringColumn( num ) );
 }
 
 

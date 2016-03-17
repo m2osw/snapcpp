@@ -33,10 +33,12 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 #pragma once
 
-#include "QtCassandra/QCassandraTools.h"
+#include "cassandra.h"
+
+#include <map>
+#include <string>
 
 #include <QString>
 #include <QByteArray>
@@ -122,18 +124,27 @@ public:
     void       bindByteArray ( const int num, const QByteArray& value );
 
     void       start();
-    bool       next();
+    bool       nextRow();
+    bool       nextPage();
 
-    bool       getBoolColumn      ( const QString& name ) const;
-    bool       getBoolColumn      ( const int      num  ) const;
-    int32_t    getIntColumn       ( const QString& name ) const;
-    int32_t    getIntColumn       ( const int      num  ) const;
-    int64_t    getCounter         ( const QString& name ) const;
-    int64_t    getCounter         ( const int      num  ) const;
-    QString    getStringColumn    ( const QString& name ) const;
-    QString    getStringColumn    ( const int      num  ) const;
-    QByteArray getByteArrayColumn ( const QString& name ) const;
-    QByteArray getByteArrayColumn ( const int      num  ) const;
+    bool       getBoolColumn      ( const QString& name  ) const;
+    bool       getBoolColumn      ( const int      num   ) const;
+    int32_t    getIntColumn       ( const QString& name  ) const;
+    int32_t    getIntColumn       ( const int      num   ) const;
+    int64_t    getCounterColumn   ( const QString& name  ) const;
+    int64_t    getCounterColumn   ( const int      num   ) const;
+    float      getFloatColumn     ( const QString& name  ) const;
+    float      getFloatColumn     ( const int      num   ) const;
+    double     getDoubleColumn    ( const QString& name  ) const;
+    double     getDoubleColumn    ( const int      num   ) const;
+    QString    getStringColumn    ( const QString& name  ) const;
+    QString    getStringColumn    ( const int      num   ) const;
+    QByteArray getByteArrayColumn ( const QString& name  ) const;
+    QByteArray getByteArrayColumn ( const int      num   ) const;
+
+    typedef std::map<std::string,std::string> string_map_t;
+    string_map_t getMapColumn ( const QString& name ) const;
+    string_map_t getMapColumn ( const int num ) const;
 
 private:
     // Current query

@@ -37,13 +37,16 @@
 
 #include "QtCassandra/QCassandra.h"
 #include "QtCassandra/QCassandraPredicate.h"
-#include "QtCassandra/QCassandraTools.h"
+#include "QtCassandra/QCassandraQuery.h"
+#include "legacy/cassandra_types.h"
 
 #include <QString>
 #include <QStringList>
 
 #include <memory>
 #include <stdexcept>
+#include <vector>
+
 
 namespace QtCassandra
 {
@@ -100,16 +103,17 @@ public:
 private:
     // forbid direct copies
     QCassandraPrivate(const QCassandraPrivate&) {}
-
     void mustBeConnected() const throw(std::runtime_error);
+
+    void retrieve_tables   ( org::apache::cassandra::KsDef& ks_def ) const;
+    void retrieve_columns  ( org::apache::cassandra::CfDef& cf_def ) const;
+    void retrieve_triggers ( org::apache::cassandra::CfDef& cf_def ) const;
 
     QCassandra::pointer_t f_parent;
 
     // New CQL interface
     //
-    cluster_pointer_t     f_cluster;
-    session_pointer_t     f_session;
-    future_pointer_t      f_connection;
+    QCassandraSession::pointer_t  f_session;
 };
 
 } // namespace QtCassandra
