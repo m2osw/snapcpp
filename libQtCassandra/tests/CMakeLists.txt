@@ -39,6 +39,8 @@ include_directories(
     ${CASSANDRACPPDRIVER_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_BINARY_DIR}
+    ${QtCassandra_SOURCE_DIR}
+    ${QtCassandra_BINARY_DIR}
 )
 
 ################################################################################

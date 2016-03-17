@@ -7,9 +7,11 @@
 
 #pragma GCC system_header
 
-// --- Snap! Website header additions ---
 #include <inttypes.h>
-#include <QString>
+
+#include <map>
+#include <string>
+#include <vector>
 
 namespace org
 {
@@ -120,9 +122,6 @@ class ColumnDef
     bool operator!=( const ColumnDef &rhs ) const { return !( *this == rhs ); }
 
     bool operator<( const ColumnDef & ) const;
-
-    uint32_t read(::apache::thrift::protocol::TProtocol *iprot );
-    uint32_t write(::apache::thrift::protocol::TProtocol *oprot ) const;
 };
 
 

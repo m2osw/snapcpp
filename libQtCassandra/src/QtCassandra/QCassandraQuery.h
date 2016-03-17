@@ -38,6 +38,7 @@
 #include "cassandra.h"
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include <QString>
@@ -88,6 +89,7 @@ namespace CassTools
 
 
 class QCassandraSession
+        : public std::enable_shared_from_this<QCassandraSession>
 {
 public:
     typedef std::shared_ptr<QCassandraSession> pointer_t;
@@ -96,7 +98,7 @@ public:
     ~QCassandraSession();
 
     void connect( const QString& host = "localhost", const int port = 9042 );
-    void connect( const QStringList& hosts         , const int port = 9042 );
+    void connect( const QStringList& host_list     , const int port = 9042 );
     void disconnect();
     bool isConnected() const;
 
@@ -121,7 +123,8 @@ public:
 
     void       query         ( const QString& query_string, const int bind_count = 0 );
     void       setPagingSize ( const int size );
-    void       bindInt       ( const int num, const int         value );
+    void       bindInt32     ( const int num, const int32_t     value );
+    void       bindInt64     ( const int num, const int64_t     value );
     void       bindString    ( const int num, const QString&    value );
     void       bindByteArray ( const int num, const QByteArray& value );
 
@@ -131,10 +134,10 @@ public:
 
     bool       getBoolColumn      ( const QString& name  ) const;
     bool       getBoolColumn      ( const int      num   ) const;
-    int32_t    getIntColumn       ( const QString& name  ) const;
-    int32_t    getIntColumn       ( const int      num   ) const;
-    int64_t    getCounterColumn   ( const QString& name  ) const;
-    int64_t    getCounterColumn   ( const int      num   ) const;
+    int32_t    getInt32Column     ( const QString& name  ) const;
+    int32_t    getInt32Column     ( const int      num   ) const;
+    int64_t    getInt64Column     ( const QString& name  ) const;
+    int64_t    getInt64Column     ( const int      num   ) const;
     float      getFloatColumn     ( const QString& name  ) const;
     float      getFloatColumn     ( const int      num   ) const;
     double     getDoubleColumn    ( const QString& name  ) const;
@@ -160,6 +163,7 @@ private:
     CassTools::result_pointer_t    f_queryResult;
     CassTools::iterator_pointer_t  f_rowsIterator;
 
+    bool 		    getBoolFromValue      ( const CassValue* value ) const;
     QByteArray      getByteArrayFromValue ( const CassValue* value ) const;
     string_map_t    getMapFromValue       ( const CassValue* value ) const;
     void            throwIfError          ( const QString& msg     );

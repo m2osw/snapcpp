@@ -38,6 +38,8 @@
 #include "QtCassandra/QCassandraQuery.h"
 #include <QtCore>
 
+#include <iostream>
+
 using namespace QtCassandra;
 
 int main( int argc, char *argv[] )
@@ -62,7 +64,7 @@ int main( int argc, char *argv[] )
         }
     }
 
-    QCassandraSession session( QCassandraSession::create() );
+    QCassandraSession::pointer_t session( QCassandraSession::create() );
     session->connect( host );
     //
     if( !session->isConnected() )
@@ -72,13 +74,13 @@ int main( int argc, char *argv[] )
 
     QCassandraQuery q( session );
     q.query( "SELECT * FROM system.schema_keyspaces" );
-    q.start()
+    q.start();
     while( q.nextRow() )
     {
         const std::string  keyspace_name    = q.getStringColumn  ( "keyspace_name"    ).toStdString();
         const bool         durable_writes   = q.getBoolColumn    ( "durable_writes"   );
         const std::string  strategy_class   = q.getStringColumn  ( "strategy_class"   ).toStdString();
-        const string_map_t strategy_options = q.getJsonMapColumn ( "strategy_options" );
+        const QCassandraQuery::string_map_t strategy_options = q.getJsonMapColumn ( "strategy_options" );
 
         std::cout << "keyspace_name=" << keyspace_name
             << ", durable_writes=" << durable_writes

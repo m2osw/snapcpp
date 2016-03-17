@@ -71,7 +71,7 @@ include_directories(
 
 add_subdirectory(cmake)
 add_subdirectory(src)
-add_subdirectory(tools)
+#add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(doc)
 
