@@ -232,6 +232,8 @@ void QueryTest::largeTableTest()
         q.end();
     }
 
+    std::map<int32_t,QString> string_map;
+
     std::cout << "Select from 'large_table' and test paging functionality..." << std::endl;
     q.query( "SELECT id,name FROM qtcassandra_query_test.large_table" );
     q.setPagingSize( 10 );
@@ -241,10 +243,27 @@ void QueryTest::largeTableTest()
         std::cout << "Iterate through page..." << std::endl;
         while( q.nextRow() )
         {
-            std::cout << "id=" << q.getInt32Column( "id" ) << ", name=" << q.getStringColumn("name").toStdString() << std::endl;
+            const int32_t id(q.getInt32Column("id"));
+            const QString name(q.getStringColumn("name"));
+            std::cout << "id=" << id << ", name=" << name.toStdString() << std::endl;
+            string_map[id] = name;
         }
     }
     while( q.nextPage() );
+
+    std::cout << "Check order of recovered records:" << std::endl;
+    int32_t idx = 0;
+    for( const auto& pair : string_map )
+    {
+        if( pair.first != idx )
+        {
+            std::cerr << "Error! We expected " << idx << ", but we got " << pair.first << " instead!" << std::endl;
+            exit( 1 );
+        }
+        //std::cout << "key=" << pair.first << ", val=" << pair.second.toStdString() << std::endl;
+        idx++;
+    }
+    std::cout << "idx=" << idx << std::endl;
 
     std::cout << "Process done!" << std::endl;
 }
