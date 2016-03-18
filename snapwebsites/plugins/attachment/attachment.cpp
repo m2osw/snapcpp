@@ -658,14 +658,19 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
 
     QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
 
-    // TODO: If the user is loading the file as an attachment,
-    //       we need those headers
-
-    //int pos(cpath.lastIndexOf('/'));
-    //QString basename(cpath.mid(pos + 1));
-    //f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
-
-    //f_snap->set_header("Content-Transfer-Encoding", "binary");
+    // If the user is loading the file as an attachment, make sure to
+    // include the disposition and transfer encoding info
+    //
+    snap_uri const & main_uri(f_snap->get_uri());
+    if(main_uri.has_query_option("download")
+    && main_uri.query_option("download") == "attachment")
+    {
+        QString const cpath(ipath.get_cpath());
+        int const pos(cpath.lastIndexOf('/'));
+        QString const basename(cpath.mid(pos + 1));
+        f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
+        f_snap->set_header("Content-Transfer-Encoding", "binary");
+    }
 
     // get the attachment MIME type and tweak it if it is a known text format
     QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());

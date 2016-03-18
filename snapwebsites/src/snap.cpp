@@ -513,30 +513,33 @@ int snap_cgi::process()
         // that would break the whole scheme so we can safely break (add \n)
         // at that location
         bool const is_multipart(QString(getenv("CONTENT_TYPE")).startsWith("multipart/form-data"));
-        int break_char(is_multipart ? '\n' : '&');
+        int const break_char(is_multipart ? '\n' : '&');
         std::string var;
         for(;;)
         {
-            int c(getchar());
+            int const c(getchar());
             if(c == break_char || c == EOF)
             {
-                // a POST without variables most often ends up with
-                // one empty line which we ignore
+                // Note: a POST without variables most often ends up with
+                //       one empty line
+                //
+                if(!is_multipart || c != EOF)
+                {
+                    // WARNING: This \n MUST exist if the POST includes
+                    //          a binary file!
+                    var += "\n";
+                }
                 if(!var.empty())
                 {
-                    if(!is_multipart || c != EOF)
-                    {
-                        var += "\n";
-                    }
                     if(socket.write(var.c_str(), var.length()) != static_cast<int>(var.length()))
                     {
                         return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str(), nullptr);
                     }
-#ifdef _DEBUG
-                    SNAP_LOG_DEBUG("wrote var=")(var.c_str());
-#endif
-                    var.clear();
                 }
+#ifdef _DEBUG
+                SNAP_LOG_DEBUG("wrote var=")(var.c_str());
+#endif
+                var.clear();
                 if(c == EOF)
                 {
                     // this was the last variable

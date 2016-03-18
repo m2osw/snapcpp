@@ -43,6 +43,101 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:if test="sizes/max"><xsl:attribute name="data-maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
   </xsl:template>
 
+  <!-- DROPPED FILE WIDGET -->
+  <!-- NOTE: we use a sub-template to allow for composite widgets -->
+  <xsl:template name="snap:dropped-file">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <xsl:param name="type"/>
+    <div field_type="dropped-file">
+      <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
+      <!--
+        IMPORTANT: In case of the dropped-file widgets, we always include
+                   the snap-editor class, meaning that it always looks like
+                   it is editable; however, there will be no input file,
+                   no "Upload" and "Reset" buttons so the functionality
+                   will still be limited to just downloading.
+      -->
+      <xsl:attribute name="class">snap-editor editable no-hover dropped-file-box <xsl:value-of
+          select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if
+          test="not(attachment[@browse='no'])"> browse</xsl:if><xsl:if
+          test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+          test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
+          select="concat(' ', classes)"/></xsl:attribute>
+      <xsl:if test="background-value">
+        <!-- by default "snap-editor-background" objects have "display: none"
+             a script shows them on load once ready AND if the value is empty
+             also it is a "pointer-event: none;" -->
+        <div class="snap-editor-background zordered">
+          <div class="snap-editor-background-content">
+            <!-- this div is placed OVER the next div -->
+            <xsl:copy-of select="background-value/node()"/>
+          </div>
+        </div>
+      </xsl:if>
+      <xsl:variable name="uri">
+        <!-- now the actual value of this line -->
+        <xsl:choose>
+          <xsl:when test="post">
+            <!-- use the post value when there is one, it has priority -->
+            <xsl:copy-of select="post/node()"/>
+          </xsl:when>
+          <xsl:when test="value">
+            <!-- use the current value when there is one -->
+            <xsl:copy-of select="value/node()"/>
+          </xsl:when>
+        </xsl:choose>
+      </xsl:variable>
+      <div value="{$uri}">
+        <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+        <!-- TBD: should we use "image" instead of "attachment" since we show images? -->
+        <xsl:attribute name="class">editor-content dropped-file attachment no-toolbar<xsl:if
+          test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
+          <!-- put two attributes, that way we can set the tabindex to -1
+               when disabling a screen -->
+          <xsl:variable name="tabindex" select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/>
+          <xsl:attribute name="tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
+          <xsl:attribute name="original_tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
+        </xsl:if>
+        <xsl:if test="tooltip">
+          <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
+        </xsl:if>
+        <xsl:if test="sizes/min"><xsl:attribute name="min-sizes"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
+        <xsl:if test="sizes/max"><xsl:attribute name="max-sizes"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
+        <div class="dropped-file-icon">
+          <img src="/images/editor/drag-n-drop-64x64.png" data-original="/images/editor/drag-n-drop-64x64.png"/>
+        </div>
+        <div class="dropped-file-filename-and-buttons">
+          <div class="dropped-file-filename">
+            <xsl:value-of select="tokenize($uri, '/')[last()]"/>
+          </div>
+          <div class="dropped-file-buttons">
+            <xsl:if test="$action = 'edit'">
+              <div class='hidden file-input'>
+                <input type='file'/>
+              </div>
+              <div class="button upload"><u>U</u>pload</div>
+            </xsl:if>
+            <div><xsl:attribute name="class">button download<xsl:if test="not($uri != '')"> disabled</xsl:if></xsl:attribute><u>D</u>ownload</div>
+            <xsl:if test="$action = 'edit'"><div class="button reset"><u>R</u>eset</div></xsl:if>
+          </div>
+        </div>
+        <div class="end-dropped-file"/>
+      </div>
+      <xsl:call-template name="snap:common-parts"/>
+    </div>
+  </xsl:template>
+  <xsl:template match="widget[@type='dropped-file']">
+    <widget path="{@path}">
+      <xsl:call-template name="snap:dropped-file">
+        <xsl:with-param name="path" select="@path"/>
+        <xsl:with-param name="name" select="@id"/>
+        <xsl:with-param name="type" select="@type"/>
+      </xsl:call-template>
+    </widget>
+  </xsl:template>
+
   <!-- DROPPED FILE WITH PREVIEW WIDGET -->
   <!-- NOTE: we use a sub-template to allow for composite widgets -->
   <xsl:template name="snap:dropped-file-with-preview">

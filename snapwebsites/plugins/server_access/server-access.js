@@ -705,7 +705,7 @@ snapwebsites.ServerAccess.prototype.setData = function(data)
  * form_data.append("field_nameN", "valueN");
  *
  * // set data in your server access object
- * server_access.setFormData(form_data);
+ * server_access.setData(form_data);
  * \endcode
  *
  * Any of the value1, value2, etc. can be a file:

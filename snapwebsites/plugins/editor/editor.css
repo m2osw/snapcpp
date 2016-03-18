@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.91
+ * Version: 0.0.1.120
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -137,6 +137,62 @@
 }
 
 
+/** most boxes (i.e. LINE BOX, TEXT AREA, etc.) **/
+.editable
+{
+	margin: 10px 0;
+	border: 1px solid black;
+	border-radius: 3px;
+	background-color: #d8d8d8;
+	cursor: text;
+}
+.editable.snap-editor
+{
+	background-color: #f0f0f0;
+}
+.editable.snap-editor.erroneous
+{
+	background-color: #fff0f0;
+	border-color: #882222;
+}
+
+.editable.snap-editor.disabled
+{
+	background-color: #aaaaaa;
+}
+.editable.snap-editor.transparent
+{
+	background-color: transparent;
+	border: none;
+	cursor: auto;
+}
+.editable .snap-editor-background
+{
+	position: absolute;
+	display: none;
+	pointer-events: none;
+	z-index: 2;
+}
+
+.editable .snap-editor-background-content
+{
+	color: #ffffff;
+	text-shadow: 1px 1px 0 #666666;
+	padding: 4px 0 0 5px;
+	pointer-events: none;
+}
+
+.editable.snap-editor:not(.disabled):not(.no-hover):not(.transparent):hover
+{
+	box-shadow: inset 0 0 0 3px rgba(64, 192, 64, 0.5);
+}
+
+.editable.snap-editor [contenteditable="true"] .filter-token
+{
+	background-color: #e0e0e0;
+}
+
+
 /** EDITOR LINK DIALOG **/
 #snap_editor_link_dialog
 {
@@ -225,62 +281,6 @@
 }
 
 
-/** most boxes (i.e. LINE BOX, TEXT AREA, etc.) **/
-.editable
-{
-	margin: 10px 0;
-	border: 1px solid black;
-	border-radius: 3px;
-	background-color: #d8d8d8;
-	cursor: text;
-}
-.editable.snap-editor
-{
-	background-color: #f0f0f0;
-}
-.editable.snap-editor.erroneous
-{
-	background-color: #fff0f0;
-	border-color: #882222;
-}
-
-.editable.snap-editor.disabled
-{
-	background-color: #aaaaaa;
-}
-.editable.snap-editor.transparent
-{
-	background-color: transparent;
-	border: none;
-	cursor: auto;
-}
-.editable .snap-editor-background
-{
-	position: absolute;
-	display: none;
-	pointer-events: none;
-	z-index: 2;
-}
-
-.editable .snap-editor-background-content
-{
-	color: #ffffff;
-	text-shadow: 1px 1px 0 #666666;
-	padding: 4px 0 0 5px;
-	pointer-events: none;
-}
-
-.editable.snap-editor:not(.disabled):not(.no-hover):not(.transparent):hover
-{
-	box-shadow: inset 0 0 0 3px rgba(64, 192, 64, 0.5);
-}
-
-.editable.snap-editor [contenteditable="true"] .filter-token
-{
-	background-color: #e0e0e0;
-}
-
-
 /** IMAGE BOX **/
 .editable.image-box
 {
@@ -333,9 +333,12 @@
 }
 
 /* hide the <input type="file"> widget */
+.editable.dropped-file-box .dropped-file-buttons .hidden.file-input,
 .editable.image-box .browse-block .hidden.file-input,
 .editable.dropped-file-with-preview-box .browse-block .hidden.file-input
 {
+	opacity: 0;
+	position: absolute;
 	width: 0;
 	height: 0;
 	overflow: hidden;
@@ -363,6 +366,89 @@
 }
 
 
+/** DROPPED FILE **/
+.editable.dropped-file-box
+{
+	border: none;
+	cursor: copy;
+}
+.editable.dropped-file-box .editor-content
+{
+}
+.editable.dropped-file-box
+{
+	background: transparent;
+}
+.editable.dropped-file-box .dropped-file-icon
+{
+	float: left;
+	border: 1px solid black;
+	border-radius: 3px;
+	width: 64px;
+	height: 64px;
+	margin-right: 20px;
+	text-align: center;
+}
+.editable.dropped-file-box .dropped-file-icon.has-attachment
+{
+	background-color: #cccccc;
+	height: 56px;
+	padding-top: 8px;
+}
+.editable.dropped-file-box .dropped-file-filename-and-buttons
+{
+	float: left;
+	width: calc(100% - 86px);
+}
+.editable.dropped-file-box .dropped-file-filename
+{
+	background-color: #f0f0f0;
+	border: 1px solid black;
+}
+.editable.snap-editor.dropped-file-box .dropped-file-filename:hover
+{
+	box-shadow: inset 0 0 0 3px rgba(64, 192, 64, 0.5);
+}
+.editable.dropped-file-box.dragging-over:not(.disabled)
+{
+	background-color: #e1f86e;
+}
+.editable.dropped-file-box .editor-content .dropped-file-filename
+{
+	min-height: 1.2em;
+	padding: 3px;
+}
+.editable.dropped-file-box .dropped-file-buttons
+{
+	display: flex;
+	justify-content: center;
+}
+.editable.dropped-file-box .dropped-file-buttons .button
+{
+	border: 1px solid black;
+	border-radius: 5px;
+	background-color: #b0e8a0;
+	display: inline-block;
+	padding: 10px;
+	margin: 10px;
+	font-weight: bold;
+	text-align: center;
+	text-decoration: none;
+	box-shadow: 2px 2px 4px #666666;
+	cursor: pointer;
+}
+.editable.dropped-file-box .dropped-file-buttons .button.disabled
+{
+	color: #666666;
+	background-color: #eeeeee;
+	cursor: normal;
+}
+.end-dropped-file
+{
+	clear: both;
+}
+
+
 /** DROPPED FILE WITH PREVIEW **/
 .editable .widget-wait-image
 {
@@ -381,11 +467,11 @@
 	pointer-events: none;
 	z-index: 3;
 	width: 64px;
-	height: 64px;
+	height: 56px;
 	text-align: center;
 	padding-top: 8px;
 	border: 1px solid black;
-	background-color: #eeeeee;
+	background-color: #cccccc;
 }
 
 .editable .broken-attachment-icon

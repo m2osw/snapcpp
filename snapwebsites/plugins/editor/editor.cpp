@@ -21,6 +21,7 @@
 #include "../attachment/attachment.h"
 #include "../locale/snap_locale.h"
 #include "../messages/messages.h"
+#include "../mimetype/mimetype.h"
 #include "../permissions/permissions.h"
 
 #include "dbutils.h"
@@ -441,7 +442,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 3, 6, 2, 47, 56, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 17, 22, 57, 56, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -934,7 +935,14 @@ void editor::on_process_post(QString const & uri_path)
                                  "Sorry! You sent this request back to Snap! way too late. It timed out. Please re-enter your information and re-submit.",
                                  "User did not click the submit button soon enough, the server session timed out.",
                                  true);
-        editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_AUTO_DRAFT;
+        if(editor_save_mode == save_mode_t::EDITOR_SAVE_MODE_ATTACHMENT)
+        {
+            editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_AUTO_ATTACHMENT;
+        }
+        else
+        {
+            editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_AUTO_DRAFT;
+        }
         break;
 
     case sessions::sessions::session_info::session_info_type_t::SESSION_INFO_USED_UP:
@@ -945,7 +953,14 @@ void editor::on_process_post(QString const & uri_path)
                                  "This editor session was already processed.",
                                  "The user submitted the same session more than once.",
                                  true);
-        editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_AUTO_DRAFT;
+        if(editor_save_mode == save_mode_t::EDITOR_SAVE_MODE_ATTACHMENT)
+        {
+            editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_AUTO_ATTACHMENT;
+        }
+        else
+        {
+            editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_AUTO_DRAFT;
+        }
         break;
 
     default:
@@ -1019,6 +1034,7 @@ void editor::on_process_post(QString const & uri_path)
                 break;
 
             case save_mode_t::EDITOR_SAVE_MODE_ATTACHMENT: // no change
+            case save_mode_t::EDITOR_SAVE_MODE_AUTO_ATTACHMENT: // TBD
                 break;
 
             case save_mode_t::EDITOR_SAVE_MODE_UNKNOWN:
@@ -1051,6 +1067,10 @@ void editor::on_process_post(QString const & uri_path)
 
         case save_mode_t::EDITOR_SAVE_MODE_ATTACHMENT:
             editor_save_attachment(real_ipath, info, server_access_plugin);
+            break;
+
+        case save_mode_t::EDITOR_SAVE_MODE_AUTO_ATTACHMENT:
+            //editor_save_attachment(real_ipath, info, server_access_plugin); -- we need to save the attachment as a "draft"
             break;
 
         case save_mode_t::EDITOR_SAVE_MODE_UNKNOWN:
@@ -2249,6 +2269,8 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
 {
     NOTUSED(info);
 
+    mimetype::mimetype * mimetype_plugin(mimetype::mimetype::instance());
+
     // get the editor widgets and save them in a map
     typedef std::map<QString, QDomElement> widget_map_t;
     widget_map_t widgets_by_name;
@@ -2292,23 +2314,50 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
         }
         QString attachment_type("attachment"); // extremely restrained by default (i.e. visible by a "root" user only)
         QString attachment_owner(default_attachment_owner);
+        QString force_filename;
+        QString force_path("#");
         QDomElement attachment_tag;
         if(max_attachments == 1)
         {
             attachment_tag = attachment_tags.at(0).toElement();
             if(!attachment_tag.isNull())
             {
-                attachment_type = attachment_tag.attribute("type", "attachment");
+                attachment_type = attachment_tag.attribute("identification", "attachment");
                 attachment_owner = attachment_tag.attribute("owner", default_attachment_owner);
+
+                force_filename = attachment_tag.attribute("force-filename", ""); // this one is #IMPLIED
+                force_path = attachment_tag.attribute("force-path", "#"); // this one is #IMPLIED
             }
+        }
+
+        content::path_info_t attachment_ipath;
+        if(force_path == "#")
+        {
+            attachment_ipath = ipath;
+        }
+        else
+        {
+            attachment_ipath.set_path(force_path);
         }
 
         content::attachment_file the_attachment(f_snap, f_snap->postfile(names[i]));
         the_attachment.set_multiple(false);
-        the_attachment.set_parent_cpath(ipath.get_cpath());
+        the_attachment.set_parent_cpath(attachment_ipath.get_cpath());
         the_attachment.set_field_name(names[i]);
         the_attachment.set_attachment_owner(attachment_owner);
         the_attachment.set_attachment_type(attachment_type);
+
+        QString const mime_type(the_attachment.get_file().get_mime_type());
+
+        // make sure the filename is all proper for our system
+        QString ext(mimetype_plugin->mimetype_to_extension(mime_type));
+        QString filename(force_filename.isEmpty() ? the_attachment.get_file().get_filename() : force_filename);
+        if(!filter::filter::filter_filename(filename, ext))
+        {
+            // user supplied filename is not considered valid, use a default name
+            filename = QString("attachment.%1").arg(ext);
+        }
+        the_attachment.set_file_filename(filename);
 
         // TBD: give others the opportunity to tweak the attachment and
         //      its parameters before it gets saved in the database
@@ -2326,26 +2375,11 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
         QString const attachment_cpath(the_attachment.get_attachment_cpath());
         if(!attachment_cpath.isEmpty())
         {
-            content::path_info_t attachment_ipath;
-            attachment_ipath.set_path(attachment_cpath);
-            server_access_plugin->ajax_append_data("attachment-path", attachment_ipath.get_key().toUtf8());
-            QString const mimetype(the_attachment.get_file().get_mime_type());
-            //server_access_plugin->ajax_append_data("attachment-mimetype", mimetype.toUtf8());
-            QString const site_key(f_snap->get_site_key_with_slash());
-
-            // TODO: do not keep hard coded MIME types and paths
-            // MIME type to icon, we need to have a map that can easily be
-            // updated (probably  directly uploaded in the database for each
-            // website so each webmaster can tweak their own map.)
-            if(mimetype.startsWith("application/pdf"))
-            {
-                server_access_plugin->ajax_append_data("attachment-icon", (site_key + "images/mimetype/file-pdf.png").toUtf8());
-            }
-            else
-            {
-                // send some default otherwise
-                server_access_plugin->ajax_append_data("attachment-icon", (site_key + "images/mimetype/file-unknown.png").toUtf8());
-            }
+            content::path_info_t final_attachment_ipath;
+            final_attachment_ipath.set_path(attachment_cpath);
+            server_access_plugin->ajax_append_data("attachment-path", final_attachment_ipath.get_key().toUtf8());
+            QString const mime_type_icon(mimetype_plugin->mimetype_to_icon(mime_type));
+            server_access_plugin->ajax_append_data("attachment-icon", mime_type_icon.toUtf8());
         }
 
         new_attachment_saved(the_attachment, w->second, attachment_tag);
@@ -2742,6 +2776,7 @@ bool editor::validate_editor_post_for_widget_impl(
                 has_minimum = true;
                 QString const m(min_element.text());
                 if(widget_type == "image-box"
+                || widget_type == "dropped-file"
                 || widget_type == "dropped-file-with-preview"
                 || widget_type == "dropped-image-with-preview"
                 || widget_type == "dropped-any-with-preview")
@@ -2842,6 +2877,7 @@ bool editor::validate_editor_post_for_widget_impl(
             {
                 QString const m(max_element.text());
                 if(widget_type == "image-box"
+                || widget_type == "dropped-file"
                 || widget_type == "dropped-file-with-preview"
                 || widget_type == "dropped-image-with-preview"
                 || widget_type == "dropped-any-with-preview")
@@ -2993,8 +3029,8 @@ bool editor::validate_editor_post_for_widget_impl(
         //|| widget_type == "password" -- not yet implemented
         || widget_type == "checkbox"
         || widget_type == "radio"
-        //|| widget_type == "file" -- not yet implemented
         || widget_type == "image-box"
+        || widget_type == "dropped-file"
         || widget_type == "dropped-file-with-preview"
         || widget_type == "dropped-image-with-preview"
         || widget_type == "dropped-any-with-preview")
@@ -3006,7 +3042,7 @@ bool editor::validate_editor_post_for_widget_impl(
                 if(required_text == "required")
                 {
                     // It is required!
-                    if(widget_type == "file"
+                    if(widget_type == "dropped-file"
                     || widget_type == "dropped-file-with-preview")
                     {
                         if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
@@ -4577,19 +4613,19 @@ bool editor::save_editor_fields_impl(content::path_info_t & ipath, QtCassandra::
 QString editor::verify_html_validity(QString body)
 {
     // any starting spaces
-    QRegExp const re_start("^(<br *\\/?>| |\\t|\\n|\\r|\\v|\\f|&nbsp;|&#160;|&#xA0;)+");
+    QRegExp const re_start("^(<br */?>| |\\t|\\n|\\r|\\v|\\f|&nbsp;|&#160;|&#xA0;)+");
     body.replace(re_start, "");
 
     // any ending spaces
-    QRegExp const re_end("(<br *\\/?>| |\\t|\\n|\\r|\\v|\\f|&nbsp;|&#160;|&#xA0;)+$");
+    QRegExp const re_end("(<br */?>| |\\t|\\n|\\r|\\v|\\f|&nbsp;|&#160;|&#xA0;)+$");
     body.replace(re_end, "");
 
     // replace <br> with <br/>
-    QRegExp const br_without_slash("<br *>");
+    QRegExp const br_without_slash("<br */?>");
     body.replace(br_without_slash, "<br/>");
 
     // replace <hr> with <hr/>
-    QRegExp const hr_without_slash("<hr *>");
+    QRegExp const hr_without_slash("<hr */?>");
     body.replace(hr_without_slash, "<hr/>");
 
     // replace any entity other than &amp;, &lt;, and &gt; to their Unicode
@@ -4771,23 +4807,26 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
     // we only support images so the MIME type has to start with "image/"
     if(!src.startsWith("data:image/"))
     {
-        SNAP_LOG_DEBUG("refused image because it does not start with \"data:image/\".");
+        SNAP_LOG_DEBUG("refused inline image because it does not start with \"data:image/\".");
         return false;
     }
 
-    // verify that it is base64 encoded, that's the only encoding we
+    // verify that it is base64 encoded, that is the only encoding we
     // support (and browsers too I would think?)
     int const p(src.indexOf(';', 11));
     if(p < 0
     || p > 64
     || src.mid(p, 8) != ";base64,")
     {
-        SNAP_LOG_DEBUG("refused image because it is not base64 encoded.");
+        SNAP_LOG_DEBUG("refused inline image because it is not base64 encoded.");
         return false;
     }
 
     // TODO: add the necessary to allow extensions defined by the
     //       administrator.
+    //
+    // TODO: it seems to me that the MIME type we receive here could
+    //       very be wrong; we should check it (TBD)
     //
     // the type of image (i.e. "png", "jpeg", "gif"...)
     // we set that up so we know that it is "jpeg" and not "jpg"
@@ -4849,72 +4888,11 @@ bool editor::save_inline_image(content::path_info_t & ipath, QDomElement img, QS
         }
     }
 
-//void filter::filter_filename(QString& filename, QString const& extension (a.k.a. type))
-//{
-    // TODO: we should move this code fixing up the filename in a filter
-    //       function because we probably want to give access to other
-    //       plugins to such a feature.
-
-    // by default we want to use the widget forced filename if defined
-    // otherwise use the user defined filename
-
-    // remove the path if there is one
-    int const slash(filename.lastIndexOf('/'));
-    if(slash >= 0)
+    if(!filter::filter::filter_filename(filename, ext))
     {
-        filename.remove(0, slash);
-    }
-
-    // force to all lowercase
-    filename = filename.toLower();
-
-    // avoid spaces in filenames
-    filename.replace(" ", "-");
-
-    // avoid "--", replace with a single "-"
-    for(;;)
-    {
-        int const length(filename.length());
-        filename.replace("--", "-");
-        if(filename.length() == length)
-        {
-            break;
-        }
-    }
-
-    // remove '-' at the start
-    while(!filename.isEmpty() && filename[0] == '-')
-    {
-        filename.remove(0, 1);
-    }
-
-    // remove '-' at the end
-    while(!filename.isEmpty() && *filename.end() == '-')
-    {
-        filename.remove(filename.length() - 1, 1);
-    }
-
-    // force the extension to what we defined in 'type' (image MIME)
-    if(!filename.isEmpty())
-    {
-        int const period(filename.lastIndexOf('.'));
-        filename = QString("%1.%2").arg(filename.left(period)).arg(ext);
-    }
-
-    // prevent hidden Unix filenames, it could cause problems on Linux
-    if(!filename.isEmpty() && filename[0] == '.')
-    {
-        // clear the filename if it has a name we do not
-        // like (i.e. hidden Unix files are forbidden)
-        filename.clear();
-    }
-
-    // user supplied filename is not considered valid, use a default name
-    if(filename.isEmpty())
-    {
+        // user supplied filename is not considered valid, use a default name
         filename = QString("image.%1").arg(ext);
     }
-//}
 
     QString identification;
     QDomNodeList attachment_tags(widget.elementsByTagName("attachment"));

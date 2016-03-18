@@ -861,6 +861,7 @@ snapwebsites.EditorWidgetTypeDateEdit.prototype.dayClicked = function(editor_wid
  * @return {!snapwebsites.EditorWidgetTypeDropdownDateEdit}
  *
  * @constructor
+ * @extends {snapwebsites.EditorWidgetType}
  * @struct
  */
 snapwebsites.EditorWidgetTypeDropdownDateEdit = function()

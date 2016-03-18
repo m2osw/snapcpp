@@ -176,7 +176,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Public pages can be viewed by anyone including anonymous users.</p>]]>
     </param>
     <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/public</link>
-    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
+    <remove-link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</remove-link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/private">
     <param name="content::title" revision="revision">Private Page Content Type</param>
@@ -184,7 +185,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Private pages can be viewed by users who registered an account and are logged in, recently or not.</p>]]>
     </param>
     <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/private</link>
-    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
+    <remove-link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</remove-link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/types/taxonomy/system/content-types/page/secure">
     <param name="content::title" revision="revision">Secure Page Content Type</param>

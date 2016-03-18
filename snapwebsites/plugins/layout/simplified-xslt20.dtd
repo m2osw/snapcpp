@@ -218,7 +218,8 @@ DTD of the XSLT 2.0.
               alt CDATA #IMPLIED
               style CDATA #IMPLIED
               type CDATA #IMPLIED
-              align (middle|left|right|bottom|top) #IMPLIED>
+              align (middle|left|right|bottom|top) #IMPLIED
+              data-original CDATA #IMPLIED>
 
 <!-- IDREF would be better for the "for" attribute, but unfortunately,
      at the point we are checking the files, the items may not yet exist -->

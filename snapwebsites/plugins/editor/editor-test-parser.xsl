@@ -42,8 +42,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<div>
 					<xsl:attribute name="class">test<!--xsl:if test="$action = 'edit'"> editing</xsl:if--></xsl:attribute>
 
-					<fieldset class="picture">
-						<legend>Picture</legend>
+					<fieldset class="drag-and-drop">
+						<legend>Drag &amp; Drop Files</legend>
+
+						<!-- file widget -->
+						<div class="widget-block">
+							<!-- area accepting the drag & drop of an image -->
+							<label for="file_widget" class="editor-title">File Widget</label>
+							<xsl:copy-of select="page/body/editor/file_widget/node()"/>
+						</div>
 
 						<!-- picture widget -->
 						<div class="widget-block">

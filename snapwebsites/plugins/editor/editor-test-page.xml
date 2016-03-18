@@ -21,9 +21,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <auto-reset minutes="30"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
-  <focus refid="picture_widget"/>
+  <focus refid="file_widget"/>
   <on-save allow-edit="yes"/>
   <taborder>
+    <tabindex refid="file_widget"/>
     <tabindex refid="picture_widget"/>
     <tabindex refid="line_edit_widget"/>
     <tabindex refid="password_widget"/>
@@ -35,6 +36,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="button_widget"/>
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
+  </widget>
+  <widget id="file_widget" type="dropped-file" field="editor::file_widget" path="editor/file_widget" drop="drop" auto-save="html">
+    <attachment identification="page/public"/>
+    <tooltip>Tooltip</tooltip>
+    <help>Help</help>
+    <sizes>
+      <max>2048x2048</max>
+    </sizes>
+    <!--filters> == this is not working yet for the editor cannot easily read the filename extension
+      <! list of accepted image formats >
+      <extensions>png,jpg,jpeg,svg</extensions>
+    </filters-->
+    <background-value>Drag &amp; Drop Your File Here</background-value>
   </widget>
   <widget id="picture_widget" type="image-box" field="editor::picture_widget" path="editor/picture_widget" drop="drop" auto-save="html">
     <tooltip>Tooltip</tooltip>

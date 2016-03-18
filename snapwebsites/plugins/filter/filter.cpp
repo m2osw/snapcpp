@@ -1681,6 +1681,123 @@ bool filter::body_to_teaser(QDomElement body, filter_teaser_info_t const & info)
 }
 
 
+/** \brief Filter a filename for proper (cleaner) HTML names.
+ *
+ * The input string (\p filename) is expected to be a filename. If it
+ * includes a path, that path first gets removed.
+ *
+ * All filenames are forced to lowercase. Remember that strings are dealt
+ * with in UTF-8 so any Unicode uppercase letter is forced to lowercase.
+ *
+ * Spaces are rather awful to deal with in URIs. This function transforms
+ * all of them to dashes instead (" " to "-".)
+ *
+ * As a result (and also there could have been multiple spaces one after
+ * another), we may end up with two or more dashes in a row. The filter
+ * replaces sequences of dashes in a row with one dash ("-").
+ *
+ * Various systems (the Windows file system and Unix Shell scripts) do
+ * not like to have a dash at he start or end of a filename. Both get
+ * removed.
+ *
+ * Finally, if the \p extension parameter is defined, replace any existing
+ * extension from \p filename with that specified extension. Note that for
+ * the purpose of this change, a filename that ends with a period (.) is
+ * considered as having an empty extension.
+ *
+ * \important
+ * Futher the function checks some other things that must be considered
+ * valid such as whether the filename starts with a period. Such bad things
+ * will result in the function returning an empty filename.
+ *
+ * We will most certainly tweak the function as time passes to accomodate,
+ * prevent, or change characters as we see fit.
+ *
+ * \param[in,out] filename  The filename to filter.
+ * \param[in] extension  The expected filename extension.
+ *
+ * \return true if the filename is not empty on return (i.e. considered
+ *         valid.)
+ */
+bool filter::filter_filename(QString & filename, QString const & extension)
+{
+    // TODO: we should move this code fixing up the filename in a filter
+    //       function because we probably want to give access to other
+    //       plugins to such a feature.
+
+    // by default we want to use the widget forced filename if defined
+    // otherwise use the user defined filename
+
+    // remove the path if there is one
+    int const slash(filename.lastIndexOf('/'));
+    if(slash >= 0)
+    {
+        filename.remove(0, slash);
+    }
+    int const backslash(filename.lastIndexOf('\\'));
+    if(backslash >= 0)
+    {
+        filename.remove(0, backslash);
+    }
+
+    // force to all lowercase
+    filename = filename.toLower();
+
+    // avoid spaces in filenames
+    filename.replace(" ", "-");
+
+    // avoid "--", replace with a single "-"
+    for(;;)
+    {
+        int const length(filename.length());
+        filename.replace("--", "-");
+        if(filename.length() == length)
+        {
+            break;
+        }
+    }
+
+    // remove '-' at the start
+    while(!filename.isEmpty() && filename[0] == '-')
+    {
+        filename.remove(0, 1);
+    }
+
+    // remove '-' at the end
+    while(!filename.isEmpty() && filename.end()[-1] == '-')
+    {
+        filename.remove(filename.length() - 1, 1);
+    }
+
+    // force the extension to what we defined in 'type' (image MIME)
+    if(!filename.isEmpty() && !extension.isEmpty())
+    {
+        int const period(filename.lastIndexOf('.'));
+        if(period <= 0)
+        {
+            filename = QString("%1.%2").arg(filename).arg(extension);
+        }
+        else
+        {
+            filename = QString("%1.%2").arg(filename.left(period)).arg(extension);
+        }
+    }
+
+    // prevent hidden Unix filenames, it could cause problems on Linux
+    if(!filename.isEmpty() && filename[0] == '.')
+    {
+        // clear the filename if it has a name we do not
+        // like (i.e. hidden Unix files are forbidden)
+        filename.clear();
+    }
+
+    // true if the filename is empty meaning that something went horribly
+    // wrong (i.e. maybe the filename was just spaces...)
+    return !filename.isEmpty();
+}
+
+
+
 SNAP_PLUGIN_END()
 
 // vim: ts=4 sw=4 et

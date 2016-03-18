@@ -3002,10 +3002,10 @@ void snap_child::read_environment()
 
             // this read blocks, so we read just 1 char. because we
             // want to stop calling read() as soon as possible (otherwise
-            // we'd be blocked here forever)
+            // we would be blocked here forever)
             if(read(f_socket, &c, 1) != 1)
             {
-                int e(errno);
+                int const e(errno);
                 die(QString("I/O error, errno: %1").arg(e));
                 NOTREACHED();
             }
@@ -3161,7 +3161,7 @@ void snap_child::read_environment()
                 // attached to a file anyway.)
                 if(!filename.isEmpty())
                 {
-                    post_file_t& file(f_files[f_name]);
+                    post_file_t & file(f_files[f_name]);
                     file.set_name(f_name);
                     file.set_filename(filename);
                     ++f_post_index; // 1-based
@@ -3267,10 +3267,10 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                     }
                     process_post_variable();
 
-                    // on next line, we're reading a new header
+                    // on next line, we are reading a new header
                     f_post_header = true;
 
-                    // we're done with those in this iteration
+                    // we are done with those in this iteration
                     f_post_environment.clear();
                     f_post_content.clear();
                     return false;
@@ -3302,7 +3302,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 }
 
                 // we got a header (Blah: value)
-                QString line(f_post_line);
+                QString const line(f_post_line);
 //printf(" ++ header line [\n%s\n] %d\n", line.trimmed().toUtf8().data(), line.size());
                 if(isspace(line.at(0).unicode()))
                 {
@@ -3312,7 +3312,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 else
                 {
                     // new header
-                    int p(line.indexOf(':'));
+                    int const p(line.indexOf(':'));
                     if(p == -1)
                     {
                         die("invalid header variable name/value pair, no ':' found.");
@@ -3385,14 +3385,16 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 die("multipart POST does not include a valid boundary.");
                 NOTREACHED();
             }
-            f_boundary.append(("--" + boundary).toAscii());
+            f_boundary = ("--" + boundary).toAscii();
             f_end_boundary = f_boundary;
             f_end_boundary.append("--\r", 3);
             f_boundary += '\r';
+            //f_post_first = true; -- function cannot be called more than once
+            //f_post_header = true;
 
             for(;;)
             {
-                char c(getc());
+                char const c(getc());
                 if(c == '\n')
                 {
                     if(process_post_line())

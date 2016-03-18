@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.811
+ * Version: 0.0.3.880
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -51,9 +51,6 @@
 // Source: http://stackoverflow.com/questions/10041433/how-to-detect-when-certain-div-is-out-of-view
 // Source: http://stackoverflow.com/questions/5605401/insert-link-in-contenteditable-element
 // Source: http://stackoverflow.com/questions/6867519/javascript-regex-to-count-whitespace-characters
-
-// FileReader replacement under IE9:
-// Source: https://github.com/MrSwitch/dropfile
 
 // Code verification with Google Closure Compiler:
 // documentation: http://code.google.com/closure/compiler/
@@ -238,9 +235,15 @@
  *                                  |                                       |
  *  +-------------------------------+--+    +---------------------------+   |
  *  |                                  |    |                           +---+
- *  | EditorWidgetTypeDateEdit         |    | EditorWidgetTypeSilent    |   |
- *  |                                  |    |                           |   |
+ *  | EditorWidgetTypeDateEdit         |    | EditorWidgetTypeDropped-  |   |
+ *  |                                  |    | File                      |   |
  *  +----------------------------------+    +---------------------------+   |
+ *                                                                          |
+ *                                          +---------------------------+   |
+ *                                          |                           +---+
+ *                                          | EditorWidgetTypeSilent    |   |
+ *                                          |                           |   |
+ *                                          +---------------------------+   |
  *                                                                          |
  *                                          +---------------------------+   |
  *                                          |                           +---+
@@ -767,8 +770,8 @@ snapwebsites.EditorSelection =
 snapwebsites.EditorWidgetTypeBase = function()
 {
     // TBD
-    // Maybe at some point we'd want to create yet another layer
-    // so we can have an auto-register, but I'm not totally sure
+    // Maybe at some point we will want to create yet another layer
+    // so we can have an auto-register, but I am not totally sure
     // that would really work right in all cases...
     //snapwebsites.EditorBase.registerWidgetType(this);
 
@@ -2606,8 +2609,8 @@ snapwebsites.EditorWidget.prototype.saving = function()
                                      .replace(/(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$/, ""),
                             "data html trimmed"
                       );
-        data.result = data.result.replace(/<br *>/g, "<br/>")
-                                 .replace(/<hr *>/g, "<hr/>");
+        data.result = data.result.replace(/<br *\/?>/g, "<br/>")
+                                 .replace(/<hr *\/?>/g, "<hr/>");
 
         this.widgetType_.saving(this, data);
     }
@@ -3198,7 +3201,8 @@ snapwebsites.EditorWidget.prototype.hideWaitImage = function()
  * reaches 12.
  *
  * The function changes the background position to give the effect that
- * the image rotates.
+ * the image rotates. The image itself is expected to include 12 pictures
+ * each at 30 degrees interval in one row (y does not change, only x).
  *
  * On my computer this animation takes less than 7% of the CPU. So I think
  * it is still acceptable.
@@ -5801,6 +5805,25 @@ snapwebsites.inherits(snapwebsites.EditorWidgetType, snapwebsites.EditorWidgetTy
 snapwebsites.EditorWidgetType.prototype.changeTimerId_ = NaN;
 
 
+/** \brief Whether we are in a dropzone or not.
+ *
+ * This variable represents the number of enter/leave while dragging
+ * an object over another. The problem we encounter is when the
+ * dropzone includes children, in that case, the child is also
+ * entered and left and the main object dragenter and dragleave
+ * events get triggered if present (probably because the children
+ * propagate their event). At this time we use this counter to know
+ * whether the user completely left the dropzone or not. We may find
+ * a better algorithm later (i.e. drop dragenter and dragleave events
+ * from children? test the target?)
+ *
+ * @type {number}
+ *
+ * @private
+ */
+snapwebsites.EditorWidgetType.prototype.dragCounter_ = 0;
+
+
 /*jslint unparam: true */
 /** \brief Initialize a widget of this type.
  *
@@ -5835,6 +5858,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
 {
     var that = this,
         editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
         c = editor_widget.getWidgetContent();
 
     this.setupEditButton(editor_widget); // allow overrides to an empty function
@@ -5899,18 +5923,22 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
         });
 
     // the user just moved over a widget while dragging something
-    c.on("dragenter", function(e)
+    w.on("dragenter", function(e)
         {
             e.preventDefault();
             e.stopPropagation();
 
             // allows your CSS to change some things when areas are
             // being dragged over
-            jQuery(this).parent().addClass("dragging-over");
+            if(that.dragCounter_ == 0)
+            {
+                w.addClass("dragging-over");
+            }
+            ++that.dragCounter_;
         });
 
     // the user is dragging something over a widget
-    c.on("dragover",function(e)
+    w.on("dragover", function(e)
         {
             // TBD this is said to make things work better in some browsers...
             e.preventDefault();
@@ -5918,13 +5946,20 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
         });
 
     // the user just moved out a widget while dragging something
-    c.on("dragleave",function(e)
+    w.on("dragleave", function(e)
         {
             e.preventDefault();
             e.stopPropagation();
 
             // remove the class when the mouse leaves
-            jQuery(this).parent().removeClass("dragging-over");
+            if(that.dragCounter_ > 0)
+            {
+                --that.dragCounter_;
+                if(that.dragCounter_ == 0)
+                {
+                    w.removeClass("dragging-over");
+                }
+            }
         });
 
     // the user actually dropped a file on this widget
@@ -5933,13 +5968,12 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
     //       should only override the the droppedImage()
     //       and droppedAttachment() functions instead
     //
-    c.on("drop", function(e)
+    w.on("drop", function(e)
         {
             var i,                      // loop index
                 r,                      // file reader object
                 accept_images,          // boolean, true if element accepts images
                 accept_files,           // boolean, true if element accepts attachments
-                that_element = c,       // this element as a jQuery object
                 file_loaded;            // finalizing function
 
             //
@@ -5947,10 +5981,13 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
             // At this point this code breaks the normal behavior that
             // properly places the image where the user wants it; I'm
             // not too sure how we can follow up on the "go ahead and
-            // do a normal instead" without propagating the event, but
-            // I'll just ask on StackOverflow for now...
+            // do a normal drop instead" without propagating the event,
+            // but I will just ask on StackOverflow for now...
             //
             // http://stackoverflow.com/questions/22318243/how-to-apply-the-default-image-drop-behavior-after-testing-that-image-is-valid
+            //
+            // (abandonned questions get auto-deleted and this is one
+            // of them...)
             //
             // That said, I did not get any answer but thinking about
             // it, it seems pretty easy to me: the answer is to use
@@ -5961,7 +5998,8 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
 
             // remove the dragging-over class on a drop because we
             // do not always get the dragleave event in that case
-            that_element.parent().removeClass("dragging-over");
+            w.removeClass("dragging-over");
+            that.dragCounter_ = 0;
 
             // always prevent the default dropping mechanism
             // we handle the file manually all the way
@@ -6728,7 +6766,7 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.validate = function(widget) // v
             valid = false;
             snapwebsites.OutputInstance.displayOneMessage(
                     "Invalid Field",
-                    "Entry \"" + (stripped_value.length > 64 ? substr(stripped_value, 61) + "..." : stripped_value) + "\" is too short for " + label + ".",
+                    "Entry \"" + (stripped_value.length > 64 ? stripped_value.substr(0, 61) + "..." : stripped_value) + "\" is too short for " + label + ".",
                     "error",
                     true);
         }
@@ -7219,12 +7257,23 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
         height,
         max_count,
         count,
-        screen_width = $(window.top).innerWidth(),
-        screen_height = $(window.top).innerHeight(),
-        scroll_top = $(window.top).scrollTop(),
-        scroll_left = $(window.top).scrollLeft(),
+        screen_width = parseFloat($(window.top).innerWidth()),
+        screen_height = parseFloat($(window.top).innerHeight()),
+        scroll_top = parseFloat($(window.top).scrollTop()),
+        scroll_left = parseFloat($(window.top).scrollLeft()),
         valid = false,
-        new_class;
+        new_class,
+        equal_pos,
+        selected,
+        offset,
+        column_range,
+        number_of_items,
+        col_widths,
+        col_outer_widths,
+        total_width,
+        tallest_line,
+        dropdown_height,
+        start_top;
 
     // is the window an iframe or the top window?
     //
@@ -8136,7 +8185,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
         }
         this.openDropdown_.fadeOut(150, function()
             {
-                var c;
+                var c,
+                    n;
 
                 if(clone)
                 {
@@ -9015,7 +9065,7 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.initializeWidget = function(widg
         browse_input_file.change(function(e)
             {
                 if(this.files
-                && this.files.length)
+                && this.files.length > 0)
                 {
                     // TODO: add a test, in case length > 1 and the destination
                     //       widget expects exactly 1 file, then generate an
@@ -9061,23 +9111,25 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.droppedImage = function(e, img)
 
 
 
-/** \brief Editor widget type for Dropped Image with a Preview.
+/** \brief Editor widget type for Dropped File with a Preview.
  *
- * This widget defines an image box in the editor forms. The image form
- * is used to display a preview of the file that gets dropped in it. This
- * is an extension of the EditorWidgetTypeImageBox which itself only
- * accepts recognized image files.
+ * This widget defines an image box extension in the editor forms.
+ * The image form is used to display a preview of the file that gets
+ * dropped in it. This is an extension of the EditorWidgetTypeImageBox,
+ * which itself only accepts recognized image files.
  *
  * Just like the image box widget, this widget does not allow for typing,
  * only to drag and drop a file in it. A new file dropped on this widget
- * replaces the previously attached file (it is not additive.)
+ * replaces the previously attached file (it is not additive.) It also
+ * includes a Browse button
  *
  * As required, the widget is smart enough to use a proportional resize
  * so the preview is made to fit the widget area.
  *
- * The widget accepts images just like the EditorWidgetTypeImageBox widget
- * does. It also can accept file formats that we can transform to a preview
- * (i.e. a PDF of which the first page will be transform in a preview.)
+ * The widget accepts images just like the EditorWidgetTypeImageBox
+ * widget does. It also can accept file formats that we can transform
+ * to a preview (i.e. a PDF of which the first page will be transform
+ * in a preview image.)
  *
  * @constructor
  * @extends {snapwebsites.EditorWidgetTypeImageBox}
@@ -9100,7 +9152,7 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeDroppedFileWithPreview, snapw
 
 /** \brief Return "dropped-file-with-preview".
  *
- * Return the name of the image box type.
+ * Return the name of the dropped file with preview type.
  *
  * Note that this widget type has 2 sub-types named
  * "dropped-image-with-preview" and "dropped-any-with-preview". However,
@@ -9118,7 +9170,8 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.getType = function
 
 /** \brief Initialize the widget.
  *
- * This function initializes the image box widget.
+ * This function initializes the image box widget (there is not much to
+ * initialize in the dropped file with preview object).
  *
  * \note
  * At this point the Image Box widget do not attach to any events since all
@@ -9188,7 +9241,6 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
     if(title_widget)
     {
         form_data.append("_editor_uri", snapwebsites.EditorForm.titleToURI(title_widget.saving().result));
-        //form_data.append("_editor_uri", snapwebsites.EditorForm.titleToURI(snapwebsites.castToString(jQuery("[field_name='title'] .editor-content").text(), "casting the field name title to a string")));
     }
     form_data.append("_editor_widget_names", name); // this field supports multiple names separated by commas
     form_data.append(name, e.target.snapEditorFile);
@@ -9229,24 +9281,26 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
     // to the server (this is a full URI)
     var editor_widget = /** @type {snapwebsites.EditorWidget} */ (result.userdata.target.snapEditorWidget),
         w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
         xml_data = jQuery(result.jqxhr.responseXML),
         attachment_path = xml_data.find("data[name='attachment-path']").text(),
-        attachment_icon = xml_data.find("data[name='attachment-icon']").text(),
-        icon_widget,
+        attachment_icon = snapwebsites.castToString(xml_data.find("data[name='attachment-icon']").text(), "casting the attachment icon path to a string"),
+        icon_widget = w.children(".attachment-icon"),
         request,
         preview_uri = attachment_path + "/preview.jpg";
 
     snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessSuccess.call(this, result);
 
     // show the attachment icon
-    icon_widget = w.children(".attachment-icon");
-    if(icon_widget.length == 0)
+    if(!icon_widget.exists())
     {
         w.prepend("<div class=\"attachment-icon\"><img src=\"" + attachment_icon + "\"/></div>");
         icon_widget = w.children(".attachment-icon");
     }
     else
     {
+        // make sure to display the new icon as required
+        icon_widget.find("img").attr("src", attachment_icon);
         icon_widget.show();
     }
 
@@ -9270,14 +9324,12 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
                 },
             error: function(request)
                 {
-                    var broken_icon;
+                    var broken_icon = jQuery(".broken-attachment-icon");
 
                     // show a broken image in this case
 //console.log("Editor Listener Request: FAILURE!");
-                    broken_icon = jQuery(".broken-attachment-icon");
-                    if(broken_icon.length == 0)
+                    if(!broken_icon.exists())
                     {
-                        // TODO: fix the path with our sitekey
                         w.prepend("<div class=\"broken-attachment-icon\"><img src=\"/images/mimetype/file-broken-document.png\" width=\"48\" height=\"48\"/></div>");
                     }
                     else
@@ -9293,6 +9345,7 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
                     icon_widget.hide();
                 }
         });
+
     request.setSpeeds([10, 3]);
     snapwebsites.ListenerInstance.addRequest(request);
 };
@@ -9353,6 +9406,489 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessComple
 /*jslint unparam: false */
 
 
+
+/** \brief Editor widget type for Dropped File.
+ *
+ * This widget defines a link per file dropped over it so a client can
+ * download the files.
+ *
+ * The widget includes a Browse button so one can use a File Manager to
+ * select the file(s) to add here.
+ *
+ * By default the Dropped File widget accepts only one file. So dropping
+ * another file over that one file will replace the existing file. It
+ * is, however, possible to setup the widget to accept multiple files
+ * in which case additional links are created for each file dropped or
+ * selected through the File Manager.
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetType}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeDroppedFile = function()
+{
+    snapwebsites.EditorWidgetTypeDroppedFile.superClass_.constructor.call(this);
+
+    return this;
+};
+
+
+/** \brief EditorWidgetTypeDroppedFile inherits from EditorWidgetType.
+ *
+ * This call ensures proper inheritance between the two classes.
+ */
+snapwebsites.inherits(snapwebsites.EditorWidgetTypeDroppedFile, snapwebsites.EditorWidgetType);
+
+
+/** \brief Return "dropped-file".
+ *
+ * Return the name of the dropped file type.
+ *
+ * @return {string} The name of the image box type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDroppedFile.prototype.getType = function() // virtual
+{
+    return "dropped-file";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the image box widget.
+ *
+ * \note
+ * At this point the Dropped File widget does not attach to any events
+ * since all the drag and drop work is done at the EditorWidgetType
+ * level. However, we have a droppedAttachment() function (see below),
+ * which finishes the work of the drag and drop implementation.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDroppedFile.prototype.initializeWidget = function(widget) // virtual
+{
+    var that = this,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        buttons = w.find(".dropped-file-buttons"),
+        upload_button = buttons.find("div.upload.button"),
+        upload_input_file = buttons.find(".hidden.file-input input"),
+        download_button = buttons.find("div.download.button"),
+        reset_button = buttons.find("div.reset.button");
+
+    snapwebsites.EditorWidgetTypeDroppedFile.superClass_.initializeWidget.call(this, widget);
+
+    // connect the new browse-button anchor
+    upload_button.click(function(e)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // simulate a click on the hidden file-input button
+            that.upload(editor_widget);
+        });
+
+    // when a file is selected, on OK you get a change()
+    upload_input_file.change(function(e)
+        {
+            if(this.files
+            && this.files.length > 0)
+            {
+                // TODO: add a test, in case length > 1 and the destination
+                //       widget expects exactly 1 file, then generate an
+                //       error because we cannot know which file the user
+                //       really intended to drop (maybe we could offer a
+                //       selection, assuming we do not lose the necessary
+                //       info...) We could also just have a max. # of
+                //       possible drops and if `length > max` then err.
+                //
+                that.droppedFiles_(editor_widget, this.files, true);
+            }
+
+            // restore focus to that widget (since it was lost to
+            // the input file widget / file manager...)
+            c.focus();
+
+            return false;
+        });
+
+    download_button.click(function(e)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+
+            that.download(editor_widget);
+        });
+
+    reset_button.click(function(e)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+
+            that.reset(editor_widget);
+        });
+
+    c.keydown(function(e)
+        {
+            if(!e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey)
+            {
+                switch(e.which)
+                {
+                case 85:   // [U]pload
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // simulate a click on the hidden file-input button
+                    that.upload(editor_widget);
+                    break;
+
+                case 13:   // Enter
+                case 32:   // Space
+                    // The default Enter and Space can be used by
+                    // switching focus to the upload_input_file object
+                    // and leave the event alone (let propagation happen)
+                    //e.preventDefault();
+                    //e.stopPropagation();
+
+                    // simulate a click on the hidden file-input Browse button
+                    //that.upload(editor_widget);
+
+                    // so... calling upload() fails... however, we can trick
+                    // the browser into sending the keypress and keyup events
+                    // to the input file widget by moving the focus to it!
+                    //
+                    upload_input_file.focus(); // some say that some browsers need this...
+                    break;
+
+                case 68:   // [D]ownload
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // simulate a click on the Download button
+                    that.download(editor_widget);
+                    break;
+
+                case 82:   // [R]eset
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // simulate a click on the Reset button
+                    that.reset(editor_widget);
+                    break;
+
+                }
+            }
+        });
+};
+
+
+/** \brief Implement the Upload button.
+ *
+ * This function implements the Upload button for the specified editor
+ * widget.
+ *
+ * \todo
+ * Unfortunately, at this point a click on the Upload button works,
+ * but the keyboard shortcut fails. There are many entries here but
+ * really, none that are any different than the solution we currently
+ * use and works with the mouse. I already tested by sending a keyup,
+ * keydown, and keypress with code 13 and 32 and neither worked.
+ * http://stackoverflow.com/questions/210643/in-javascript-can-i-make-a-click-event-fire-programmatically-for-a-file-input
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The editor widget that
+ *        had its Upload button clicked.
+ */
+snapwebsites.EditorWidgetTypeDroppedFile.prototype.upload = function(editor_widget)
+{
+    var w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        upload_button = w.find(".dropped-file-buttons div.upload.button"),
+        upload_input_file = w.find(".dropped-file-buttons .hidden.file-input input");
+
+    // ignore clicks if the button does not exist
+    if(!upload_button.exists())
+    {
+        return;
+    }
+
+    // simulate a click on the file "Browse" button
+    //
+    upload_input_file.focus(); // some say that some browsers need this...
+    upload_input_file.click();
+    c.focus();
+};
+
+
+/** \brief Implement the Download button.
+ *
+ * This function implements the Download button for the specified editor
+ * widget.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The editor widget that
+ *        had its Download button clicked.
+ */
+snapwebsites.EditorWidgetTypeDroppedFile.prototype.download = function(editor_widget)
+{
+    var uri = editor_widget.getValue(),
+        w = editor_widget.getWidget(),
+        download_button = w.find(".dropped-file-buttons div.download.button");
+
+    // ignore clicks if the button is disabled
+    if(download_button.hasClass("disabled")
+    || uri.length == 0)
+    {
+        return;
+    }
+
+    // simulate a click on an anchor, but also request that
+    // attachment plugin to send us the file as an attachment
+    // (i.e. do not load the file directly in the browser if
+    // at all possible--although the user may have an extension
+    // to view the file in the browser...)
+    //
+    window.location = snapwebsites.ServerAccess.appendQueryString(uri, { download: "attachment" });
+};
+
+
+/** \brief Reset the Dropped File widget.
+ *
+ * We added a Reset button because there is otherwise no way to remove
+ * an uploaded file from a Dropped File widget. This function implements
+ * that functionality.
+ *
+ * The reset function, in this case, clears the widget (opposed to the
+ * EditorWidget.resetValue() function which restores the last value that
+ * was loaded in the form.)
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  Editor widget that
+ *        is to be reset.
+ */
+snapwebsites.EditorWidgetTypeDroppedFile.prototype.reset = function(editor_widget)
+{
+    var w = editor_widget.getWidget(),
+        icon_widget = w.find(".dropped-file-icon"),
+        icon_img = icon_widget.find("img"),
+        download_button = w.find(".dropped-file-buttons div.download.button"),
+        reset_button = w.find(".dropped-file-buttons div.reset.button");
+
+    // ignore clicks if the button does not exist
+    if(!reset_button.exists())
+    {
+        return;
+    }
+
+    // restore the icon to the default
+    icon_img.attr("src", icon_img.data("original"));
+    icon_widget.removeClass("has-attachment");
+
+    // make sure to disable the download button again
+    download_button.addClass("disabled");
+
+    // reset the value to empty
+    editor_widget.setValue("", true);
+};
+
+
+/** \brief Save a new value in the specified editor widget.
+ *
+ * This function offers a way for programmers to dynamically change the
+ * value of a widget. You should never call the editor widget type
+ * function, instead use the setValue() function of the widget you
+ * want to change the value of (it will make sure that the modified
+ * flag is properly set.)
+ *
+ * Depending on the type, the value may be a string, a number, of some
+ * other type, this is why here it is also marked as an object.
+ *
+ * @param {!Object} widget  The concerned widget.
+ * @param {!Object|string|number} value  The value to be saved.
+ *
+ * @return {boolean}  true if the value gets changed.
+ */
+snapwebsites.EditorWidgetTypeDroppedFile.prototype.setValue = function(widget, value)
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        filename = c.find(".dropped-file-filename"),
+        pos = /** @type {string} */ (value).lastIndexOf('/'),
+        basename = pos < 0 ? /** @type {string} */ (value) : /** @type {string} */ (value).substr(pos + 1);
+
+    if(filename.html() !== value)
+    {
+        filename.empty();
+        filename.append(basename);
+        if(/** @type {string} */ (value).length == 0)
+        {
+            filename.removeAttr("title");
+        }
+        else
+        {
+            filename.attr("title", /** @type {string} */ (value));
+        }
+
+        // we also have to save that in the value attribute so the
+        // standard getValue() works as expected
+        //
+        c.attr("value", /** @type {string} */ (value));
+
+        // send an event for each change because the user
+        // may want to know even if the value was not actually
+        // modified
+        widget_change = jQuery.Event("widgetchange",
+            {
+                widget: editor_widget,
+                value: value
+            });
+        w.trigger(widget_change);
+
+        editor_widget.getEditorBase().checkModified(editor_widget);
+
+        return true;
+    }
+
+    return false;
+};
+
+
+/** \brief Handle the dropped file.
+ *
+ * This function handles the dropped image by saving it in the target
+ * element.
+ *
+ * \todo
+ * We may want to look into generating an MD5 checksum and check that first
+ * because the file may already be available on the server. Calculating an
+ * MD5 in JavaScript is not that hard...
+ *
+ * @param {ProgressEvent} e  The event.
+ *
+ * @override
+ */
+snapwebsites.EditorWidgetTypeDroppedFile.prototype.droppedAttachment = function(e)
+{
+    var form_data,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (e.target.snapEditorWidget),
+        editor_form = editor_widget.getEditorForm(),
+        w = editor_widget.getWidget(),
+        session = editor_form.getSession(),
+        title_widget = editor_form.getWidgetByName("title"),
+        name = editor_widget.getName(),
+        broken_icon = jQuery(".broken-attachment-icon"),
+        icon_widget = w.children(".dropped-file-icon");
+
+    // hide previous icons if the user is doing this a second time
+    broken_icon.hide();
+    icon_widget.hide();
+
+    //
+    // In case of an attachment, we send them to the server because the
+    // browser cannot just magically generate a preview; so we create
+    // a POST with the data and send that.
+    //
+    // (Note: the client "could" create a preview, it would just take
+    // a day or two and loads of memory...)
+    //
+    // The data is attached to the session of this editor form. We do that
+    // because we do not want to involve the main plugin responsible for
+    // the form until a full POST of all the changes. We can still have a
+    // hook on a callback if necessary.
+    //
+    // Note that in the end this means the data of an editor form come from
+    // the client and the editor session system.
+    //
+
+    form_data = new FormData();
+    form_data.append("_editor_session", session);
+    form_data.append("_editor_save_mode", "attachment");
+    if(title_widget)
+    {
+        form_data.append("_editor_uri", snapwebsites.EditorForm.titleToURI(title_widget.saving().result));
+    }
+    form_data.append("_editor_widget_names", name); // this field supports multiple names separated by commas
+    form_data.append(name, e.target.snapEditorFile);
+
+    // mark widget as processing (allows for CSS effects)
+    w.addClass("processing-attachment");
+
+    // show a "Please Wait" image
+    editor_widget.showWaitImage();
+
+    this.ajaxReason_ = "dropped_file";
+    if(!this.serverAccess_)
+    {
+        this.serverAccess_ = new snapwebsites.ServerAccess(this);
+    }
+    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorWidgetTypeDroppedFile.droppedAttachment()"));
+    this.serverAccess_.setData(form_data);
+    this.serverAccess_.send(e);
+};
+
+
+/** \brief Function called on AJAX success.
+ *
+ * This function is called if the remote access was successful. The
+ * result object includes a reference to the XML document found in the
+ * data sent back from the server.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data.
+ */
+snapwebsites.EditorWidgetTypeDroppedFile.prototype.serverAccessSuccess = function(result) // virtual
+{
+    // the response was successful so responseXML is valid,
+    // get the canonicalized path to the file we just sent
+    // to the server (this is a full URI)
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (result.userdata.target.snapEditorWidget),
+        w = editor_widget.getWidget(),
+        xml_data = jQuery(result.jqxhr.responseXML),
+        attachment_path = xml_data.find("data[name='attachment-path']").text(),
+        attachment_icon = snapwebsites.castToString(xml_data.find("data[name='attachment-icon']").text(), "casting the attachment icon path to a string"),
+        icon_widget = w.find(".dropped-file-icon"),
+        download_button = w.find(".dropped-file-buttons div.download.button");
+
+    snapwebsites.EditorWidgetTypeDroppedFile.superClass_.serverAccessSuccess.call(this, result);
+
+    // show the attachment icon
+    icon_widget.find("img").attr("src", attachment_icon);
+    icon_widget.addClass("has-attachment");
+
+    download_button.removeClass("disabled");
+
+    // TODO: add support for any number of attachments
+    //
+    editor_widget.setValue(attachment_path, true);
+};
+
+
+/** \brief Function called on AJAX completion.
+ *
+ * This function is called once the whole process is over. It is most
+ * often used to do some cleanup.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.EditorWidgetTypeDroppedFile.prototype.serverAccessComplete = function(result) // virtual
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (result.userdata.target.snapEditorWidget);
+
+    snapwebsites.EditorWidgetTypeDroppedFile.superClass_.serverAccessComplete.call(this, result);
+
+    editor_widget.hideWaitImage();
+
+    // done processing
+    result.userdata.target.snapEditorWidget.getWidget().removeClass("processing-attachment");
+};
+
+
+
 // auto-initialize
 jQuery(document).ready(function()
     {
@@ -9365,6 +9901,7 @@ jQuery(document).ready(function()
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeRadio());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeImageBox());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDroppedFileWithPreview());
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDroppedFile());
     });
 
 // vim: ts=4 sw=4 et

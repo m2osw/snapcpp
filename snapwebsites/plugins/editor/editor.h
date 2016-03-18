@@ -112,7 +112,8 @@ public:
         EDITOR_SAVE_MODE_SAVE,
         EDITOR_SAVE_MODE_NEW_BRANCH,
         EDITOR_SAVE_MODE_AUTO_DRAFT,
-        EDITOR_SAVE_MODE_ATTACHMENT
+        EDITOR_SAVE_MODE_ATTACHMENT,
+        EDITOR_SAVE_MODE_AUTO_ATTACHMENT
     };
 
     typedef QMap<QString, QString> params_map_t;

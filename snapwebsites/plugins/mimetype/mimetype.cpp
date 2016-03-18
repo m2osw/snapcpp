@@ -27,6 +27,103 @@
 
 SNAP_PLUGIN_START(mimetype, 1, 0)
 
+
+namespace
+{
+
+struct mimetype_to_path
+{
+    char const *    f_mimetype;
+    char const *    f_filename;
+    char const *    f_extension;
+};
+
+mimetype_to_path const g_mimetype_to_path[] =
+{
+    {
+        "application/pdf",
+        "pdf",
+        "pdf"
+    },
+    {
+        "image/gif",
+        "gif",
+        "gif"
+    },
+    {
+        "image/jpeg",
+        "jpg",
+        "jpg"
+    },
+    {
+        "image/png",
+        "png",
+        "png"
+    }
+};
+
+
+int find_mimetype(QString const & mime_type)
+{
+    QString type;
+    int const pos(mime_type.indexOf(';'));
+    if(pos < 0)
+    {
+        type = mime_type;
+    }
+    else
+    {
+        type = mime_type.mid(0, pos);
+    }
+    QByteArray const mt(type.toUtf8());
+    size_t const max(sizeof(g_mimetype_to_path) / sizeof(g_mimetype_to_path[0]));
+
+#ifdef DEBUG
+    for(size_t idx(0); idx < max - 1; ++idx)
+    {
+        if(strcmp(g_mimetype_to_path[idx].f_mimetype, g_mimetype_to_path[idx + 1].f_mimetype) >= 0)
+        {
+            throw mimetype_exception_invalid_data(QString("The g_mimetyoe_to_path table is not properly sorted, all f_mimetype strings must be in byte order (strmp). Error found at position: %1 (\"%2\" vs \"%3\").")
+                        .arg(idx)
+                        .arg(g_mimetype_to_path[idx].f_mimetype)
+                        .arg(g_mimetype_to_path[idx + 1].f_mimetype));
+        }
+    }
+#endif
+
+    size_t i(0);
+    size_t j(max);
+    size_t p(static_cast<size_t>(-1));
+    while(i < j)
+    {
+        p = i + (j - i) / 2;
+        int const r(strcmp(mt.data(), g_mimetype_to_path[p].f_mimetype));
+        if(r == 0)
+        {
+            // found a match!
+            return static_cast<int>(p);
+        }
+
+        if(r > 0)
+        {
+            // move the range up (we already checked p so use p + 1)
+            i = p + 1;
+        }
+        else
+        {
+            // move the range down (we never check an item at position j)
+            j = p;
+        }
+    }
+
+    // anything else is unknown
+    return -1;
+}
+
+
+} // no name namespace
+
+
 /* \brief Get a fixed MIME type name.
  *
  * The MIME type plugin makes use of different names in the database. This
@@ -137,7 +234,7 @@ int64_t mimetype::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 12, 30, 23, 6, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 14, 19, 39, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -171,8 +268,70 @@ void mimetype::bootstrap(snap_child * snap)
 }
 
 
+/** \brief Transform a MIME type to the path of an icon.
+ *
+ * This function is used to convert a valid MIME type of a path to
+ * an icon.
+ *
+ * \todo
+ * We want to move the list to the database to allow website administrator
+ * to select the icons they want for such and such MIME type and to give
+ * them the ability to add new types. These types can be common to all
+ * websites by adding a MIME type specific table, and it can be specific
+ * to a website so that way a website can present its own MIME type icons.
+ *
+ * \todo
+ * At some point we can change the path to point to one common resource
+ * so client's browsers can cache those images once for all of
+ * our websites.
+ *
+ * \param[in] mime_type  The MIME type to convert.
+ *
+ * \return The path to the image as it can be used in this website.
+ */
+QString mimetype::mimetype_to_icon(QString const & mime_type)
+{
+    QString const site_key(f_snap->get_site_key_with_slash());
+    int const p(find_mimetype(mime_type));
+    if(p == -1)
+    {
+        // anything else is unknown
+        return QString("%1images/mimetype/file-unknown.png").arg(site_key);
+    }
+    else
+    {
+        // found a match!
+        return QString("%1images/mimetype/file-%2.png")
+                            .arg(site_key)
+                            .arg(g_mimetype_to_path[p].f_filename);
+    }
+}
 
 
+
+/** \brief Transform a MIME type to a file extension.
+ *
+ * This function is used to convert a valid MIME type of a file
+ * extension.
+ *
+ * \param[in] mime_type  The MIME type to convert.
+ *
+ * \return The extension that best represents that MIME type.
+ */
+QString mimetype::mimetype_to_extension(QString const & mime_type)
+{
+    int const p(find_mimetype(mime_type));
+    if(p == -1)
+    {
+        // anything else is unknown
+        return "ext";
+    }
+    else
+    {
+        // found a match!
+        return g_mimetype_to_path[p].f_extension;
+    }
+}
 
 
 

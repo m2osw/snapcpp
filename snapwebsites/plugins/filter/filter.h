@@ -382,6 +382,7 @@ public:
     static bool         filter_uri(QString & uri);
     static QString      encode_text_for_html(QString const & text);
     static bool         body_to_teaser(QDomElement body, filter_teaser_info_t const & info);
+    static bool         filter_filename(QString & filename, QString const & extension);
 
     SNAP_SIGNAL(replace_token, (content::path_info_t & ipath, QDomDocument & xml, token_info_t & token), (ipath, xml, token));
     SNAP_SIGNAL(filter_text, (filter_text_t & txt_filt), (txt_filt));
