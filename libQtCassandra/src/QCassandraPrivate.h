@@ -82,7 +82,7 @@ public:
     void dropTable    ( const QString& table_name);
     void truncateTable( const QCassandraTable::pointer_t table);
 
-    void insertValue( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
+    void insertValue( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value, const QString& validation_class );
     void getValue   ( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void getCounter ( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void addValue   ( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t value);

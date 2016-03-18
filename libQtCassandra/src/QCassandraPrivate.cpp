@@ -1047,6 +1047,17 @@ void QCassandraPrivate::truncateTable(QCassandraTable::pointer_t table)
     q.start();
 }
 
+
+namespace
+{
+    bool isCounterClass( const QString& validation_class )
+    {
+        return (validation_class == "org.apache.cassandra.db.marshal.CounterColumnType")
+                || (validation_class == "CounterColumnType");
+    }
+}
+
+
 /** \brief Insert a value in the Cassandra database.
  *
  * This function insert the specified \p value in the Cassandra database.
@@ -1064,6 +1075,7 @@ void QCassandraPrivate::insertValue
     , const QByteArray&      row_key
     , const QByteArray&      column_key
     , const QCassandraValue& p_value
+    , const QString&		 validation_class
     )
 {
     mustBeConnected();
@@ -1141,7 +1153,7 @@ void QCassandraPrivate::insertValue
     int column_id = 1;
     int value_id  = 2;
     QString query_string;
-    if( f_defaultValidationClass == "CounterColumnType" )
+    if( isCounterClass(validation_class) )
     {
         QCassandraValue v;
         getValue( row_key, column_key, v );
@@ -1195,7 +1207,7 @@ void QCassandraPrivate::insertValue
     q.bindByteArray( row_id, row_key.constData(), row_key.size() );
     q.bindByteArray( column_id, column_key.constData(), column_key.size() );
 
-    if( f_defaultValidationClass == "CounterColumnType" )
+    if( isCounterClass(validation_class) )
     {
         q.bindInt64( value_id, value.int64Value() );
     }
