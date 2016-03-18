@@ -37,7 +37,7 @@
 #pragma once
 
 #include "QtCassandra/QCassandraContext.h"
-#include "QtCassandra/QCassandraTools.h"
+#include "QtCassandra/QCassandraQuery.h"
 #include "QtCassandra/QCassandraVersion.h"
 
 #include <memory>
@@ -66,16 +66,6 @@ public:
     static int versionPatch();
     static const char *version();
 
-    // handle queries
-    //
-    future_pointer_t executeQuery( const QString& query ) const;
-    void executeQuery( const QString& query, QStringList& values ) const;
-    void executeQuery( const QString& table, const QString& column, QStringList& values ) const;
-
-    cluster_pointer_t cluster()    const;
-    session_pointer_t session()    const;
-    future_pointer_t  connection() const;
-
     // connection functions
     bool connect(const QString& host = "localhost", const int port = 9042 );
     bool connect(const QStringList& hosts, const int port = 9042 );
@@ -90,6 +80,7 @@ public:
     const QString& snitch() const;
 
     // context functions (the database [Cassandra keyspace])
+    QCassandraContext::pointer_t currentContext() const { return f_current_context; }
     QCassandraContext::pointer_t context(const QString& context_name);
     const QCassandraContexts& contexts() const;
 

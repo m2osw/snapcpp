@@ -57,15 +57,7 @@ public:
     QCassandraPrivate( QCassandra::pointer_t parent );
     ~QCassandraPrivate();
 
-    // handle queries
-    //
-    future_pointer_t executeQuery( const QString& query ) const;
-    void executeQuery( const QString& query, QStringList& values ) const;
-    void executeQuery( const QString& table, const QString& column, QStringList& values ) const;
-
-    cluster_pointer_t cluster()    const;
-    session_pointer_t session()    const;
-    future_pointer_t  connection() const;
+    QCassandraSession::pointer_t getCassandraSession() const;
 
     bool connect(const QString& host = "localhost", const int port = 9042 );
     bool connect(const QStringList& hosts, const int port = 9042 );
@@ -73,10 +65,10 @@ public:
     bool isConnected() const;
     void synchronizeSchemaVersions(int timeout);
 
-    QString clusterName()     const;
-    QString protocolVersion() const;
-    QString partitioner()     const;
-    QString snitch()          const;
+    const QString& clusterName()     const;
+    const QString& protocolVersion() const;
+    const QString& partitioner()     const;
+    const QString& snitch()          const;
 
     void setContext(const QString& context);
     void contexts() const;
@@ -88,7 +80,7 @@ public:
     void createTable  ( const QCassandraTable::pointer_t table);
     void updateTable  ( const QCassandraTable::pointer_t table);
     void dropTable    ( const QString& table_name);
-    void truncateTable( const QCassandraTable *table);
+    void truncateTable( const QCassandraTable::pointer_t table);
 
     void insertValue( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     void getValue   ( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
@@ -108,6 +100,9 @@ private:
     void retrieve_tables   ( org::apache::cassandra::KsDef& ks_def ) const;
     void retrieve_columns  ( org::apache::cassandra::CfDef& cf_def ) const;
     void retrieve_triggers ( org::apache::cassandra::CfDef& cf_def ) const;
+
+    QString getKeyspaceOptions ( org::apache::cassandra::KsDef& ks );
+    QString getTableOptions    ( org::apache::cassandra::CfDef& cf );
 
     QCassandra::pointer_t f_parent;
 

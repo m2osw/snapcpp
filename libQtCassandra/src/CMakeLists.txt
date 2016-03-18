@@ -49,16 +49,16 @@ configure_file(
 		)
 
 set( HEADER_FILES
-    #QtCassandra/QCassandra.h
-    #QtCassandra/QCassandraCell.h
-    #QtCassandra/QCassandraContext.h
-    #QtCassandra/QCassandraLock.h
-    #QtCassandra/QCassandraPredicate.h
+    QtCassandra/QCassandra.h
+    QtCassandra/QCassandraCell.h
+    QtCassandra/QCassandraContext.h
+    QtCassandra/QCassandraLock.h
+    QtCassandra/QCassandraPredicate.h
     QtCassandra/QCassandraQuery.h
-    #QtCassandra/QCassandraRow.h
-    #QtCassandra/QCassandraTable.h
-    #QtCassandra/QCassandraValue.h
-    #QtCassandra/QCassandraVersion.h.in
+    QtCassandra/QCassandraRow.h
+    QtCassandra/QCassandraTable.h
+    QtCassandra/QCassandraValue.h
+    QtCassandra/QCassandraVersion.h.in
     ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
 )
 
@@ -70,17 +70,17 @@ set( LEGACY_FILES
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
     ${LEGACY_FILES}
-    #QCassandra.cpp
-    #QCassandraCell.cpp
-    #QCassandraContext.cpp
-    #QCassandraLock.cpp
-    #QCassandraPrivate.h
-    #QCassandraPrivate.cpp
-    #QCassandraPredicate.cpp
+    QCassandra.cpp
+    QCassandraCell.cpp
+    QCassandraContext.cpp
+    QCassandraLock.cpp
+    QCassandraPrivate.h
+    QCassandraPrivate.cpp
+    QCassandraPredicate.cpp
     QCassandraQuery.cpp
-    #QCassandraRow.cpp
-    #QCassandraTable.cpp
-    #QCassandraValue.cpp
+    QCassandraRow.cpp
+    QCassandraTable.cpp
+    QCassandraValue.cpp
 )
 
 target_link_libraries(QtCassandra

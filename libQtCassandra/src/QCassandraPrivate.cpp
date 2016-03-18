@@ -109,8 +109,8 @@ const char g_unreachable[] = "UNREACHABLE";
  * to send and receive messages (i.e. header, footer, etc.)
  */
 
-/** \var QCassandraPrivate::f_client
- * \brief Define a client object.
+/** \var QCassandraPrivate::f_session
+ * \brief Define a CQL client object.
  *
  * The client object is what we use everywhere to communicate
  * with the Cassandra server. It is a Cassandra Client object
@@ -158,6 +158,12 @@ QCassandraPrivate::QCassandraPrivate( QCassandra::pointer_t parent )
 QCassandraPrivate::~QCassandraPrivate()
 {
     disconnect();
+}
+
+
+QCassandraSession::pointer_t QCassandraPrivate::getCassandraSession() const
+{
+    return f_session;
 }
 
 
@@ -250,9 +256,9 @@ bool QCassandraPrivate::connect(const QStringList& host_list, const int port )
         throw std::runtime_error( "Error in database table system.local!" );
     }
 
-    f_cluster_name     = local_table.getStringColumn ( "cluster_name"            );
-    f_protocol_version = local_table.getStringColumn ( "native_protocol_version" );
-    f_partitioner      = local_table.getStringColumn ( "partitioner"             );
+    f_cluster_name     = local_table.getStringColumn( "cluster_name"            );
+    f_protocol_version = local_table.getStringColumn( "native_protocol_version" );
+    f_partitioner      = local_table.getStringColumn( "partitioner"             );
     //
     // I have no idea how to get this from the new CQL-based c++ interface.
     //
@@ -280,7 +286,7 @@ void QCassandraPrivate::disconnect()
 
 /** \brief Check whether we're connected.
  *
- * This checks whether an f_client point exists.
+ * This checks whether an f_session point exists.
  *
  * \note
  * To test whether the actual TCP/IP connection is up we'll want to
@@ -425,7 +431,7 @@ void QCassandraPrivate::mustBeConnected() const throw(std::runtime_error)
  *
  * \return The name of the cluster.
  */
-QString QCassandraPrivate::clusterName() const
+const QString& QCassandraPrivate::clusterName() const
 {
     return f_cluster_name;
 }
@@ -437,7 +443,7 @@ QString QCassandraPrivate::clusterName() const
  *
  * \return The version of the protocol.
  */
-QString QCassandraPrivate::protocolVersion() const
+const QString& QCassandraPrivate::protocolVersion() const
 {
     return f_protocol_version;
 }
@@ -518,7 +524,7 @@ QString QCassandraPrivate::protocolVersion() const
  *
  * \return The name of the partitioner.
  */
-QString QCassandraPrivate::partitioner() const
+const QString& QCassandraPrivate::partitioner() const
 {
     return f_partitioner;
 }
@@ -785,6 +791,95 @@ void QCassandraPrivate::retrieve_context(const QString& context_name) const
 }
 
 
+QString QCassandraPrivate::getKeyspaceOptions( org::apache::cassandra::KsDef& ks )
+{
+    QString q_str = QString("WITH replication = {'class': '%1'").arg(ks.strategy_class);
+    for( const auto& pair : ks.strategy_options )
+    {
+        q_str += QString(", '%1': '%2'").arg(pair.first.c_str()).arg(pair.second.c_str());
+    }
+    q_str += "}\n";
+
+    if( ks.__isset.durable_writes )
+    {
+        q_str += QString("AND durable_writes = %1\n").arg(ks.durable_writes? 'true': 'false');
+    }
+}
+
+
+namespace
+{
+    QString map_to_json( const std::map<std::string,std::string>& map )
+    {
+        QString ret;
+        for( const auto& pair : map )
+        {
+            if( !ret.isEmpty() )
+            {
+                ret += ", ";
+            }
+            ret += QString("'%1': '%2'").arg(pair.first.c_str()).arg(pair.second.c_str());
+        }
+        return ret;
+    }
+}
+
+
+QString QCassandraPrivate::getTableOptions( org::apache::cassandra::CfDef& cf )
+{
+    QString q_str;
+
+    // TODO: We might want to add more options, but for now, this is what Snap! uses in each of their tables.
+    //
+    if( cf.__isset.bloom_filter_fp_chance )
+    {
+        q_str += QString("AND bloom_filter_fp_chance = %1\n").arg(cf.bloom_filter_fp_chance);
+    }
+    if( cf.__isset.caching )
+    {
+        q_str += QString("AND caching = '%1'\n").arg(cf.caching);
+    }
+    if( cf.__isset.comment )
+    {
+        q_str += QString("AND comment = '%1'\n").arg(cf.comment);
+    }
+    if( cf.__isset.compaction_strategy_options )
+    {
+        q_str += QString("AND compaction = '%1'\n").arg(map_to_json(cf.compaction_strategy_options));
+    }
+    if( cf.__isset.compression_options )
+    {
+        q_str += QString("AND compression = '%1'\n").arg(map_to_json(cf.compression_options));
+    }
+    if( cf.__isset.dclocal_read_repair_chance )
+    {
+        q_str += QString("AND dclocal_read_repair_chance = %1\n").arg(cf.dclocal_read_repair_chance);
+    }
+    if( cf.__isset.default_time_to_live )
+    {
+        q_str += QString("AND default_time_to_live = %1\n").arg(cf.default_time_to_live);
+    }
+    if( cf.__isset.gc_grace_seconds )
+    {
+        q_str += QString("AND gc_grace_seconds = %1\n").arg(cf.gc_grace_seconds);
+    }
+    if( cf.__isset.memtable_flush_period_in_ms )
+    {
+        q_str += QString("AND memtable_flush_period_in_ms = %1\n").arg(cf.memtable_flush_period_in_ms);
+    }
+    if( cf.__isset.read_repair_chance )
+    {
+        q_str += QString("AND read_repair_chance = %1\n").arg(cf.read_repair_chance);
+    }
+    if( cf.__isset.speculative_retry )
+    {
+        q_str += QString("AND speculative_retry = %1\n").arg(cf.speculative_retry);
+    }
+
+    return q_str;
+}
+
+
 /** \brief Create a new context.
  *
  * This function creates a new context. Trying to create a context with
@@ -806,8 +901,15 @@ void QCassandraPrivate::createContext(const QCassandraContext& context)
     mustBeConnected();
     org::apache::cassandra::KsDef ks;
     context.prepareContextDefinition(&ks);
-    std::string id_ignore;
-    f_client->system_add_keyspace(id_ignore, ks);
+    //std::string id_ignore;
+    //f_client->system_add_keyspace(id_ignore, ks);
+
+    QString q_str( QString("CREATE KEYSPACE IF NOT EXISTS %1\n").arg(context->contextName()) );
+    q_str += getKeyspaceOptions( ks );
+
+    QCassandraQuery q( f_session );
+    q.query( q_str );
+    q.start();
 }
 
 /** \brief Update an existing context.
@@ -827,8 +929,15 @@ void QCassandraPrivate::updateContext(const QCassandraContext& context)
     mustBeConnected();
     org::apache::cassandra::KsDef ks;
     context.prepareContextDefinition(&ks);
-    std::string id_ignore;
-    f_client->system_update_keyspace(id_ignore, ks);
+    //std::string id_ignore;
+    //f_client->system_update_keyspace(id_ignore, ks);
+
+    QString q_str( QString("ALTER KEYSPACE %1\n").arg(context->contextName()) );
+    q_str += getKeyspaceOptions( ks );
+
+    QCassandraQuery q( f_session );
+    q.query( q_str );
+    q.start();
 }
 
 /** \brief Drop an existing context.
@@ -844,8 +953,12 @@ void QCassandraPrivate::dropContext(const QCassandraContext& context)
 {
     mustBeConnected();
     f_parent->clearCurrentContextIf(context);
-    std::string id_ignore;
-    f_client->system_drop_keyspace(id_ignore, context.contextName().toUtf8().data());
+    //std::string id_ignore;
+    //f_client->system_drop_keyspace(id_ignore, context.contextName().toUtf8().data());
+
+    QCassandraQuery q( f_session );
+    q.query( QString("DROP KEYSPACE %1").arg(context.contextName()) );
+    q.start();
 }
 
 /** \brief Create a table in the Cassandra server.
@@ -856,14 +969,28 @@ void QCassandraPrivate::dropContext(const QCassandraContext& context)
  *
  * \param[in] table  The table to be created.
  */
-void QCassandraPrivate::createTable(const QCassandraTable *table)
+void QCassandraPrivate::createTable(QCassandraTable::pointer_t table)
 {
     mustBeConnected();
     org::apache::cassandra::CfDef cf;
     table->prepareTableDefinition(&cf);
-    std::string id_ignore;
-    f_client->system_add_column_family(id_ignore, cf);
+    //std::string id_ignore;
+    //f_client->system_add_column_family(id_ignore, cf);
+
+    QString q_str(
+            QString("CREATE TABLE IF NOT EXISTS %1.%2 "
+                    "(key BLOB, column1 BLOB, value BLOB, PRIMARY KEY (key,column1))"
+                    "WITH COMPACT STORAGE AND CLUSTERING ORDER BY (column1 ASC)\n")
+                .arg(cf.keyspace)
+                .arg(cf.name)
+                );
+    q_str = getTableOptions( cf );
+
+    QCassandraQuery q( f_session );
+    q.query( q_str );
+    q.start();
 }
+
 
 /** \brief Update a table in the Cassandra server.
  *
@@ -871,14 +998,17 @@ void QCassandraPrivate::createTable(const QCassandraTable *table)
  *
  * \param[in] table  The table to be updated.
  */
-void QCassandraPrivate::updateTable(const QCassandraTable *table)
+void QCassandraPrivate::updateTable(QCassandraTable::pointer_t table)
 {
     mustBeConnected();
     org::apache::cassandra::CfDef cf;
-    table->prepareTableDefinition(&cf);
+#if 0
     std::string id_ignore;
     f_client->system_update_column_family(id_ignore, cf);
+#endif
+    // NOT SUPPORTED
 }
+
 
 /** \brief Drop a table from the Cassandra server.
  *
@@ -889,9 +1019,15 @@ void QCassandraPrivate::updateTable(const QCassandraTable *table)
 void QCassandraPrivate::dropTable(const QString& table_name)
 {
     mustBeConnected();
-    std::string id_ignore;
-    f_client->system_drop_column_family(id_ignore, table_name.toUtf8().data());
+    //std::string id_ignore;
+    //f_client->system_drop_column_family(id_ignore, table_name.toUtf8().data());
+    QCassandraQuery q( f_session );
+    q.query( QString("DROP TABLE IF EXISTS %1.%2")
+             .arg(f_parent->currentContext().contextName())
+             .arg(table_name) );
+    q.start();
 }
+
 
 /** \brief Truncate a table in the Cassandra server.
  *
@@ -900,10 +1036,15 @@ void QCassandraPrivate::dropTable(const QString& table_name)
  *
  * \param[in] table  The table to be created.
  */
-void QCassandraPrivate::truncateTable(const QCassandraTable *table)
+void QCassandraPrivate::truncateTable(QCassandraTable::pointer_t table)
 {
     mustBeConnected();
-    f_client->truncate(table->tableName().toUtf8().data());
+    //f_client->truncate(table->tableName().toUtf8().data());
+    QCassandraQuery q( f_session );
+    q.query( QString("TRUNCATE TABLE IF EXISTS %1.%2")
+             .arg(f_parent->currentContext().contextName())
+             .arg(table->tableName()) );
+    q.start();
 }
 
 /** \brief Insert a value in the Cassandra database.
@@ -918,10 +1059,16 @@ void QCassandraPrivate::truncateTable(const QCassandraTable *table)
  * \param[in] column_key  The key used to identify the column.
  * \param[in] value  The new value of the cell.
  */
-void QCassandraPrivate::insertValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value)
+void QCassandraPrivate::insertValue
+    ( const QString&         table_name
+    , const QByteArray&      row_key
+    , const QByteArray&      column_key
+    , const QCassandraValue& p_value
+    )
 {
     mustBeConnected();
 
+#if 0
     std::string rkey(row_key.data(), row_key.size());
 
     org::apache::cassandra::ColumnParent column_parent;
@@ -987,6 +1134,78 @@ void QCassandraPrivate::insertValue(const QString& table_name, const QByteArray&
             select(0, nullptr, nullptr, nullptr, &to);
         }
     }
+#endif
+
+    QCassandraValue value( p_value );
+    int row_id    = 0;
+    int column_id = 1;
+    int value_id  = 2;
+    QString query_string;
+    if( f_defaultValidationClass == "CounterColumnType" )
+    {
+        QCassandraValue v;
+        getValue( row_key, column_key, v );
+        // new value = user value - current value
+        int64_t add(-v.int64Value());
+        switch( value.size() )
+        {
+            case 0:
+                // accept NULL as zero
+                break;
+
+            case 1:
+                add += value.signedCharValue();
+                break;
+
+            case 2:
+                add += value.int16Value();
+                break;
+
+            case 4:
+                add += value.int32Value();
+                break;
+
+            case 8:
+                add += value.int64Value();
+                break;
+
+            default:
+                throw std::runtime_error("value has an invalid size for a counter value");
+        }
+        value.setInt64Value( add );
+
+        query_string = QString("UPDATE %1.%2 SET value = value + ? WHERE key = ? AND column1 = ?;")
+            .arg(f_context->contextName())
+            .arg(f_tableName)
+            ;
+        value_id  = 0;
+        row_id    = 1;
+        column_id = 2;
+    }
+    else
+    {
+        query_string = QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?);")
+            .arg(f_context->contextName())
+            .arg(f_tableName)
+            ;
+    }
+
+    QCassandraQuery q( f_session );
+    q.query( query_string, 3 );
+    q.bindByteArray( row_id, row_key.constData(), row_key.size() );
+    q.bindByteArray( column_id, column_key.constData(), column_key.size() );
+
+    if( f_defaultValidationClass == "CounterColumnType" )
+    {
+        q.bindInt64( value_id, value.int64Value() );
+    }
+    else
+    {
+        auto binary_val( value.binaryValue() );
+        q.bindByteArray( value_id, binary_val.constData(), binary_val.size() );
+    }
+
+    q.start();
 }
 
 /** \brief Get a value from the Cassandra database.
