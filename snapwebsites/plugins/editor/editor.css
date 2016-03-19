@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.120
+ * Version: 0.0.1.121
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -405,7 +405,8 @@
 	background-color: #f0f0f0;
 	border: 1px solid black;
 }
-.editable.snap-editor.dropped-file-box .dropped-file-filename:hover
+/* here we use .drop to know whether the widget is in edit mode */
+.editable.drop.dropped-file-box .dropped-file-filename:hover
 {
 	box-shadow: inset 0 0 0 3px rgba(64, 192, 64, 0.5);
 }
