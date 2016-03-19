@@ -57,10 +57,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                    it is editable; however, there will be no input file,
                    no "Upload" and "Reset" buttons so the functionality
                    will still be limited to just downloading.
+
+        WARNING: at this point we check whether we are in "edit" mode before
+                 adding the 'drop' class and also below we only offer the
+                 Upload and Reset buttons when in edit mode; only in our
+                 regular system (not forms) we do not have such a mode on
+                 loading... that being said, I do not thing we can re-use
+                 this widget as is there anyway.
       -->
       <xsl:attribute name="class">snap-editor editable no-hover dropped-file-box <xsl:value-of
-          select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if
-          test="not(attachment[@browse='no'])"> browse</xsl:if><xsl:if
+          select="$name"/><xsl:if test="(@drop or /editor-form/drop) and $action = 'edit'"> drop</xsl:if><xsl:if
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
           select="concat(' ', classes)"/></xsl:attribute>

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.880
+ * Version: 0.0.3.881
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -5922,99 +5922,108 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
             }
         });
 
-    // the user just moved over a widget while dragging something
-    w.on("dragenter", function(e)
-        {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // allows your CSS to change some things when areas are
-            // being dragged over
-            if(that.dragCounter_ == 0)
+    // only setup the drag & drop functionality on which that have the
+    // class defined
+    //
+    // TODO: change support for widget that could dynamically add/remove
+    //       the drop class along the way?
+    //
+    if(w.hasClass("drop"))
+    {
+        // the user just moved over a widget while dragging something
+        w.on("dragenter", function(e)
             {
-                w.addClass("dragging-over");
-            }
-            ++that.dragCounter_;
-        });
+                e.preventDefault();
+                e.stopPropagation();
 
-    // the user is dragging something over a widget
-    w.on("dragover", function(e)
-        {
-            // TBD this is said to make things work better in some browsers...
-            e.preventDefault();
-            e.stopPropagation();
-        });
-
-    // the user just moved out a widget while dragging something
-    w.on("dragleave", function(e)
-        {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // remove the class when the mouse leaves
-            if(that.dragCounter_ > 0)
-            {
-                --that.dragCounter_;
+                // allows your CSS to change some things when areas are
+                // being dragged over
                 if(that.dragCounter_ == 0)
                 {
-                    w.removeClass("dragging-over");
+                    w.addClass("dragging-over");
                 }
-            }
-        });
+                ++that.dragCounter_;
+            });
 
-    // the user actually dropped a file on this widget
-    //
-    // Note: we handle the drop at this level, other widget types
-    //       should only override the the droppedImage()
-    //       and droppedAttachment() functions instead
-    //
-    w.on("drop", function(e)
-        {
-            var i,                      // loop index
-                r,                      // file reader object
-                accept_images,          // boolean, true if element accepts images
-                accept_files,           // boolean, true if element accepts attachments
-                file_loaded;            // finalizing function
-
-            //
-            // TODO:
-            // At this point this code breaks the normal behavior that
-            // properly places the image where the user wants it; I'm
-            // not too sure how we can follow up on the "go ahead and
-            // do a normal drop instead" without propagating the event,
-            // but I will just ask on StackOverflow for now...
-            //
-            // http://stackoverflow.com/questions/22318243/how-to-apply-the-default-image-drop-behavior-after-testing-that-image-is-valid
-            //
-            // (abandonned questions get auto-deleted and this is one
-            // of them...)
-            //
-            // That said, I did not get any answer but thinking about
-            // it, it seems pretty easy to me: the answer is to use
-            // the jQuery().trigger() command which processes the event
-            // as if nothing had happened. Then we just need to ignore
-            // that event if it calls this "drop" event handler again.
-            //
-
-            // remove the dragging-over class on a drop because we
-            // do not always get the dragleave event in that case
-            w.removeClass("dragging-over");
-            that.dragCounter_ = 0;
-
-            // always prevent the default dropping mechanism
-            // we handle the file manually all the way
-            e.preventDefault();
-            e.stopPropagation();
-
-            // anything transferred on widget that accepts files?
-            if(e.originalEvent.dataTransfer
-            && e.originalEvent.dataTransfer.files.length)
+        // the user is dragging something over a widget
+        w.on("dragover", function(e)
             {
-                that.droppedFiles_(editor_widget, e.originalEvent.dataTransfer.files, false);
-            }
+                // TBD this is said to make things work better in some browsers...
+                e.preventDefault();
+                e.stopPropagation();
+            });
 
-            return false;
-        });
+        // the user just moved out a widget while dragging something
+        w.on("dragleave", function(e)
+            {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // remove the class when the mouse leaves
+                if(that.dragCounter_ > 0)
+                {
+                    --that.dragCounter_;
+                    if(that.dragCounter_ == 0)
+                    {
+                        w.removeClass("dragging-over");
+                    }
+                }
+            });
+
+        // the user actually dropped a file on this widget
+        //
+        // Note: we handle the drop at this level, other widget types
+        //       should only override the the droppedImage()
+        //       and droppedAttachment() functions instead
+        //
+        w.on("drop", function(e)
+            {
+                var i,                      // loop index
+                    r,                      // file reader object
+                    accept_images,          // boolean, true if element accepts images
+                    accept_files,           // boolean, true if element accepts attachments
+                    file_loaded;            // finalizing function
+
+                //
+                // TODO:
+                // At this point this code breaks the normal behavior that
+                // properly places the image where the user wants it; I'm
+                // not too sure how we can follow up on the "go ahead and
+                // do a normal drop instead" without propagating the event,
+                // but I will just ask on StackOverflow for now...
+                //
+                // http://stackoverflow.com/questions/22318243/how-to-apply-the-default-image-drop-behavior-after-testing-that-image-is-valid
+                //
+                // (abandonned questions get auto-deleted and this is one
+                // of them...)
+                //
+                // That said, I did not get any answer but thinking about
+                // it, it seems pretty easy to me: the answer is to use
+                // the jQuery().trigger() command which processes the event
+                // as if nothing had happened. Then we just need to ignore
+                // that event if it calls this "drop" event handler again.
+                //
+
+                // remove the dragging-over class on a drop because we
+                // do not always get the dragleave event in that case
+                w.removeClass("dragging-over");
+                that.dragCounter_ = 0;
+
+                // always prevent the default dropping mechanism
+                // we handle the file manually all the way
+                e.preventDefault();
+                e.stopPropagation();
+
+                // anything transferred on widget that accepts files?
+                if(e.originalEvent.dataTransfer
+                && e.originalEvent.dataTransfer.files.length)
+                {
+                    that.droppedFiles_(editor_widget, e.originalEvent.dataTransfer.files, false);
+                }
+
+                return false;
+            });
+    }
 };
 
 
