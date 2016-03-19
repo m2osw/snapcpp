@@ -643,6 +643,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::invoice_paid_on" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::invoice_start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::payment_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::refused_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::report_created" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::void_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
