@@ -28,7 +28,7 @@
 
 #include "xslt.h"
 #include "log.h"
-#include "snapwebsites/qdomhelpers.h"
+#include "qdomhelpers.h"
 
 #include <iostream>
 
