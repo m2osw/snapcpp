@@ -294,6 +294,7 @@ void users_ui::bootstrap(::snap::snap_child * snap)
     SNAP_LISTEN(users_ui, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users_ui, "path", path::path, check_for_redirect, _1);
     SNAP_LISTEN(users_ui, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(users_ui, "filter", filter::filter, token_help, _1);
     SNAP_LISTEN(users_ui, "editor", editor::editor, finish_editor_form_processing, _1, _2);
 }
 
@@ -411,6 +412,13 @@ void users_ui::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
             token.f_replacement = QString("<img src=\"...\"/>");
         }
     }
+}
+
+
+void users_ui::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("users::picture",
+        "Display a picture for the specified user. (not implemented yet, we still want to support an avatar like feature but we need a way to upload an image first.)");
 }
 
 

@@ -254,7 +254,7 @@ int64_t filter::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 16, 15, 15, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 20, 1, 22, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -470,7 +470,7 @@ void filter::on_xss_filter(QDomNode & node,
  *                             the specified \<xpath>
  * \li [select_text("\<xpath>")] -- select content from the XML document using
  *                                  the specified \<xpath>, output as text
- * \li [site-name] -- the name of the site as defined in the 'sites' table
+ * \li [site_name] -- the name of the site as defined in the 'sites' table
  * \li [test] -- a simple test token, it inserts "The Test Token Worked"
  *               message, in English.
  * \li [version] -- version of the Snap! C++ server
@@ -487,117 +487,205 @@ bool filter::replace_token_impl(content::path_info_t & ipath, QDomDocument & xml
 {
     NOTUSED(ipath);
 
-    if(token.is_token("test"))
+    switch(token.f_name[0].unicode())
     {
-        token.f_replacement = "<span style=\"font-weight: bold;\">The Test Token Worked</span>";
-        return false;
-    }
-    else if(token.is_token("select") || token.is_token("select_text"))
-    {
-        if(token.verify_args(1, 1))
+    case 'd':
+        if(token.is_token("date"))
         {
-            parameter_t param(token.get_arg("xpath", 0));
-            if(!token.f_error)
+            if(token.verify_args(0, 2))
             {
-                // in this case the XPath is dynamic so we have to compile now
-                QDomXPath dom_xpath;
-                dom_xpath.setXPath(param.f_value);
-                QDomXPath::node_vector_t result(dom_xpath.apply(xml));
-                // at this point we expect the result to be 1 (or 0) entries
-                // if more than 1, ignore the following nodes
-                if(result.size() > 0)
+                time_t unix_time(f_snap->get_start_time());
+                QString date_format;
+                if(token.has_arg("format", 0))
                 {
-                    // apply the replacement
-                    if(result[0].isElement())
+                    parameter_t param(token.get_arg("format", 0, token_t::TOK_STRING));
+                    date_format = param.f_value;
+                }
+                if(token.has_arg("unixtime", 1))
+                {
+                    parameter_t param(token.get_arg("unixtime", 1, token_t::TOK_STRING));
+                    bool ok(false);
+                    unix_time = param.f_value.toLongLong(&ok);
+                    // TODO: verify ok
+                }
+                token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
+            }
+            return false;
+        }
+        break;
+
+    case 'g':
+        if(token.is_token("gmdate"))
+        {
+            if(token.verify_args(0, 2))
+            {
+                time_t unix_time(f_snap->get_start_time());
+                QString date_format;
+                if(token.has_arg("format", 0))
+                {
+                    parameter_t param(token.get_arg("format", 0, token_t::TOK_STRING));
+                    date_format = param.f_value;
+                }
+                if(token.has_arg("unixtime", 1))
+                {
+                    parameter_t param(token.get_arg("unixtime", 1, token_t::TOK_STRING));
+                    bool ok(false);
+                    unix_time = param.f_value.toLongLong(&ok);
+                    // TODO: verify ok
+                }
+                token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, false);
+            }
+            return false;
+        }
+        break;
+
+    case 'h':
+        if(token.is_token("help"))
+        {
+            token_help_t help;
+            token_help(help);
+            token.f_replacement = help.result();
+            return false;
+        }
+        break;
+
+    case 't':
+        if(token.is_token("test"))
+        {
+            token.f_replacement = "<span style=\"font-weight: bold;\">The Test Token Worked</span>";
+            return false;
+        }
+        break;
+
+    case 's':
+        if(token.is_token("select") || token.is_token("select_text"))
+        {
+            if(token.verify_args(1, 1))
+            {
+                parameter_t param(token.get_arg("xpath", 0));
+                if(!token.f_error)
+                {
+                    // in this case the XPath is dynamic so we have to compile now
+                    QDomXPath dom_xpath;
+                    dom_xpath.setXPath(param.f_value);
+                    QDomXPath::node_vector_t result(dom_xpath.apply(xml));
+                    // at this point we expect the result to be 1 (or 0) entries
+                    // if more than 1, ignore the following nodes
+                    if(result.size() > 0)
                     {
-                        if(token.f_name == "select_text")
+                        // apply the replacement
+                        if(result[0].isElement())
                         {
-                            token.f_replacement = result[0].toElement().text();
+                            if(token.f_name == "select_text")
+                            {
+                                token.f_replacement = result[0].toElement().text();
+                            }
+                            else
+                            {
+                                QDomDocument document;
+                                QDomNode copy(document.importNode(result[0], true));
+                                document.appendChild(copy);
+                                token.f_replacement = document.toString(-1);
+                            }
                         }
-                        else
+                        else if(result[0].isAttr())
                         {
-                            QDomDocument document;
-                            QDomNode copy(document.importNode(result[0], true));
-                            document.appendChild(copy);
-                            token.f_replacement = document.toString(-1);
+                            token.f_replacement = result[0].toAttr().value();
                         }
-                    }
-                    else if(result[0].isAttr())
-                    {
-                        token.f_replacement = result[0].toAttr().value();
                     }
                 }
             }
+            return false;
         }
-        return false;
-    }
-    else if(token.is_token("year"))
-    {
-        // TODO: add support for local time and user defined unix time
-        time_t now(f_snap->get_start_time());
-        struct tm time_info;
-        gmtime_r(&now, &time_info);
-        token.f_replacement = QString("%1").arg(time_info.tm_year + 1900);
-        return false;
-    }
-    else if(token.is_token("date"))
-    {
-        if(token.verify_args(0, 2))
+        else if(token.is_token("site_name"))
         {
-            time_t unix_time(f_snap->get_start_time());
-            QString date_format;
-            if(token.has_arg("format", 0))
-            {
-                parameter_t param(token.get_arg("format", 0, token_t::TOK_STRING));
-                date_format = param.f_value;
-            }
-            if(token.has_arg("unixtime", 1))
-            {
-                parameter_t param(token.get_arg("unixtime", 1, token_t::TOK_STRING));
-                bool ok(false);
-                unix_time = param.f_value.toLongLong(&ok);
-                // TODO: verify ok
-            }
-            token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
+            token.f_replacement = f_snap->get_site_parameter(get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)).stringValue();
+            return false;
         }
-        return false;
-    }
-    else if(token.is_token("gmdate"))
-    {
-        if(token.verify_args(0, 2))
+        break;
+
+    case 'v':
+        if(token.is_token("version"))
         {
-            time_t unix_time(f_snap->get_start_time());
-            QString date_format;
-            if(token.has_arg("format", 0))
-            {
-                parameter_t param(token.get_arg("format", 0, token_t::TOK_STRING));
-                date_format = param.f_value;
-            }
-            if(token.has_arg("unixtime", 1))
-            {
-                parameter_t param(token.get_arg("unixtime", 1, token_t::TOK_STRING));
-                bool ok(false);
-                unix_time = param.f_value.toLongLong(&ok);
-                // TODO: verify ok
-            }
-            token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, false);
+            token.f_replacement = SNAPWEBSITES_VERSION_STRING;
+            return false;
         }
-        return false;
-    }
-    else if(token.is_token("version"))
-    {
-        token.f_replacement = SNAPWEBSITES_VERSION_STRING;
-        return false;
-    }
-    else if(token.is_token("site-name"))
-    {
-        token.f_replacement = f_snap->get_site_parameter(get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)).stringValue();
-        return false;
+        break;
+
+    case 'y':
+        if(token.is_token("year"))
+        {
+            // TODO: add support for local time and user defined unix time
+            time_t const now(f_snap->get_start_time());
+            struct tm time_info;
+            gmtime_r(&now, &time_info);
+            token.f_replacement = QString("%1").arg(time_info.tm_year + 1900);
+            return false;
+        }
+        break;
+
     }
 
     return true;
 }
 
+
+/** \brief Gather all the tokens and a quick help.
+ *
+ * This function is used by the info system to present the user with all
+ * the available tokens.
+ *
+ * \param[in,out] help  The existing help data.
+ */
+bool filter::token_help_impl(token_help_t & help)
+{
+    help.add_token("date",
+        "Output the current date. You may enter a format (same as strftime"
+        " format) otherwise the format depends on the current locale"
+        " [format]. You may also specify a Unix time (0 represent Jan 1,"
+        " 1970) as the second parameter [unixtime], in which case that"
+        " time is converted to a date.");
+
+    help.add_token("gmdate",
+        "Output the current UTC date. You may enter a format (same as"
+        " strftime format) otherwise the format depends on the current"
+        " locale [format]. You may also specify a Unix time (0 represent"
+        " Jan 1, 1970) as the second parameter [unixtime], in which case"
+        " that time is converted to a date.");
+
+    help.add_token("help",
+        "Display all the available tokens with their help / description.");
+
+    help.add_token("select",
+        "Select a value available in the XML data at the time the page is"
+        " being generated. The select accepts one parameter which has to"
+        " be a valid X-Path [xpath]. The result are all the tags found"
+        " within the X-Path results. You may also query an attribute"
+        " (@attr).");
+
+    help.add_token("select_text",
+        "Select a value available in the XML data at the time the page is"
+        " being generated. The select accepts one parameter which has to"
+        " be a valid X-Path [xpath]. The result is transformed to text"
+        " only data (i.e. tags get trimmed.) You may also query an"
+        " attribute (@attr).");
+
+    help.add_token("site_name",
+        "Show the current name of this website.");
+
+    help.add_token("test",
+        "Add a &lt;span&gt; tag to the output. This can be used to test"
+        " that the token system is indeed functional.");
+
+    help.add_token("version",
+        "Output the version of Snap! as a set of numbers (such as 1.2.3).");
+
+    help.add_token("year",
+        "The current year. Quite practical to display a copyright notice"
+        " that matches the current year.");
+
+    return true;
+}
 
 
 /** \brief Read all the XML text and replace its tokens.

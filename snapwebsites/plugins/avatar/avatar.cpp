@@ -188,6 +188,7 @@ void avatar::bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(avatar, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(avatar, "filter", filter::filter, token_help, _1);
 }
 
 
@@ -226,6 +227,13 @@ void avatar::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, 
             token.f_replacement = QString("<img src=\"http://www.gravatar.com/avatar/%1\"/>").arg(hash);
         }
     }
+}
+
+
+void avatar::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("avatar::avatar",
+        "If available, display an avatar (a photo, a drawing, a flag...) for the specified user [email]. The token takes one parameter which is an email address. This is just one &lt;img&gt; tag. If no avatar is available, some default image tag may still be generated.");
 }
 
 

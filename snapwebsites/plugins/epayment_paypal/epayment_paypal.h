@@ -153,6 +153,7 @@ public:
 
     // filter signals
     void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                        on_token_help(filter::filter::token_help_t & help);
 
     // epayment signals
     void                        on_repeat_payment(content::path_info_t & first_invoice_ipath, content::path_info_t & previous_invoice_ipath, content::path_info_t & new_invoice_ipath);

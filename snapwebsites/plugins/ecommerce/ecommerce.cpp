@@ -504,6 +504,7 @@ void ecommerce::bootstrap(snap_child * snap)
     SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(ecommerce, "epayment", epayment::epayment, generate_invoice, _1, _2, _3);
     SNAP_LISTEN(ecommerce, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(ecommerce, "filter", filter::filter, token_help, _1);
     SNAP_LISTEN(ecommerce, "path", path::path, preprocess_path, _1, _2);
 }
 
@@ -1646,8 +1647,8 @@ void ecommerce::on_replace_token(content::path_info_t & ipath, QDomDocument & xm
         //   "last-invoice" -- in this case we use the invoice defined in the cookie
         //   "<relative path to invoice>" -- the direct path to an invoice
         //   "<number>" -- an invoice number
-        users::users *users_plugin(users::users::instance());
-        content::content *content_plugin(content::content::instance());
+        users::users * users_plugin(users::users::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
         bool has_invoice(false);
         content::path_info_t invoice_ipath;
@@ -1692,7 +1693,21 @@ void ecommerce::on_replace_token(content::path_info_t & ipath, QDomDocument & xm
             && content_table->row(invoice_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
             {
                 // the invoice exists
-                locale::locale *locale_plugin(locale::locale::instance());
+
+                // make sure we have enough permissions to view
+                // that invoice
+                //
+                permissions::permissions * permissions_plugin(permissions::permissions::instance());
+                QString const & login_status(permissions_plugin->get_login_status());
+                content::permission_flag result;
+                path::path::instance()->access_allowed(permissions_plugin->get_user_path(), invoice_ipath, "view", login_status, result);
+                if(!result.allowed())
+                {
+                    token.error(QString("You do not have enough access right to %1.").arg(invoice_ipath.get_cpath()));
+                    return;
+                }
+
+                locale::locale * locale_plugin(locale::locale::instance());
                 locale_plugin->set_timezone();
                 locale_plugin->set_locale();
                 QString const invoice_status(content_table->row(invoice_ipath.get_key())->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
@@ -1735,6 +1750,11 @@ void ecommerce::on_replace_token(content::path_info_t & ipath, QDomDocument & xm
 }
 
 
+void ecommerce::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("ecommerce::invoice",
+        "Generate an invoice in HTML of the specified invoice. The first parameter is the invoice number or the words 'last-invoice' [which]. Trying to display an invoice with an invalid number fails with an error. The current user must have enough permissions to view that invoice or an error is generated.");
+}
 
 
 

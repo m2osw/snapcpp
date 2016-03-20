@@ -277,6 +277,7 @@ void test_plugin::bootstrap(snap_child * snap)
 
     SNAP_LISTEN(test_plugin, "server", server, process_post, _1);
     SNAP_LISTEN(test_plugin, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(test_plugin, "filter", filter::filter, token_help, _1);
 }
 
 
@@ -481,6 +482,20 @@ void test_plugin::on_replace_token(content::path_info_t& ipath, QDomDocument& xm
         content::content::instance()->add_javascript(xml, "test-plugin");
     }
 }
+
+
+void test_plugin::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("test_plugin::version",
+        "Show the version of the test plugin.");
+
+    help.add_token("test_plugin::tests",
+        "Generate a list of all the available client-side tests"
+        " including links to execute them. This token also adds"
+        " CSS and JavaScript code so the output is fully functional.");
+}
+
+
 
 
 /** \brief Execute a path owned by test_plugin.

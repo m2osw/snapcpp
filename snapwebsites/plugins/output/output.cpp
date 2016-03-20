@@ -166,7 +166,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 3, 15, 21, 21, 44, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 20, 2, 15, 44, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -203,6 +203,7 @@ void output::bootstrap(snap_child * snap)
 
     SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(output, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(output, "filter", filter::filter, token_help, _1);
 }
 
 
@@ -743,12 +744,25 @@ void output::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, 
     }
 
     // For now breadcrumbs are created as a DOM so we skip this part
-    // since anyway it should not be too useful
+    // since anyway it should never be too useful
     //if(token.is_token("content::breadcrumb"))
     //{
     //    token.f_replacement = breadcrumb(ipath);
     //    return;
     //}
+}
+
+
+void output::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("content::created",
+        "The date and time when this page was created. The token accepts"
+        " one parameter to define the date and time format [format].");
+
+    help.add_token("content::last_updated",
+        "The date and time when this page was last updated (i.e. when the"
+        " last revision was created). The token accepts one parameter to"
+        " define the date and time format [format].");
 }
 
 

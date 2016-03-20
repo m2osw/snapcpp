@@ -361,6 +361,19 @@ public:
         QString                     f_end_marker_uri_title;
     };
 
+    class token_help_t
+    {
+    public:
+                                    token_help_t();
+        void                        add_token(QString const & token, QString const & help);
+        QString                     result();
+
+    private:
+        QDomDocument                f_doc;
+        QDomElement                 f_root_tag;
+        QDomElement                 f_help_tag;
+    };
+
                         filter();
                         ~filter();
 
@@ -385,6 +398,7 @@ public:
     static bool         filter_filename(QString & filename, QString const & extension);
 
     SNAP_SIGNAL(replace_token, (content::path_info_t & ipath, QDomDocument & xml, token_info_t & token), (ipath, xml, token));
+    SNAP_SIGNAL(token_help, (token_help_t & help), (help));
     SNAP_SIGNAL(filter_text, (filter_text_t & txt_filt), (txt_filt));
 
 private:

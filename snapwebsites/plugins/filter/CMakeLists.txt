@@ -54,10 +54,12 @@ snap_validate_xml( content.xml content/content.dtd )
 
 add_library(filter SHARED
     filter.cpp
+    token_help.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
     filter-logo-64x64.png
+    token-help.xsl
 )
 
 target_link_libraries( filter ${QT_LIBRARIES} )

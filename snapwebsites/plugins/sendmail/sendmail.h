@@ -247,6 +247,7 @@ public:
     // server signals
     void                    on_register_backend_cron(server::backend_action_set & actions);
     void                    on_replace_token(content::path_info_t & cpath, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                    on_token_help(filter::filter::token_help_t & help);
 
     // server::backend_action implementation
     virtual void            on_backend_action(QString const & action);

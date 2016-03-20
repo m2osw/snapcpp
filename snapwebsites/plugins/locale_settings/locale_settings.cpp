@@ -219,6 +219,7 @@ void locale_settings::bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(locale_settings, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(locale_settings, "filter", filter::filter, token_help, _1);
 }
 
 
@@ -485,6 +486,21 @@ void locale_settings::on_replace_token(content::path_info_t & ipath, QDomDocumen
         token.f_replacement = doc.toString(-1);
         return;
     }
+}
+
+
+void locale_settings::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("locale::library",
+        "Output the name of the library used to handle the locale data.");
+
+    help.add_token("locale::timezone_list",
+        "Output an HTML table with the completely list of all the"
+        " available timezones.");
+
+    help.add_token("locale::locale_list",
+        "Output an HTML table with the completely list of all the"
+        " available locales.");
 }
 
 

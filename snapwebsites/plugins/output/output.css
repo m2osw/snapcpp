@@ -1,6 +1,6 @@
 /*
  * Name: output
- * Version: 0.0.27
+ * Version: 0.0.28
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -172,4 +172,10 @@ div.breadcrumb li.hide
 .navigation .div-clear
 {
 	clear: both;
+}
+
+/** List of Tokens */
+ul.token-list li span.token-name
+{
+	font-weight: bold;
 }

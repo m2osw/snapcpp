@@ -387,6 +387,7 @@ void epayment_paypal::bootstrap(snap_child * snap)
     SNAP_LISTEN(epayment_paypal, "server", server, table_is_accessible, _1, _2);
     SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(epayment_paypal, "filter", filter::filter, token_help, _1);
     SNAP_LISTEN(epayment_paypal, "epayment", epayment::epayment, repeat_payment, _1, _2, _3);
 }
 
@@ -3242,6 +3243,11 @@ void epayment_paypal::on_replace_token(content::path_info_t & ipath, QDomDocumen
         return;
     }
 
+    // TODO: determine whether this is still in use. It seems to me that
+    //       we now always execute the payment... (because the user already
+    //       accepted on PayPal so there is no need for them to re-accept
+    //       on our website.)
+    //
     if(token.is_token("epayment_paypal::process_buttons"))
     {
         // buttons used to run the final paypal process (i.e. execute
@@ -3255,13 +3261,13 @@ void epayment_paypal::on_replace_token(content::path_info_t & ipath, QDomDocumen
             content::path_info_t invoice_ipath;
             invoice_ipath.set_path(invoice);
 
-            epayment::epayment *epayment_plugin(epayment::epayment::instance());
+            epayment::epayment * epayment_plugin(epayment::epayment::instance());
 
             // TODO: add a test to see whether the invoice has already been
             //       accepted, if so running the remainder of the code here
             //       may not be safe (i.e. this would happen if the user hits
             //       Reload on his browser.)
-            epayment::name_t status(epayment_plugin->get_invoice_status(invoice_ipath));
+            epayment::name_t const status(epayment_plugin->get_invoice_status(invoice_ipath));
             if(status == epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING)
             {
                 token.f_replacement = "<div class=\"epayment_paypal-process-buttons\">"
@@ -3271,6 +3277,13 @@ void epayment_paypal::on_replace_token(content::path_info_t & ipath, QDomDocumen
             }
         }
     }
+}
+
+
+void epayment_paypal::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("epayment_paypal::process_buttons",
+        "Generate a pair of buttons: Process and Cancel, so end users can choose whether to accepts (Process) or refuse (Cancel) to proceed with a payment. The parameter comes from the query string and is named \"paymentId\". If no such parameter is defined, then nothing is output.");
 }
 
 

@@ -314,6 +314,7 @@ public:
 
     // filter signals
     void                    on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                    on_token_help(filter::filter::token_help_t & help);
 
     // links::links_cloned implementation
     virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);

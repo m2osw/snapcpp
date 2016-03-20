@@ -206,6 +206,7 @@ void versions::bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(versions, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(versions, "filter", filter::filter, token_help, _1);
 }
 
 
@@ -258,6 +259,13 @@ void versions::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
             versions_tools(token);
         }
     }
+}
+
+
+void versions::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("versions::versions",
+        "Display the version of all the libraries, plugins, and tools used by this installation of Snap!");
 }
 
 

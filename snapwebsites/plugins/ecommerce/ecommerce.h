@@ -96,6 +96,7 @@ public:
 
     // filter signals
     void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                        on_token_help(filter::filter::token_help_t & help);
 
     // epayment signals
     void                        on_generate_invoice(content::path_info_t & invoice_ipath, uint64_t & invoice_number, epayment::epayment_product_list & plist);

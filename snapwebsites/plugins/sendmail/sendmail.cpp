@@ -1584,6 +1584,7 @@ void sendmail::bootstrap(snap_child * snap)
 
     SNAP_LISTEN(sendmail, "server", server, register_backend_cron, _1);
     SNAP_LISTEN(sendmail, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(sendmail, "filter", filter::filter, token_help, _1);
     SNAP_LISTEN(sendmail, "users", users::users, check_user_security, _1);
 
     SNAP_TEST_PLUGIN_SUITE_LISTEN(sendmail);
@@ -3828,6 +3829,59 @@ void sendmail::on_replace_token(content::path_info_t & ipath, QDomDocument & xml
             }
         }
     }
+}
+
+
+void sendmail::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("sendmail::forgot_password_link",
+        "Generate a link that can be used to go to the \"forgot"
+        " password\" form. The anchor text can be defined using"
+        " the first token parameter [text].");
+
+    help.add_token("sendmail::unsubscribe_link",
+        "Generate a link that can be used to go to the \"unsubscribe\" form."
+        " The anchor text can be defined using the first token parameter"
+        " [text].");
+
+    help.add_token("sendmail::verify_link",
+        "Generate a link that can be used to verify a user's email address."
+        " The anchor text can be defined using the first token parameter"
+        " [text].");
+
+    help.add_token("sendmail::from",
+        "Return the 'from' parameter of the email.");
+
+    help.add_token("sendmail::to",
+        "Return the 'to' parameter of the email.");
+
+    help.add_token("sendmail::path",
+        "Return the 'path' parameter of the email.");
+
+    help.add_token("sendmail::key",
+        "Return the 'key' parameter of the email.");
+
+    help.add_token("sendmail::created",
+        "Return the 'created' parameter of the email (The date and"
+        " time when the email was created).");
+
+    help.add_token("sendmail::date",
+        "Return the 'date' parameter of the email (The date when the"
+        " email was created).");
+
+    help.add_token("sendmail::time",
+        "Return the 'time' parameter of the email (The time when the"
+        " email was created).");
+
+    help.add_token("sendmail::attachment_count",
+        "Return the 'attachment_count' parameter of the email which"
+        " represents the total number of attachments (may be zero).");
+
+    help.add_token("sendmail::priority",
+        "Return the 'priority' parameter of the email.");
+
+    help.add_token("sendmail::parameter",
+        "Return the specified parameter of the email [name]. The parameter name is case sensitive.");
 }
 
 

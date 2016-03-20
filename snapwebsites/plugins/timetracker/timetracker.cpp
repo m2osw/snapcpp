@@ -224,6 +224,7 @@ void timetracker::bootstrap(snap_child * snap)
     SNAP_LISTEN(timetracker, "path", path::path, check_for_redirect, _1);
     SNAP_LISTEN(timetracker, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(timetracker, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(timetracker, "filter", filter::filter, token_help, _1);
     SNAP_LISTEN(timetracker, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
 }
 
@@ -630,6 +631,17 @@ void timetracker::on_replace_token(content::path_info_t & ipath, QDomDocument & 
         break;
 
     }
+}
+
+
+void timetracker::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("timetracker::calendar",
+        "Display a calendar with work done and functionality so one"
+        " can edit the data.");
+
+    help.add_token("timetracker::main_page",
+        "Display the timetracker main page.");
 }
 
 

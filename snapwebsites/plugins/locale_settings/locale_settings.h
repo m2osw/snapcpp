@@ -77,6 +77,7 @@ public:
 
     // filter signals
     void                        on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                        on_token_help(filter::filter::token_help_t & help);
 
 private:
     void                        content_update(int64_t variables_timestamp);

@@ -516,6 +516,7 @@ void users::bootstrap(snap_child * snap)
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3);
     SNAP_LISTEN(users, "layout", layout::layout, generate_page_content, _1, _2, _3);
     SNAP_LISTEN(users, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(users, "filter", filter::filter, token_help, _1);
 
     f_info.reset(new sessions::sessions::session_info);
 }
@@ -3886,7 +3887,7 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
     case 's':
         if(token.is_token("users::since"))
         {
-            // TODO: make sure that the user created and verified his account
+            // TODO: add support for a user defined date format
             QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->value());
             int64_t date(value.int64Value());
             token.f_replacement = QString("%1 %2")
@@ -3898,6 +3899,30 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
         break;
 
     }
+}
+
+
+/** \brief Gather all the tokens and a quick help.
+ *
+ * This function is used by the info system to present the user with all
+ * the available tokens.
+ *
+ * \param[in,out] help  The existing help data.
+ */
+void users::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("users::count",
+        "Output the number of registered users, all inclusive (verified"
+        " and unverified).");
+
+    help.add_token("users::email",
+        "The current user email address.");
+
+    help.add_token("users::email_anchor",
+        "The current user email address as an anchor (using mailto: as the protocol).");
+
+    help.add_token("users::since",
+        "The date and time the user registered his account.");
 }
 
 

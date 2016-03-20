@@ -70,6 +70,7 @@ public:
 
     // filter signals
     void                on_replace_token(content::path_info_t & ipath, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                on_token_help(filter::filter::token_help_t & help);
 
     SNAP_SIGNAL_WITH_MODE(versions_libraries, (filter::filter::token_info_t & token), (token), START_AND_DONE);
     SNAP_SIGNAL_WITH_MODE(versions_tools, (filter::filter::token_info_t & token), (token), START_AND_DONE);

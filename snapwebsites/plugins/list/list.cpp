@@ -1313,6 +1313,7 @@ void list::bootstrap(snap_child * snap)
     SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
     SNAP_LISTEN(list, "links", links::links, modified_link, _1, _2);
     SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3);
+    SNAP_LISTEN(list, "filter", filter::filter, token_help, _1);
 
     SNAP_TEST_PLUGIN_SUITE_LISTEN(list);
 }
@@ -3239,6 +3240,17 @@ void list::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, fi
 
         token.f_replacement = generate_list(ipath, list_ipath, start, count, theme);
     }
+}
+
+
+void list::on_token_help(filter::filter::token_help_t & help)
+{
+    help.add_token("list::theme",
+        "Display a themed list. The token accepts 1 to 4 parameters:"
+        " the path to the list (mandatory) [path], the name of a theme"
+        " (\"default\" otherwise) [theme], the first item to display"
+        " [start] (the very first item is number 0), the number of"
+        " items to display [count].");
 }
 
 
