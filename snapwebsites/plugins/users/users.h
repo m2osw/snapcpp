@@ -373,6 +373,7 @@ public:
 private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
+    void                    token_user_count(filter::filter::token_info_t & token);
 
     zpsnap_child_t              f_snap;
 

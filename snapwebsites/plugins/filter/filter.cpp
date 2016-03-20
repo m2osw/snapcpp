@@ -463,6 +463,9 @@ void filter::on_xss_filter(QDomNode & node,
  *
  * \li [date(\"format\")] -- date with format as per strftime(); without
  *                           format, the default depends on the locale
+ * \li [gmdate(\"format\")] -- UTC date with format as per strftime();
+ *                             without format, the default depends on the
+ *                             locale
  * \li [select("\<xpath>")] -- select content from the XML document using
  *                             the specified \<xpath>
  * \li [select_text("\<xpath>")] -- select content from the XML document using
@@ -1073,7 +1076,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                 // fields as such so the editor is aware of them
                 QByteArray utf8(info.f_replacement.toUtf8());
                 bool use_span(true);
-                for(char const *s(utf8.data()); *s != '\0'; ++s)
+                for(char const * s(utf8.data()); *s != '\0'; ++s)
                 {
                     if(*s == '<')
                     {
@@ -1081,7 +1084,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                         if((*s >= 'a' && *s <= 'z')
                         || (*s >= 'A' && *s <= 'Z'))
                         {
-                            char const *start(s);
+                            char const * start(s);
                             for(++s; (*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z'); ++s);
                             int const len(static_cast<int>(s - start));
                             use_span = f_snap->tag_is_inline(utf8.data(), len);

@@ -72,6 +72,7 @@
 #include "users.h"
 
 #include "../output/output.h"
+#include "../list/list.h"
 #include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 #include "../server_access/server_access.h"
@@ -3821,10 +3822,22 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
     NOTUSED(ipath);
     NOTUSED(xml);
 
-    if(!token.is_namespace("users::"))
+    if(token.f_name.length() <= 7
+    || !token.is_namespace("users::"))
     {
         // not a users plugin token
         return;
+    }
+
+    switch(token.f_name[7].unicode())
+    {
+    case 'c':
+        if(token.is_token("users::count"))
+        {
+            token_user_count(token);
+        }
+        break;
+
     }
 
     if(f_user_key.isEmpty())
@@ -3840,19 +3853,24 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
         return;
     }
 
-    if(token.is_token("users::email"))
+    switch(token.f_name[7].unicode())
     {
-        token.f_replacement = f_user_key;
-        return;
-    }
+    case 'e':
+        if(token.is_token("users::email"))
+        {
+            token.f_replacement = f_user_key;
+            return;
+        }
+        if(token.is_token("users::email_anchor"))
+        {
+            // TODO: replace f_user_key with the user first/last names in the
+            //       anchor text when available AND authorized
+            //
+            token.f_replacement = "<a href=\"mailto:" + f_user_key + "\">" + f_user_key + "</a>";
+            return;
+        }
+        break;
 
-    if(token.is_token("users::email_anchor"))
-    {
-        // TODO: replace f_user_key with the user first/last names in the
-        //       anchor text when available AND authorized
-        //
-        token.f_replacement = "<a href=\"mailto:" + f_user_key + "\">" + f_user_key + "</a>";
-        return;
     }
 
     // anything else requires the user to be verified
@@ -3863,17 +3881,45 @@ void users::on_replace_token(content::path_info_t & ipath, QDomDocument & xml, f
         return;
     }
 
-    if(token.is_token("users::since"))
+    switch(token.f_name[7].unicode())
     {
-        // TODO: make sure that the user created and verified his account
-        QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->value());
-        int64_t date(value.int64Value());
-        token.f_replacement = QString("%1 %2")
-                .arg(f_snap->date_to_string(date, f_snap->date_format_t::DATE_FORMAT_SHORT))
-                .arg(f_snap->date_to_string(date, f_snap->date_format_t::DATE_FORMAT_TIME));
-        // else use was not yet verified
-        return;
+    case 's':
+        if(token.is_token("users::since"))
+        {
+            // TODO: make sure that the user created and verified his account
+            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->value());
+            int64_t date(value.int64Value());
+            token.f_replacement = QString("%1 %2")
+                    .arg(f_snap->date_to_string(date, f_snap->date_format_t::DATE_FORMAT_SHORT))
+                    .arg(f_snap->date_to_string(date, f_snap->date_format_t::DATE_FORMAT_TIME));
+            // else use was not yet verified
+            return;
+        }
+        break;
+
     }
+}
+
+
+/** \brief Replace the token with the number of registered users.
+ *
+ * This function replaces the [users::count] token with the number of
+ * registered users.
+ *
+ * \todo
+ * Implement a list of verified users instead of all registrations.
+ *
+ * \param[in,out] token  The token where the replacement takes place.
+ */
+void users::token_user_count(filter::filter::token_info_t & token)
+{
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+
+    content::path_info_t user_count_ipath;
+    user_count_ipath.set_path(get_name(name_t::SNAP_NAME_USERS_PATH));
+    int32_t const count(branch_table->row(user_count_ipath.get_branch_key())->cell(list::get_name(list::name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value());
+    token.f_replacement = QString("%1").arg(count);
 }
 
 

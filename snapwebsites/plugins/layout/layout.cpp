@@ -793,7 +793,7 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     //       (i.e. ultimately we want to have some sort of filter
     //       tagging capability)
     QString filtered_xsl(xsl);
-    if(plugins::exists("filter"))
+    //if(plugins::exists("filter")) -- this is a core module, so it is always installed
     {
 //SNAP_LOG_WARNING("*** Filter all of that...: [")(doc.toString())("]");
         // replace all tokens when filtering is available
@@ -1116,7 +1116,7 @@ SNAP_LOG_TRACE("box_ipath key = ")(box_ipath.get_key())(", branch_key=")(box_ipa
                         plugin * box_plugin(path::path::instance()->get_plugin(box_ipath, box_error_callback));
                         if(!box_error_callback.has_error() && box_plugin)
                         {
-                            layout_boxes *lb(dynamic_cast<layout_boxes *>(box_plugin));
+                            layout_boxes * lb(dynamic_cast<layout_boxes *>(box_plugin));
                             if(lb != nullptr)
                             {
                                 // put each box in a filter tag because we have to

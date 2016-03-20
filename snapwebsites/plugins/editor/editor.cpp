@@ -4531,6 +4531,7 @@ bool editor::replace_uri_token_impl(editor_uri_token & token_info)
 
         }
         struct tm time_info;
+        // TODO: allow for gmtime or localtime ...
         gmtime_r(&seconds, &time_info);
         char buf[256];
         buf[0] = '\0';
