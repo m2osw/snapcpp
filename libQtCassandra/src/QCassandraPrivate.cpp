@@ -992,6 +992,7 @@ void QCassandraPrivate::createTable(QCassandraTable::pointer_t table)
 }
 
 
+#if 0
 /** \brief Update a table in the Cassandra server.
  *
  * This function updates a table int the cassandra server.
@@ -1008,6 +1009,7 @@ void QCassandraPrivate::updateTable(QCassandraTable::pointer_t table)
 #endif
     // NOT SUPPORTED
 }
+#endif
 
 
 /** \brief Drop a table from the Cassandra server.
@@ -1048,16 +1050,7 @@ void QCassandraPrivate::truncateTable(QCassandraTable::pointer_t table)
 }
 
 
-namespace
-{
-    bool isCounterClass( const QString& validation_class )
-    {
-        return (validation_class == "org.apache.cassandra.db.marshal.CounterColumnType")
-                || (validation_class == "CounterColumnType");
-    }
-}
-
-
+#if 0
 /** \brief Insert a value in the Cassandra database.
  *
  * This function insert the specified \p value in the Cassandra database.
@@ -1075,12 +1068,10 @@ void QCassandraPrivate::insertValue
     , const QByteArray&      row_key
     , const QByteArray&      column_key
     , const QCassandraValue& p_value
-    , const QString&		 validation_class
     )
 {
     mustBeConnected();
 
-#if 0
     std::string rkey(row_key.data(), row_key.size());
 
     org::apache::cassandra::ColumnParent column_parent;
@@ -1146,78 +1137,6 @@ void QCassandraPrivate::insertValue
             select(0, nullptr, nullptr, nullptr, &to);
         }
     }
-#endif
-
-    QCassandraValue value( p_value );
-    int row_id    = 0;
-    int column_id = 1;
-    int value_id  = 2;
-    QString query_string;
-    if( isCounterClass(validation_class) )
-    {
-        QCassandraValue v;
-        getValue( row_key, column_key, v );
-        // new value = user value - current value
-        int64_t add(-v.int64Value());
-        switch( value.size() )
-        {
-            case 0:
-                // accept NULL as zero
-                break;
-
-            case 1:
-                add += value.signedCharValue();
-                break;
-
-            case 2:
-                add += value.int16Value();
-                break;
-
-            case 4:
-                add += value.int32Value();
-                break;
-
-            case 8:
-                add += value.int64Value();
-                break;
-
-            default:
-                throw std::runtime_error("value has an invalid size for a counter value");
-        }
-        value.setInt64Value( add );
-
-        query_string = QString("UPDATE %1.%2 SET value = value + ? WHERE key = ? AND column1 = ?;")
-            .arg(f_context->contextName())
-            .arg(f_tableName)
-            ;
-        value_id  = 0;
-        row_id    = 1;
-        column_id = 2;
-    }
-    else
-    {
-        query_string = QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?);")
-            .arg(f_context->contextName())
-            .arg(f_tableName)
-            ;
-    }
-
-    QCassandraQuery q( f_session );
-    q.query( query_string, 3 );
-    q.bindByteArray( row_id, row_key.constData(), row_key.size() );
-    q.bindByteArray( column_id, column_key.constData(), column_key.size() );
-
-    if( isCounterClass(validation_class) )
-    {
-        q.bindInt64( value_id, value.int64Value() );
-    }
-    else
-    {
-        auto binary_val( value.binaryValue() );
-        q.bindByteArray( value_id, binary_val.constData(), binary_val.size() );
-    }
-
-    q.start();
 }
 
 /** \brief Get a value from the Cassandra database.
@@ -1693,6 +1612,7 @@ uint32_t QCassandraPrivate::getRowSlices(QCassandraTable& table, QCassandraRowPr
 
     return size;
 }
+#endif
 
 } // namespace QtCassandra
 // vim: ts=4 sw=4 et

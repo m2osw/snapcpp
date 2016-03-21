@@ -78,10 +78,11 @@ public:
     void dropContext(const QCassandraContext& context);
 
     void createTable  ( const QCassandraTable::pointer_t table);
-    void updateTable  ( const QCassandraTable::pointer_t table);
+    //void updateTable  ( const QCassandraTable::pointer_t table);
     void dropTable    ( const QString& table_name);
     void truncateTable( const QCassandraTable::pointer_t table);
 
+#if 0
     void insertValue( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value, const QString& validation_class );
     void getValue   ( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void getCounter ( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
@@ -91,6 +92,7 @@ public:
     uint32_t    getColumnSlice( QCassandraTable& table,    const QByteArray& row_key, QCassandraColumnPredicate& column_predicate);
     void        remove        ( const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level);
     uint32_t    getRowSlices  ( QCassandraTable& table,    QCassandraRowPredicate::pointer_t row_predicate);
+#endif
 
 private:
     // forbid direct copies
