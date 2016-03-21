@@ -2,8 +2,8 @@ Source: csspp
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, doxygen, graphviz, catch (>= 1.0),
-    snapcmakemodules (>= 1.0.25.62~trusty),
-    libadvgetopt-dev (>= 1.0.16.306~trusty)
+    snapcmakemodules (>= 1.0.25.63~trusty),
+    libadvgetopt-dev (>= 1.0.16.307~trusty)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
