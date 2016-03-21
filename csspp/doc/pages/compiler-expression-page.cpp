@@ -1508,7 +1508,7 @@
  *
  * There is a talk about this on this page:
  *
- * http://scottsievert.github.io/blog/2015/04/23/image-sqrt/
+ * http://scottsievert.com/blog/2015/04/23/image-sqrt/
  *
  * See also the XYZ color space (by CIE):
  *

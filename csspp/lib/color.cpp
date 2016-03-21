@@ -446,7 +446,7 @@ void color::get_hsl(color_component_t & hue, color_component_t & saturation, col
     }
     else
     {
-        saturation = chroma / (1 - fabs(lightness * 2 - 1));
+        saturation = chroma / (1.0 - fabs(lightness * 2.0 - 1.0));
     }
 
     alpha = f_alpha;
