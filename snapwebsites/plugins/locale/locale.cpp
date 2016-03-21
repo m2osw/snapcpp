@@ -957,6 +957,9 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
         }
 
         // UDate is a double in milliseconds
+        // TODO: should we round the number up to one second?
+        //       (we do not really expect dates with such precision
+        //       at this point?)
         return static_cast<time_t>(result / 1000.0);
     }
 }
