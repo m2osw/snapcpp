@@ -45,6 +45,9 @@
 namespace QtCassandra
 {
 
+// Cassandra KsDef (Thrift legacy) object
+//
+class QCassandraContextPrivate;
 class QCassandra;
 
 class QCassandraContext
@@ -81,13 +84,18 @@ public:
     // replication
     void setReplicationFactor(int32_t factor);
     void unsetReplicationFactor();
+    bool hasReplicationFactor() const;
+    int32_t replicationFactor() const;
     void setDurableWrites(bool durable_writes);
+    void unsetDurableWrites();
+    bool hasDurableWrites() const;
+    bool durableWrites() const;
 
     // handling
     QString generateReplicationStanza() const;
     //
     void create();
-    void update();
+    //void update();
     void drop();
     void dropTable(const QString& table_name);
     void clearCache();
@@ -121,6 +129,7 @@ private:
     friend class QCassandraTable;
     friend class QCassandraLock;
 
+    std::auto_ptr<QCassandraContextPrivate>     f_private;
     // f_cassandra is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)

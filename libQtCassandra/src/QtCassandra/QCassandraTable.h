@@ -37,7 +37,7 @@
 
 #include "QtCassandra/QCassandraPredicate.h"
 #include "QtCassandra/QCassandraRow.h"
-#include "QtCassandra/QCassandraTools.h"
+#include "QtCassandra/QCassandraQuery.h"
 
 // GNU does not officially offer cstdint yet
 #include <stdint.h>
@@ -132,10 +132,7 @@ private:
     QCassandraRows                              f_rows;
     //QCassandraRowPredicate::pointer_t           f_currentPredicate;
 
-    statement_pointer_t                         f_queryStmt;
-    future_pointer_t                            f_sessionExecute;
-    result_pointer_t                            f_currentQueryResult;
-
+    QCassandraSession::pointer_t                f_session;
     QString                                     f_defaultValidationClass;
 };
 

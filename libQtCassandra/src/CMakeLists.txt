@@ -74,8 +74,6 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraCell.cpp
     QCassandraContext.cpp
     QCassandraLock.cpp
-    QCassandraPrivate.h
-    QCassandraPrivate.cpp
     QCassandraPredicate.cpp
     QCassandraQuery.cpp
     QCassandraRow.cpp

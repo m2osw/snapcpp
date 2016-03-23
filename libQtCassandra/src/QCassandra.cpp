@@ -532,297 +532,9 @@ namespace QtCassandra
  *
  * Actual Cassandra's FAQ: http://wiki.apache.org/cassandra/FAQ
  *
- * \section changes Changes between versions
- *
- * \li version 0.5.22
- *
- * . Applied a fix to the QCassandraLock so if a process trying to obtain
- *   a lock crashes (abort) or gets killed (KILL, computer loses power)
- *   then the entering::... key still gets deleted.
- *
- * . Bumped copyright notice to 2016.
- *
- * . Fixed the qcassandra-lock top comment which was from the lock test.
- *
- * . Finally took care of the debian/copyright file.
- *
- * . Changed the README.txt to a README.md file instead.
- *
- * \li version 0.5.21
- *
- * . Added support for a regular expression to search rows.
- *
- * . Note: versions 0.5.8 to 0.5.20 were nightly builds changing the "wrong"
- *   version number.
- *
- * \li version 0.5.7
- *
- * . Updated the headers to support the new controlled_vars enum.
- *
- * . Tweaked the include_directories() to support system and local headers.
- *
- * \li version 0.5.6
- *
- * . Repaired warning-as-error regarding strict-overflow. Alexis added the
- *   special-edge case.
- *
- * \li version 0.5.5
- *
- * . Added fix for clearTable() to work as expected.
- *
- * \li version 0.5.4
- *
- * . Added documentation about the fact that the QMap is always started from
- *   smallest to largest even if you set the reverse flag on.
- *
- * \li version 0.5.3
- *
- * . Updated the C++ warnings: reduced the strict-overlow to 4 instead of 5,
- *   tested with -Wconversion and fixed many errors.
- *
- * . "Fixed" comparison between floating point numbers (== and !=).
- *
- * . Removed some debug code.
- *
- * \li version 0.5.2
- *
- * . Put the limit size of a buffer inside the throw raised when the limit is
- *   reached.
- *
- * \li version 0.5.0-2
- *
- * . Changed all shared pointer with std::share_ptr<> so we can use weak
- *   pointers properly.
- *
- * \li version 0.5.0-1
- *
- * . Fixed broken package because of the info file, which was not needed.
- *
- * \li version 0.5.0
- *
- * . Added support for debian packaging with pbuilder.
- *
- * \li version 0.4.7
- *
- * . Added the QCassandraLock object to lock any number of processes
- *   using the Cassandra database system and the Lamport bakery algorithm.
- *
- * . Fixed some documentation.
- *
- * . Added support for specifying the consistency level of a read
- *   via the f_value of a cell.
- *
- * . Added a synchronization function so we can wait and have all the
- *   nodes running with the same schema version.
- *
- * . Fixed the QCassandra::Snitch() so it returns the snitch, not the
- *   protocol version.
- *
- * . Added a test to verify that locks work when processes run on any
- *   number of clients.
- *
- * . Updated the tests to properly work in a cluster environment.
- *
- * . Added a unit test for the QCassandraValue class which checks
- *   a large number of cases, this allowed me to apply several fixes.
- *
- * . The <, <=, >, >= QCassandraValue operators were invalid
- *
- * . Added Bool support in the QCassandraValue object
- *
- * . Added an index to the QCassandraValue data to read any value in
- *   an array or structure; and a size for strings and binaries
- *   (although a size of a UTF-8 string...)
- *
- * . Moved the read of values to global functions so they are
- *   accessible from other functions without having to use
- *   QCassandraValue variables (only the writes were accessible)
- *
- * . Fixed the findContext() so it loads the Cassandra contexts first
- *   if not yet loaded.
- *
- * . Fixed the disconnect() function so it clears all the variables
- *   and the same Cassandra object can safely be reused.
- *
- * . Fixed the QCassandraPrivate::getColumnSlice() and
- *   QCassandraPrivate::getRowSlices() functions which would not
- *   first transform the column key to a QByteArray and thus binary
- *   keys with null characters would invariably fail.
- *
- * . Fixed the QCassandraRow::dropCell() as it would emit a read of
- *   the cell before actually dropping it. The read would retrive the
- *   consistency value and/or the timestamp. These values are retrieved
- *   from memory only now, if defined.
- *
- * . Fixed the CMakeLists.txt so the thrift library is linked against
- *   the libQtCassandra library itself; that way it is not required in
- *   the binaries that link against the libQtCassandra library.
- *
- * . Removed all references to the boost_system library.
- *
- * . Added some #include of \<unistd.h> for Ubuntu 12.10 and over.
- *
- * . Reviewed the SSL connection capability. It is still not considered
- *   to be working but the password can now be specified from your
- *   application.
- *
- * . Included 2013 in copyright notices.
- *
- * \li version 0.4.6
- *
- * . Added direct support for QUuid as row and column keys.
- *
- * . Added direct support for char * and wchar_t * so we do not
- *   have to first cast strings to QString everywhere.
- *
- * . Fixed bug testing row key size to limit of 64535 instead
- *   of 65535.
- *
- * . Added a test as row and column keys cannot be empty. It will
- *   now throw an error immediately if so.
- *
- * . Updated some documentation accordingly and with enhancements.
- *
- * \li version 0.4.5
- *
- * . Added a first_char and last_char variables (QChar) in column predicate
- *   which can be used to define "[nearly] All column names".
- *
- * . Fixed the names of two functions: setFinishColumnName() and
- *   setFinishColumnKey() are now setEndColumnName() and setEndColumnKey()
- *   respectively (as documented and so it matches the getters.)
- *
- * . Added support for indexes defined with columns. The column predicate
- *   now has a setIndex() function and that allows you to call readCells()
- *   repititively until all the columns matching the predicate were
- *   returned (very similar to reading a large set of rows.)
- *
- * . Fixed a few things in the documentation.
- *
- * \li Version 0.4.4
- *
- * . Added support for composite columns. It was functional before but with
- *   knowledge on how to build the column key which is actually quite
- *   complicated (okay, not that hard, but libQtCassandra is here to hide
- *   that sort of thing!) Use the compositeCell() function of your
- *   QCassandraRow objects.
- *
- * \li Version 0.4.3
- *
- * . Added support for counters.
- *
- * . Fixed several usage of keys so 0 bytes works as expected. (in getValue()
- *   and insertValue())
- *
- * . Small fixes to documentation.
- *
- * \li Version 0.4.2 (see also)
- *
- * . Fixed the QCassandraTable::readRows() so it automatically updates the
- *   row predicate with the last row as the new start key. This is very
- *   important because the rows returned to you get sorted by key in the
- *   table, whereas, in Cassandra they are not sorted that way at all.
- *   (At least not by default when you use the RandomPartitioner which
- *   is very likely.)
- *
- * . Fixed the QCassandraContext::descriptionOption() which would create
- *   empty options when the sought option did not exist in the context.
- *
- * . Upgraded the version of Thrift to 0.8.0. There are some problems with
- *   the output of the thrift command line option (some missing \#include
- *   and invalid references.) I fixed the generated code as required so
- *   it compiles and the result works as expected.
- *
- * . Made updates to the code so it works with version 1.1 of Cassandra.
- *   This includes proper support for the replication factor which was
- *   deprecated as a direct field in the KsDef structure. The other
- *   deprecated fields are simply ignored at this point (those are
- *   in Tables, see CfDef in interface/cassandra.thrift of Cassandra 1.1)
- *
- * . Fixed replicateOnWrite() which now returns the expected value.
- *
- * . Fixed all the context and table get...() functions so if the value
- *   is marked as unset, empty or zero is returned instead of the current
- *   value saved in the object (which may not reflect what the database
- *   is defined as.)
- *
- * . Added the million_rows test to ensure we can create over 1 million
- *   rows and read them back. At this time, in my environment, it often
- *   crashes the Cassandra server... Java problems?
- *
- * . Added functions that return the partitioner and snitch information
- *   from the cluster.
- *
- * . Fixed QCassandraContext::prepareContextDefinition() which would
- *   force the replication factor to 1 instead of the user defined value.
- *
- * . The CMakeLists.txt now properly defines the folder where the compiled
- *   thrift library lies so it can link with it in the standalone version
- *   of the library.
- *
- * \li Version 0.4.1
- *
- * . Fixed the size of the buffer used to save 64 bit integers.
- *
- * . Fixed the size of integers used to handle floating points.
- *
- * . Fixed the double being read as 8 bytes and somehow converted
- *   to a float instead of a double.
- *
- * . Fixed the test of the string set in a value to limit the UTF-8
- *   version of the string to 64Mb (instead of the number of UCS-2
- *   characters held by a QString.)
- *
- * . Enhanced documentation about the findRow() and findCell()
- *   which do not look for a row or cell in the Cassandra system,
- *   it only checks in memory!
- *
- * . Better support older versions of g++ (4.1 cannot properly
- *   cast the controlled variables for enumerations) -- thank
- *   you to John Griswold for reporting the problem.
- *
- * . Added some missing documentation.
- *
- * \li Version 0.4.0
- *
- * . Enhanced the cmake scripts
- *
- * . Enhanced documentation of different functions
- *
- * . Removed all the Qt sub-folders from all the \#include
- *
- * . Removed all unwanted files from the source package using
- *   a CPACK variable
- *
- * . Added some try/catch to avoid a certain number of exceptions
- *   from Cassandra
- *
- * . Fixed the column and row predicates to make use the whole key
- *   instead of just the string up to the first null terminator
- *
- * . Updated the copyright version to include 2012
- *
- * \li Version 0.3.2
- *
- * . Fixed the creation of a row predicate as it wasn't defining a
- *   column predicate which is necessary when we call readRows()
- *   with the default parameters on a table.
- *
- * \li Version 0.3.1
- *
- * . Added support for installation targets and generation of binary packages.
- *
- * \li Version 0.3.0
- *
- * . Added a dropContext() in the QCassandra object.
- *
- * . Added proper unparenting of the context and table classes.
- *
- * . Started to make use of the Controlled Variables (requires 1.3.0 or better.)
- *
  * \section copyright libQtCassandra copyright and license
  *
- * Copyright (c) 2011-2013 Made to Order Software Corp.
+ * Copyright (c) 2011-2016 Made to Order Software Corp.
  *
  * http://snapwebsites.org/<br/>
  * contact@m2osw.com
@@ -912,15 +624,6 @@ namespace QtCassandra
  * as to avoid guessing the default value.
  */
 
-/** \var QCassandra::f_private
- * \brief A pointer to a QCassandraPrivate object.
- *
- * The QCassandra object accesses the Cassandra server via functions defined
- * in the QCassandraPrivate object. This pointer holds that object.
- *
- * This pointer is assigned at the time the QCassandra object gets allocated.
- */
-
 /** \var QCassandra::f_current_context
  * \brief A pointer to the current context.
  *
@@ -930,14 +633,6 @@ namespace QtCassandra
  *
  * The libQtCassandra library does not give you access to the
  * QCassandraContext::makeCurrent() function
- */
-
-/** \var QCassandra::f_contexts_read
- * \brief Whether the map of contexts were read from Cassandra.
- *
- * This flag defines whether the f_contexts was already initialized or
- * not. This allows to call the describe_keyspaces() function a maximum
- * of one time per connection.
  */
 
 /** \var QCassandra::f_contexts
@@ -1001,9 +696,8 @@ namespace QtCassandra
  * \sa setSchemaSynchronizationTimeout()
  */
 QCassandra::QCassandra()
-    : f_private( new QCassandraPrivate( this ) )
+    : f_session( std::make_shared<QCassandraSession>() )
     // f_current_context(nullptr) -- auto-init
-    // f_contexts_read(false) -- auto-init
     // f_contexts() -- auto-init
     // f_cluster_name("") -- auto-init
     // f_protocol_version("") -- auto-init
@@ -1139,82 +833,25 @@ bool QCassandra::connect( const QStringList &host_list, const int port )
     // disconnect any existing connection
     disconnect();
 
-    std::stringstream contact_points;
-    for ( QString host : host_list )
-    {
-        if ( contact_points.str() != "" )
-        {
-            contact_points << ",";
-        }
-        contact_points << host.toUtf8().data();
-    }
+    f_session = std::make_shared<QCassandraSession>();
+    f_session->connect( host_list, port ); // throws on failure!
 
-    f_cluster.reset( cass_cluster_new(), clusterDeleter() );
-    cass_cluster_set_contact_points( f_cluster.get(),
-                                     contact_points.str().c_str() );
-
-    std::stringstream port_str;
-    port_str << port;
-    cass_cluster_set_contact_points( f_cluster.get(), port_str.str().c_str() );
+    QCassandraQuery local_table( f_session );
+    local_table.query( "SELECT cluster_name, native_protocol_version, partitioner FROM system.local" );
+    local_table.start();
     //
-    f_session.reset( cass_session_new(), sessionDeleter() );
-    f_connection.reset(
-        cass_session_connect( f_session.get(), f_cluster.get() ),
-        futureDeleter() );
-
-    /* This operation will block until the result is ready */
-    CassError rc = cass_future_error_code( f_connection.get() );
-    if ( rc != CASS_OK )
-    {
-        const char *message;
-        size_t message_length;
-        cass_future_error_message( f_connection.get(), &message,
-                                   &message_length );
-        std::stringstream msg;
-        msg << "Cannot connect to cassandra server! Reason=["
-            << std::string( message ) << "]";
-
-        f_connection.reset();
-        f_session.reset();
-        f_cluster.reset();
-        throw std::runtime_error( msg.str().c_str() );
-    }
-
-    future_pointer_t future(
-        executeQuery( "SELECT cluster_name, native_protocol_version, "
-                      "partitioner FROM system.local" ) );
-    result_pointer_t result( cass_future_get_result( future.get() ),
-                             resultDeleter() );
-
-    CassIterator *rows = cass_iterator_from_result( result.get() );
-    if ( !cass_iterator_next( rows ) )
+    if( !local_table.nextRow() )
     {
         throw std::runtime_error( "Error in database table system.local!" );
     }
 
-    const char *byte_value = 0;
-    size_t value_len = 0;
-    const CassRow *row = cass_iterator_get_row( rows );
+    f_cluster_name     = local_table.getStringColumn( "cluster_name"            );
+    f_protocol_version = local_table.getStringColumn( "native_protocol_version" );
+    f_partitioner      = local_table.getStringColumn( "partitioner"             );
     //
-    const CassValue *value = cass_row_get_column( row, 0 );
-    cass_value_get_string( value, &byte_value, &value_len );
-    f_cluster_name = byte_value;
+    // I have no idea how to get this from the new CQL-based c++ interface.
     //
-    value = cass_row_get_column( row, 1 );
-    cass_value_get_string( value, &byte_value, &value_len );
-    f_protocol_version = byte_value;
-    //
-    value = cass_row_get_column( row, 2 );
-    cass_value_get_string( value, &byte_value, &value_len );
-    f_partitioner = byte_value;
-
-    QStringList keyspaces;
-    executeQuery( "SELECT keyspace_name FROM system.schema_keyspaces;",
-                  keyspaces );
-    for ( auto keyspace : keyspaces )
-    {
-        context( keyspace );
-    }
+    f_snitch = "TODO!";
 
     return true;
 }
@@ -1232,17 +869,7 @@ bool QCassandra::connect( const QStringList &host_list, const int port )
  */
 void QCassandra::disconnect()
 {
-    f_connection.reset();
-    //
-    if ( f_session )
-    {
-        future_pointer_t result( cass_session_close( f_session.get() ),
-                                 futureDeleter() );
-        cass_future_wait( result.get() );
-    }
-    //
     f_session.reset();
-    f_cluster.reset();
 
     f_current_context.reset();
     f_contexts.clear();
@@ -1267,7 +894,7 @@ void QCassandra::disconnect()
  */
 bool QCassandra::isConnected() const
 {
-    return f_connection && f_session && f_cluster;
+    return f_session->isConnected();
 }
 
 #if 0
@@ -1554,10 +1181,15 @@ void QCassandra::clearCurrentContextIf( const QCassandraContext &c )
  */
 const QCassandraContexts &QCassandra::contexts() const
 {
-    if ( !f_contexts_read )
+    if( f_contexts.empty() )
     {
-        f_private->contexts();
-        f_contexts_read = true;
+        QCassandraQuery keyspace_query( f_session );
+        keyspace_query.query( "SELECT keyspace_name FROM system.schema_keyspaces;" );
+        keyspace_query.start();
+        while( keyspace_query.nextRow() )
+        {
+            f_parent->context( keyspace_query.getStringColumn("keyspace_name") );
+        }
     }
     return f_contexts;
 }
@@ -1585,8 +1217,7 @@ const QCassandraContexts &QCassandra::contexts() const
  * \sa contexts()
  * \sa QCassandraContext::create()
  */
-QCassandraContext::pointer_t
-QCassandra::findContext( const QString &context_name ) const
+QCassandraContext::pointer_t QCassandra::findContext( const QString &context_name ) const
 {
     QCassandraContexts::const_iterator ci( contexts().find( context_name ) );
     if ( ci == f_contexts.end() )

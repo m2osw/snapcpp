@@ -45,8 +45,6 @@
 namespace QtCassandra
 {
 
-class QCassandraPrivate;
-
 // Handling of the transport and CassandraClient objects
 class QCassandra
     : public QObject
@@ -79,6 +77,8 @@ public:
     const QString& partitioner() const;
     const QString& snitch() const;
 
+    QCassandraSession::pointer_t    session() const { return f_session; }
+
     // context functions (the database [Cassandra keyspace])
     QCassandraContext::pointer_t currentContext() const { return f_current_context; }
     QCassandraContext::pointer_t context(const QString& context_name);
@@ -103,16 +103,10 @@ private:
     //QCassandraContext::pointer_t currentContext() const;
     void setCurrentContext(QCassandraContext::pointer_t c);
     void clearCurrentContextIf(const QCassandraContext& c);
-    std::unique_ptr<QCassandraPrivate> getPrivate();
 
-    friend class QCassandraPrivate;
     friend class QCassandraContext;
 
-    cluster_pointer_t                       f_cluster;
-    session_pointer_t                       f_session;
-    future_pointer_t                        f_connection;
-
-    std::unique_ptr<QCassandraPrivate>      f_private;
+    QCassandraSession::pointer_t            f_session;
     QCassandraContext::pointer_t            f_current_context;
     mutable controlled_vars::flbool_t       f_contexts_read;
     QCassandraContexts                      f_contexts;

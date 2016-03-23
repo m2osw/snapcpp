@@ -163,7 +163,7 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
     , f_tableName(table_name)
     //f_rows() -- auto-init
     , f_currentPredicate(0)
-    , f_defaultValidationClass("BytesType")
+    //, f_defaultValidationClass
 {
     // verify the name here (faster than waiting for the server and good documentation)
     QRegExp re("[A-Za-z][A-Za-z0-9_]*");
@@ -178,6 +178,7 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
 
     // we save the name and at this point we prevent it from being changed.
     //f_private->__set_name(table_name.toUtf8().data());
+    f_session = f_context->parentCassandra()->getCassandraSession();
 }
 
 /** \brief Clean up the QCassandraTable object.
@@ -309,7 +310,7 @@ void QCassandraTable::create()
     //      object and column definitions?
     
     QString value_type("BLOB");
-    if( f_defaultValidationClass == "CounterColumnType" )
+    if( isCounterClass() )
     {
         value_type = "COUNTER";
     }
@@ -891,6 +892,30 @@ QCassandraContext::pointer_t QCassandraTable::parentContext() const
 }
 
 
+bool QCassandraTable::isCounterClass()
+{
+    if( f_defaultValidationClass.isEmpty() )
+    {
+        QCassandraQuery q( f_session );
+        q.query(
+            QString("SELECT validator FROM system.schema_columns WHERE keyspace_name = '%1' AND columnfamily_name = '%2'" )
+            .arg(f_context->contextName())
+            .arg(f_tableName)
+            );
+        q.start();
+        if( !q.nextRow() )
+        {
+            throw std::runtime_error( "Critical database error! Cannot read system.schema_columns!" );
+        }
+        f_defaultValidationClass = q.getStringColumn( 0 );
+        q.end();
+    }
+
+    return (f_defaultValidationClass == "org.apache.cassandra.db.marshal.CounterColumnType")
+            || (f_defaultValidationClass == "CounterColumnType");
+}
+
+
 bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
 {
     const QString query( QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
@@ -908,7 +933,7 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
     iterator_pointer_t rows( cass_iterator_from_result(query_result.get()), iteratorDeleter()   );
     if( !cass_iterator_next(rows.get()) )
     {
-        if( f_defaultValidationClass == "CounterColumnType" )
+        if( isCounterClass() )
         {
             value.setInt64Value(0);
         }
@@ -919,7 +944,7 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
         return false;
     }
     const CassRow* row( cass_iterator_get_row(rows.get()));
-    if( f_defaultValidationClass == "CounterColumnType" )
+    if( isCounterClass() )
     {
         value = getCounterFromRow( row, "value" );
     }
@@ -949,7 +974,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     int column_id = 1;
     int value_id  = 2;
     QString query_string;
-    if( f_defaultValidationClass == "CounterColumnType" )
+    if( isCounterClass() )
     {
         QCassandraValue v;
         getValue( row_key, column_key, v );
@@ -1000,25 +1025,22 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
 
     // Insert or update the row values.
     //
-    statement_pointer_t query_stmt( cass_statement_new( query_string.toUtf8().data(), 3 ), statementDeleter() );
+    QCassandraQuery q( f_session );
+    q.query( query_string, 3 );
+    q.bindByteArray( row_id, row_key.constData(), row_key.size() );
+    q.bindByteArray( column_id, column_key.constData(), column_key.size() );
 
-    cass_statement_bind_string_n( query_stmt.get(), row_id,    row_key.constData(),    row_key.size()    );
-    cass_statement_bind_string_n( query_stmt.get(), column_id, column_key.constData(), column_key.size() );
-
-    if( f_defaultValidationClass == "CounterColumnType" )
+    if( isCounterClass(validation_class) )
     {
-        cass_statement_bind_int64( query_stmt.get(), value_id, value.int64Value() );
+        q.bindInt64( value_id, value.int64Value() );
     }
     else
     {
         auto binary_val( value.binaryValue() );
-        cass_statement_bind_string_n( query_stmt.get(), value_id, binary_val.constData(), binary_val.size() );
+        q.bindByteArray( value_id, binary_val.constData(), binary_val.size() );
     }
 
-    future_pointer_t result_future( cass_session_execute( f_context->parentCassandra()->session().get(), query_stmt.get() ), futureDeleter() );
-    cass_future_wait( result_future.get() );
-
-    throwIfError( result_future, QString("Cannot insert into table '%1.%2'").arg(f_context->contextName()).arg(f_tableName) );
+    q.start();
 }
 
 
@@ -1032,11 +1054,24 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
  *
  * \return The number of columns in this row.
  */
-int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandraCellPredicate& /*column_predicate*/)
+int32_t QCassandraTable::getCellCount
+    ( const QByteArray& row_key
+    , QCassandraCellPredicate::pointer_t column_predicate
+    )
 {
     if( f_rows.find( row_key ) == f_rows.end() )
     {
-        throw std::runtime_error("Key not found--you need to call readRows()!");
+        query_string = QString("SELECT COUNT(*) AS count FROM %1.%2")
+            .arg(f_context->contextName())
+            .arg(f_tableName)
+            ;
+
+        QCassandraQuery q( f_session );
+        q.query( query_string, 0 );
+        q.setPagingSize( column_predicate->count() );
+        q.start();
+        q.nextRow();
+        return getInt32Column( "count" );
     }
 
     // return the count from the memory cache
@@ -1051,7 +1086,10 @@ int32_t QCassandraTable::getCellCount(const QByteArray& row_key, const QCassandr
  * \param[in] row_key  The row in which the cell is to be removed.
  * \param[in] column_key  The cell to be removed.
  */
-void QCassandraTable::remove( const QByteArray& row_key, const QByteArray& column_key )
+void QCassandraTable::remove
+    ( const QByteArray& row_key
+    , const QByteArray& column_key
+    )
 {
     const QString query(
         QString("DELETE FROM %1.%2 WHERE key=? AND column1=?;")
@@ -1059,11 +1097,11 @@ void QCassandraTable::remove( const QByteArray& row_key, const QByteArray& colum
             .arg(f_tableName)
             );
 
-    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 2 ), statementDeleter() );
-    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(),    row_key.size()    );
-    cass_statement_bind_string_n( query_stmt.get(), 1, column_key.constData(), column_key.size() );
-    future_pointer_t result_future( cass_session_execute( f_context->parentCassandra()->session().get(), query_stmt.get() ) , futureDeleter()    );
-    throwIfError( result_future, QString("Cannot select from table '%1'!").arg(f_tableName) );
+    QCassandraQuery q( f_session );
+    q.query( query_string, 2 );
+    q.bindByteArray( row_id    , row_key.constData()    , row_key.size()    );
+    q.bindByteArray( column_id , column_key.constData() , column_key.size() );
+    q.start();
 }
 
 /** \brief Delete a Cell from a table row.
@@ -1083,10 +1121,10 @@ void QCassandraTable::remove( const QByteArray& row_key )
             .arg(f_tableName)
             );
 
-    statement_pointer_t query_stmt( cass_statement_new( query.toUtf8().data(), 1 ), statementDeleter() );
-    cass_statement_bind_string_n( query_stmt.get(), 0, row_key.constData(),    row_key.size()    );
-    future_pointer_t result_future( cass_session_execute( f_context->parentCassandra()->session().get(), query_stmt.get() ) , futureDeleter()    );
-    throwIfError( result_future, QString("Cannot select from table '%1'!").arg(f_tableName) );
+    QCassandraQuery q( f_session );
+    q.query( query_string, 2 );
+    q.bindByteArray( row_id, row_key.constData(), row_key.size() );
+    q.start();
 }
 
 /** \brief Set the default validation class to create a counters table.

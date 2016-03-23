@@ -54,10 +54,15 @@ class QCassandraPredicate
 public:
     typedef std::shared_ptr<QCassandraPredicate> pointer_t;
 
-    QCassandraPredicate() {}
+    QCassandraPredicate() : f_count(100) {}
     virtual ~QCassandraPredicate() {}
 
+    int32_t count() const                         { return f_count;  }
+    void    setCount( const int32_t count = 100 ) { f_count = count; }
+
 protected:
+    cassandra_count_t   f_count;
+
     virtual void appendQuery( QString& query, int& bind_count ) = 0;
     virtual void bindQuery( statement_pointer_t query_stmt, int& bind_num ) = 0;
 };
@@ -125,15 +130,11 @@ public:
     QCassandraRowPredicate() : f_cellPred( new QCassandraCellPredicate ) {}
     virtual ~QCassandraRowPredicate() {}
 
-    int32_t count() const                         { return f_count;  }
-    void    setCount( const int32_t count = 100 ) { f_count = count; }
-
     QCassandraCellPredicate::pointer_t  cellPredicate() const { return f_cellPred; }
     void                                setCellPredicate( QCassandraCellPredicate::pointer_t pred ) { f_cellPred = pred; }
 
 protected:
     typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_count_t;
-    cassandra_count_t                       f_count;
     QCassandraCellPredicate::pointer_t      f_cellPred;
 
     virtual void appendQuery( QString& /*query*/, int& /*bind_count*/             ) {}

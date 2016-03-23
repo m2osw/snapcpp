@@ -36,6 +36,7 @@
 
 #include "QtCassandra/QCassandraContext.h"
 #include "QtCassandra/QCassandra.h"
+#include "legacy/cassandra_types.h"
 
 #include <stdexcept>
 #include <unistd.h>
@@ -233,6 +234,17 @@ namespace QtCassandra
  * (i.e. SEGV that aborts the process immediately?) then at least the lock system
  * will recover after a little while.
  */
+
+/** \brief Overload the KsDef to handle details.
+ *
+ * This class hides the KsDef from the outside. It will give a copy of the
+ * KsDef to the QCassandraContext.
+ *
+ * Having this definition allows us to avoid the \#include of thrift
+ * generated headers (which in turn \#include thrift headers) that your
+ * applications would otherwise need to have access to.
+ */
+class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
 
 
 
@@ -1119,13 +1131,14 @@ void QCassandraContext::update()
  */
 void QCassandraContext::drop()
 {
-    if( !f_cassandra ) {
+    if( !f_cassandra )
+    {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    const QString query_fmt("DROP KEYSPACE IF EXISTS %1");
-
-    f_cassandra->executeQuery( query_fmt.arg(f_contextName) );
+    QCassandraQuery q( f_cassandra->session() );
+    q.query( QString("DROP KEYSPACE IF EXISTS %1").arg(f_contextName) );
+    q.start();
 }
 
 /** \brief Drop the specified table from the Cassandra database.
