@@ -2552,6 +2552,8 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
             continue;
         }
 
+        // <content path="..." moved-from="..." owner="...">...</content>
+
         QString owner(content_element.attribute("owner"));
         if(owner.isEmpty())
         {
@@ -2566,8 +2568,12 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
         f_snap->canonicalize_path(path);
         QString const key(f_snap->get_site_key_with_slash() + path);
 
+        // in case the page was moved...
+        QString moved_from(content_element.attribute("moved-from"));
+        f_snap->canonicalize_path(moved_from);
+
         // create a new entry for the database
-        add_content(key, owner);
+        add_content(key, moved_from, owner);
 
         QDomNodeList children(content_element.childNodes());
         bool found_content_type(false);
@@ -2579,13 +2585,13 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
             QDomNode child(children.at(c));
             if(!child.isElement())
             {
-                // we're only interested by elements
+                // we are only interested by elements
                 continue;
             }
             QDomElement element(child.toElement());
             if(element.isNull())
             {
-                // somehow this is not really an element
+                // somehow this is not really an element?!
                 continue;
             }
 
@@ -3071,14 +3077,22 @@ void content::add_xml_document(QDomDocument & dom, QString const & plugin_name)
  * If that happens (i.e. two plugins trying to create the same piece of
  * content) then the system raises an exception.
  *
+ * The \p moved_from_path can be used if you move your data from one
+ * location to another. This will force the creation of a redirect
+ * on the former page (the page pointed by the moved_from_path). However,
+ * it will not copy anything from the former page. In most cases, this is
+ * used to redirect users from your old settings to the new settings
+ * because you renamed the page to better fit your plugin.
+ *
  * \exception content_exception_content_already_defined
  * This exception is raised if the block already exists and the owner
  * of the existing block doesn't match the \p plugin_owner parameter.
  *
  * \param[in] path  The path of the content being added.
+ * \param[in] moved_from_path  The path where the content was before.
  * \param[in] plugin_owner  The name of the plugin managing this content.
  */
-void content::add_content(QString const & path, QString const & plugin_owner)
+void content::add_content(QString const & path, QString const & moved_from_path, QString const & plugin_owner)
 {
     if(!plugins::verify_plugin_name(plugin_owner))
     {
@@ -3094,7 +3108,15 @@ void content::add_content(QString const & path, QString const & plugin_owner)
             // cannot change owner!?
             throw content_exception_content_already_defined("adding block \"" + path + "\" with owner \"" + b->f_owner + "\" cannot be changed to \"" + plugin_owner + "\"");
         }
-        // it already exists, we're all good
+
+        // it already exists, we are all good
+
+        // TBD: should we yell if the paths both exist and
+        //      are not equal?
+        if(b->f_moved_from.isEmpty())
+        {
+            b->f_moved_from = moved_from_path;
+        }
     }
     else
     {
@@ -3102,6 +3124,7 @@ void content::add_content(QString const & path, QString const & plugin_owner)
         content_block_t block;
         block.f_path = path;
         block.f_owner = plugin_owner;
+        block.f_moved_from = moved_from_path;
         f_blocks.insert(path, block);
     }
 
@@ -3613,6 +3636,60 @@ void content::on_save_content()
                     if(!ok)
                     {
                         throw content_exception_invalid_content_xml(QString("content::on_save_content() tried to convert %1 to a number and failed.").arg(*data));
+                    }
+                }
+            }
+        }
+
+        // if we have a moved-from path then we want to check whether that
+        // "old" page exists and if so marked it as moved to the new location;
+        // if the old page does not exist, do nothing
+        //
+        // if the status of the old page is not NORMAL, also do nothing
+        //
+        if(!d->f_moved_from.isEmpty())
+        {
+            path_info_t moved_from_ipath;
+            moved_from_ipath.set_path(d->f_moved_from);
+            QtCassandra::QCassandraRow::pointer_t row(content_table->row(moved_from_ipath.get_key()));
+            if(row->exists(primary_owner))
+            {
+                // it already exists, but it could have been deleted or moved before
+                // in which case we need to resurrect the page back to NORMAL
+                //
+                // the editor allowing creating such a page should have asked the
+                // end user first to know whether the page should indeed be
+                // "undeleted".
+                //
+                path_info_t::status_t moved_status(moved_from_ipath.get_status());
+                if(moved_status.get_state() == path_info_t::status_t::state_t::NORMAL)
+                {
+                    // change page to MOVED (i.e. the path plugin will then
+                    // redirect the user automatically)
+                    //
+                    // TODO: here we probably need to force a new branch so the
+                    //       user would not see the old revisions by default...
+                    //
+                    SNAP_LOG_WARNING("Marked page \"")(moved_from_ipath.get_key())("\" as we moved to page \"")(ipath.get_key())("\".");
+                    moved_status.reset_state(path_info_t::status_t::state_t::MOVED, path_info_t::status_t::working_t::NOT_WORKING);
+                    moved_from_ipath.set_status(moved_status);
+
+                    // link both pages together in this branch
+                    {
+                        // note: we do not need a specific revision when
+                        //       creating a link, however, we do need a
+                        //       specific branch so we create a new path
+                        //       info with the right branch, but leave
+                        //       the revision to whatever it is by default
+                        bool source_unique(false);
+                        char const * clone_name(get_name(name_t::SNAP_NAME_CONTENT_CLONE));
+                        links::link_info link_source(clone_name, source_unique, moved_from_ipath.get_key(), moved_from_ipath.get_branch());
+
+                        bool destination_unique(true);
+                        char const * original_page_name(get_name(name_t::SNAP_NAME_CONTENT_ORIGINAL_PAGE));
+                        links::link_info link_destination(original_page_name, destination_unique, ipath.get_key(), ipath.get_branch());
+
+                        links::links::instance()->create_link(link_source, link_destination);
                     }
                 }
             }

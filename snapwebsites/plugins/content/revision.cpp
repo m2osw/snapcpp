@@ -533,7 +533,7 @@ snap_version::version_number_t content::get_new_revision(
             ? branch
             : old_branch);
 
-    // define the key
+    // define the keys
     QString last_revision_key(QString("%1::%2::%3")
                 .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
@@ -614,7 +614,8 @@ snap_version::version_number_t content::get_new_revision(
     if(repeat
     && (revision != snap_version::SPECIAL_VERSION_FIRST_REVISION
        || old_branch != snap_version::SPECIAL_VERSION_UNDEFINED)
-    && previous_revision != revision)
+    && (previous_branch != branch
+       || previous_revision != revision))
     {
         // get two revision keys like:
         // http://csnap.m2osw.com/verify-credentials#en/0.2

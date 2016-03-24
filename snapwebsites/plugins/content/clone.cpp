@@ -442,14 +442,14 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
                         bool source_unique(false);
                         si.set_path(page.f_source.get_key());
                         si.force_branch(branch);
-                        char const *clone_name(get_name(name_t::SNAP_NAME_CONTENT_CLONE));
+                        char const * clone_name(get_name(name_t::SNAP_NAME_CONTENT_CLONE));
                         links::link_info link_source(clone_name, source_unique, si.get_key(), si.get_branch());
 
                         path_info_t di;
                         bool destination_unique(true);
                         di.set_path(page.f_destination.get_key());
                         di.force_branch(branch);
-                        char const *original_page_name(get_name(name_t::SNAP_NAME_CONTENT_ORIGINAL_PAGE));
+                        char const * original_page_name(get_name(name_t::SNAP_NAME_CONTENT_ORIGINAL_PAGE));
                         links::link_info link_destination(original_page_name, destination_unique, di.get_key(), di.get_branch());
 
                         links::links::instance()->create_link(link_source, link_destination);
@@ -579,7 +579,7 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
  * \sa clone_page()
  * \sa trash_page()
  */
-bool content::move_page(path_info_t& ipath_source, path_info_t& ipath_destination)
+bool content::move_page(path_info_t & ipath_source, path_info_t & ipath_destination)
 {
     // is the page deletable? (and thus movable?)
     //
@@ -600,7 +600,7 @@ bool content::move_page(path_info_t& ipath_source, path_info_t& ipath_destinatio
     source.f_ipath = ipath_source;
     source.f_processing_state.set_state(path_info_t::status_t::state_t::NORMAL);
     source.f_processing_state.set_working(path_info_t::status_t::working_t::CLONING);
-    source.f_done_state.set_state(path_info_t::status_t::state_t::DELETED);
+    source.f_done_state.set_state(path_info_t::status_t::state_t::MOVED);
 
     clone_info_t destination;
     destination.f_ipath = ipath_destination;

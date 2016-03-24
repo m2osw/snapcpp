@@ -799,6 +799,20 @@ QString path::define_action(content::path_info_t & ipath)
         // save the action in the path
         ipath.set_parameter("action", action);
     }
+    else if(action != "administer" && (ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/")) && !ipath.get_cpath().startsWith("admin/layout"))
+    {
+        // TBD: anything under /admin is supposed to be administrative
+        //      forms and navigation pages; however, we have our layout
+        //      data which should probably be moved to another location
+        //      because many of those pages are supposed to be public!
+        //      (i.e. boxes) and certainly not administrative pages
+        //      unless marked as such using some permission information
+        //
+        action = "administer";
+
+        // save the action in the path
+        ipath.set_parameter("action", action);
+    }
 
     return action;
 }
@@ -981,11 +995,11 @@ SNAP_LOG_TRACE("path::on_execute(\"")(uri_path)("\") -> [")(ipath.get_cpath())("
 bool path::check_for_redirect_impl(content::path_info_t & ipath)
 {
     // check whether the page mode is currently MOVED
-    content::path_info_t::status_t status(ipath.get_status());
+    content::path_info_t::status_t const status(ipath.get_status());
     if(status.get_state() == content::path_info_t::status_t::state_t::MOVED)
     {
         // the page was moved, get the new location and auto-redirect
-        // user
+        // user to the new page
         //
         // TODO: avoid auto-redirect if user is an administrator so that
         //       way the admin can reuse the page in some way
@@ -993,21 +1007,24 @@ bool path::check_for_redirect_impl(content::path_info_t & ipath)
         // TBD: what code is the most appropriate here? (we are using 301
         //      for now, but 303 or 307 could be better?)
         //
-        links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_ORIGINAL_PAGE), true, ipath.get_key(), ipath.get_branch());
+        links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_CLONE), false, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info clone_info;
         if(link_ctxt->next_link(clone_info))
         {
-            content::path_info_t imoved;
-            imoved.set_path(clone_info.key());
-            if(imoved.get_status().get_state() == content::path_info_t::status_t::state_t::NORMAL)
+            // WARNING: we could have been cloned multiple times,
+            //          we just use the first link for now...
+            //
+            content::path_info_t moved_ipath;
+            moved_ipath.set_path(clone_info.key());
+            if(moved_ipath.get_status().get_state() == content::path_info_t::status_t::state_t::NORMAL)
             {
                 // we have a valid destination, go there
-                f_snap->page_redirect(imoved.get_key(),
+                f_snap->page_redirect(moved_ipath.get_key(),
                             snap_child::http_code_t::HTTP_CODE_MOVED_PERMANENTLY,
                             "Redirect to the new version of this page.",
                             QString("This page (%1) was moved so we are redirecting this user to the new location (%2).")
-                                    .arg(ipath.get_key()).arg(imoved.get_key()));
+                                    .arg(ipath.get_key()).arg(moved_ipath.get_key()));
                 NOTREACHED();
             }
             // else -- if the destination status is MOVED, we can loop over it!

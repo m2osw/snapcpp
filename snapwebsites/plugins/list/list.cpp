@@ -1697,8 +1697,9 @@ list::priority_t list::get_priority() const
  * In most cases you do not need to change this value. However, if you
  * are working with a special plugin that needs to create many pages,
  * especially permissions to change who has access to those pages, then
- * the process may take more or around the default 10 seconds. In that,
- * you want to change the start date offset with a (much) larger amount.
+ * the process may take more or around the default 10 seconds. In that
+ * case, you want to change the start date offset with a (much) larger
+ * amount.
  *
  * You should never call this function directly. Instead look into
  * using the RAII class safe_start_date_offset, which will automatically

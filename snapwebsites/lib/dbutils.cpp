@@ -81,13 +81,13 @@ dbutils::dbutils( const QString& table_name, const QString& row_name )
  * \param[in] tb  The destination table.
  * \param[in] b  The name of the row to copy to.
  */
-void dbutils::copy_row(QtCassandra::QCassandraTable::pointer_t ta, QString const& a, // source
-                       QtCassandra::QCassandraTable::pointer_t tb, QString const& b) // destination
+void dbutils::copy_row(QtCassandra::QCassandraTable::pointer_t ta, QString const & a, // source
+                       QtCassandra::QCassandraTable::pointer_t tb, QString const & b) // destination
 {
     QtCassandra::QCassandraRow::pointer_t source_row(ta->row(a));
     QtCassandra::QCassandraRow::pointer_t destination_row(tb->row(b));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
+    column_predicate.setCount(100); // we have to copy everything also it is likely very small (i.e. 10 fields...)
     column_predicate.setIndex(); // behave like an index
     for(;;)
     {
@@ -427,6 +427,14 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 {
     QString const n( get_column_name( c ) );
 
+    if(f_tableName == "revision" && f_rowName.indexOf("#user/") != -1 && n != "content::modified")
+    {
+        // on error fields are all saved as string, whetever their type
+        // (because on errors we cannot save a transformed value as the
+        // user entered it...)
+        return column_type_t::CT_string_value;
+    }
+
     if(n == "antivirus::enable"
     || n == "content::breadcrumbs_show_current_page"
     || n == "content::breadcrumbs_show_home"
@@ -529,13 +537,15 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "password::invalid_passwords_counter_lifetime"
          || n == "password::invalid_passwords_slowdown"
          || n == "password::minimum_length"
+         || n == "password::minimum_length_of_variations"
          || n == "password::minimum_letters"
          || n == "password::minimum_lowercase_letters"
          || n == "password::minimum_spaces"
-         || n == "password::minimum_special"
+         || n == "password::minimum_specials"
          || n == "password::minimum_unicode"
          || n == "password::minimum_uppercase_letters"
          || n == "password::minimum_digits"
+         || n == "password::minimum_variation"
          || n == "sessions::check_flags"
          || n == "users::administrative_session_duration"
          || n == "users::total_session_duration"

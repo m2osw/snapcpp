@@ -788,7 +788,7 @@ public:
     // add content for addition to the database
     void                add_xml(QString const & plugin_name);
     void                add_xml_document(QDomDocument & dom, QString const & plugin_name);
-    void                add_content(QString const & path, QString const & plugin_owner);
+    void                add_content(QString const & path, QString const & moved_to_path, QString const & plugin_owner);
     void                add_param(QString const & path, QString const & name, param_revision_t revision_type, QString const & locale, QString const & data);
     void                set_param_overwrite(QString const & path, const QString& name, bool overwrite);
     void                set_param_type(QString const & path, const QString & name, param_type_t param_type);
@@ -828,6 +828,7 @@ private:
     struct content_block_t
     {
         QString                     f_path;
+        QString                     f_moved_from;
         QString                     f_owner;
         content_params_t            f_params;
         content_links_t             f_links;

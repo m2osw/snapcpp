@@ -212,7 +212,7 @@ void insert_node_to_xml_doc(QDomNode & child, QDomNode const & node)
  *
  * \sa xml_children_to_string()
  */
-QString xml_to_string(QDomNode & node)
+QString xml_to_string(QDomNode const & node)
 {
     QString buffer;
     QTextStream stream(&buffer);
@@ -233,7 +233,7 @@ QString xml_to_string(QDomNode & node)
  *
  * \sa xml_to_string()
  */
-QString xml_children_to_string(QDomNode & node)
+QString xml_children_to_string(QDomNode const & node)
 {
     QString buffer;
     if(node.hasChildNodes())

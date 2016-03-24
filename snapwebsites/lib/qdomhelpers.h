@@ -50,8 +50,8 @@ void            append_plain_text_to_node(QDomNode & node, QString const & plain
 void            append_integer_to_node(QDomNode & node, int64_t integer);
 void            insert_html_string_to_xml_doc(QDomNode & child, QString const & xml);
 void            insert_node_to_xml_doc(QDomNode & child, QDomNode const & node);
-QString         xml_to_string(QDomNode & node);
-QString         xml_children_to_string(QDomNode & node);
+QString         xml_to_string(QDomNode const & node);
+QString         xml_children_to_string(QDomNode const & node);
 void            replace_node_with_html_string(QDomNode & child, QString const & html);
 void            replace_node_with_elements(QDomNode & replace, QDomNode const & node);
 void            remove_all_children(QDomElement & parent);

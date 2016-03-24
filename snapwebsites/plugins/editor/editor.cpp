@@ -2031,7 +2031,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
             // make this newer revision the current one
             if(switch_branch)
             {
-                // TODO: test whether that branch already exist (it should not!)
+                // TODO: test whether that branch already exists (it should not!)
                 content_plugin->copy_branch(key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, branch_number);
 
                 // working branch cannot really stay as the system branch
@@ -2678,8 +2678,8 @@ bool editor::validate_editor_post_for_widget_impl(
             QString const & value,
             bool const is_secret)
 {
-    // TODO: we want to move that to the editor class and make it public
-    //       and use it to make the validate_editor_post_for_widget()
+    // TODO: we want to move that class to the editor class and make it
+    //       public and use it to make the validate_editor_post_for_widget()
     //       signal call, that way we can have this code available to
     //       all plugins; we could even have all sorts of things available
     //       like ways to generate the error messages in an editor
