@@ -35,9 +35,12 @@
  */
 #pragma once
 
+#include "QtCassandra/QCassandraColumnDefinition.h"
 #include "QtCassandra/QCassandraPredicate.h"
-#include "QtCassandra/QCassandraRow.h"
 #include "QtCassandra/QCassandraQuery.h"
+#include "QtCassandra/QCassandraRow.h"
+
+#include <controlled_vars/controlled_vars_auto_enum_init.h>
 
 // GNU does not officially offer cstdint yet
 #include <stdint.h>
@@ -236,26 +239,26 @@ private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 
     void        setFromCassandra();
-    void        parseTableDefinition( const CfDef& data );
-    void        prepareTableDefinition( CfDef& data ) const;
+    void        parseTableDefinition( const CfDef* data );
+    void        prepareTableDefinition( CfDef* data ) const;
     void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
-    int32_t     getCellCount(const QByteArray& row_key, const QCassandraCellPredicate& column_predicate);
-    uint32_t    getColumnSlice(const QByteArray& row_key, QCassandraColumnPredicate& column_predicate);
+    int32_t     getCellCount(const QByteArray& row_key, QCassandraCellPredicate::pointer_t column_predicate);
+    //uint32_t    getColumnSlice(const QByteArray& row_key, QCassandraCellPredicate::pointer_t column_predicate);
     void 		remove( const QByteArray& row_key, const QByteArray& column_key );
     void 		remove( const QByteArray& row_key );
 
     void 		loadTables();
     void		addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data );
 
-    QString     getTableOptions( CfDef& cf ) const;
+    QString     getTableOptions( const CfDef& cf ) const;
 
     friend class QCassandraContext;
     friend class QCassandraRow;
 
     controlled_vars::zbool_t                    f_from_cassandra;
-    std::auto_ptr<CfDef>                        f_private;
+    std::unique_ptr<CfDef>                      f_private;
     std::shared_ptr<QCassandraContext>          f_context;
     QCassandraColumnDefinitions                 f_column_definitions;
     QCassandraRows                              f_rows;

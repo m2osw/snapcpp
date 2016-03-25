@@ -696,7 +696,7 @@ namespace QtCassandra
  * \sa setSchemaSynchronizationTimeout()
  */
 QCassandra::QCassandra()
-    : f_session( std::make_shared<QCassandraSession>() )
+    : f_session( QCassandraSession::create() )
     // f_current_context(nullptr) -- auto-init
     // f_contexts() -- auto-init
     // f_cluster_name("") -- auto-init
@@ -734,37 +734,6 @@ QCassandra::pointer_t QCassandra::create()
 QCassandra::~QCassandra()
 {
     disconnect();
-}
-
-/** \brief Internal function to give others access to the Cassandra server.
- *
- * This function internally gives other objects a way to access the private
- * definitions.
- *
- * For example, the QCassandraContext uses this function to call functions
- * such as createContext().
- *
- * \return A bare pointer to the QCassandraPrivate object attached to this
- * QCassandra instance.
- */
-std::unique_ptr<QCassandraPrivate> QCassandra::getPrivate()
-{
-    return f_private;
-}
-
-cluster_pointer_t QCassandra::cluster() const
-{
-    return f_cluster;
-}
-
-session_pointer_t QCassandra::session() const
-{
-    return f_session;
-}
-
-future_pointer_t QCassandra::connection() const
-{
-    return f_connection;
 }
 
 /** \brief Connect to a Cassandra Cluster.
@@ -833,7 +802,7 @@ bool QCassandra::connect( const QStringList &host_list, const int port )
     // disconnect any existing connection
     disconnect();
 
-    f_session = std::make_shared<QCassandraSession>();
+    f_session = QCassandraSession::create();
     f_session->connect( host_list, port ); // throws on failure!
 
     QCassandraQuery local_table( f_session );
@@ -1183,13 +1152,13 @@ const QCassandraContexts &QCassandra::contexts() const
 {
 #if 0
     // retrieve the key spaces from Cassandra
-    std::vector<org::apache::cassandra::KsDef> keyspaces;
+    std::vector<KsDef> keyspaces;
     f_client->describe_keyspaces(keyspaces);
 
-    for(std::vector<org::apache::cassandra::KsDef>::const_iterator
+    for(std::vector<KsDef>::const_iterator
                     ks(keyspaces.begin()); ks != keyspaces.end(); ++ks) {
         QCassandraContext::pointer_t c(f_parent->context(ks->name.c_str()));
-        const org::apache::cassandra::KsDef& ks_def = *kse
+        const KsDef& ks_def = *kse
         c->parseContextDefinition(&ks_def);
     }
 #endif
@@ -1201,7 +1170,7 @@ const QCassandraContexts &QCassandra::contexts() const
         keyspace_query.start();
         while( keyspace_query.nextRow() )
         {
-            f_parent->context( keyspace_query.getStringColumn("keyspace_name") );
+            const_cast<QCassandra*>(this)->context( keyspace_query.getStringColumn("keyspace_name") );
         }
     }
     return f_contexts;

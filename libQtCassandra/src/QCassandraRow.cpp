@@ -203,7 +203,8 @@ const QByteArray& QCassandraRow::rowKey() const
  */
 int QCassandraRow::cellCount( const QCassandraCellPredicate::pointer_t column_predicate )
 {
-    return static_cast<int>(f_cells.size());
+    //return static_cast<int>(f_cells.size());
+    return f_table->getCellCount(f_key, column_predicate);
 }
 
 /** \brief Read the cells as defined by a default column predicate.
@@ -719,7 +720,7 @@ bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& valu
     return f_table->getValue(f_key, column_key, value);
 }
 
-#if 0
+
 /** \brief Add a value to a Cassandra counter.
  *
  * This function calls the table addValue() function to add the specified
@@ -727,15 +728,18 @@ bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& valu
  *
  * If the cell counter does not exist yet, then value is set to the specified
  * value.
+ * 
+ * \note this is a synonym for QCassandraRow::insertValue(), since counters
+ * are automatically sensed and handled with an "UPDATE" instead of an "INSERT".
  *
  * \param[in] column_key  The key used to identify the column.
  * \param[in] value  To value to add to this counter.
  */
 void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
 {
-    return f_table->addValue(f_key, column_key, value);
+    return f_table->insertValue(f_key, column_key, value);
 }
-#endif
+
 
 } // namespace QtCassandra
 

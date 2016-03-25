@@ -52,6 +52,7 @@ set( HEADER_FILES
     QtCassandra/QCassandra.h
     QtCassandra/QCassandraCell.h
     QtCassandra/QCassandraColumnDefinition.h
+    QtCassandra/QCassandraConsistencyLevel.h
     QtCassandra/QCassandraContext.h
     QtCassandra/QCassandraLock.h
     QtCassandra/QCassandraPredicate.h
@@ -74,6 +75,7 @@ add_library(${PROJECT_NAME} SHARED
     QCassandra.cpp
     QCassandraCell.cpp
     QCassandraColumnDefinition.cpp
+    QCassandraConsistencyLevel.cpp
     QCassandraContext.cpp
     QCassandraLock.cpp
     QCassandraPredicate.cpp

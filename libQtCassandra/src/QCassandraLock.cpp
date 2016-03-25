@@ -795,7 +795,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     tickets_row->clearCache(); // make sure we have a clean slate
 
     // for all the QCassandraRow::cellCounts() calls
-    QCassandraColumnPredicate column_count;
+    auto column_count(std::make_shared<QCassandraCellPredicate>());
 
     // retrieve the largest ticket (ticket[i] = 1 + max(ticket[1], ..., ticket[NUM_THREADS]))
     //
@@ -808,14 +808,15 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     //                 processes; again that is fine since we can sort the
     //                 processes using their host identifier and pid.
     //
-    QCassandraColumnRangePredicate tickets_predicate;
-    tickets_predicate.setCount(tickets_row->cellCount(column_count) + 100);
+    auto tickets_predicate(std::make_shared<QCassandraCellRangePredicate>());
+    tickets_predicate->setCount(tickets_row->cellCount(column_count) + 100);
     tickets_row->readCells(tickets_predicate);
     const QCassandraCells& tickets(tickets_row->cells());
 
 //fprintf(stderr, "%6d -- %d tickets already exist\n", getpid(), tickets.count());
     uint32_t our_ticket(0);
-    for(QCassandraCells::const_iterator j(tickets.begin()); j != tickets.end(); ++j) {
+    for(QCassandraCells::const_iterator j(tickets.begin()); j != tickets.end(); ++j)
+    {
         QByteArray jticket_key((*j)->columnKey());
         uint32_t jticket(uint32Value(jticket_key, 0));
         if(our_ticket < jticket) {
@@ -829,7 +830,8 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     // connections a second and need to lock a row for all of them and it
     // takes too long to do all of that... you pile up and soon enough you
     // get over 4 billion tickets!)
-    if(our_ticket == static_cast<uint32_t>(-1)) {
+    if(our_ticket == static_cast<uint32_t>(-1))
+    {
         throw std::logic_error("somehow the ticket numbers have reached the maximum allowed of 4 billion?");
     }
     ++our_ticket;
@@ -872,8 +874,8 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     //                 processes using their host identifier and pid.
     //
     entering_row->clearCache(); // <- very important or we'd miss those who entered just after us
-    QCassandraColumnRangePredicate entering_predicate;
-    entering_predicate.setCount(entering_row->cellCount(column_count) + 100);
+    auto entering_predicate(std::make_shared<QCassandraCellRangePredicate>());
+    entering_predicate->setCount(entering_row->cellCount(column_count) + 100);
     entering_row->readCells(entering_predicate);
     // get those cells by copy because we expect to reset that map again and again
     const QCassandraCells entering_processes(entering_row->cells());
@@ -914,14 +916,15 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     // turn, very fast! (okay, the poll afterward is not that fast
     // but it would be required either way...)
     tickets_row->clearCache(); // <- very important or we'd miss those who entered just after us
-    tickets_predicate.setCount(tickets_row->cellCount(column_count) + 100);
-    tickets_predicate.setEndColumnKey(f_ticket_id);
+    tickets_predicate->setCount(tickets_row->cellCount(column_count) + 100);
+    tickets_predicate->setEndCellKey(f_ticket_id);
     tickets_row->readCells(tickets_predicate);
     // make a copy of those cells because we're about to reset and
     // re-establish that array over and over again
     const QCassandraCells all_tickets(tickets_row->cells());
 
-    for(QCassandraCells::const_iterator j(all_tickets.begin()); j != all_tickets.end(); ++j) {
+    for(QCassandraCells::const_iterator j(all_tickets.begin()); j != all_tickets.end(); ++j)
+    {
         // read the that ticket information
         QByteArray jticket_key((*j)->columnKey());
         uint32_t jticket(uint32Value(jticket_key, 0));

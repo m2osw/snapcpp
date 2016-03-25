@@ -7,11 +7,7 @@
 
 #include <algorithm>
 
-namespace org
-{
-namespace apache
-{
-namespace cassandra
+namespace QtCassandra
 {
 
 #if 0
@@ -124,6 +120,7 @@ void swap( KsDef &a, KsDef &b )
     swap( a.durable_writes, b.durable_writes );
     swap( a.__isset, b.__isset );
 }
-}
-}
-} // namespace
+
+} // namespace QtCassandra
+
+// vim: ts=4 sw=4 et

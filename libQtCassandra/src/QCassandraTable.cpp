@@ -88,16 +88,6 @@ namespace QtCassandra
  */
 
 
-/** \brief Overload the CfDef to handle details.
- *
- * This class is used to handle the CfDef class through the
- * QCassandraTable but hides all the thrift definition
- * from the libQtCassandra user.
- */
-//class QCassandraTablePrivate : public org::apache::cassandra::CfDef {};
-
-
-
 /** \var QCassandraTable::f_from_cassandra
  * \brief Whether the table is a memory table or a server table.
  *
@@ -170,11 +160,9 @@ namespace QtCassandra
  */
 QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QString& table_name)
     //f_from_cassandra(false) -- auto-init
-    : f_private(new QCassandraTablePrivate),
+    : f_private(new CfDef)
     , f_context(context)
     //f_rows() -- auto-init
-    , f_currentPredicate(0)
-    //, f_defaultValidationClass
 {
     // verify the name here (faster than waiting for the server and good documentation)
     QRegExp re("[A-Za-z][A-Za-z0-9_]*");
@@ -190,7 +178,7 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
     // we save the name and at this point we prevent it from being changed.
     f_private->__set_name(table_name.toStdString());
 
-    f_session = f_context->parentCassandra()->getCassandraSession();
+    f_session = f_context->parentCassandra()->session();
 }
 
 /** \brief Clean up the QCassandraTable object.
@@ -2032,10 +2020,8 @@ void QCassandraTable::setFromCassandra()
  *
  * \param[in] data  The pointer to the CfDef object.
  */
-void QCassandraTable::parseTableDefinition( const QCassandraTablePrivate& data )
+void QCassandraTable::parseTableDefinition( const CfDef* cf )
 {
-    const QCassandraTablePrivate *cf = &data;
-
     if(cf->keyspace != f_private->keyspace) {
         // what do we do here?
         throw std::logic_error("CfDef and QCassandraTablePrivate context names don't match");
@@ -2234,9 +2220,8 @@ void QCassandraTable::parseTableDefinition( const QCassandraTablePrivate& data )
     f_column_definitions.clear();
     for( auto col : cf->column_metadata )
     {
-        QCassandraColumnDefinition::pointer_t column_definition(columnDefinition(col->name.c_str()));
-        const org::apache::cassandra::ColumnDef& column_def(*col);
-        column_definition->parseColumnDefinition(column_def);
+        QCassandraColumnDefinition::pointer_t column_definition(columnDefinition(col.name.c_str()));
+        column_definition->parseColumnDefinition(&col);
     }
 
     f_from_cassandra = true;
@@ -2252,16 +2237,15 @@ void QCassandraTable::parseTableDefinition( const QCassandraTablePrivate& data )
  *
  * \param[in] data  The CfDef were the table is to be saved.
  */
-void QCassandraTable::prepareTableDefinition( QCassandraTablePrivate& data ) const
+void QCassandraTable::prepareTableDefinition( CfDef* cf ) const
 {
-    QCassandraTablePrivate *cf = &data;
     *cf = *f_private;
 
     // copy the columns
     cf->column_metadata.clear();
     for( auto c : f_column_definitions )
     {
-        QCassandraColumnDefinitionPrivate col;
+        ColumnDef col;
         c->prepareColumnDefinition( &col );
         cf->column_metadata.push_back(col);
     }
@@ -2271,7 +2255,7 @@ void QCassandraTable::prepareTableDefinition( QCassandraTablePrivate& data ) con
 }
 
 
-QString QCassandraTable::getTableOptions( QCassandraTablePrivate& cf ) const
+QString QCassandraTable::getTableOptions( const CfDef& cf ) const
 {
     QString q_str;
 
@@ -2387,7 +2371,7 @@ QString QCassandraTable::getTableOptions( QCassandraTablePrivate& cf ) const
  */
 void QCassandraTable::create()
 {
-    org::apache::cassandra::CfDef cf;
+    CfDef cf;
     prepareTableDefinition( &cf );
 
     QString value_type("BLOB");

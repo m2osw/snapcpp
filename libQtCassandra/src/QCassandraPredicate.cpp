@@ -47,9 +47,9 @@ void QCassandraCellKeyPredicate::appendQuery( QString& query, int& bind_count )
     bind_count++;
 }
 
-void QCassandraCellKeyPredicate::bindQuery( statement_pointer_t query_stmt, int& bind_num )
+void QCassandraCellKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
 {
-    cass_statement_bind_string_n( query_stmt.get(), bind_num++, f_cellKey.constData(),  f_cellKey.size() );
+    q->bindByteArray( bind_num++, f_cellKey );
 }
 
 
@@ -60,10 +60,10 @@ void QCassandraCellRangePredicate::appendQuery( QString& query, int& bind_count 
     bind_count += 2;
 }
 
-void QCassandraCellRangePredicate::bindQuery( statement_pointer_t query_stmt, int& bind_num )
+void QCassandraCellRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
 {
-    cass_statement_bind_string_n( query_stmt.get(), bind_num++, f_startCellKey.constData(),  f_startCellKey.size() );
-    cass_statement_bind_string_n( query_stmt.get(), bind_num++, f_endCellKey.constData(),    f_endCellKey.size()   );
+    q->bindByteArray( bind_num++, f_startCellKey );
+    q->bindByteArray( bind_num++, f_endCellKey   );
 }
 
 
@@ -75,10 +75,10 @@ void QCassandraRowKeyPredicate::appendQuery( QString& query, int& bind_count )
     f_cellPred->appendQuery( query, bind_count );
 }
 
-void QCassandraRowKeyPredicate::bindQuery( statement_pointer_t query_stmt, int& bind_num )
+void QCassandraRowKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
 {
-    cass_statement_bind_string_n( query_stmt.get(), bind_num++, f_rowKey.constData(),  f_rowKey.size() );
-    f_cellPred->bindQuery( query_stmt, bind_num );
+    q->bindByteArray( bind_num++, f_rowKey );
+    f_cellPred->bindQuery( q, bind_num );
 }
 
 
@@ -90,11 +90,11 @@ void QCassandraRowRangePredicate::appendQuery( QString& query, int& bind_count )
     f_cellPred->appendQuery( query, bind_count );
 }
 
-void QCassandraRowRangePredicate::bindQuery( statement_pointer_t query_stmt, int& bind_num )
+void QCassandraRowRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
 {
-    cass_statement_bind_string_n( query_stmt.get(), bind_num++, f_startRowKey.constData(),  f_startRowKey.size() );
-    cass_statement_bind_string_n( query_stmt.get(), bind_num++, f_endRowKey.constData(),    f_endRowKey.size()   );
-    f_cellPred->bindQuery( query_stmt, bind_num );
+    q->bindByteArray( bind_num++, f_startRowKey );
+    q->bindByteArray( bind_num++, f_endRowKey   );
+    f_cellPred->bindQuery( q, bind_num );
 }
 
 

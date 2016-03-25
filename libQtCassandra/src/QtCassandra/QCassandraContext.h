@@ -96,7 +96,7 @@ public:
     QString generateReplicationStanza() const;
     //
     void create();
-    //void update();
+    void update();
     void drop();
     void dropTable(const QString& table_name);
     void clearCache();
@@ -126,15 +126,15 @@ private:
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
 
-    void parseContextDefinition(const void *data);
-    void prepareContextDefinition(void *data) const;
+    void parseContextDefinition(const KsDef* ks );
+    void prepareContextDefinition(KsDef *data) const;
 
     friend class QCassandra;
     friend class KsDef;
     friend class QCassandraTable;
     friend class QCassandraLock;
 
-    std::auto_ptr<KsDef>                        f_private;
+    std::unique_ptr<KsDef>                      f_private;
     // f_cassandra is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)

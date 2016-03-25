@@ -36,6 +36,7 @@
  */
 #pragma once
 
+#include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraContext.h"
 #include "QtCassandra/QCassandraQuery.h"
 #include "QtCassandra/QCassandraVersion.h"

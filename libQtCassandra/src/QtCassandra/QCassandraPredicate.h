@@ -36,7 +36,7 @@
  */
 #pragma once
 
-#include "QtCassandra/QCassandraTools.h"
+#include "QtCassandra/QCassandraQuery.h"
 
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 
@@ -48,6 +48,7 @@
 namespace QtCassandra
 {
 
+typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_count_t;
 
 class QCassandraPredicate
 {
@@ -64,7 +65,7 @@ protected:
     cassandra_count_t   f_count;
 
     virtual void appendQuery( QString& query, int& bind_count ) = 0;
-    virtual void bindQuery( statement_pointer_t query_stmt, int& bind_num ) = 0;
+    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num ) = 0;
 };
 
 
@@ -77,8 +78,12 @@ public:
     virtual ~QCassandraCellPredicate() {}
 
 protected:
+    friend class QCassandraRowPredicate;
+    friend class QCassandraRowKeyPredicate;
+    friend class QCassandraRowRangePredicate;
+
     virtual void appendQuery( QString& /*query*/, int& /*bind_count*/             ) {}
-    virtual void bindQuery( statement_pointer_t /*query_stmt*/, int& /*bind_num*/ ) {}
+    virtual void bindQuery( QCassandraQuery::pointer_t /*query*/, int& /*bind_num*/ ) {}
 };
 
 
@@ -96,7 +101,7 @@ protected:
     QByteArray  f_cellKey;
 
     virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindQuery( statement_pointer_t query_stmt, int& bind_num );
+    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
 };
 
 
@@ -118,7 +123,7 @@ protected:
     QByteArray  f_endCellKey;
 
     virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindQuery( statement_pointer_t query_stmt, int& bind_num );
+    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
 };
 
 
@@ -138,7 +143,7 @@ protected:
     QCassandraCellPredicate::pointer_t      f_cellPred;
 
     virtual void appendQuery( QString& /*query*/, int& /*bind_count*/             ) {}
-    virtual void bindQuery( statement_pointer_t /*query_stmt*/, int& /*bind_num*/ ) {}
+    virtual void bindQuery( QCassandraQuery::pointer_t /*query*/, int& /*bind_num*/ ) {}
 };
 
 
@@ -156,7 +161,7 @@ protected:
     QByteArray  f_rowKey;
 
     virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindQuery( statement_pointer_t query_stmt, int& bind_num );
+    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
 };
 
 
@@ -178,7 +183,7 @@ protected:
     QByteArray  f_endRowKey;
 
     virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindQuery( statement_pointer_t query_stmt, int& bind_num );
+    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
 };
 
 

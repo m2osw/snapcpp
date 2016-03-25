@@ -203,7 +203,7 @@ void QCassandraColumnDefinition::setIndexType(index_type_t index_type)
     switch(index_type)
     {
     case INDEX_TYPE_KEYS:
-        f_private->__set_index_type(org::apache::cassandra::IndexType::KEYS);
+        f_private->__set_index_type(IndexType::KEYS);
         break;
 
     default:
@@ -251,7 +251,7 @@ QCassandraColumnDefinition::index_type_t QCassandraColumnDefinition::indexType()
     }
     switch(f_private->index_type)
     {
-    case org::apache::cassandra::IndexType::KEYS:
+    case IndexType::KEYS:
         return INDEX_TYPE_KEYS;
 
     default:
@@ -430,7 +430,7 @@ void QCassandraColumnDefinition::parseColumnDefinition(const ColumnDef *col)
     {
         for( auto o : col->index_options )
         {
-            f_index_options.insert( o->first.c_str(), o->second.c_str() );
+            f_index_options.insert( o.first.c_str(), o.second.c_str() );
         }
     }
 }
@@ -458,9 +458,9 @@ void QCassandraColumnDefinition::prepareColumnDefinition( ColumnDef *col ) const
     if( !f_index_options.isEmpty() )
     {
         std::map<std::string,std::string> map;
-        for( auto o : f_index_options )
+        for( const auto& key : f_index_options.keys() )
         {
-            map[o.key().toStdString()] = o.value().toStdString();
+            map[key.toStdString()] = f_index_options[key].toStdString();
         }
         col->__set_index_options( map );
     }
