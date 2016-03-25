@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.881
+ * Version: 0.0.3.882
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -9689,7 +9689,7 @@ snapwebsites.EditorWidgetTypeDroppedFile.prototype.reset = function(editor_widge
     }
 
     // restore the icon to the default
-    icon_img.attr("src", icon_img.data("original"));
+    icon_img.attr("src", /** @type {string} */ (icon_img.data("original")));
     icon_widget.removeClass("has-attachment");
 
     // make sure to disable the download button again
@@ -9723,7 +9723,8 @@ snapwebsites.EditorWidgetTypeDroppedFile.prototype.setValue = function(widget, v
         c = editor_widget.getWidgetContent(),
         filename = c.find(".dropped-file-filename"),
         pos = /** @type {string} */ (value).lastIndexOf('/'),
-        basename = pos < 0 ? /** @type {string} */ (value) : /** @type {string} */ (value).substr(pos + 1);
+        basename = pos < 0 ? /** @type {string} */ (value) : /** @type {string} */ (value).substr(pos + 1),
+        widget_change;
 
     if(filename.html() !== value)
     {

@@ -54,7 +54,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   <!-- user session duration (access to "standard" pages, not /admin) -->
   <widget id="user_session_duration" type="line-edit" field="users::user_session_duration" path="users/user_session_duration" no-toolbar="no-toolbar" auto-save="int64">
-    <tooltip>Enter the duration, in minutes, of the User Session Duration. Most <em>standard</em> pages can be viewed, edited, deleted, etc. when the user is logged in with a User Session. The default is 5 days.</tooltip>
+    <tooltip>Enter the duration, in minutes, of the User Session Duration. Most <em>standard</em> pages can be viewed, edited, deleted, etc. when the user is logged in with a User Session. The default is 5 days (7200 minutes).</tooltip>
     <help>Help</help>
     <sizes>
       <min>1</min>
@@ -66,7 +66,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   <!-- total session duration (returning registered user who is not logged in) -->
   <widget id="total_session_duration" type="line-edit" field="users::total_session_duration" path="users/total_session_duration" no-toolbar="no-toolbar" auto-save="int64">
-    <tooltip>Enter the duration, in minutes, of the total session duration. In most cases, this is left to the default of 1 year (365 days). It cannot be made bigger. It can be reduced though.</tooltip>
+    <tooltip>Enter the duration, in minutes, of the total session duration. In most cases, this is left to the default of 1 year (365 days = 525600 minutes). It cannot be made bigger. It can be reduced though.</tooltip>
     <help>Help</help>
     <sizes>
       <min>1</min>
