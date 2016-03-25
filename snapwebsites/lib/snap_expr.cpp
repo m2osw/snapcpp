@@ -186,21 +186,21 @@ void variable_t::set_value(double value)
 void variable_t::set_value(char const * value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
-    f_value = QString::fromUtf8(value);
+    f_value.setStringValue(QString::fromUtf8(value));
 }
 
 
 void variable_t::set_value(wchar_t const * value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
-    f_value = QString::fromWCharArray(value);
+    f_value.setStringValue(QString::fromWCharArray(value));
 }
 
 
 void variable_t::set_value(QString const & value)
 {
     f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
-    f_value = value;
+    f_value.setStringValue(value);
 }
 
 
@@ -744,7 +744,7 @@ public:
     };
 
     template<typename F>
-    typename enable_if<has_function<F>::has_floating_points>::type do_float(variable_t& result, double a, double b)
+    typename enable_if<has_function<F>::has_floating_points>::type do_float(variable_t & result, double a, double b)
     {
         QtCassandra::QCassandraValue value;
         value.setFloatValue(static_cast<float>(F::floating_points(a, b)));
@@ -754,7 +754,7 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     template<typename F>
-    typename enable_if<!has_function<F>::has_floating_points>::type do_float(variable_t& result, double a, double b)
+    typename enable_if<!has_function<F>::has_floating_points>::type do_float(variable_t & result, double a, double b)
     {
     }
 #pragma GCC diagnostic pop
@@ -1052,7 +1052,7 @@ public:
         static bool integers(int64_t a, int64_t b) { return a || b; }
     };
 
-    void execute(variable_t& result, variable_t::variable_map_t& variables, functions_t& functions)
+    void execute(variable_t & result, variable_t::variable_map_t & variables, functions_t & functions)
     {
 #ifdef SHOW_COMMANDS
         switch(f_type)
@@ -1956,15 +1956,15 @@ public:
                 }
             }
 
-            variable_t::variable_vector_t const& f_sub_results;
-            QString f_format;
-            controlled_vars::zint32_t f_position;
-            controlled_vars::mint32_t f_index;
-            QString f_result;
-            int f_last;
-            int f_flags;
-            controlled_vars::zint32_t f_width;
-            controlled_vars::zint32_t f_precision;
+            variable_t::variable_vector_t const &   f_sub_results;
+            QString                                 f_format;
+            controlled_vars::zint32_t               f_position;
+            controlled_vars::mint32_t               f_index;
+            QString                                 f_result;
+            int                                     f_last;
+            int                                     f_flags;
+            controlled_vars::zint32_t               f_width;
+            controlled_vars::zint32_t               f_precision;
         };
         input in(sub_results);
         in.parse();
@@ -2392,7 +2392,7 @@ public:
         }
         else
         {
-            result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, "");
+            result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, QString(""));
         }
     }
 
