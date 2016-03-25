@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.882
+ * Version: 0.0.3.886
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -7570,7 +7570,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                                     return col_widths[col];
                                 });
 
-                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        width = this.openDropdown_.outerWidth(false);
+                        if(width > screen_width)
                         {
                             break;
                         }
@@ -7603,7 +7604,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                     {
                         // try until column count == number of items
                         // or the width fails
-                        max_count = 100;
+                        max_count = 10;
                         count = 2;
                     }
                     else
@@ -7674,7 +7675,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                                     return col_widths[col];
                                 });
 
-                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        width = this.openDropdown_.outerWidth(false);
+                        if(width > screen_width)
                         {
                             break;
                         }
@@ -7707,7 +7709,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                     {
                         // try until column count == number of items
                         // or the width fails
-                        max_count = 100;
+                        max_count = 10;
                         count = 2;
                     }
                     else
@@ -7732,7 +7734,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                     for(; count <= max_count; ++count)
                     {
                         this.openDropdown_.find("ul").css("column-count", count);
-                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        width = this.openDropdown_.outerWidth(false);
+                        if(width > screen_width)
                         {
                             break;
                         }
@@ -7764,7 +7767,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                     {
                         // try until column count == number of items
                         // or the width fails
-                        max_count = 100;
+                        max_count = 10;
                         count = 2;
                     }
                     else
@@ -7789,7 +7792,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                     for(; count <= max_count; ++count)
                     {
                         this.openDropdown_.find("ul").css("column-count", count);
-                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        width = this.openDropdown_.outerWidth(false);
+                        if(width > screen_width)
                         {
                             break;
                         }
@@ -7897,7 +7901,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                                     return col_widths[col];
                                 });
 
-                        if(this.openDropdown_.outerWidth(false) > screen_width)
+                        width = this.openDropdown_.outerWidth(false);
+                        if(width > screen_width)
                         {
                             // too large, try with less columns
                             continue;
@@ -7995,6 +8000,12 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
 //                                    }
 //                                });
 //console.log(new Date);
+                        width = this.openDropdown_.outerWidth(false);
+                        if(width > screen_width)
+                        {
+                            // too large, try with less columns
+                            continue;
+                        }
                         if(pos.top + w.outerHeight(false) + tallest_line - scroll_top < screen_height)
                         {
                             pos.top += w.outerHeight(false);
@@ -8089,6 +8100,12 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
 //                                    }
 //                                });
 //console.log(new Date);
+                        width = this.openDropdown_.outerWidth(false);
+                        if(width > screen_width)
+                        {
+                            // too large, try with less columns
+                            continue;
+                        }
                         if(pos.top + parseFloat(w.css("border-top-width")) - tallest_line > scroll_top)
                         {
                             start_top = pos.top + parseFloat(w.css("border-top-width"));
