@@ -129,7 +129,7 @@ namespace QtCassandra
  */
 
 /** \var QCassandraContext::f_private
- * \brief The pointer to the QCassandraContextPrivate object.
+ * \brief The pointer to the KsDef object.
  *
  * This pointer is a shared pointer to the private definition of
  * the Cassandra context (i.e. a keyspace definition.)
@@ -244,7 +244,7 @@ namespace QtCassandra
  * generated headers (which in turn \#include thrift headers) that your
  * applications would otherwise need to have access to.
  */
-class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
+//class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
 
 
 
@@ -292,7 +292,8 @@ class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
  * \sa QCassandra::synchronizeSchemaVersions()
  */
 QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
-    : f_cassandra(cassandra)
+    : f_private(new KsDef),
+    , f_cassandra(cassandra)
       //f_options() -- auto-init
       //f_tables() -- auto-init
       //f_host_name() -- auto-init
@@ -308,7 +309,7 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
     }
 
     // we save the name and at this point we prevent it from being changed.
-    f_contextName = context_name;
+    f_private->__set_name(context_name.toUtf8().data());
 
     // get the computer name as the host name
     char hostname[HOST_NAME_MAX + 1];
@@ -429,6 +430,15 @@ QString QCassandraContext::strategyClass() const
 void QCassandraContext::setDescriptionOptions(const QCassandraContextOptions& options)
 {
     f_options = options;
+
+    if(f_options.contains("replication_factor"))
+    {
+        f_private->__set_replication_factor(f_options["replication_factor"].toInt());
+    }
+    else
+    {
+        f_private->__isset.replication_factor = false;
+    }
 }
 
 /** \brief Get the map of all description options.
@@ -473,6 +483,11 @@ const QCassandraContext::QCassandraContextOptions& QCassandraContext::descriptio
 void QCassandraContext::setDescriptionOption(const QString& option, const QString& value)
 {
     f_options[option] = value;
+
+    if(option == "replication_factor")
+    {
+        f_private->__set_replication_factor(f_options["replication_factor"].toInt());
+    }
 }
 
 /** \brief Retrieve a description option.
@@ -513,6 +528,11 @@ QString QCassandraContext::descriptionOption(const QString& option) const
 void QCassandraContext::eraseDescriptionOption(const QString& option)
 {
     f_options.erase(f_options.find(option));
+
+    if(option == "replication_factor")
+    {
+        f_private->__isset.replication_factor = false;
+    }
 }
 
 /** \brief Retrieve a table definition by name.
@@ -577,10 +597,12 @@ void QCassandraContext::loadTables()
  */
 const QCassandraTables& QCassandraContext::tables()
 {
+#if 0
     if( f_tables.empty() )
     {
         loadTables();
     }
+#endif
 
     return f_tables;
 }
@@ -708,7 +730,6 @@ void QCassandraContext::unsetReplicationFactor()
     eraseDescriptionOption("replication_factor");
 }
 
-#if 0
 /** \brief Check whether the replication factor is defined.
  *
  * This function retrieves the current status of the replication factor parameter.
@@ -744,7 +765,6 @@ int32_t QCassandraContext::replicationFactor() const
     }
     return 0;
 }
-#endif
 
 /** \brief Set whether the writes are durable.
  *
@@ -763,20 +783,92 @@ void QCassandraContext::setDurableWrites(bool durable_writes)
     f_durableWrites = durable_writes;
 }
 
-#if 0
+
+/** \brief Set the replication factor.
+ *
+ * This function sets the replication factor of the context.
+ *
+ * \deprecated
+ * Since version 1.1 of Cassandra, the context replication
+ * factor is viewed as a full option. This function automatically
+ * sets the factor using the setDescriptionOption() function.
+ * This means calling the setDescriptionOptions()
+ * and overwriting all the options has the side effect of
+ * cancelling this call. Note that may not work right with
+ * older version of Cassandra. Let me know if that's the case.
+ *
+ * \param[in] factor  The new replication factor.
+ */
+void QCassandraContext::setReplicationFactor(int32_t factor)
+{
+    // since version 1.1 of Cassandra, the replication factor
+    // defined in the structure is ignored
+    QString value(QString("%1").arg(factor));
+    setDescriptionOption("replication_factor", value);
+}
+
+/** \brief Unset the replication factor.
+ *
+ * This function unsets the replication factor in case it was set.
+ * In general it is not necessary to call this function unless you
+ * are initializing a new context and you want to make sure that
+ * the default replication factor is used.
+ */
+void QCassandraContext::unsetReplicationFactor()
+{
+    eraseDescriptionOption("replication_factor");
+}
+
+/** \brief Check whether the replication factor is defined.
+ *
+ * This function retrieves the current status of the replication factor parameter.
+ *
+ * \return True if the replication factor parameter is defined.
+ */
+bool QCassandraContext::hasReplicationFactor() const
+{
+    return f_private->__isset.replication_factor;
+}
+
+/** \brief Retrieve the current replication factor.
+ *
+ * This function reads and return the current replication factor of
+ * the context.
+ *
+ * If the replication factor is not defined, zero is returned.
+ *
+ * \return The current replication factor.
+ */
+int32_t QCassandraContext::replicationFactor() const
+{
+    if(f_private->__isset.replication_factor) {
+        return f_private->replication_factor;
+    }
+    return 0;
+}
+
+/** \brief Set whether the writes are durable.
+ *
+ * Temporary and permanent contexts can be created. This option defines
+ * whether it is one of the other. Set to true to create a permanent
+ * context (this is the default.)
+ *
+ * \param[in] durable_writes  Set whether writes are durable.
+ */
+void QCassandraContext::setDurableWrites(bool durable_writes)
+{
+    f_private->__set_durable_writes(durable_writes);
+}
+
 /** \brief Unset the durable writes flag.
  *
  * This function marks the durable write flag as not set. This does
  * not otherwise change the flag. It will just not be sent over the
  * network and the default will be used when required.
- *
- * \sa durableWrites()
- * \sa setDurableWrites()
- * \sa hasDurableWrites()
  */
 void QCassandraContext::unsetDurableWrites()
 {
-    f_durableWrites = false;
+    f_private->__isset.durable_writes = false;
 }
 
 /** \brief Check whether the durable writes is defined.
@@ -784,10 +876,6 @@ void QCassandraContext::unsetDurableWrites()
  * This function retrieves the current status of the durable writes parameter.
  *
  * \return True if the durable writes parameter is defined.
- *
- * \sa durableWrites()
- * \sa setDurableWrites()
- * \sa unsetDurableWrites()
  */
 bool QCassandraContext::hasDurableWrites() const
 {
@@ -800,10 +888,6 @@ bool QCassandraContext::hasDurableWrites() const
  * context is temporary (false) or permanent (true).
  *
  * \return The current durable writes flag status.
- *
- * \sa hasDurableWrites()
- * \sa setDurableWrites()
- * \sa unsetDurableWrites()
  */
 bool QCassandraContext::durableWrites() const
 {
@@ -812,9 +896,8 @@ bool QCassandraContext::durableWrites() const
     }
     return false;
 }
-#endif
 
-#if 0
+
 /** \brief This is an internal function used to parse a KsDef structure.
  *
  * This function is called internally to parse a KsDef object.
@@ -926,7 +1009,6 @@ void QCassandraContext::prepareContextDefinition(void *data) const
     }
     //if(ks->cf_defs.empty()) ... problem? it's not optional...
 }
-#endif
 
 /** \brief Make this context the current context.
  *

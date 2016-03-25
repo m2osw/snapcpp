@@ -1181,6 +1181,19 @@ void QCassandra::clearCurrentContextIf( const QCassandraContext &c )
  */
 const QCassandraContexts &QCassandra::contexts() const
 {
+#if 0
+    // retrieve the key spaces from Cassandra
+    std::vector<org::apache::cassandra::KsDef> keyspaces;
+    f_client->describe_keyspaces(keyspaces);
+
+    for(std::vector<org::apache::cassandra::KsDef>::const_iterator
+                    ks(keyspaces.begin()); ks != keyspaces.end(); ++ks) {
+        QCassandraContext::pointer_t c(f_parent->context(ks->name.c_str()));
+        const org::apache::cassandra::KsDef& ks_def = *kse
+        c->parseContextDefinition(&ks_def);
+    }
+#endif
+
     if( f_contexts.empty() )
     {
         QCassandraQuery keyspace_query( f_session );

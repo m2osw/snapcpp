@@ -47,7 +47,7 @@ namespace QtCassandra
 
 // Cassandra KsDef (Thrift legacy) object
 //
-class QCassandraContextPrivate;
+class KsDef;
 class QCassandra;
 
 class QCassandraContext
@@ -80,6 +80,7 @@ public:
 
     QCassandraTable::pointer_t findTable(const QString& table_name);
     QCassandraTable& operator[] (const QString& table_name);
+    const QCassandraTable& operator[] (const QString& table_name) const;
 
     // replication
     void setReplicationFactor(int32_t factor);
@@ -125,11 +126,15 @@ private:
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
 
+    void parseContextDefinition(const void *data);
+    void prepareContextDefinition(void *data) const;
+
     friend class QCassandra;
+    friend class KsDef;
     friend class QCassandraTable;
     friend class QCassandraLock;
 
-    std::auto_ptr<QCassandraContextPrivate>     f_private;
+    std::auto_ptr<KsDef>                        f_private;
     // f_cassandra is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
@@ -139,15 +144,11 @@ private:
     std::shared_ptr<QCassandra>                 f_cassandra;
     QCassandraContextOptions                    f_options;
     QCassandraTables                   			f_tables;
-    QString                                     f_contextName;
     QString                                     f_host_name;
     QString                                     f_lock_table_name;
-    QString                                     f_strategyClass;
-    controlled_vars::auto_init<bool>            f_durableWrites;
     mutable controlled_vars::flbool_t           f_lock_accessed;
     lock_timeout_t                              f_lock_timeout;
     lock_ttl_t                                  f_lock_ttl;
-    controlled_vars::zint32_t                   f_pagingSize;
 };
 
 typedef QMap<QString, QCassandraContext::pointer_t> QCassandraContexts;

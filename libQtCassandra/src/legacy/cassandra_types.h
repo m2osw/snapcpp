@@ -13,11 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace org
-{
-namespace apache
-{
-namespace cassandra
+namespace QtCassandra
 {
 
 struct IndexType
@@ -885,8 +881,7 @@ class KsDef
     // uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
     // uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 };
-}
-}
+
 } // namespace
 
 // vim: ts=4 sw=4 et
