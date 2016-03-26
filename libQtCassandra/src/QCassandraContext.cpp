@@ -547,14 +547,14 @@ void QCassandraContext::loadTables()
     QCassandraQuery q( f_cassandra->session() );
     q.query( QString("SELECT columnfamily_name FROM system.schema_columnfamilies WHERE keyspace_name = '%1';").arg(f_private->name.c_str()) );
     q.start();
-    QStringList tables;
+    QStringList table_list;
     while( q.nextRow() )
     {
-        tables << q.getStringColumn( "columnfamily_name" );
+        table_list << q.getStringColumn( "columnfamily_name" );
     }
     q.end();
 
-    for( auto table_name : tables )
+    for( auto table_name : table_list )
     {
         QCassandraTable::pointer_t t(new QCassandraTable(shared_from_this(), table_name));
         t->setFromCassandra();

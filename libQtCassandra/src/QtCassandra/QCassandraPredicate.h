@@ -58,8 +58,8 @@ public:
     QCassandraPredicate() : f_count(100) {}
     virtual ~QCassandraPredicate() {}
 
-    int32_t count() const                         { return f_count;  }
-    void    setCount( const int32_t count = 100 ) { f_count = count; }
+    int32_t count() const                       { return f_count; }
+    void    setCount( const int32_t val = 100 ) { f_count = val;  }
 
 protected:
     cassandra_count_t   f_count;

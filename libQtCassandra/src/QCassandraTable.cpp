@@ -2267,11 +2267,11 @@ QString QCassandraTable::getTableOptions( const CfDef& cf ) const
     }
     if( cf.__isset.caching )
     {
-        q_str += QString("AND caching = '%1'\n").arg(cf.caching);
+        q_str += QString("AND caching = '%1'\n").arg(cf.caching.c_str());
     }
     if( cf.__isset.comment )
     {
-        q_str += QString("AND comment = '%1'\n").arg(cf.comment);
+        q_str += QString("AND comment = '%1'\n").arg(cf.comment.c_str());
     }
     if( cf.__isset.compaction_strategy_options )
     {
