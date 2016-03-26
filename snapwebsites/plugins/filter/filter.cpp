@@ -461,11 +461,12 @@ void filter::on_xss_filter(QDomNode & node,
  * The default filter replace_token event supports the following
  * general tokens:
  *
- * \li [date(\"format\")] -- date with format as per strftime(); without
- *                           format, the default depends on the locale
- * \li [gmdate(\"format\")] -- UTC date with format as per strftime();
- *                             without format, the default depends on the
- *                             locale
+ * \li [child("\<parent>", "\<child>")] -- concatenate parent with child paths
+ *                           making sure there is only one "/" between both
+ * \li [date("\<format>", "\<unixdate>")] -- date with format as per strftime();
+ *                           without format, the default depends on the locale
+ * \li [gmdate("\<format>")] -- UTC date with format as per strftime();
+ *                           without format, the default depends on the locale
  * \li [select("\<xpath>")] -- select content from the XML document using
  *                             the specified \<xpath>
  * \li [select_text("\<xpath>")] -- select content from the XML document using
@@ -489,6 +490,37 @@ bool filter::replace_token_impl(content::path_info_t & ipath, QDomDocument & xml
 
     switch(token.f_name[0].unicode())
     {
+    case 'c':
+        if(token.is_token("child"))
+        {
+            if(token.verify_args(2, 2))
+            {
+                parameter_t const param_parent(token.get_arg("parent", 0));
+                parameter_t const param_child(token.get_arg("child", 1));
+                if(!token.f_error)
+                {
+                    QString parent(param_parent.f_value);
+                    QString child(param_child.f_value);
+                    while(parent.endsWith("/"))
+                    {
+                        parent = parent.left(parent.length() - 1);
+                    }
+                    while(child.startsWith("/"))
+                    {
+                        child = child.right(child.length() - 1);
+                    }
+                    if(!child.isEmpty()
+                    && !parent.isEmpty())
+                    {
+                        parent = parent + "/" + child;
+                    }
+                    token.f_replacement = parent;
+                }
+            }
+            return false;
+        }
+        break;
+
     case 'd':
         if(token.is_token("date"))
         {
@@ -498,12 +530,12 @@ bool filter::replace_token_impl(content::path_info_t & ipath, QDomDocument & xml
                 QString date_format;
                 if(token.has_arg("format", 0))
                 {
-                    parameter_t param(token.get_arg("format", 0, token_t::TOK_STRING));
+                    parameter_t const param(token.get_arg("format", 0, token_t::TOK_STRING));
                     date_format = param.f_value;
                 }
                 if(token.has_arg("unixtime", 1))
                 {
-                    parameter_t param(token.get_arg("unixtime", 1, token_t::TOK_STRING));
+                    parameter_t const param(token.get_arg("unixtime", 1, token_t::TOK_STRING));
                     bool ok(false);
                     unix_time = param.f_value.toLongLong(&ok);
                     // TODO: verify ok
@@ -1002,7 +1034,7 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
             {
                 if(c == '[')
                 {
-                    if(parse_token())
+                    if(parse_token(false))
                     {
                         changed = true;
                     }
@@ -1029,12 +1061,16 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
 
     private:
         // it is not yet proven to be a token...
-        bool parse_token()
+        bool parse_token(bool const add_as_string)
         {
             token_info_t info;
 
             // reset the token variable
             f_token = "[";
+            if(add_as_string)
+            {
+                f_token += "*";
+            }
             token_t t(get_token(info.f_name, false));
             f_token += info.f_name;
             if(t != token_t::TOK_IDENTIFIER)
@@ -1115,8 +1151,8 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
 
                         if(t != token_t::TOK_SEPARATOR)
                         {
-                            // only commas are accepted here until we find
-                            // a closing parenthesis
+                            // only commas or the closing parenthesis are
+                            // accepted here...
                             return false;
                         }
 
@@ -1189,12 +1225,19 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                         .arg(encode_text_for_html(unbracketed_quote))
                         .arg(info.f_replacement);
             }
-            ungets(info.f_replacement);
+            if(add_as_string)
+            {
+                ungets(QString("\"%1\"").arg(info.f_replacement));
+            }
+            else
+            {
+                ungets(info.f_replacement);
+            }
 
             return true;
         }
 
-        token_t get_token(QString& tok, bool skip_spaces = true)
+        token_t get_token(QString & tok, bool skip_spaces = true)
         {
             char_t c;
             for(;;)
@@ -1202,9 +1245,16 @@ bool filter::filter_text_impl(filter_text_t & txt_filt)
                 c = getc();
                 if(c == '[')
                 {
+                    c = getc();
+                    bool const view_as_string(c == '*');
+                    if(!view_as_string)
+                    {
+                        // transform to string
+                        ungetc(c);
+                    }
                     // recursively parse sub-tokens
                     QString const save_token(f_token);
-                    if(!parse_token())
+                    if(!parse_token(view_as_string))
                     {
                         f_token = save_token + f_token;
                         return token_t::TOK_INVALID;

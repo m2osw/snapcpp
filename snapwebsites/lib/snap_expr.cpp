@@ -1594,6 +1594,32 @@ public:
         result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
+    static void call_child(variable_t & result, variable_t::variable_vector_t const & sub_results)
+    {
+        if(sub_results.size() != 2)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call child() expected exactly 2");
+        }
+        QString path(sub_results[0].get_string("child(1)"));
+        QString child(sub_results[1].get_string("child(2)"));
+        while(path.endsWith("/"))
+        {
+            path = path.left(path.length() - 1);
+        }
+        while(child.startsWith("/"))
+        {
+            child = child.right(child.length() - 1);
+        }
+        if(!child.isEmpty()
+        && !path.isEmpty())
+        {
+            path = path + "/" + child;
+        }
+        QtCassandra::QCassandraValue value;
+        value.setStringValue(path);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
+    }
+
     // This cannot work right in an international website
     // The dates should be saved as int64_t values in the database instead
     //static void call_date_to_us(variable_t & result, variable_t::variable_vector_t const & sub_results)
@@ -3539,6 +3565,10 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
     { // check whether a cell exists in a table and row
         "cell_exists",
         expr_node::call_cell_exists
+    },
+    { // concatenate a child to a path (add "foo" or "/foo" as required)
+        "child",
+        expr_node::call_child
     },
     //{ // converts a date to microseconds
     //    "date_to_us",
