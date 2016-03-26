@@ -175,8 +175,8 @@ void list_hosts()
     }
     else {
         // show all the computer names in this context
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setIndex();
+        auto column_predicate( std::make_shared<QtCassandra::QCassandraCellRangePredicate>() );
+        column_predicate->setIndex();
         hosts->readCells(column_predicate);
         QtCassandra::QCassandraCells cells(hosts->cells());
         if(cells.count() == 0) {

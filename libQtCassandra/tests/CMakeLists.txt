@@ -171,7 +171,6 @@ add_executable(cassandra_lock
 target_link_libraries(cassandra_lock
     QtCassandra
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
 )
 
 ################################################################################

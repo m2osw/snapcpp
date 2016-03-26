@@ -2255,6 +2255,24 @@ void QCassandraTable::prepareTableDefinition( CfDef* cf ) const
 }
 
 
+namespace
+{
+    QString map_to_json( const std::map<std::string,std::string>& map )
+    {
+        QString ret;
+        for( const auto& pair : map )
+        {
+            if( !ret.isEmpty() )
+            {
+                ret += ", ";
+            }
+            ret += QString("'%1': '%2'").arg(pair.first.c_str()).arg(pair.second.c_str());
+        }
+        return ret;
+    }
+}
+
+
 QString QCassandraTable::getTableOptions( const CfDef& cf ) const
 {
     QString q_str;
@@ -2303,7 +2321,7 @@ QString QCassandraTable::getTableOptions( const CfDef& cf ) const
     }
     if( cf.__isset.speculative_retry )
     {
-        q_str += QString("AND speculative_retry = %1\n").arg(cf.speculative_retry);
+        q_str += QString("AND speculative_retry = %1\n").arg(cf.speculative_retry.c_str());
     }
 
     return q_str;
@@ -2386,7 +2404,7 @@ void QCassandraTable::create()
         "WITH COMPACT STORAGE\n"
         "AND CLUSTERING ORDER BY (column1 ASC)\n" )
             .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_private->name.c_str())
             .arg(value_type)
             );
     query += getTableOptions( cf );
@@ -2427,10 +2445,10 @@ void QCassandraTable::truncate()
     const QString query(
         QString("TRUNCATE %1.%2;")
             .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_private->name.c_str())
             );
 
-    QCassandraQuery q;
+    QCassandraQuery q( f_session );
     q.query( query );
     q.start();
     q.end();
@@ -2453,7 +2471,7 @@ void QCassandraTable::truncate()
  */
 void QCassandraTable::clearCache()
 {
-    f_query.clear();
+    f_query->end();
     f_rows.clear();
 }
 
@@ -2521,11 +2539,13 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
     }
     else
     {
-        QString query( QString("SELECT key,column1,value FROM %1.%2").arg(f_context->contextName()).arg(f_tableName) );
+        QString query( QString("SELECT key,column1,value FROM %1.%2")
+                       .arg(f_context->contextName())
+                       .arg(f_private->name.c_str()) );
         int bind_count = 0;
         if( row_predicate )
         {
-            row_predicate->appendQuery( query, bind_count );
+                row_predicate->appendQuery( query, bind_count );
         }
         query += " ALLOW FILTERING";
         //
@@ -2626,7 +2646,7 @@ QCassandraRow::pointer_t QCassandraTable::row(const QByteArray& row_key)
  */
 const QCassandraRows& QCassandraTable::rows()
 {
-    if( !f_queryStmt )
+    if( !f_query )
     {
         throw std::runtime_error( "No query is in effect!" );
     }
@@ -2634,7 +2654,7 @@ const QCassandraRows& QCassandraTable::rows()
     if( f_rows.empty() )
     {
         std::stringstream msg;
-        msg << "You must first call readRows() on table " << f_tableName.toStdString() << " before trying to access the rows!";
+        msg << "You must first call readRows() on table " << f_private->name << " before trying to access the rows!";
         throw std::runtime_error( msg.str().c_str() );
     }
 
@@ -2663,7 +2683,8 @@ const QCassandraRows& QCassandraTable::rows()
  *
  * \sa exists()
  * \sa row()
- */QCassandraRow::pointer_t QCassandraTable::findRow(const char* row_name)
+ */
+QCassandraRow::pointer_t QCassandraTable::findRow(const char* row_name) const
 {
     return findRow( QByteArray::fromRawData(row_name, qstrlen(row_name)) );
 }
@@ -2691,7 +2712,7 @@ const QCassandraRows& QCassandraTable::rows()
  * \sa exists()
  * \sa row()
  */
-QCassandraRow::pointer_t QCassandraTable::findRow(const QString& row_name)
+QCassandraRow::pointer_t QCassandraTable::findRow(const QString& row_name) const
 {
     return findRow( row_name.toUtf8() );
 }
@@ -2719,7 +2740,7 @@ QCassandraRow::pointer_t QCassandraTable::findRow(const QString& row_name)
  * \sa exists()
  * \sa row()
  */
-QCassandraRow::pointer_t QCassandraTable::findRow(const QByteArray& row_key)
+QCassandraRow::pointer_t QCassandraTable::findRow(const QByteArray& row_key) const
 {
     QCassandraRows::iterator ri(f_rows.find(row_key));
     if(ri == f_rows.end())
@@ -2800,8 +2821,8 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
         return true;
     }
 
-    QCassandraRowPredicate::pointer_t row_predicate( new QCassandraRowPredicate );
-    row_predicate.setrowKey(row_key);
+    auto row_predicate( std::make_shared<QCassandraRowKeyPredicate>() );
+    row_predicate->setRowKey(row_key);
 
     // define a key range that is quite unlikely to match any column
     QCassandraCellRangePredicate::pointer_t cell_pred( new QCassandraCellRangePredicate );
@@ -2812,7 +2833,8 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
     cell_pred->setEndCellKey(key);
     row_predicate->setCellPredicate( std::static_pointer_cast<QCassandraCellPredicate>( cell_pred ) );
 
-    return const_cast<QCassandraTable *>(this)->readRows( row_predicate ) != 0;
+    return const_cast<QCassandraTable *>(this)
+            ->readRows( std::dynamic_pointer_cast<QCassandraRowPredicate>(row_predicate) ) != 0;
 }
 
 /** \brief Retrieve a table row.
@@ -2982,9 +3004,9 @@ void QCassandraTable::dropRow(const char *row_name, QCassandraValue::timestamp_m
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
  */
-void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
+void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level )
 {
-    dropRow(row_name.toUtf8(), mode, timestamp);
+    dropRow(row_name.toUtf8(), mode, timestamp, consistency_level);
 }
 
 /** \brief Drop the row from the Cassandra database.
@@ -3043,7 +3065,7 @@ void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestam
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older. Ignored.
  */
-void QCassandraTable::dropRow( const QByteArray& row_key, QCassandraValue::timestamp_mode_t /*mode*/, int64_t /*timestamp*/)
+void QCassandraTable::dropRow( const QByteArray& row_key, QCassandraValue::timestamp_mode_t /*mode*/, int64_t /*timestamp*/, consistency_level_t /*consistency_level*/ )
 {
     remove( row_key );
     f_rows.remove( row_key );
@@ -3117,7 +3139,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
 
         query_string = QString("UPDATE %1.%2 SET value = value + ? WHERE key = ? AND column1 = ?;")
             .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_private->name.c_str())
             ;
         value_id  = 0;
         row_id    = 1;
@@ -3127,7 +3149,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     {
         query_string = QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?);")
             .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_private->name.c_str())
             ;
     }
 
@@ -3135,17 +3157,16 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     //
     QCassandraQuery q( f_session );
     q.query( query_string, 3 );
-    q.bindByteArray( row_id,    row_key.constData(),    row_key.size()    );
-    q.bindByteArray( column_id, column_key.constData(), column_key.size() );
-
-    if( isCounterClass(validation_class) )
+    q.bindByteArray( row_id,    row_key    );
+    q.bindByteArray( column_id, column_key );
+    //
+    if( isCounterClass() )
     {
         q.bindInt64( value_id, value.int64Value() );
     }
     else
     {
-        auto binary_val( value.binaryValue() );
-        q.bindByteArray( value_id, binary_val.constData(), binary_val.size() );
+        q.bindByteArray( value_id, value.binaryValue() );
     }
 
     q.start();
@@ -3160,14 +3181,14 @@ bool QCassandraTable::isCounterClass()
         q.query(
             QString("SELECT validator FROM system.schema_columns WHERE keyspace_name = '%1' AND columnfamily_name = '%2'" )
             .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_private->name.c_str())
             );
         q.start();
         if( !q.nextRow() )
         {
             throw std::runtime_error( "Critical database error! Cannot read system.schema_columns!" );
         }
-        f_private->set_default_validation_class( q.getStringColumn( 0 ).toStdString() );
+        f_private->__set_default_validation_class( q.getStringColumn( 0 ).toStdString() );
         q.end();
     }
 
@@ -3194,11 +3215,11 @@ bool QCassandraTable::isCounterClass()
 bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
 {
     const QString q_str( QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
-                         .arg(f_context->contextName()).arg(f_tableName) );
+                         .arg(f_context->contextName())
+                         .arg(f_private->name.c_str()) );
 
     QCassandraQuery q( f_session );
     q.query( q_str, 2 );
-
     size_t bind_num = 0;
     q.bindByteArray( bind_num++, row_key    );
     q.bindByteArray( bind_num++, column_key );
@@ -3218,14 +3239,13 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
         return false;
     }
 
-    const CassRow* row( cass_iterator_get_row(rows.get()));
     if( isCounterClass() )
     {
         value = q.getInt64Column( "value" );
     }
     else
     {
-        value = q.getByteArray( "value" );
+        value = q.getByteArrayColumn( "value" );
     }
 
     return true;
@@ -3249,17 +3269,17 @@ int32_t QCassandraTable::getCellCount
 {
     if( f_rows.find( row_key ) == f_rows.end() )
     {
-        query_string = QString("SELECT COUNT(*) AS count FROM %1.%2")
+        const QString query_string ( QString("SELECT COUNT(*) AS count FROM %1.%2")
             .arg(f_context->contextName())
-            .arg(f_tableName)
-            ;
+            .arg(f_private->name.c_str())
+            );
 
         QCassandraQuery q( f_session );
         q.query( query_string, 0 );
         q.setPagingSize( column_predicate->count() );
         q.start();
         q.nextRow();
-        return getInt32Column( "count" );
+        return q.getInt32Column( "count" );
     }
 
     // return the count from the memory cache
@@ -3287,13 +3307,14 @@ void QCassandraTable::remove
     const QString query(
         QString("DELETE FROM %1.%2 WHERE key=? AND column1=?;")
             .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_private->name.c_str())
             );
 
     QCassandraQuery q( f_session );
-    q.query( query_string, 2 );
-    q.bindByteArray( row_id    , row_key.constData()    , row_key.size()    );
-    q.bindByteArray( column_id , column_key.constData() , column_key.size() );
+    q.query( query, 2 );
+    size_t bind_num = 0;
+    q.bindByteArray( bind_num++, row_key    );
+    q.bindByteArray( bind_num++, column_key );
     q.start();
 }
 
@@ -3316,54 +3337,13 @@ void QCassandraTable::remove( const QByteArray& row_key )
     const QString query(
         QString("DELETE FROM %1.%2 WHERE key=?;")
             .arg(f_context->contextName())
-            .arg(f_tableName)
+            .arg(f_private->name.c_str())
             );
 
     QCassandraQuery q( f_session );
-    q.query( query_string, 2 );
-    q.bindByteArray( row_id, row_key.constData(), row_key.size() );
+    q.query( query, 1 );
+    q.bindByteArray( 0, row_key );
     q.start();
-}
-
-/** \brief Set the default validation class to create a counters table.
- *
- * This function is a specialized version of the setDefaultValidationClass()
- * with the name of the class necessary to create a table of counters. Remember
- * that once in this state a table cannot be converted.
- *
- * This is equivalent to setDefaultValidationClass("CounterColumnType").
- */
-void QCassandraTable::setDefaultValidationClassForCounters()
-{
-    setDefaultValidationClass("CounterColumnType");
-}
-
-/** \brief Set the default validation class.
- *
- * This function defines the default validation class for the table columns.
- * By default it is set to binary (BytesType), which is similar to saying
- * no validation is required.
- *
- * The CLI documentation says that the following are valid as a default
- * validation class:
- *
- * AsciiType, BytesType, CounterColumnType, IntegerType, LexicalUUIDType,
- * LongType, UTF8Type
- *
- * \param[in] validation_class  The default validation class for columns data.
- */
-void QCassandraTable::setDefaultValidationClass(const QString& validation_class)
-{
-    f_defaultValidationClass = validation_class;
-}
-
-/** \brief Unset the default validation class.
- *
- * This function removes the effects of setDefaultValidationClass() calls.
- */
-void QCassandraTable::unsetDefaultValidationClass()
-{
-    f_defaultValidationClass = QString("BytesType");
 }
 
 } // namespace QtCassandra

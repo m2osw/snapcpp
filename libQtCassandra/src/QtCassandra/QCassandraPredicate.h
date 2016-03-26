@@ -38,6 +38,7 @@
 
 #include "QtCassandra/QCassandraQuery.h"
 
+#include <controlled_vars/controlled_vars_auto_enum_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 
 #include <QByteArray>
@@ -118,9 +119,17 @@ public:
     const QByteArray& endCellKey() const                          { return f_endCellKey;       }
     void              setEndCellKey(const QByteArray& cell_key)   { f_endCellKey = cell_key;   }
 
+    bool reversed() const                                         { return f_reversed; }
+    void setReversed( bool val = true )                           { f_reversed = val;  }
+
+    bool index() const                                            { return f_index;    }
+    void setIndex( bool val = true )                              { f_index = val;     }
+
 protected:
-    QByteArray  f_startCellKey;
-    QByteArray  f_endCellKey;
+    QByteArray                  f_startCellKey;
+    QByteArray                  f_endCellKey;
+    controlled_vars::fbool_t    f_reversed;
+    controlled_vars::fbool_t    f_index; // whether predicate is used as an index
 
     virtual void appendQuery( QString& query, int& bind_count );
     virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
@@ -138,12 +147,12 @@ public:
     QCassandraCellPredicate::pointer_t  cellPredicate() const { return f_cellPred; }
     void                                setCellPredicate( QCassandraCellPredicate::pointer_t pred ) { f_cellPred = pred; }
 
+    virtual void appendQuery( QString& /*query*/, int& /*bind_count*/             ) {}
+    virtual void bindQuery( QCassandraQuery::pointer_t /*query*/, int& /*bind_num*/ ) {}
+
 protected:
     typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_count_t;
     QCassandraCellPredicate::pointer_t      f_cellPred;
-
-    virtual void appendQuery( QString& /*query*/, int& /*bind_count*/             ) {}
-    virtual void bindQuery( QCassandraQuery::pointer_t /*query*/, int& /*bind_num*/ ) {}
 };
 
 
@@ -157,11 +166,11 @@ public:
     const QByteArray& rowKey() const                       { return f_rowKey;   }
     void              setRowKey(const QByteArray& row_key) { f_rowKey= row_key; }
 
-protected:
-    QByteArray  f_rowKey;
-
     virtual void appendQuery( QString& query, int& bind_count );
     virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
+
+protected:
+    QByteArray  f_rowKey;
 };
 
 
@@ -178,12 +187,12 @@ public:
     const QByteArray& endRowKey() const                         { return f_endRowKey;      }
     void              setEndRowKey(const QByteArray& row_key)   { f_endRowKey = row_key;   }
 
+    virtual void appendQuery( QString& query, int& bind_count );
+    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
+
 protected:
     QByteArray  f_startRowKey;
     QByteArray  f_endRowKey;
-
-    virtual void appendQuery( QString& query, int& bind_count );
-    virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
 };
 
 
