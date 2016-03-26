@@ -378,7 +378,7 @@ private:
 
     zpsnap_child_t              f_snap;
 
-    QString                     f_user_key;                     // logged in user email address
+    QString                     f_user_key;                     // user email address (may not be logged in)
     controlled_vars::fbool_t    f_user_logged_in;               // user is logged in only if this is true
     controlled_vars::fbool_t    f_administrative_logged_in;     // user is logged in and has administrative rights if this is true
     QString                     f_user_changing_password_key;   // not quite logged in user

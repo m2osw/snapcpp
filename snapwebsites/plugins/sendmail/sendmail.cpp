@@ -17,6 +17,7 @@
 
 #include "sendmail.h"
 
+#include "../locale/snap_locale.h"
 #include "../output/output.h"
 #include "../users/users.h"
 
@@ -3168,6 +3169,35 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         }
     }
 
+    // TODO: look into whether we should have a way to setup the locale
+    //       and timezone of a user without having to log the user in
+    //       as we do here...
+    //
+    {
+        // create a fake session so we can temporarily log this user
+        // which means the locale and timezone can be setup for that user!
+        // (i.e. destination user since that's whom we are sending the
+        // email and thus his preferences apply)
+        //
+        sessions::sessions::session_info info;
+        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_SECURE);
+        info.set_session_id(1);
+        info.set_plugin_owner(get_plugin_name()); // ourselves
+        //info.set_page_path(); -- no path for emails
+        info.set_object_path("/email-session/" + to); // save the email address; this is not a real path though
+        info.set_user_agent(get_name(name_t::SNAP_NAME_SENDMAIL_USER_AGENT));
+        info.set_time_limit(f_snap->get_start_time() + 86400);  // now + 1 day
+        users::users * users_plugin(users::users::instance());
+        if(!users_plugin->authenticated_user(to, &info))
+        {
+            SNAP_LOG_WARNING("User \"")(to)("\" could not be authenticated. The locale information will be set to the website locale.");
+        }
+    }
+
+    locale::locale * locale_plugin(locale::locale::instance());
+    locale_plugin->set_locale();
+    locale_plugin->set_timezone();
+
     {
         sessions::sessions::session_info info;
         info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_SECURE);
@@ -3517,6 +3547,8 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
  */
 void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body)
 {
+    locale::locale * locale_plugin(locale::locale::instance());
+
     // by default an email is just like a regular page
     output::output::instance()->on_generate_main_content(ipath, page, body);
 
@@ -3531,7 +3563,7 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
         {
             QDomElement from(doc.createElement("from"));
             sendmail_tag.appendChild(from);
-            const QString from_email(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_FROM)));
+            QString const from_email(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_FROM)));
             QDomText from_text(doc.createTextNode(from_email));
             from.appendChild(from_text);
             // TODO: parse the email address with libtld and offer:
@@ -3542,7 +3574,7 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
         {
             QDomElement to(doc.createElement("to"));
             sendmail_tag.appendChild(to);
-            const QString to_email(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
+            QString const to_email(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
             QDomText to_text(doc.createTextNode(to_email));
             to.appendChild(to_text);
         }
@@ -3561,25 +3593,26 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
             key.appendChild(key_text);
         }
         // /snap/page/body/sendmail/created
-        const QString created(f_snap->date_to_string(f_email.get_time() * 1000000, snap_child::date_format_t::DATE_FORMAT_LONG));
+        QString const created_date(locale_plugin->format_date(f_email.get_time()));
+        QString const created_time(locale_plugin->format_time(f_email.get_time()));
         {
             QDomElement time_tag(doc.createElement("created"));
             sendmail_tag.appendChild(time_tag);
-            QDomText time_text(doc.createTextNode(created));
+            QDomText time_text(doc.createTextNode(QString("%1 %2").arg(created_date).arg(created_time)));
             time_tag.appendChild(time_text);
         }
         // /snap/page/body/sendmail/date
         {
             QDomElement time_tag(doc.createElement("date"));
             sendmail_tag.appendChild(time_tag);
-            QDomText time_text(doc.createTextNode(created.mid(0, 10)));
+            QDomText time_text(doc.createTextNode(created_date));
             time_tag.appendChild(time_text);
         }
         // /snap/page/body/sendmail/time
         {
             QDomElement time_tag(doc.createElement("time"));
             sendmail_tag.appendChild(time_tag);
-            QDomText time_text(doc.createTextNode(created.mid(11)));
+            QDomText time_text(doc.createTextNode(created_time));
             time_tag.appendChild(time_text);
         }
         // /snap/page/body/sendmail/attachment-count

@@ -795,7 +795,7 @@ void users::on_process_cookies()
         // so we do a complete reset first
         //
         sessions::sessions::session_info new_session;
-        *f_info = new_session; 
+        *f_info = new_session;
     }
 
     // There is a login limit so we do not need to "randomly" limit
@@ -4134,7 +4134,7 @@ void users::on_set_timezone()
     QString const user_path(get_user_path());
     if(!user_path.isEmpty())
     {
-        content::content *content_plugin(content::content::instance());
+        content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
         content::path_info_t user_ipath;
