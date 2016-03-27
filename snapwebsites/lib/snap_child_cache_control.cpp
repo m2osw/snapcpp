@@ -150,7 +150,7 @@ void snap_child::not_modified()
         // if the "Cache-Control" header was specified with "no-cache",
         // then we have to re-send the data no matter what
         //
-        if(!no_caching())
+        if(no_caching())
         {
             // never caching this data, never send the 304.
             return;
@@ -222,6 +222,9 @@ void snap_child::not_modified()
 
             // no data to output with 304
         }
+
+        // the cache worked as expected
+        exit(0);
     }
     catch(...)
     {
