@@ -35,11 +35,11 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef QCASSANDRA_LOCK_H
-#define QCASSANDRA_LOCK_H
+#pragma once
 
-#include "QCassandraTable.h"
+#include "QCassandraConsistencyLevel.h"
 #include "QCassandraContext.h"
+#include "QCassandraTable.h"
 
 namespace QtCassandra
 {
@@ -48,8 +48,8 @@ namespace QtCassandra
 class QCassandraLock : public QObject
 {
 public:
-    QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name = "");
-    QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_key   );
+    QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name = "", cassandra_consistency_level_t level = CONSISTENCY_LEVEL_DEFAULT );
+    QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_key   , cassandra_consistency_level_t level = CONSISTENCY_LEVEL_DEFAULT );
     virtual ~QCassandraLock();
 
     bool lock(const QString& object_name);
@@ -60,6 +60,7 @@ private:
     void internal_init(const QByteArray& object_name);
 
     QCassandraContext::pointer_t   f_context;
+    cassandra_consistency_level_t  f_level;
     QCassandraTable::pointer_t     f_table;
     QByteArray                     f_object_name;
     QByteArray                     f_ticket_id;
@@ -67,6 +68,5 @@ private:
 };
 
 } // namespace QtCassandra
-#endif
-//#ifndef QCASSANDRA_LOCK_H
+
 // vim: ts=4 sw=4 et

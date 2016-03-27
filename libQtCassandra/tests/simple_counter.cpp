@@ -40,6 +40,7 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
+#include <thrift-gencpp-cassandra/cassandra_types.h>
 
 int main(int argc, char *argv[])
 {
@@ -69,7 +70,7 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_sc"));
     try {
         context->drop();
-        //cassandra->synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
     }
     catch(...) {
         // ignore errors, this happens when the context doesn't exist yet
@@ -80,22 +81,28 @@ int main(int argc, char *argv[])
     context->setReplicationFactor(1); // by default this is undefined
 
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-    table->option( "general",     "comment"             ) = "Our test table.";
-    table->option( "general",     "gc_grace_seconds"    ) = "3600";
-    table->option( "compaction",  "class"               ) = "org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy";
-    table->option( "compaction",  "min_threshold"       ) = "4";
-    table->option( "compaction",  "max_threshold"       ) = "22";
-    table->option( "compression", "sstable_compression" ) = "org.apache.cassandra.io.compress.LZ4Compressor";
-    table->setDefaultValidationClassForCounters();
+    //table->setComment("Our test table.");
+    table->setColumnType("Standard"); // Standard or Super
+    table->setKeyValidationClass("BytesType");
+    table->setDefaultValidationClassForCounters();  // this is counter table
+    table->setComparatorType("BytesType");
+    table->setKeyCacheSavePeriodInSeconds(14400);
+    table->setMemtableFlushAfterMins(60);
+    //table->setMemtableThroughputInMb(247);
+    //table->setMemtableOperationsInMillions(1.1578125);
+    //table->setGcGraceSeconds(864000); // 10 days (default)
+    table->setGcGraceSeconds(3600); // 1h.
+    table->setMinCompactionThreshold(4);
+    table->setMaxCompactionThreshold(22);
+    table->setReplicateOnWrite(1);
 
     try {
         context->create();
-        table->create();
-        //cassandra->synchronizeSchemaVersions();
+        cassandra->synchronizeSchemaVersions();
         qDebug() << "Context and its table were created!";
     }
-    catch(const std::exception& e) {
-        qDebug() << "Exception is [" << e.what() << "]";
+    catch(org::apache::cassandra::InvalidRequestException& e) {
+        qDebug() << "Exception is [" << e.why.c_str() << "]";
         exit(1);
     }
 
@@ -105,13 +112,10 @@ int main(int argc, char *argv[])
     // In order to be able to read the value as a 64 bit value we clear the
     // cache that just saved the number 8 in an 'int' which is likely 32 bits
     (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
-    qDebug() << "Size of counter should be 8, it is"
-             << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
-    qDebug() << "Read value should be 8, it is"
-             << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
+    qDebug() << "Size of counter should be 8, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().size();
+    qDebug() << "Read value should be 8, it is" << (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value();
     (*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].clearCache();
-    if((*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 8)
-    {
+    if((*cassandra)["qt_cassandra_test_sc"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")][QString("size")].value().int64Value() != 8) {
         ++err;
     }
 
@@ -154,7 +158,7 @@ int main(int argc, char *argv[])
 #pragma GCC pop
 
     context->drop();
-    //cassandra->synchronizeSchemaVersions();
+    cassandra->synchronizeSchemaVersions();
 
     exit(err == 0 ? 0 : 1);
 }

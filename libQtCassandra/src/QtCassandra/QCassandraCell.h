@@ -33,10 +33,10 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef QCASSANDRA_CELL_H
-#define QCASSANDRA_CELL_H
+#pragma once
 
 #include "QCassandraValue.h"
+#include "QCassandraConsistencyLevel.h"
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <QObject>
 #include <QMap>
@@ -99,6 +99,5 @@ typedef QMap<QByteArray, QCassandraCell::pointer_t> QCassandraCells;
 
 
 } // namespace QtCassandra
-#endif
-//#ifndef QCASSANDRA_CELL_H
+
 // vim: ts=4 sw=4 et

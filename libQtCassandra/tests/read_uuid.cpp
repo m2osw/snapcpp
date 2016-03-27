@@ -71,39 +71,40 @@ int main(int argc, char *argv[])
     qDebug() << "Working on Cassandra Cluster Named" << cassandra.clusterName();
     qDebug() << "Working on Cassandra Protocol Version" << cassandra.protocolVersion();
 
-    qDebug() << "Get context";
+qDebug() << "Get context";
     QSharedPointer<QtCassandra::QCassandraContext> context(cassandra.context("snap_websites"));
-    qDebug() << "Get table";
+qDebug() << "Get table";
     QSharedPointer<QtCassandra::QCassandraTable> table(context->table("uuid_test"));
-    qDebug() << "Get row" << uuid;
+qDebug() << "Get row" << uuid;
 
-    //QByteArray a(uuid.toRfc4122());
-    //for(int i=0;i<a.size();++i){
-    //QString s(QString("%1").arg((int)a.at(i)));
-    //qDebug()<<i<<s;
-    //}
+//QByteArray a(uuid.toRfc4122());
+//for(int i=0;i<a.size();++i){
+//QString s(QString("%1").arg((int)a.at(i)));
+//qDebug()<<i<<s;
+//}
 
     QSharedPointer<QtCassandra::QCassandraRow> row(table->row(uuid));
-    qDebug() << "Row is" << row.data();
+qDebug() << "Row is" << row.data();
     QSharedPointer<QtCassandra::QCassandraCell> cell(row->cell("abc"));
-    //    QCassandraValue p;
-    //    p.setInt32Value(1234);
-    //    cell->setValue(p);
-    //exit(0);
-    qDebug() << "Cell is" << cell.data();
+//    QCassandraValue p;
+//    p.setInt32Value(1234);
+//    cell->setValue(p);
+//exit(0);
+qDebug() << "Cell is" << cell.data();
     QtCassandra::QCassandraValue v(cell->value());
-    qDebug() << "Value is" << v.size() << "bytes" << v.int32Value();
-    QByteArray ll;
-    ll = QByteArray::number(0xc);//0x0102030405060708LL);
-    qDebug() << "QByteArray long long" << ll.size() << "bytes";
-    for(int i=0;i<ll.size();++i){
-        QString s(QString("0x%1").arg((int)ll.at(i), 2, 16, QChar('0')));
-        qDebug()<<i<<s;
-    }
+qDebug() << "Value is" << v.size() << "bytes" << v.int32Value();
+QByteArray ll;
+ll = QByteArray::number(0xc);//0x0102030405060708LL);
+qDebug() << "QByteArray long long" << ll.size() << "bytes";
+for(int i=0;i<ll.size();++i){
+QString s(QString("0x%1").arg((int)ll.at(i), 2, 16, QChar('0')));
+qDebug()<<i<<s;
+}
 
-    //qDebug() << "Get value";
+//qDebug() << "Get value";
     QtCassandra::QCassandraValue r((*context)["uuid_test"][uuid][":"]);
-    qDebug() << "Value is" << r.size() << "bytes";
+qDebug() << "Value is" << r.size() << "bytes";
+
     qDebug() << "Value is" << r.int16Value();
 
     exit(0);
