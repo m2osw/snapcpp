@@ -40,7 +40,6 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
-#include <thrift-gencpp-cassandra/cassandra_types.h>
 
 int main(int argc, char *argv[])
 {
@@ -102,13 +101,15 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraColumnDefinition::pointer_t column2(table->columnDefinition("qt_cassandra_test_column2"));
     column2->setValidationClass("IntegerType");
 
-    try {
+    try
+    {
         context->create();
         cassandra->synchronizeSchemaVersions();
         qDebug() << "Done!";
     }
-    catch(org::apache::cassandra::InvalidRequestException& e) {
-        qDebug() << "Exception is [" << e.why.c_str() << "]";
+    catch( const std::exception& e )
+    {
+        qDebug() << "Exception is [" << e.what() << "]";
     }
 
     // now that it's created, we can access it with the [] operator

@@ -46,7 +46,8 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
-#include <thrift-gencpp-cassandra/cassandra_types.h>
+
+#include <unistd.h>
 
 int main(int argc, char *argv[])
 {
@@ -121,8 +122,8 @@ int main(int argc, char *argv[])
         cassandra->synchronizeSchemaVersions();
         qDebug() << "++ Context and its table were created!";
     }
-    catch(org::apache::cassandra::InvalidRequestException& e) {
-        qDebug() << "Exception is [" << e.why.c_str() << "]";
+    catch(const std::exception& e) {
+        qDebug() << "Exception is [" << e.what() << "]";
         exit(1);
     }
 
@@ -141,12 +142,15 @@ int main(int argc, char *argv[])
         value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
         QString row(QString("row%1").arg(i));
 //qDebug() << "Save row" << row << "with" << r;
-        for(int retry(5); retry > 0; --retry) {
-            try {
+        for(int retry(5); retry > 0; --retry)
+        {
+            try
+            {
                 (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"][row]["value"] = value;
                 retry = 0;
             }
-            catch(const org::apache::cassandra::TimedOutException& e) {
+            catch(const std::exception& /*e*/)
+            {
                 printf("*");
                 fflush(stdout);
                 if(retry == 1) {
@@ -185,10 +189,10 @@ int main(int argc, char *argv[])
     fflush(stdout);
 
     // now read the data
-    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
-    column_predicate->addColumnName("value");
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setColumnPredicate(column_predicate);
+    auto column_predicate( std::make_shared<QtCassandra::QCassandraCellKeyPredicate>() );
+    column_predicate->setCellKey("value");
+    auto row_predicate( std::make_shared<QtCassandra::QCassandraRowPredicate>() );
+    row_predicate->setCellPredicate(column_predicate);
     //row_predicate.setWrap();
     //row_predicate.setStartRowName("");
     //row_predicate.setEndRowName("");

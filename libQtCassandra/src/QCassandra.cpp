@@ -866,7 +866,6 @@ bool QCassandra::isConnected() const
     return f_session->isConnected();
 }
 
-#if 0
 // TODO: I don't think we need this any more with Cassandra v2+ and CQL,
 // but it would be good to look into to be sure.
 //
@@ -901,12 +900,15 @@ bool QCassandra::isConnected() const
  *
  * \param[in] timeout  The number of seconds to wait at most.
  */
-void QCassandra::synchronizeSchemaVersions(uint32_t timeout)
+void QCassandra::synchronizeSchemaVersions(uint32_t /*timeout*/)
 {
+#if 0
     if(timeout == SCHEMA_SYNCHRONIZATION_USE_DEFAULT) {
         timeout = f_schema_synchronization_timeout;
     }
     f_private->synchronizeSchemaVersions(timeout);
+#endif
+    // Does nothing
 }
 
 
@@ -930,7 +932,6 @@ void QCassandra::setSchemaSynchronizationTimeout(uint32_t timeout)
     }
     f_schema_synchronization_timeout = timeout;
 }
-#endif
 
 /** \brief Get the name of the Cassandra cluster.
  *

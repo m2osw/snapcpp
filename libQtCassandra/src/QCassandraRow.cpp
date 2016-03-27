@@ -508,6 +508,26 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
  *
  * \return A shared pointer to the cell.
  */
+QCassandraCell& QCassandraRow::operator [] (const char* column_name)
+{
+    return *cell(column_name);
+}
+
+/** \brief Retrieve a cell from the row.
+ *
+ * This function retrieves a reference to a cell from this row in
+ * array syntax.
+ *
+ * This version returns a writable cell and it creates a new cell
+ * when one with the specified name doesn't already exist.
+ *
+ * This function accepts a column name. The UTF-8 version of it is used to
+ * retrieve the data from Cassandra.
+ *
+ * \param[in] column_name  The name of the column referencing this cell.
+ *
+ * \return A shared pointer to the cell.
+ */
 QCassandraCell& QCassandraRow::operator [] (const QString& column_name)
 {
     return *cell(column_name);
@@ -530,6 +550,30 @@ QCassandraCell& QCassandraRow::operator [] (const QString& column_name)
 QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key)
 {
     return *cell(column_key);
+}
+
+/** \brief Retrieve a cell from the row.
+ *
+ * This function retrieves a constant reference to a cell from this row
+ * in array syntax.
+ *
+ * This version returns a read-only cell. If the cell doesn't exist,
+ * the funtion raises an exception.
+ *
+ * This function accepts a column name. The UTF-8 version of it is used to
+ * retrieve the data from Cassandra.
+ *
+ * \exception std::runtime_error
+ * This function requires that the cell being accessed already exist
+ * in memory. If not, this exception is raised.
+ *
+ * \param[in] column_name  The name of the column referencing this cell.
+ *
+ * \return A shared pointer to the cell.
+ */
+const QCassandraCell& QCassandraRow::operator [] (const char* column_name) const
+{
+    return operator [] (QString(column_name));
 }
 
 /** \brief Retrieve a cell from the row.

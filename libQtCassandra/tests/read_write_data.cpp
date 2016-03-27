@@ -40,7 +40,6 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
-#include <thrift-gencpp-cassandra/cassandra_types.h>
 
 int main(int argc, char *argv[])
 {
@@ -100,8 +99,8 @@ int main(int argc, char *argv[])
         cassandra->synchronizeSchemaVersions();
         qDebug() << "Context and its table were created!";
     }
-    catch(org::apache::cassandra::InvalidRequestException& e) {
-        qDebug() << "Exception is [" << e.why.c_str() << "]";
+    catch(const std::exception& e) {
+        qDebug() << "Exception is [" << e.what() << "]";
         exit(1);
     }
 
@@ -201,11 +200,12 @@ int main(int argc, char *argv[])
 
     // clear the cache, test that we can find all the cells
     (*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"].clearCache();
-    QtCassandra::QCassandraColumnPredicate column_predicate;
+    auto column_predicate( std::make_shared<QtCassandra::QCassandraCellPredicate>() );
     (*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].readCells(column_predicate);
     const QtCassandra::QCassandraCells& cells((*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].cells());
     qDebug() << "cells in 1st row" << cells.size();
-    for(QtCassandra::QCassandraCells::const_iterator it = cells.begin(); it != cells.end(); ++it) {
+    for(QtCassandra::QCassandraCells::const_iterator it = cells.begin(); it != cells.end(); ++it)
+    {
         qDebug() << "  name" << (*it)->columnName();
     }
 

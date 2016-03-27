@@ -72,8 +72,10 @@ public:
     QCassandraCell::pointer_t findCell(const QByteArray& column_key) const;
     bool exists(const QString& column_name) const;
     bool exists(const QByteArray& column_key) const;
+    QCassandraCell& operator [] (const char* column_name);
     QCassandraCell& operator [] (const QString& column_name);
     QCassandraCell& operator [] (const QByteArray& column_key);
+    const QCassandraCell& operator [] (const char* column_name) const;
     const QCassandraCell& operator [] (const QString& column_name) const;
     const QCassandraCell& operator [] (const QByteArray& column_key) const;
 

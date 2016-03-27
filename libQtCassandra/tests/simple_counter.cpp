@@ -40,7 +40,6 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
-#include <thrift-gencpp-cassandra/cassandra_types.h>
 
 int main(int argc, char *argv[])
 {
@@ -101,8 +100,8 @@ int main(int argc, char *argv[])
         cassandra->synchronizeSchemaVersions();
         qDebug() << "Context and its table were created!";
     }
-    catch(org::apache::cassandra::InvalidRequestException& e) {
-        qDebug() << "Exception is [" << e.why.c_str() << "]";
+    catch( const std::exception& e ) {
+        qDebug() << "Exception is [" << e.what() << "]";
         exit(1);
     }
 

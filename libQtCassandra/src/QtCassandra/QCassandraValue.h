@@ -35,6 +35,8 @@
  */
 #pragma once
 
+#include "QtCassandra/QCassandraConsistencyLevel.h"
+
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
@@ -934,6 +936,9 @@ public:
     int32_t ttl() const;
     void setTtl(int32_t ttl = TTL_PERMANENT);
 
+    consistency_level_t consistencyLevel() const;
+    void setConsistencyLevel(consistency_level_t level);
+
     timestamp_mode_t timestampMode() const;
     void setTimestampMode(timestamp_mode_t mode);
     int64_t timestamp() const;
@@ -950,6 +955,7 @@ private:
 
     QByteArray                  f_value;
     cassandra_ttl_t             f_ttl;
+    consistency_level_t         f_consistency_level;
     timestamp_mode_t            f_timestamp_mode;
     controlled_vars::zint64_t   f_timestamp;
 };

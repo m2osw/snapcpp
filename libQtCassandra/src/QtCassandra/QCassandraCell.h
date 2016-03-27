@@ -78,6 +78,11 @@ public:
 
     void clearCache();
 
+    consistency_level_t consistencyLevel() const;
+    void setConsistencyLevel(consistency_level_t level);
+    int64_t timestamp() const;
+    void setTimestamp(int64_t timestamp);
+
     std::shared_ptr<QCassandraRow> parentRow() const;
 
 private:
@@ -88,8 +93,8 @@ private:
     friend class QCassandraTable;
 
     std::shared_ptr<QCassandraRow>      f_row;
-    mutable controlled_vars::flbool_t   f_cached;
     QByteArray                          f_key;
+    mutable controlled_vars::flbool_t   f_cached;
     QCassandraValue                     f_value;
 };
 
