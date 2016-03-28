@@ -126,8 +126,8 @@ private:
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
 
-    void parseContextDefinition(const KsDef* ks );
-    void prepareContextDefinition(KsDef *data) const;
+    void parseContextDefinition(const KsDef* ks);
+    void prepareContextDefinition(KsDef *ks) const;
 
     friend class QCassandra;
     friend class KsDef;

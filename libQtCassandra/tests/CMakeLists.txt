@@ -34,6 +34,7 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+################################################################################
 include_directories(
     ${AS2JS_INCLUDE_DIR}
     ${CASSANDRACPPDRIVER_INCLUDE_DIR}
@@ -42,6 +43,14 @@ include_directories(
     ${QtCassandra_SOURCE_DIR}
     ${QtCassandra_BINARY_DIR}
 )
+
+################################################################################
+# Change the IP as required by your environment
+set( DEFAULT_CASSANDRA_IP "$ENV{CASSANDRA_IP}" )
+if( NOT DEFAULT_CASSANDRA_IP )
+    set( DEFAULT_CASSANDRA_IP "localhost" )
+endif()
+set( CASSANDRA_IP "${DEFAULT_CASSANDRA_IP}" CACHE STRING "IP address of the cassandra server" )
 
 ################################################################################
 project(query)
@@ -56,6 +65,7 @@ target_link_libraries(${PROJECT_NAME}
     QtCassandra
 )
 
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ###############################################################################
 project(cluster)
@@ -69,6 +79,7 @@ target_link_libraries(cluster
     QtCassandra
 )
 
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
 project(cassandra_value)
@@ -83,6 +94,8 @@ target_link_libraries(cassandra_value
     ${THRIFT_LIBRARIES}
 )
 
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
+
 ################################################################################
 project(context_management)
 
@@ -96,6 +109,8 @@ target_link_libraries(context_management
     ${THRIFT_LIBRARIES}
 )
 
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
+
 ################################################################################
 project(read_write_data)
 
@@ -108,6 +123,8 @@ target_link_libraries(read_write_data
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}
 )
+
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
 #project(read_uuid)
@@ -135,6 +152,8 @@ target_link_libraries(million_rows
     ${THRIFT_LIBRARIES}
 )
 
+#add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
+
 ################################################################################
 project(simple_counter)
 
@@ -148,6 +167,8 @@ target_link_libraries(simple_counter
     ${THRIFT_LIBRARIES}
 )
 
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
+
 ################################################################################
 #project(composite_type)
 #
@@ -160,6 +181,8 @@ target_link_libraries(simple_counter
 #    ${QT_LIBRARIES}
 #    ${THRIFT_LIBRARIES}
 #)
+#
+#add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
 project(cassandra_lock)
@@ -173,57 +196,6 @@ target_link_libraries(cassandra_lock
     ${QT_LIBRARIES}
 )
 
-################################################################################
-project(run_cassandra_tests)
-
-# Change the IP as required by your environment
-set( DEFAULT_CASSANDRA_IP "$ENV{CASSANDRA_IP}" )
-if( NOT DEFAULT_CASSANDRA_IP )
-    set( DEFAULT_CASSANDRA_IP "localhost" )
-endif()
-set( CASSANDRA_IP "${DEFAULT_CASSANDRA_IP}" CACHE STRING "IP address of the cassandra server" )
-
-add_custom_target(run_cassandra_tests
-    COMMAND echo "========================================="
-    COMMAND echo "query -h ${CASSANDRA_IP}"
-    COMMAND query -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "cluster -h ${CASSANDRA_IP}"
-    COMMAND cluster -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "cassandra_value -h ${CASSANDRA_IP}"
-    COMMAND cassandra_value -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "context_management -h ${CASSANDRA_IP}"
-    COMMAND context_management -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "read_write_data -h ${CASSANDRA_IP}"
-    COMMAND read_write_data -h ${CASSANDRA_IP}
-    # This test is actually not working, this is a Cassandra
-    # limitation; (i.e. flooding a server is not supported)
-    # http://www.datastax.com/dev/blog/bulk-loading
-    #COMMAND echo "========================================="
-    #COMMAND echo "million_rows -h ${CASSANDRA_IP}"
-    #COMMAND million_rows -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "simple_counter -h ${CASSANDRA_IP}"
-    COMMAND simple_counter -h ${CASSANDRA_IP}
-    #COMMAND echo "========================================="
-    #COMMAND echo "composite_type -h ${CASSANDRA_IP}"
-    #COMMAND composite_type -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "cassandra_lock -h ${CASSANDRA_IP}"
-    COMMAND cassandra_lock -h ${CASSANDRA_IP} -i 4 -n 5
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS
-        cluster
-        cassandra_value
-        context_management
-        read_write_data
-        million_rows
-        simple_counter
-        #composite_type
-        cassandra_lock
-)
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} -i 4 -n 5 )
 
 # vim: ts=4 sw=4 et

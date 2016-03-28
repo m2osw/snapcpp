@@ -92,6 +92,12 @@ namespace
 
     void getMapFromJsonObject( QCassandraQuery::string_map_t& json_map, const QString& data )
     {
+        json_map.clear();
+        if( data.isEmpty() || data == "null" )
+        {
+            return;
+        }
+
         as2js::JSON::pointer_t load_json( std::make_shared<as2js::JSON>() );
         as2js::StringInput::pointer_t in( std::make_shared<as2js::StringInput>(data.toStdString()) );
         as2js::JSON::JSONValue::pointer_t opts( load_json->parse(in) );
@@ -105,6 +111,12 @@ namespace
 
     void getDataFromJsonMap( const QCassandraQuery::string_map_t& json_map, std::string& data )
     {
+        data.clear();
+        if( json_map.empty() )
+        {
+            return;
+        }
+
         as2js::Position pos;
         as2js::JSON::JSONValue::object_t   json_obj;
         as2js::JSON::JSONValue::pointer_t  top_level_val( std::make_shared<as2js::JSON::JSONValue>(pos,json_obj) );

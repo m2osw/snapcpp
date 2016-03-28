@@ -43,7 +43,7 @@ namespace QtCassandra
 /// \brief Cell predicate query handlers
 void QCassandraCellKeyPredicate::appendQuery( QString& query, int& bind_count )
 {
-    query += "AND column1 == ?";
+    query += " AND column1 == ?";
     bind_count++;
 }
 
@@ -56,7 +56,7 @@ void QCassandraCellKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& b
 /// \brief Cell range predicate query handlers
 void QCassandraCellRangePredicate::appendQuery( QString& query, int& bind_count )
 {
-    query += "AND column1 >= ? AND column1 <= ?";
+    query += " AND column1 >= ? AND column1 <= ?";
     bind_count += 2;
 }
 
@@ -70,7 +70,7 @@ void QCassandraCellRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int&
 /// \brief Row key predicate query handlers
 void QCassandraRowKeyPredicate::appendQuery( QString& query, int& bind_count )
 {
-    query += "WHERE key == ?";
+    query += " WHERE key = ?";
     bind_count++;
     f_cellPred->appendQuery( query, bind_count );
 }
@@ -85,7 +85,7 @@ void QCassandraRowKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& bi
 /// \brief Row range predicate query handlers
 void QCassandraRowRangePredicate::appendQuery( QString& query, int& bind_count )
 {
-    query += "WHERE token(key) >= token(?) AND token(key) <= token(?)";
+    query += " WHERE token(key) >= token(?) AND token(key) <= token(?)";
     bind_count += 2;
     f_cellPred->appendQuery( query, bind_count );
 }

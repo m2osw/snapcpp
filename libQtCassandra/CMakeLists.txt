@@ -69,6 +69,11 @@ include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIR}
 )
 
+option( RUN_TESTS "Enable CTest support and turn on the 'test' make target." OFF )
+if( ${RUN_TESTS} )
+    enable_testing()
+endif()
+
 add_subdirectory(cmake)
 add_subdirectory(src)
 add_subdirectory(tools)

@@ -539,6 +539,7 @@ QCassandraTable::pointer_t QCassandraContext::table(const QString& table_name)
     return t;
 }
 
+#if 0
 void QCassandraContext::loadTables()
 {
     f_tables.clear();
@@ -554,6 +555,8 @@ void QCassandraContext::loadTables()
     }
     q.end();
 
+    f_private->cf_defs.clear();
+
     for( auto table_name : table_list )
     {
         QCassandraTable::pointer_t t(new QCassandraTable(shared_from_this(), table_name));
@@ -561,6 +564,7 @@ void QCassandraContext::loadTables()
         f_tables.insert(table_name, t);
     }
 }
+#endif
 
 
 /** \brief Retrieve a reference to the tables.
@@ -766,7 +770,7 @@ bool QCassandraContext::durableWrites() const
  *
  * \sa prepareContextDefinition()
  */
-void QCassandraContext::parseContextDefinition(const KsDef* ks )
+void QCassandraContext::parseContextDefinition(const KsDef* ks)
 {
     // name
     if(ks->name != f_private->name) {
@@ -795,25 +799,28 @@ void QCassandraContext::parseContextDefinition(const KsDef* ks )
 
     // the options is an array that we keep on our end
     f_options.clear();
-    if(ks->__isset.strategy_options) {
+    if(ks->__isset.strategy_options)
+    {
         for(std::map<std::string, std::string>::const_iterator
-                    o = ks->strategy_options.begin();
-                    o != ks->strategy_options.end();
-                    ++o) {
+            o = ks->strategy_options.begin();
+            o != ks->strategy_options.end();
+            ++o)
+        {
             // TBD: can option strings include binary data?
             f_options.insert(o->first.c_str(), o->second.c_str());
         }
     }
 
     // table definitions (CfDef, column family definitions)
-    f_tables.clear();
     for(std::vector<CfDef>::const_iterator
-                cf = ks->cf_defs.begin(); cf != ks->cf_defs.end(); ++cf) {
+        cf = ks->cf_defs.begin(); cf != ks->cf_defs.end(); ++cf)
+    {
         QCassandraTable::pointer_t t(table(cf->name.c_str()));
         const CfDef& cf_def = *cf;
         t->parseTableDefinition(&cf_def);
     }
 }
+
 
 /** \brief Prepare the context.
  *
@@ -855,13 +862,10 @@ void QCassandraContext::prepareContextDefinition(KsDef *ks) const
     // instead we have to loop through the table in the previous
     // level and update each column family separately
     ks->cf_defs.clear();
-    for(QtCassandra::QCassandraTables::const_iterator
-            t = f_tables.begin();
-            t != f_tables.end();
-            ++t)
+    for( auto t : f_tables )
     {
         CfDef cf;
-        (*t)->prepareTableDefinition(&cf);
+        t->prepareTableDefinition(&cf);
         ks->cf_defs.push_back(cf);
     }
     //if(ks->cf_defs.empty()) ... problem? it's not optional...
@@ -988,7 +992,8 @@ QString QCassandraContext::generateReplicationStanza() const
  */
 void QCassandraContext::create()
 {
-    if(!f_cassandra) {
+    if(!f_cassandra)
+    {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
@@ -1002,8 +1007,6 @@ void QCassandraContext::create()
               );
     q.start();
     q.end();
-
-    loadTables();
 
     // TBD: Should we then call describe_keyspace() to make sure we've
     //      got the right data (defaults) in this object, tables, and
@@ -1131,6 +1134,7 @@ void QCassandraContext::dropTable(const QString& table_name)
 void QCassandraContext::clearCache()
 {
     f_tables.clear();
+    f_cassandra->retrieve_context( f_private->name.c_str() );
 }
 
 /** \brief The hosts are listed in the locks table under this name.

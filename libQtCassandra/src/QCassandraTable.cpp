@@ -2321,7 +2321,7 @@ QString QCassandraTable::getTableOptions( const CfDef& cf ) const
     }
     if( cf.__isset.speculative_retry )
     {
-        q_str += QString("AND speculative_retry = %1\n").arg(cf.speculative_retry.c_str());
+        q_str += QString("AND speculative_retry = '%1'\n").arg(cf.speculative_retry.c_str());
     }
 
     return q_str;
@@ -2471,7 +2471,11 @@ void QCassandraTable::truncate()
  */
 void QCassandraTable::clearCache()
 {
-    f_query->end();
+    if( f_query )
+    {
+        f_query->end();
+    }
+    f_query.reset();
     f_rows.clear();
 }
 
@@ -2551,7 +2555,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         //
         std::cout << "query=[" << query.toStdString() << "]" << std::endl;
         f_query = std::make_shared<QCassandraQuery>(f_session);
-        f_query->query( query );
+        f_query->query( query, bind_count );
         //
         if( row_predicate )
         {
