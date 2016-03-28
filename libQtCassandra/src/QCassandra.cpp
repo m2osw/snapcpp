@@ -1078,6 +1078,7 @@ QCassandraContext::pointer_t QCassandra::context( const QString &context_name )
     QCassandraContext::pointer_t c(
         new QCassandraContext( shared_from_this(), context_name ) );
     f_contexts.insert( context_name, c );
+    retrieveContext( context_name );
     return c;
 }
 
@@ -1146,7 +1147,7 @@ void QCassandra::clearCurrentContextIf( const QCassandraContext &c )
  *
  * \param[in,out]  cf_def  The "columnfamily" (i.e. table) information structure that we will populate from the query.
  */
-void QCassandra::retrieve_columns( CfDef& cf_def ) const
+void QCassandra::retrieveColumns( CfDef& cf_def ) const
 {
     const QString query( QString("SELECT column_name, index_name, "
                                  "index_options, index_type, type, validator "
@@ -1195,7 +1196,7 @@ void QCassandra::retrieve_columns( CfDef& cf_def ) const
  *
  * \param[in,out]  cf_def  The "columnfamily" (i.e. table) information structure that we will populate from the query.
  */
-void QCassandra::retrieve_triggers( CfDef& cf_def ) const
+void QCassandra::retrieveTriggers( CfDef& cf_def ) const
 {
     const QString query( QString("SELECT trigger_name, trigger_options "
                                  "FROM system.schema_triggers "
@@ -1226,7 +1227,7 @@ void QCassandra::retrieve_triggers( CfDef& cf_def ) const
  *
  * \param[in,out]  ks_def  The keyspace information structure that we will populate from the query.
  */
-void QCassandra::retrieve_tables( KsDef& ks_def ) const
+void QCassandra::retrieveTables( KsDef& ks_def ) const
 {
     const QString query( QString("SELECT columnfamily_name, type, comparator, subcomparator, "
                                  "comment, read_repair_chance, gc_grace_seconds, default_validator, "
@@ -1272,8 +1273,8 @@ void QCassandra::retrieve_tables( KsDef& ks_def ) const
         cf_def.__set_default_time_to_live        ( the_query.getInt32Column   ("default_time_to_live")                 );
         cf_def.__set_speculative_retry           ( the_query.getStringColumn  ("speculative_retry")                    .toStdString() );
         //
-        retrieve_columns  ( cf_def );
-        retrieve_triggers ( cf_def );
+        retrieveColumns  ( cf_def );
+        retrieveTriggers ( cf_def );
         //
         cf_def_list.push_back( cf_def );
     }
@@ -1295,7 +1296,7 @@ void QCassandra::retrieve_tables( KsDef& ks_def ) const
  *
  * \param[in] context_name  The name of the context to re-describe.
  */
-void QCassandra::retrieve_context(const QString& context_name) const
+void QCassandra::retrieveContext(const QString& context_name) const
 {
     // retrieve this keyspace from Cassandra
     KsDef ks_def;
@@ -1311,7 +1312,8 @@ void QCassandra::retrieve_context(const QString& context_name) const
     the_query.start();
     if( !the_query.nextRow() )
     {
-        throw std::runtime_error("database is inconsistent!");
+        // No tables have been created yet.
+        return;
     }
 
     const bool    durable_writes   ( the_query.getBoolColumn   ( "durable_writes"   ) );
@@ -1328,7 +1330,7 @@ void QCassandra::retrieve_context(const QString& context_name) const
         ks_def.__set_replication_factor( atoi(iter->second.c_str()) );
     }
 
-    retrieve_tables( ks_def );
+    retrieveTables( ks_def );
 
     ks_def.__set_durable_writes( durable_writes );
 
@@ -1365,7 +1367,7 @@ const QCassandraContexts &QCassandra::contexts() const
         keyspace_query.start();
         while( keyspace_query.nextRow() )
         {
-            retrieve_context( keyspace_query.getStringColumn("keyspace_name") );
+            retrieveContext( keyspace_query.getStringColumn("keyspace_name") );
         }
     }
     return f_contexts;

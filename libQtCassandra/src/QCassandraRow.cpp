@@ -467,7 +467,6 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
         return true;
     }
 
-#if 0
     // This is already done by the readRows() method of QCassandraTable.
     // If you have an instance of this class without going through the
     // QCassandraTable interface, it won't work right.
@@ -488,9 +487,8 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
 
     QCassandraCell::pointer_t c(const_cast<QCassandraRow *>(this)->cell(column_key));
     c->setValue(value);
-#endif
 
-    return false;
+    return true;
 }
 
 /** \brief Retrieve a cell from the row.

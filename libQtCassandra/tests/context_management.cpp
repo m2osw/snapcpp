@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
         // ignore errors, this happens when the context doesn't exist yet
     }
 
-    context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy"); // default is LocalStrategy
+    context->setStrategyClass("SimpleStrategy"); // default is LocalStrategy
     //context->setDurableWrites(false); // by default this is 'true'
     context->setReplicationFactor(1); // by default this is undefined
 

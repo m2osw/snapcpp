@@ -93,7 +93,8 @@ public:
     bool durableWrites() const;
 
     // handling
-    QString generateReplicationStanza() const;
+    //QString generateReplicationStanza() const;
+    QString getKeyspaceOptions( KsDef& ks );
     //
     void create();
     void update();

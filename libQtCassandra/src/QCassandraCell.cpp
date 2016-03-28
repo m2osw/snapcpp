@@ -385,7 +385,7 @@ void QCassandraCell::add(int64_t val)
         f_cached = true;
     }
 
-    f_row->insertValue( f_key, val );
+    f_row->insertValue( f_key, f_value );
 }
 
 /** \brief Add to a counter.

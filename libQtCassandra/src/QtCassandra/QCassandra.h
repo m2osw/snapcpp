@@ -108,10 +108,10 @@ private:
     void setCurrentContext(QCassandraContext::pointer_t c);
     void clearCurrentContextIf(const QCassandraContext& c);
 
-    void retrieve_columns  ( CfDef& cf_def ) const;
-    void retrieve_triggers ( CfDef& cf_def ) const;
-    void retrieve_tables   ( KsDef& ks_def ) const;
-    void retrieve_context  ( const QString& context_name ) const;
+    void retrieveColumns  ( CfDef& cf_def ) const;
+    void retrieveTriggers ( CfDef& cf_def ) const;
+    void retrieveTables   ( KsDef& ks_def ) const;
+    void retrieveContext  ( const QString& context_name ) const;
 
     friend class QCassandraContext;
 

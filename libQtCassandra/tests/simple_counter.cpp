@@ -38,6 +38,8 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <iostream>
+
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
 
@@ -98,7 +100,7 @@ int main(int argc, char *argv[])
     try {
         context->create();
         cassandra->synchronizeSchemaVersions();
-        table->create();
+        //table->create();
         qDebug() << "Context and its table were created!";
     }
     catch( const std::exception& e ) {
@@ -159,6 +161,11 @@ int main(int argc, char *argv[])
 
     context->drop();
     cassandra->synchronizeSchemaVersions();
+
+    if( err )
+    {
+        std::cerr << err << " tests failed!" << std::endl;
+    }
 
     exit(err == 0 ? 0 : 1);
 }

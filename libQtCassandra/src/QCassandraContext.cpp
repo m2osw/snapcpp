@@ -844,7 +844,7 @@ void QCassandraContext::prepareContextDefinition(KsDef *ks) const
     *ks = *f_private;
 
     if(ks->strategy_class == "") {
-        ks->strategy_class = "org.apache.cassandra.locator.LocalStrategy";
+        ks->strategy_class = "LocalStrategy";
     }
 
     // copy the options
@@ -901,6 +901,7 @@ void QCassandraContext::makeCurrent()
 }
 
 
+#if 0
 /** \brief Generate the replication stanza for the CQL keyspace schema.
  */
 QString QCassandraContext::generateReplicationStanza() const
@@ -934,6 +935,25 @@ QString QCassandraContext::generateReplicationStanza() const
     }
 
     return replication_stanza;
+}
+#endif
+
+
+QString QCassandraContext::getKeyspaceOptions( KsDef& ks )
+{
+    QString q_str = QString("WITH replication = {'class': '%1'").arg(ks.strategy_class.c_str());
+    for( const auto& pair : ks.strategy_options )
+    {
+        q_str += QString(", '%1': '%2'").arg(pair.first.c_str()).arg(pair.second.c_str());
+    }
+    q_str += "}\n";
+
+    if( ks.__isset.durable_writes )
+    {
+        q_str += QString("AND durable_writes = %1\n").arg(ks.durable_writes? "true": "false");
+    }
+
+    return q_str;
 }
 
 
@@ -997,25 +1017,21 @@ void QCassandraContext::create()
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    const QString query_fmt("CREATE KEYSPACE IF NOT EXISTS %1 WITH replication = {%2} AND durable_writes = %3");
+    KsDef ks;
+    prepareContextDefinition(&ks);
+
+    QString q_str( QString("CREATE KEYSPACE IF NOT EXISTS %1\n").arg(contextName()) );
+    q_str += getKeyspaceOptions( ks );
 
     QCassandraQuery q( f_cassandra->session() );
-    q.query( query_fmt
-                 .arg(f_private->name.c_str())
-                 .arg(generateReplicationStanza())
-                 .arg(f_private->durable_writes? "true": "false")
-              );
+    q.query( q_str );
     q.start();
     q.end();
 
-    // TBD: Should we then call describe_keyspace() to make sure we've
-    //      got the right data (defaults) in this object, tables, and
-    //      column definitions?
-    //
-    //      Actually the describe_schema_versions() needs to be called
-    //      to make sure that all the nodes are synchronized properly.
-    //      This is done with the QCassandra::synchronizeSchemaVersions()
-    //      function.
+    for( auto t: f_tables )
+    {
+        t->create();
+    }
 }
 
 /** \brief Update a context with new properties.
@@ -1026,21 +1042,22 @@ void QCassandraContext::create()
  */
 void QCassandraContext::update()
 {
-    if(!f_cassandra) {
+    if(!f_cassandra)
+    {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    const QString query_fmt("ALTER KEYSPACE %1 WITH replication = {%2} AND durable_writes = %3");
+    KsDef ks;
+    prepareContextDefinition(&ks);
+
+    QString q_str( QString("ALTER KEYSPACE %1\n").arg(contextName()) );
+    q_str += getKeyspaceOptions( ks );
 
     QCassandraQuery q( f_cassandra->session() );
-    q.query( query_fmt
-                 .arg(f_private->name.c_str())
-                 .arg(generateReplicationStanza())
-                 .arg(f_private->durable_writes? "true": "false")
-             );
+    q.query( q_str );
     q.start();
-    q.end();
 }
+
 
 /** \brief Drop this context.
  *
@@ -1076,8 +1093,8 @@ void QCassandraContext::drop()
     QCassandraQuery q( f_cassandra->session() );
     q.query( QString("DROP KEYSPACE IF EXISTS %1").arg(f_private->name.c_str()) );
     q.start();
-    q.end();
 }
+
 
 /** \brief Drop the specified table from the Cassandra database.
  *
@@ -1134,7 +1151,7 @@ void QCassandraContext::dropTable(const QString& table_name)
 void QCassandraContext::clearCache()
 {
     f_tables.clear();
-    f_cassandra->retrieve_context( f_private->name.c_str() );
+    f_cassandra->retrieveContext( f_private->name.c_str() );
 }
 
 /** \brief The hosts are listed in the locks table under this name.

@@ -2416,6 +2416,7 @@ void QCassandraTable::create()
     QCassandraQuery q( f_session );
     q.query( query );
     q.start();
+    q.end();
 
     f_from_cassandra = true;
 }
