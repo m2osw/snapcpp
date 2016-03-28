@@ -152,7 +152,10 @@ target_link_libraries(million_rows
     ${THRIFT_LIBRARIES}
 )
 
-#add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
+option( RUN_MILLION_ROW_TEST "In addition to the normal tests, include the (very slow) 'million row' test." OFF )
+if( ${RUN_MILLION_ROW_TEST} )
+    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
+endif()
 
 ################################################################################
 project(simple_counter)
