@@ -21,6 +21,7 @@
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 
+#include "dbutils.h"
 #include "http_strings.h"
 #include "log.h"
 #include "not_reached.h"
@@ -261,10 +262,15 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t & ipath, path::
 }
 
 
-/** \brief Check whether we have an uncompressed version of the file.
+/** \brief Check whether we have a normal or uncompressed version of the file.
  *
- * This entry allows us to return an uncompressed version of the file
- * if it exists.
+ * This function checks for two things:
+ *
+ * 1. If we have a version of the file that's compressed then we want to
+ *    rename the path without the .gz because the path needs to check the
+ *    name without the .gz
+ * 2. Whether it is compressed or not, if the client sent us a If-None-Math
+ *    header with the correct ETag, then we want to return a 304 instead
  *
  * \param[in,out] ipath  The path being checked.
  * \param[in,out] plugin_info  The dynamic plugin information.
@@ -277,6 +283,8 @@ bool attachment::check_for_uncompressed_file(content::path_info_t & ipath, path:
     cpath = cpath.left(cpath.length() - 3);
     content::path_info_t attachment_ipath;
     attachment_ipath.set_path(cpath);
+
+    // file exists?
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
     if(!revision_table->exists(attachment_ipath.get_revision_key())
     || !revision_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
@@ -284,15 +292,15 @@ bool attachment::check_for_uncompressed_file(content::path_info_t & ipath, path:
         return false;
     }
 
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
-    if(attachment_key.nullValue())
+    // load the MD5 key for that attachment
+    QtCassandra::QCassandraValue const attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    if(attachment_key.size() != 16)
     {
         return false;
     }
 
     QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
-    if(!files_table->exists(attachment_key.binaryValue())
-    || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED)))
+    if(!files_table->exists(attachment_key.binaryValue()))
     {
         // TODO: also offer a dynamic version which compress the
         //       file on the fly (but we wouldd have to save it and
@@ -301,11 +309,66 @@ bool attachment::check_for_uncompressed_file(content::path_info_t & ipath, path:
         return false;
     }
 
-    // tell the path plugin that we know how to handle this one
-    plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
-    ipath.set_parameter("attachment_field", content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED));
+    bool const field_name(files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED)));
+    if(field_name)
+    {
+        // use the MD5 sum
+        QString const md5sum(dbutils::key_to_string(attachment_key.binaryValue()));
+        f_snap->set_header("ETag", md5sum);
 
-    return true;
+        // user may mark a page with the "no-cache" type in which case
+        // we want to skip on setting up the cache
+        //
+        // this makes me think that we need a cache control defined in
+        // the content plugin
+        //
+        {
+            // this is considered a valid entry so we can setup the
+            // cache to last "forever"; a script with its version
+            // NEVER changes; you always have to bump the version
+            // to get the latest changes
+            //
+            cache_control_settings & server_cache_control(f_snap->server_cache_control());
+            server_cache_control.set_max_age(3600); // cache for 1h
+            server_cache_control.set_must_revalidate(false); // default is true
+
+            // check whether this file is public (can be saved in proxy
+            // caches, i.e. is viewable by a visitor) or private (only
+            // cache on client's machine)
+            //
+            content::permission_flag result;
+            path::path::instance()->access_allowed("", attachment_ipath, "view", permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR), result);
+            server_cache_control.set_public(result.allowed());
+
+            // let the system check the various cache definitions
+            // found in the page being worked on
+            //
+            content::content * content_plugin(content::content::instance());
+            content_plugin->set_cache_control_page(attachment_ipath);
+
+            // cache control for the page
+            //
+            cache_control_settings & page_cache_control(f_snap->page_cache_control());
+            page_cache_control.set_max_age(3600);  // cache for 1h
+            page_cache_control.set_must_revalidate(false); // default is true
+
+            // we set the ETag header and cache information so we can
+            // call the not_modified() function now;
+            //
+            // if the ETag did not change, the function does not return;
+            // instead it sends a 304 as the response to the client
+            //
+            f_snap->not_modified();
+            // ... function may never return ...
+        }
+
+        // tell the path plugin that we know how to handle this one
+        plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
+        ipath.set_parameter("attachment_field", content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED));
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -480,8 +543,18 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
                 f_snap->set_header("Content-Encoding", "gzip", snap_child::HEADER_MODE_NO_ERROR);
             }
 
-            // retrieve the version which is a unique number
-            f_snap->set_header("ETag", version);
+            // use the version since it is a unique number
+            // NO NO NO, we need to use the Last-Modified only (or max-age)
+            // but ETag would mean we'd get to send a 304 each time which
+            // is not necessary since the version is in the URI!
+            //f_snap->set_header("ETag", version);
+
+            // get the last modification time of this very version
+            QtCassandra::QCassandraValue revision_modification(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
+            QDateTime expires(QDateTime().toUTC());
+            expires.setTime_t(revision_modification.safeInt64Value() / 1000000);
+            QLocale us_locale(QLocale::English, QLocale::UnitedStates);
+            f_snap->set_header("Last-Modified", us_locale.toString(expires, "ddd, dd MMM yyyy hh:mm:ss' GMT'"), snap_child::HEADER_MODE_EVERYWHERE);
 
             // user may mark a page with the "no-cache" type in which case
             // we want to skip on setting up the cache
@@ -496,7 +569,7 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
                 // to get the latest changes
                 //
                 cache_control_settings & server_cache_control(f_snap->server_cache_control());
-                server_cache_control.set_max_age(-1);
+                server_cache_control.set_max_age(cache_control_settings::AGE_MAXIMUM);
                 server_cache_control.set_must_revalidate(false); // default is true
 
                 // check whether this file is public (can be saved in proxy
@@ -515,8 +588,8 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
                 // cache control for the page
                 //
                 cache_control_settings & page_cache_control(f_snap->page_cache_control());
+                page_cache_control.set_max_age(cache_control_settings::AGE_MAXIMUM);
                 page_cache_control.set_must_revalidate(false); // default is true
-                page_cache_control.set_max_age(-1);  // TODO -- this is not too good...
 
                 // we set the ETag header and cache information so we can
                 // call the not_modified() function now;
@@ -525,17 +598,8 @@ bool attachment::check_for_minified_js_or_css(content::path_info_t & ipath, path
                 // instead it sends a 304 as the response to the client
                 //
                 f_snap->not_modified();
+                // ... function may never return ...
             }
-
-            // Chrome and IE check this header for CSS and JS data
-            f_snap->set_header("X-Content-Type-Options", "nosniff");
-
-            // get the last modification time of this very version
-            QtCassandra::QCassandraValue revision_modification(revision_table->row(revision_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
-            QDateTime expires(QDateTime().toUTC());
-            expires.setTime_t(revision_modification.safeInt64Value() / 1000000);
-            QLocale us_locale(QLocale::English, QLocale::UnitedStates);
-            f_snap->set_header("Last-Modified", us_locale.toString(expires, "ddd, dd MMM yyyy hh:mm:ss' GMT'"), snap_child::HEADER_MODE_EVERYWHERE);
 
             // tell the path plugin that we know how to handle this one
             plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
@@ -626,7 +690,7 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
 
     // get the file MD5 which must be exactly 16 bytes
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue const attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.size() != 16)
     {
         // somehow the file key is not available
@@ -648,8 +712,7 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
         // somehow the file data is not available
         f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
                 QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
-                QString("Could not find field \"%2\" of file \"%3\" (maybe renamed \"%4\").")
-                        .arg(ipath.get_key())
+                QString("Could not find field \"%1\" of file \"%2\" (maybe renamed \"%3\").")
                         .arg(field_name)
                         .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
                         .arg(renamed));
@@ -657,6 +720,81 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
     }
 
     QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
+
+    // get the attachment MIME type and tweak it if it is a known text format
+    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    QString content_type(attachment_mime_type.stringValue());
+    if(content_type == "text/javascript"
+    || content_type == "text/css")
+    {
+        // TBD -- we probably should check what is defined inside those
+        //        files before assuming it is using UTF-8.
+        content_type += "; charset=utf-8";
+
+        // Chrome and IE check this header for CSS and JS data
+        f_snap->set_header("X-Content-Type-Options", "nosniff");
+    }
+    else
+    {
+        // All other files are marked with an ETag so we can avoid resending
+        // them but clients are expected to query for them on each load
+        // (i.e. a must-revalidate type of cache)
+        //
+        QString const md5sum(dbutils::key_to_string(attachment_key.binaryValue()));
+        f_snap->set_header("ETag", md5sum);
+
+        // user may mark a page with the "no-cache" type in which case
+        // we want to skip on setting up the cache
+        //
+        // this makes me think that we need a cache control defined in
+        // the content plugin
+        //
+        {
+            // this is considered a valid entry so we can setup the
+            // cache to last "forever"; a script with its version
+            // NEVER changes; you always have to bump the version
+            // to get the latest changes
+            //
+            cache_control_settings & server_cache_control(f_snap->server_cache_control());
+            server_cache_control.set_max_age(3600); // cache for 1h before rechecking
+            server_cache_control.set_must_revalidate(false); // default is true
+
+            // check whether this file is public (can be saved in proxy
+            // caches, i.e. is viewable by a visitor) or private (only
+            // cache on client's machine)
+            //
+            content::permission_flag result;
+            path::path::instance()->access_allowed("", attachment_ipath, "view", permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR), result);
+            server_cache_control.set_public(result.allowed());
+
+            // let the system check the various cache definitions
+            // found in the page being worked on
+            //
+            content::content * content_plugin(content::content::instance());
+            content_plugin->set_cache_control_page(attachment_ipath);
+
+            // cache control for the page
+            //
+            cache_control_settings & page_cache_control(f_snap->page_cache_control());
+            page_cache_control.set_max_age(3600);  // cache for 1h before rechecking
+            page_cache_control.set_must_revalidate(false); // default is true
+
+            // we set the ETag header and cache information so we can
+            // call the not_modified() function now;
+            //
+            // if the ETag did not change, the function does not return;
+            // instead it sends a 304 as the response to the client
+            //
+            f_snap->not_modified();
+            // ... function may never return ...
+        }
+
+        if(content_type == "text/xml")
+        {
+            content_type += "; charset=utf-8";
+        }
+    }
+    f_snap->set_header("Content-Type", content_type);
 
     // If the user is loading the file as an attachment, make sure to
     // include the disposition and transfer encoding info
@@ -671,19 +809,6 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
         f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
         f_snap->set_header("Content-Transfer-Encoding", "binary");
     }
-
-    // get the attachment MIME type and tweak it if it is a known text format
-    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
-    QString content_type(attachment_mime_type.stringValue());
-    if(content_type == "text/javascript"
-    || content_type == "text/css"
-    || content_type == "text/xml")
-    {
-        // TBD -- we probably should check what is defined inside those
-        //        files before assuming it is using UTF-8.
-        content_type += "; charset=utf-8";
-    }
-    f_snap->set_header("Content-Type", content_type);
 
     // the actual file data now
     QtCassandra::QCassandraValue data(file_row->cell(field_name)->value());

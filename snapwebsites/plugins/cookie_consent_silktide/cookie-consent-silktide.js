@@ -1,26 +1,35 @@
 /*!
  * Name: cookie-consent-silktide
- * Version: 2.0
+ * Version: 2.0.9
  * Browsers: all
  * Depends: jquery (>= 1.10)
  * Description: Silktide Cookie Consent JavaScript Library v2.x
- * Copyright: Copyright 2012-2013 Silktide Ltd.
- * License: GPL 3
+ * Copyright: Copyright 2012-2015 Silktide Ltd.
+ * License: MIT
  *
  * https://github.com/silktide/cookieconsent2/blob/master/cookieconsent.js
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * The MIT License (MIT)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Copyright (c) 2015 Silktide Ltd
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 (function () {
   // Stop from running again, if accidently included more than once.
@@ -40,11 +49,13 @@
   // Name of cookie to be set when dismissed
   var DISMISSED_COOKIE = 'cookieconsent_dismissed';
 
-  // The path to built in themes (s3 bucket)
-  var THEME_BUCKET_PATH = '//s3.amazonaws.com/cc.silktide.com/';
+  // The path to built in themes
+  // Note: Directly linking to a version on the CDN like this is horrible, but it's less horrible than people downloading the code
+  // then discovering that their CSS bucket disappeared
+  var THEME_BUCKET_PATH = '//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/1.0.10/';
 
   // No point going further if they've already dismissed.
-  if (document.cookie.indexOf(DISMISSED_COOKIE) > -1) {
+  if (document.cookie.indexOf(DISMISSED_COOKIE) > -1 || (window.navigator && window.navigator.CookiesOK)) {
     return;
   }
 
@@ -177,7 +188,7 @@
     var insertReplacements = function (htmlStr, scope) {
       return htmlStr.replace(/\{\{(.*?)\}\}/g, function (_match, sub) {
         var tokens = sub.split('||');
-        var value;
+        var value, token;
         while (token = tokens.shift()) {
           token = token.trim();
 
@@ -255,6 +266,7 @@
       dismiss: 'Got it!',
       learnMore: 'More info',
       link: null,
+      target: '_self',
       container: null, // selector
       theme: 'light-floating',
       domain: null, // default to current domain.
@@ -265,7 +277,7 @@
         '<div class="cc_banner cc_container cc_container--open">',
         '<a href="#null" data-cc-event="click:dismiss" target="_blank" class="cc_btn cc_btn_accept_all">{{options.dismiss}}</a>',
 
-        '<p class="cc_message">{{options.message}} <a data-cc-if="options.link" class="cc_more_info" href="{{options.link || "#null"}}">{{options.learnMore}}</a></p>',
+        '<p class="cc_message">{{options.message}} <a data-cc-if="options.link" target="{{ options.target }}" class="cc_more_info" href="{{options.link || "#null"}}">{{options.learnMore}}</a></p>',
 
         '<a class="cc_logo" target="_blank" href="http://silktide.com/cookieconsent">Cookie Consent plugin for the EU cookie law</a>',
         '</div>',

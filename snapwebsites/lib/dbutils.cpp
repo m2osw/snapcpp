@@ -58,7 +58,7 @@ namespace
 }
 
 
-dbutils::dbutils( const QString& table_name, const QString& row_name )
+dbutils::dbutils( QString const & table_name, QString const & row_name )
     : f_tableName(table_name)
     , f_rowName(row_name)
     , f_displayLen(64)
@@ -127,7 +127,7 @@ QByteArray dbutils::get_row_key() const
         {
             // these rows make use of MD5 sums so we have to convert them
             QByteArray const str(f_rowName.toUtf8());
-            char const *s(str.data());
+            char const * s(str.data());
             while(s[0] != '\0' && s[1] != '\0')
             {
                 char const c(static_cast<char>((hex_to_dec(s[0]) << 4) | hex_to_dec(s[1])));

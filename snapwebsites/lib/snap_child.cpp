@@ -4849,7 +4849,9 @@ void snap_child::canonicalize_options()
     }
 
     // *** CACHE CONTROL ***
-    cache_control_settings cache_control(snapenv("HTTP_CACHE_CONTROL"), false);
+    cache_control_settings cache_control;
+    cache_control.set_max_age(cache_control_settings::IGNORE_VALUE); // defaults to 0 which is not correct for client's cache information
+    cache_control.set_cache_info(snapenv("HTTP_CACHE_CONTROL"), false);
 
     // *** SAVE RESULTS ***
     f_language = lang;
@@ -4861,6 +4863,7 @@ void snap_child::canonicalize_options()
     //    f_language_key += f_country;
     //}
 
+    // TBD: add support for long revisions? (for JS and CSS files)
     f_working_branch = working_branch;
     f_branch = branch_value;
     f_revision = revision_value;
@@ -6420,7 +6423,8 @@ void snap_child::define_http_name(http_code_t http_code, QString & http_name)
  * Added a separate function so we can add multiple HTTP Link entries.
  *
  * \param[in] name  The name of the header.
- * \param[in] value  The value to assign to that header.
+ * \param[in] value  The value to assign to that header. Set to an empty
+ *                   string to remove the header.
  * \param[in] modes  Where the header will be used.
  */
 void snap_child::set_header(QString const & name, QString const & value, header_mode_t modes)
@@ -7972,13 +7976,16 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
  *      YYYY-MM-DD
  *      DD-MMM-YYYY HH:MM:SS TZ
  *      DD-MMM-YYYY HH:MM:SS TZ
- *      WWW DD-MMM-YYYY HH:MM:SS TZ
+ *      WWW, DD-MMM-YYYY HH:MM:SS TZ
  *      MMM-DD-YYYY HH:MM:SS TZ
  *      WWW MMM-DD HH:MM:SS YYYY
  * \endcode
  *
  * The month and weekday may be a 3 letter abbreviation or the full English
- * name. The month must use letters.
+ * name. The month must use letters. We support the ANSI format which must
+ * start with the month or week name in letters. We distinguish the ANSI
+ * format from the other RFC-2616 date if it starts with a week day and is
+ * followed by a space, or it directly starts with the month name.
  *
  * The year may be 2 or 4 digits.
  *
@@ -8309,6 +8316,37 @@ time_t snap_child::string_to_date(QString const & date)
 
         bool parse()
         {
+            // support for YYYY-MM-DD
+            if(f_date.size() == 10
+            && f_s[4] == '-'
+            && f_s[7] == '-')
+            {
+                if(!integer(4, 4, 0, 3000, f_time_info.tm_year))
+                {
+                    return false;
+                }
+                if(*f_s != '-')
+                {
+                    return false;
+                }
+                ++f_s;
+                if(!integer(2, 2, 1, 12, f_time_info.tm_mon))
+                {
+                    return false;
+                }
+                --f_time_info.tm_mon; // expect 0 to 11 in final structure
+                if(*f_s != '-')
+                {
+                    return false;
+                }
+                ++f_s;
+                if(!integer(2, 2, 1, 31, f_time_info.tm_mday))
+                {
+                    return false;
+                }
+                return true;
+            }
+
             // week day (optional in RFC822)
             if(*f_s >= 'a' && *f_s <= 'z')
             {
@@ -8344,37 +8382,6 @@ time_t snap_child::string_to_date(QString const & date)
                 }
                 ++f_s; // skip the comma
                 skip_spaces();
-            }
-
-            // support for YYYY-MM-DD
-            if(f_date.size() == 10
-            && f_s[4] == '-'
-            && f_s[7] == '-')
-            {
-                if(!integer(4, 4, 0, 3000, f_time_info.tm_year))
-                {
-                    return false;
-                }
-                if(*f_s != '-')
-                {
-                    return false;
-                }
-                ++f_s;
-                if(!integer(2, 2, 1, 12, f_time_info.tm_mon))
-                {
-                    return false;
-                }
-                --f_time_info.tm_mon; // expect 0 to 11 in final structure
-                if(*f_s != '-')
-                {
-                    return false;
-                }
-                ++f_s;
-                if(!integer(2, 2, 1, 31, f_time_info.tm_mday))
-                {
-                    return false;
-                }
-                return true;
             }
 
             if(!integer(1, 2, 1, 31, f_time_info.tm_mday))
@@ -8432,6 +8439,12 @@ time_t snap_child::string_to_date(QString const & date)
         {
             parser.f_time_info.tm_year += 100;
         }
+    }
+
+    // make sure the day is valid for that month/year
+    if(parser.f_time_info.tm_mday > last_day_of_month(parser.f_time_info.tm_mon + 1, parser.f_time_info.tm_year))
+    {
+        return -1;
     }
 
     // now we have a time_info which is fully adjusted except for DST...

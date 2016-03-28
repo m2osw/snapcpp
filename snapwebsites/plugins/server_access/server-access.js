@@ -837,6 +837,17 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
     var ajax_options =
         {
             method: "POST",
+            headers:
+            {
+                // The 'no-transform' is important if we have intermediate
+                // proxies that would want to otherwise transform the data
+                // in some ways
+                //
+                // The 's-max=0' request that the shared caches do not
+                // actually cache anything
+                //
+                'Cache-Control': 'no-transform,s-max=0'
+            },
             processData: this.dataType_ === snapwebsites.ServerAccess.OBJECT_,
             data: this.data_ ? this.data_ : { _ajax: 1 },
             error: function(jqxhr, result_status, error_msg)

@@ -157,7 +157,9 @@ public:
         req_sets_t                      f_plugin_permissions;
         QString                         f_plugin_cache_key;
         controlled_vars::fbool_t        f_using_user_cache;
+        controlled_vars::fbool_t        f_user_cache_reset;
         controlled_vars::fbool_t        f_using_plugin_cache;
+        controlled_vars::fbool_t        f_plugin_cache_reset;
     };
 
                             permissions();

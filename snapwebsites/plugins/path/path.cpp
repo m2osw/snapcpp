@@ -271,7 +271,7 @@ void dynamic_plugin_t::set_plugin(plugins::plugin * p)
  * \li Converted: file is .pdf, user gets a .png ...
  * \li Book: .pdf on the root page of a book tree
  *
- * \param[in] plugin  The plugin that understands the path.
+ * \param[in] p  The plugin that understands the path.
  * \param[in] cpath  The path replacing the one used by the user.
  */
 void dynamic_plugin_t::set_plugin_if_renamed(plugins::plugin * p, QString const & cpath)

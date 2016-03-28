@@ -45,6 +45,13 @@ namespace details
 // cache table from the content plugin
 QtCassandra::QCassandraTable::pointer_t     g_cache_table;
 
+// when client does a reload, we want to regenerate each permissions only
+// once so we save the URIs in this vector (we suspect that we receive
+// such requests only once and then quit this snap_child instance)
+//
+QMap<QString, bool>                         g_user_cache_reviewed;
+QMap<QString, bool>                         g_plugin_cache_reviewed;
+
 
 name_t login_status_from_string(QString const & status)
 {
@@ -541,6 +548,7 @@ bool permissions::sets_t::read_from_user_cache()
     if(!details::g_cache_table->exists(cache_ipath.get_key())
     || !details::g_cache_table->row(cache_ipath.get_key())->exists(cache_key))
     {
+        f_user_cache_reset = true;
         return false;
     }
 
@@ -555,7 +563,37 @@ bool permissions::sets_t::read_from_user_cache()
     {
         // the cache is present but out of date, let the caller compute
         // a new version
+        f_user_cache_reset = true;
         return false;
+    }
+
+    // check whether the client said we should reset our caches
+    //
+    // TODO: This is problematic for Anonymous users, any one user who is
+    //       not logged in can generate a reset of the permissions caches
+    //       under the feet of other Anonymous users... (it may also be
+    //       that anonymous users cannot reach this line of code.)
+    //
+    if(!f_user_cache_reset)
+    {
+        cache_control_settings const & page_cache_control(f_snap->client_cache_control());
+        if((page_cache_control.get_no_cache()
+        || page_cache_control.get_max_age() == 0)
+        && !details::g_user_cache_reviewed.contains(cache_ipath.get_key()))
+        {
+            details::g_user_cache_reviewed[cache_ipath.get_key()] = true;
+
+            // okay! user says to not take existing cache in account, so we
+            // ignore it here... it should be recalculated and the new version
+            // saved so no need to drop the cell and generate a tombstone
+            //
+            f_user_cache_reset = true;
+            // TODO: we are supposed to return false here to force the
+            //       server to regenerate the permissions, but it is really
+            //       slow at this point so I think that should not be done
+            //       on a simple reload; further testing will be needed.
+            //return false;
+        }
     }
 
     // convert the cached value in what the caller expects
@@ -699,6 +737,7 @@ bool permissions::sets_t::read_from_plugin_cache()
     || !details::g_cache_table->row(f_ipath.get_key())->exists(cache_key))
     {
         // no cache available, let the caller compute this one
+        f_plugin_cache_reset = true;
         return false;
     }
 
@@ -713,7 +752,37 @@ bool permissions::sets_t::read_from_plugin_cache()
     {
         // the cache is present but out of date, let the caller compute
         // a new version
+        f_plugin_cache_reset = true;
         return false;
+    }
+
+    // check whether the client said we should reset our caches
+    //
+    // TODO: This is problematic for Anonymous users, any one user who is
+    //       not logged in can generate a reset of the permissions caches
+    //       under the feet of other Anonymous users... (it may also be
+    //       that anonymous users cannot reach this line of code.)
+    //
+    if(!f_plugin_cache_reset)
+    {
+        cache_control_settings const & page_cache_control(f_snap->client_cache_control());
+        if((page_cache_control.get_no_cache()
+        || page_cache_control.get_max_age() == 0)
+        && !details::g_plugin_cache_reviewed.contains(f_ipath.get_key()))
+        {
+            details::g_plugin_cache_reviewed[f_ipath.get_key()] = true;
+
+            // okay! user says to not take existing cache in account, so we
+            // ignore it here... it should be recalculated and the new version
+            // saved so no need to drop the cell and generate a tombstone
+            //
+            f_plugin_cache_reset = true;
+            // TODO: we are supposed to return false here to force the
+            //       server to regenerate the permissions, but it is really
+            //       slow at this point so I think that should not be done
+            //       on a simple reload; further testing will be needed.
+            //return false;
+        }
     }
 
     // convert the cached value in what the caller expects

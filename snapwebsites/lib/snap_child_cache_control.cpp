@@ -106,11 +106,16 @@ cache_control_settings & snap_child::page_cache_control()
  */
 bool snap_child::no_caching() const
 {
-    return f_client_cache_control.get_no_cache()
-        || f_client_cache_control.get_no_store()
-        || f_page_cache_control.get_no_cache()
-        || f_server_cache_control.get_no_store()
+    // IMPORTANT NOTE: A 'max-age' value of 0 means 'do not cache', also
+    //                 the value may be set to IGNORE_VALUE (-1).
+    //
+    // Note: The client may send us a "Cache-Control: no-cache" request,
+    //       which means we do not want to return data from any cache,
+    //       however, that does not mean we cannot send a cached reply!
+    //
+    return f_page_cache_control.get_no_cache()
         || f_page_cache_control.get_max_age() <= 0
+        || f_server_cache_control.get_no_store()
         || f_server_cache_control.get_max_age() <= 0;
 }
 
@@ -159,72 +164,157 @@ void snap_child::not_modified()
         // if the data was cached, including an ETag parameter, we may
         // receive this request even though the browser has a version
         // cached but it asks the server whether it changed so we have
-        // to return a 304; however,
+        // to return a 304;
+        //
+        // this has to be checked before the If-Modified-Since
         //
         QString const if_none_match(snapenv("HTTP_IF_NONE_MATCH"));
-        if(if_none_match.isEmpty()
-        || if_none_match != get_header("ETag"))
+        if(!if_none_match.isEmpty()
+        && if_none_match == get_header("ETag"))
         {
-            // the ETag is not a match, the data must have changed
-            return;
-        }
-
-        // this or die() was already called, forget it
-        //
-        if(f_died)
-        {
-            // avoid loops
-            return;
-        }
-        f_died = true;
-
-        // define a default error name if undefined
-        QString err_name;
-        define_http_name(http_code_t::HTTP_CODE_NOT_MODIFIED, err_name);
-
-        // log the fact we are sending a 304
-        SNAP_LOG_INFO("snap_child_cache_control.cpp:not_modified(): replying with HTTP 304 for ")(f_uri.path());
-
-        if(f_is_being_initialized)
-        {
-            // send initialization process the info about the fact
-            // (this should never occur, we may instead want to call die()?)
-            trace(QString("Error: not_modified() called: %1\n").arg(f_uri.path()));
-            trace("#END\n");
-        }
-        else
-        {
-            // On error we do not return the HTTP protocol, only the Status field
-            // it just needs to be first to make sure it works right
-            set_header("Status",
-                       QString("%1 %2\n")
-                            .arg(static_cast<int>(http_code_t::HTTP_CODE_NOT_MODIFIED))
-                            .arg(err_name),
-                       HEADER_MODE_EVERYWHERE);
-
-            // content type is HTML, we reset this header because it could have
-            // been changed to something else and prevent the error from showing
-            // up in the browser
-            set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
-                       "text/html; charset=utf8",
-                       HEADER_MODE_EVERYWHERE);
-
-            // since we are going to exit without calling the attach_to_session()
-            server::pointer_t server( f_server.lock() );
-            if(!server)
+            // this or die() was already called, forget it
+            //
+            if(f_died)
             {
-                throw snap_logic_exception("server pointer is nullptr");
+                // avoid loops
+                return;
             }
-            server->attach_to_session();
+            f_died = true;
 
-            // in case there are any cookies, send them along too
-            output_headers(HEADER_MODE_NO_ERROR);
+            // define a default error name if undefined
+            QString err_name;
+            define_http_name(http_code_t::HTTP_CODE_NOT_MODIFIED, err_name);
 
-            // no data to output with 304
+            // log the fact we are sending a 304
+            SNAP_LOG_INFO("snap_child_cache_control.cpp:not_modified(): replying with HTTP 304 for ")(f_uri.path())(" (1)");
+
+            if(f_is_being_initialized)
+            {
+                // send initialization process the info about the fact
+                // (this should never occur, we may instead want to call die()?)
+                trace(QString("Error: not_modified() called: %1\n").arg(f_uri.path()));
+                trace("#END\n");
+            }
+            else
+            {
+                // On error we do not return the HTTP protocol, only the Status field
+                // it just needs to be first to make sure it works right
+                set_header("Status",
+                           QString("%1 %2\n")
+                                .arg(static_cast<int>(http_code_t::HTTP_CODE_NOT_MODIFIED))
+                                .arg(err_name),
+                           HEADER_MODE_EVERYWHERE);
+
+                // content type is HTML, we reset this header because it could have
+                // been changed to something else and prevent the error from showing
+                // up in the browser
+                //set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+                //           "text/html; charset=utf8",
+                //           HEADER_MODE_EVERYWHERE);
+                //
+                // Remove the Content-Type header, this is simpler than requiring
+                // the correct content type information
+                set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+                           "",
+                           HEADER_MODE_EVERYWHERE);
+
+                // since we are going to exit without calling the attach_to_session()
+                server::pointer_t server( f_server.lock() );
+                if(!server)
+                {
+                    throw snap_logic_exception("server pointer is nullptr");
+                }
+                server->attach_to_session();
+
+                // in case there are any cookies, send them along too
+                output_headers(HEADER_MODE_NO_ERROR);
+
+                // no data to output with 304
+            }
+
+            // the cache worked as expected
+            exit(0);
         }
 
-        // the cache worked as expected
-        exit(0);
+        // No "If-None-Match" header found, so check fo the next
+        // possible modification check which is the "If-Modified-Since"
+        QString const if_modified_since(snapenv("HTTP_IF_MODIFIED_SINCE"));
+        QString const last_modified_str(get_header("Last-Modified"));
+        if(!if_modified_since.isEmpty()
+        && !last_modified_str.isEmpty())
+        {
+            time_t const modified_since(string_to_date(if_modified_since));
+            time_t const last_modified(string_to_date(last_modified_str));
+            // TBD: should we use >= instead of == here?
+            if(modified_since == last_modified)
+            {
+                // this or die() was already called, forget it
+                //
+                if(f_died)
+                {
+                    // avoid loops
+                    return;
+                }
+                f_died = true;
+
+                // define a default error name if undefined
+                QString err_name;
+                define_http_name(http_code_t::HTTP_CODE_NOT_MODIFIED, err_name);
+
+                // log the fact we are sending a 304
+                SNAP_LOG_INFO("snap_child_cache_control.cpp:not_modified(): replying with HTTP 304 for ")(f_uri.path())(" (2)");
+
+                if(f_is_being_initialized)
+                {
+                    // send initialization process the info about the fact
+                    // (this should never occur, we may instead want to call die()?)
+                    trace(QString("Error: not_modified() called: %1\n").arg(f_uri.path()));
+                    trace("#END\n");
+                }
+                else
+                {
+                    // On error we do not return the HTTP protocol, only the Status field
+                    // it just needs to be first to make sure it works right
+                    set_header("Status",
+                               QString("%1 %2\n")
+                                    .arg(static_cast<int>(http_code_t::HTTP_CODE_NOT_MODIFIED))
+                                    .arg(err_name),
+                               HEADER_MODE_EVERYWHERE);
+
+                    // content type is HTML, we reset this header because it could have
+                    // been changed to something else and prevent the error from showing
+                    // up in the browser
+                    //set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+                    //           "text/html; charset=utf8",
+                    //           HEADER_MODE_EVERYWHERE);
+                    //
+                    // Remove the Content-Type header, this is simpler than requiring
+                    // the correct content type information
+                    set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+                               "",
+                               HEADER_MODE_EVERYWHERE);
+
+                    // since we are going to exit without calling the attach_to_session()
+                    server::pointer_t server( f_server.lock() );
+                    if(!server)
+                    {
+                        throw snap_logic_exception("server pointer is nullptr");
+                    }
+                    server->attach_to_session();
+
+                    // in case there are any cookies, send them along too
+                    output_headers(HEADER_MODE_NO_ERROR);
+
+                    // no data to output with 304
+                }
+
+                // the cache worked as expected
+                exit(0);
+            }
+        }
+
+        // No match from client, must return normally
+        return;
     }
     catch(...)
     {
@@ -276,6 +366,20 @@ void snap_child::set_cache_control()
 //    (" - ")(f_page_cache_control.get_max_age() <= 0 ? QString("page max-age=%1").arg(f_page_cache_control.get_max_age()) : "page NO-MAX-AGE!")
 //    (" - ")(f_server_cache_control.get_max_age() <= 0 ? "server max-age" : "server NO-MAX-AGE!")
 //;
+
+    // make sure this data never gets transformed
+    //
+    // in our case, it can be very important for OAuth2 answers and
+    // other similar data... although OAuth2 replies should not be
+    // cached!
+    //
+    if(f_client_cache_control.get_no_transform()
+    || f_page_cache_control.get_no_transform()
+    || f_server_cache_control.get_no_transform())
+    {
+        cache_control_fields << "no-transform";
+    }
+
     if(no_caching())
     {
         // using Pragma for older browsers, although from what I have read
@@ -287,10 +391,7 @@ void snap_child::set_cache_control()
         //
         set_header("Expires", "Sat,  1 Jan 2000 00:00:00 GMT", HEADER_MODE_EVERYWHERE);
 
-        // I put all the "do not cache anything" in this case
-        //
-        //set_header("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, private", HEADER_MODE_EVERYWHERE);
-
+        // I put all the possible "do not cache anything" in this case
         cache_control_fields << "no-cache";
 
         // put no-store only if specified somewhere (client, page, plugins)
@@ -317,7 +418,7 @@ void snap_child::set_cache_control()
         // (the specs says you should not have public or private when
         // specifying no-cache, but it looks like it works better in
         // some cases for some browsers; if they just ignore that entry
-        // as expected, it won't hurt)
+        // as expected, it will not hurt)
         //
         cache_control_fields << "private";
     }
@@ -331,6 +432,10 @@ void snap_child::set_cache_control()
         bool public_data(true);
 
         // get the smallest max_age specified
+        //
+        // IMPORTANT: unless no_caching() fails, one of the get_max_age()
+        //            function will not return 0 or -1
+        //
         int64_t const max_age(f_page_cache_control.minimum(f_page_cache_control.get_max_age(), f_server_cache_control.get_max_age()));
         cache_control_fields << QString("max-age=%1").arg(max_age);
 
@@ -352,27 +457,17 @@ void snap_child::set_cache_control()
         }
 
 
-        // make sure this data never gets transformed
-        //
-        // in our case, it can be very important for OAuth2 answers and
-        // other similar data... although OAuth2 replies should not be
-        // cached!
-        //
-        if(f_client_cache_control.get_no_transform()
-        || f_page_cache_control.get_no_transform()
-        || f_server_cache_control.get_no_transform())
-        {
-            cache_control_fields << "no-transform";
-        }
-
         // any 's-maxage' info?
+        //
+        // IMPORTANT NOTE: here max_age cannot be 0 or -1
+        //
         int64_t const s_maxage(f_page_cache_control.minimum(f_page_cache_control.get_s_maxage(), f_server_cache_control.get_s_maxage()));
-        if(s_maxage >= 0 && s_maxage < max_age)
+        if(s_maxage != cache_control_settings::IGNORE_VALUE && s_maxage < max_age)
         {
             // request for intermediate proxies to not cache data for more
             // than the specified value; we do not send this header if
             // larger than max_age since caches should respect 'max-age'
-            // too so there would be no need to have a large 's-maxage'
+            // too so there would be no need to have a larger 's-maxage'
             //
             cache_control_fields << QString("s-maxage=%1").arg(s_maxage);
         }
@@ -409,7 +504,7 @@ void snap_child::set_cache_control()
             // HTTP spec. tells us to do
             //
             QDateTime expires(QDateTime().toUTC());
-            expires.setTime_t(f_start_date / 1000000 + max_age - 1); 
+            expires.setTime_t(f_start_date / 1000000 + max_age - 1);
             QLocale us_locale(QLocale::English, QLocale::UnitedStates);
             set_header("Expires", us_locale.toString(expires, "ddd, dd MMM yyyy hh:mm:ss' GMT'"), HEADER_MODE_EVERYWHERE);
         }
