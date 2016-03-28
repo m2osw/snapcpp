@@ -125,7 +125,7 @@ void QueryTest::dropSchema()
     std::cout << "Dropping keyspace..." << std::endl;
 
     QCassandraQuery q( f_session );
-    q.query( "DROP KEYSPACE qtcassandra_query_test" );
+    q.query( "DROP KEYSPACE IF EXISTS qtcassandra_query_test" );
     q.start();
 }
 
