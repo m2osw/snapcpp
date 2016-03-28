@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
     try {
         context->create();
         cassandra->synchronizeSchemaVersions();
+        table->create();
         qDebug() << "Context and its table were created!";
     }
     catch( const std::exception& e ) {
