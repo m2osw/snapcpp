@@ -2048,9 +2048,9 @@ void sendmail::check_bounced_emails()
     //
     QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     QtCassandra::QCassandraRow::pointer_t raw_row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_RAW)));
-    QtCassandra::QCassandraColumnRangePredicate all_column_predicate;
-    all_column_predicate.setCount(100); // should this be a parameter?
-    all_column_predicate.setIndex(); // behave like an index
+    auto all_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    all_column_predicate->setCount(100); // should this be a parameter?
+    all_column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         raw_row->clearCache();
@@ -2087,11 +2087,11 @@ void sendmail::check_bounced_emails()
     //SNAP_LOG_TRACE("process \"")(website_key)("\" bounced emails");
 
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED)));
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setStartColumnName(website_key + "/");
-    column_predicate.setEndColumnName(website_key + "0");
-    column_predicate.setCount(100); // should this be a parameter?
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setStartCellKey(website_key + "/");
+    column_predicate->setEndCellKey(website_key + "0");
+    column_predicate->setCount(100); // should this be a parameter?
+    column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         row->clearCache();
@@ -2561,9 +2561,9 @@ void sendmail::process_emails()
 
     QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW)));
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100); // should this be a parameter?
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(100); // should this be a parameter?
+    column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         row->clearCache();
@@ -2980,14 +2980,14 @@ void sendmail::run_emails()
     QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     const char *index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(index));
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setStartColumnName("0");
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setStartCellKey("0");
     // we use +1 otherwise immediate emails are sent 5 min. later!
     time_t const unix_date(time(nullptr) + 1);
     QString const end(QString("%1").arg(unix_date, 16, 16, QLatin1Char('0')));
-    column_predicate.setEndColumnName(end);
-    column_predicate.setCount(100); // should this be a parameter?
-    column_predicate.setIndex(); // behave like an index
+    column_predicate->setEndCellKey(end);
+    column_predicate->setCount(100); // should this be a parameter?
+    column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         row->clearCache();

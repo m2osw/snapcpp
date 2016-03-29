@@ -36,9 +36,11 @@ namespace snap
 
 
 table_model::table_model( const int row_count )
-    : f_rowCount(row_count)
+    // f_table             -- auto-init
+    : f_rowp(std::make_shared<QtCassandra::QCassandraRowRangePredicate>())
+    , f_rowCount(row_count)
     //, f_rowsRemaining(0) -- auto-init
-    //, f_pos(0) -- auto-init
+    //, f_pos(0)           -- auto-init
 {
 }
 
@@ -57,7 +59,7 @@ void table_model::setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp c
     {
         // add a filter and add the start/end column names (see snapdb with '%')
         // this would be important for some rows that have a very large number of columns
-        QtCassandra::QCassandraColumnRangePredicate::pointer_t columnp( new QtCassandra::QCassandraColumnRangePredicate );
+        auto columnp = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
         columnp->setCount(f_rowCount); // TODO: define a column count too
 
         // we cannot use the start and end row names to filter the rows
@@ -66,11 +68,9 @@ void table_model::setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp c
         //
         // so instead we use the match feature which requires a regex
         //
-        f_rowp.setStartRowName("");
-        f_rowp.setEndRowName("");
-        f_rowp.setCount(f_rowCount); // 1000 is the default for now
-        f_rowp.setColumnPredicate(columnp);
-        f_rowp.setRowNameMatch(re);
+        f_rowp->setCount(f_rowCount); // 1000 is the default for now
+        f_rowp->setCellPredicate(columnp);
+        f_rowp->setRowNameMatch(re);
         f_rowsRemaining = f_table->readRows( f_rowp );
         f_pos = 0;
     }

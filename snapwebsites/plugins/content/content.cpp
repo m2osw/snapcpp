@@ -614,10 +614,10 @@ void content::remove_files_compressor(int64_t variables_timestamp)
 
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
 
-    QtCassandra::QCassandraRowPredicate row_predicate;
+    auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
     QString const site_key(f_snap->get_site_key_with_slash());
     // process 100 in a row
-    row_predicate.setCount(100);
+    row_predicate->setCount(100);
     for(;;)
     {
         files_table->clearCache();
@@ -1692,12 +1692,12 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
             // if we do, make sure it is one to one equivalent to what we
             // just generated
             //
-            QtCassandra::QCassandraColumnRangePredicate references_column_predicate;
-            references_column_predicate.setCount(10);
-            references_column_predicate.setIndex(); // behave like an index
+            auto references_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            references_column_predicate->setCount(10);
+            references_column_predicate->setIndex(); // behave like an index
             QString const start_ref(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
-            references_column_predicate.setStartColumnName(start_ref);
-            references_column_predicate.setEndColumnName(start_ref + QtCassandra::QCassandraColumnPredicate::last_char);
+            references_column_predicate->setStartCellKey(start_ref);
+            references_column_predicate->setEndCellKey(start_ref + QtCassandra::QCassandraCellPredicate::last_char);
 
             files_table->row(md5)->clearCache();
             files_table->row(md5)->readCells(references_column_predicate);
@@ -4000,12 +4000,12 @@ void content::add_javascript(QDomDocument doc, QString const & name)
     //       the whole process fails even if by not using the latest
     //       would have worked
     //
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(10); // small because we generally really only are interested by the first 1 unless marked as insecure or not yet updated on that website
-    column_predicate.setIndex(); // behave like an index
-    column_predicate.setStartColumnName(name + "`"); // start/end keys are reversed
-    column_predicate.setEndColumnName(name + "_");
-    column_predicate.setReversed(); // read the last first
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(10); // small because we generally really only are interested by the first 1 unless marked as insecure or not yet updated on that website
+    column_predicate->setIndex(); // behave like an index
+    column_predicate->setStartCellKey(name + "`"); // start/end keys are reversed
+    column_predicate->setEndCellKey(name + "_");
+    column_predicate->setReversed(); // read the last first
     for(;;)
     {
         javascript_row->clearCache();
@@ -4082,13 +4082,13 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             // TODO: allow for remote paths by checking a flag in the file
             //       saying "remote" (i.e. to use Google Store and alike)
             //
-            QtCassandra::QCassandraColumnRangePredicate references_column_predicate;
-            references_column_predicate.setCount(1);
-            references_column_predicate.setIndex(); // behave like an index
+            auto references_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            references_column_predicate->setCount(1);
+            references_column_predicate->setIndex(); // behave like an index
             QString const site_key(f_snap->get_site_key_with_slash());
             QString const start_ref(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
-            references_column_predicate.setStartColumnName(start_ref);
-            references_column_predicate.setEndColumnName(start_ref + QtCassandra::QCassandraColumnPredicate::last_char);
+            references_column_predicate->setStartCellKey(start_ref);
+            references_column_predicate->setEndCellKey(start_ref + QtCassandra::QCassandraCellPredicate::last_char);
 
             row->clearCache();
             row->readCells(references_column_predicate);
@@ -4119,12 +4119,12 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             // be included first, so there is another sub-loop for that
             // note that all of those must be loaded first but the order
             // we read them as does not matter
-            QtCassandra::QCassandraColumnRangePredicate dependencies_column_predicate;
-            dependencies_column_predicate.setCount(100);
-            dependencies_column_predicate.setIndex(); // behave like an index
+            auto dependencies_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            dependencies_column_predicate->setCount(100);
+            dependencies_column_predicate->setIndex(); // behave like an index
             QString const start_dep(QString("%1:").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
-            dependencies_column_predicate.setStartColumnName(start_dep + ":");
-            dependencies_column_predicate.setEndColumnName(start_dep + ";");
+            dependencies_column_predicate->setStartCellKey(start_dep + ":");
+            dependencies_column_predicate->setEndCellKey(start_dep + ";");
             for(;;)
             {
                 row->clearCache();
@@ -4343,12 +4343,12 @@ void content::add_css(QDomDocument doc, QString const & name)
     //       makes uses of the latest and if a file does not match
     //       the whole process fails even if by not using the latest
     //       would have worked
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(10); // small because we are really only interested by the first 1 unless marked as insecure
-    column_predicate.setIndex(); // behave like an index
-    column_predicate.setStartColumnName(name + "`"); // start/end keys are reversed
-    column_predicate.setEndColumnName(name + "_");
-    column_predicate.setReversed(); // read the last first
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(10); // small because we are really only interested by the first 1 unless marked as insecure
+    column_predicate->setIndex(); // behave like an index
+    column_predicate->setStartCellKey(name + "`"); // start/end keys are reversed
+    column_predicate->setEndCellKey(name + "_");
+    column_predicate->setReversed(); // read the last first
     for(;;)
     {
         css_row->clearCache();
@@ -4415,13 +4415,13 @@ void content::add_css(QDomDocument doc, QString const & name)
             //
             // TODO: allow for remote paths by checking a flag in the file
             //       saying "remote" (i.e. to use Google Store and alike)
-            QtCassandra::QCassandraColumnRangePredicate references_column_predicate;
-            references_column_predicate.setCount(1);
-            references_column_predicate.setIndex(); // behave like an index
+            auto references_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            references_column_predicate->setCount(1);
+            references_column_predicate->setIndex(); // behave like an index
             QString const site_key(f_snap->get_site_key_with_slash());
             QString const start_ref(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
-            references_column_predicate.setStartColumnName(start_ref);
-            references_column_predicate.setEndColumnName(start_ref + QtCassandra::QCassandraColumnPredicate::last_char);
+            references_column_predicate->setStartCellKey(start_ref);
+            references_column_predicate->setEndCellKey(start_ref + QtCassandra::QCassandraCellPredicate::last_char);
 
             row->clearCache();
             row->readCells(references_column_predicate);
@@ -4446,12 +4446,12 @@ void content::add_css(QDomDocument doc, QString const & name)
             // be included first, so there is another sub-loop for that
             // note that all of those must be loaded first but the order
             // we read them as does not matter
-            QtCassandra::QCassandraColumnRangePredicate dependencies_column_predicate;
-            dependencies_column_predicate.setCount(100);
-            dependencies_column_predicate.setIndex(); // behave like an index
+            auto dependencies_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            dependencies_column_predicate->setCount(100);
+            dependencies_column_predicate->setIndex(); // behave like an index
             QString const start_dep(QString("%1::").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
-            dependencies_column_predicate.setStartColumnName(start_dep);
-            dependencies_column_predicate.setEndColumnName(start_dep + QtCassandra::QCassandraColumnPredicate::last_char);
+            dependencies_column_predicate->setStartCellKey(start_dep);
+            dependencies_column_predicate->setEndCellKey(start_dep + QtCassandra::QCassandraCellPredicate::last_char);
             for(;;)
             {
                 row->clearCache();

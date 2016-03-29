@@ -172,8 +172,8 @@ void content::destroy_page_done(path_info_t & ipath)
         //
         snap_string_list revision_keys;
         QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
-        QtCassandra::QCassandraRowPredicate row_predicate;
-        row_predicate.setCount(1000);
+        auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+        row_predicate->setCount(1000);
         for(;;)
         {
             revision_table->clearCache();
@@ -228,8 +228,8 @@ void content::destroy_page_done(path_info_t & ipath)
         //
         snap_string_list branch_keys;
         QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
-        QtCassandra::QCassandraRowPredicate row_predicate;
-        row_predicate.setCount(1000);
+        auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+        row_predicate->setCount(1000);
         for(;;)
         {
             branch_table->clearCache();
@@ -317,11 +317,11 @@ bool content::destroy_revision_impl(QString const & revision_key)
             // check whether this was the last reference, if so, then we can
             // drop the file itself too since it won't be useful anymore
             //
-            QtCassandra::QCassandraColumnRangePredicate column_predicate;
-            column_predicate.setCount(1); // if there is 1 or more, we cannot delete
-            column_predicate.setIndex(); // behave like an index
-            column_predicate.setStartColumnName(files_reference + "::"); // start/end keys are reversed
-            column_predicate.setEndColumnName(files_reference + ":;");
+            auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            column_predicate->setCount(1); // if there is 1 or more, we cannot delete
+            column_predicate->setIndex(); // behave like an index
+            column_predicate->setStartCellKey(files_reference + "::"); // start/end keys are reversed
+            column_predicate->setEndCellKey(files_reference + ":;");
             files_row->clearCache();
             files_row->readCells(column_predicate);
             QtCassandra::QCassandraCells const cells(files_row->cells());

@@ -42,6 +42,7 @@
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 
 #include <QByteArray>
+#include <QRegExp>
 #include <QString>
 
 #include <memory>
@@ -74,6 +75,16 @@ class QCassandraCellPredicate : public QCassandraPredicate
 {
 public:
     typedef std::shared_ptr<QCassandraCellPredicate> pointer_t;
+
+    // The name predicates can have any character from \0 to \uFFFD
+    // (although in full Unicode, you may want to use \U10FFFD but at this
+    // point I limit the code to \uFFFD because QChar uses a ushort)
+    //
+    // Note: Qt strings use UTF-16, but in a QChar, I'm not too sure we
+    //       can put a value more than 0xFFFF... so we'd need the last_char
+    //       to be a QString to support the max. character in Unicode!
+    static const QChar first_char;
+    static const QChar last_char;
 
     QCassandraCellPredicate() {}
     virtual ~QCassandraCellPredicate() {}
@@ -114,9 +125,13 @@ public:
     QCassandraCellRangePredicate() {}
 
     const QByteArray& startCellKey() const                        { return f_startCellKey;     }
+    void              setStartCellKey(const char* cell_key)       { setStartCellKey(QByteArray::fromRawData(cell_key,qstrlen(cell_key))); }
+    void              setStartCellKey(const QString& cell_key)    { setStartCellKey(cell_key.toUtf8()); }
     void              setStartCellKey(const QByteArray& cell_key) { f_startCellKey = cell_key; }
 
     const QByteArray& endCellKey() const                          { return f_endCellKey;       }
+    void              setEndCellKey(const char* cell_key)         { setEndCellKey(QByteArray::fromRawData(cell_key,qstrlen(cell_key))); }
+    void              setEndCellKey(const QString& cell_key)      { setEndCellKey(cell_key.toUtf8()); }
     void              setEndCellKey(const QByteArray& cell_key)   { f_endCellKey = cell_key;   }
 
     bool reversed() const                                         { return f_reversed; }
@@ -144,6 +159,9 @@ public:
     QCassandraRowPredicate() : f_cellPred( new QCassandraCellPredicate ) {}
     virtual ~QCassandraRowPredicate() {}
 
+    QRegExp rowNameMatch() const { return f_row_name_match; }
+    void    setRowNameMatch(QRegExp const& re) { f_row_name_match = re; }
+
     QCassandraCellPredicate::pointer_t  cellPredicate() const { return f_cellPred; }
     void                                setCellPredicate( QCassandraCellPredicate::pointer_t pred ) { f_cellPred = pred; }
 
@@ -153,6 +171,7 @@ public:
 protected:
     typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_count_t;
     QCassandraCellPredicate::pointer_t      f_cellPred;
+    QRegExp                                 f_row_name_match;
 };
 
 

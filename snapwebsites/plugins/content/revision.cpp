@@ -350,9 +350,9 @@ void content::copy_branch(QString const & key, snap_version::version_number_t co
 
     QtCassandra::QCassandraRow::pointer_t destination_row(branch_table->row(destination_uri.get_branch_key()));
 
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
+    column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         source_row->clearCache();

@@ -423,16 +423,10 @@ void antihammering::on_check_for_redirect(content::path_info_t & ipath)
         NOTREACHED();
     }
 
-    // count the number of 200 which are HTML pages (result starts with "200 html-page")
-    //QtCassandra::QCassandraColumnRangePredicate html_page_predicate;
-    //html_page_predicate.setStartColumnName("200 html-page 0");
-    //html_page_predicate.setEndColumnName("200 html-page 9");
-    //int const page_count(antihammering_table->row(ip)->cellCount(html_page_predicate));
-
     int64_t const hit_limit_duration(row->cell(get_name(name_t::SNAP_NAME_ANTIHAMMERING_HIT_LIMIT_DURATION))->value().safeInt64Value(0, 1LL));
-    QtCassandra::QCassandraColumnRangePredicate html_page_predicate;
-    html_page_predicate.setStartColumnName(QString("200 html-page %1").arg(start_date - hit_limit_duration * 1000000LL, 19, 10, QChar('0')));
-    html_page_predicate.setEndColumnName("200 html-page 9"); // up to the end
+    auto html_page_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    html_page_predicate->setStartCellKey(QString("200 html-page %1").arg(start_date - hit_limit_duration * 1000000LL, 19, 10, QChar('0')));
+    html_page_predicate->setEndCellKey("200 html-page 9"); // up to the end
     int const page_count(antihammering_table->row(ip)->cellCount(html_page_predicate));
     int64_t const hit_limit(row->cell(get_name(name_t::SNAP_NAME_ANTIHAMMERING_HIT_LIMIT))->value().safeInt64Value(0, 100LL));
     if(page_count >= hit_limit)
@@ -454,9 +448,9 @@ void antihammering::on_check_for_redirect(content::path_info_t & ipath)
     }
 
     // then count the number of errors (result over 399)
-    //QtCassandra::QCassandraColumnRangePredicate error_predicate;
-    //error_predicate.setStartColumnName("400");
-    //error_predicate.setEndColumnName(":");
+    //auto error_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    //error_predicate.setStartCellKey("400");
+    //error_predicate.setEndCellKey(":");
     //int const error_count(antihammering_table->row(ip)->cellCount(error_predicate));
 
     // now check where we stand

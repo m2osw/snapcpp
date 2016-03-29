@@ -373,8 +373,8 @@ void snapdb::display_rows() const
     }
 
     snap::dbutils du( f_table, f_row );
-    QCassandraRowPredicate row_predicate;
-    row_predicate.setCount(f_count);
+    auto row_predicate = std::make_shared<QCassandraRowPredicate>();
+    row_predicate->setCount(f_count);
     table->readRows(row_predicate);
     const QCassandraRows& rows(table->rows());
     for( auto p_r : rows )
@@ -395,13 +395,13 @@ void snapdb::display_rows_wildcard() const
         std::cerr << "error:display_rows_wildcard(): table \"" << f_table << "\" not found." << std::endl;
         exit(1);
     }
-    QCassandraRowPredicate row_predicate;
+    auto row_predicate = std::make_shared<QCassandraRowPredicate>();
     QString row_start(f_row.left(f_row.length() - 1));
     // remember that the start/end on row doesn't work in "alphabetical"
     // order so we cannot use it here...
-    //row_predicate.setStartRowName(row_start);
-    //row_predicate.setEndRowName(row_start + QCassandraColumnPredicate::first_char);
-    row_predicate.setCount(f_count);
+    //row_predicate->setStartRowName(row_start);
+    //row_predicate->setEndRowName(row_start + QCassandraColumnPredicate::first_char);
+    row_predicate->setCount(f_count);
     std::stringstream ss;
     for(;;)
     {
@@ -453,9 +453,9 @@ void snapdb::display_columns() const
     }
 
     QCassandraRow::pointer_t row(table->row(row_key));
-    QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(f_count);
-    column_predicate.setIndex();
+    auto column_predicate = std::make_shared<QCassandraCellRangePredicate>();
+    column_predicate->setCount(f_count);
+    column_predicate->setIndex();
     for(;;)
     {
         row->clearCache();

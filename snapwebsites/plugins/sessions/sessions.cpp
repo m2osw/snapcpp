@@ -1315,8 +1315,8 @@ void sessions::clean_session_table(int64_t variables_timestamp)
     QString const id(get_name(name_t::SNAP_NAME_SESSIONS_ID));
 
     QtCassandra::QCassandraTable::pointer_t sessions_table(get_sessions_table());
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setCount(1000);
+    auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+    row_predicate->setCount(1000);
     for(;;)
     {
         sessions_table->clearCache();

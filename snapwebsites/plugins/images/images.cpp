@@ -1039,9 +1039,9 @@ int64_t images::transform_images()
     // we use a smaller number (100) instead of a larger number (1000)
     // in case the user makes changes we are more likely to catch the
     // latest version instead of using an older cached version
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100);
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(100);
+    column_predicate->setIndex(); // behave like an index
 
     // loop until all cells were deleted or the STOP signal was received
     for(;;)

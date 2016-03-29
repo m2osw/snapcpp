@@ -39,6 +39,29 @@
 namespace QtCassandra
 {
 
+/** \brief Define the first possible character in a column key.
+ *
+ * This character can be used to define the very first character
+ * in a column key. Note though that it is rarely used because
+ * the empty string serves the purpose and is more likely what
+ * you want.
+ *
+ * The first character is '\0'.
+ */
+const QChar QCassandraCellPredicate::first_char = QChar('\0');
+
+/** \brief Define the last possible character in a column key.
+ *
+ * This character can be used to define the very last character
+ * in a column key.
+ *
+ * The last character is '\\uFFFD'.
+ *
+ * \note
+ * This character can also be used in row predicates.
+ */
+const QChar QCassandraCellPredicate::last_char = QChar(L'\uFFFD');
+
 
 /// \brief Cell predicate query handlers
 void QCassandraCellKeyPredicate::appendQuery( QString& query, int& bind_count )

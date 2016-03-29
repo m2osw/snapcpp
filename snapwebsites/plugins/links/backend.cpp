@@ -307,8 +307,8 @@ void links::cleanup_links()
     //      the following algorithm to avoid reading all the branches
     //      of all the websites...
     //
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setCount(100);
+    auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+    row_predicate->setCount(100);
     for(;;)
     {
         branch_table->clearCache();
@@ -331,11 +331,11 @@ void links::cleanup_links()
                 continue;
             }
 
-            QtCassandra::QCassandraColumnRangePredicate column_predicate;
-            column_predicate.setCount(100);
-            column_predicate.setIndex(); // behave like an index
-            column_predicate.setStartColumnName(links_namespace_start); // limit the loading to links at least
-            column_predicate.setEndColumnName(links_namespace_end);
+            auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            column_predicate->setCount(100);
+            column_predicate->setIndex(); // behave like an index
+            column_predicate->setStartCellKey(links_namespace_start); // limit the loading to links at least
+            column_predicate->setEndCellKey(links_namespace_end);
 
             // loop until all cells are handled
             for(;;)

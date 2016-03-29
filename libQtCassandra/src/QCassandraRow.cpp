@@ -444,6 +444,27 @@ QCassandraCell::pointer_t QCassandraRow::findCell(const QByteArray& column_key) 
  *
  * \return true if the cell exists, false otherwise.
  */
+bool QCassandraRow::exists(const char* column_name) const
+{
+    return exists(QString(column_name));
+}
+
+/** \brief Check whether a cell exists in this row.
+ *
+ * The check is happening in memory first. If the cell doesn't exist in memory,
+ * then the row checks in the Cassandra database.
+ *
+ * \todo
+ * Look into why a cell is created when just checking for its existance.
+ *
+ * \bug
+ * At this time this function CREATES the cell if it did not yet
+ * exist!
+ *
+ * \param[in] column_name  The column name.
+ *
+ * \return true if the cell exists, false otherwise.
+ */
 bool QCassandraRow::exists(const QString& column_name) const
 {
     return exists(column_name.toUtf8());
@@ -632,6 +653,21 @@ const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) 
 void QCassandraRow::clearCache()
 {
     f_cells.clear();
+}
+
+/** \brief Drop the named cell.
+ *
+ * This function is the same as the dropCell() that accepts a QByteArray
+ * as its column key. It simply calls it after changing the column name into
+ * a key.
+ *
+ * \param[in] column_name  The name of the column to drop.
+ * \param[in] mode  Specify the timestamp mode.
+ * \param[in] timestamp  Specify the timestamp to remove only cells that are equal or older.
+ */
+void QCassandraRow::dropCell(const char* column_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
+{
+    dropCell(QByteArray::fromRawData(column_name,qstrlen(column_name)), mode, timestamp);
 }
 
 /** \brief Drop the named cell.

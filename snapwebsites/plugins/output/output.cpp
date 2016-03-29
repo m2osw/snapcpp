@@ -373,11 +373,11 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
                 .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
                 .arg(branch));
         int const revision_key_length(revision_key.length());
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(100);
-        column_predicate.setIndex(); // behave like an index
-        column_predicate.setStartColumnName(revision_key + "@");
-        column_predicate.setEndColumnName(revision_key + "~");
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
+        column_predicate->setStartCellKey(revision_key + "@");
+        column_predicate->setEndCellKey(revision_key + "~");
         QtCassandra::QCassandraRow::pointer_t page_row(content_table->row(ipath.get_key()));
         bool first(true);
         for(;;)

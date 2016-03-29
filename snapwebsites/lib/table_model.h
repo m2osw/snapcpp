@@ -19,7 +19,7 @@
 #include <controlled_vars/controlled_vars_need_init.h>
 
 #include <QtCassandra/QCassandraTable.h>
-#include <QtCassandra/QCassandraRowPredicate.h>
+#include <QtCassandra/QCassandraPredicate.h>
 #include <QAbstractListModel>
 #include <QModelIndex>
 
@@ -52,12 +52,12 @@ public:
     virtual void            fetchMore    ( QModelIndex const & index );
 
 private:
-    QtCassandra::QCassandraTable::pointer_t f_table;
-    QtCassandra::QCassandraRowPredicate     f_rowp;
+    QtCassandra::QCassandraTable::pointer_t 		f_table;
+    QtCassandra::QCassandraRowPredicate::pointer_t  f_rowp;
     // TODO: use controlled_vars instead of constructor
-    controlled_vars::mint32_t               f_rowCount;
-    controlled_vars::zint32_t               f_rowsRemaining;
-    controlled_vars::zint32_t               f_pos;
+    controlled_vars::mint32_t               		f_rowCount;
+    controlled_vars::zint32_t               		f_rowsRemaining;
+    controlled_vars::zint32_t               		f_pos;
 };
 
 }

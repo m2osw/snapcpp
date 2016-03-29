@@ -167,11 +167,11 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // 2.2.1 check the source
     {
         QtCassandra::QCassandraRow::pointer_t row(branch_table->row(source.get_branch_key()));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setStartColumnName(QString("%1-").arg(source_field_multiname_start));
-        column_predicate.setEndColumnName(QString("%1.").arg(source_field_multiname_start));
-        column_predicate.setCount(100);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setStartCellKey(QString("%1-").arg(source_field_multiname_start));
+        column_predicate->setEndCellKey(QString("%1.").arg(source_field_multiname_start));
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -195,11 +195,11 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // 2.2.2 check the destination
     {
         QtCassandra::QCassandraRow::pointer_t row(branch_table->row(destination.get_branch_key()));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setStartColumnName(QString("%1-").arg(destination_field_multiname_start));
-        column_predicate.setEndColumnName(QString("%1.").arg(destination_field_multiname_start));
-        column_predicate.setCount(100);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setStartCellKey(QString("%1-").arg(destination_field_multiname_start));
+        column_predicate->setEndCellKey(QString("%1.").arg(destination_field_multiname_start));
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -244,11 +244,11 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // search for it, and then verify it exists in the links table as expected
     {
         QtCassandra::QCassandraRow::pointer_t row(branch_table->row(source.get_branch_key()));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setStartColumnName(QString("%1-").arg(source_field_multiname_start));
-        column_predicate.setEndColumnName(QString("%1.").arg(source_field_multiname_start));
-        column_predicate.setCount(100);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setStartCellKey(QString("%1-").arg(source_field_multiname_start));
+        column_predicate->setEndCellKey(QString("%1.").arg(source_field_multiname_start));
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -282,11 +282,11 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     }
     {
         QtCassandra::QCassandraRow::pointer_t row(branch_table->row(destination.get_branch_key()));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setStartColumnName(QString("%1-").arg(destination_field_multiname_start));
-        column_predicate.setEndColumnName(QString("%1.").arg(destination_field_multiname_start));
-        column_predicate.setCount(100);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setStartCellKey(QString("%1-").arg(destination_field_multiname_start));
+        column_predicate->setEndCellKey(QString("%1.").arg(destination_field_multiname_start));
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -329,9 +329,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     {
         bool found(false);
         QtCassandra::QCassandraRow::pointer_t row(links_table->row(source_multilink_name));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(100);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -358,9 +358,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     {
         bool found(false);
         QtCassandra::QCassandraRow::pointer_t row(links_table->row(destination_multilink_name));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(100);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -395,11 +395,11 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // now check that all the multi-link data was indeed removed as expected
     {
         QtCassandra::QCassandraRow::pointer_t row(branch_table->row(source.get_branch_key()));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setStartColumnName(QString("%1-").arg(source_field_multiname_start));
-        column_predicate.setEndColumnName(QString("%1.").arg(source_field_multiname_start));
-        column_predicate.setCount(3);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setStartCellKey(QString("%1-").arg(source_field_multiname_start));
+        column_predicate->setEndCellKey(QString("%1.").arg(source_field_multiname_start));
+        column_predicate->setCount(3);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -425,11 +425,11 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     }
     {
         QtCassandra::QCassandraRow::pointer_t row(branch_table->row(destination.get_branch_key()));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setStartColumnName(QString("%1-").arg(destination_field_multiname_start));
-        column_predicate.setEndColumnName(QString("%1.").arg(destination_field_multiname_start));
-        column_predicate.setCount(3);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setStartCellKey(QString("%1-").arg(destination_field_multiname_start));
+        column_predicate->setEndCellKey(QString("%1.").arg(destination_field_multiname_start));
+        column_predicate->setCount(3);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -465,9 +465,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // value is the field name as we just read from the branch table
     {
         QtCassandra::QCassandraRow::pointer_t row(links_table->row(source_multilink_name));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(3);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setCount(3);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -487,9 +487,9 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     }
     {
         QtCassandra::QCassandraRow::pointer_t row(links_table->row(destination_multilink_name));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(3);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setCount(3);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice

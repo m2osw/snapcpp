@@ -689,9 +689,9 @@ void snap_firewall::setup_firewall()
 
     // run through the entire table
     //
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100);
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(100);
+    column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         row->clearCache();
@@ -788,14 +788,14 @@ void snap_firewall::process_timeout()
 
     // unblock IP addresses which have a timeout in the past
     //
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
     QByteArray limit;
     QtCassandra::setInt64Value(limit, 0);  // whatever the first column is
-    column_predicate.setStartColumnName(limit);
+    column_predicate->setStartCellKey(limit);
     QtCassandra::setInt64Value(limit, now + 60LL * 1000000LL);  // until now within 1 minute
-    column_predicate.setEndColumnName(limit);
-    column_predicate.setCount(100);
-    column_predicate.setIndex(); // behave like an index
+    column_predicate->setEndCellKey(limit);
+    column_predicate->setCount(100);
+    column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         row->clearCache();
@@ -855,9 +855,9 @@ void snap_firewall::next_wakeup()
     // determine whether there is another IP in the table and if so at
     // what time we need to wake up to remove it from the firewall
     //
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(1);
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(1);
+    column_predicate->setIndex(); // behave like an index
     row->clearCache();
     row->readCells(column_predicate);
     QtCassandra::QCassandraCells const cells(row->cells());

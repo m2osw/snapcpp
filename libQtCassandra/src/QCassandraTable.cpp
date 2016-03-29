@@ -2568,14 +2568,25 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         f_query->start();
     }
 
+    auto re(row_predicate->rowNameMatch());
+
     size_t result_size = 0;
-    while( f_query->nextRow() )
+    for( ; f_query->nextRow(); ++result_size )
     {
-        const QByteArray row_key   ( f_query->getByteArrayColumn( "key"     ) );
-        const QByteArray column_key( f_query->getByteArrayColumn( "column1" ) );
-        const QByteArray data      ( f_query->getByteArrayColumn( "value"   ) );
+        const QByteArray row_key    ( f_query->getByteArrayColumn( "key"     ) );
+        const QByteArray column_key ( f_query->getByteArrayColumn( "column1" ) );
+        const QByteArray data       ( f_query->getByteArrayColumn( "value"   ) );
+
+        if( !re.isEmpty() )
+        {
+            const QString row_name( QString::fromUtf8(row_key.data()) );
+            if( re.indexIn(row_name) == -1 )
+            {
+                continue;
+            }
+        }
+
         addRow( row_key, column_key, data );
-        ++result_size;
     }
 
     return result_size;
