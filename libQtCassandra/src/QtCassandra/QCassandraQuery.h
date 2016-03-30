@@ -35,14 +35,21 @@
  */
 #pragma once
 
-#include "cassandra.h"
-
 #include <map>
 #include <memory>
 #include <string>
 
 #include <QString>
 #include <QByteArray>
+
+typedef struct CassCluster_     CassCluster;
+typedef struct CassCollection_  CassCollection;
+typedef struct CassFuture_      CassFuture;
+typedef struct CassIterator_    CassIterator;
+typedef struct CassResult_      CassResult;
+typedef struct CassSession_     CassSession;
+typedef struct CassStatement_   CassStatement;
+typedef struct CassValue_       CassValue;
 
 namespace QtCassandra
 {

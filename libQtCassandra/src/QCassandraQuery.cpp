@@ -36,6 +36,8 @@
 
 #include "QtCassandra/QCassandraQuery.h"
 
+#include "cassandra.h"
+
 #include <as2js/json.h>
 
 #include <iostream>
