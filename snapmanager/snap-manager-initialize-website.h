@@ -20,6 +20,8 @@
 
 #include <snapwebsites/snap_initialize_website.h>
 
+#include <QPointer>
+
 class snap_manager_initialize_website : public QDialog, public Ui_initializeWebsiteBox
 {
     Q_OBJECT

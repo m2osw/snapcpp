@@ -136,7 +136,7 @@ ConfigureMakeProject( PROJECT_NAME libQtCassandra
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS thrift snapCMakeModules controlled_vars
+    DEPENDS thrift snapCMakeModules controlled_vars as2js
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtSerialization

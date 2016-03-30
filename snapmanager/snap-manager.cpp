@@ -803,10 +803,10 @@ void snap_manager::reset_domains_index()
 
     // go through all the domain rows
     int count(0);
-    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
-    column_predicate->addColumnName("core::rules"); // get one column to avoid getting all!
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setColumnPredicate(column_predicate);
+    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
+    column_predicate->setCellKey("core::rules"); // get one column to avoid getting all!
+    auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
+    row_predicate->setCellPredicate(column_predicate);
     for(;;)
     {
         table->clearCache();
@@ -847,10 +847,10 @@ void snap_manager::reset_websites_index()
 
     // go through all the website rows
     int count(0);
-    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
-    column_predicate->addColumnName("core::rules"); // get one column to avoid getting all!
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setColumnPredicate(column_predicate);
+    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
+    column_predicate->setCellKey("core::rules"); // get one column to avoid getting all!
+    auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
+    row_predicate->setCellPredicate(column_predicate);
     for(;;)
     {
         table->clearCache();
@@ -933,13 +933,13 @@ void snap_manager::loadHosts()
 
     QtCassandra::QCassandraRow::pointer_t row(table->row(f_context->lockHostsKey()));
 
-    QtCassandra::QCassandraColumnRangePredicate hosts_predicate;
+    auto hosts_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
     QString filter(f_host_filter_string->text());
     if(filter.length() != 0)
     {
         // assign the filter only if not empty
-        hosts_predicate.setStartColumnName(filter);
-        hosts_predicate.setEndColumnName(filter + QtCassandra::QCassandraColumnPredicate::last_char);
+        hosts_predicate->setStartCellKey(filter);
+        hosts_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
     }
     row->clearCache(); // remove any previous load results
     row->readCells(hosts_predicate);
@@ -1191,13 +1191,13 @@ void snap_manager::loadDomains()
     }
     QtCassandra::QCassandraRow::pointer_t row(table->row(row_index_name));
 
-    QtCassandra::QCassandraColumnRangePredicate domain_predicate;
+    auto domain_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
     QString const filter(f_domain_filter_string->text());
     if(filter.length() != 0)
     {
         // assign the filter only if not empty
-        domain_predicate.setStartColumnName(filter);
-        domain_predicate.setEndColumnName(filter + QtCassandra::QCassandraColumnPredicate::last_char);
+        domain_predicate->setStartCellKey(filter);
+        domain_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
     }
     row->clearCache(); // remove any previous load results
     row->readCells(domain_predicate);
@@ -1514,9 +1514,9 @@ void snap_manager::on_domainDelete_clicked()
             // for that domain (m2osw.com:;).
             // Note that we're using our index row to read those entries because we do
             // not force a sort on row keys.
-            QtCassandra::QCassandraColumnRangePredicate domain_predicate;
-            domain_predicate.setStartColumnName(name + "::");
-            domain_predicate.setEndColumnName(name + ":;"); // ';' > ':'
+            auto domain_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+            domain_predicate->setStartCellKey(name + "::");
+            domain_predicate->setEndCellKey(name + ":;"); // ';' > ':'
             row->clearCache(); // remove any previous load results
             row->readCells(domain_predicate);
 
@@ -1599,9 +1599,9 @@ void snap_manager::loadWebsites()
     // it encompasses all the possible domain names (.m2osw.com).
     // Note that we're using our index row to read those entries because we do
     // not force a sort on row keys.
-    QtCassandra::QCassandraColumnRangePredicate domain_predicate;
-    domain_predicate.setStartColumnName(f_domain_org_name + "::");
-    domain_predicate.setEndColumnName(f_domain_org_name + ":;"); // ';' > ':'
+    auto domain_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+    domain_predicate->setStartCellKey(f_domain_org_name + "::");
+    domain_predicate->setEndCellKey(f_domain_org_name + ":;"); // ';' > ':'
     row->clearCache(); // remove any previous load results
     row->readCells(domain_predicate);
 
