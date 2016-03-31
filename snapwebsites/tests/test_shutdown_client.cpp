@@ -26,6 +26,8 @@
 
 #include "snap_communicator.h"
 
+#include "snap_tests.h"
+
 #include "log.h"
 #include "qstring_stream.h"
 #include "not_reached.h"
@@ -47,7 +49,7 @@ class messager_connection
 public:
     messager_connection()
         : snap_tcp_client_message_connection(
-                    "127.0.0.1",
+                    snap_test::host(),
                     4030,
                     tcp_client_server::bio_client::mode_t::MODE_PLAIN)
     {

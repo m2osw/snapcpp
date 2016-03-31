@@ -22,7 +22,7 @@
  * implementation to ensure that most everything works as expected.
  */
 
-#include "catch_tests.h"
+#include "snap_tests.h"
 
 #include "snap_communicator.h"
 
@@ -187,7 +187,7 @@ TEST_CASE("Client/Server test", "[snap-communicator] [client-server]")
                 // done (we could grow all of that some more later...)
                 snap::snap_communicator_message reply;
                 reply.set_command("PINGME");
-                reply.add_parameter("address", "127.0.0.1");
+                reply.add_parameter("address", snap_test::host().c_str());
                 reply.add_parameter("port", 4011);
 
                 // for fun I create a message here and that's the message
@@ -384,12 +384,12 @@ std::cerr << QString("%1: MESSAGE LISTENER: received UDP message \"%2\".\n").arg
 
         snap::snap_communicator::pointer_t communicator(snap::snap_communicator::instance());
 
-        tcp_listener_impl::pointer_t tcp_listener(new tcp_listener_impl("127.0.0.1", 4010, -1, true));
+        tcp_listener_impl::pointer_t tcp_listener(new tcp_listener_impl(snap_test::host(), 4010, -1, true));
         tcp_listener->set_name("SERVER: tcp_listener_impl");
         REQUIRE(tcp_listener->is_listener()); // make sure this is true
         communicator->add_connection(tcp_listener);
 
-        udp_listener_impl::pointer_t udp_listener(new udp_listener_impl("127.0.0.1", 4011));
+        udp_listener_impl::pointer_t udp_listener(new udp_listener_impl(snap_test::host(), 4011));
         udp_listener->set_name("SERVER: udp_listener_impl");
         udp_listener->set_tcp_listener(tcp_listener);
         communicator->add_connection(udp_listener);
@@ -404,7 +404,7 @@ std::cerr << QString("%1: MESSAGE LISTENER: received UDP message \"%2\".\n").arg
         if(child == 0)
         {
             // we are the child, run the client test
-            std::string const cmd(snap_test::g_progdir + "/test_snap_communicator_client --host 127.0.0.1 --port 4010");
+            std::string const cmd(snap_test::progdir() + "/test_snap_communicator_client --host " + snap_test::host() + " --port 4010");
             exit(system(cmd.c_str()));
         }
 

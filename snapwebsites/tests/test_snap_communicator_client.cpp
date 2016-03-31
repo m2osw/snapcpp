@@ -28,6 +28,8 @@
 
 #include "snap_communicator.h"
 
+#include "snap_tests.h"
+
 #include "snapwebsites.h"
 
 #include <sstream>
@@ -121,7 +123,6 @@ void usage()
 
 int main(int argc, char * argv[])
 {
-    char const * addr("127.0.0.1");
     int port(4010);
 
     for(int i(1); i < argc; ++i)
@@ -146,7 +147,7 @@ int main(int argc, char * argv[])
                 exit(1);
                 snap::NOTREACHED();
             }
-            addr = argv[i];
+            snap_test::host(argv[i]);
         }
         else if(strcmp(argv[i], "--port") == 0)
         {
@@ -162,7 +163,7 @@ int main(int argc, char * argv[])
     }
 
     snap::snap_communicator::pointer_t communicator(snap::snap_communicator::instance());
-    connection_impl::pointer_t connection(new connection_impl(addr, port));
+    connection_impl::pointer_t connection(new connection_impl(snap_test::host(), port));
     connection->set_name("CLIENT: created connection");
     communicator->add_connection(connection);
 

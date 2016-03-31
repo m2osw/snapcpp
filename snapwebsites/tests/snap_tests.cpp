@@ -1,6 +1,4 @@
-#ifndef SNAP_TESTS_H
-#define SNAP_TESTS_H
-// Snap! Websites -- Test Suite Main Header
+// Snap! Websites -- Test Suite main()
 // Copyright (C) 2015-2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -18,28 +16,23 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /** \file
- * \brief Common header for all our catch tests.
+ * \brief Snap! Websites main unit test.
  *
- * Snap! Websites comes with a set of unit tests. All are not yet
- * converted to catch.cpp and pretty much none are full coverage
- * at this point.
+ * This file includes code common to all our tests. At this time it is
+ * mainly the main() function that checks the command line arguments.
+ *
+ * This test suite uses catch.hpp, for details see:
+ *
+ *   https://github.com/philsquared/Catch/blob/master/docs/tutorial.md
  */
 
-// include the version and a few other things
-#include <snapwebsites.h>
+#include "snap_tests.h"
 
-#include <catch.hpp>
+std::string  snap_test::f_progname;
+std::string  snap_test::f_progdir;
+bool         snap_test::f_verbose = false;
+std::string  snap_test::f_host    = "127.0.0.1";
 
-namespace snap_test
-{
-
-extern char * g_progname;
-extern std::string g_progdir;
-extern bool g_verbose;
-
-} // snap_test namespace
-#endif
-// #ifndef SNAP_TESTS_H
 
 // Local Variables:
 // mode: cpp

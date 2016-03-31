@@ -56,6 +56,11 @@ project( snapwebsites_project )
 enable_language( CXX )
 enable_language( C )
 
+option( RUN_TESTS "Enable tests to run via CTest" OFF )
+if( ${RUN_TESTS} )
+    enable_testing()
+endif()
+
 ## Include support modules
 ##
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )

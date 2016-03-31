@@ -29,6 +29,8 @@
 
 #include "snap_communicator.h"
 
+#include "snap_tests.h"
+
 #include "log.h"
 #include "qstring_stream.h"
 #include "not_reached.h"
@@ -184,7 +186,7 @@ class listener
         : public snap::snap_communicator::snap_tcp_server_connection
 {
 public:
-    listener() : snap_tcp_server_connection("127.0.0.1", 4030, 10, true, false)
+    listener() : snap_tcp_server_connection(snap_test::host(), 4030, 10, true, false)
     {
         set_name("listener");
     }

@@ -29,7 +29,7 @@
 // Tell catch we want it to add the runner code in this file.
 #define CATCH_CONFIG_RUNNER
 
-#include "catch_tests.h"
+#include "snap_tests.h"
 
 #include "qstring_stream.h"
 
@@ -37,84 +37,74 @@
 
 #include <stdlib.h>
 
-namespace snap_test
-{
-
-char * g_progname = nullptr;
-std::string g_progdir;
-bool g_verbose = false;
-
-} // snap_test namespace
-
 int main(int argc, char * argv[])
 {
     // define program name
-    snap_test::g_progname = argv[0];
-    char * e1(strrchr(snap_test::g_progname, '/' ));
-    char * e2(strrchr(snap_test::g_progname, '\\'));
-    if(e1 && e1 > e2)
+    snap_test::progname(argv[0]);
+    const auto& pn(snap_test::progname());
+    size_t e1(pn.rfind('/'));
+    size_t e2(pn.rfind('\\'));
+    if(e1 != std::string::npos && e1 > e2)
     {
-        snap_test::g_progname = e1 + 1; // LCOV_EXCL_LINE
-        snap_test::g_progdir = std::string(argv[0], e1);
+        snap_test::progname( pn.substr(e1 + 1) ); // LCOV_EXCL_LINE
+        snap_test::progdir( pn.substr(0, e1) );
     }
-    else if(e2 && e2 > e1)
+    else if(e2 != std::string::npos && e2 > e1)
     {
-        snap_test::g_progname = e2 + 1; // LCOV_EXCL_LINE
-        snap_test::g_progdir = std::string(argv[0], e2);
+        snap_test::progname( pn.substr(e2 + 1) ); // LCOV_EXCL_LINE
+        snap_test::progdir( pn.substr( 0, e2 ) );
     }
-    if(snap_test::g_progdir.empty())
+    if(snap_test::progdir().empty())
     {
         // no directory in argv[0], use "." as the default
-        snap_test::g_progdir = ".";
+        snap_test::progdir( "." );
     }
 
     unsigned int seed(static_cast<unsigned int>(time(nullptr)));
     bool help(false);
+    std::vector<std::string> arg_list;
     for(int i(1); i < argc;)
     {
-        if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+        arg_list.push_back( argv[i] );
+    }
+    //
+    for( auto i = arg_list.begin(); i != arg_list.end(); ++i )
+    {
+        const auto& arg(*(i));
+        if( arg == "-h" || arg == "--help" )
         {
             help = true; // LCOV_EXCL_LINE
-            ++i;
         }
-        else if(strcmp(argv[i], "--seed") == 0)
+        else if( arg == "--seed" )
         {
-            if(i + 1 >= argc) // LCOV_EXCL_LINE
+            if( i + 1 == arg_list.end() ) // LCOV_EXCL_LINE
             {
-                std::cerr << "error: --seed need to be followed by the actual seed." << std::endl; // LCOV_EXCL_LINE
+                std::cerr << "error: --seed needs to be followed by the actual seed." << std::endl; // LCOV_EXCL_LINE
                 exit(1); // LCOV_EXCL_LINE
             }
-            seed = atoll(argv[i + 1]); // LCOV_EXCL_LINE
-            // remove the --seed and <value>
-            argc -= 2; // LCOV_EXCL_LINE
-            for(int j(i); j < argc; ++j) // LCOV_EXCL_LINE
-            {
-                argv[j] = argv[j + 2]; // LCOV_EXCL_LINE
-            }
+            seed = atoll((++i)->c_str()); // LCOV_EXCL_LINE
         }
-        else if(strcmp(argv[i], "--verbose") == 0)
+        else if( arg == "--host" )
         {
-            snap_test::g_verbose = true;
-            // remove the --verbose
-            argc -= 1; // LCOV_EXCL_LINE
-            for(int j(i); j < argc; ++j) // LCOV_EXCL_LINE
+            if( i + 1 == arg_list.end() ) // LCOV_EXCL_LINE
             {
-                argv[j] = argv[j + 1]; // LCOV_EXCL_LINE
+                std::cerr << "error: --host needs to be followed by the host name." << std::endl; // LCOV_EXCL_LINE
+                exit(1); // LCOV_EXCL_LINE
             }
+            snap_test::host( *(++i) ); // LCOV_EXCL_LINE
         }
-        else if(strcmp(argv[i], "--version") == 0)
+        else if( arg == "--verbose" )
+        {
+            snap_test::verbose( true );
+        }
+        else if( arg == "--version" )
         {
             std::cout << SNAPWEBSITES_VERSION_STRING << std::endl;
             exit(0);
         }
-        else
-        {
-            // no error here, catch.hpp may generate an error, though
-            ++i;
-        }
     }
     srand(seed);
-    std::cout << snap_test::g_progname << "[" << getpid() << "]" << ": version " << SNAPWEBSITES_VERSION_STRING << ", seed is " << seed << std::endl;
+    std::cout << snap_test::progname() << "[" << getpid() << "]" << ": version " << SNAPWEBSITES_VERSION_STRING << ", seed is " << seed << std::endl;
 
     if(help)
     {

@@ -54,6 +54,8 @@ else()
     add_custom_target( test_prereqs )
 endif()
 
+set( CASSANDRA_HOST_IP "127.0.0.1" CACHE STRING "Host IP address for the cassandra server to connect to." )
+
 ##
 ## The unified unit tests in one large test
 ##
@@ -64,15 +66,16 @@ if(CATCH_FOUND)
 
     project(test_snap)
 
-    add_executable(test_snap
+    add_executable(${PROJECT_NAME}
         # Main
+        snap_tests.cpp
         catch_tests.cpp
 
         # Test suites
         catch_snap_communicator.cpp
     )
-    add_dependencies( test_snap test_prereqs )
-    target_link_libraries(test_snap
+    add_dependencies( ${PROJECT_NAME} test_prereqs )
+    target_link_libraries(${PROJECT_NAME}
         snapwebsites
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
@@ -80,6 +83,8 @@ if(CATCH_FOUND)
         ${THRIFT_LIBRARIES}
         dl
     )
+
+    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --host ${CASSANDRA_HOST_IP} )
 
 else(CATCH_FOUND)
 
@@ -93,14 +98,13 @@ endif(CATCH_FOUND)
 ## A client used to test our Snap! Communicator
 ##
 project(test_snap_communicator_client)
-
-
-add_executable(test_snap_communicator_client
+add_executable(${PROJECT_NAME}
     # Main
+    snap_tests.cpp
     test_snap_communicator_client.cpp
 )
-add_dependencies( test_snap_communicator_client test_prereqs )
-target_link_libraries(test_snap_communicator_client
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -108,15 +112,15 @@ target_link_libraries(test_snap_communicator_client
     ${THRIFT_LIBRARIES}
     dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --host ${CASSANDRA_HOST_IP} )
 
 
 ##
 ## Send orders to the Snap Server via the snap.cgi tool
 ##
 project(test_snap_cgi)
-
-
 add_executable(test_snap_cgi
+    snap_tests.cpp
     test_snap_cgi.cpp
 )
 add_dependencies( test_snap_cgi test_prereqs )
@@ -130,13 +134,16 @@ target_link_libraries(test_snap_cgi
     #thrift
     #tld
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
-add_executable(test_snap_parser
+project(test_snap_parser)
+add_executable(${PROJECT_NAME}
+    snap_tests.cpp
     test_snap_parser.cpp
 )
-add_dependencies( test_snap_parser test_prereqs )
-target_link_libraries(test_snap_parser
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -144,19 +151,25 @@ target_link_libraries(test_snap_parser
     ${THRIFT_LIBRARIES}
     dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
-add_executable(test_unix_timestamp
+project( test_unix_timestamp )
+add_executable(${PROJECT_NAME}
+    snap_tests.cpp
     test_unix_timestamp.cpp
 )
-add_dependencies( test_unix_timestamp test_prereqs )
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
-add_executable(test_entity_filter
+project( test_entity_filter )
+add_executable(${PROJECT_NAME}
+    snap_tests.cpp
     test_entity_filter.cpp
 )
-add_dependencies( test_entity_filter test_prereqs )
-target_link_libraries(test_entity_filter
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -164,13 +177,16 @@ target_link_libraries(test_entity_filter
     ${THRIFT_LIBRARIES}
     dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
-add_executable(test_ip_strings
+project( test_ip_strings )
+add_executable(${PROJECT_NAME}
+    snap_tests.cpp
     test_ip_strings.cpp
 )
-add_dependencies( test_ip_strings test_prereqs )
-target_link_libraries(test_ip_strings
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -178,6 +194,7 @@ target_link_libraries(test_ip_strings
     ${THRIFT_LIBRARIES}
     dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
 # This one is retired because we now use snap_communicator
@@ -194,12 +211,13 @@ target_link_libraries(test_ip_strings
 ##    dl
 ##)
 
-
-add_executable(test_quoted_printable
+project(test_quoted_printable)
+add_executable(${PROJECT_NAME}
+    snap_tests.cpp
     test_quoted_printable.cpp
 )
-add_dependencies( test_quoted_printable test_prereqs )
-target_link_libraries(test_quoted_printable
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -207,13 +225,16 @@ target_link_libraries(test_quoted_printable
     ${THRIFT_LIBRARIES}
     dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
-add_executable(test_snap_child_date_parser
+project(test_snap_child_date_parser)
+add_executable(${PROJECT_NAME}
+    snap_tests.cpp
     test_snap_child_date_parser.cpp
 )
-add_dependencies( test_snap_child_date_parser test_prereqs )
-target_link_libraries(test_snap_child_date_parser
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -221,14 +242,16 @@ target_link_libraries(test_snap_child_date_parser
     ${THRIFT_LIBRARIES}
     dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
-
-add_executable( test_snap_version
+project(test_snap_version)
+add_executable( ${PROJECT_NAME}
+    snap_tests.cpp
     test_snap_version.cpp
 )
-add_dependencies( test_snap_version test_prereqs )
-target_link_libraries(test_snap_version
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -236,6 +259,7 @@ target_link_libraries(test_snap_version
     ${THRIFT_LIBRARIES}
     dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
 
@@ -243,11 +267,13 @@ target_link_libraries(test_snap_version
 ## Check catching and displaying of snap exceptions
 ## (because we render the stack)
 ##
-add_executable( test_snap_exception
-	test_snap_exception.cpp
+project(test_snap_exception)
+add_executable( ${PROJECT_NAME}
+    snap_tests.cpp
+    test_snap_exception.cpp
 )
-add_dependencies( test_snap_exception test_prereqs )
-target_link_libraries(test_snap_exception
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
 	snapwebsites
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
@@ -255,17 +281,20 @@ target_link_libraries(test_snap_exception
 	${THRIFT_LIBRARIES}
 	dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
 ##
 ## Test a client/server via snap_communicator to see whether shutdown()
 ## has the same effect in the parent as it has in the client
 ##
-add_executable( test_shutdown_server
-	test_shutdown_server.cpp
+project(test_shutdown_server)
+add_executable( ${PROJECT_NAME}
+    snap_tests.cpp
+    test_shutdown_server.cpp
 )
-add_dependencies( test_shutdown_server test_prereqs )
-target_link_libraries(test_shutdown_server
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
 	snapwebsites
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
@@ -273,12 +302,15 @@ target_link_libraries(test_shutdown_server
 	${THRIFT_LIBRARIES}
 	dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
-add_executable( test_shutdown_client
-	test_shutdown_client.cpp
+project(test_shutdown_client)
+add_executable( ${PROJECT_NAME}
+    snap_tests.cpp
+    test_shutdown_client.cpp
 )
-add_dependencies( test_shutdown_client test_prereqs )
-target_link_libraries(test_shutdown_client
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
 	snapwebsites
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
@@ -286,15 +318,18 @@ target_link_libraries(test_shutdown_client
 	${THRIFT_LIBRARIES}
 	dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
 ##
 ## String Speed (testing a Qt feature)
 ##
-add_executable( string_speed
-	string_speed.cpp
+project(string_speed)
+add_executable( ${PROJECT_NAME}
+    snap_tests.cpp
+    string_speed.cpp
 )
-target_link_libraries(string_speed
+target_link_libraries(${PROJECT_NAME}
 	#snapwebsites
 	#${QTCASSANDRA_LIBRARIES}
 	#${LIBTLD_LIBRARIES}
@@ -302,15 +337,18 @@ target_link_libraries(string_speed
 	#${THRIFT_LIBRARIES}
 	#dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
 ##
 ## Check gethostbyname()
 ##
-add_executable( gethostips
-	gethostips.cpp
+project(gethostips)
+add_executable( ${PROJECT_NAME}
+    snap_tests.cpp
+    gethostips.cpp
 )
-target_link_libraries(gethostips
+target_link_libraries(${PROJECT_NAME}
 	#snapwebsites
 	#${QTCASSANDRA_LIBRARIES}
 	#${LIBTLD_LIBRARIES}
@@ -318,6 +356,7 @@ target_link_libraries(gethostips
 	#${THRIFT_LIBRARIES}
 	#dl
 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
 
