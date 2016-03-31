@@ -18,6 +18,7 @@
 #include "date_widgets.h"
 
 #include "../locale/snap_locale.h"
+#include "../messages/messages.h"
 
 #include "log.h"
 #include "mkgmtime.h"
@@ -199,6 +200,7 @@ void date_widgets::bootstrap(snap_child * snap)
     SNAP_LISTEN(date_widgets, "editor", editor::editor, value_to_string, _1);
     SNAP_LISTEN(date_widgets, "editor", editor::editor, string_to_value, _1);
     SNAP_LISTEN(date_widgets, "editor", editor::editor, init_editor_widget, _1, _2, _3, _4, _5);
+    SNAP_LISTEN(date_widgets, "editor", editor::editor, validate_editor_post_for_widget, _1, _2, _3, _4, _5, _6, _7);
 }
 
 
@@ -415,6 +417,224 @@ QString date_widgets::range_to_year(QString const range_date)
     return QString("%1").arg(tm_now.tm_year + 1900);
 }
 
+
+
+void date_widgets::on_validate_editor_post_for_widget(
+            content::path_info_t & ipath,
+            sessions::sessions::session_info & info,
+            QDomElement const & widget,
+            QString const & widget_name,
+            QString const & widget_type,
+            QString const & value,
+            bool const is_secret)
+{
+    NOTUSED(ipath);
+    NOTUSED(widget_type);
+
+    // emptiness is checked with the system "required" feature
+    if(!value.isEmpty())
+    {
+        QDomElement const filters(widget.firstChildElement("filters"));
+        if(!filters.isNull())
+        {
+            // regular expression
+            QDomElement const regex_tag(filters.firstChildElement("regex"));
+            if(!regex_tag.isNull())
+            {
+                QString const regex_name(regex_tag.attribute("name"));
+                if(regex_name == "partial-date")
+                {
+                    QString label(widget.firstChildElement("label").text());
+                    if(label.isEmpty())
+                    {
+                        label = widget_name;
+                    }
+
+                    // partial date only--this means any one of the
+                    // usual date parameters may be set to a dash
+                    // instead of a number; we have to replace the
+                    // dashes with a valid number first; for the
+                    // month and day we use 1, for the year we
+                    // use 2000; we expect the date to always be
+                    // written as: YYYY/MM/DD
+                    //
+                    // The client is expected to properly build
+                    // the date so any error in what we described
+                    // earlier and we mark the date as invalid
+                    //
+                    snap_string_list date_parts(value.split('/'));
+                    if(date_parts.size() != 3)
+                    {
+                        // this is incorrect
+                        messages::messages * messages(messages::messages::instance());
+                        messages->set_error(
+                            "Invalid Value",
+                            QString("\"%1\" is not a valid partial date for \"%2\".")
+                                    .arg(form::form::html_64max(value, is_secret)).arg(label),
+                            QString("the date did not validate for \"%1\"")
+                                    .arg(widget_name),
+                            is_secret
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                    }
+                    else
+                    {
+                        // we do our own parsing since the date is
+                        // not specific to the current locale
+                        //
+                        // first we transform the "-" to 2000 (year) or 1
+                        // (month/day of month) and then we parse the
+                        // date using the snap_child parser which requires
+                        // "-" as separators
+                        //
+                        if(date_parts[0] == "-")
+                        {
+                            date_parts[0] = "2000";
+                        }
+                        if(date_parts[1] == "-")
+                        {
+                            date_parts[1] = "1";
+                        }
+                        if(date_parts[2] == "-")
+                        {
+                            date_parts[2] = "1";
+                        }
+                        bool ok_year(false), ok_month(false), ok_day(false);
+                        int const year(date_parts[0].toInt(&ok_year));
+                        int const month(date_parts[1].toInt(&ok_month));
+                        int const day(date_parts[2].toInt(&ok_day));
+                        // since the data could be tainted, we check the
+                        // values once here already...
+                        if(!ok_year
+                        || !ok_month
+                        || !ok_day
+                        || year < 1
+                        || year > 3000
+                        || month < 1
+                        || month > 12
+                        || day < 1
+                        || day > f_snap->last_day_of_month(month, year))
+                        {
+                            messages::messages * messages(messages::messages::instance());
+                            messages->set_error(
+                                "Invalid Value",
+                                QString("\"%1\" is not a valid partial date for \"%2\".")
+                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                QString("the date did not validate for \"%1\"")
+                                        .arg(widget_name),
+                                is_secret
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                        }
+                        else
+                        {
+                            // this checks the date yet again (probably not
+                            // necessary?)
+                            QString const us_date(QString("%1-%2-%3")
+                                        .arg(year,  4, 10, QChar('0'))
+                                        .arg(month, 2, 10, QChar('0'))
+                                        .arg(day,   2, 10, QChar('0')));
+                            time_t const date_value(f_snap->string_to_date(us_date));
+                            if(date_value == -1)
+                            {
+                                messages::messages * messages(messages::messages::instance());
+                                messages->set_error(
+                                    "Invalid Value",
+                                    QString("\"%1\" is not a valid partial date for \"%2\" (%3).")
+                                            .arg(form::form::html_64max(value, is_secret)).arg(label).arg(us_date),
+                                    QString("the date did not validate for \"%1\"")
+                                            .arg(widget_name),
+                                    is_secret
+                                ).set_widget_name(widget_name);
+                                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                            }
+                            else
+                            {
+                                // Further the user may have defined a minimum and maximum
+                                // (these will be ignored by the editor.cpp validation
+                                // function because it will fail converting the partial date
+                                // and assume that another validation will take over)
+                                //
+                                // minimum/maximum date
+                                QDomElement min_date(filters.firstChildElement("min-date"));
+                                QDomElement max_date(filters.firstChildElement("max-date"));
+                                if(!min_date.isNull()
+                                || !max_date.isNull())
+                                {
+                                    QString min_str("-1");
+                                    QString max_str("-1");
+                                    time_t min_time(-1);
+                                    time_t max_time(-1);
+
+                                    locale::locale * locale_plugin(locale::locale::instance());
+                                    if(!min_date.isNull())
+                                    {
+                                        min_str = min_date.text();
+                                        locale::locale::parse_error_t errcode;
+                                        min_time = locale_plugin->parse_date(min_str, errcode);
+                                        if(errcode != locale::locale::parse_error_t::PARSE_NO_ERROR)
+                                        {
+                                            throw editor::editor_exception_invalid_editor_form_xml(QString("the minimum date \"%1\" must be a valid date").arg(min_str));
+                                        }
+                                    }
+
+                                    if(!max_date.isNull())
+                                    {
+                                        max_str = max_date.text();
+                                        locale::locale::parse_error_t errcode;
+                                        max_time = locale_plugin->parse_date(max_str, errcode);
+                                        if(errcode != locale::locale::parse_error_t::PARSE_NO_ERROR)
+                                        {
+                                            throw editor::editor_exception_invalid_editor_form_xml(QString("the maximum date \"%1\" must be a valid date").arg(max_str));
+                                        }
+                                    }
+
+                                    if(min_time != -1 && max_time != -1 && max_time < min_time)
+                                    {
+                                        throw editor::editor_exception_invalid_editor_form_xml(QString("the minimum date \"%1\" is not smaller than the maximum date \"%2\"").arg(min_str).arg(max_str));
+                                    }
+
+                                    // Note: if 'value' is not a valid date, we ignore the error
+                                    //       at this point, we catch it below if the user asked
+                                    //       for the format to be checked with a regex filter
+                                    //       named 'date'.
+                                    //  
+                                    if(min_time != -1 && date_value < min_time)
+                                    {
+                                        // date is too small
+                                        messages::messages * messages(messages::messages::instance());
+                                        messages->set_error(
+                                            "Too Old",
+                                            QString("\"%1\" is too far in the past for \"%2\". The widget requires a date starting on \"%3\".")
+                                                    .arg(form::form::html_64max(value, is_secret)).arg(label).arg(min_str),
+                                            QString("unexpected date in \"%1\"").arg(widget_name),
+                                            is_secret
+                                        ).set_widget_name(widget_name);
+                                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                                    }
+
+                                    if(max_time != -1 && date_value > max_time)
+                                    {
+                                        // date is too large
+                                        messages::messages * messages(messages::messages::instance());
+                                        messages->set_error(
+                                            "Too Recent",
+                                            QString("\"%1\" is too far in the future for \"%2\". The widget requires a date ending on \"%3\".")
+                                                    .arg(form::form::html_64max(value, is_secret)).arg(label).arg(max_str),
+                                            QString("unexpected date in \"%1\"").arg(widget_name),
+                                            is_secret
+                                        ).set_widget_name(widget_name);
+                                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.886
+ * Version: 0.0.3.898
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -7276,6 +7276,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
         selected,
         offset,
         column_range,
+        list_of_items,
         number_of_items,
         col_widths,
         col_outer_widths,
@@ -7462,7 +7463,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
 
                 // now scroll toward the existing selection if any
                 selected = this.openDropdown_.find("li.selected");
-                if(selected)
+                if(selected.exists())
                 {
                     // TBD: by setting the overflow to hidden, we will force the scrollTop()
                     // to be recalculated/used as expected (may be required for mobile phones)
@@ -7620,7 +7621,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                     //       loop below; that's probably not 100% correct
                     //       to do so, however...
                     //
-                    number_of_items = this.openDropdown_.find("li").length;
+                    list_of_items = this.openDropdown_.find("li");
+                    number_of_items = list_of_items.length;
                     if(max_count > number_of_items)
                     {
                         max_count = number_of_items;
@@ -7633,9 +7635,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                         //
                         col_widths = new Array(count);
                         col_outer_widths = new Array(count);
-                        this.openDropdown_
-                            .find("li")
-                            .each(function(idx, element)
+                        list_of_items.each(function(idx, element)
                                 {
                                     var col = idx % count,
                                         width = jQuery(element).width(),
@@ -7924,7 +7924,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
 
                             // now scroll toward the existing selection if any
                             selected = this.openDropdown_.find("li.selected");
-                            if(selected)
+                            if(selected.exists())
                             {
                                 // by setting the overflow to hidden, we will force the scrollTop()
                                 // to be recalculated/used as expected (may be required for mobile phones)
@@ -8001,7 +8001,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
 //                                });
 //console.log(new Date);
                         width = this.openDropdown_.outerWidth(false);
-                        if(width > screen_width)
+                        if(width + 20 > screen_width) // +20 to account for the scrollbar width (TODO: calculate exact size)
                         {
                             // too large, try with less columns
                             continue;
@@ -8012,22 +8012,28 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                             if(pos.left + width > screen_width)
                             {
                                 // adjust the left position so we see the right side of the dropdown
-                                pos.left = screen_width - width;
+                                pos.left = screen_width - width - 20; // -20 to account for the scrollbar (TODO: calculate exact size)
                                 if(pos.left < 0)
                                 {
                                     pos.left = 0;
                                 }
                             }
-                            total_width = this.openDropdown_.outerWidth(false);
                             dropdown_height = screen_height - (pos.top - scroll_top);
-                            this.openDropdown_
-                                    //.find("ul")
-                                    .height(dropdown_height)
-                                    .width(total_width + 20);     // +20 to account for the scrollbar width (TODO: calculate exact size)
+                            if(dropdown_height > this.openDropdown_.outerHeight(false))
+                            {
+                                this.openDropdown_
+                                        .width(width + 20);     // +20 to account for the scrollbar width (TODO: calculate exact size)
+                            }
+                            else
+                            {
+                                this.openDropdown_
+                                        .height(dropdown_height)
+                                        .width(width + 20);     // +20 to account for the scrollbar width (TODO: calculate exact size)
+                            }
 
                             // now scroll toward the existing selection if any
                             selected = this.openDropdown_.find("li.selected");
-                            if(selected)
+                            if(selected.exists())
                             {
                                 // by setting the overflow to hidden, we will force the scrollTop()
                                 // to be recalculated/used as expected (may be required for mobile phones)
@@ -8130,7 +8136,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
 
                             // now scroll toward the existing selection if any
                             selected = this.openDropdown_.find("li.selected");
-                            if(selected)
+                            if(selected.exists())
                             {
                                 // TBD: by setting the overflow to hidden, we will force the scrollTop()
                                 // to be recalculated/used as expected (may be required for mobile phones)

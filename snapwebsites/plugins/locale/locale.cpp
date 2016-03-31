@@ -20,6 +20,7 @@
 #include "../content/content.h"
 
 #include "log.h"
+#include "mkgmtime.h"
 #include "not_used.h"
 #include "qunicodestring.h"
 
@@ -797,14 +798,24 @@ QString locale::format_date(time_t d, QString const & date_format, bool use_loca
  */
 time_t locale::parse_date(QString const & date, parse_error_t & errcode)
 {
+    enum class round_t
+    {
+        ROUND_NO,
+        ROUND_UP,
+        ROUND_DOWN,
+        ROUND_ROUND
+    };
+
     errcode = parse_error_t::PARSE_NO_ERROR;
 
     if(date.startsWith("now"))
     {
         // in this case we use our own special code
-        time_t result(f_snap->get_start_time());
-        QString d(date.mid(3));
-        QChar const *s(d.unicode());
+        time_t const now(f_snap->get_start_time());
+        struct tm result;
+        gmtime_r(&now, &result);
+        QString const d(date.mid(3));
+        QChar const * s(d.unicode());
         for(;;)
         {
             while(s->isSpace())
@@ -813,9 +824,10 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
             }
             if(s->unicode() == L'\0')
             {
-                return result;
+                return mkgmtime(&result);
             }
             int64_t sign(1LL);
+            round_t round(round_t::ROUND_NO);
             if(s->unicode() == '+')
             {
                 ++s;
@@ -824,6 +836,60 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
             {
                 ++s;
                 sign = -1LL;
+            }
+            else if((s[0].unicode() == 'r' || s[0].unicode() == 'R')
+                 && (s[1].unicode() == 'o' || s[1].unicode() == 'O')
+                 && (s[2].unicode() == 'u' || s[2].unicode() == 'U')
+                 && (s[3].unicode() == 'n' || s[3].unicode() == 'N')
+                 && (s[4].unicode() == 'd' || s[4].unicode() == 'D'))
+            {
+                s += 5;
+                if((s[0].unicode() == 'e' || s[0].unicode() == 'E')
+                && (s[1].unicode() == 'd' || s[1].unicode() == 'D'))
+                {
+                    // allow for "rounded" instead of just "round"
+                    s += 2;
+                }
+                while(s->isSpace())
+                {
+                    ++s;
+                }
+                if((s[0].unicode() == 'u' || s[0].unicode() == 'U')
+                && (s[1].unicode() == 'p' || s[1].unicode() == 'P'))
+                {
+                    round = round_t::ROUND_UP;
+                    s += 2;
+                }
+                else if((s[0].unicode() == 'd' || s[0].unicode() == 'D')
+                     && (s[1].unicode() == 'o' || s[1].unicode() == 'O')
+                     && (s[2].unicode() == 'w' || s[2].unicode() == 'W')
+                     && (s[3].unicode() == 'n' || s[3].unicode() == 'N'))
+                {
+                    round = round_t::ROUND_DOWN;
+                    s += 4;
+                }
+                else if((s[0].unicode() >= '0' && s[0].unicode() <= '9')
+                     || (s[0].unicode() == 't' || s[0].unicode() == 'T'))
+                {
+                    // if UP or DOWN are not specified, then we assume
+                    // ROUND instead (UP if value is 50% or more of count)
+                    round = round_t::ROUND_ROUND;
+                }
+                else
+                {
+                    errcode = parse_error_t::PARSE_ERROR_DATE;
+                    return -1;
+                }
+                while(s->isSpace())
+                {
+                    ++s;
+                }
+                if((s[0].unicode() == 't' || s[0].unicode() == 'T')
+                && (s[1].unicode() == 'o' || s[1].unicode() == 'o'))
+                {
+                    // allow for "rounded" instead of just "round"
+                    s += 2;
+                }
             }
 
             while(s->isSpace())
@@ -859,9 +925,19 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
                 ++s;
             }
 
+            if(count == 0
+            && round != round_t::ROUND_NO)
+            {
+                // TBD: should we be returning -1 and set an error?
+                //      it seems to me that in this case the programmer
+                //      wants to know immediately that he has a bug
+                throw locale_exception_invalid_argument("count cannot be zero with rounding capability");
+            }
+
             // here we are interested in the following word
             // unfortunately QChar does not offer a way to compare
             // a word as is and we do not know the length...
+            bool use_seconds(false);
             if((s[0].unicode() == 's' || s[0].unicode() == 'S')
             && (s[1].unicode() == 'e' || s[1].unicode() == 'E')
             && (s[2].unicode() == 'c' || s[2].unicode() == 'C')
@@ -870,7 +946,7 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
             && (s[5].unicode() == 'd' || s[5].unicode() == 'D'))
             {
                 s += 6;
-                result += count;
+                use_seconds = true;
             }
             else if((s[0].unicode() == 'm' || s[0].unicode() == 'M')
                  && (s[1].unicode() == 'i' || s[1].unicode() == 'I')
@@ -880,7 +956,8 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
                  && (s[5].unicode() == 'e' || s[5].unicode() == 'E'))
             {
                 s += 6;
-                result += count * 60LL;
+                count *= 60LL;
+                use_seconds = true;
             }
             else if((s[0].unicode() == 'h' || s[0].unicode() == 'H')
                  && (s[1].unicode() == 'o' || s[1].unicode() == 'O')
@@ -888,14 +965,16 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
                  && (s[3].unicode() == 'r' || s[3].unicode() == 'R'))
             {
                 s += 4;
-                result += count * 3600LL;
+                count *= 3600LL;
+                use_seconds = true;
             }
             else if((s[0].unicode() == 'd' || s[0].unicode() == 'D')
                  && (s[1].unicode() == 'a' || s[1].unicode() == 'A')
                  && (s[2].unicode() == 'y' || s[2].unicode() == 'Y'))
             {
                 s += 3;
-                result += count * 86400LL;
+                count *= 86400LL;
+                use_seconds = true;
             }
             else if((s[0].unicode() == 'm' || s[0].unicode() == 'M')
                  && (s[1].unicode() == 'o' || s[1].unicode() == 'O')
@@ -903,26 +982,187 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
                  && (s[3].unicode() == 't' || s[3].unicode() == 'T')
                  && (s[4].unicode() == 'h' || s[4].unicode() == 'H'))
             {
-                // with roughly 365.25 days and 12 months a year
-                // we have an average of 30.4375 days per months
-                // which represents 2629800 seconds
                 s += 5;
-                result += count * 2629800LL;
+                round_t r(round);
+                if(r == round_t::ROUND_ROUND)
+                {
+                    time_t const seconds((result.tm_mday - 1) * 86400
+                                        + result.tm_hour * 3600
+                                        + result.tm_min * 60
+                                        + result.tm_sec);
+                    time_t const total_seconds(f_snap->last_day_of_month(result.tm_mon + 1, result.tm_year + 1900));
+                    if(seconds >= total_seconds / 2)
+                    {
+                        r = round_t::ROUND_UP;
+                    }
+                    else
+                    {
+                        r = round_t::ROUND_DOWN;
+                    }
+                }
+                switch(r)
+                {
+                case round_t::ROUND_NO:
+                    {
+                        // here count may be negative
+                        result.tm_mon += count;
+
+                        // adjust the result fields to sensible values
+                        time_t const seconds(mkgmtime(&result));
+                        gmtime_r(&seconds, &result);
+                    }
+                    break;
+
+                case round_t::ROUND_DOWN:
+                    {
+                        // MMM 1, YYYY 00:00:00
+                        result.tm_sec = 0;
+                        result.tm_min = 0;
+                        result.tm_hour = 0;
+                        result.tm_mday = 1;
+                        result.tm_mon -= count - 1;
+
+                        // adjust the result fields to sensible values
+                        time_t const seconds(mkgmtime(&result));
+                        gmtime_r(&seconds, &result);
+                    }
+                    break;
+
+                case round_t::ROUND_UP:
+                    // round down and then go to next X seconds, days, months...
+                    // minus 1 second (so we clamp at the end of that X seconds,
+                    // days, months...)
+                    {
+                        // In this case we do (month + count - 1 second)
+
+                        // MMM 28/29/30/31, YYYY 23:59:59
+                        result.tm_sec = -1;
+                        result.tm_min = 0;
+                        result.tm_hour = 0;
+                        result.tm_mday = 1;
+                        result.tm_mon += count;
+
+                        // adjust the month
+                        time_t const seconds(mkgmtime(&result));
+                        gmtime_r(&seconds, &result);
+                    }
+                    break;
+
+                case round_t::ROUND_ROUND:
+                    throw snap_logic_exception("round_t::ROUND_ROUND cannot happen in this switch. It was replaced by round up or down in the preceeding if() block.");
+
+                }
             }
             else if((s[0].unicode() == 'y' || s[0].unicode() == 'Y')
                  && (s[1].unicode() == 'e' || s[1].unicode() == 'E')
                  && (s[2].unicode() == 'a' || s[2].unicode() == 'A')
                  && (s[3].unicode() == 'r' || s[3].unicode() == 'R'))
             {
-                // with roughly 365.25 days in a year and 86400 seconds
-                // per day, we have 31557600 seconds in a year
                 s += 4;
-                result += count * 31557600LL;
+                round_t r(round);
+                if(r == round_t::ROUND_ROUND)
+                {
+                    if(result.tm_mon >= 6) // Jul-Dec, round UP
+                    {
+                        r = round_t::ROUND_UP;
+                    }
+                    else // Jan-Jun, round DOWN
+                    {
+                        r = round_t::ROUND_DOWN;
+                    }
+                }
+                switch(r)
+                {
+                case round_t::ROUND_NO:
+                    // here count may be negative
+                    result.tm_year += count;
+                    break;
+
+                case round_t::ROUND_DOWN:
+                    {
+                        // Jan 1, YYYY 00:00:00
+                        result.tm_sec = 0;
+                        result.tm_min = 0;
+                        result.tm_hour = 0;
+                        result.tm_mday = 1;
+                        result.tm_mon = 0;
+                        result.tm_year += count - 1;
+                    }
+                    break;
+
+                case round_t::ROUND_UP:
+                    // round down and then go to next X seconds, days, months...
+                    // minus 1 second (so we clamp at the end of that X seconds,
+                    // days, months...)
+                    {
+                        // Dec 31, YYYY 23:59:59
+                        result.tm_sec = 59;
+                        result.tm_min = 59;
+                        result.tm_hour = 23;
+                        result.tm_mday = 31; // Dec is always 31 days
+                        result.tm_mon = 11;
+                        result.tm_year += count - 1;
+                    }
+                    break;
+
+                case round_t::ROUND_ROUND:
+                    throw snap_logic_exception("round_t::ROUND_ROUND cannot happen in this switch. It was replaced by round up or down in the preceeding if() block.");
+
+                }
             }
             else
             {
                 errcode = parse_error_t::PARSE_ERROR_DATE;
                 return -1;
+            }
+
+            if(use_seconds)
+            {
+                switch(round)
+                {
+                case round_t::ROUND_NO:
+                    // here count may be negative
+                    result.tm_sec += count;
+                    break;
+
+                case round_t::ROUND_DOWN:
+                    {
+                        time_t seconds(mkgmtime(&result));
+                        seconds -= seconds % count;
+                        gmtime_r(&seconds, &result);
+                    }
+                    break;
+
+                case round_t::ROUND_UP:
+                    // round down and then go to next X seconds, days, months...
+                    // minus 1 second (so we clamp at the end of that X seconds,
+                    // days, months...)
+                    {
+                        time_t seconds(mkgmtime(&result));
+                        seconds = seconds - seconds % count + count - 1;
+                        gmtime_r(&seconds, &result);
+                    }
+                    break;
+
+                case round_t::ROUND_ROUND:
+                    // TBD: should it be  (count + 1) / 2 ?
+                    {
+                        time_t seconds(mkgmtime(&result));
+                        if(seconds % count >= count / 2)
+                        {
+                            // round up, fully (i.e. no -1...)
+                            seconds = seconds - seconds % count + count - 1;
+                        }
+                        else
+                        {
+                            // round down
+                            seconds -= seconds % count;
+                        }
+                        gmtime_r(&seconds, &result);
+                    }
+                    break;
+
+                }
             }
 
             // skip the plurial if defined

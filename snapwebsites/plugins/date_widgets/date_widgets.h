@@ -30,6 +30,14 @@ namespace date_widgets
 //    explicit date_widgets_exception(std::string const & what_msg) : snap_exception("date_widgets", what_msg) {}
 //    explicit date_widgets_exception(QString const &     what_msg) : snap_exception("date_widgets", what_msg) {}
 //};
+//
+//class date_widgets_exception_invalid_argument : public date_widgets_exception
+//{
+//public:
+//    explicit date_widgets_exception_invalid_argument(char const *        what_msg) : editor_exception(what_msg) {}
+//    explicit date_widgets_exception_invalid_argument(std::string const & what_msg) : editor_exception(what_msg) {}
+//    explicit date_widgets_exception_invalid_argument(QString const &     what_msg) : editor_exception(what_msg) {}
+//};
 
 
 
@@ -61,6 +69,7 @@ public:
     void                    on_value_to_string(editor::editor::value_to_string_info_t & value_info);
     void                    on_string_to_value(editor::editor::string_to_value_info_t & value_info);
     void                    on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row);
+    void                    on_validate_editor_post_for_widget(content::path_info_t & ipath, sessions::sessions::session_info & info, QDomElement const & widget, QString const & widget_name, QString const & widget_type, QString const & value, bool const is_secret);
 
 private:
     void                    content_update(int64_t variables_timestamp);

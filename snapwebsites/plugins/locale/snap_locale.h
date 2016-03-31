@@ -43,14 +43,21 @@ enum class name_t
 char const * get_name(name_t name) __attribute__ ((const));
 
 
-//class locale_exception : public snap_exception
-//{
-//public:
-//    explicit explicit locale_exception(char const *        what_msg) : snap_exception("locale", what_msg) {}
-//    explicit explicit locale_exception(std::string const & what_msg) : snap_exception("locale", what_msg) {}
-//    explicit explicit locale_exception(QString const &     what_msg) : snap_exception("locale", what_msg) {}
-//};
+class locale_exception : public snap_exception
+{
+public:
+    explicit locale_exception(char const *        what_msg) : snap_exception("locale", what_msg) {}
+    explicit locale_exception(std::string const & what_msg) : snap_exception("locale", what_msg) {}
+    explicit locale_exception(QString const &     what_msg) : snap_exception("locale", what_msg) {}
+};
 
+class locale_exception_invalid_argument : public locale_exception
+{
+public:
+    explicit locale_exception_invalid_argument(char const *        what_msg) : locale_exception(what_msg) {}
+    explicit locale_exception_invalid_argument(std::string const & what_msg) : locale_exception(what_msg) {}
+    explicit locale_exception_invalid_argument(QString const &     what_msg) : locale_exception(what_msg) {}
+};
 
 
 

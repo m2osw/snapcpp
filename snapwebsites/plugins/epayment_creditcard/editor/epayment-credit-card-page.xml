@@ -68,9 +68,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>This field must be set to the month and year on which your credit card will expire.</help>
     <required>required</required>
     <filters>
-      <regex name="date"/>
-      <min-date>now - 1 year</min-date>
-      <max-date>now + 19 year</max-date>
+      <regex name="partial-date"/>
+      <min-date>now round down 1 month</min-date>
+      <max-date>now + 19 year round up 1 year</max-date>
     </filters>
     <dropdown-date-edit>
       <include-month/>
