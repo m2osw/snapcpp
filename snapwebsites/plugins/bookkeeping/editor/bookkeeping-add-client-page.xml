@@ -18,6 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <editor-form owner="bookkeeping" content-modified="2016-01-10 02:27:44">
+  <timeout minutes="1440"/> <!-- 1 day -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="client_name"/>
@@ -29,7 +30,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="client_state"/>
     <tabindex refid="client_zip"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
+  </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
   </widget>
 
   <!-- client information -->

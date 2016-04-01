@@ -29,8 +29,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output filter="token"> <!-- lang="{$lang}" 'lang variable undefined' -->
-			<div id="content" class="editor-form" form_name="info">
-				<xsl:attribute name="session"><xsl:copy-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
+			<div id="content" class="editor-form" form_name="info" mode="save-all">
+				<xsl:attribute name="session"><xsl:value-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
+				<xsl:attribute name="auto-reset"><xsl:value-of select="page/body/editor/auto_reset/div/div/node()"/></xsl:attribute>
+				<xsl:attribute name="timeout"><xsl:value-of select="page/body/editor/timeout/div/div/node()"/></xsl:attribute>
 
 				<!-- xsl:if test="$action != 'edit' and $can_edit = 'yes'">
 					<a class="settings-edit-button" href="?a=edit">Edit</a>
@@ -80,20 +82,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<xsl:copy-of select="page/body/epayment/city/node()"/>
 						</div>
 
-						<div class="editor-block">
-							<label for="province" class="editor-title">Province / State:</label>
-							<xsl:copy-of select="page/body/epayment/province/node()"/>
-						</div>
+						<xsl:if test="page/body/epayment/province">
+							<div class="editor-block">
+								<label for="province" class="editor-title">Province / State:</label>
+								<xsl:copy-of select="page/body/epayment/province/node()"/>
+							</div>
+						</xsl:if>
 
 						<div class="editor-block">
 							<label for="postal_code" class="editor-title">Postal Code:</label>
 							<xsl:copy-of select="page/body/epayment/postal_code/node()"/>
 						</div>
 
-						<div class="editor-block">
-							<label for="country" class="editor-title">Country:</label>
-							<xsl:copy-of select="page/body/epayment/country/node()"/>
-						</div>
+						<xsl:if test="page/body/epayment/country">
+							<div class="editor-block">
+								<label for="country" class="editor-title">Country:</label>
+								<xsl:copy-of select="page/body/epayment/country/node()"/>
+							</div>
+						</xsl:if>
 					</fieldset>
 
 				</div>

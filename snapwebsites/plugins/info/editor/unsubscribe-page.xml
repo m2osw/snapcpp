@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="sendmail" content-modified="2015-05-20 22:21:08">
-  <auto-reset minutes="480"/> <!-- 8 hours -->
+<editor-form owner="sendmail" id="settings" content-modified="2015-05-20 22:21:08">
+  <timeout minutes="15"/> <!-- 15 minutes -->
   <focus refid="email"/>
   <immediate/> <!-- entire form is immediate -->
   <no-toolbar/> <!-- none of the fields should have the toolbar -->
@@ -28,7 +28,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="email"/>
     <tabindex refid="level"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="sendmail/form/unsubscribe/session">
+  </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
   </widget>
 
   <!-- the email address the user wants to unsubscribe -->

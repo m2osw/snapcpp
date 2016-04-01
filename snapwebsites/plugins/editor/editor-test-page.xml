@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="editor" content-modified="2014-10-06 22:53:48">
-  <auto-reset minutes="30"/> <!-- 30 minutes -->
+<editor-form owner="editor" id="test" content-modified="2014-10-06 22:53:48">
+  <timeout minutes="1440"/> <!-- 1 day -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="file_widget"/>
@@ -35,8 +35,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="radio_widget"/>
     <tabindex refid="button_widget"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
+  </widget>
+
   <widget id="file_widget" type="dropped-file" field="editor::file_widget" path="editor/file_widget" drop="drop" auto-save="html">
     <attachment identification="page/public"/>
     <tooltip>Tooltip</tooltip>

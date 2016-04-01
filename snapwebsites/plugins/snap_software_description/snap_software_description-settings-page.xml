@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="snap_software_description" content-modified="2015-11-27 18:17:45">
+<editor-form owner="snap_software_description" id="settings" content-modified="2015-11-27 18:17:45">
   <mode action="edit"/>
   <immediate/>
   <focus refid="snsd_enable"/>

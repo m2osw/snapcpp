@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="info" content-modified="2015-09-07 23:22:10">
-  <auto-reset minutes="30"/> <!-- 30 minutes -->
+<editor-form owner="info" id="settings" content-modified="2015-09-07 23:22:10">
+  <timeout minutes="60"/> <!-- 1 hour -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="soft_administrative_session"/>
@@ -29,7 +29,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="user_session_duration"/>
     <tabindex refid="total_session_duration"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
+  </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
   </widget>
 
   <!-- soft administrative session (update the login time limit on each access) -->

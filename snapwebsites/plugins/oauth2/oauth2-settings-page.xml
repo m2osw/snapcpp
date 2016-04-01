@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="oauth2" content-modified="2014-11-21 16:42:08">
-  <auto-reset minutes="30"/> <!-- 30 minutes -->
+<editor-form owner="oauth2" id="settings" content-modified="2014-11-21 16:42:08">
+  <timeout minutes="1440"/> <!-- 1 day -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="oauth2_enable"/>
@@ -30,8 +30,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="oauth2_secret"/>
     <tabindex refid="oauth2_user_enable"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
+  </widget>
+
   <widget id="oauth2_enable" type="checkmark" field="oauth2::enable" path="oauth2/enable" auto-save="int8">
     <label>Turn the OAuth2 feature ON or OFF</label>
     <tooltip>Check this box to enable the OAuth2 feature. When OAuth2 is enabled applications that know of various API supported by your website can log in and manage your website remotely.</tooltip>

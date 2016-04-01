@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="flash" content-modified="2015-01-02 04:16:35">
-  <auto-reset minutes="120"/>
+<editor-form owner="flash" id="settings" content-modified="2015-01-02 04:16:35">
+  <timeout minutes="1440"/> <!-- 1 day -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="enabled"/>
@@ -27,8 +27,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="enabled"/>
     <tabindex refid="always_detect"/>
   </taborder>
+
   <widget id="editor-session" type="silent" field="editor::session" path="editor/session">
   </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
+  </widget>
+
   <widget id="enabled" type="checkbox" field="flash::enabled" path="flash/enabled" auto-save="string">
     <tooltip>Check this checkbox to allow flash animations to work on your website.</tooltip>
     <help>Your browser may verify that a Flash animation can indeed be played from your server.

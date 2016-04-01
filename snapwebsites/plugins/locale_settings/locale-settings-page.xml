@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="locale" content-modified="2014-11-21 16:42:08">
-  <auto-reset minutes="30"/> <!-- 30 minutes -->
+<editor-form owner="locale" id="settings" content-modified="2014-11-21 16:42:08">
+  <timeout minutes="1440"/> <!-- 1 day -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="locale_timezone"/>
@@ -26,8 +26,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <taborder>
     <tabindex refid="locale_timezone"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
+  </widget>
+
   <!-- until we get a locale_locale type of widget, we use a line::edit... -->
   <widget id="locale_locale" type="line-edit" field="locale_settings::locale" path="locale/locale" auto-save="string">
     <tooltip>Enter a valid locale name such as "en_US".</tooltip>

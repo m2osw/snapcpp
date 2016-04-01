@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <editor-form owner="epayment_stripe" content-modified="2016-01-27 00:15:15">
-  <auto-reset minutes="30"/> <!-- 30 minutes -->
+  <timeout minutes="30"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="client_id"/>
@@ -30,8 +30,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="sandbox_client_id"/>
     <tabindex refid="sandbox_secret"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
+  </widget>
+
   <widget id="client_id" type="line-edit" field="epayment_stripe::client_id" path="epayment_stripe/client_id" auto-save="plain" secret="secret">
     <tooltip>The Stripe plugin makes use of users who have a specific client identifier and secret. This field is expected to be filled with the client_id.</tooltip>
     <help>Help</help>

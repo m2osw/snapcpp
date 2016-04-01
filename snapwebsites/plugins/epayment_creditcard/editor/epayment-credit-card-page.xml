@@ -17,12 +17,18 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="epayment_creditcatd" content-modified="2016-01-28 23:49:49">
+<editor-form owner="epayment_creditcard" id="creditcard_form" content-modified="2016-01-28 23:49:49">
+  <timeout minutes="30"/> <!-- after 30 minutes we auto-cancel... -->
   <auto-reset minutes="10"/> <!-- 10 minutes only on this one, you should not keep credit information out in the wild... -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="card_number"/>
-  <on-save allow-edit="yes"/>
+  <!-- no auto-save otherwise it would create new versions each
+    time someone sends their credit card information (although it
+    would not save that data in the database, we really do not need
+    a new revision of pages with this form duplicated millions of
+    times.) -->
+  <on-save allow-edit="yes" auto-save="no"/>
   <taborder>
     <tabindex refid="card_number"/>
     <tabindex refid="security_code"/>
@@ -35,7 +41,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="postal_code"/>
     <tabindex refid="country"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
+  </widget>
+  <widget id="editor-reset" type="silent" field="editor::auto_reset" path="editor/auto_reset">
+  </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
   </widget>
 
   <!-- card details -->

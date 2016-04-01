@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!--
+Snap Websites Server == e-payment credit card settings page widgets
+Copyright (C) 2014-2016  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<editor-form owner="epayment_creditcard" id="settings" content-modified="2016-03-30 19:18:09">
+  <timeout minutes="1440"/> <!-- 1 day -->
+  <mode action="edit"/>
+  <immediate/>
+  <focus refid="show_address2"/>
+  <on-save allow-edit="yes"/>
+  <taborder>
+    <tabindex refid="show_address2"/>
+    <tabindex refid="show_province"/>
+    <tabindex refid="show_country"/>
+    <tabindex refid="default_country"/>
+  </taborder>
+
+  <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
+  </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
+  </widget>
+
+  <!-- optional fields -->
+  <widget id="show_address2" type="checkmark" field="epayment::show_address2" path="epayment/credit_card/show_address2" auto-save="int8">
+    <tooltip>Uncheck this checkmark if you do not want people to choose to enter a second line for their address.</tooltip>
+    <help>In most cases, the more detail the better, however, at times, a second line in the address can prevent a credit card gateway you are using from working right.</help>
+    <label>Show the second line in the user's address.</label>
+    <value>1</value>
+  </widget>
+  <widget id="show_province" type="checkmark" field="epayment::show_province" path="epayment/credit_card/show_province" auto-save="int8">
+    <tooltip>Uncheck this checkmark if you do not want people to enter a province or state name.</tooltip>
+    <help>If you expect your users from a country where the province or state is not generally included in their address, then you may hide this field.</help>
+    <label>Show the Province / State field.</label>
+    <value>1</value>
+  </widget>
+  <widget id="show_country" type="checkmark" field="epayment::show_country" path="epayment/credit_card/show_country" auto-save="int8">
+    <tooltip>Uncheck this checkmark if you do not want people to enter the name of their country.</tooltip>
+    <help>If your sales are limited to your country, you want to uncheck this checkmark. You may enter the default country name below.</help>
+    <label>Show the Country field.</label>
+    <value>1</value>
+  </widget>
+  <widget id="default_country" type="line-edit" field="epayment::default_country" path="epayment/credit_card/default_country" no-toolbar="no-toolbar" auto-save="string">
+    <tooltip>Enter the name of the default country. (WARNING: if you enter a default, many users are likely to not enter their country name. Be careful.)</tooltip>
+    <help>
+      In general, you will want to enter the name of the country you
+      do business from. The default is to not specify a default. This
+      ensures people enter their country name instead of leaving the
+      default <em>by mistake.</em>
+    </help>
+    <sizes>
+      <max>64</max>
+    </sizes>
+    <background-value>default country name</background-value>
+  </widget>
+
+</editor-form>
+<!-- vim: ts=2 sw=2 et
+-->

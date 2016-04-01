@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="feed" content-modified="2015-10-24 16:28:15">
-  <auto-reset minutes="30"/> <!-- 30 minutes -->
+<editor-form owner="feed" id="settings" content-modified="2015-10-24 16:28:15">
+  <timeout minutes="1440"/> <!-- 1 day -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="default_logo"/>
@@ -33,7 +33,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="teaser_end_marker"/>
     <tabindex refid="top_maximum_number_of_items_in_any_feed"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
+  </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
   </widget>
 
   <!-- main feed parameters -->

@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="hashtag" content-modified="2015-01-02 04:16:35">
-  <auto-reset minutes="120"/>
+<editor-form owner="hashtag" id="settings" content-modified="2015-01-02 04:16:35">
+  <timeout minutes="1440"/> <!-- 1 day -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="link"/>
@@ -26,8 +26,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <taborder>
     <tabindex refid="link"/>
   </taborder>
+
   <widget id="editor-session" type="silent" field="editor::session" path="editor/session">
   </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
+  </widget>
+
   <widget id="link" type="dropdown" field="hashtag::link" path="hashtag/link" auto-save="string">
     <tooltip>Select the mode used to display the hashtags on this website.</tooltip>
     <help>A hashtag can be shown as a link with the hash character in front of it (like twitter.)

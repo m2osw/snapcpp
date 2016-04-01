@@ -17,19 +17,56 @@
 
 #include "epayment_creditcard.h"
 
-//#include "../messages/messages.h"
-//#include "../permissions/permissions.h"
-//#include "../server_access/server_access.h"
-//#include "../users/users.h"
+#include "../editor/editor.h"
 
+#include "log.h"
 #include "not_reached.h"
 #include "not_used.h"
+#include "qdomhelpers.h"
+#include "qdomxpath.h"
 
 #include "poison.h"
 
 
 SNAP_PLUGIN_START(epayment_creditcard, 1, 0)
 
+
+
+/* \brief Get a fixed path name.
+ *
+ * The path plugin makes use of different names in the database. This
+ * function ensures that you get the right spelling for a given name.
+ *
+ * \param[in] name  The name to retrieve.
+ *
+ * \return A pointer to the name.
+ */
+char const * get_name(name_t name)
+{
+    switch(name)
+    {
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY:
+        return "epayment::default_country";
+
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH:
+        return "admin/settings/epayment/creditcard";
+
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ADDRESS2:
+        return "epayment::show_address2";
+
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_COUNTRY:
+        return "epayment::show_country";
+
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PROVINCE:
+        return "epayment::show_province";
+
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_EPAYMENT_CREDITCARD_...");
+
+    }
+    NOTREACHED();
+}
 
 
 /** \brief Initialize the epayment_creditcard plugin.
@@ -135,7 +172,7 @@ int64_t epayment_creditcard::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 3, 30, 15, 4, 16, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 30, 21, 30, 16, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -170,6 +207,7 @@ void epayment_creditcard::bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(epayment_creditcard, "server", server, process_post, _1);
+    SNAP_LISTEN(epayment_creditcard, "editor", editor::editor, dynamic_editor_widget, _1, _2, _3);
 }
 
 
@@ -192,6 +230,128 @@ void epayment_creditcard::on_process_post(QString const & uri_path)
 {
     NOTUSED(uri_path);
 }
+
+
+
+
+void epayment_creditcard::on_dynamic_editor_widget(
+        content::path_info_t & ipath,
+        QString const & name,
+        QDomDocument & editor_widgets)
+{
+    NOTUSED(ipath);
+    NOTUSED(name);
+
+    // are we dealing with the epayment credit card form?
+    //
+    QDomElement root(editor_widgets.documentElement());
+    if(root.isNull())
+    {
+        return;
+    }
+    QString const owner_name(root.attribute("owner"));
+    if(owner_name != "epayment_creditcard")
+    {
+        return;
+    }
+    QString const form_id(root.attribute("id"));
+    if(form_id != "creditcard_form")
+    {
+        return;
+    }
+
+    // read the settings
+    //
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    content::path_info_t epayment_creditcard_settings_ipath;
+    epayment_creditcard_settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH));
+    if(!content_table->exists(epayment_creditcard_settings_ipath.get_key())
+    || !content_table->row(epayment_creditcard_settings_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    {
+        // the form by default is what we want if no settings were defined
+        return;
+    }
+    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(epayment_creditcard_settings_ipath.get_revision_key()));
+
+    // remove the unwanted widgets if the administrator required so...
+    //
+
+    // address2
+    //
+    {
+        bool const show_address2(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ADDRESS2))->value().safeSignedCharValue(0, 1) != 0);
+        if(!show_address2)
+        {
+            // forget that widget
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath("/editor-form/widget[@id='address2']");
+            QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+        }
+    }
+
+    // country
+    //
+    {
+        bool const show_country(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_COUNTRY))->value().safeSignedCharValue(0, 1) != 0);
+        if(!show_country)
+        {
+            // forget that widget
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath("/editor-form/widget[@id='country']");
+            QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+        }
+        else
+        {
+            // setup the default if there is one and we did not remove the
+            // widget
+            QString const default_country(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY))->value().stringValue());
+            if(!default_country.isEmpty())
+            {
+                QDomXPath dom_xpath;
+                dom_xpath.setXPath("/editor-form/widget[@id='country']");
+                QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+                if(result.size() > 0
+                && result[0].isElement())
+                {
+                    QDomElement default_value(editor_widgets.createElement("value"));
+                    result[0].appendChild(default_value);
+                    snap_dom::append_plain_text_to_node(default_value, default_country);
+                }
+            }
+        }
+    }
+
+    // province
+    //
+    {
+        bool const show_province(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PROVINCE))->value().safeSignedCharValue(0, 1) != 0);
+        if(!show_province)
+        {
+            // forget that widget
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath("/editor-form/widget[@id='province']");
+            QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+        }
+    }
+}
+
 
 
 

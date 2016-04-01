@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.898
+ * Version: 0.0.3.915
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -2256,7 +2256,7 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
     this.widgetContent_ = widget.children(".editor-content");
     if(this.widgetContent_.length == 0)
     {
-        throw new Error("Widget \"" + this.name_ + "\" must define a tag with class \"editor-content\"");
+        throw new Error("Widget \"" + this.name_ + "\" must define a child element with class \"editor-content\"");
     }
     // Moved to AFTER the [pre]initialization
     //this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
@@ -2533,6 +2533,12 @@ snapwebsites.EditorWidget.prototype.wasModified = function(opt_recheck)
         }
         else
         {
+//#ifdef DEBUG
+            if(value === undefined && this.widget_.hasClass("composite"))
+            {
+                throw new Error("Composite widget \"" + this.name_ + "\" must define a \"value\" attribute to work properly.");
+            }
+//#endif
             this.modified_ = snapwebsites.trim(this.originalData_) != snapwebsites.trim(snapwebsites.castToString(this.widgetContent_.html(), "expected html() for \"" + this.name_ + "\" to return a string in this case"));
         }
     }
@@ -2653,7 +2659,7 @@ snapwebsites.EditorWidget.prototype.discard = function()
     this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
 
     // we do NOT want a "real" castToString() call on the value attribute
-    // because we expect "undefined" to be returned in some cases
+    // because we expect "undefined" to be returned in many cases
     this.originalValue_ = /** @type {string} */ (this.widgetContent_.attr("value"));
 
     this.wasModified(true);
@@ -2977,35 +2983,74 @@ snapwebsites.EditorWidget.prototype.getValueAsDate = function()
 
 /** \brief Reset the data of a widget to the last saved value.
  *
- * This function copies the originalData_ back in the data of this widget.
- * This it is restoring the data, it marks the widget as not modified.
+ * This function copies the original data back in this widget.
+ * It restores the widget to the state it was when the form
+ * was loaded, it is expected to mark the widget as not modified
+ * and show or hide the background value as required.
  *
  * @final
  *
- * @return {boolean}  true if the restore succeeded.
+ * @return {boolean}  true if the restore had an effect.
  *
  * \sa resetValue()
  * \sa setValue()
  */
 snapwebsites.EditorWidget.prototype.restoreValue = function()
 {
+    var modified = false;
+
     // We cannot directly use the setValue() with the original data
-    // because that data is HTML. However, we can restore the HTML
-    // and then retrieve the resulting value and reapply that to
-    // make sure we are on the right wave length.
-    this.widgetContent_.html(this.originalData_);
+    // may have nothing to do with a user value. For example, a
+    // dropdown may present the user with a sentence such as:
+    // "Please select an option..." which is not a valid value.
+    //
+    // To properly restore, we thus have to restore that original
+    // data and the value if any as two separate entities.
+    //
+    // Restore the original HTML of this widget
+    //
+    if(!this.widget_.hasClass("composite"))
+    {
+        // note that we ignore whether the original data of a composite
+        // widget was modified
+        //
+        modified = this.widgetContent_.html() != this.originalData_;
+
+        // the content of composite widget are other widgets and restoring
+        // the whole thing could be a bad idea... (TBD)
+        //
+        this.widgetContent_.html(this.originalData_);
+    }
+
+    // if there was a value attribute, it is defined in the
+    // originalValue_ parameter; this cannot be HTML like
+    // the originalData_
+    //
     if(this.originalValue_ !== undefined)
     {
+        modified = modified || this.widgetContent_.attr("value") != this.originalValue_;
         this.widgetContent_.attr("value", this.originalValue_);
     }
     else
     {
+        modified = modified || this.widgetContent_.attr("value");
         this.widgetContent_.removeAttr("value");
     }
 
-    // generate a setValue() which handles all the necessary
-    // special cases
-    return this.setValue(this.getValue(), true);
+    // recheck the "was modified" flag; it should be set back to
+    // false in pretty much all cases but we cannot be 100% sure
+    // about that
+    //
+    this.wasModified(true);
+
+    // finally, check whether the background value should be
+    // displayed or not
+    //
+    this.checkForBackgroundValue();
+
+    // return true if the restore did actual restore something
+    //
+    return modified;
 };
 
 
@@ -4732,6 +4777,17 @@ snapwebsites.EditorForm.prototype.formTimedout = function()
         this.formTimeoutId_ = NaN;
     }
 
+    // we also do not want to receive auto-reset signals anymore:
+    //   1. this function resets the form
+    //   2. the form is then not editable anymore (since everything is
+    //      disabled)
+    //
+    if(!isNaN(this.formAutoResetId_))
+    {
+        clearTimeout(this.formAutoResetId_);
+        this.formAutoResetId_ = NaN;
+    }
+
     // disable and restore all the widgets
     //
     // Note: that does not disable buttons that the user may have
@@ -4824,7 +4880,7 @@ snapwebsites.EditorForm.prototype.resetAutoReset = function(force)
         // setup the auto-reset feature of this form (by default we assume
         // that the form does not need to be auto-resetted)
         minutes = parseFloat(this.formWidget_.attr("auto-reset"));
-        if(minutes > 0)
+        if(minutes > 0.0)
         {
             this.formAutoResetId_ = setTimeout(function()
                 {
@@ -4857,14 +4913,16 @@ snapwebsites.EditorForm.prototype.formAutoReset = function()
 {
     var key;
 
-    // reset the timer if it is still considered active
-    // (because this function is public and it may be called by a different
-    // mechanism than out internal timer)
-    if(!isNaN(this.formAutoResetId_))
-    {
-        clearTimeout(this.formAutoResetId_);
-        this.formAutoResetId_ = NaN;
-    }
+    // reset the auto-reset timer
+    //
+    // note that this function is public and it may be called by a different
+    // mechanism than our internal timer
+    //
+    // also, the auto-reset may be required over and over again, not just
+    // once (i.e. the timer does not get reset properly when you start
+    // typing again unless it still exists)
+    //
+    this.resetAutoReset(false);
 
     // restore the value of each widget; note that in most cases
     // only forms that come out empty should use this feature
@@ -4879,6 +4937,10 @@ snapwebsites.EditorForm.prototype.formAutoReset = function()
             this.editorWidgets_[key].restoreValue();
         }
     }
+
+    // make sure the form is marked as unmodified
+    // (since we just restored it all!)
+    this.wasModified(true);
 
     // then, if we have a user callback, call it
     if(this.formAutoResetCallback_)
@@ -5043,11 +5105,16 @@ snapwebsites.EditorForm.prototype.wasModified = function(recheck)
 {
     var key;                            // loop index
 
+    // if already marked as modified and not rechecking, just return true
+    //
     if(!recheck && this.modified_)
     {
         return true;
     }
 
+    // check each widget, although we stop on the first one that tells us
+    // that it was modified if such exists
+    //
     for(key in this.editorWidgets_)
     {
         if(this.editorWidgets_.hasOwnProperty(key)
@@ -5058,7 +5125,14 @@ snapwebsites.EditorForm.prototype.wasModified = function(recheck)
         }
     }
 
+    // well, nothing was modified, make sure to mark the form like so
+    //
     this.modified_ = false;
+
+    // if the save dialog was opened, make sure to close it now
+    //
+    this.getSaveDialog().close();
+
     return false;
 };
 

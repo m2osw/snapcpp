@@ -24,11 +24,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/images/epayment">
     <file>epayment-credit-card-logo-64x64.png</file>
   </qresource>
-  <qresource prefix="/xsl">
-    <file>layout/epayment-credit-card-parser.xsl</file>
-  </qresource>
   <qresource prefix="/xml">
+    <file>editor/epayment-credit-card-settings-page.xml</file>
     <file>editor/epayment-credit-card-page.xml</file>
+  </qresource>
+  <qresource prefix="/xsl">
+    <file>layout/epayment-credit-card-settings-parser.xsl</file>
+    <file>layout/epayment-credit-card-parser.xsl</file>
   </qresource>
 </RCC>
 <!--

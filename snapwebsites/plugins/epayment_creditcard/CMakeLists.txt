@@ -52,7 +52,13 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 
-snap_validate_xml( content.xml content/content.dtd )
+snap_validate_xml( content.xml                                      content/content.dtd )
+
+snap_validate_xml( editor/epayment-credit-card-settings-page.xml    editor/editor-form.dtd )
+snap_validate_xml( editor/epayment-credit-card-page.xml             editor/editor-form.dtd )
+
+snap_validate_xml( layout/epayment-credit-card-settings-parser.xsl  layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/epayment-credit-card-parser.xsl           layout/simplified-xslt20.dtd )
 
 #snap_validate_js( epayment-creditcard.js )
 
@@ -65,6 +71,10 @@ add_library(epayment_creditcard SHARED
     content.xml
     #epayment_creditcard.js
     epayment-credit-card-logo-64x64.png
+    editor/epayment-credit-card-settings-page.xml
+    editor/epayment-credit-card-page.xml
+    layout/epayment-credit-card-settings-parser.xsl
+    layout/epayment-credit-card-parser.xsl
 )
 
 target_link_libraries( epayment_creditcard ${QT_LIBRARIES} )

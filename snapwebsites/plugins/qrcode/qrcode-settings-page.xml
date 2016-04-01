@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="qrcode" content-modified="2014-11-21 16:42:08">
-  <auto-reset minutes="30"/> <!-- 30 minutes -->
+<editor-form owner="qrcode" id="settings" content-modified="2014-11-21 16:42:08">
+  <timeout minutes="1440"/> <!-- 1 day -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="qrcode_private_enable"/>
@@ -28,8 +28,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="qrcode_default_scale"/>
     <tabindex refid="qrcode_default_edge"/>
   </taborder>
+
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
+  <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
+  </widget>
+
   <widget id="qrcode_private_enable" type="checkmark" field="qrcode::private_enable" path="qrcode/private_enable" auto-save="int8">
     <label>Allow QR Code generation for private pages</label>
     <tooltip>Select this checkmark to allow QR code for private pages. By default this is off because there is not much need for private pages to receive a QR code.</tooltip>

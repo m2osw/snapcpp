@@ -24,6 +24,17 @@ namespace epayment_creditcard
 {
 
 
+enum class name_t
+{
+    SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY,
+    SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH,
+    SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ADDRESS2,
+    SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_COUNTRY,
+    SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PROVINCE
+};
+char const * get_name(name_t name) __attribute__ ((const));
+
+
 class epayment_creditcard_exception : public snap_exception
 {
 public:
@@ -64,6 +75,9 @@ public:
 
     // server signals
     void                        on_process_post(QString const & uri_path);
+
+    // editor signals
+    void                        on_dynamic_editor_widget(content::path_info_t & ipath, QString const & name, QDomDocument & editor_widgets);
 
 private:
     void                        content_update(int64_t variables_timestamp);

@@ -442,7 +442,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 3, 30, 17, 24, 57, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 3, 31, 21, 24, 57, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -4871,6 +4871,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
         // no editor specified for this page, skip on it (no editing allowed)
         return;
     }
+
     QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
     int const max_widgets(widgets.size());
 //std::cerr << "***\n*** Generating editor: " << max_widgets << " widgets for " << ipath.get_key() << "\n***\n";
@@ -4903,6 +4904,11 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
             // save user defined value
             timeout_int = timeout_temp;
         }
+
+        // TODO: limit this timing to the user session; there is no need
+        //       to keep a form accessible for 24 hours (the usual default)
+        //       if the user cannot be logged in for more than 1 hour at a
+        //       time!
     }
 
     QString auto_reset; // no default value

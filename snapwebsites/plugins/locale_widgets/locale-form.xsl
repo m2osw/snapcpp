@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:param name="value"/>
     <div field_type="locale_timezone">
       <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-      <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable transparent <xsl:value-of
+      <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable composite transparent <xsl:value-of
         select="classes"/> locale_timezone <xsl:value-of select="$name"/><xsl:if
         test="@immediate or /editor-form/immediate"> immediate</xsl:if></xsl:attribute>
 

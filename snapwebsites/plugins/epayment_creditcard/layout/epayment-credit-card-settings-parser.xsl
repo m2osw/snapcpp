@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == plugin settings parser
+Snap Websites Server == epayment credit catd settings parser
 Copyright (C) 2014-2016  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -23,9 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:snap="snap:snap">
 
 	<!-- some special variables to define the theme -->
-	<xsl:variable name="layout-area">plugin-settings-parser</xsl:variable>
-	<xsl:variable name="layout-modified">2015-12-18 16:22:10</xsl:variable>
-	<xsl:variable name="layout-editor">plugin-settings-page</xsl:variable>
+	<xsl:variable name="layout-area">epayment-credit-card-parser</xsl:variable>
+	<xsl:variable name="layout-modified">2016-03-30 19:18:09</xsl:variable>
+	<xsl:variable name="layout-editor">epayment-credit-card-page</xsl:variable>
 
 	<xsl:template match="snap">
 		<output filter="token"> <!-- lang="{$lang}" 'lang variable undefined' -->
@@ -33,34 +33,35 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<xsl:attribute name="session"><xsl:value-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 				<xsl:attribute name="timeout"><xsl:value-of select="page/body/editor/timeout/div/div/node()"/></xsl:attribute>
 
-				<h3>Snap! Plugins</h3>
+				<!-- xsl:if test="$action != 'edit' and $can_edit = 'yes'">
+					<a class="settings-edit-button" href="?a=edit">Edit</a>
+				</xsl:if>
+				<xsl:if test="$action = 'edit'">
+					<a class="settings-save-button" href="#">Save Changes</a>
+					<a class="settings-cancel-button right-aligned" href="{/snap/head/metadata/desc[@type='page_uri']/data}">Cancel</a>
+				</xsl:if-->
+				<h3>Billing Information</h3>
 				<div>
 					<xsl:attribute name="class">test<!--xsl:if test="$action = 'edit'"> editing</xsl:if--></xsl:attribute>
 
-					<p>List of available, default, and installed plugins.</p>
+					<fieldset class="site-name">
+						<legend>Credit Card Information</legend>
 
-					<!-- plugin path widget -->
-					<div class="editor-block">
-						<label for="plugin_path" class="editor-title">Plugin Paths:</label>
-						<xsl:copy-of select="page/body/plugin/path/node()"/>
-					</div>
+						<div class="editor-block">
+							<xsl:copy-of select="page/body/epayment/credit_card/show_address2/node()"/>
+							<xsl:copy-of select="page/body/epayment/credit_card/show_province/node()"/>
+							<xsl:copy-of select="page/body/epayment/credit_card/show_country/node()"/>
+						</div>
 
-					<fieldset class="plugins">
-						<legend>Plugins</legend>
-
-						<!-- selection of plugins -->
-						<xsl:for-each select="page/body/plugin/selection/*">
-							<div class="editor-block">
-								<xsl:copy-of select="./div/div/node()"/>
-							</div>
-						</xsl:for-each>
+						<div class="editor-block">
+							<label for="security_code" class="editor-title">Default Country:</label>
+							<xsl:copy-of select="page/body/epayment/credit_card/default_country/node()"/>
+						</div>
 
 					</fieldset>
 
 				</div>
 			</div>
-
-			<css name="info"/>
 		</output>
 	</xsl:template>
 </xsl:stylesheet>
