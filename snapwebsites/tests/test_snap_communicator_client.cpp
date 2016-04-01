@@ -127,18 +127,19 @@ int main(int argc, char * argv[])
 
     for(int i(1); i < argc; ++i)
     {
-        if(strcmp(argv[i], "--help") == 0)
+        const std::string arg(argv[i]);
+        if( arg == "--help" )
         {
             usage();
             snap::NOTREACHED();
         }
-        else if(strcmp(argv[i], "--version") == 0)
+        else if( arg == "--version" )
         {
             std::cout << SNAPWEBSITES_VERSION_STRING << std::endl;
             exit(0);
             snap::NOTREACHED();
         }
-        else if(strcmp(argv[i], "--host") == 0)
+        else if( arg == "--host" )
         {
             ++i;
             if(i >= argc)
@@ -149,7 +150,7 @@ int main(int argc, char * argv[])
             }
             snap_test::host(argv[i]);
         }
-        else if(strcmp(argv[i], "--port") == 0)
+        else if( arg == "--port" )
         {
             ++i;
             if(i >= argc)

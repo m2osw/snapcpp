@@ -62,36 +62,35 @@ int main(int argc, char * argv[])
 
     unsigned int seed(static_cast<unsigned int>(time(nullptr)));
     bool help(false);
-    std::vector<std::string> arg_list;
-    for(int i(1); i < argc;)
-    {
-        arg_list.push_back( argv[i] );
-    }
     //
-    for( auto i = arg_list.begin(); i != arg_list.end(); ++i )
+    std::vector<char*> catch_args;
+    catch_args.push_back(argv[0]);
+    //
+    for( int i(1); i < argc; ++i )
     {
-        const auto& arg(*(i));
+        const std::string arg( argv[i] );
         if( arg == "-h" || arg == "--help" )
         {
             help = true; // LCOV_EXCL_LINE
+            catch_args.push_back( argv[i] );
         }
         else if( arg == "--seed" )
         {
-            if( i + 1 == arg_list.end() ) // LCOV_EXCL_LINE
+            if( i + 1 >= argc ) // LCOV_EXCL_LINE
             {
                 std::cerr << "error: --seed needs to be followed by the actual seed." << std::endl; // LCOV_EXCL_LINE
                 exit(1); // LCOV_EXCL_LINE
             }
-            seed = atoll((++i)->c_str()); // LCOV_EXCL_LINE
+            seed = atoll(argv[++i]); // LCOV_EXCL_LINE
         }
         else if( arg == "--host" )
         {
-            if( i + 1 == arg_list.end() ) // LCOV_EXCL_LINE
+            if( i + 1 >= argc ) // LCOV_EXCL_LINE
             {
                 std::cerr << "error: --host needs to be followed by the host name." << std::endl; // LCOV_EXCL_LINE
                 exit(1); // LCOV_EXCL_LINE
             }
-            snap_test::host( *(++i) ); // LCOV_EXCL_LINE
+            snap_test::host( argv[++i] ); // LCOV_EXCL_LINE
         }
         else if( arg == "--verbose" )
         {
@@ -101,6 +100,10 @@ int main(int argc, char * argv[])
         {
             std::cout << SNAPWEBSITES_VERSION_STRING << std::endl;
             exit(0);
+        }
+        else
+        {
+            catch_args.push_back( argv[i] );
         }
     }
     srand(seed);
@@ -116,7 +119,7 @@ int main(int argc, char * argv[])
                   << std::endl; // LCOV_EXCL_LINE
     }
 
-    return Catch::Session().run(argc, argv);
+    return Catch::Session().run(catch_args.size(), &catch_args[0]);
 }
 
 // Local Variables:
