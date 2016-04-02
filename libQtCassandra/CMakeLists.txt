@@ -63,8 +63,8 @@ link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 include_directories( SYSTEM ${QT_INCLUDES} )
 
 include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_BINARY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}/src
     ${CMAKE_BINARY_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIR}
 )

@@ -39,8 +39,6 @@ project( QtCassandra )
 include_directories(
     ${AS2JS_INCLUDE_DIR}
     ${CASSANDRACPPDRIVER_INCLUDE_DIR}
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_BINARY_DIR}
 )
 
 configure_file(
