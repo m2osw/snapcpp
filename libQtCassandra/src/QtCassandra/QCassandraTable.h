@@ -64,6 +64,8 @@ public:
 
     virtual ~QCassandraTable();
 
+    QCassandraSession::pointer_t session() const { return f_session; }
+
     // context name
     QString contextName() const;
 

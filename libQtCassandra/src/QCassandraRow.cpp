@@ -39,6 +39,7 @@
 #include "QtCassandra/QCassandraRow.h"
 #include "QtCassandra/QCassandraTable.h"
 
+#include <iostream>
 #include <stdexcept>
 
 namespace QtCassandra
@@ -267,9 +268,60 @@ uint32_t QCassandraRow::readCells()
  *
  * \sa setIndex(), QCassandraTable::readRows()
  */
-uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t /*column_predicate*/ )
+uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_predicate )
 {
-    return f_cells.size();
+    if( f_query )
+    {
+        if( !f_query->nextPage() )
+        {
+            f_query.reset();
+            return 0;
+        }
+    }
+    else
+    {
+        auto row_predicate = std::make_shared<QCassandraRowKeyPredicate>();
+        row_predicate->setRowKey( f_key );
+
+        QString query( QString("SELECT column1,value FROM %1.%2")
+                       .arg(f_table->contextName())
+                       .arg(f_table->tableName())
+                       );
+        int bind_count = 0;
+        if( column_predicate )
+        {
+            row_predicate->setCellPredicate( column_predicate );
+        }
+        row_predicate->appendQuery( query, bind_count );
+        query += " ALLOW FILTERING";
+        //
+        //std::cout << "query=[" << query.toStdString() << "]" << std::endl;
+        f_query = std::make_shared<QCassandraQuery>(f_table->session());
+        f_query->query( query, bind_count );
+        //
+        int bind_num = 0;
+        row_predicate->bindQuery( f_query, bind_num );
+        //
+        if( column_predicate )
+        {
+            f_query->setPagingSize( column_predicate->count() );
+        }
+        //
+
+        f_query->start();
+    }
+
+    size_t result_size = 0;
+    for( ; f_query->nextRow(); ++result_size )
+    {
+        const QByteArray column_key ( f_query->getByteArrayColumn( "column1" ) );
+        const QByteArray data       ( f_query->getByteArrayColumn( "value"   ) );
+
+        QCassandraCell::pointer_t new_cell( cell( column_key ) );
+        new_cell->assignValue( QCassandraValue(data) );
+    }
+
+    return result_size;
 }
 
 /** \brief Retrieve a cell from the row.
@@ -290,7 +342,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t /*column_p
  */
 QCassandraCell::pointer_t QCassandraRow::cell(const char* column_name)
 {
-    return cell(QString(column_name));
+    return cell( QByteArray::fromRawData(column_name,qstrlen(column_name)) );
 }
 QCassandraCell::pointer_t QCassandraRow::cell(const QString& column_name)
 {

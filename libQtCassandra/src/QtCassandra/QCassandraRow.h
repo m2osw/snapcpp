@@ -104,6 +104,7 @@ private:
     std::shared_ptr<QCassandraTable>  f_table;
     QByteArray                  	  f_key;
     QCassandraCells                   f_cells;
+    QCassandraQuery::pointer_t        f_query;
 };
 
 // array of rows

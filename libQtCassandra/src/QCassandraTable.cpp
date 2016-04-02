@@ -2554,7 +2554,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         }
         query += " ALLOW FILTERING";
         //
-        std::cout << "query=[" << query.toStdString() << "]" << std::endl;
+        //std::cout << "query=[" << query.toStdString() << "]" << std::endl;
         f_query = std::make_shared<QCassandraQuery>(f_session);
         f_query->query( query, bind_count );
         //
@@ -2595,7 +2595,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
 
 QCassandraRow::pointer_t QCassandraTable::row(const char* row_name)
 {
-    return row( QString(row_name) );
+    return row( QByteArray::fromRawData(row_name,qstrlen(row_name)) );
 }
 
 
@@ -2662,18 +2662,6 @@ QCassandraRow::pointer_t QCassandraTable::row(const QByteArray& row_key)
  */
 const QCassandraRows& QCassandraTable::rows()
 {
-    if( !f_query )
-    {
-        throw std::runtime_error( "No query is in effect!" );
-    }
-
-    if( f_rows.empty() )
-    {
-        std::stringstream msg;
-        msg << "You must first call readRows() on table " << f_private->name << " before trying to access the rows!";
-        throw std::runtime_error( msg.str().c_str() );
-    }
-
     return f_rows;
 }
 
@@ -2840,6 +2828,8 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
     auto row_predicate( std::make_shared<QCassandraRowKeyPredicate>() );
     row_predicate->setRowKey(row_key);
 
+#if 0
+    // Alexis: WHY?!
     // define a key range that is quite unlikely to match any column
     QCassandraCellRangePredicate::pointer_t cell_pred( new QCassandraCellRangePredicate );
     QByteArray key;
@@ -2848,9 +2838,10 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
     setInt32Value(key, 0x00000001);
     cell_pred->setEndCellKey(key);
     row_predicate->setCellPredicate( std::static_pointer_cast<QCassandraCellPredicate>( cell_pred ) );
+#endif
 
     return const_cast<QCassandraTable *>(this)
-            ->readRows( std::dynamic_pointer_cast<QCassandraRowPredicate>(row_predicate) ) != 0;
+            ->readRows( std::static_pointer_cast<QCassandraRowPredicate>(row_predicate) ) != 0;
 }
 
 /** \brief Retrieve a table row.
