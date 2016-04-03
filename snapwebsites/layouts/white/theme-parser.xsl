@@ -21,9 +21,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:xs="http://www.w3.org/2001/XMLSchema"
 															xmlns:fn="http://www.w3.org/2005/xpath-functions"
 															xmlns:snap="snap:snap">
+
 	<xsl:variable name="layout-name">white</xsl:variable>
 	<xsl:variable name="layout-area">theme-parser</xsl:variable>
 	<xsl:variable name="layout-modified">2012-10-30 10:41:36</xsl:variable>
+
+  <xsl:include href="user-messages"/>
+
 	<xsl:param name="year" select="year-from-date(current-date())"/>
 	<xsl:param name="use_dcterms">yes</xsl:param>
 	<!-- get the website URI (i.e. URI without any folder other than the website base folder) -->
@@ -646,6 +650,7 @@ body
 	</xsl:template-->
 	<xsl:template match="page/body">
 		<body>
+      <xsl:call-template name="snap:user-messages"/>
 			<div id="page">
 				<div id="header">Header...</div>
 				<div id="page-top-wrapper">

@@ -72,6 +72,7 @@ snap_validate_js( editor.js )
 
 add_library(editor SHARED
     editor.cpp
+    save_info.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     buttons.png

@@ -998,9 +998,12 @@ void links::create_link(link_info const & src, link_info const & dst)
     if(src.name() == "permissions::link_back"
     || dst.name() == "permissions::link_back")
     {
-        throw links_exception_invalid_name(QString("the link name must be more precise (\"%1\" or \"%2\" cannot just be \"permissions::link_back\".")
+        throw links_exception_invalid_name(QString("the link name must be more precise (\"%1\" or \"%2\" cannot just be \"permissions::link_back\")."
+                                                  " Error found while manipulating \"%3\" and \"%4\".")
                     .arg(src.name())
-                    .arg(dst.name()));
+                    .arg(dst.name())
+                    .arg(src.key())
+                    .arg(dst.key()));
     }
 
     // there is one special case: if a page is linked to itself (yes, it

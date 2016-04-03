@@ -74,6 +74,14 @@ public:
     explicit editor_exception_invalid_xslt_data(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
+class editor_exception_locked : public editor_exception
+{
+public:
+    explicit editor_exception_locked(char const *        what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_locked(std::string const & what_msg) : editor_exception(what_msg) {}
+    explicit editor_exception_locked(QString const &     what_msg) : editor_exception(what_msg) {}
+};
+
 
 
 
@@ -90,6 +98,44 @@ enum class name_t
     SNAP_NAME_EDITOR_TYPE_FORMAT_PATH
 };
 char const * get_name(name_t name) __attribute__ ((const));
+
+
+
+class save_info_t
+{
+public:
+                                            save_info_t(content::path_info_t & p_ipath,
+                                                        QDomDocument & p_editor_widgets,
+                                                        QtCassandra::QCassandraRow::pointer_t p_revision_row,
+                                                        QtCassandra::QCassandraRow::pointer_t p_secret_row,
+                                                        QtCassandra::QCassandraRow::pointer_t p_draft_row);
+
+    content::path_info_t &                  ipath();
+
+    QDomDocument &                          editor_widgets();
+
+    QtCassandra::QCassandraRow::pointer_t   revision_row() const;
+    QtCassandra::QCassandraRow::pointer_t   secret_row() const;
+    QtCassandra::QCassandraRow::pointer_t   draft_row() const;
+
+    void                                    lock();
+
+    void                                    mark_as_modified();
+    bool                                    modified() const;
+    void                                    mark_as_having_errors();
+    bool                                    has_errors() const;
+
+private:
+    content::path_info_t &                  f_ipath;
+    QDomDocument                            f_editor_widgets;
+    QtCassandra::QCassandraRow::pointer_t   f_revision_row;
+    QtCassandra::QCassandraRow::pointer_t   f_secret_row;
+    QtCassandra::QCassandraRow::pointer_t   f_draft_row;
+    bool                                    f_locked = false;
+    bool                                    f_modified = false;
+    bool                                    f_has_errors = false;
+};
+
 
 
 class editor
@@ -259,13 +305,13 @@ public:
     static save_mode_t  string_to_save_mode(QString const & mode);
     static QString      clean_post_value(QString const & widget_type, QString value);
     void                parse_out_inline_img(content::path_info_t & ipath, QString & body, QDomElement widget);
-    QDomDocument        get_editor_widgets(content::path_info_t & ipath, bool saving = false);
+    QDomDocument        get_editor_widgets(content::path_info_t & ipath, bool const saving = false);
     void                add_editor_widget_templates(QDomDocument doc);
     void                add_editor_widget_templates(QString const & doc);
     void                add_editor_widget_templates_from_file(QString const & filename);
 
     SNAP_SIGNAL(prepare_editor_form, (editor * e), (e));
-    SNAP_SIGNAL(save_editor_fields, (content::path_info_t & ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row), (ipath, revision_row, secret_row));
+    SNAP_SIGNAL(save_editor_fields, (save_info_t & info), (info));
     SNAP_SIGNAL(validate_editor_post_for_widget, (content::path_info_t & ipath, sessions::sessions::session_info & info, QDomElement const & widget, QString const & widget_name, QString const & widget_type, QString const & value, bool const is_secret), (ipath, info, widget, widget_name, widget_type, value, is_secret));
     SNAP_SIGNAL(replace_uri_token, (editor_uri_token & token_info), (token_info));
     SNAP_SIGNAL_WITH_MODE(dynamic_editor_widget, (content::path_info_t & cpath, QString const & name, QDomDocument & editor_widgets), (cpath, name, editor_widgets), NEITHER);

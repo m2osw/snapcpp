@@ -48,6 +48,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <label>Show the Province / State field.</label>
     <value>1</value>
   </widget>
+  <widget id="show_phone" type="dropdown" field="epayment::show_phone" path="epayment/credit_card/show_phone" auto-save="int8">
+    <tooltip>Select how the <strong>Phone</strong> field has to be managed: hidden, shown but optional, or required.</tooltip>
+    <help>If you are selling items over the internet (i.e. a PDF file) then it may increase your sales by not asking for a phone number. If you are shipping goods, a phone number may actually be required.</help>
+    <label>Show the Country field.</label>
+    <preset>
+      <item value="0">Hide the <strong>Phone</strong> field</item>
+      <item value="1" default="default">Show an optional <strong>Phone</strong> field</item>
+      <item value="2">Show a required <strong>Phone</strong> field</item>
+    </preset>
+  </widget>
   <widget id="show_country" type="checkmark" field="epayment::show_country" path="epayment/credit_card/show_country" auto-save="int8">
     <tooltip>Uncheck this checkmark if you do not want people to enter the name of their country.</tooltip>
     <help>If your sales are limited to your country, you want to uncheck this checkmark. You may enter the default country name below.</help>
@@ -66,6 +76,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <max>64</max>
     </sizes>
     <background-value>default country name</background-value>
+  </widget>
+
+  <widget id="gateway" type="dropdown" field="epayment::gateway" path="epayment/credit_card/gateway" auto-save="string">
+    <tooltip>Select the default gateway. It is possible to <em>force</em> the use of a credit card gateway by specifying it on the URI, otherwise this one is used.</tooltip>
+    <help>In most cases, it is not required to define a default gateway because it will automatically be defined using a query string variable on the URI used to retrieve the user credit card information. However, if you offer multiple gateways, it can become useful to have a default one, just in case.</help>
+    <preset>
+      <item value="no-default" default="default">No default gateway</item>
+    </preset>
   </widget>
 
 </editor-form>

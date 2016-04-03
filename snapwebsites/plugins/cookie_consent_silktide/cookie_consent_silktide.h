@@ -86,7 +86,7 @@ public:
     void                        on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata);
 
     // editor signals
-    void                        on_save_editor_fields(content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row);
+    void                        on_save_editor_fields(editor::save_info_t & save_info);
 
 private:
     void                        content_update(int64_t variables_timestamp);

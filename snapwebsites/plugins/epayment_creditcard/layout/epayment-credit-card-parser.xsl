@@ -34,6 +34,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<xsl:attribute name="auto-reset"><xsl:value-of select="page/body/editor/auto_reset/div/div/node()"/></xsl:attribute>
 				<xsl:attribute name="timeout"><xsl:value-of select="page/body/editor/timeout/div/div/node()"/></xsl:attribute>
 
+				<xsl:copy-of select="page/body/epayment/gateway/node()"/>
+
 				<!-- xsl:if test="$action != 'edit' and $can_edit = 'yes'">
 					<a class="settings-edit-button" href="?a=edit">Edit</a>
 				</xsl:if>
@@ -98,6 +100,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<div class="editor-block">
 								<label for="country" class="editor-title">Country:</label>
 								<xsl:copy-of select="page/body/epayment/country/node()"/>
+							</div>
+						</xsl:if>
+
+						<xsl:if test="page/body/epayment/phone">
+							<div class="editor-block">
+								<label for="country" class="editor-title">Phone:</label>
+								<xsl:copy-of select="page/body/epayment/phone/node()"/>
 							</div>
 						</xsl:if>
 					</fieldset>

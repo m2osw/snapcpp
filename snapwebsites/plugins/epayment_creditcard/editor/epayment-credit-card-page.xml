@@ -49,6 +49,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
   </widget>
 
+  <widget id="gateway" type="hidden" path="epayment/gateway" auto-save="no">
+  </widget>
+
   <!-- card details -->
   <widget id="card_number" type="line-edit" path="epayment/card_number" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Enter your card number.</tooltip>
@@ -129,6 +132,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>Enter the name of the country of your credit card address. This field is required.</help>
     <background-value>province or state</background-value>
     <required>required</required>
+  </widget>
+  <widget id="phone" type="line-edit" path="epayment/phone" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Your phone number we can use to contact you in case a problem arise.</tooltip>
+    <help>We collect your phone number in order to be able to quickly contact you if any problem arise with your order. This field is optional. Some processing gateways may accept the phone number as an additional security measure. If you are in a different country than us, make sure to include your country code.</help>
+    <background-value>phone number</background-value>
   </widget>
 
 </editor-form>

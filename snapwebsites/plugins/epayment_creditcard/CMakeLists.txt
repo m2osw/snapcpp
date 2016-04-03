@@ -66,6 +66,8 @@ snap_validate_xml( layout/epayment-credit-card-parser.xsl           layout/simpl
 add_library(epayment_creditcard SHARED
     epayment_creditcard.cpp
     epayment_creditcard.h
+    epayment_creditcard_info.cpp
+    epayment_gateway_features.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml

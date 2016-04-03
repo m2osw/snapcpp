@@ -41,6 +41,20 @@ SNAP_PLUGIN_START(locale, 1, 0)
  * The locale plugin makes use of different names in the database. This
  * function ensures that you get the right spelling for a given name.
  *
+ * \li Example of usage
+ *
+ * Convert a date using UTC as the timezone (to avoid DST side effects),
+ * this assumes date_val is a time_t variable which has time set to
+ * 00:00:00 and only the date is of interest to you:
+ *
+ * \code
+ *    {
+ *        locale::safe_timezone const utc_timezone("UTC");
+ *
+ *        QString date_str(locale::locale::instance()->format_date(date_val));
+ *    }
+ * \endcode
+ *
  * \param[in] name  The name to retrieve.
  *
  * \return A pointer to the name.
@@ -69,6 +83,31 @@ char const * get_name(name_t name)
 
 
 
+/** \brief Safely change the timezone.
+ *
+ * This class ensures that a change to the current timezone gets restored
+ * even when an exception occurs.
+ *
+ * \param[in] new_timezone  The timezone to use for a while (until this
+ *                          object gets destroyed.)
+ */
+safe_timezone::safe_timezone(QString const new_timezone)
+    : f_locale_plugin(locale::locale::instance())
+    , f_old_timezone(f_locale_plugin->get_current_timezone())
+{
+    f_locale_plugin->set_current_timezone(new_timezone);
+}
+
+
+/** \brief Restore the timezone from before this object was created.
+ *
+ * This function makes sure the current timezone is reverted to
+ * what it was before you created it.
+ */
+safe_timezone::~safe_timezone()
+{
+    f_locale_plugin->set_current_timezone(f_old_timezone);
+}
 
 
 
@@ -324,6 +363,9 @@ locale::locale::timezone_list_t const & locale::get_timezone_list()
                 //}
 
                 QString const qid(QString::fromUtf16(id));
+// TODO: add a command line one can use to list all timezones
+//       (and also all locales)
+//SNAP_LOG_WARNING("timezone = ")(qid);
                 snap_string_list const id_segments(qid.split('/'));
                 if(id_segments.size() == 2)
                 {
@@ -738,6 +780,7 @@ QString locale::format_time(time_t d)
  * \param[in] d  The Unix time to convert.
  * \param[in] date_format  The format to use as defined in strftime().
  * \param[in] use_local  Whether to use the localtime() or gmtime() function.
+ *     (WARNING: use_local is ignored when date_format is an empty string)
  *
  * \return The formatted date.
  *

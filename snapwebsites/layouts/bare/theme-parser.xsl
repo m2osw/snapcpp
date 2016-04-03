@@ -25,11 +25,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <!-- include system data -->
   <xsl:include href="functions"/>
   <xsl:include href="html-header"/>
+  <xsl:include href="user-messages"/>
 
   <!-- some special variables to define the theme -->
   <xsl:variable name="layout-name">bare</xsl:variable>
   <xsl:variable name="layout-area">theme-parser</xsl:variable>
-  <xsl:variable name="layout-modified">2016-01-08 03:20:00</xsl:variable>
+  <xsl:variable name="layout-modified">2016-04-02 22:00:25</xsl:variable>
 
   <xsl:template match="snap">
     <!--
@@ -54,6 +55,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template-->
   <xsl:template match="page/body">
     <body>
+      <xsl:call-template name="snap:user-messages"/>
       <div>
         <xsl:choose>
           <xsl:when test="/snap/head/metadata/page_session">

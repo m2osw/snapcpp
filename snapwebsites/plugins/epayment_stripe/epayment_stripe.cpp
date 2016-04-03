@@ -307,7 +307,7 @@ QString epayment_stripe::description() const
  */
 QString epayment_stripe::dependencies() const
 {
-    return "|editor|epayment|filter|messages|output|path|";
+    return "|editor|epayment_creditcard|filter|messages|output|path|";
 }
 
 
@@ -3799,86 +3799,120 @@ void epayment_stripe::on_table_is_accessible(QString const & table_name, server:
 }
 
 
+/** \brief Define the test gateway.
+ *
+ * This function is a callback that is used by the system whenever it
+ * wants to offer a specific gateway to process credit cards.
+ *
+ * \param[in,out] gateway_info  The structure that takes the various gateway
+ *                              details.
+ */
+void epayment_stripe::gateway_features(epayment_creditcard::epayment_gateway_features_t & gateway_info)
+{
+    gateway_info.set_name("Stripe");
+}
+
+
+/** \brief Test a credit card processing.
+ *
+ * This function is used to test the credit card processing mechanism.
+ * The function just logs a message to let you know that it worked.
+ *
+ * \param[in] creditcard_info  The credit card information.
+ * \param[in,out] save_info  The information from the editor form.
+ */
+void epayment_stripe::process_creditcard(epayment_creditcard::epayment_creditcard_info_t const & creditcard_info, editor::save_info_t & save_info)
+{
+    NOTUSED(creditcard_info);
+    NOTUSED(save_info);
+
+    SNAP_LOG_INFO("epayment_stripe::process_creditcard() called.");
+
+}
+
+
 
 // Stripe documentation at time of writing
 //   https://stripe.com/docs/api
 
-// Example using curl to send a processing request
-//
-// curl https://api.stripe.com/v1/charges \
-//     -u sk_test_BQokikJOvBiI2HlWgH4olfQ2: \
-//     -d amount=400 \
-//     -d currency=usd \
-//     -d "description=Charge for test@example.com" \
-//     -d "source[object]=card" \
-//     -d "source[number]=4242424242424242" \
-//     -d "source[exp_month]=12" \
-//     -d "source[exp_year]=2017" \
-//     -d "source[cvc]=123"
-//
-// There is the JSON answer from that request:
-//
-// {
-//   "id": "ch_17XnAd2eZvKYlo2CdClOKnBH",
-//   "object": "charge",
-//   "amount": 400,
-//   "amount_refunded": 0,
-//   "application_fee": null,
-//   "balance_transaction": "txn_17XnAd2eZvKYlo2C5zgluyFD",
-//   "captured": true,
-//   "created": 1453877571,
-//   "currency": "usd",
-//   "customer": null,
-//   "description": "Charge for test@example.com",
-//   "destination": null,
-//   "dispute": null,
-//   "failure_code": null,
-//   "failure_message": null,
-//   "fraud_details": {},
-//   "invoice": null,
-//   "livemode": false,
-//   "metadata": {},
-//   "order": null,
-//   "paid": true,
-//   "receipt_email": null,
-//   "receipt_number": null,
-//   "refunded": false,
-//   "refunds": {
-//     "object": "list",
-//     "data": [],
-//     "has_more": false,
-//     "total_count": 0,
-//     "url": "/v1/charges/ch_17XnAd2eZvKYlo2CdClOKnBH/refunds"
-//   },
-//   "shipping": null,
-//   "source": {
-//     "id": "card_17XnAd2eZvKYlo2CfuBraJUm",
-//     "object": "card",
-//     "address_city": null,
-//     "address_country": null,
-//     "address_line1": null,
-//     "address_line1_check": null,
-//     "address_line2": null,
-//     "address_state": null,
-//     "address_zip": null,
-//     "address_zip_check": null,
-//     "brand": "Visa",
-//     "country": "US",
-//     "customer": null,
-//     "cvc_check": "pass",
-//     "dynamic_last4": null,
-//     "exp_month": 12,
-//     "exp_year": 2017,
-//     "fingerprint": "Xt5EWLLDS7FJjR1c",
-//     "funding": "credit",
-//     "last4": "4242",
-//     "metadata": {},
-//     "name": null,
-//     "tokenization_method": null
-//   },
-//   "statement_descriptor": null,
-//   "status": "succeeded"
-// }
+/*
+ * Example using curl to send a processing request
+ *
+ * curl https://api.stripe.com/v1/charges 
+ *     -u sk_test_BQokikJOvBiI2HlWgH4olfQ2: \
+ *     -d amount=400 \
+ *     -d currency=usd \
+ *     -d "description=Charge for test@example.com" \
+ *     -d "source[object]=card" \
+ *     -d "source[number]=4242424242424242" \
+ *     -d "source[exp_month]=12" \
+ *     -d "source[exp_year]=2017" \
+ *     -d "source[cvc]=123"
+ *
+ * There is the JSON answer from that request:
+ *
+ * {
+ *   "id": "ch_17XnAd2eZvKYlo2CdClOKnBH",
+ *   "object": "charge",
+ *   "amount": 400,
+ *   "amount_refunded": 0,
+ *   "application_fee": null,
+ *   "balance_transaction": "txn_17XnAd2eZvKYlo2C5zgluyFD",
+ *   "captured": true,
+ *   "created": 1453877571,
+ *   "currency": "usd",
+ *   "customer": null,
+ *   "description": "Charge for test@example.com",
+ *   "destination": null,
+ *   "dispute": null,
+ *   "failure_code": null,
+ *   "failure_message": null,
+ *   "fraud_details": {},
+ *   "invoice": null,
+ *   "livemode": false,
+ *   "metadata": {},
+ *   "order": null,
+ *   "paid": true,
+ *   "receipt_email": null,
+ *   "receipt_number": null,
+ *   "refunded": false,
+ *   "refunds": {
+ *     "object": "list",
+ *     "data": [],
+ *     "has_more": false,
+ *     "total_count": 0,
+ *     "url": "/v1/charges/ch_17XnAd2eZvKYlo2CdClOKnBH/refunds"
+ *   },
+ *   "shipping": null,
+ *   "source": {
+ *     "id": "card_17XnAd2eZvKYlo2CfuBraJUm",
+ *     "object": "card",
+ *     "address_city": null,
+ *     "address_country": null,
+ *     "address_line1": null,
+ *     "address_line1_check": null,
+ *     "address_line2": null,
+ *     "address_state": null,
+ *     "address_zip": null,
+ *     "address_zip_check": null,
+ *     "brand": "Visa",
+ *     "country": "US",
+ *     "customer": null,
+ *     "cvc_check": "pass",
+ *     "dynamic_last4": null,
+ *     "exp_month": 12,
+ *     "exp_year": 2017,
+ *     "fingerprint": "Xt5EWLLDS7FJjR1c",
+ *     "funding": "credit",
+ *     "last4": "4242",
+ *     "metadata": {},
+ *     "name": null,
+ *     "tokenization_method": null
+ *   },
+ *   "statement_descriptor": null,
+ *   "status": "succeeded"
+ * }
+ */
 
 
 SNAP_PLUGIN_END()

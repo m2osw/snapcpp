@@ -17,7 +17,7 @@
 
 #include "epayment_creditcard.h"
 
-#include "../editor/editor.h"
+#include "../messages/messages.h"
 
 #include "log.h"
 #include "not_reached.h"
@@ -56,6 +56,9 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_COUNTRY:
         return "epayment::show_country";
+
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PHONE:
+        return "epayment::show_phone";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PROVINCE:
         return "epayment::show_province";
@@ -208,6 +211,7 @@ void epayment_creditcard::bootstrap(snap_child * snap)
 
     SNAP_LISTEN(epayment_creditcard, "server", server, process_post, _1);
     SNAP_LISTEN(epayment_creditcard, "editor", editor::editor, dynamic_editor_widget, _1, _2, _3);
+    SNAP_LISTEN(epayment_creditcard, "editor", editor::editor, save_editor_fields, _1);
 }
 
 
@@ -233,13 +237,29 @@ void epayment_creditcard::on_process_post(QString const & uri_path)
 
 
 
-
+/** \brief Dynamically tweak the credit card form.
+ *
+ * The settings allow the user to enter his credit card information.
+ * Only that form includes parameters that may not be useful to all
+ * website owners. The settings let the owner of a site turn off a
+ * few fields and this function executes those orders.
+ *
+ * First the functions checks whether this is the credit card form
+ * being handled, if not, it returns immediately.
+ *
+ * If it is the credit card form, it then reads the settings and
+ * compeletely removes the second line of address, the province/state
+ * field, and the country. At some point we will want to offer a way
+ * for users to define the billing address.
+ *
+ * If a default country name was defined, it is also saved in that
+ * field assuming the field is not being removed.
+ */
 void epayment_creditcard::on_dynamic_editor_widget(
         content::path_info_t & ipath,
         QString const & name,
         QDomDocument & editor_widgets)
 {
-    NOTUSED(ipath);
     NOTUSED(name);
 
     // are we dealing with the epayment credit card form?
@@ -255,11 +275,21 @@ void epayment_creditcard::on_dynamic_editor_widget(
         return;
     }
     QString const form_id(root.attribute("id"));
-    if(form_id != "creditcard_form")
+    if(form_id == "creditcard_form")
     {
-        return;
+        setup_form(ipath, editor_widgets);
     }
+    else if(form_id == "settings")
+    {
+        setup_settings(editor_widgets);
+    }
+}
 
+
+void epayment_creditcard::setup_form(
+        content::path_info_t & ipath,
+        QDomDocument & editor_widgets)
+{
     // read the settings
     //
     content::content * content_plugin(content::content::instance());
@@ -350,9 +380,341 @@ void epayment_creditcard::on_dynamic_editor_widget(
             }
         }
     }
+
+    // phone
+    //
+    {
+        int const show_phone(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PHONE))->value().safeSignedCharValue(0, 1));
+        switch(show_phone)
+        {
+        case 0: // Hide phone number
+        case 2: // Required phone number
+            {
+                // forget that widget
+                QDomXPath dom_xpath;
+                dom_xpath.setXPath("/editor-form/widget[@id='phone']");
+                QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+                if(result.size() > 0
+                && result[0].isElement())
+                {
+                    if(show_phone == 0)
+                    {
+                        result[0].parentNode().removeChild(result[0]);
+                    }
+                    else
+                    {
+                        QDomElement required_tag(editor_widgets.createElement("required"));
+                        result[0].appendChild(required_tag);
+                        snap_dom::append_plain_text_to_node(required_tag, "required");
+                    }
+                }
+            }
+            break;
+
+        }
+    }
+
+    // gateway
+    //
+    {
+        QString gateway;
+
+        snap_uri const & main_uri(f_snap->get_uri());
+
+        if(ipath.get_cpath() == "admin/settings/epayment/creditcard-test")
+        {
+            // for the test, force this plugin
+            //
+            gateway = "epayment_creditcard";
+
+            if(main_uri.has_query_option("gateway"))
+            {
+                messages::messages * messages(messages::messages::instance());
+                messages->set_warning(
+                    "Specified Gateway Ignored",
+                    "The ?gateway=... parameter is always ignored on the credit card test page.",
+                    "For security reasons, we completely ignore the gateway=... parameter on this page."
+                );
+            }
+        }
+        else
+        {
+            // for any other form, make sure the user defined a gateway
+            //
+            // TODO: add support for a default gateway
+            //
+            if(!main_uri.has_query_option("gateway"))
+            {
+                throw epayment_creditcard_exception_gateway_missing("the \"?gateway=<plugin-name>\" is mandatory when loading a credit card form");
+            }
+
+            gateway = main_uri.query_option("gateway");
+            if(gateway.isEmpty()
+            || !plugins::exists(gateway))
+            {
+                throw epayment_creditcard_exception_gateway_missing(QString("could not find plugin \"%1\" to process credit card.").arg(gateway));
+            }
+        }
+
+        {
+            // save the name of the gateway in the form
+            //
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath("/editor-form/widget[@id='gateway']");
+            QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                QDomElement value(editor_widgets.createElement("value"));
+                result[0].appendChild(value);
+                snap_dom::append_plain_text_to_node(value, gateway);
+            }
+        }
+    }
 }
 
 
+void epayment_creditcard::setup_settings(QDomDocument & editor_widgets)
+{
+    QDomXPath dom_xpath;
+    dom_xpath.setXPath("/editor-form/widget[@id='gateway']/preset");
+    QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+    if(result.size() > 0
+    && result[0].isElement())
+    {
+        // retrieve the list of gateways and display them in the settings.
+        //
+        QMap<QString, QString> gateways;
+        plugins::plugin_vector_t const & plugin_list(plugins::get_plugin_vector());
+        size_t const max_plugins(plugin_list.size());
+        for(size_t idx(0); idx < max_plugins; ++idx)
+        {
+            epayment_creditcard_gateway_t * gateway(dynamic_cast<epayment_creditcard_gateway_t *>(plugin_list[idx]));
+            if(gateway != nullptr)
+            {
+                epayment_gateway_features_t gateway_info(plugin_list[idx]->get_plugin_name());
+                gateway->gateway_features(gateway_info);
+
+                // save in temporary map so it gets sorted alphabetically
+                // (assuming all names are English it will be properly
+                // sorted...)
+                //
+                gateways[gateway_info.get_name()] = gateway_info.get_gateway();
+            }
+        }
+
+        // now that we have a complete list, generate the <item> entries
+        //
+        for(QMap<QString, QString>::const_iterator it(gateways.begin());
+                                                   it != gateways.end();
+                                                   ++it)
+        {
+            QDomElement item(editor_widgets.createElement("item"));
+            item.setAttribute("value", it.value());
+            snap_dom::append_plain_text_to_node(item, it.key());
+            result[0].appendChild(item);
+        }
+    }
+}
+
+
+/** \brief Gather the credit card information and generate a specific signal.
+ *
+ * This function is called whenever the credit card form is saved by
+ * the editor processes. It does three main things:
+ *
+ * \li Validation
+ *
+ * First it makes sure that the data was validated without errors. If there
+ * was an error, the credit card data received should not be processed sine
+ * it is likely not going to work.
+ *
+ * \li Reformat Data
+ *
+ * Second the function reads all the available data and saves it in a
+ * structure making it a lot easier for further processing to take place.
+ *
+ * For example, it is much easier to receive a "struct tm" for the
+ * expiration date than having to go the post environment and get
+ * the partial date used in the credit card form.
+ *
+ * \li Signal Processing Gateways
+ *
+ * Third the function calls a gateway callback. The form will include the
+ * name of a gateway, which for us is the name of a plugin. This function
+ * searches for that plugin and expects it to have the
+ * epayment_creditcard_gateway_t interface implemented.
+ *
+ * \param[in,out] save_info  The editor form being saved.
+ */
+void epayment_creditcard::on_save_editor_fields(editor::save_info_t & save_info)
+{
+    // on errors, forget it immediately, whatever form this is
+    //
+    if(save_info.has_errors())
+    {
+        return;
+    }
+
+    // are we dealing with the epayment credit card form?
+    //
+    QDomElement root(save_info.editor_widgets().documentElement());
+    if(root.isNull())
+    {
+        // no widgets?!
+        return;
+    }
+    QString const owner_name(root.attribute("owner"));
+    if(owner_name != "epayment_creditcard")
+    {
+        // not the expected owner
+        return;
+    }
+    QString const form_id(root.attribute("id"));
+    if(form_id != "creditcard_form")
+    {
+        // not the expected form
+        return;
+    }
+
+    // get the settings ready
+    //
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    content::path_info_t epayment_creditcard_settings_ipath;
+    epayment_creditcard_settings_ipath.set_path(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH));
+    if(!content_table->exists(epayment_creditcard_settings_ipath.get_key())
+    || !content_table->row(epayment_creditcard_settings_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    {
+        // the form by default is what we want if no settings were defined
+        return;
+    }
+    QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(epayment_creditcard_settings_ipath.get_revision_key()));
+
+    // retrieve the data and save it in a epayment_creditcard_info_t object
+    //
+    epayment_creditcard_info_t creditcard_info;
+
+    editor::editor * editor_plugin(editor::editor::instance());
+    creditcard_info.set_creditcard_number(editor_plugin->clean_post_value("line-edit", f_snap->postenv("card_number")));
+    creditcard_info.set_security_code(editor_plugin->clean_post_value("line-edit", f_snap->postenv("security_code")));
+
+    // small processing on the expiration date
+    QString const expiration_date(editor_plugin->clean_post_value("line-edit", f_snap->postenv("expiration_date")));
+    snap_string_list const expiration_date_parts(expiration_date.split('/'));
+    creditcard_info.set_expiration_date_month(expiration_date_parts[1]);
+    creditcard_info.set_expiration_date_year(expiration_date_parts[0]);
+
+    creditcard_info.set_user_name(editor_plugin->clean_post_value("line-edit", f_snap->postenv("user_name")));
+    creditcard_info.set_address1(editor_plugin->clean_post_value("line-edit", f_snap->postenv("address1")));
+    // address2 may be hidden in which case it ends up empty, which is fine
+    creditcard_info.set_address2(editor_plugin->clean_post_value("line-edit", f_snap->postenv("address2")));
+    creditcard_info.set_city(editor_plugin->clean_post_value("line-edit", f_snap->postenv("city")));
+    // province may be hidden in which case it ends up empty, which is fine
+    creditcard_info.set_province(editor_plugin->clean_post_value("line-edit", f_snap->postenv("province")));
+    creditcard_info.set_postal_code(editor_plugin->clean_post_value("line-edit", f_snap->postenv("postal_code")));
+
+    // country may be hidden and have a default instead
+    //
+    {
+        bool const show_country(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_COUNTRY))->value().safeSignedCharValue(0, 1) != 0);
+        if(!show_country)
+        {
+            // user could not enter a country, administrator may have
+            // a default though...
+            //
+            creditcard_info.set_country(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY))->value().stringValue());
+        }
+        else
+        {
+            creditcard_info.set_country(editor_plugin->clean_post_value("line-edit", f_snap->postenv("country")));
+        }
+    }
+
+    // the data is ready, search for the gateway (a plugin)
+    //
+    QString const gateway(f_snap->postenv("gateway"));
+    plugins::plugin * gateway_plugin(plugins::get_plugin(gateway));
+    if(gateway_plugin == nullptr)
+    {
+        // this should not happen since it was tested in the generation of
+        // the form, but an administrator may have turned off that gateway
+        // in between...
+        //
+        throw epayment_creditcard_exception_gateway_missing(QString("could not find plugin \"%1\" to process credit card.").arg(gateway));
+    }
+    epayment_creditcard_gateway_t * gateway_processor(dynamic_cast<epayment_creditcard_gateway_t *>(gateway_plugin));
+    if(gateway_processor == nullptr)
+    {
+        // this can definitely happen since a hacker could specify the
+        // name of a different plugin before returning the form; it
+        // should not matter though (it is safe) as long as we make
+        // sure that the gateway_processor pointer is not null...
+        //
+        throw epayment_creditcard_exception_gateway_missing(QString("plugin \"%1\" is not capable of processing credit cards.").arg(gateway));
+    }
+
+    // we are on
+    //
+    SNAP_LOG_INFO("Processing a credit card with \"")(gateway)("\".");
+    // also log the name of the person, but only in the secure logs
+    SNAP_LOG_INFO(logging::log_security_t::LOG_SECURITY_SECURE)
+            ("Processing \"")(creditcard_info.get_user_name())("\"'s credit card with \"")(gateway)("\".");
+
+    // This actually processes the data (i.e. sends the credit card
+    // information to the bank's gateway and return with PAID or FAILED.)
+    // As far as the epayment_creditcard plugin is concerned, the result
+    // of the processing are ignored here.
+    //
+    gateway_processor->process_creditcard(creditcard_info, save_info);
+}
+
+
+/** \brief Define the test gateway.
+ *
+ * This function is a callback that is used by the system whenever it
+ * wants to offer a specific gateway to process credit cards.
+ *
+ * \param[in,out] gateway_info  The structure that takes the various gateway
+ *                              details.
+ */
+void epayment_creditcard::gateway_features(epayment_gateway_features_t & gateway_info)
+{
+    gateway_info.set_name("Credit Card Test Gateway");
+}
+
+
+/** \brief Test a credit card processing.
+ *
+ * This function is used to test the credit card processing mechanism.
+ * The function just logs a message to let you know that it worked.
+ *
+ * \param[in] creditcard_info  The credit card information.
+ * \param[in,out] save_info  The information from the editor form.
+ */
+void epayment_creditcard::process_creditcard(epayment_creditcard_info_t const & creditcard_info, editor::save_info_t & save_info)
+{
+    NOTUSED(creditcard_info);
+    NOTUSED(save_info);
+
+    SNAP_LOG_INFO("epayment_creditcard::process_creditcard() called.");
+
+#ifdef _DEBUG
+// For debug purposes, you may check all the values with the following
+std::cerr << "cc number [" << creditcard_info.get_creditcard_number() << "]\n";
+std::cerr << "cc security_code [" << creditcard_info.get_security_code() << "]\n";
+std::cerr << "cc expiration_date_month [" << creditcard_info.get_expiration_date_month() << "]\n";
+std::cerr << "cc expiration_date_year [" << creditcard_info.get_expiration_date_year() << "]\n";
+std::cerr << "cc user_name [" << creditcard_info.get_user_name() << "]\n";
+std::cerr << "cc address1 [" << creditcard_info.get_address1() << "]\n";
+std::cerr << "cc address2 [" << creditcard_info.get_address2() << "]\n";
+std::cerr << "cc city [" << creditcard_info.get_city() << "]\n";
+std::cerr << "cc province [" << creditcard_info.get_province() << "]\n";
+std::cerr << "cc postal_code [" << creditcard_info.get_postal_code() << "]\n";
+std::cerr << "cc country [" << creditcard_info.get_country() << "]\n";
+#endif
+}
 
 
 

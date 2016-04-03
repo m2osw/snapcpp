@@ -442,7 +442,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 3, 31, 21, 24, 57, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 4, 2, 20, 32, 57, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1662,12 +1662,13 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
     QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
     QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(ipath.get_key())); // same key as the content table
     QtCassandra::QCassandraRow::pointer_t draft_row(revision_table->row(draft_key));
+
+    // the data_row will get initialized as required
     QtCassandra::QCassandraRow::pointer_t data_row;
 
-    // this will get initialized if the row is required
+    save_info_t save_info(ipath, editor_widgets, revision_row, secret_row, draft_row);
 
     // first load the XML code representing the editor widgets for this page
-    bool modified(false);
     if(!editor_widgets.isNull())
     {
         // a default (data driven) redirect to apply when saving an editor form
@@ -1824,7 +1825,6 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
         // rows; this allows us to reload the data later from the draft instead
         // of the current revision (we will use the dates to know what to load)
         //
-        bool has_errors(false);
         for(int i(0); i < max_widgets; ++i)
         {
             QDomElement widget(widgets.at(i).toElement());
@@ -1914,7 +1914,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
             {
                 if(current_value.isEmpty())    // emptiness invalidity is check by validate_editor_post_for_widget()
                 {
-                    if(!has_errors)
+                    if(!save_info.has_errors())
                     {
                         // save the empty string as the result
                         f_converted_values[widget_name] = QString();
@@ -1928,7 +1928,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
                     {
                         // on errors we are not going to make use of these
                         // values so avoid wasting time on them
-                        if(!has_errors)
+                        if(!save_info.has_errors())
                         {
                             // keep a copy of the result on success
                             f_converted_values[widget_name] = value_info.result();
@@ -2001,7 +2001,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
                 QDomText message_text(editor_widgets.createTextNode(msg.get_body()));
                 message_tag.appendChild(message_text);
 
-                has_errors = true;
+                save_info.mark_as_having_errors();
                 f_converted_values.clear(); // these are not going to be used
             }
             else
@@ -2016,10 +2016,14 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
                 //      form validates properly
             }
         }
+        // prevent further modification of various flags
+        // (f_has_error at time of writing)
+        //
+        save_info.lock();
 
         // now we switch to a new revision in the event the data was not
         // considered erroneous
-        if(!has_errors && auto_save)
+        if(!save_info.has_errors() && auto_save)
         {
             // create the new revision and make it current
             //
@@ -2099,7 +2103,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
 
             // note: the auto-save may not be turned on, we can still copy
             //       empty pointers around, it is fast enough
-            if(has_errors)
+            if(save_info.has_errors())
             {
                 if(is_secret)
                 {
@@ -2134,21 +2138,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
                 data_row->cell(field_name)->setValue(f_converted_values[widget_name]);
             }
 
-            modified = true;
-        }
-
-        if(modified)
-        {
-            if(has_errors)
-            {
-                int64_t const start_date(f_snap->get_start_date());
-                draft_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
-            }
-            else
-            {
-                // if there was a draft, it got saved so drop it now
-                revision_table->dropRow(draft_key);
-            }
+            save_info.mark_as_modified();
         }
     }
 
@@ -2161,10 +2151,21 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
     // TODO: determine whether the save_editor_fields() should NOT be called
     //       if no save took place
     //
-    save_editor_fields(ipath, revision_row, secret_row);
+    save_editor_fields(save_info);
 
-    if(modified)
+    if(save_info.modified())
     {
+        if(save_info.has_errors())
+        {
+            int64_t const start_date(f_snap->get_start_date());
+            draft_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
+        }
+        else
+        {
+            // if there was a draft, it got saved so drop it now
+            revision_table->dropRow(draft_key);
+        }
+
         // save the modification date in the branch
         content_plugin->modified_content(ipath);
     }
@@ -2245,6 +2246,7 @@ QString editor::clean_post_value(QString const & widget_type, QString value)
 
     // TODO: apply XSS filter as required for this user
 
+    // TODO: offer other plugins to do their own clean up
 
     return value;
 }
@@ -2397,7 +2399,7 @@ void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sess
  *
  * \return The QDomDocument representing the editor form, may be null.
  */
-QDomDocument editor::get_editor_widgets(content::path_info_t & ipath, bool saving)
+QDomDocument editor::get_editor_widgets(content::path_info_t & ipath, bool const saving)
 {
     static QMap<QString, QDomDocument> g_cached_form;
 
@@ -4417,22 +4419,22 @@ bool editor::replace_uri_token_impl(editor_uri_token & token_info)
  * Note that the ipath parameter has its revision number set to the new
  * revision number that was allocated to save this data.
  *
- * \param[in,out] ipath  The ipath to the page being modified.
- * \param[in,out] revision_row  The row where all the fields are to be saved.
- * \param[in,out] secret_row  The row where all the fields are to be saved.
+ * \param[in] info  The various information while saving these fields.
  */
-bool editor::save_editor_fields_impl(content::path_info_t & ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row)
+bool editor::save_editor_fields_impl(save_info_t & info)
 {
-    NOTUSED(ipath);
-    NOTUSED(secret_row);
-
+    // Page Title
+    //
     if(f_snap->postenv_exists("title"))
     {
         QString title(f_snap->postenv("title"));
         title = verify_html_validity(title);
         // TODO: XSS filter title
-        revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
+        info.revision_row()->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
     }
+
+    // Page Body
+    //
     if(f_snap->postenv_exists("body"))
     {
         QString body(f_snap->postenv("body"));
@@ -4445,9 +4447,9 @@ bool editor::save_editor_fields_impl(content::path_info_t & ipath, QtCassandra::
         QDomDocument doc;
         QDomElement body_widget(doc.createElement("widget"));
         // add stuff as required by the parse_out_inline_img() -- nothing for now for the body
-        parse_out_inline_img(ipath, body, body_widget);
+        parse_out_inline_img(info.ipath(), body, body_widget);
         // TODO: XSS filter body
-        revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(body);
+        info.revision_row()->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(body);
     }
 
     return true;

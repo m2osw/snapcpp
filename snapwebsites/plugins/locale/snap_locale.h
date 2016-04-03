@@ -150,6 +150,19 @@ private:
 };
 
 
+class safe_timezone
+{
+public:
+                    safe_timezone(QString const new_timezone);
+                    ~safe_timezone();
+
+private:
+    locale *        f_locale_plugin = nullptr;
+    QString         f_old_timezone;
+};
+
+
+
 } // namespace locale
 } // namespace snap
 // vim: ts=4 sw=4 et

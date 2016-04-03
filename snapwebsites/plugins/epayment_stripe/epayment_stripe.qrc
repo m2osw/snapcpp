@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </qresource>
   <qresource prefix="/images/epayment">
     <file>stripe-logo-64x64.png</file>
-    <file>stripe.png</file>
+    <!--file>stripe.png</file-->
     <!--file>stripe-medium.png</file-->
     <file>stripe-large.png</file>
   </qresource>

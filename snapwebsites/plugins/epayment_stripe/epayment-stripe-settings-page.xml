@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<editor-form owner="epayment_stripe" content-modified="2016-01-27 00:15:15">
+<editor-form owner="epayment_stripe" id="settings" content-modified="2016-01-27 00:15:15">
   <timeout minutes="30"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
@@ -88,6 +88,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </sizes>
     <background-value>secret</background-value>
   </widget>
+
 </editor-form>
 <!-- vim: ts=2 sw=2 et
 -->

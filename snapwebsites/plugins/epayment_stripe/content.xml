@@ -85,14 +85,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <path>:/images/epayment/stripe-logo-64x64.png</path>
       <mime-type>image/png</mime-type>
     </attachment>
-    <attachment name="stripe" type="attachment/public">
+    <!--attachment name="stripe" type="attachment/public">
       <path>:/images/epayment/stripe.png</path>
       <mime-type>image/png</mime-type>
     </attachment>
     <attachment name="stripe-medium" type="attachment/public">
       <path>:/images/epayment/stripe-medium.png</path>
       <mime-type>image/png</mime-type>
-    </attachment>
+    </attachment-->
     <attachment name="stripe-large" type="attachment/public">
       <path>:/images/epayment/stripe-large.png</path>
       <mime-type>image/png</mime-type>

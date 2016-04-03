@@ -17,6 +17,7 @@
 #pragma once
 
 #include "../epayment/epayment.h"
+#include "../epayment_creditcard/epayment_creditcard.h"
 #include "../filter/filter.h"
 #include "../layout/layout.h"
 #include "../path/path.h"
@@ -124,6 +125,7 @@ class epayment_stripe
         : public plugins::plugin
         , public path::path_execute
         , public layout::layout_content
+        , public epayment_creditcard::epayment_creditcard_gateway_t
 {
 public:
                                 epayment_stripe();
@@ -156,6 +158,10 @@ public:
 
     // epayment signals
     void                        on_repeat_payment(content::path_info_t & first_invoice_ipath, content::path_info_t & previous_invoice_ipath, content::path_info_t & new_invoice_ipath);
+
+    // epayment_creditcard::epayment_creditcard_gateway_t implementation
+    virtual void                gateway_features(epayment_creditcard::epayment_gateway_features_t & gateway_info);
+    virtual void                process_creditcard(epayment_creditcard::epayment_creditcard_info_t const & creditcard_info, editor::save_info_t & save_info);
 
 private:
     void                        initial_update(int64_t variables_timestamp);

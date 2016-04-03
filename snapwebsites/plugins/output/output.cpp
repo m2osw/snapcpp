@@ -600,7 +600,7 @@ void output::on_generate_page_content(content::path_info_t & ipath, QDomElement 
     //                 plugin because the messages cannot depend on the
     //                 layout plugin (circular dependencies)
     QDomDocument doc(page.ownerDocument());
-    messages::messages *messages_plugin(messages::messages::instance());
+    messages::messages * messages_plugin(messages::messages::instance());
     int const max_messages(messages_plugin->get_message_count());
     if(max_messages > 0)
     {

@@ -441,6 +441,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     || n == "content::prevent_delete"
     || n == "epayment::show_address2"
     || n == "epayment::show_country"
+    || n == "epayment::show_phone"
     || n == "epayment::show_province"
     || n == "epayment_paypal::debug"
     || n == "feed::allow_main_atom_xml"

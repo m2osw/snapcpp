@@ -246,7 +246,7 @@ void cookie_consent_silktide::bootstrap(snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(cookie_consent_silktide, "layout", layout::layout, generate_header_content, _1, _2, _3);
-    SNAP_LISTEN(cookie_consent_silktide, "editor", editor::editor, save_editor_fields, _1, _2, _3);
+    SNAP_LISTEN(cookie_consent_silktide, "editor", editor::editor, save_editor_fields, _1);
 }
 
 
@@ -311,13 +311,12 @@ void cookie_consent_silktide::on_generate_header_content(content::path_info_t & 
  *
  * This function generates the JavaScript to use with the
  * cookie-consent-silktide.js
+ *
+ * \param[in,out] save_info  
  */
-void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row)
+void cookie_consent_silktide::on_save_editor_fields(editor::save_info_t & save_info)
 {
-    NOTUSED(revision_row);
-    NOTUSED(secret_row);
-
-    if(ipath.get_cpath() != "admin/settings/cookie-consent-silktide")
+    if(save_info.ipath().get_cpath() != "admin/settings/cookie-consent-silktide")
     {
         return;
     }
@@ -335,7 +334,7 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
     // for those we verify the format of which as far as I know is all
     // of them!)
     {
-        temp_str = revision_row->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_MESSAGE))->value().stringValue().toUtf8().data();
+        temp_str = save_info.revision_row()->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_MESSAGE))->value().stringValue().toUtf8().data();
         if(!temp_str.empty())
         {
             field.reset(new as2js::JSON::JSONValue(pos, temp_str));
@@ -344,7 +343,7 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
     }
 
     {
-        temp_str = revision_row->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_LEARN_MORE_LABEL))->value().stringValue().toUtf8().data();
+        temp_str = save_info.revision_row()->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_LEARN_MORE_LABEL))->value().stringValue().toUtf8().data();
         if(!temp_str.empty())
         {
             field.reset(new as2js::JSON::JSONValue(pos, temp_str));
@@ -353,7 +352,7 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
     }
 
     {
-        temp_str = revision_row->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_LEARN_MORE_URI))->value().stringValue().toUtf8().data();
+        temp_str = save_info.revision_row()->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_LEARN_MORE_URI))->value().stringValue().toUtf8().data();
         if(!temp_str.empty())
         {
             field.reset(new as2js::JSON::JSONValue(pos, temp_str));
@@ -362,7 +361,7 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
     }
 
     {
-        temp_str = revision_row->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_DISMISS))->value().stringValue().toUtf8().data();
+        temp_str = save_info.revision_row()->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_DISMISS))->value().stringValue().toUtf8().data();
         if(!temp_str.empty())
         {
             field.reset(new as2js::JSON::JSONValue(pos, temp_str));
@@ -371,7 +370,7 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
     }
 
     {
-        temp_str = revision_row->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_DOMAIN))->value().stringValue().toUtf8().data();
+        temp_str = save_info.revision_row()->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_DOMAIN))->value().stringValue().toUtf8().data();
         if(!temp_str.empty())
         {
             field.reset(new as2js::JSON::JSONValue(pos, temp_str));
@@ -380,7 +379,7 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
     }
 
     {
-        int64_t consent_duration(revision_row->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_CONSENT_DURATION))->value().safeInt64Value());
+        int64_t consent_duration(save_info.revision_row()->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_CONSENT_DURATION))->value().safeInt64Value());
         if(consent_duration > 0)
         {
             as2js::Int64 integer(consent_duration);
@@ -390,7 +389,7 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
     }
 
     {
-        temp_str = revision_row->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_THEME))->value().stringValue().toUtf8().data();
+        temp_str = save_info.revision_row()->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_THEME))->value().stringValue().toUtf8().data();
         if(!temp_str.empty())
         {
             field.reset(new as2js::JSON::JSONValue(pos, temp_str));
@@ -400,8 +399,8 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
 
     content::path_info_t js_file;
     js_file.set_path(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_OPTIONS));
-    int64_t const version(revision_row->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_VERSION))->value().safeInt64Value() + 1);
-    revision_row->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_VERSION))->setValue(version);
+    int64_t const version(save_info.revision_row()->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_VERSION))->value().safeInt64Value() + 1);
+    save_info.revision_row()->cell(get_name(name_t::SNAP_NAME_COOKIE_CONSENT_SILKTIDE_JAVASCRIPT_VERSION))->setValue(version);
 
     QDateTime date;
     date.setMSecsSinceEpoch(f_snap->get_start_date() / 1000); // us to ms
@@ -426,7 +425,7 @@ void cookie_consent_silktide::on_save_editor_fields(content::path_info_t & ipath
 
     // We could have a copy in the revision table,
     // but I don't think that's useful
-    //revision_row->cell(get_name())->setValue(js_options);
+    //save_info.revision_row()->cell(get_name())->setValue(js_options);
 
     {
         content::attachment_file file(f_snap);

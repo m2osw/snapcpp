@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.915
+ * Version: 0.0.3.916
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -7156,7 +7156,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 e.preventDefault();
                 e.stopPropagation();
 
-                that.itemClicked(editor_widget, jQuery(e.target));
+                that.itemClicked(editor_widget, jQuery(this));
             });
 
     c.blur(function()
@@ -7406,7 +7406,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_w
                     e.preventDefault();
                     e.stopPropagation();
 
-                    that.itemClicked(editor_widget, jQuery(e.target));
+                    that.itemClicked(editor_widget, jQuery(this));
                 });
     }
     else
@@ -8355,14 +8355,14 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(editor_wi
         this.hideDropdown();
 
         // first select the new item
-        d.find(".dropdown-item").removeClass("selected");
+        d.find("li.dropdown-item").removeClass("selected");
         if(window.self != window.top)
         {
             // "selected_item" look nice, but it is the copy in the _top
             // window and we have to mark the selected item in the list
             // present in this popup instead
             //
-            d.find(".dropdown-item").eq(selected_item.index()).addClass("selected");
+            d.find("li.dropdown-item").eq(selected_item.index()).addClass("selected");
         }
         else
         {

@@ -45,19 +45,38 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<xsl:attribute name="class">test<!--xsl:if test="$action = 'edit'"> editing</xsl:if--></xsl:attribute>
 
 					<fieldset class="site-name">
-						<legend>Credit Card Information</legend>
+						<legend>Credit Card Form</legend>
 
 						<div class="editor-block">
 							<xsl:copy-of select="page/body/epayment/credit_card/show_address2/node()"/>
 							<xsl:copy-of select="page/body/epayment/credit_card/show_province/node()"/>
-							<xsl:copy-of select="page/body/epayment/credit_card/show_country/node()"/>
+
+							<label>Phone Field</label>
+							<xsl:copy-of select="page/body/epayment/credit_card/show_phone/node()"/>
+
 						</div>
 
 						<div class="editor-block">
+							<xsl:copy-of select="page/body/epayment/credit_card/show_country/node()"/>
 							<label for="security_code" class="editor-title">Default Country:</label>
 							<xsl:copy-of select="page/body/epayment/credit_card/default_country/node()"/>
 						</div>
+					</fieldset>
 
+					<fieldset class="site-name">
+						<legend>Credit Card Gateway</legend>
+
+						<div class="editor-block">
+							<label>Default Gateway</label>
+							<xsl:copy-of select="page/body/epayment/credit_card/gateway/node()"/>
+							<p>
+								<strong>Note:</strong> If you do not select a default
+								Gateway, then all the form asking for credit card
+								details must be called with ?gateway=&lt;plugin-name&gt;
+								otherwise an error will be generated and the end user
+								will get a 503 error.
+							</p>
+						</div>
 					</fieldset>
 
 				</div>
