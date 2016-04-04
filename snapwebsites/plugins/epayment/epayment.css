@@ -1,6 +1,6 @@
 /*
  * Name: epayment
- * Version: 0.0.1.9
+ * Version: 0.0.1.10
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -35,6 +35,7 @@
 	background-color: #ffee33;
 	background: linear-gradient(to bottom, #fff79f, #ffee33 25%, #ffee33 85%, #c4b727);
 	cursor: pointer;
+	text-align: center;
 }
 
 .epayment-buttons

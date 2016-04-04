@@ -21,14 +21,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/epayment" owner="output">
     <param name="content::title" revision="revision">Various e-Payment Pages!</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<div class="epayment_paypal-invoice"><p>e-Payment offers various pages, such as a Thank You, Canceled, and Payment Failed pages.</p></div>]]>
+      <![CDATA[<div class="epayment-invoice"><p>e-Payment offers various pages, such as a Thank You, Canceled, and Payment Failed pages.</p></div>]]>
     </param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
   <content path="/epayment/thank-you" owner="output">
     <param name="content::title" revision="revision">Thank You!</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<div class="epayment_paypal-invoice"><p>Thank you for your payment.</p></div>]]>
+      <![CDATA[<div class="epayment-invoice"><p>Thank you for your payment.</p></div>]]>
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
@@ -36,7 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/epayment/thank-you-subscription" owner="output">
     <param name="content::title" revision="revision">Thank You!</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<div class="epayment_paypal-invoice"><p>Thank you for subscribing to our services.</p></div>]]>
+      <![CDATA[<div class="epayment-invoice"><p>Thank you for subscribing to our services.</p></div>]]>
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
@@ -44,7 +44,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/epayment/canceled" owner="output">
     <param name="content::title" revision="revision">Order Canceled!</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<div class="epayment_paypal-invoice"><p>We're Sorry You Canceled.</p></div>]]>
+      <![CDATA[<div class="epayment-invoice"><p>We're Sorry You Canceled.</p></div>]]>
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
@@ -52,7 +52,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/epayment/failed" owner="output">
     <param name="content::title" revision="revision">Payment Failed!</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<div class="epayment_paypal-invoice"><p>Your payment somehow failed. You may try <a href="/epayment/restore-cart">ordering again</a> if you'd like.</p></div>]]>
+      <![CDATA[<div class="epayment-invoice"><p>Your payment somehow failed. You may try <a href="/epayment/restore-cart">ordering again</a> if you'd like.</p></div>]]>
     </param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>

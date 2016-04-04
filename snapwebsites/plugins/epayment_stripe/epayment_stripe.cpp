@@ -328,7 +328,7 @@ int64_t epayment_stripe::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 12, 20, 21, 53, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 4, 3, 16, 23, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -445,6 +445,7 @@ QtCassandra::QCassandraTable::pointer_t epayment_stripe::get_epayment_stripe_tab
  */
 void epayment_stripe::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
+SNAP_LOG_WARNING("stripes in generate header content...");
     NOTUSED(ipath);
     NOTUSED(metadata);
 
@@ -519,14 +520,15 @@ void epayment_stripe::on_generate_header_content(content::path_info_t & ipath, Q
         secret = secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_SECRET))->value().stringValue();
     }
 
-    if(!client_id.isEmpty()
-    && !secret.isEmpty())
+    //if(!client_id.isEmpty()
+    //&& !secret.isEmpty())
     {
         // TODO: find a way to include e-Payment-Stripe data only if required
         //       (it may already be done! search on add_javascript() for info.)
         content::content::instance()->add_javascript(doc, "epayment-stripe");
         content::content::instance()->add_css(doc, "epayment-stripe");
     }
+SNAP_LOG_WARNING("got the stripes on!");
 }
 
 
