@@ -1433,7 +1433,7 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     // the defaults are empty...
                     REQUIRE(n->to_string(flags) == "{}");
 
-                    // test with an actual function
+                    // test with an actual expression
                     csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
                     p->set_integer(7);
                     n->add_child(p);
@@ -1915,6 +1915,36 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     n->add_child(p);
                     REQUIRE(n->to_string(flags) == "0 - 33");
                 }
+
+                {
+                    n->clear();
+
+                    // 1.45 + 15, 7 - 1.15
+                    csspp::node::pointer_t arg(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    n->add_child(arg);
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(1.45);
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::ADD, n->get_position()));
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(15);
+                    arg->add_child(p);
+
+                    // there is no comma in the tree once compiled, just another ARG
+                    arg.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    n->add_child(arg);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(7);
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::SUBTRACT, n->get_position()));
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(1.15);
+                    arg->add_child(p);
+
+                    REQUIRE(n->to_string(flags) == "1.45+15,7-1.15");
+                }
                 break;
 
             case csspp::node_type_t::LIST:
@@ -1922,7 +1952,7 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     // the defaults are empty...
                     REQUIRE(n->to_string(flags) == "");
 
-                    // test with an actual function
+                    // test with an actual expression
                     csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
                     p->set_decimal_number(3.22);
                     n->add_child(p);
@@ -1936,6 +1966,69 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     p->set_decimal_number(5.3);
                     n->add_child(p);
                     REQUIRE(n->to_string(flags) == "3.22 ** 5.3");
+                }
+
+                {
+                    n->clear();
+
+                    // test with a couple of declarations to make sure we get
+                    // the semi-colon in between
+                    csspp::node::pointer_t declaration(new csspp::node(csspp::node_type_t::DECLARATION, n->get_position()));
+                    n->add_child(declaration);
+
+                    // and a declaration may have multiple arguments
+                    csspp::node::pointer_t arg(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    declaration->add_child(arg);
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(14.53);
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::ADD, n->get_position()));
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(150);
+                    arg->add_child(p);
+
+                    // there is no comma in the tree once compiled, just another ARG
+                    arg.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    declaration->add_child(arg);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(107);
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::SUBTRACT, n->get_position()));
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(115.23);
+                    arg->add_child(p);
+
+                    // second declaration
+                    declaration.reset(new csspp::node(csspp::node_type_t::DECLARATION, n->get_position()));
+                    n->add_child(declaration);
+
+                    // second argument of this declaration
+                    arg.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    declaration->add_child(arg);
+                    p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(1.453);
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::ADD, n->get_position()));
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(1);
+                    arg->add_child(p);
+
+                    // there is no comma in the tree once compiled, just another ARG
+                    arg.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    declaration->add_child(arg);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(19);
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::SUBTRACT, n->get_position()));
+                    arg->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(15.03);
+                    arg->add_child(p);
+
+                    REQUIRE(n->to_string(flags) == "14.53+150,107-115.23;1.453+1,19-15.03");
                 }
                 break;
 

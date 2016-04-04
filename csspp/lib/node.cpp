@@ -1150,11 +1150,47 @@ std::string node::to_string(int flags) const
         break;
 
     case node_type_t::ARG:
-    case node_type_t::DECLARATION:
-    case node_type_t::LIST:
         for(auto c : f_children)
         {
             out << c->to_string(flags);
+        }
+        break;
+
+    case node_type_t::DECLARATION:
+        for(size_t idx(0); idx < f_children.size(); ++idx)
+        {
+            if(f_children[idx]->f_type == node_type_t::ARG)
+            {
+                out << f_children[idx]->to_string(flags);
+                if(idx + 1 != f_children.size())
+                {
+                    // multiple lists of arguments are comma separated
+                    out << ",";
+                }
+            }
+            else
+            {
+                out << f_children[idx]->to_string(flags);
+            }
+        }
+        break;
+
+    case node_type_t::LIST:
+        for(size_t idx(0); idx < f_children.size(); ++idx)
+        {
+            if(f_children[idx]->f_type == node_type_t::DECLARATION)
+            {
+                out << f_children[idx]->to_string(flags);
+                if(idx + 1 != f_children.size())
+                {
+                    // multiple declarations are semi-colon separated
+                    out << ";";
+                }
+            }
+            else
+            {
+                out << f_children[idx]->to_string(flags);
+            }
         }
         break;
 

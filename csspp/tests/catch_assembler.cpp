@@ -187,6 +187,7 @@ TEST_CASE("Assemble rules", "[assembler]")
                << "{\n"
                << "  border: 3px solid darken(#f7d0cf, 3%);\n"
                << "\tborder-bottom-width: 1px;\n"
+               << "\tbox-shadow: 1px 0px 7px #88aa11, 0px 3px 1px #aa8833;\n"
                << "  font: 17.2px/1.35em\tArial;\n"
                << "}\n"
                << "\n";
@@ -218,14 +219,14 @@ TEST_CASE("Assemble rules", "[assembler]")
             case csspp::output_mode_t::COMPACT:
                 REQUIRE(out.str() ==
 "div { color: #fff; font-size: 1.3em }\n"
-"span { border: 3px solid #f5c3c2; border-bottom-width: 1px; font: 17.2px/1.35em Arial }\n"
+"span { border: 3px solid #f5c3c2; border-bottom-width: 1px; box-shadow: 1px 0px 7px #8a1, 0px 3px 1px #a83; font: 17.2px/1.35em Arial }\n"
 + csspp_test::get_close_comment()
                     );
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
                 REQUIRE(out.str() ==
-"div{color:#fff;font-size:1.3em}span{border:3px solid #f5c3c2;border-bottom-width:1px;font:17.2px/1.35em Arial}\n"
+"div{color:#fff;font-size:1.3em}span{border:3px solid #f5c3c2;border-bottom-width:1px;box-shadow:1px 0px 7px #8a1,0px 3px 1px #a83;font:17.2px/1.35em Arial}\n"
 + csspp_test::get_close_comment()
                     );
                 break;
@@ -241,6 +242,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "{\n"
 "  border: 3px solid #f5c3c2;\n"
 "  border-bottom-width: 1px;\n"
+"  box-shadow: 1px 0px 7px #8a1, 0px 3px 1px #a83;\n"
 "  font: 17.2px/1.35em Arial;\n"
 "}\n"
 + csspp_test::get_close_comment()
@@ -250,7 +252,7 @@ TEST_CASE("Assemble rules", "[assembler]")
             case csspp::output_mode_t::TIDY:
                 REQUIRE(out.str() ==
 "div{color:#fff;font-size:1.3em}\n"
-"span{border:3px solid #f5c3c2;border-bottom-width:1px;font:17.2px/1.35em Arial}\n"
+"span{border:3px solid #f5c3c2;border-bottom-width:1px;box-shadow:1px 0px 7px #8a1,0px 3px 1px #a83;font:17.2px/1.35em Arial}\n"
 + csspp_test::get_close_comment()
                     );
                 break;
@@ -275,6 +277,7 @@ TEST_CASE("Assemble rules", "[assembler]")
                << "\t  font-size: 1.3em;\n"
                << " \n"
                << "  border: 3px solid desaturate(#f7d0cf, 5%);\n"
+               << "  \tbox-shadow: 1px 0px 7px #88aa11, 0px 3px 1px #aa8833, 1px 2px 3px #92af54;\n"
                << "\tborder-bottom-width: 1px;\n"
                << "}\n"
                << "\n";
@@ -305,14 +308,14 @@ TEST_CASE("Assemble rules", "[assembler]")
             {
             case csspp::output_mode_t::COMPACT:
                 REQUIRE(out.str() ==
-"div a b, p span i { color: gray; font-size: 1.3em; border: 3px solid #f6d1d0; border-bottom-width: 1px }\n"
+"div a b, p span i { color: gray; font-size: 1.3em; border: 3px solid #f6d1d0; box-shadow: 1px 0px 7px #8a1, 0px 3px 1px #a83, 1px 2px 3px #92af54; border-bottom-width: 1px }\n"
 + csspp_test::get_close_comment()
                     );
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
                 REQUIRE(out.str() ==
-"div a b,p span i{color:gray;font-size:1.3em;border:3px solid #f6d1d0;border-bottom-width:1px}\n"
+"div a b,p span i{color:gray;font-size:1.3em;border:3px solid #f6d1d0;box-shadow:1px 0px 7px #8a1,0px 3px 1px #a83,1px 2px 3px #92af54;border-bottom-width:1px}\n"
 + csspp_test::get_close_comment()
                     );
                 break;
@@ -324,6 +327,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "  color: gray;\n"
 "  font-size: 1.3em;\n"
 "  border: 3px solid #f6d1d0;\n"
+"  box-shadow: 1px 0px 7px #8a1, 0px 3px 1px #a83, 1px 2px 3px #92af54;\n"
 "  border-bottom-width: 1px;\n"
 "}\n"
 + csspp_test::get_close_comment()
@@ -332,7 +336,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 
             case csspp::output_mode_t::TIDY:
                 REQUIRE(out.str() ==
-"div a b,p span i{color:gray;font-size:1.3em;border:3px solid #f6d1d0;border-bottom-width:1px}\n"
+"div a b,p span i{color:gray;font-size:1.3em;border:3px solid #f6d1d0;box-shadow:1px 0px 7px #8a1,0px 3px 1px #a83,1px 2px 3px #92af54;border-bottom-width:1px}\n"
 + csspp_test::get_close_comment()
                     );
                 break;

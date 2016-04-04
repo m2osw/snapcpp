@@ -417,7 +417,13 @@ void assembler::output(node::pointer_t n)
             size_t const max_children(n->size());
             for(size_t idx(0); idx < max_children; ++idx)
             {
-                output(n->get_child(idx));
+                node::pointer_t child(n->get_child(idx));
+                output(child);
+                if(child->is(node_type_t::ARG)
+                && idx + 1 != max_children)
+                {
+                    f_impl->output_operator(",", g_flag_optional_space_after);
+                }
             }
             // we make sure it appears at the end
             if(n->get_flag("important"))
@@ -509,17 +515,11 @@ void assembler::output(node::pointer_t n)
             for(size_t idx(0); idx < max_children; ++idx)
             {
                 node::pointer_t child(n->get_child(idx));
-                if(child->is(node_type_t::DECLARATION))
+                output(child);
+                if(child->is(node_type_t::DECLARATION)
+                && idx + 1 != max_children)
                 {
-                    output(child);
-                    if(idx + 1 != max_children)
-                    {
-                        f_impl->output_operator(";", g_flag_optional_space_after_or_newline);
-                    }
-                }
-                else
-                {
-                    output(child);
+                    f_impl->output_operator(";", g_flag_optional_space_after_or_newline);
                 }
             }
         }

@@ -104,4 +104,8 @@ additional features:
 . Design a test which checks the csspp command line itself.
 
 
+. Write a test to make sure that the MasterCMakeLists.txt is valid in
+  the final tarball.
+
+
 vim: tw=2 sw=2 et
