@@ -42,62 +42,34 @@
 #include <QString>
 #include <QByteArray>
 
-typedef struct CassCluster_     CassCluster;
-typedef struct CassCollection_  CassCollection;
-typedef struct CassFuture_      CassFuture;
-typedef struct CassIterator_    CassIterator;
-typedef struct CassResult_      CassResult;
-typedef struct CassSession_     CassSession;
-typedef struct CassStatement_   CassStatement;
-typedef struct CassValue_       CassValue;
+typedef struct CassCluster_      CassCluster;
+typedef struct CassCollection_   CassCollection;
+typedef struct CassColumnMeta_   CassColumnMeta;
+typedef struct CassFuture_       CassFuture;
+typedef struct CassIterator_     CassIterator;
+typedef struct CassKeyspaceMeta_ CassKeyspaceMeta;
+typedef struct CassResult_       CassResult;
+typedef struct CassSchemaMeta_   CassSchemaMeta;
+typedef struct CassSession_      CassSession;
+typedef struct CassStatement_    CassStatement;
+typedef struct CassValue_        CassValue;
 
 namespace QtCassandra
 {
 
 namespace CassTools
 {
-    typedef std::shared_ptr<CassCluster>      cluster_pointer_t;
-    typedef std::shared_ptr<CassCollection>   collection_pointer_t;
-    typedef std::shared_ptr<CassFuture>       future_pointer_t;
-    typedef std::shared_ptr<CassIterator>     iterator_pointer_t;
-    typedef std::shared_ptr<const CassResult> result_pointer_t;
-    typedef std::shared_ptr<CassSession>      session_pointer_t;
-    typedef std::shared_ptr<CassStatement>    statement_pointer_t;
-
-    struct collectionDeleter
-    {
-        void operator()(CassCollection* p) const;
-    };
-
-    struct clusterDeleter
-    { 
-        void operator()(CassCluster* p) const;
-    };
-
-    struct futureDeleter
-    { 
-        void operator()(CassFuture* p) const;
-    };
-
-    struct iteratorDeleter
-    {
-        void operator()(CassIterator* p) const;
-    };
-
-    struct resultDeleter
-    {
-        void operator()(const CassResult* p) const;
-    };
-
-    struct sessionDeleter
-    { 
-        void operator()(CassSession* p) const;
-    };
-
-    struct statementDeleter
-    { 
-        void operator()(CassStatement* p) const;
-    };
+    typedef std::shared_ptr<CassCluster>            cluster_pointer_t;
+    typedef std::shared_ptr<CassCollection>         collection_pointer_t;
+    typedef std::shared_ptr<const CassColumnMeta>   column_meta_pointer_t;
+    typedef std::shared_ptr<CassFuture>             future_pointer_t;
+    typedef std::shared_ptr<CassIterator>           iterator_pointer_t;
+    typedef std::shared_ptr<const CassKeyspaceMeta> keyspace_meta_pointer_t;
+    typedef std::shared_ptr<const CassResult>       result_pointer_t;
+    typedef std::shared_ptr<const CassSchemaMeta>   schema_meta_pointer_t;
+    typedef std::shared_ptr<const CassTableMeta>    table_meta_pointer_t;
+    typedef std::shared_ptr<CassSession>            session_pointer_t;
+    typedef std::shared_ptr<CassStatement>          statement_pointer_t;
 }
 
 
@@ -126,6 +98,86 @@ private:
     CassTools::session_pointer_t       f_session;
     CassTools::future_pointer_t        f_connection;
 };
+
+
+class QCassandraSessionMeta
+{
+public:
+    typedef std::shared_ptr<QCassandraSessionMeta>  pointer_t;
+    typedef std::map<QString,QString>               qstring_map_t;
+
+    QCassandraSessionMeta( QCassandraSession::pointer_t session );
+    ~QCassandraSessionMeta();
+
+    QCassandraSession::pointer_t    session() const;
+
+    cass_uint32_t   snapshotVersion() const;
+
+    class KeyspaceMeta
+    {
+    public:
+        typedef std::shared_ptr<KeyspaceMeta> pointer_t;
+        typedef std::map<QString,pointer_t>   map_t;
+
+        KeyspaceMeta( QCassandraSessionMeta::pointer_t session_meta );
+
+        QCassandraSession::pointer_t session() const;
+
+        QString         getName() const;
+        qstring_map_t   getFields() const;
+
+        class TableMeta
+        {
+        public:
+            typedef std::shared_ptr<TableMeta>  pointer_t;
+            typedef std::map<QString,pointer_t> map_t;
+
+            TableMeta( KeyspaceMeta::pointer_t kysp );
+
+            QString     getName() const;
+
+            class ColumnMeta
+            {
+            public:
+                typedef std::shared_ptr<ColumnMeta> pointer_t;
+                typedef std::map<QString,pointer_t> map_t;
+
+                typedef enum
+                {
+                    TypeRegular, TypePartitionKey, TypeClusteringKey, TypeStatic, TypeCompactValue;
+                }
+                type_t;
+
+                ColumnMeta( TableMeta::pointer_t tbl );
+
+                QString         getName() const;
+                qstring_map_t   getFields() const;
+                type_t          getType() const;
+
+            private:
+                qstring_map_t   f_fields;
+            };
+
+        private:
+            KeyspaceMeta::pointer_t f_keyspace;
+            ColumnMeta::map_t       f_columns;
+        };
+
+        const TableMeta::map_t& getTableMetaMap() const;
+
+    private:
+        QCassandraSessionMeta::pointer_t    f_session;
+        qstring_map_t                       f_fields;
+        TableMeta::map_t                    f_tables;
+    };
+
+    KeyspaceMeta::map_t   getKeyspaceMetaMap() const;
+
+private:
+    QCassandraSession::pointer_t    f_session;
+    qstring_list_t                  f_keyspaceNames;
+};
+
 
 class QCassandraQuery
 {

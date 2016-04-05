@@ -145,6 +145,41 @@ namespace
 namespace CassTools
 {
 
+struct collectionDeleter
+{
+    void operator()(CassCollection* p) const;
+};
+
+struct clusterDeleter
+{ 
+    void operator()(CassCluster* p) const;
+};
+
+struct futureDeleter
+{ 
+    void operator()(CassFuture* p) const;
+};
+
+struct iteratorDeleter
+{
+    void operator()(CassIterator* p) const;
+};
+
+struct resultDeleter
+{
+    void operator()(const CassResult* p) const;
+};
+
+struct sessionDeleter
+{ 
+    void operator()(CassSession* p) const;
+};
+
+struct statementDeleter
+{ 
+    void operator()(CassStatement* p) const;
+};
+
 
 void collectionDeleter::operator()(CassCollection* p) const
 {
@@ -185,6 +220,20 @@ void sessionDeleter::operator()(CassSession* p) const
 // namespace CassTools
 
 using namespace CassTools;
+
+
+#if 0
+The idea would be to get the schema meta from the API itself. First get the CassSchemaMeta instance and an iterator for all of the keyspaces:
+
+    const CassSchemaMeta* schema_meta = cass_session_get_schema_meta(session);
+    CassIterator* iter = cass_iterator_keyspaces_from_schema_meta( schema_meta );
+
+Then you iterate through each keyspace and get the keyspace metadata from each iterator:
+
+    cass_iterator_get_keyspace_meta( iter );
+
+Then get the keyspace 
+#endif
 
 
 /** \brief Initialize a QCassandraSession object
