@@ -56,6 +56,7 @@ set( HEADER_FILES
     QtCassandra/QCassandraPredicate.h
     QtCassandra/QCassandraQuery.h
     QtCassandra/QCassandraRow.h
+    QtCassandra/QCassandraSchema.h
     QtCassandra/QCassandraTable.h
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
@@ -79,6 +80,7 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraPredicate.cpp
     QCassandraQuery.cpp
     QCassandraRow.cpp
+    QCassandraSchema.cpp
     QCassandraTable.cpp
     QCassandraValue.cpp
 )

@@ -81,6 +81,8 @@
  * \sa QCassandraSession
  */
 
+#include "CassTools.h"
+
 namespace QtCassandra
 {
 
@@ -142,98 +144,7 @@ namespace
 }
 
 
-namespace CassTools
-{
-
-struct collectionDeleter
-{
-    void operator()(CassCollection* p) const;
-};
-
-struct clusterDeleter
-{ 
-    void operator()(CassCluster* p) const;
-};
-
-struct futureDeleter
-{ 
-    void operator()(CassFuture* p) const;
-};
-
-struct iteratorDeleter
-{
-    void operator()(CassIterator* p) const;
-};
-
-struct resultDeleter
-{
-    void operator()(const CassResult* p) const;
-};
-
-struct sessionDeleter
-{ 
-    void operator()(CassSession* p) const;
-};
-
-struct statementDeleter
-{ 
-    void operator()(CassStatement* p) const;
-};
-
-
-void collectionDeleter::operator()(CassCollection* p) const
-{
-    cass_collection_free(p);
-}
-
-void clusterDeleter::operator()(CassCluster* p) const
-{
-    cass_cluster_free(p);
-}
-
-void resultDeleter::operator()(const CassResult* p) const
-{
-    cass_result_free(p);
-}
-
-void futureDeleter::operator()(CassFuture* p) const
-{
-    cass_future_free(p);
-}
-
-void iteratorDeleter::operator()(CassIterator* p) const
-{
-    cass_iterator_free(p);
-}
-
-void statementDeleter::operator()(CassStatement* p) const
-{
-    cass_statement_free(p);
-}
-
-void sessionDeleter::operator()(CassSession* p) const
-{
-    cass_session_free(p);
-}
-
-}
-// namespace CassTools
-
 using namespace CassTools;
-
-
-#if 0
-The idea would be to get the schema meta from the API itself. First get the CassSchemaMeta instance and an iterator for all of the keyspaces:
-
-    const CassSchemaMeta* schema_meta = cass_session_get_schema_meta(session);
-    CassIterator* iter = cass_iterator_keyspaces_from_schema_meta( schema_meta );
-
-Then you iterate through each keyspace and get the keyspace metadata from each iterator:
-
-    cass_iterator_get_keyspace_meta( iter );
-
-Then get the keyspace 
-#endif
 
 
 /** \brief Initialize a QCassandraSession object

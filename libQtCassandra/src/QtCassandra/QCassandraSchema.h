@@ -45,6 +45,7 @@ namespace QCassandraSchema
 
 
 class SessionMeta
+    : public std::enable_shared_from_this<SessionMeta>
 {
 public:
     typedef std::shared_ptr<SessionMeta>  pointer_t;
@@ -88,37 +89,49 @@ public:
 
                 typedef enum
                 {
-                    TypeRegular, TypePartitionKey, TypeClusteringKey, TypeStatic, TypeCompactValue;
+                    TypeRegular, TypePartitionKey, TypeClusteringKey, TypeStatic, TypeCompactValue
                 }
                 type_t;
 
                 ColumnMeta( TableMeta::pointer_t tbl );
 
                 QString         getName() const;
-                qstring_map_t   getFields() const;
                 type_t          getType() const;
+                qstring_map_t   getFields() const;
 
             private:
+                QString         f_name;
+                type_t          f_type;
                 qstring_map_t   f_fields;
+
+                friend class TableMeta;
             };
+
+            const ColumnMeta::map_t& getColumns() const;
 
         private:
             KeyspaceMeta::pointer_t f_keyspace;
             ColumnMeta::map_t       f_columns;
+
+            friend class KeyspaceMeta;
         };
 
-        const TableMeta::map_t& getTableMetaMap() const;
+        const TableMeta::map_t& getTables() const;
 
     private:
         QCassandraSessionMeta::pointer_t    f_session;
+        QString                             f_name;
         qstring_map_t                       f_fields;
         TableMeta::map_t                    f_tables;
+
+        friend class SessionMeta;
     };
 
     const KeyspaceMeta::map_t& getKeyspaces();
 
 private:
     QCassandraSession::pointer_t    f_session;
+    CassSchemaMeta::pointer_t       f_schemaMeta;
     QString                         f_name;
     qstring_map_t                   f_fields;
     uint32_t                        f_version;

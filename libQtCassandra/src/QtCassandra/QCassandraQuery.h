@@ -54,8 +54,10 @@ typedef struct CassSession_      CassSession;
 typedef struct CassStatement_    CassStatement;
 typedef struct CassValue_        CassValue;
 
+
 namespace QtCassandra
 {
+
 
 namespace CassTools
 {
