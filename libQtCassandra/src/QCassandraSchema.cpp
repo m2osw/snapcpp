@@ -73,15 +73,16 @@ SessionMeta::SessionMeta( QCassandraSession::pointer_t session )
 
     while( cass_iterator_next( iter.get() ) )
     {
-        keyspace_meta_pointer_t keyspace( cass_iterator_get_keyspace_meta( iter.get() ) );
+        keyspace_meta_pointer_t p_keyspace( cass_iterator_get_keyspace_meta( iter.get() ) );
         char * name;
         size_t len;
-        cass_keyspace_meta_name( keyspace.get(), &name, &len );
-        KeyspaceMeta::pointer_t km( std::shared_ptr<KeyspaceMeta>(shared_from_this()) );
-        km->f_name = QString::fromUtf8(name,len);
+        cass_keyspace_meta_name( p_keyspace.get(), &name, &len );
+        KeyspaceMeta::pointer_t keyspace( std::shared_ptr<KeyspaceMeta>(shared_from_this()) );
+        keyspace->f_name = QString::fromUtf8(name,len);
+        f_keyspaces.push_back( keyspace );
 
         iterator_pointer_t fields_iter
-            ( cass_iterator_fields_from_keyspace_meta( km.get() )
+            ( cass_iterator_fields_from_keyspace_meta( p_keyspace.get() )
             , iteratorDeleter()
             );
         while( cass_iterator_next( fields_iter.get() ) )
@@ -99,19 +100,72 @@ SessionMeta::SessionMeta( QCassandraSession::pointer_t session )
                 throw std::runtime_error( "Cannot get field value from iterator!" );
             }
             const QString field_value( QString::fromUtf8(name,len) );
-            km->f_fields[field_name] = field_value;
+            keyspace->f_fields[field_name] = field_value;
         }
 
         iterator_pointer_t tables_iter
-            ( cass_iterator_fields_from_table_meta( km.get()
+            ( cass_iterator_fields_from_table_meta( p_keyspace.get()
             , iteratorDeleter()
             );
         while( cass_iterator_next( tables_iter.get() )
         {
-            table_meta_pointer_t table
+            table_meta_pointer_t p_table
                 ( cass_iterator_get_table_meta( tables_iter.get() )
                 , tableMetaDeleter()
                 );
+            cass_table_meta_name( p_table.get(), &name, &len );
+            TableMeta::pointer_t table( std::make_shared<TableMeta>(keyspace) );
+            table->f_name = QString::fromUtf8(name,len);
+            keyspace->f_tables.push_back( table );
+
+            iterator_pointer_t columns_iter
+                ( cass_iterator_columns_from_table_meta( p_table.get() )
+                , tableMetaDeleter()
+                );
+            while( cass_iterator_next( columns_iter.get() ) )
+            {
+                column_meta_pointer_t p_col
+                    ( cass_iterator_get_column_meta( columns_iter.get() )
+                    , columnMetaDeleter()
+                    );
+                cass_column_meta_name( p_col.get(), name, len );
+
+                ColumnMeta::pointer_t column( std::make_shared<ColumnMeta>(table) );
+                column->f_name = QString::fromUtf8(name,len);
+                table->f_columns.push_back( column );
+
+                CassColumnType type = cass_column_meta_type( p_col.get() );
+                switch( type )
+                {
+                case CASS_COLUMN_TYPE_REGULAR        : column->f_type = ColumnMeta::TypeRegular;        break;
+                case CASS_COLUMN_TYPE_PARTITION_KEY  : column->f_type = ColumnMeta::TypePartitionKey;   break;
+                case CASS_COLUMN_TYPE_CLUSTERING_KEY : column->f_type = ColumnMeta::TypeClusteringKey;  break;
+                case CASS_COLUMN_TYPE_STATIC         : column->f_type = ColumnMeta::TypeStatic;         break;
+                case CASS_COLUMN_TYPE_COMPACT_VALUE  : column->f_type = ColumnMeta::TypeCompactValue;   break;
+                }
+
+                iterator_pointer_t meta_iter
+                    ( cass_iterator_fields_from_column_meta( p_col.get() )
+                    , iteratorDeleter()
+                    );
+                while( cass_iterator_next( meta_iter.get() ) )
+                {
+                    CassError rc = cass_iterator_get_meta_field_name( meta_iter.get(), &name, &len );
+                    if( rc != CASS_OK )
+                    {
+                        throw std::runtime_error( "Cannot read field from set!" );
+                    }
+                    const QString field_name( QString::fromUtf8(name,len) );
+
+                    rc = cass_iterator_get_meta_field_value( meta_iter.get(), &name, &len );
+                    if( rc != CASS_OK )
+                    {
+                        throw std::runtime_error( "Cannot read field from set!" );
+                    }
+                    const QString field_value( QString::fromUtf8(name,len) );
+                    column->f_fields[field_name] = field_value;
+                }
+            }
         }
     }
 }

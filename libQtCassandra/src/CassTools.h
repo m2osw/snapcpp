@@ -47,6 +47,15 @@ struct collectionDeleter
 	}
 };
 
+struct columnMetaDeleter
+{
+    void operator()(const CassColumnMeta* p) const
+	{
+        // No need to delete anything
+		//cass_column_meta_free(p);
+	}
+};
+
 struct clusterDeleter
 { 
     void operator()(CassCluster* p) const
