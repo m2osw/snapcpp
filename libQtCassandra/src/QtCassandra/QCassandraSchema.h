@@ -34,7 +34,8 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "QtCassandra/QCassandraSchema.h"
+#include "QtCassandra/QCassandraQuery.h"
+#include <QString>
 
 namespace QtCassandra
 {
@@ -100,26 +101,28 @@ public:
                 qstring_map_t   getFields() const;
 
             private:
-                QString         f_name;
-                type_t          f_type;
-                qstring_map_t   f_fields;
+                TableMeta::pointer_t	f_table;
+                QString         		f_name;
+                type_t          		f_type;
+                qstring_map_t   		f_fields;
 
-                friend class TableMeta;
+                friend class SessionMeta;
             };
 
             const ColumnMeta::map_t& getColumns() const;
 
         private:
             KeyspaceMeta::pointer_t f_keyspace;
+            QString					f_name;
             ColumnMeta::map_t       f_columns;
 
-            friend class KeyspaceMeta;
+            friend class SessionMeta;
         };
 
         const TableMeta::map_t& getTables() const;
 
     private:
-        QCassandraSessionMeta::pointer_t    f_session;
+        SessionMeta::pointer_t    			f_session;
         QString                             f_name;
         qstring_map_t                       f_fields;
         TableMeta::map_t                    f_tables;
@@ -131,7 +134,6 @@ public:
 
 private:
     QCassandraSession::pointer_t    f_session;
-    CassSchemaMeta::pointer_t       f_schemaMeta;
     QString                         f_name;
     qstring_map_t                   f_fields;
     uint32_t                        f_version;

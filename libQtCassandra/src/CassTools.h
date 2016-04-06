@@ -34,7 +34,12 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#pragma once
+
 #include "cassandra.h"
+
+namespace QtCassandra
+{
 
 namespace CassTools
 {
@@ -49,7 +54,7 @@ struct collectionDeleter
 
 struct columnMetaDeleter
 {
-    void operator()(const CassColumnMeta* p) const
+    void operator()(const CassColumnMeta* /*p*/) const
 	{
         // No need to delete anything
 		//cass_column_meta_free(p);
@@ -80,6 +85,14 @@ struct iteratorDeleter
 	}
 };
 
+struct keyspaceMetaDeleter
+{
+    void operator()(const CassKeyspaceMeta* /*p*/) const
+    {
+        //cass_keyspace_meta_deleter(p);
+    }
+};
+
 struct resultDeleter
 {
     void operator()(const CassResult* p) const
@@ -90,9 +103,9 @@ struct resultDeleter
 
 struct tableMetaDeleter
 { 
-    void operator()(const CassTableMeta* p) const
+    void operator()(const CassTableMeta* /*p*/) const
     {
-        cass_table_meta_free(p);
+        //cass_table_meta_free(p);
     }
 };
 
@@ -121,5 +134,9 @@ struct statementDeleter
 };
 
 }
+// namespace CassTools
+
+}
+//namespace QtCassandra
 
 // vim: ts=4 sw=4 et

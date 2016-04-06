@@ -61,6 +61,7 @@ set( HEADER_FILES
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
     ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+    CassTools.h
 )
 
 set( LEGACY_FILES

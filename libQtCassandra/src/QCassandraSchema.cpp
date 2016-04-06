@@ -34,9 +34,8 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#pragma once
-
 #include "QtCassandra/QCassandraSchema.h"
+#include "QtCassandra/QCassandraQuery.h"
 
 #include "cassandra.h"
 
@@ -44,16 +43,80 @@
 
 #include <memory>
 #include <map>
-#include <QString>
+#include <QtCore>
 
 
 namespace QtCassandra
 {
 
 
+using namespace CassTools;
+
+
 namespace QCassandraSchema
 {
 
+
+
+
+namespace
+{
+    QVariant GetCassValue( iterator_pointer_t iter )
+    {
+        const char* str = "";
+        size_t len = 0;
+        CassError rc = CASS_OK;
+
+        const CassValue* val = cass_iterator_get_meta_field_value( iter.get() );
+        const CassValueType type = cass_value_type( val );
+        switch( type )
+        {
+            case CASS_VALUE_TYPE_UNKNOWN    :
+            case CASS_VALUE_TYPE_CUSTOM     :
+            case CASS_VALUE_TYPE_ASCII      :
+            case CASS_VALUE_TYPE_BIGINT     :
+            case CASS_VALUE_TYPE_BLOB       :
+            case CASS_VALUE_TYPE_BOOLEAN    :
+            case CASS_VALUE_TYPE_COUNTER    :
+            case CASS_VALUE_TYPE_DECIMAL    :
+            case CASS_VALUE_TYPE_DOUBLE     :
+            case CASS_VALUE_TYPE_FLOAT      :
+            case CASS_VALUE_TYPE_INT        :
+            case CASS_VALUE_TYPE_LAST_ENTRY :
+                // TODO
+                break;
+
+            case CASS_VALUE_TYPE_TEXT      :
+                rc = cass_value_get_string( val, &str, &len );
+                break;
+
+            case CASS_VALUE_TYPE_TIMESTAMP :
+            case CASS_VALUE_TYPE_UUID      :
+            case CASS_VALUE_TYPE_VARCHAR   :
+            case CASS_VALUE_TYPE_VARINT    :
+            case CASS_VALUE_TYPE_TIMEUUID  :
+            case CASS_VALUE_TYPE_INET      :
+            case CASS_VALUE_TYPE_DATE      :
+            case CASS_VALUE_TYPE_TIME      :
+            case CASS_VALUE_TYPE_SMALL_INT :
+            case CASS_VALUE_TYPE_TINY_INT  :
+            case CASS_VALUE_TYPE_LIST      :
+            case CASS_VALUE_TYPE_MAP       :
+            case CASS_VALUE_TYPE_SET       :
+            case CASS_VALUE_TYPE_UDT       :
+            case CASS_VALUE_TYPE_TUPLE     :
+                // TODO
+                break;
+        }
+
+        if( rc != CASS_OK )
+        {
+            throw std::runtime_error( "Failed!" );
+        }
+
+        return QString::fromUtf8( str, len );
+    }
+}
 
 //================================================================/
 // SessionMeta
@@ -61,25 +124,25 @@ namespace QCassandraSchema
 SessionMeta::SessionMeta( QCassandraSession::pointer_t session )
     : f_session(session)
 {
-    schema_meta_pointer_t schema
-        ( cass_session_get_schema_meta(f_session.get())
+    schema_meta_pointer_t schema_meta
+        ( cass_session_get_schema_meta(f_session->session().get())
         , schemaMetaDeleter()
         );
 
     iterator_pointer_t iter
-        ( cass_iterator_keyspaces_from_schema_meta( schema_meta )
+        ( cass_iterator_keyspaces_from_schema_meta( schema_meta.get() )
         , iteratorDeleter()
         );
 
     while( cass_iterator_next( iter.get() ) )
     {
-        keyspace_meta_pointer_t p_keyspace( cass_iterator_get_keyspace_meta( iter.get() ) );
-        char * name;
+        keyspace_meta_pointer_t p_keyspace( cass_iterator_get_keyspace_meta( iter.get() ), keyspaceMetaDeleter() );
+        const char * name;
         size_t len;
         cass_keyspace_meta_name( p_keyspace.get(), &name, &len );
-        KeyspaceMeta::pointer_t keyspace( std::shared_ptr<KeyspaceMeta>(shared_from_this()) );
+        KeyspaceMeta::pointer_t keyspace( std::make_shared<KeyspaceMeta>(shared_from_this()) );
         keyspace->f_name = QString::fromUtf8(name,len);
-        f_keyspaces.push_back( keyspace );
+        f_keyspaces[keyspace->f_name] = keyspace;
 
         iterator_pointer_t fields_iter
             ( cass_iterator_fields_from_keyspace_meta( p_keyspace.get() )
@@ -94,33 +157,30 @@ SessionMeta::SessionMeta( QCassandraSession::pointer_t session )
             }
 
             const QString field_name( QString::fromUtf8(name,len) );
-            rc = cass_iterator_get_meta_field_value( fields_iter.get(), name, len );
-            if( rc != CASS_OK )
-            {
-                throw std::runtime_error( "Cannot get field value from iterator!" );
-            }
-            const QString field_value( QString::fromUtf8(name,len) );
-            keyspace->f_fields[field_name] = field_value;
+            keyspace->f_fields[field_name] = GetCassValue( iter ).toString();
         }
 
         iterator_pointer_t tables_iter
-            ( cass_iterator_fields_from_table_meta( p_keyspace.get()
+            ( cass_iterator_tables_from_keyspace_meta(p_keyspace.get())
             , iteratorDeleter()
             );
-        while( cass_iterator_next( tables_iter.get() )
+        while( cass_iterator_next(tables_iter.get()) )
         {
             table_meta_pointer_t p_table
                 ( cass_iterator_get_table_meta( tables_iter.get() )
                 , tableMetaDeleter()
                 );
             cass_table_meta_name( p_table.get(), &name, &len );
-            TableMeta::pointer_t table( std::make_shared<TableMeta>(keyspace) );
-            table->f_name = QString::fromUtf8(name,len);
-            keyspace->f_tables.push_back( table );
+            using TableMeta = KeyspaceMeta::TableMeta;
+            TableMeta::pointer_t table
+                    ( std::make_shared<TableMeta>(keyspace) );
+            table->f_keyspace = keyspace;
+            table->f_name     = QString::fromUtf8(name,len);
+            keyspace->f_tables[table->f_name] = table;
 
             iterator_pointer_t columns_iter
                 ( cass_iterator_columns_from_table_meta( p_table.get() )
-                , tableMetaDeleter()
+                , iteratorDeleter()
                 );
             while( cass_iterator_next( columns_iter.get() ) )
             {
@@ -128,11 +188,13 @@ SessionMeta::SessionMeta( QCassandraSession::pointer_t session )
                     ( cass_iterator_get_column_meta( columns_iter.get() )
                     , columnMetaDeleter()
                     );
-                cass_column_meta_name( p_col.get(), name, len );
+                cass_column_meta_name( p_col.get(), &name, &len );
 
+                using ColumnMeta = TableMeta::ColumnMeta;
                 ColumnMeta::pointer_t column( std::make_shared<ColumnMeta>(table) );
-                column->f_name = QString::fromUtf8(name,len);
-                table->f_columns.push_back( column );
+                column->f_table = table;
+                column->f_name  = QString::fromUtf8(name,len);
+                table->f_columns[column->f_name] = column;
 
                 CassColumnType type = cass_column_meta_type( p_col.get() );
                 switch( type )
@@ -156,14 +218,7 @@ SessionMeta::SessionMeta( QCassandraSession::pointer_t session )
                         throw std::runtime_error( "Cannot read field from set!" );
                     }
                     const QString field_name( QString::fromUtf8(name,len) );
-
-                    rc = cass_iterator_get_meta_field_value( meta_iter.get(), &name, &len );
-                    if( rc != CASS_OK )
-                    {
-                        throw std::runtime_error( "Cannot read field from set!" );
-                    }
-                    const QString field_value( QString::fromUtf8(name,len) );
-                    column->f_fields[field_name] = field_value;
+                    column->f_fields[field_name] = GetCassValue( meta_iter ).toString();
                 }
             }
         }
@@ -189,7 +244,7 @@ uint32_t SessionMeta::snapshotVersion() const
 
 
 
-const SessionMeta::KeyspaceMeta::map_t& getKeyspaces()
+const SessionMeta::KeyspaceMeta::map_t& SessionMeta::getKeyspaces()
 {
     return f_keyspaces;
 }
@@ -198,7 +253,7 @@ const SessionMeta::KeyspaceMeta::map_t& getKeyspaces()
 //================================================================/
 // KeyspaceMeta
 //
-SessionMeta::KeyspaceMeta( SessionMeta::pointer_t session_meta )
+SessionMeta::KeyspaceMeta::KeyspaceMeta( SessionMeta::pointer_t session_meta )
     : f_session(session_meta)
 {
     // TODO add sub-fields
@@ -221,8 +276,8 @@ SessionMeta::qstring_map_t
 //================================================================/
 // TableMeta
 //
-SessionMeta::KeyspaceMeta::TableMeta( SessionMeta::KeyspaceMeta::pointer_t kysp )
-    : f_keyspaces(kysp)
+SessionMeta::KeyspaceMeta::TableMeta::TableMeta( KeyspaceMeta::pointer_t kysp )
+    : f_keyspace(kysp)
 {
 }
 
@@ -243,15 +298,15 @@ const SessionMeta::KeyspaceMeta::TableMeta::map_t&
 const SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::map_t&
     SessionMeta::KeyspaceMeta::TableMeta::getColumns() const
 {
-    return f_tables;
+    return f_columns;
 }
 
 
 //================================================================/
 // ColumnMeta
 //
-SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta( SessionMeta::KeyspaceMeta::TableMeta::pointer_t tables )
-    : f_tables(tables)
+SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::ColumnMeta( SessionMeta::KeyspaceMeta::TableMeta::pointer_t table )
+    : f_table(table)
 {
 }
 
@@ -270,7 +325,7 @@ SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::type_t
 }
 
 
-SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::qstring_map_t
+SessionMeta::qstring_map_t
     SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getFields() const
 {
     return f_fields;

@@ -35,6 +35,7 @@
  */
 
 #include "QtCassandra/QCassandraQuery.h"
+#include "CassTools.h"
 
 #include "cassandra.h"
 
@@ -45,7 +46,6 @@
 #include <sstream>
 
 #include <QtCore>
-
 
 /** \class QCassandraSession
  * \brief Creates and maintains a CQL session with the Cassandra server
@@ -81,11 +81,10 @@
  * \sa QCassandraSession
  */
 
-#include "CassTools.h"
-
 namespace QtCassandra
 {
 
+using namespace CassTools;
 
 namespace
 {

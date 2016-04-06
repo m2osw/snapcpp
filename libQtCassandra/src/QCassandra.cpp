@@ -41,12 +41,14 @@
 #pragma GCC pop
 
 #include "QtCassandra/QCassandra.h"
+#include "QtCassandra/QCassandraSchema.h"
 #include "legacy/cassandra_types.h"
 
 #include <QtCore>
 
 #include <cassandra.h>
 
+#include <iostream>
 #include <sstream>
 
 /** \brief The QtCassandra namespace includes all the Cassandra extensions.
@@ -65,6 +67,8 @@
  */
 namespace QtCassandra
 {
+
+using namespace QCassandraSchema;
 
 /** \mainpage
  *
@@ -1360,6 +1364,19 @@ const QCassandraContexts &QCassandra::contexts() const
 {
     if( !f_contexts_read )
     {
+        SessionMeta::pointer_t session_meta( std::make_shared<SessionMeta>(f_session) );
+
+        for( auto keyspace : session_meta->getKeyspaces() )
+        {
+            std::cout << "keyspace=[" << keyspace.first.toStdString() << "]" << std::endl;
+            for( auto field : keyspace.second->getFields() )
+            {
+                std::cout << "\t" << field.first.toStdString() << "=[" << field.second.toStdString() << "]" << std::endl;
+            }
+        }
+        exit(1);
+
+#if 0
         f_contexts_read = true;
 
         QCassandraQuery keyspace_query( f_session );
@@ -1369,6 +1386,7 @@ const QCassandraContexts &QCassandra::contexts() const
         {
             retrieveContext( keyspace_query.getStringColumn("keyspace_name") );
         }
+#endif
     }
     return f_contexts;
 }

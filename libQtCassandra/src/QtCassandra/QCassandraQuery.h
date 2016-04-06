@@ -52,6 +52,7 @@ typedef struct CassResult_       CassResult;
 typedef struct CassSchemaMeta_   CassSchemaMeta;
 typedef struct CassSession_      CassSession;
 typedef struct CassStatement_    CassStatement;
+typedef struct CassTableMeta_    CassTableMeta;
 typedef struct CassValue_        CassValue;
 
 
@@ -99,85 +100,6 @@ private:
     CassTools::cluster_pointer_t       f_cluster;
     CassTools::session_pointer_t       f_session;
     CassTools::future_pointer_t        f_connection;
-};
-
-
-class QCassandraSessionMeta
-{
-public:
-    typedef std::shared_ptr<QCassandraSessionMeta>  pointer_t;
-    typedef std::map<QString,QString>               qstring_map_t;
-
-    QCassandraSessionMeta( QCassandraSession::pointer_t session );
-    ~QCassandraSessionMeta();
-
-    QCassandraSession::pointer_t    session() const;
-
-    cass_uint32_t   snapshotVersion() const;
-
-    class KeyspaceMeta
-    {
-    public:
-        typedef std::shared_ptr<KeyspaceMeta> pointer_t;
-        typedef std::map<QString,pointer_t>   map_t;
-
-        KeyspaceMeta( QCassandraSessionMeta::pointer_t session_meta );
-
-        QCassandraSession::pointer_t session() const;
-
-        QString         getName() const;
-        qstring_map_t   getFields() const;
-
-        class TableMeta
-        {
-        public:
-            typedef std::shared_ptr<TableMeta>  pointer_t;
-            typedef std::map<QString,pointer_t> map_t;
-
-            TableMeta( KeyspaceMeta::pointer_t kysp );
-
-            QString     getName() const;
-
-            class ColumnMeta
-            {
-            public:
-                typedef std::shared_ptr<ColumnMeta> pointer_t;
-                typedef std::map<QString,pointer_t> map_t;
-
-                typedef enum
-                {
-                    TypeRegular, TypePartitionKey, TypeClusteringKey, TypeStatic, TypeCompactValue;
-                }
-                type_t;
-
-                ColumnMeta( TableMeta::pointer_t tbl );
-
-                QString         getName() const;
-                qstring_map_t   getFields() const;
-                type_t          getType() const;
-
-            private:
-                qstring_map_t   f_fields;
-            };
-
-        private:
-            KeyspaceMeta::pointer_t f_keyspace;
-            ColumnMeta::map_t       f_columns;
-        };
-
-        const TableMeta::map_t& getTableMetaMap() const;
-
-    private:
-        QCassandraSessionMeta::pointer_t    f_session;
-        qstring_map_t                       f_fields;
-        TableMeta::map_t                    f_tables;
-    };
-
-    KeyspaceMeta::map_t   getKeyspaceMetaMap() const;
-
-private:
-    QCassandraSession::pointer_t    f_session;
-    qstring_list_t                  f_keyspaceNames;
 };
 
 
