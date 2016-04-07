@@ -1365,6 +1365,7 @@ const QCassandraContexts &QCassandra::contexts() const
     if( !f_contexts_read )
     {
         SessionMeta::pointer_t session_meta( std::make_shared<SessionMeta>(f_session) );
+        session_meta->loadSchema();
 
         for( auto keyspace : session_meta->getKeyspaces() )
         {

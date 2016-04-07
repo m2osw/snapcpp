@@ -55,6 +55,8 @@ public:
     SessionMeta( QCassandraSession::pointer_t session );
     ~SessionMeta();
 
+    void loadSchema();
+
     QCassandraSession::pointer_t    session() const;
 
     uint32_t   snapshotVersion() const;
