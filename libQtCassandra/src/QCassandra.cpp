@@ -1364,15 +1364,18 @@ const QCassandraContexts &QCassandra::contexts() const
 {
     if( !f_contexts_read )
     {
-        SessionMeta::pointer_t session_meta( std::make_shared<SessionMeta>(f_session) );
+        SessionMeta::pointer_t session_meta( SessionMeta::create(f_session) );
         session_meta->loadSchema();
 
         for( auto keyspace : session_meta->getKeyspaces() )
         {
             std::cout << "keyspace=[" << keyspace.first.toStdString() << "]" << std::endl;
-            for( auto field : keyspace.second->getFields() )
+            for( const auto& field : keyspace.second->getFields() )
             {
-                std::cout << "\t" << field.first.toStdString() << "=[" << field.second.toStdString() << "]" << std::endl;
+                std::cout << "\t"
+                    << field.first.toStdString()
+                    << "=[" << field.second->output().toStdString() << "]"
+                    << std::endl;
             }
         }
         exit(1);

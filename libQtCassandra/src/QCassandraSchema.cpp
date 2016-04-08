@@ -57,155 +57,18 @@ namespace QCassandraSchema
 {
 
 
-
-
-namespace
-{
-    QVariant GetCassValue( iterator_pointer_t iter )
-    {
-        QVariant result;
-        CassError rc = CASS_OK;
-
-        const CassValue* val = cass_iterator_get_meta_field_value( iter.get() );
-        const CassValueType type = cass_value_type( val );
-        switch( type )
-        {
-            case CASS_VALUE_TYPE_UNKNOWN    :
-            case CASS_VALUE_TYPE_CUSTOM     :
-            case CASS_VALUE_TYPE_DECIMAL    :
-            case CASS_VALUE_TYPE_LAST_ENTRY :
-            case CASS_VALUE_TYPE_LIST      :
-            case CASS_VALUE_TYPE_MAP       :
-            case CASS_VALUE_TYPE_SET       :
-            case CASS_VALUE_TYPE_UDT       :
-            case CASS_VALUE_TYPE_TUPLE     :
-                // TODO
-                break;
-
-            case CASS_VALUE_TYPE_BLOB       :
-                {
-                    const cass_byte_t* buff;
-                    size_t len = 0;
-                    rc = cass_value_get_bytes( val, &buff, &len );
-                    result = QByteArray::fromRawData( reinterpret_cast<const char*>(buff), len );
-                }
-                break;
-
-            case CASS_VALUE_TYPE_BOOLEAN    :
-                {
-                    cass_bool_t b;
-                    rc = cass_value_get_bool( val, &b );
-                    result = (b == cass_true);
-                }
-                break;
-
-            case CASS_VALUE_TYPE_FLOAT      :
-                {
-                    cass_float_t f;
-                    rc = cass_value_get_float( val, &f );
-                    result = static_cast<float>(f);
-                }
-                break;
-
-            case CASS_VALUE_TYPE_DOUBLE     :
-                {
-                    cass_double_t d;
-                    rc = cass_value_get_double( val, &d );
-                    result = static_cast<double>(d);
-                }
-                break;
-
-            case CASS_VALUE_TYPE_TINY_INT  :
-                {
-                    cass_int8_t i;
-                    rc = cass_value_get_int8( val, &i );
-                    result = static_cast<int8_t>(i);
-                }
-                break;
-
-            case CASS_VALUE_TYPE_SMALL_INT :
-                {
-                    cass_int16_t i;
-                    rc = cass_value_get_int16( val, &i );
-                    result = static_cast<int16_t>(i);
-                }
-                break;
-
-            case CASS_VALUE_TYPE_INT       :
-            case CASS_VALUE_TYPE_VARINT    :
-                {
-                    cass_int32_t i;
-                    rc = cass_value_get_int32( val, &i );
-                    result = static_cast<int32_t>(i);
-                }
-                break;
-
-            case CASS_VALUE_TYPE_BIGINT     :
-            case CASS_VALUE_TYPE_COUNTER    :
-                {
-                    cass_int64_t i;
-                    rc = cass_value_get_int64( val, &i );
-                    result = static_cast<int64_t>(i);
-                }
-                break;
-
-            case CASS_VALUE_TYPE_ASCII     :
-            case CASS_VALUE_TYPE_DATE      :
-            case CASS_VALUE_TYPE_TEXT      :
-            case CASS_VALUE_TYPE_TIME      :
-            case CASS_VALUE_TYPE_TIMESTAMP :
-            case CASS_VALUE_TYPE_VARCHAR   :
-                {
-                    const char* str;
-                    size_t len = 0;
-                    rc = cass_value_get_string( val, &str, &len );
-                    result = QString::fromUtf8( str, len );
-                }
-                break;
-
-            case CASS_VALUE_TYPE_UUID      :
-                {
-                    CassUuid uuid;
-                    rc = cass_value_get_uuid( val, &uuid );
-                    if( rc == CASS_OK )
-                    {
-                        char str[CASS_UUID_STRING_LENGTH+1];
-                        result = static_cast<uint64_t>(cass_uuid_timestamp( uuid ));
-                    }
-                }
-                break;
-
-            case CASS_VALUE_TYPE_TIMEUUID  :
-                {
-                    CassUuid uuid;
-                    rc = cass_value_get_uuid( val, &uuid );
-                    if( rc == CASS_OK )
-                    {
-                        char str[CASS_UUID_STRING_LENGTH+1];
-                        cass_uuid_string( uuid, str );
-                        result = QString(str);
-                    }
-                }
-                break;
-
-            case CASS_VALUE_TYPE_INET      :
-        }
-
-        if( rc != CASS_OK )
-        {
-            throw std::runtime_error( "Failed!" );
-        }
-
-        return result;
-    }
-}
-
 //================================================================/
 // SessionMeta
 //
 SessionMeta::SessionMeta( QCassandraSession::pointer_t session )
     : f_session(session)
 {
+}
+
+
+SessionMeta::pointer_t SessionMeta::create( QCassandraSession::pointer_t session )
+{
+    return std::make_shared<SessionMeta>(session);
 }
 
 
@@ -244,7 +107,9 @@ void SessionMeta::loadSchema()
             }
 
             const QString field_name( QString::fromUtf8(name,len) );
-            keyspace->f_fields[field_name] = GetCassValue( fields_iter ).toString();
+            auto val( Value::create() );
+            val->readValue(fields_iter);
+            keyspace->f_fields[field_name] = val;
         }
 
         iterator_pointer_t tables_iter
@@ -305,7 +170,9 @@ void SessionMeta::loadSchema()
                         throw std::runtime_error( "Cannot read field from set!" );
                     }
                     const QString field_name( QString::fromUtf8(name,len) );
-                    column->f_fields[field_name] = GetCassValue( meta_iter ).toString();
+                    auto val( Value::create() );
+                    val->readValue(meta_iter);
+                    column->f_fields[field_name] = val;
                 }
             }
         }
@@ -347,13 +214,13 @@ SessionMeta::KeyspaceMeta::KeyspaceMeta( SessionMeta::pointer_t session_meta )
 }
 
 
-QString SessionMeta::KeyspaceMeta::getName() const
+const QString& SessionMeta::KeyspaceMeta::getName() const
 {
     return f_name;
 }
 
 
-SessionMeta::qstring_map_t
+const SessionMeta::map_t&
     SessionMeta::KeyspaceMeta::getFields() const
 {
     return f_fields;
@@ -369,7 +236,7 @@ SessionMeta::KeyspaceMeta::TableMeta::TableMeta( KeyspaceMeta::pointer_t kysp )
 }
 
 
-QString SessionMeta::KeyspaceMeta::TableMeta::getName() const
+const QString& SessionMeta::KeyspaceMeta::TableMeta::getName() const
 {
     return f_name;
 }
@@ -398,7 +265,7 @@ SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::ColumnMeta( SessionMeta::Keysp
 }
 
 
-QString
+const QString&
     SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getName() const
 {
     return f_name;
@@ -412,7 +279,7 @@ SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::type_t
 }
 
 
-SessionMeta::qstring_map_t
+const SessionMeta::map_t&
     SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getFields() const
 {
     return f_fields;

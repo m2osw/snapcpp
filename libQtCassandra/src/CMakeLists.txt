@@ -47,6 +47,7 @@ configure_file(
 		)
 
 set( HEADER_FILES
+    CassTools.h
     QtCassandra/QCassandra.h
     QtCassandra/QCassandraCell.h
     QtCassandra/QCassandraColumnDefinition.h
@@ -57,11 +58,11 @@ set( HEADER_FILES
     QtCassandra/QCassandraQuery.h
     QtCassandra/QCassandraRow.h
     QtCassandra/QCassandraSchema.h
+    QtCassandra/QCassandraSchemaValue.h
     QtCassandra/QCassandraTable.h
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
     ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
-    CassTools.h
 )
 
 set( LEGACY_FILES
@@ -72,6 +73,7 @@ set( LEGACY_FILES
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
     ${LEGACY_FILES}
+    CassTools.cpp
     QCassandra.cpp
     QCassandraCell.cpp
     QCassandraColumnDefinition.cpp
@@ -82,6 +84,7 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraQuery.cpp
     QCassandraRow.cpp
     QCassandraSchema.cpp
+    QCassandraSchemaValue.cpp
     QCassandraTable.cpp
     QCassandraValue.cpp
 )

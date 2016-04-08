@@ -73,6 +73,7 @@ namespace CassTools
     typedef std::shared_ptr<const CassTableMeta>    table_meta_pointer_t;
     typedef std::shared_ptr<CassSession>            session_pointer_t;
     typedef std::shared_ptr<CassStatement>          statement_pointer_t;
+    typedef std::shared_ptr<const CassValue>        value_pointer_t;
 }
 
 

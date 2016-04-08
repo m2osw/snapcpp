@@ -1,6 +1,6 @@
 /*
  * Text:
- *      CassTools.h
+ *      QCassandraSchemaValue.h
  *
  * Description:
  *      Handling of the CQL interface.
@@ -37,76 +37,67 @@
 #pragma once
 
 #include "cassandra.h"
+#include "QtCassandra/QCassandraQuery.h"
+
+#include <map>
+#include <memory>
+#include <vector>
+
+#include <QString>
+#include <QVariant>
+
 
 namespace QtCassandra
 {
 
-namespace CassTools
+
+namespace QCassandraSchema
 {
 
-struct collectionDeleter
+
+class Value
 {
-    void operator()(CassCollection* p) const;
+public:
+    typedef enum { TypeUnknown, TypeVariant, TypeMap, TypeList } type_t;
+    typedef std::shared_ptr<Value>      pointer_t;
+    typedef std::vector<pointer_t>      list_t;
+    typedef std::map<QString,pointer_t> map_t;
+
+    Value();
+
+    static pointer_t create();
+
+    void    readValue( CassTools::iterator_pointer_t iter );
+    void    readValue( CassTools::value_pointer_t iter );
+    type_t  type() const { return f_type; }
+
+    const QVariant& variant() const { return f_variant; }
+    const list_t&   list()    const { return f_list;    }
+    const map_t&    map()     const { return f_map;     }
+
+    const QString& output() const;
+
+private:
+    CassTools::value_pointer_t f_value;
+    type_t                     f_type;
+    CassValueType              f_cassType;
+    QVariant                   f_variant;
+    list_t                     f_list;
+    map_t                      f_map;
+
+    mutable QString f_stringOutput;
+
+    void    parseValue();
+    void    parseMap();
+    void    parseList();
+    void    parseTuple();
+    void    parseVariant();
 };
 
-struct columnMetaDeleter
-{
-    void operator()(const CassColumnMeta* /*p*/) const;
-};
-
-struct clusterDeleter
-{ 
-    void operator()(CassCluster* p) const;
-};
-
-struct futureDeleter
-{ 
-    void operator()(CassFuture* p) const;
-};
-
-struct iteratorDeleter
-{
-    void operator()(CassIterator* p) const;
-};
-
-struct keyspaceMetaDeleter
-{
-    void operator()(const CassKeyspaceMeta* /*p*/) const;
-};
-
-struct resultDeleter
-{
-    void operator()(const CassResult* p) const;
-};
-
-struct tableMetaDeleter
-{ 
-    void operator()(const CassTableMeta* /*p*/) const;
-};
-
-struct schemaMetaDeleter
-{ 
-    void operator()(const CassSchemaMeta* p) const;
-};
-
-struct sessionDeleter
-{ 
-    void operator()(CassSession* p) const;
-};
-
-struct statementDeleter
-{ 
-    void operator()(CassStatement* p) const;
-};
-
-struct valueDeleter
-{ 
-    void operator()(CassValue*       ) const {}
-    void operator()(const CassValue* ) const {}
-};
 
 }
-// namespace CassTools
+// namespace QCassandraSchema
+
 
 }
 //namespace QtCassandra
