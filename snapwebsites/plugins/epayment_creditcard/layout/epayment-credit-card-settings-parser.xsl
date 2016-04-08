@@ -23,9 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:snap="snap:snap">
 
 	<!-- some special variables to define the theme -->
-	<xsl:variable name="layout-area">epayment-credit-card-parser</xsl:variable>
-	<xsl:variable name="layout-modified">2016-03-30 19:18:09</xsl:variable>
-	<xsl:variable name="layout-editor">epayment-credit-card-page</xsl:variable>
+	<xsl:variable name="layout-area">epayment-credit-card-settings-parser</xsl:variable>
+	<xsl:variable name="layout-modified">2016-04-05 14:10:09</xsl:variable>
+	<xsl:variable name="layout-editor">epayment-credit-card-settings-page</xsl:variable>
 
 	<xsl:template match="snap">
 		<output filter="token"> <!-- lang="{$lang}" 'lang variable undefined' -->
@@ -48,12 +48,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<legend>Credit Card Form</legend>
 
 						<div class="editor-block">
+							<xsl:copy-of select="page/body/epayment/credit_card/show_one_name/node()"/>
+							<xsl:copy-of select="page/body/epayment/credit_card/show_business_name/node()"/>
+							<xsl:copy-of select="page/body/epayment/credit_card/show_delivery/node()"/>
 							<xsl:copy-of select="page/body/epayment/credit_card/show_address2/node()"/>
 							<xsl:copy-of select="page/body/epayment/credit_card/show_province/node()"/>
-
-							<label>Phone Field</label>
-							<xsl:copy-of select="page/body/epayment/credit_card/show_phone/node()"/>
-
 						</div>
 
 						<div class="editor-block">
@@ -61,6 +60,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<label for="security_code" class="editor-title">Default Country:</label>
 							<xsl:copy-of select="page/body/epayment/credit_card/default_country/node()"/>
 						</div>
+
+						<div class="editor-block">
+							<label>Phone Field</label>
+							<xsl:copy-of select="page/body/epayment/credit_card/show_phone/node()"/>
+						</div>
+
 					</fieldset>
 
 					<fieldset class="site-name">

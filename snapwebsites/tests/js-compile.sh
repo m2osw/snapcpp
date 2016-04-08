@@ -39,7 +39,10 @@ FILES="plugins/bookkeeping/bookkeeping-add-client.js
        plugins/ecommerce/ecommerce.js
        plugins/editor/editor.js
        plugins/epayment/epayment.js
+       plugins/epayment_creditcard/epayment-credit-card.js
+       plugins/epayment_creditcard/epayment-credit-card-form.js
        plugins/epayment_paypal/epayment-paypal.js
+       plugins/epayment_stripe/epayment-stripe.js
        plugins/favicon/favicon.js
        plugins/flash/flash-detection.js
        plugins/form/form.js

@@ -345,17 +345,17 @@ void http_request::set_post(std::string const& name, std::string const& value)
 }
 
 
-void http_request::set_basic_auth(std::string const& username, std::string const& secret)
+void http_request::set_basic_auth(std::string const & username, std::string const & secret)
 {
     struct uuencode
     {
-        static void encode(std::string const& in, std::string& out)
+        static void encode(std::string const & in, std::string & out)
         {
             // reset output (just in case)
             out.clear();
 
             // WARNING: following algorithm does NOT take any line length
-            //          in account; but it is deadly well optimized
+            //          in account; and it is deadly well optimized
             unsigned char const *s(reinterpret_cast<unsigned char const *>(in.c_str()));
             while(*s != '\0')
             {
@@ -400,7 +400,7 @@ void http_request::set_basic_auth(std::string const& username, std::string const
 }
 
 
-void http_request::set_data(std::string const& data)
+void http_request::set_data(std::string const & data)
 {
     if(f_has_post || f_has_body)
     {

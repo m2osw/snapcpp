@@ -60,7 +60,8 @@ snap_validate_xml( editor/epayment-credit-card-page.xml             editor/edito
 snap_validate_xml( layout/epayment-credit-card-settings-parser.xsl  layout/simplified-xslt20.dtd )
 snap_validate_xml( layout/epayment-credit-card-parser.xsl           layout/simplified-xslt20.dtd )
 
-#snap_validate_js( epayment-creditcard.js )
+snap_validate_js( epayment-credit-card.js )
+snap_validate_js( epayment-credit-card-form.js )
 
 
 add_library(epayment_creditcard SHARED
@@ -71,7 +72,8 @@ add_library(epayment_creditcard SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    #epayment_creditcard.js
+    epayment-credit-card.js
+    epayment-credit-card-form.js
     epayment-credit-card-logo-64x64.png
     editor/epayment-credit-card-settings-page.xml
     editor/epayment-credit-card-page.xml

@@ -144,7 +144,6 @@ public:
 
     // server signals
     void                        on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
-    void                        on_process_post(QString const & uri_path);
 
     // path::path_execute implementation
     virtual bool                on_path_execute(content::path_info_t & ipath);

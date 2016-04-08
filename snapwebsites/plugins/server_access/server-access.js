@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.40
+ * Version: 0.0.1.41
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -97,99 +97,31 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  *                        if any messages were displayed
  * * [ESC] jqxhr -- the original XHR plus a few things adjusted by jQuery.
  * * [S] result_data -- raw AJAX result string.
- * * [I] undarken -- set to snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER
- *                   by default; may be changed in your serverAccessComplete()
- *                   function before calling the super version; set to:
- * ** snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS -- always undarken
- *    unless the willRedirect() function returns true
- * ** snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR -- undarken if we
- *    received messages; should be used when you redirect the user when
- *    no error occurred
- * ** snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER -- never undarken
- *    the screen
  * * [ESC] userdata -- the data passed to the send() function, may be
  *                     set to 'undefined'.
  *
- * The [ESC] letters stand for:
+ * The [IESC] letters stand for:
  *
- * \li I -- initialized once before AJAX callbacks get called
  * \li E -- set when an error occurs,
  * \li S -- set when the AJAX request was successful,
- * \li C -- reset in the complete function before calling your callback.
+ * \li C -- reset before calling your callback.
+ * \li I -- initialized once before AJAX callbacks get called
  *
  * The ajax_error_message may not be set if the error occurs on a successful
  * AJAX request, but the server generated an error. In that case, the
  * result_data and messages are likely defined.
  *
- * @typedef {{result_status: string,
+ * @typedef {{server_access_: snapwebsites.ServerAccess,
+ *            result_status: string,
  *            messages: (NodeList|null),
  *            error_message: string,
  *            ajax_error_message: string,
  *            hide_messages: boolean,
  *            jqxhr: (Object|null),
  *            result_data: string,
- *            undarken: number,
  *            userdata: (Object|null|undefined)}}
  */
 snapwebsites.ServerAccessCallbacks.ResultData;
-
-
-/** \brief Never undarken the screen.
- *
- * By default the result.undarken variable member is set to UNDARKEN_NEVER.
- * This means we do not do anything with the popup.
- *
- * If you darken the screen before using an AJAX feature then you want to
- * undarken the screen on completion. In that case, you serverAccessComplete()
- * callback implementation should change the undarken value:
- *
- * \code
- *      // change the undarken value
- *      result.undarken = snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
- *      // call the super version
- *      snapwebsites.<your-class>.superClass_.serverAccessComplete.call(this, result);
- * \endcode
- *
- * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS
- * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR
- *
- * @type {number}
- * @const
- */
-snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER = 0;
-
-
-/** \brief Always undarken the screen.
- *
- * By default the result.undarken variable member is set to UNDARKEN_NEVER.
- * It can be changedthe UNDARKEN_ALWAYS to always undarken the screen.
- *
- * If you redirect the user on success, you may want to consider using
- * the UNDARKEN_ERROR instead.
- *
- * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER
- * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR
- *
- * @type {number}
- * @const
- */
-snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS = 1;
-
-
-/** \brief Undarken error in serverAccessComplete().
- *
- * By default the result.undarken variable member is set to UNDARKEN_NEVER.
- * You may change it to UNDARKEN_ERROR so the screen gets undarken only when
- * a message was received. It is expected that you will redirect the end
- * user if the undarken stays up on success.
- *
- * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER
- * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS
- *
- * @type {number}
- * @const
- */
-snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR = 2; // static const
 
 
 /** \brief Set or change the redirect information of this form.
@@ -330,40 +262,35 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
 //window.result_jqxhr = result.jqxhr;
 //#endif
 
-    var undarken = result.undarken == snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
-
     if(!snapwebsites.ServerAccess.willRedirect(result))
     {
         if(result.messages && result.messages.length > 0)
         {
             snapwebsites.OutputInstance.displayMessages(result.messages);
-
-            // undarken only on errors, if we are to redirect we do not have
-            // to undarken since everything will anyway go away
-            undarken = undarken || result.undarken == snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR;
         }
         else if(result.error_message)
         {
             // the ServerAccess itself generated an error message
+            //
             snapwebsites.OutputInstance.displayOneMessage("Error", result.error_message);
         }
         else if(result.hide_messages)
         {
             // no messages from server, remove existing messages if any
-            // and requested to remove such messages
+            // and caller requested to remove such messages
             //
             snapwebsites.OutputInstance.hideMessages();
         }
     }
 
-    // WARNING: DO NOT CACHE THE RESULT OF THE PREVIOUS CALL TO THAT FUNCTION
+    // WARNING: DO NOT CACHE THE RESULT OF THE PREVIOUS CALL TO willRedirect()
     //
-    // Because the user's functions in between may have changed what the
-    // function is to return.
+    // Because the user's functions in between may have changed what
+    // willRedirect() function is to return now.
     //
-    if(!snapwebsites.ServerAccess.willRedirect(result) && undarken)
+    if(!snapwebsites.ServerAccess.willRedirect(result))
     {
-        snapwebsites.PopupInstance.darkenPage(-150, false);
+        result.server_access_.closeWaitScreen();
     }
 };
 
@@ -386,7 +313,7 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
  *     function ServerAccess(callback: ServerAccessCallbacks);
  *     function setURI(uri: string, opt_queryString: Object) : Void;
  *     function setData(data: Object) : Void;
- *     function send() : Void;
+ *     function send(userdata: Object = undefined) : Void;
  *     static function appendQueryString(uri: string, query_string: Object): string;
  *
  * private:
@@ -466,6 +393,37 @@ snapwebsites.ServerAccess.FORM_ = "form"; // static const
  * @private
  */
 snapwebsites.ServerAccess.prototype.callback_ = null;
+
+
+/** \brief Whether to darken the screen.
+ *
+ * This variable can be modified using the showWaitScreen() function.
+ * By default it is zero meaning that the screen does not get darken.
+ *
+ * \todo
+ * The darken duration should probably be set in a global variable
+ * from settings the user can tweak. Then this variable would become
+ * a boolean to know whether the darken screen should be created or
+ * not.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.ServerAccess.prototype.darkenDuration_ = 0;
+
+
+/** \brief If the darken duration is set, this is the DarkenScreen.
+ *
+ * This variable holds an instance to a snapwebsites.DarkenScreen,
+ * which gets created at the time the send() command is called.
+ *
+ * The darken screen is created only when the darkenDuration_ is
+ * larger than zero.
+ *
+ * @type {snapwebsites.DarkenScreen}
+ * @private
+ */
+snapwebsites.ServerAccess.prototype.darkenScreen_ = null;
 
 
 /** \brief A boolean letting us know whether a hit is transparent or not.
@@ -572,8 +530,8 @@ snapwebsites.ServerAccess.willRedirect = function(result) // static
     //       i.e. if the user wants to change the "redirect" info then
     //       we should catch that and change the cached flag.
     //
-    //       That being said, it probably won't make any speed difference
-    //       since we do not call this function much.
+    //       That being said, it probably will not make any big speed
+    //       difference since we do not call this function much.
     //
     var redirect;
 
@@ -587,6 +545,26 @@ snapwebsites.ServerAccess.willRedirect = function(result) // static
     }
 
     return false;
+};
+
+
+/** \brief Set whether the wait screen should be shown while processing data.
+ *
+ * This function is used to set the darken screen time of display in
+ * milliseconds.
+ *
+ * This amount is used each time the send() command is used. In that
+ * case the ServerAccess object will allocate a DarkenScreen object
+ * and destroy it whenever it receives the serverAccessComplete
+ * callback, unless there is a redirection in which case the darken
+ * effect stays on until the new page gets loaded.
+ *
+ * @param {number} duration  The amount of time it will take to display
+ *                           the darken screen.
+ */
+snapwebsites.ServerAccess.prototype.showWaitScreen = function(duration)
+{
+    this.darkenDuration_ = duration;
 };
 
 
@@ -673,6 +651,7 @@ snapwebsites.ServerAccess.prototype.setData = function(data)
         this.data_ = data;
 
         // always force the _ajax field to 1
+        //
         if(this.dataType_ === snapwebsites.ServerAccess.FORM_)
         {
             this.data_.append("_ajax", "1");
@@ -770,6 +749,13 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
         query_string = this.queryString_,
         uri;
 
+    if(this.darkenDuration_ > 0)
+    {
+        // create a "Please wait ..." display while running our AJAX code
+        //
+        this.darkenScreen_ = new snapwebsites.DarkenScreen(this.darkenDuration_, true);
+    }
+
     // add the "hit" entry with "transparent" if requested
     // (note that the user may already have such in his query string)
     //
@@ -781,6 +767,8 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
         {
             query_string = {};
         }
+        // TODO: should we avoid setting this parameter if already set?
+        //
         query_string["hit"] = "transparent";
     }
 
@@ -794,6 +782,7 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
      * \li E -- error
      * \li S -- success
      * \li C -- completion
+     * \li I -- initialization
      *
      * Note that the same object is passed to the completion so the error
      * and success parameters, if not overridden by the completion step,
@@ -804,6 +793,9 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
      */
     var result =
         {
+            // [I] A reference back to this specific ServerAccess object
+            server_access_: this,
+
             // [ESC] A string representing the result of the AJAX command
             result_status: "",
 
@@ -824,9 +816,6 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
 
             // [S] The resulting data (raw format)
             result_data: "",
-
-            // [C] What to do in serverAccessComplete() about darken screens
-            undarken: snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER,
 
             // [ESC] A user object
             userdata: opt_userdata
@@ -852,6 +841,7 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
             data: this.data_ ? this.data_ : { _ajax: 1 },
             error: function(jqxhr, result_status, error_msg)
             {
+                result.server_access_ = that;
                 result.jqxhr = jqxhr;
                 result.result_status = result_status;
                 result.ajax_error_message = error_msg;
@@ -859,6 +849,7 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
             },
             success: function(data, result_status, jqxhr)
             {
+                result.server_access_ = that;
                 result.jqxhr = jqxhr;
                 result.result_data = data;
                 result.result_status = result_status;
@@ -866,6 +857,7 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
             },
             complete: function(jqxhr, result_status)
             {
+                result.server_access_ = that;
                 result.jqxhr = jqxhr;
                 result.result_status = result_status;
                 that.onComplete_(result);
@@ -888,6 +880,25 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
     }
 
     jQuery.ajax(uri, ajax_options);
+};
+
+
+/** \brief Close the darken screen if present.
+ *
+ * This function closes the darken screen if it exists. It is automatically
+ * called by the serverAccessComplete() callback function and should
+ * probably never get called from the outside.
+ *
+ * The DarkenScreen is created only if you setup the darken duration to
+ * a positive number (1 or larger) with a call to showWaitScreen().
+ */
+snapwebsites.ServerAccess.prototype.closeWaitScreen = function()
+{
+    if(this.darkenScreen_)
+    {
+        this.darkenScreen_.close();
+        this.darkenScreen_ = null;
+    }
 };
 
 

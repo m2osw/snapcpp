@@ -1,8 +1,8 @@
 /** @preserve
  * Name: epayment-stripe
- * Version: 0.0.1.1
+ * Version: 0.0.1.3
  * Browsers: all
- * Depends: epayment (>= 0.0.1)
+ * Depends: epayment-credit-card (>= 0.0.1)
  * Copyright: Copyright 2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
@@ -24,6 +24,7 @@
 // @js plugins/listener/listener.js
 // @js plugins/editor/editor.js
 // @js plugins/epayment/epayment.js
+// @js plugins/epayment_creditcard/epayment-credit-card.js
 // ==/ClosureCompiler==
 //
 
@@ -119,6 +120,15 @@ snapwebsites.inherits(snapwebsites.ePaymentFacilityStripe, snapwebsites.ePayment
 snapwebsites.ePaymentFacilityStripe.prototype.serverAccess_ = null;
 
 
+/** \brief A reference to the credit card popup window.
+ *
+ * This variable holds the credit card popup window.
+ *
+ * @private
+ */
+snapwebsites.ePaymentFacilityStripe.prototype.creditcardWindow_ = null;
+
+
 /** \brief Get the technical name of this facility.
  *
  * This function returns "stripe".
@@ -185,27 +195,15 @@ snapwebsites.ePaymentFacilityStripe.prototype.getButtonHTML = function()
  * This Stripe implementation sends the click to the server directly.
  * It expects the server to register the invoice and start the checkout
  * process with Stripe Express.
+ *
+ * @return {snapwebsites.ePaymentCreditCard}  Reference to the created popup window.
  */
 snapwebsites.ePaymentFacilityStripe.prototype.buttonClicked = function()
 {
-    if(!this.serverAccess_)
-    {
-        this.serverAccess_ = new snapwebsites.ServerAccess(this);
-    }
+    // we need credit card details... gather those first
+    this.creditcardWindow_ = new snapwebsites.ePaymentCreditCard("epayment_stripe");
 
-    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.ePaymentFacilityStripe.buttonClicked()") + "?a=view");
-    this.serverAccess_.setData(
-        {
-            epayment__epayment_stripe: "checkout"
-        });
-    this.serverAccess_.send();
-
-    // now we wait for an answer which should give us a URL to redirect
-    // the user to a Stripe page
-
-    // darken the screen to avoid having the user click something else
-    // while processing...
-    snapwebsites.PopupInstance.darkenPage(150, true);
+    return this.creditcardWindow_;
 };
 
 

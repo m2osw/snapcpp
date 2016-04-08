@@ -542,6 +542,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<!-- TODO: how do we move that one as part of the editor? -->
 			<xsl:if test="/snap/head/metadata/editor[@darken-on-save = 'yes']"> editor-darken-on-save</xsl:if>
 		</xsl:attribute>
+		<xsl:if test="/snap/head/metadata/editor[@owner != '']">
+			<xsl:attribute name="data-editor-form-owner"><xsl:value-of select="/snap/head/metadata/editor/@owner"/></xsl:attribute>
+		</xsl:if>
+		<xsl:if test="/snap/head/metadata/editor[@id != '']">
+			<xsl:attribute name="data-editor-form-id"><xsl:value-of select="/snap/head/metadata/editor/@id"/></xsl:attribute>
+		</xsl:if>
 	</xsl:template>
 </xsl:stylesheet>
 <!-- vim: ts=2 sw=2

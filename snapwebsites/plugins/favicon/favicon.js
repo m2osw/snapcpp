@@ -124,8 +124,6 @@ snapwebsites.FavIcon.prototype.initFavIcon_ = function()
 
             that.clickedButton_ = jQuery(this);
 
-            snapwebsites.PopupInstance.darkenPage(0, true);
-
             icon_name = this.hash.substr(1);
 
             // user clicked the "Install" button, send the info to the
@@ -136,6 +134,7 @@ snapwebsites.FavIcon.prototype.initFavIcon_ = function()
                 that.serverAccess_ = new snapwebsites.ServerAccess(that);
             }
             that.serverAccess_.setURI("/admin/settings/favicon");
+            that.serverAccess_.showWaitScreen(1);
             that.serverAccess_.setData(
                 {
                     icon: icon_name
@@ -204,7 +203,6 @@ snapwebsites.FavIcon.prototype.serverAccessSuccess = function(result) // virtual
  */
 snapwebsites.FavIcon.prototype.serverAccessComplete = function(result) // virtual
 {
-    result.undarken = snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
     snapwebsites.FavIcon.superClass_.serverAccessComplete.call(this, result);
     this.clickedButton_ = null;
 };

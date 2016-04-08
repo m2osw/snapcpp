@@ -1,6 +1,6 @@
 /*
  * Name: epayment
- * Version: 0.0.1.10
+ * Version: 0.0.1.18
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -24,8 +24,15 @@
 	padding: 10px;
 }
 
+.epayment-facilities .epayment-facility-height-adjuster
+{
+	display: inline-block;
+}
+
 .epayment-facilities .epayment-facility
 {
+	margin-right: 10px;
+	float: left;
 	border-top: 1px solid #cccccc;
 	border-left: 1px solid #cccccc;
 	border-bottom: 1px solid #444444;
@@ -36,6 +43,14 @@
 	background: linear-gradient(to bottom, #fff79f, #ffee33 25%, #ffee33 85%, #c4b727);
 	cursor: pointer;
 	text-align: center;
+	line-height: 140px;
+	width: 140px;
+	height: 140px;
+}
+
+.epayment-facilities .epayment-facility .facility-icon
+{
+	vertical-align: middle;
 }
 
 .epayment-buttons
@@ -44,7 +59,10 @@
 }
 
 .epayment-buttons .epayment-back,
-.epayment-buttons .epayment-more
+.epayment-buttons .epayment-more,
+.epayment-buttons .epayment-next,
+.epayment-buttons .epayment-send,
+.epayment-buttons .epayment-cancel
 {
 	display: block;
 	padding: 10px 30px;
@@ -56,18 +74,29 @@
 	font-weight: bold;
 }
 
-.epayment-buttons .epayment-back
+.epayment-buttons .epayment-cancel
 {
 	float: left;
 	background-color: #fbea2f;
-	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727); /* yellow */
 }
 
-.epayment-buttons .epayment-more
+.epayment-buttons .epayment-back,
+.epayment-buttons .epayment-more,
+.epayment-buttons .epayment-next
 {
 	float: right;
 	background-color: #fbea2f;
-	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+	background: linear-gradient(to bottom, #9fccff, #2f8efb 25%, #2f8efb 85%, #2770c4); /* blue */
+	margin-left: 10px;
+}
+
+.epayment-buttons .epayment-send
+{
+	float: right;
+	background-color: #fbea2f;
+	background: linear-gradient(to bottom, #ff9fd8, #fb2fa6 25%, #fb2fa6 85%, #c42883); /* red */
+	margin-left: 10px;
 }
 
 /* product details box */

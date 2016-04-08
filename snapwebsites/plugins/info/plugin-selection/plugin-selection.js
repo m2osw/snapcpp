@@ -130,8 +130,6 @@ snapwebsites.PluginSelection.prototype.initPluginSelections_ = function()
                 return;
             }
 
-            snapwebsites.PopupInstance.darkenPage(0, true);
-
             plugin_name = that.clickedButton_.data("plugin-name");
 
             // user clicked the "Install" button, send the info to the
@@ -142,6 +140,7 @@ snapwebsites.PluginSelection.prototype.initPluginSelections_ = function()
                 that.serverAccess_ = new snapwebsites.ServerAccess(that);
             }
             that.serverAccess_.setURI("/admin/plugins/install/" + plugin_name);
+            that.serverAccess_.showWaitScreen(1);
             that.serverAccess_.send(e);
         });
 
@@ -169,8 +168,6 @@ snapwebsites.PluginSelection.prototype.initPluginSelections_ = function()
                 return;
             }
 
-            snapwebsites.PopupInstance.darkenPage(0, true);
-
             plugin_name = that.clickedButton_.data("plugin-name");
 
             // user clicked the "Remove" button, send the info to the
@@ -181,6 +178,7 @@ snapwebsites.PluginSelection.prototype.initPluginSelections_ = function()
                 that.serverAccess_ = new snapwebsites.ServerAccess(that);
             }
             that.serverAccess_.setURI("/admin/plugins/remove/" + plugin_name);
+            that.serverAccess_.showWaitScreen(1);
             that.serverAccess_.send(e);
         });
 
@@ -286,7 +284,6 @@ snapwebsites.PluginSelection.prototype.serverAccessSuccess = function(result) //
  */
 snapwebsites.PluginSelection.prototype.serverAccessComplete = function(result) // virtual
 {
-    result.undarken = snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
     snapwebsites.PluginSelection.superClass_.serverAccessComplete.call(this, result);
     this.clickedButton_ = null;
 };

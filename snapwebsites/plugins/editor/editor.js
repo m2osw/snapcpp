@@ -1331,6 +1331,17 @@ snapwebsites.EditorLinkDialog.prototype.editorBase_ = null;
 snapwebsites.EditorLinkDialog.prototype.linkDialogPopup_ = null;
 
 
+/** \brief A DarkenScreen used with the link dialog.
+ *
+ * This references the DarkenScreen used with the link popup dialog
+ * which we manually manage in the editor.
+ *
+ * @type {snapwebsites.DarkenScreen}
+ * @private
+ */
+snapwebsites.EditorLinkDialog.prototype.linkDialogDarkenScreen_ = null;
+
+
 /** \brief The selection range when opening a dialog.
  *
  * The selection needs to be preserved whenever we open a popup dialog
@@ -1421,7 +1432,7 @@ snapwebsites.EditorLinkDialog.prototype.open = function()
     {
         left = 10;
     }
-    snapwebsites.PopupInstance.darkenPage(150, false);
+    this.linkDialogDarkenScreen_ = new snapwebsites.DarkenScreen(150, false);
     this.linkDialogPopup_.css("left", left);
     this.linkDialogPopup_.css("z-index", 0);
     z = jQuery("div.zordered").maxZIndex() + 1;
@@ -1443,7 +1454,8 @@ snapwebsites.EditorLinkDialog.prototype.close = function()
     var url, links, jtag, text, title, new_window;
 
     this.linkDialogPopup_.fadeOut(150);
-    snapwebsites.PopupInstance.darkenPage(-150, false);
+    this.linkDialogDarkenScreen_.close();
+    this.linkDialogDarkenScreen_ = null;
 
     this.editorBase_.refocus();
     snapwebsites.EditorSelection.restoreSelection(this.selectionRange_);
@@ -3033,7 +3045,7 @@ snapwebsites.EditorWidget.prototype.restoreValue = function()
     }
     else
     {
-        modified = modified || this.widgetContent_.attr("value");
+        modified = modified || this.widgetContent_.attr("value") != "";
         this.widgetContent_.removeAttr("value");
     }
 
@@ -3986,6 +3998,17 @@ snapwebsites.EditorForm.prototype.widgetInitialized_ = false;
 snapwebsites.EditorForm.prototype.saveDialog_ = null;
 
 
+/** \brief The Darken Screen used while saving editor data.
+ *
+ * This reference is used to keep track of a DarkenScreen while
+ * saving data from the editor objects.
+ *
+ * @type {snapwebsites.DarkenScreen}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.saveDarkenScreen_ = null;
+
+
 /** \brief The mode used for this editor form.
  *
  * This parameter is taken from the attribute named "mode" of the
@@ -4521,19 +4544,37 @@ snapwebsites.EditorForm.prototype.setSaving = function(new_status, will_redirect
     this.getFormWidget().toggleClass("editor-saving", new_status);
     this.saveDialog_.setStatus(!new_status);
 
-    // TODO: we already have an undarken feature in the ServerAccess object
-    //       which may very well be in conflict with this code...
-    //
-    // TODO: add a condition coming from the DOM (i.e. we don't want
+    // TODO: add a condition coming from the DOM (i.e. we do not want
     //       to gray out the screen if the user is expected to be
     //       able to continue editing while saving)
-    //       the class is nearly there (see header trying to assign body
-    //       attributes), we will then need to test it here
+    //
+    //       said class="..." is nearly there (see header trying to assign
+    //       body attributes), we will then need to test it here
+    //
     //       WARNING: this needs to be moved to the editor-form object
-    //                instead of the body!
+    //                instead of the body! (i.e. one flag per form)
+    //
     if(!will_redirect)
     {
-        snapwebsites.PopupInstance.darkenPage(new_status ? 150 : -150, new_status);
+        if(new_status)
+        {
+            if(!this.saveDarkenScreen_)
+            {
+                // darken the screen with a "Please wait ..." screen
+                //
+                this.saveDarkenScreen_ = new snapwebsites.DarkenScreen(150, true);
+            }
+        }
+        else
+        {
+            if(this.saveDarkenScreen_)
+            {
+                // remove the darken screen
+                //
+                this.saveDarkenScreen_.close();
+                this.saveDarkenScreen_ = null;
+            }
+        }
     }
 };
 

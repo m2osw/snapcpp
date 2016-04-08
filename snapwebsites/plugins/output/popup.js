@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.39
+ * Version: 0.1.0.49
  * Browsers: all
  * Copyright: Copyright 2014-2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5.71)
@@ -22,6 +22,246 @@
 
 /*jslint nomen: true, todo: true, devel: true */
 /*global snapwebsites: false, jQuery: false */
+
+
+
+/** \brief Snap DarkenScreen.
+ *
+ * This class is used by to darken the whole screen behind a popup or
+ * for a "Please Wait ..." effect (i.e. a way to prevent further user
+ * interactions until we are done with an AJAX message.)
+ *
+ * To remove a DarkenScreen once done with it, call its close()
+ * function and forget its reference (see close() for an example.)
+ *
+ * @param {number} show  A positive number defining the amount of ms used
+ *                       to show the darken page (as in jQuery.fadeIn())
+ * @param {boolean} wait  Whether this is opened to represent a wait.
+ *
+ * @return {!snapwebsites.DarkenScreen}
+ *
+ * @constructor
+ * @struct
+ *
+ * \sa close()
+ */
+snapwebsites.DarkenScreen = function(show, wait)
+{
+//#ifdef DEBUG
+    var idx;
+
+    for(idx = snapwebsites.DarkenScreen.darkenScreenStack_.length - 1; idx >= 0; --idx)
+    {
+        if(snapwebsites.DarkenScreen.darkenScreenStack_[idx].wait_)
+        {
+            // we cannot wait more than once... (we certainly could
+            // and may be we will allow such at a later time, but right
+            // now I think this is bug if it happens.)
+            //
+            throw new Error("adding a DarkenScreen over another that has the 'wait' parameter set to true is not allowed.");
+        }
+    }
+//#endif
+
+    // if it is the first time we get called, we still have to create the
+    // actual object used to darken the whole screen
+    //
+    if(!snapwebsites.DarkenScreen.darkenScreenPopup_)
+    {
+        jQuery("<div id='darkenPage' class='zordered'></div>").appendTo("body");
+        snapwebsites.DarkenScreen.darkenScreenPopup_ = jQuery("#darkenPage");
+    }
+
+    // we create this DarkenScreen object to darken the current screen,
+    // so we can compute the z-index as it stands right now...
+    //
+    snapwebsites.DarkenScreen.darkenScreenPopup_.css("z-index", 0);
+    this.zIndex_ = jQuery("body").children().maxZIndex() + 1;
+    snapwebsites.DarkenScreen.darkenScreenPopup_.css("z-index", this.zIndex_);
+
+    // setup the 'wait' class appropriately
+    //
+    this.wait_ = wait;
+    snapwebsites.DarkenScreen.darkenScreenPopup_.toggleClass("wait", wait);
+
+//#ifdef DEBUG
+    for(idx = snapwebsites.DarkenScreen.darkenScreenStack_.length - 1; idx >= 0; --idx)
+    {
+        if(this.zIndex_ < snapwebsites.DarkenScreen.darkenScreenStack_[idx].zIndex_)
+        {
+            // if this happens, it means our maxZIndex did not work
+            // correctly because there should be some new items below
+            // the new DarkenScreen
+            //
+            // Note that for a "double wait" (which we do not currently
+            // allow) we would end up with an equality here, but still
+            // not one index smaller than the other
+            //
+            throw new Error("somehow a newer DarkenScreen object has z-index "
+                    + this.zIndex_
+                    + ", which is smaller than an older DarkScreen object which has a z-index of "
+                    + snapwebsites.DarkenScreen.darkenScreenStack_[idx].zIndex_);
+        }
+    }
+//#endif
+
+    // fade it in now
+    //
+    if(show < 10)
+    {
+        // timing is so small, just show instantly
+        //
+        snapwebsites.DarkenScreen.darkenScreenPopup_.show();
+    }
+    else
+    {
+        snapwebsites.DarkenScreen.darkenScreenPopup_.fadeIn(show);
+    }
+
+    // add this very item to the stack of darken pages
+    //
+    snapwebsites.DarkenScreen.darkenScreenStack_.push(this);
+
+    return this;
+};
+
+
+/** \brief Mark DarkenScreen as a base class.
+ *
+ * This class does not inherit from any other classes.
+ */
+snapwebsites.base(snapwebsites.DarkenScreen);
+
+
+/** \brief The darken "page" (a div that covers the whole screen).
+ *
+ * This variable holds the jQuery DOM object representing the darken
+ * page popup.
+ *
+ * We use only one such DOM object, so it is marked as static. Whether
+ * to show or hide this object depends on our current stack, which is
+ * a static object too. More or less, if the stack is not empty, the
+ * darken page is visible. If the stack is empty, then the darken
+ * page is made invisible (display: none; so as to not interfere with
+ * anything else.)
+ *
+ * @type {?jQuery}
+ * @private
+ */
+snapwebsites.DarkenScreen.darkenScreenPopup_ = null; // static
+
+
+/** \brief The stack of darken pages.
+ *
+ * Whenever a popup darkens the screen, it adds one DarkenScreen item
+ * to this stack. When a popup undarkens the screen, its corresponding
+ * item gets removed from the stack.
+ *
+ * The DarkenScreen item at the top of the stack defines the current
+ * z-index of the darkenScreenPopup_ DOM object.
+ *
+ * @type {Array.<snapwebsites.DarkenScreen>}
+ * @private
+ */
+snapwebsites.DarkenScreen.darkenScreenStack_ = []; // static
+
+
+/** \brief The z-index where this darken screen is.
+ *
+ * Each DarkenScreen has a z-index. The darkenScreenStack_ parameter
+ * has a stack of DarkenScreen object order by zIndex_ (the largest
+ * is last.)
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.DarkenScreen.prototype.zIndex_ = 0;
+
+
+/** \brief Whether this darken page is used as a "please wait" screen.
+ *
+ * This flag is used to know whether the "wait" class should be set
+ * or not.
+ *
+ * Note that it is considered an error to open yet another DarkenScreen
+ * over one that has this flag set to true. In debug mode, it throws
+ * in such a special case.
+ *
+ * @type {boolean}
+ * @private
+ */
+snapwebsites.DarkenScreen.prototype.wait_ = false;
+
+
+/** \brief Get rid of a darken screen.
+ *
+ * This function is used to undarken the screen. If other darken
+ * screen objects exist in the stack of darken screens, then
+ * the screen remains darken, only the z-index parameter changes
+ * back to the now largest z-index still in the stack. The wait
+ * class may also be added or removed.
+ *
+ * This DarkenScreen reference should then be nullified since the
+ * object is considered gone and it cannot be revived.
+ *
+ * \code
+ *      this.myDarkenObject_.close();
+ *      this.myDarkenObject_ = null;
+ * \endcode
+ */
+snapwebsites.DarkenScreen.prototype.close = function()
+{
+    var idx;
+
+    // 99% of the time, it will be the last one although we allow
+    // intermediate popups being closed before to top-most popup
+    // so we could end up removing another DarkenScreen than the
+    // last
+    //
+    for(idx = snapwebsites.DarkenScreen.darkenScreenStack_.length - 1; idx >= 0; --idx)
+    {
+        if(snapwebsites.DarkenScreen.darkenScreenStack_[idx] == this)
+        {
+            snapwebsites.DarkenScreen.darkenScreenStack_.splice(idx, 1);
+            if(idx == snapwebsites.DarkenScreen.darkenScreenStack_.length)
+            {
+                if(snapwebsites.DarkenScreen.darkenScreenStack_.length == 0)
+                {
+                    // Since the fading may or may not happen, having the user passing
+                    // a timing for it is not sensible
+                    //
+                    // At this point we use 150ms, although we may look into a way for
+                    // users to enter an amount in some settings (but I am not so sure
+                    // it would be that useful, 150ms is so short no one should complain
+                    // about such duration, right?)
+                    //
+                    snapwebsites.DarkenScreen.darkenScreenPopup_.fadeOut(150);
+                }
+                else
+                {
+                    // we removed the last darken page on the stack and there is
+                    // still some darken pages... adjust the z-index
+                    //
+                    --idx;
+                    snapwebsites.DarkenScreen.darkenScreenPopup_.css("z-index", snapwebsites.DarkenScreen.darkenScreenStack_[idx].zIndex_);
+                    snapwebsites.DarkenScreen.darkenScreenPopup_.toggleClass("wait", snapwebsites.DarkenScreen.darkenScreenStack_[idx].wait_);
+                }
+            }
+            // else ...
+            //
+            // we did not remove the last item so we have nothing more to
+            // do (i.e. the top item still has the correct z-index and
+            // we cannot be the last if idx is smaller than length)
+            //
+
+            return;
+        }
+    }
+
+    // otherwise we have got an error
+    //
+    throw new Error("attempt to close this DarkenScreen failed: could not find that object in the existing stack (closing more than once?)");
+};
 
 
 
@@ -59,12 +299,21 @@ snapwebsites.base(snapwebsites.Popup);
  * This is an object passed to most of the Popup object functions
  * that holds the current state of your popup.
  *
- * \li id -- the identifier of the popup DOM object; it has to be unique,
- *           if undefined, the Popup library generates one automatically.
+ * The open() function set the \p id parameter if it is not defined
+ * when the function is called.
+ *
+ * The open() function sets the \p widget parameter to a jQuery()
+ * reference to the top-most DOM element used to create the popup.
+ *
+ * \li id -- the identifier of the popup DOM object; it is expected to be
+ *           unique for each popup; i.e. if you call open() with the same
+ *           popup.id parameter, then that very popup gets reopened.
+ *           If undefined, the Popup library generates an identifier
+ *           automatically ("snapPopup\<number>").
  * \li path -- the path to a page to display in the popup; in this case
  *             the Popup object uses an IFRAME to display the content.
  * \li html -- The HTML to display in the IFRAME, this is exclusive from
- *             the path usage.
+ *             the path usage (i.e. either path or hatml, not both).
  * \li noClose -- do not create a close button for the popup; this is
  *                particularly useful for popup windows that ask a question
  *                and cannot really safely have a close button (because the
@@ -73,24 +322,25 @@ snapwebsites.base(snapwebsites.Popup);
  *            centered.
  * \li left -- the left position; if undefined, the popup will be horizontally
  *             centered.
- * \li width -- the width to use for the popup; this is a required parameter.
- * \li height -- the height to use for the popup; this is a required parameter.
+ * \li width -- the width to use for the popup; defaults to 400 pixels.
+ * \li height -- the height to use for the popup; defaults to 300 pixels.
  * \li darken -- the amount of time it will take to darken the screen behind
- *               the popup; null or undefined prevents any darkening; zero
- *               makes the dark overlay appear instantely.
+ *               the popup; zero, a negative value, null, or undefined
+ *               prevents any darkening; use 1 to get the darkening instantly.
  * \li position -- "absolute" to get the popup to scroll with the window; this
  *                 is useful if you are to have very tall popups; you may also
- *                 use "fixed" to get a popup that doesn't scroll at all;
+ *                 use "fixed" to get a popup that does not scroll at all;
  *                 the default is "fixed".
- * \li title -- a title for the popup; if empty no popup.
+ * \li title -- a title for the popup; it may include HTML.
  * \li open -- a callback called once the popup is open, it gets called with
- *             a reference to this popup.
+ *             a reference to this popup object. Note that opened does not
+ *             mean visible (see 'show' as well.)
  * \li show -- a callback called once the popup is fully visible (i.e. if
  *             fading in, this callback is called after the fade in is
  *             over); it has no parameters.
  * \li beforeHide -- a callback called before the popup gets hidden; this
  *                   gives your code a chance to cancel a click on the close
- *                   button or equivalent; the callback is called with a
+ *                   button or equivalent; the callback is called with the
  *                   PopupData object; the editor offers such a function:
  *                   snapwebsites.EditorForm.beforeHide().
  * \li hide -- a callback called once the popup is fully hidden; which means
@@ -104,11 +354,20 @@ snapwebsites.base(snapwebsites.Popup);
  *               jQuery widget using the id parameter.
  * \li editorFormName -- the name of the form attached to this popup;
  *                       this is used by the editor beforeHide() function.
+ * \li darkenScreen_ -- this is a private member which you do not have access
+ *                      to; it is used to save the DarkenScreen created by
+ *                      the popup as required by the darken parameter.
  *
  * \note
  * The width and height could be calculated with different euristic math
  * and propbably will at some point. The current version requires these
  * parameters to be defined if you want to get a valid popup.
+ *
+ * \todo
+ * Create an object to make it a lot safer (i.e. so as to not allow
+ * contradictory parameters or invalid values at the time we set them.)
+ * At the same time, we currently have static definitions and that cannot
+ * be used with a class.
  *
  * @typedef {{id: ?string,
  *            path: ?string,
@@ -127,7 +386,8 @@ snapwebsites.base(snapwebsites.Popup);
  *            hide: ?function(),
  *            hideNow: ?function(),
  *            widget: ?Object,
- *            editorFormName: ?string}}
+ *            editorFormName: ?string,
+ *            darkenScreen_: snapwebsites.DarkenScreen}}
  */
 snapwebsites.Popup.PopupData;
 
@@ -178,67 +438,6 @@ snapwebsites.PopupInstance = null; // static
 snapwebsites.Popup.prototype.uniqueID_ = 0;
 
 
-/** \brief The jQuery DOM object representing the popup.
- *
- * This parameter represents the popup DOM object used to create the
- * popup window. Since there is only one darken page popup, this is
- * created once and reused as many times as required.
- *
- * Note, however, that it is not "safe" to open a popup from a popup
- * as that will reuse that same darkenpagepopup object which will
- * obstruct the view.
- *
- * @type {Object}
- * @private
- */
-snapwebsites.Popup.prototype.darkenPagePopup_ = null;
-
-
-/** \brief Create a DIV used to darken the background.
- *
- * This function creates a DIV tag used to darken the background of the
- * screen when a popup appears.
- *
- * The function creates a single DIV. If you call the function multiple
- * times, the existing DIV is reused over and over again.
- *
- * \todo
- * The function needs to retrieve the maximum z-index, without including
- * the popup that needs to appear over it, each time it gets called so
- * we can be sure it is always correct.
- *
- * \todo
- * Offer a debug version that verifies that show is never set to zero.
- *
- * @param {number} show  If positive, show the darken page using
- *                       fadeIn(show), if negative, hide the darken
- *                       page using fadeOut(-show).
- * @param {boolean} wait  Whether this is opened to represent a wait.
- */
-snapwebsites.Popup.prototype.darkenPage = function(show, wait)
-{
-    if(!this.darkenPagePopup_)
-    {
-        // create the full screen fixed div
-        jQuery("<div id='darkenPage' class='zordered'></div>").appendTo("body");
-        this.darkenPagePopup_ = jQuery("#darkenPage");
-    }
-
-    this.darkenPagePopup_.css("z-index", 1);
-    this.darkenPagePopup_.css("z-index", jQuery("body").children().maxZIndex() + 1);
-    this.darkenPagePopup_.toggleClass("wait", wait);
-
-    if(show >= 0)
-    {
-        this.darkenPagePopup_.fadeIn(show);
-    }
-    else
-    {
-        this.darkenPagePopup_.fadeOut(-show);
-    }
-};
-
-
 /** \brief Create a new popup "window".
  *
  * This function creates a \<div\> tag with the settings as defined
@@ -258,41 +457,14 @@ snapwebsites.Popup.prototype.darkenPage = function(show, wait)
  * the same \p popup parameter. However, popups that can be shared or
  * reused should not be forgotten.
  *
- * The settings of a \p popup may include any one of the following
- * parameters:
+ * The \p popup parameters are defined in the PopupData structure.
  *
- * \li id -- the identifier of the DIV, that way you can retrieve it
- *           again later by using the same identifier; note that the
- *           jQuery object is also saved in your popup parameter
- * \li path -- the path to the content to load in the popup using an IFRAME
- *             default is no IFRAME
- * \li html -- the HTML to put in the popup if no path was defined
- * \li top -- the top position of the popup, default center vertically
- * \li left -- the left position of the popup, default center horizontally
- * \li width -- the width of the popup, default 400 pixels
- * \li height -- the height of the popup, default 300 pixels
- * \li darken -- whether to create (> 0) an overlay to darken the
- *               rest of the screen, the default is to not darken
- *               if undefined (0)
- * \li position -- we accept absolute (scrolls up and down) and fixed
- *                 (does not scroll, the default)
- * \li title -- a title shown at the top, may be HTML, added inside
- *              a \<div\> tag (i.e. if you want an header tag, you have
- *              to include it in the title)
- * \li open -- if defined, a function called once the popup was opened
- *             (in case of an IFRAME it generally happens BEFORE the
- *             IFRAME gets loaded.)
- * \li show -- if defined, a function called just before the popup
- *             window gets shown
- * \li hide -- if defined, a function called just before the popup
- *             window gets hidden
+ * The open() function creates the following few parameters as
+ * required:
  *
- * The function creates the following parameters in \p popup as required:
- *
- * \li id -- if the input \p popup does not already have a valid
- *           identifier defined, this function assigns a new one
- * \li widget -- the jQuery object referencing the popup is saved in
- *               this variable member
+ * \li id -- only if not defined by the caller
+ * \li widget -- overwritten every time
+ * \li darkenScreen_ -- set if darken > 0
  *
  * @param {snapwebsites.Popup.PopupData} popup  The settings to create
  *                                              the popup.
@@ -319,6 +491,14 @@ snapwebsites.Popup.prototype.open = function(popup)
         popup.widget = jQuery("#" + popup.id);
     }
     popup.widget.show();
+
+    // allow for a closePopup() directly from the iframe whether we have
+    // a close-popup or not
+    //
+    popup.widget.bind("close_popup", function()
+        {
+            that.hide(popup);
+        });
 
     // here we cannot be sure whether the click() event was still here
     // so we unbind() it first
@@ -455,7 +635,7 @@ snapwebsites.Popup.prototype.show = function(popup)
                 });
             if(popup.darken > 0)
             {
-                this.darkenPage(/** @type {number} */ (popup.darken), false);
+                popup.darkenScreen_ = new snapwebsites.DarkenScreen(/** @type {number} */ (popup.darken), false);
             }
             popup.widget.css("z-index", 1);
             popup.widget.css("z-index", jQuery("body").children().maxZIndex() + 1);
@@ -523,6 +703,20 @@ snapwebsites.Popup.prototype.hide = function(popup)
 };
 
 
+/** \brief Close the popup.
+ *
+ * This function is expected to be called from within a popup iframe.
+ * It will close the popup by triggering the "close_popup" event
+ * on the main popup widget.
+ */
+snapwebsites.Popup.prototype.closePopup = function()
+{
+    window.parent.jQuery(window.frameElement, window.parent.document)
+            .parents(".snap-popup")
+            .trigger("close_popup");
+};
+
+
 /** \brief Actual hides the popup.
  *
  * This function actually hides the Popup. It is separate from the hide()
@@ -542,9 +736,10 @@ snapwebsites.Popup.prototype.hideNow_ = function(popup)
             duration: 150,
             complete: popup.hide
         });
-    if(popup.darken > 0)
+    if(popup.darkenScreen_)
     {
-        this.darkenPage(-popup.darken, false);
+        popup.darkenScreen_.close();
+        popup.darkenScreen_ = null;
     }
 };
 

@@ -77,7 +77,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <attachment name="epayment-stripe" type="attachment/public">
       <path>:/js/epayment/epayment-stripe.js</path>
       <mime-type>text/javascript</mime-type>
-      <dependency>epayment (&gt;= 0.0.1)</dependency>
+      <dependency>epayment-credit-card (&gt;= 0.0.1)</dependency>
     </attachment>
   </content>
   <content path="/images/epayment" owner="output">

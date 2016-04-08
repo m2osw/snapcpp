@@ -196,12 +196,11 @@ snapwebsites.TimeTracker.prototype.initTimeTrackerMainPage_ = function()
                 return;
             }
 
-            snapwebsites.PopupInstance.darkenPage(0, true);
-
             // user clicked the "Add Self" button, send the info to the
             // server with AJAX...
             //
             that.serverAccess_.setURI("/timetracker");
+            that.serverAccess_.showWaitScreen(1);
             that.serverAccess_.setData({
                         operation: "add-self"
                     });
@@ -371,6 +370,7 @@ snapwebsites.TimeTracker.prototype.reloadCalendar_ = function()
     // user clicked a next/previous month/year, request the new calendar
     //
     this.serverAccess_.setURI("/timetracker");
+    this.serverAccess_.showWaitScreen(1);
     this.serverAccess_.setData({
                 operation: "calendar",
                 year: this.getYear_(),
@@ -424,8 +424,6 @@ snapwebsites.TimeTracker.prototype.nextMonth_ = function(e, button, offset)
         return;
     }
 
-    snapwebsites.PopupInstance.darkenPage(0, true);
-
     switch(offset)
     {
     case 0:
@@ -474,6 +472,7 @@ snapwebsites.TimeTracker.prototype.nextMonth_ = function(e, button, offset)
     // user clicked a next/previous month/year, request the new calendar
     //
     this.serverAccess_.setURI("/timetracker");
+    this.serverAccess_.showWaitScreen(1);
     this.serverAccess_.setData({
                 operation: "calendar",
                 year: year,
@@ -605,7 +604,6 @@ snapwebsites.TimeTracker.prototype.serverAccessSuccess = function(result) // vir
  */
 snapwebsites.TimeTracker.prototype.serverAccessComplete = function(result) // virtual
 {
-    result.undarken = snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
     snapwebsites.TimeTracker.superClass_.serverAccessComplete.call(this, result);
     this.clickedButton_ = null;
 };

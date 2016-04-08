@@ -51,6 +51,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<legend>Credit Card</legend>
 
 						<div class="editor-block">
+							<label for="user_name" class="editor-title">First and Last Name:</label>
+							<xsl:copy-of select="page/body/epayment/user_name/node()"/>
+						</div>
+
+						<div class="editor-block">
 							<label for="card_number" class="editor-title">Card Number:</label>
 							<xsl:copy-of select="page/body/epayment/card_number/node()"/>
 						</div>
@@ -65,51 +70,116 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						</div>
 					</fieldset>
 
-					<fieldset class="breadcrumbs">
-						<legend>User Information</legend>
+					<fieldset class="billing">
+						<legend>Billing Address</legend>
 
-						<div class="editor-block">
-							<label for="user_name" class="editor-title">First and Last Name:</label>
-							<xsl:copy-of select="page/body/epayment/user_name/node()"/>
-						</div>
-
-						<div class="editor-block">
-							<label for="address1" class="editor-title">Address:</label>
-							<xsl:copy-of select="page/body/epayment/address1/node()"/>
-							<xsl:copy-of select="page/body/epayment/address2/node()"/>
-						</div>
-
-						<div class="editor-block">
-							<label for="city" class="editor-title">City:</label>
-							<xsl:copy-of select="page/body/epayment/city/node()"/>
-						</div>
-
-						<xsl:if test="page/body/epayment/province">
+						<xsl:if test="page/body/epayment/billing_business_name">
 							<div class="editor-block">
-								<label for="province" class="editor-title">Province / State:</label>
-								<xsl:copy-of select="page/body/epayment/province/node()"/>
+								<label for="billing_business_name" class="editor-title">Business Name:</label>
+								<xsl:copy-of select="page/body/epayment/billing_business_name/node()"/>
+							</div>
+						</xsl:if>
+
+						<xsl:if test="page/body/epayment/billing_attention">
+							<div class="editor-block">
+								<label for="billing_attention" class="editor-title">Attention:</label>
+								<xsl:copy-of select="page/body/epayment/billing_attention/node()"/>
 							</div>
 						</xsl:if>
 
 						<div class="editor-block">
-							<label for="postal_code" class="editor-title">Postal Code:</label>
-							<xsl:copy-of select="page/body/epayment/postal_code/node()"/>
+							<label for="billing_address1" class="editor-title">Address:</label>
+							<xsl:copy-of select="page/body/epayment/billing_address1/node()"/>
+							<xsl:copy-of select="page/body/epayment/billing_address2/node()"/>
 						</div>
 
-						<xsl:if test="page/body/epayment/country">
+						<div class="editor-block">
+							<label for="billing_city" class="editor-title">City:</label>
+							<xsl:copy-of select="page/body/epayment/billing_city/node()"/>
+						</div>
+
+						<xsl:if test="page/body/epayment/billing_province">
 							<div class="editor-block">
-								<label for="country" class="editor-title">Country:</label>
-								<xsl:copy-of select="page/body/epayment/country/node()"/>
+								<label for="billing_province" class="editor-title">Province / State:</label>
+								<xsl:copy-of select="page/body/epayment/billing_province/node()"/>
 							</div>
 						</xsl:if>
 
-						<xsl:if test="page/body/epayment/phone">
+						<div class="editor-block">
+							<label for="billing_postal_code" class="editor-title">Postal Code:</label>
+							<xsl:copy-of select="page/body/epayment/billing_postal_code/node()"/>
+						</div>
+
+						<xsl:if test="page/body/epayment/billing_country">
 							<div class="editor-block">
-								<label for="country" class="editor-title">Phone:</label>
-								<xsl:copy-of select="page/body/epayment/phone/node()"/>
+								<label for="billing_country" class="editor-title">Country:</label>
+								<xsl:copy-of select="page/body/epayment/billing_country/node()"/>
 							</div>
 						</xsl:if>
 					</fieldset>
+
+					<xsl:if test="page/body/epayment/delivery_address1">
+						<fieldset class="delivery">
+							<legend>Delivery Address</legend>
+
+							<xsl:if test="page/body/epayment/delivery_business_name">
+								<div class="editor-block">
+									<label for="delivery_business_name" class="editor-title">Business Name:</label>
+									<xsl:copy-of select="page/body/epayment/delivery_business_name/node()"/>
+								</div>
+							</xsl:if>
+
+							<xsl:if test="page/body/epayment/delivery_attention">
+								<div class="editor-block">
+									<label for="delivery_attention" class="editor-title">Attention:</label>
+									<xsl:copy-of select="page/body/epayment/delivery_attention/node()"/>
+								</div>
+							</xsl:if>
+
+							<div class="editor-block">
+								<label for="delivery_address1" class="editor-title">Address:</label>
+								<xsl:copy-of select="page/body/epayment/delivery_address1/node()"/>
+								<xsl:copy-of select="page/body/epayment/delivery_address2/node()"/>
+							</div>
+
+							<div class="editor-block">
+								<label for="delivery_city" class="editor-title">City:</label>
+								<xsl:copy-of select="page/body/epayment/delivery_city/node()"/>
+							</div>
+
+							<xsl:if test="page/body/epayment/delivery_province">
+								<div class="editor-block">
+									<label for="delivery_province" class="editor-title">Province / State:</label>
+									<xsl:copy-of select="page/body/epayment/delivery_province/node()"/>
+								</div>
+							</xsl:if>
+
+							<div class="editor-block">
+								<label for="delivery_postal_code" class="editor-title">Postal Code:</label>
+								<xsl:copy-of select="page/body/epayment/delivery_postal_code/node()"/>
+							</div>
+
+							<xsl:if test="page/body/epayment/delivery_country">
+								<div class="editor-block">
+									<label for="delivery_country" class="editor-title">Country:</label>
+									<xsl:copy-of select="page/body/epayment/delivery_country/node()"/>
+								</div>
+							</xsl:if>
+						</fieldset>
+					</xsl:if>
+
+					<xsl:if test="page/body/epayment/phone">
+						<fieldset class="other">
+							<legend>Other Information</legend>
+
+							<xsl:if test="page/body/epayment/phone">
+								<div class="editor-block">
+									<label for="phone" class="editor-title">Phone:</label>
+									<xsl:copy-of select="page/body/epayment/phone/node()"/>
+								</div>
+							</xsl:if>
+						</fieldset>
+					</xsl:if>
 
 				</div>
 			</div>

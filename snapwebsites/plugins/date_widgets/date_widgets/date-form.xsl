@@ -322,7 +322,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </xsl:for-each>
         </xsl:if>
 
-        <div class="div-clear"/>
+        <div class="clear-both"/>
 
       </div>
       <xsl:call-template name="snap:common-parts"/>

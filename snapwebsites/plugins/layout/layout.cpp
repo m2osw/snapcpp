@@ -403,7 +403,8 @@ QString layout::get_layout(content::path_info_t & ipath, QString const & column_
         if(run_script)
         {
             // TODO: remove dependency on JS with an event on this one!
-            //       (TBD: as far as I know this is okay now)
+            //       (TBD: as far as I know this is okay now although we
+            //       may want to use snap_expr expressions instead?)
             QVariant const v(javascript::javascript::instance()->evaluate_script(layout_script));
             layout_name = v.toString();
         }

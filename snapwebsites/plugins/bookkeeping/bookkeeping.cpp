@@ -206,7 +206,7 @@ int64_t bookkeeping::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 1, 10, 21, 57, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 4, 7, 1, 45, 41, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

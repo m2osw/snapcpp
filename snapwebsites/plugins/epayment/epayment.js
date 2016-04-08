@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment
- * Version: 0.0.1.27
+ * Version: 0.0.1.35
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -329,7 +329,6 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(resu
         result_xml = result.jqxhr.responseXML;
 
     // manage messages if any
-    result.undarken = snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
     snapwebsites.ePaymentFacilityBase.superClass_.serverAccessComplete.call(this, result);
 
     // on errors, it is not unlikely that we get a new cart which
@@ -539,6 +538,16 @@ snapwebsites.ePayment = function()
  * In the cart, that feature is pretty much always asynchroneous.
  */
 snapwebsites.inherits(snapwebsites.ePayment, snapwebsites.ServerAccessCallbacks);
+
+
+/** \brief The instance of the e-Payment object.
+ *
+ * This variable is used to save the instance of the one e-Payment
+ * object used in Snap!
+ *
+ * @type {snapwebsites.ePayment}
+ */
+snapwebsites.ePaymentInstance = null; // static
 
 
 /** \brief The list of payment facilities understood by the e-Payment plugin.
@@ -808,8 +817,9 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
 
     this.sortFacilitiesByPriority();
 
-    // TODO: we need the width of one facility icon/button so we can properly
-    //       calculate the number of facilities to show
+    // TODO: get the width from the CSS so that way we can make sure this
+    //       math is correct
+    //
     max = Math.floor(width / (icon_width + 30));
     if(max < 1)
     {
@@ -834,12 +844,11 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
             name = facility.getFacilityName();
 
             html += "<div class='epayment-facility item-"
-                  + name + "' style='width: "
-                  + icon_width + "px; height: "
-                  + icon_width + "px;' name='" + name + "'>"
+                  + name + "' data-name='" + name + "'>"
                   + facility.getButtonHTML()
                   + "</div>";
         }
+        html += "<div class='clear-both'></div>";
     }
     html += "</div>";
     if(back_button || max < this.sortedPaymentFacility_.length)
@@ -853,7 +862,7 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
         {
             html += "<a class='epayment-more' href='#more'>More</a>";
         }
-        html += "</div>";
+        html += "<div class='clear-both'></div></div>";
     }
     html += "</div>";
 
@@ -862,7 +871,7 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
     // now connect to those buttons
     cart_payment.find(".epayment-facility").click(function(e)
         {
-            var facility_name = jQuery(this).attr("name"),
+            var facility_name = /** @type {string} */ (jQuery(this).data("name")),
                 this_facility = that.getPaymentFacility(snapwebsites.castToString(facility_name, "epayment-facility tag had no 'name' attribute?"));
 
             e.preventDefault();

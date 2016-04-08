@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <auto-reset minutes="10"/> <!-- 10 minutes only on this one, you should not keep credit information out in the wild... -->
   <mode action="edit"/>
   <immediate/>
-  <focus refid="card_number"/>
+  <focus refid="user_name"/>
   <!-- no auto-save otherwise it would create new versions each
     time someone sends their credit card information (although it
     would not save that data in the database, we really do not need
@@ -30,16 +30,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     times.) -->
   <on-save allow-edit="yes" auto-save="no"/>
   <taborder>
+    <tabindex refid="user_name"/>
     <tabindex refid="card_number"/>
     <tabindex refid="security_code"/>
     <tabindex refid="expiration_date"/>
-    <tabindex refid="user_name"/>
-    <tabindex refid="address1"/>
-    <tabindex refid="address2"/>
-    <tabindex refid="city"/>
-    <tabindex refid="province"/>
-    <tabindex refid="postal_code"/>
-    <tabindex refid="country"/>
+    <tabindex refid="billing_business_name"/>
+    <tabindex refid="billing_attention"/>
+    <tabindex refid="billing_address1"/>
+    <tabindex refid="billing_address2"/>
+    <tabindex refid="billing_city"/>
+    <tabindex refid="billing_province"/>
+    <tabindex refid="billing_postal_code"/>
+    <tabindex refid="billing_country"/>
+    <tabindex refid="delivery_business_name"/>
+    <tabindex refid="delivery_attention"/>
+    <tabindex refid="delivery_address1"/>
+    <tabindex refid="delivery_address2"/>
+    <tabindex refid="delivery_city"/>
+    <tabindex refid="delivery_province"/>
+    <tabindex refid="delivery_postal_code"/>
+    <tabindex refid="delivery_country"/>
+    <tabindex refid="phone"/>
   </taborder>
 
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
@@ -53,6 +64,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </widget>
 
   <!-- card details -->
+  <widget id="user_name" type="line-edit" path="epayment/user_name" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter your name as it appears on your credit card.</tooltip>
+    <help>This name is the one used with the credit card company to process the charge. It has to match the name as it appears on your credit card.</help>
+    <background-value>first and last name</background-value>
+    <required>required</required>
+  </widget>
   <widget id="card_number" type="line-edit" path="epayment/card_number" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Enter your card number.</tooltip>
     <help>Enter all the digits of your credit or debit card in this field. You may enter spaces to separate groups of digits.</help>
@@ -92,47 +109,103 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </dropdown-date-edit>
   </widget>
 
-  <!-- user name and address -->
-  <widget id="user_name" type="line-edit" path="epayment/user_name" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>Enter the label to use for the Home breadcrumb label.</tooltip>
+  <!-- billing address -->
+  <widget id="billing_business_name" type="line-edit" path="epayment/billing_business_name" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter the name of the business being billed.</tooltip>
     <help>Help</help>
-    <background-value>first and last name</background-value>
+    <background-value>business name</background-value>
     <required>required</required>
   </widget>
-  <widget id="address1" type="line-edit" path="epayment/address1" no-toolbar="no-toolbar" auto-save="no">
+  <widget id="billing_attention" type="line-edit" path="epayment/billing_attention" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter the name of the person who is being billed.</tooltip>
+    <help>Help</help>
+    <background-value>person name</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="billing_address1" type="line-edit" path="epayment/billing_address1" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>First line of the address for which the credit card is registered.</tooltip>
     <help>Enter the first line of your credit card address. This information is required.</help>
     <background-value>address line 1</background-value>
     <required>required</required>
   </widget>
-  <widget id="address2" type="line-edit" path="epayment/address2" no-toolbar="no-toolbar" auto-save="no">
+  <widget id="billing_address2" type="line-edit" path="epayment/billing_address2" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Second line of the address for which the credit catd is registered.</tooltip>
     <help>Enter the second line of your credit card address. This information is optional.</help>
     <background-value>address line 2</background-value>
   </widget>
-  <widget id="city" type="line-edit" path="epayment/city" no-toolbar="no-toolbar" auto-save="no">
+  <widget id="billing_city" type="line-edit" path="epayment/billing_city" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>The name of the city for which the credit catd is registered.</tooltip>
     <help>Enter the city name of your credit card address. This information is required.</help>
     <background-value>city</background-value>
     <required>required</required>
   </widget>
-  <widget id="province" type="line-edit" path="epayment/province" no-toolbar="no-toolbar" auto-save="no">
+  <widget id="billing_province" type="line-edit" path="epayment/billing_province" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>The name of the province for which the credit catd is registered.</tooltip>
     <help>Enter the name of the province of your credit card address. This information is optional for most countries.</help>
     <background-value>province or state</background-value>
   </widget>
-  <widget id="postal_code" type="line-edit" path="epayment/postal_code" no-toolbar="no-toolbar" auto-save="no">
+  <widget id="billing_postal_code" type="line-edit" path="epayment/billing_postal_code" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>The postal code for which the credit catd is registered.</tooltip>
     <help>Enter the postal code of your credit card address. This information is required.</help>
     <background-value>postal code</background-value>
     <required>required</required>
   </widget>
-  <widget id="country" type="line-edit" path="epayment/country" no-toolbar="no-toolbar" auto-save="no">
+  <widget id="billing_country" type="line-edit" path="epayment/billing_country" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>The name of the country in which the credit catd is registered.</tooltip>
     <help>Enter the name of the country of your credit card address. This field is required.</help>
     <background-value>province or state</background-value>
     <required>required</required>
   </widget>
+
+  <!-- delivery address -->
+  <widget id="delivery_business_name" type="line-edit" path="epayment/delivery_business_name" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter the name of business (optional).</tooltip>
+    <help>Help</help>
+    <background-value>business name</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="delivery_attention" type="line-edit" path="epayment/delivery_attention" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Enter the name of the person who will receive the package.</tooltip>
+    <help>Help</help>
+    <background-value>person name</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="delivery_address1" type="line-edit" path="epayment/delivery_address1" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>First line of the address for which the credit card is registered.</tooltip>
+    <help>Enter the first line of your credit card address. This information is required.</help>
+    <background-value>address line 1</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="delivery_address2" type="line-edit" path="epayment/delivery_address2" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>Second line of the address for which the credit catd is registered.</tooltip>
+    <help>Enter the second line of your credit card address. This information is optional.</help>
+    <background-value>address line 2</background-value>
+  </widget>
+  <widget id="delivery_city" type="line-edit" path="epayment/delivery_city" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>The name of the city for which the credit catd is registered.</tooltip>
+    <help>Enter the city name of your credit card address. This information is required.</help>
+    <background-value>city</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="delivery_province" type="line-edit" path="epayment/delivery_province" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>The name of the province for which the credit catd is registered.</tooltip>
+    <help>Enter the name of the province of your credit card address. This information is optional for most countries.</help>
+    <background-value>province or state</background-value>
+  </widget>
+  <widget id="delivery_postal_code" type="line-edit" path="epayment/delivery_postal_code" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>The postal code for which the credit catd is registered.</tooltip>
+    <help>Enter the postal code of your credit card address. This information is required.</help>
+    <background-value>postal code</background-value>
+    <required>required</required>
+  </widget>
+  <widget id="delivery_country" type="line-edit" path="epayment/delivery_country" no-toolbar="no-toolbar" auto-save="no">
+    <tooltip>The name of the country in which the credit catd is registered.</tooltip>
+    <help>Enter the name of the country of your credit card address. This field is required.</help>
+    <background-value>province or state</background-value>
+    <required>required</required>
+  </widget>
+
+  <!-- other information -->
   <widget id="phone" type="line-edit" path="epayment/phone" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Your phone number we can use to contact you in case a problem arise.</tooltip>
     <help>We collect your phone number in order to be able to quickly contact you if any problem arise with your order. This field is optional. Some processing gateways may accept the phone number as an additional security measure. If you are in a different country than us, make sure to include your country code.</help>

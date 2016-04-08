@@ -442,7 +442,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 4, 2, 20, 32, 57, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 4, 7, 1, 45, 57, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -527,7 +527,7 @@ void editor::on_generate_header_content(content::path_info_t & ipath, QDomElemen
 
     // The following creates a session for editing the page.
     // This code is NOT used if the page is an editor form (i.e.
-    // when the editor has widgets on this page).
+    // when the editor has widgets on a page).
     //
     // TODO: change the following behavior to allow editing in various
     //       other ways than when the action is edit or administer
@@ -4886,13 +4886,34 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
 
     QDomDocument doc(page.ownerDocument());
 
-    QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
-    if(on_save.attribute("allow-edit", "yes") == "no")
     {
         QDomElement metadata(snap_dom::get_element(doc, "metadata", true));
         QDomElement editor_tag(snap_dom::create_element(metadata, "editor"));
-        editor_tag.setAttribute("darken-on-save", "yes");
         metadata.appendChild(editor_tag);
+
+        QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
+        if(on_save.attribute("allow-edit", "yes") == "no")
+        {
+            // /snap/head/metadata/editor[@darken-on-save='yes']
+            editor_tag.setAttribute("darken-on-save", "yes");
+        }
+
+        QDomElement root(editor_widgets.documentElement());
+        if(!root.isNull())
+        {
+            QString const owner_name(root.attribute("owner"));
+            if(!owner_name.isEmpty())
+            {
+                // /snap/head/metadata/editor[@owner='...']
+                editor_tag.setAttribute("owner", owner_name);
+            }
+            QString const form_id(root.attribute("id"));
+            if(!form_id.isEmpty())
+            {
+                // /snap/head/metadata/editor[@id='...']
+                editor_tag.setAttribute("id", form_id);
+            }
+        }
     }
 
     int timeout_int(g_default_timeout); // 24h in minutes
@@ -5276,7 +5297,7 @@ int editor::js_property_count() const
 }
 
 
-QVariant editor::js_property_get(QString const& name) const
+QVariant editor::js_property_get(QString const & name) const
 {
     // the current value
     if(name == "value")

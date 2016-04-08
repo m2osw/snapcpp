@@ -99,7 +99,7 @@ char const * get_name(name_t name)
  * This function is used to initialize the javascript plugin object.
  */
 javascript::javascript()
-    //: f_snap(NULL) -- auto-init
+    //: f_snap(nullptr) -- auto-init
     //, f_dynamic_plugins() -- auto-init
 {
 }
@@ -218,7 +218,7 @@ void javascript::bootstrap(snap_child * snap)
  *
  * \param[in] p  The dynamic plugin to register.
  */
-void javascript::register_dynamic_plugin(javascript_dynamic_plugin *p)
+void javascript::register_dynamic_plugin(javascript_dynamic_plugin * p)
 {
     f_dynamic_plugins.push_back(p);
 }
@@ -231,7 +231,7 @@ void javascript::register_dynamic_plugin(javascript_dynamic_plugin *p)
 class javascript_dynamic_plugin_iterator : public QScriptClassPropertyIterator
 {
 public:
-    javascript_dynamic_plugin_iterator(javascript *js, QScriptEngine *engine, QScriptValue const& object_value, javascript_dynamic_plugin *plugin)
+    javascript_dynamic_plugin_iterator(javascript * js, QScriptEngine * engine, QScriptValue const & object_value, javascript_dynamic_plugin * plugin)
         : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value)
         , f_javascript(js)
         , f_engine(engine)
@@ -322,7 +322,7 @@ private:
 class dynamic_plugin_class : public QScriptClass
 {
 public:
-    dynamic_plugin_class(javascript *js, QScriptEngine *script_engine, javascript_dynamic_plugin *plugin)
+    dynamic_plugin_class(javascript * js, QScriptEngine * script_engine, javascript_dynamic_plugin * plugin)
         : QScriptClass(script_engine),
           f_javascript(js),
           f_plugin(plugin)
@@ -341,7 +341,7 @@ public:
 
     virtual QString name() const
     {
-        plugins::plugin *p(dynamic_cast<plugins::plugin *>(f_plugin));
+        plugins::plugin * p(dynamic_cast<plugins::plugin *>(f_plugin));
         if(!p)
         {
             throw std::runtime_error("plugin pointer is null (dynamic_plugin_class::name)");
@@ -349,7 +349,7 @@ public:
         return p->get_plugin_name();
     }
 
-    virtual QScriptClassPropertyIterator *newIterator(QScriptValue const& object)
+    virtual QScriptClassPropertyIterator * newIterator(QScriptValue const & object)
     {
         return new javascript_dynamic_plugin_iterator(f_javascript, engine(), object, f_plugin);
     }
@@ -402,7 +402,7 @@ private:
 class javascript_plugins_iterator : public QScriptClassPropertyIterator
 {
 public:
-    javascript_plugins_iterator(javascript *js, QScriptEngine *engine, const QScriptValue& object_value)
+    javascript_plugins_iterator(javascript * js, QScriptEngine * engine, QScriptValue const & object_value)
         : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value)
         , f_javascript(js)
         , f_engine(engine)
@@ -498,7 +498,7 @@ private:
 class plugins_class : public QScriptClass
 {
 public:
-    plugins_class(javascript *js, QScriptEngine *script_engine)
+    plugins_class(javascript * js, QScriptEngine * script_engine)
         : QScriptClass(script_engine)
         , f_javascript(js)
     {
@@ -513,12 +513,12 @@ public:
         return "plugins";
     }
 
-    virtual QScriptClassPropertyIterator *newIterator(QScriptValue const& object)
+    virtual QScriptClassPropertyIterator * newIterator(QScriptValue const & object)
     {
         return new javascript_plugins_iterator(f_javascript, engine(), object);
     }
 
-    virtual QScriptValue property(QScriptValue const& object, QScriptString const& object_name, uint id)
+    virtual QScriptValue property(QScriptValue const & object, QScriptString const & object_name, uint id)
     {
         QString const temp_name(object_name);
         if(f_dynamic_plugins.contains(temp_name))
@@ -548,7 +548,7 @@ public:
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-    virtual QScriptValue::PropertyFlags propertyFlags(const QScriptValue& object, const QScriptString& property_name, uint id)
+    virtual QScriptValue::PropertyFlags propertyFlags(QScriptValue const & object, QScriptString const & property_name, uint id)
     {
         // at some point we may want to allow read/write/delete...
         return QScriptValue::ReadOnly | QScriptValue::Undeletable | QScriptValue::KeepExistingFlags;
@@ -563,7 +563,7 @@ public:
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-    virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& property_name, QueryFlags flags, uint * id)
+    virtual QueryFlags queryProperty(QScriptValue const & object, QScriptString const & property_name, QueryFlags flags, uint * id)
     {
         return QScriptClass::HandlesReadAccess;
     }
@@ -577,7 +577,7 @@ public:
 
 private:
     QMap<QString, QSharedPointer<dynamic_plugin_class> >    f_dynamic_plugins;
-    javascript *                            f_javascript;
+    javascript *                            f_javascript = nullptr;
 };
 
 
@@ -605,7 +605,7 @@ QVariant javascript::evaluate_script(QString const & script)
     engine.globalObject().setProperty("plugins", plugins_object);
 //SNAP_LOG_TRACE("object name = [")(plugins_object.scriptClass()->name())("] (")(plugins_object.isObject())(")\n");
     QScriptValue value(engine.evaluate(program));
-    QVariant variant(value.toVariant());
+    QVariant const variant(value.toVariant());
     if(value.isError())
     {
         // this happens if the script is not correct and it cannot be executed
@@ -616,7 +616,7 @@ QVariant javascript::evaluate_script(QString const & script)
         QScriptValue e(engine.uncaughtException());
         SNAP_LOG_ERROR("javascript: result = ")(engine.hasUncaughtException())(", e = ")(e.isError())(", s = \"")(e.toString())("\"");
     }
-    return value.toVariant();
+    return variant;
 }
 
 
@@ -632,7 +632,7 @@ QVariant javascript::evaluate_script(QString const & script)
  * \param[in] file_row  The row where the file is saved in \p files_table.
  * \param[in] file  The file to be processed.
  */
-void javascript::on_process_attachment(QtCassandra::QCassandraRow::pointer_t file_row, content::attachment_file const& file)
+void javascript::on_process_attachment(QtCassandra::QCassandraRow::pointer_t file_row, content::attachment_file const & file)
 {
     // TODO: got to finish the as2js compiler...
     NOTUSED(file_row);
@@ -690,7 +690,7 @@ void javascript::on_process_attachment(QtCassandra::QCassandraRow::pointer_t fil
  * \param[in,out] secure  Whether the file is considered secure.
  * \param[in] fast  Whether it is the fast check (true) or not (false).
  */
-void javascript::on_check_attachment_security(content::attachment_file const& file, content::permission_flag& secure, bool const fast)
+void javascript::on_check_attachment_security(content::attachment_file const & file, content::permission_flag & secure, bool const fast)
 {
     // always check the filename, just in case
     QString const cpath(file.get_file().get_filename());

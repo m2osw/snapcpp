@@ -348,16 +348,23 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/public</link>
     <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/system-page</link>
     <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <!-- at this time the editor uses "administer" instead of "submit" -->
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/user/register</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/submit/form</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/submit/survey</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/submit/application</link>
     <link name="permissions::action::submit" to="permissions::link_back::submit" mode="*:*">/types/permissions/rights/submit/form</link>
     <link name="permissions::action::submit" to="permissions::link_back::submit" mode="*:*">/types/permissions/rights/submit/survey</link>
     <link name="permissions::action::submit" to="permissions::link_back::submit" mode="*:*">/types/permissions/rights/submit/application</link>
+  </content>
+  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor" owner="permissions">
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer">
     <param name="content::title" revision="revision">Spammer Group</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Spammers are blocked from nearly everything. We just show them our home page, privacy policy, and terms and conditions. It won't help them though.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_action" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="permissions::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
   </content>
   <!--
     STATUS
@@ -423,15 +430,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>This right allows a user to register on your website. It has to be assigned to visitors in order for visitors to be able to register an account on your website.</p>]]>
     </param>
   </content>
-  <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor" owner="permissions">
-    <link name="permissions::action::administer" to="permissions::link_action" mode="*:*">/types/permissions/rights/administer/user/register</link>
-  </content>
   <content path="/types/permissions/groups/users">
     <param name="content::title" revision="revision">Per User Groups</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This permission group is used by users. Each user receives a group under this page, identifier by their user unique identifier.</p>]]>
     </param>
-    <link name="permissions::action::administer" to="permissions::link_action" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer</link>
   </content>
   <content path="/types/permissions/users">
     <param name="content::title" revision="revision">Per User Specific Permissions</param>

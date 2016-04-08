@@ -49,13 +49,22 @@ char const * get_name(name_t name)
         return "epayment::default_country";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH:
-        return "admin/settings/epayment/creditcard";
+        return "admin/settings/epayment/credit-card";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ADDRESS2:
         return "epayment::show_address2";
 
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_BUSINESS_NAME:
+        return "epayment::show_business_name";
+
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_COUNTRY:
         return "epayment::show_country";
+
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_DELIVERY:
+        return "epayment::show_delivery";
+
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ONE_NAME:
+        return "epayment::show_one_name";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PHONE:
         return "epayment::show_phone";
@@ -175,7 +184,7 @@ int64_t epayment_creditcard::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 3, 30, 21, 30, 16, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 4, 7, 20, 36, 16, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -274,6 +283,14 @@ void epayment_creditcard::on_dynamic_editor_widget(
     {
         return;
     }
+    snap_uri const & main_uri(f_snap->get_uri());
+    content::path_info_t main_ipath;
+    main_ipath.set_path(main_uri.path());
+    if(main_ipath.get_cpath() != ipath.get_cpath())
+    {
+        // this happens when generating lists and such
+        return;
+    }
     QString const form_id(root.attribute("id"));
     if(form_id == "creditcard_form")
     {
@@ -305,8 +322,90 @@ void epayment_creditcard::setup_form(
     }
     QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(epayment_creditcard_settings_ipath.get_revision_key()));
 
-    // remove the unwanted widgets if the administrator required so...
+    // remove unwanted widgets if the administrator required so...
     //
+
+    // delivery
+    //
+    {
+        bool const show_delivery(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_DELIVERY))->value().safeSignedCharValue(0, 1) != 0);
+        if(!show_delivery)
+        {
+            char const * delivery_fields[] =
+            {
+                "delivery_business_name",
+                "delivery_attention",
+                "delivery_address1",
+                "delivery_address2",
+                "delivery_city",
+                "delivery_province",
+                "delivery_postal_code",
+                "delivery_country"
+            };
+            // forget all of those widgets
+            for(size_t idx(0); idx < sizeof(delivery_fields) / sizeof(delivery_fields[0]); ++idx)
+            {
+                QDomXPath dom_xpath;
+                dom_xpath.setXPath(QString("/editor-form/widget[@id='%1']").arg(delivery_fields[idx]));
+                QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+                if(result.size() > 0
+                && result[0].isElement())
+                {
+                    result[0].parentNode().removeChild(result[0]);
+                }
+            }
+        }
+    }
+
+    // one name
+    //
+    {
+        bool const show_one_name(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ONE_NAME))->value().safeSignedCharValue(0, 1) != 0);
+        if(show_one_name) // WARNING: here we test the flag INVERTED! (default is hide those fields)
+        {
+            // forget that widget
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath("/editor-form/widget[@id='billing_attention']");
+            QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+            dom_xpath.setXPath("/editor-form/widget[@id='delivery_attention']");
+            result = dom_xpath.apply(editor_widgets);
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+        }
+    }
+
+    // business name
+    //
+    {
+        bool const show_business_name(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_BUSINESS_NAME))->value().safeSignedCharValue(0, 1) != 0);
+        if(!show_business_name)
+        {
+            // forget that widget
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath("/editor-form/widget[@id='billing_business_name']");
+            QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+            dom_xpath.setXPath("/editor-form/widget[@id='delivery_business_name']");
+            result = dom_xpath.apply(editor_widgets);
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+        }
+    }
 
     // address2
     //
@@ -316,8 +415,15 @@ void epayment_creditcard::setup_form(
         {
             // forget that widget
             QDomXPath dom_xpath;
-            dom_xpath.setXPath("/editor-form/widget[@id='address2']");
+            dom_xpath.setXPath("/editor-form/widget[@id='billing_address2']");
             QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+            dom_xpath.setXPath("/editor-form/widget[@id='delivery_address2']");
+            result = dom_xpath.apply(editor_widgets);
             if(result.size() > 0
             && result[0].isElement())
             {
@@ -334,8 +440,15 @@ void epayment_creditcard::setup_form(
         {
             // forget that widget
             QDomXPath dom_xpath;
-            dom_xpath.setXPath("/editor-form/widget[@id='country']");
+            dom_xpath.setXPath("/editor-form/widget[@id='billing_country']");
             QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+            dom_xpath.setXPath("/editor-form/widget[@id='delivery_country']");
+            result = dom_xpath.apply(editor_widgets);
             if(result.size() > 0
             && result[0].isElement())
             {
@@ -350,8 +463,17 @@ void epayment_creditcard::setup_form(
             if(!default_country.isEmpty())
             {
                 QDomXPath dom_xpath;
-                dom_xpath.setXPath("/editor-form/widget[@id='country']");
+                dom_xpath.setXPath("/editor-form/widget[@id='billing_country']");
                 QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+                if(result.size() > 0
+                && result[0].isElement())
+                {
+                    QDomElement default_value(editor_widgets.createElement("value"));
+                    result[0].appendChild(default_value);
+                    snap_dom::append_plain_text_to_node(default_value, default_country);
+                }
+                dom_xpath.setXPath("/editor-form/widget[@id='delivery_country']");
+                result = dom_xpath.apply(editor_widgets);
                 if(result.size() > 0
                 && result[0].isElement())
                 {
@@ -371,8 +493,15 @@ void epayment_creditcard::setup_form(
         {
             // forget that widget
             QDomXPath dom_xpath;
-            dom_xpath.setXPath("/editor-form/widget[@id='province']");
+            dom_xpath.setXPath("/editor-form/widget[@id='billing_province']");
             QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                result[0].parentNode().removeChild(result[0]);
+            }
+            dom_xpath.setXPath("/editor-form/widget[@id='delivery_province']");
+            result = dom_xpath.apply(editor_widgets);
             if(result.size() > 0
             && result[0].isElement())
             {
@@ -421,7 +550,7 @@ void epayment_creditcard::setup_form(
 
         snap_uri const & main_uri(f_snap->get_uri());
 
-        if(ipath.get_cpath() == "admin/settings/epayment/creditcard-test")
+        if(ipath.get_cpath() == "admin/settings/epayment/credit-card-test")
         {
             // for the test, force this plugin
             //
@@ -596,24 +725,35 @@ void epayment_creditcard::on_save_editor_fields(editor::save_info_t & save_info)
     //
     epayment_creditcard_info_t creditcard_info;
 
+    // information about credit card itself
+    //
     editor::editor * editor_plugin(editor::editor::instance());
-    creditcard_info.set_creditcard_number(editor_plugin->clean_post_value("line-edit", f_snap->postenv("card_number")));
-    creditcard_info.set_security_code(editor_plugin->clean_post_value("line-edit", f_snap->postenv("security_code")));
+    creditcard_info.set_user_name(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("user_name"))));
+
+    // remove spaces and dashes from card number
+    QString card_number(snap_dom::unescape(f_snap->postenv("card_number")));
+    card_number = card_number.replace(" ", "").replace("-", "");
+    creditcard_info.set_creditcard_number(editor_plugin->clean_post_value("line-edit", card_number));
+
+    creditcard_info.set_security_code(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("security_code"))));
 
     // small processing on the expiration date
-    QString const expiration_date(editor_plugin->clean_post_value("line-edit", f_snap->postenv("expiration_date")));
+    QString const expiration_date(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("expiration_date"))));
     snap_string_list const expiration_date_parts(expiration_date.split('/'));
     creditcard_info.set_expiration_date_month(expiration_date_parts[1]);
     creditcard_info.set_expiration_date_year(expiration_date_parts[0]);
 
-    creditcard_info.set_user_name(editor_plugin->clean_post_value("line-edit", f_snap->postenv("user_name")));
-    creditcard_info.set_address1(editor_plugin->clean_post_value("line-edit", f_snap->postenv("address1")));
+    // billing address
+    //
+    creditcard_info.set_billing_business_name(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("billing_business_name"))));
+    creditcard_info.set_billing_attention(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("billing_attention"))));
+    creditcard_info.set_billing_address1(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("billing_address1"))));
     // address2 may be hidden in which case it ends up empty, which is fine
-    creditcard_info.set_address2(editor_plugin->clean_post_value("line-edit", f_snap->postenv("address2")));
-    creditcard_info.set_city(editor_plugin->clean_post_value("line-edit", f_snap->postenv("city")));
+    creditcard_info.set_billing_address2(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("billing_address2"))));
+    creditcard_info.set_billing_city(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("billing_city"))));
     // province may be hidden in which case it ends up empty, which is fine
-    creditcard_info.set_province(editor_plugin->clean_post_value("line-edit", f_snap->postenv("province")));
-    creditcard_info.set_postal_code(editor_plugin->clean_post_value("line-edit", f_snap->postenv("postal_code")));
+    creditcard_info.set_billing_province(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("billing_province"))));
+    creditcard_info.set_billing_postal_code(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("billing_postal_code"))));
 
     // country may be hidden and have a default instead
     //
@@ -624,13 +764,49 @@ void epayment_creditcard::on_save_editor_fields(editor::save_info_t & save_info)
             // user could not enter a country, administrator may have
             // a default though...
             //
-            creditcard_info.set_country(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY))->value().stringValue());
+            creditcard_info.set_billing_country(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY))->value().stringValue());
         }
         else
         {
-            creditcard_info.set_country(editor_plugin->clean_post_value("line-edit", f_snap->postenv("country")));
+            creditcard_info.set_billing_country(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("billing_country"))));
         }
     }
+
+    // delivery address
+    //
+    creditcard_info.set_delivery_business_name(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("delivery_business_name"))));
+    creditcard_info.set_delivery_attention(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("delivery_attention"))));
+    creditcard_info.set_delivery_address1(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("delivery_address1"))));
+    // address2 may be hidden in which case it ends up empty, which is fine
+    creditcard_info.set_delivery_address2(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("delivery_address2"))));
+    creditcard_info.set_delivery_city(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("delivery_city"))));
+    // province may be hidden in which case it ends up empty, which is fine
+    creditcard_info.set_delivery_province(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("delivery_province"))));
+    creditcard_info.set_delivery_postal_code(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("delivery_postal_code"))));
+
+    // country may be hidden and have a default instead
+    //
+    {
+        bool const show_country(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_COUNTRY))->value().safeSignedCharValue(0, 1) != 0);
+        if(!show_country)
+        {
+            // user could not enter a country, administrator may have
+            // a default though...
+            //
+            // TBD: should we check whether the delivery address should be
+            //      added and if not avoid this call?
+            //
+            creditcard_info.set_delivery_country(settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY))->value().stringValue());
+        }
+        else
+        {
+            creditcard_info.set_delivery_country(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("delivery_country"))));
+        }
+    }
+
+    // other fields
+    //
+    creditcard_info.set_phone(editor_plugin->clean_post_value("line-edit", snap_dom::unescape(f_snap->postenv("phone"))));
 
     // the data is ready, search for the gateway (a plugin)
     //
@@ -702,17 +878,31 @@ void epayment_creditcard::process_creditcard(epayment_creditcard_info_t const & 
 
 #ifdef _DEBUG
 // For debug purposes, you may check all the values with the following
+std::cerr << "cc user_name [" << creditcard_info.get_user_name() << "]\n";
 std::cerr << "cc number [" << creditcard_info.get_creditcard_number() << "]\n";
 std::cerr << "cc security_code [" << creditcard_info.get_security_code() << "]\n";
 std::cerr << "cc expiration_date_month [" << creditcard_info.get_expiration_date_month() << "]\n";
 std::cerr << "cc expiration_date_year [" << creditcard_info.get_expiration_date_year() << "]\n";
-std::cerr << "cc user_name [" << creditcard_info.get_user_name() << "]\n";
-std::cerr << "cc address1 [" << creditcard_info.get_address1() << "]\n";
-std::cerr << "cc address2 [" << creditcard_info.get_address2() << "]\n";
-std::cerr << "cc city [" << creditcard_info.get_city() << "]\n";
-std::cerr << "cc province [" << creditcard_info.get_province() << "]\n";
-std::cerr << "cc postal_code [" << creditcard_info.get_postal_code() << "]\n";
-std::cerr << "cc country [" << creditcard_info.get_country() << "]\n";
+
+std::cerr << "cc billing_business_name [" << creditcard_info.get_billing_business_name() << "]\n";
+std::cerr << "cc billing_attention [" << creditcard_info.get_billing_attention() << "]\n";
+std::cerr << "cc billing_address1 [" << creditcard_info.get_billing_address1() << "]\n";
+std::cerr << "cc billing_address2 [" << creditcard_info.get_billing_address2() << "]\n";
+std::cerr << "cc billing_city [" << creditcard_info.get_billing_city() << "]\n";
+std::cerr << "cc billing_province [" << creditcard_info.get_billing_province() << "]\n";
+std::cerr << "cc billing_postal_code [" << creditcard_info.get_billing_postal_code() << "]\n";
+std::cerr << "cc billing_country [" << creditcard_info.get_billing_country() << "]\n";
+
+std::cerr << "cc delivery_business_name [" << creditcard_info.get_delivery_business_name() << "]\n";
+std::cerr << "cc delivery_attention [" << creditcard_info.get_delivery_attention() << "]\n";
+std::cerr << "cc delivery_address1 [" << creditcard_info.get_delivery_address1() << "]\n";
+std::cerr << "cc delivery_address2 [" << creditcard_info.get_delivery_address2() << "]\n";
+std::cerr << "cc delivery_city [" << creditcard_info.get_delivery_city() << "]\n";
+std::cerr << "cc delivery_province [" << creditcard_info.get_delivery_province() << "]\n";
+std::cerr << "cc delivery_postal_code [" << creditcard_info.get_delivery_postal_code() << "]\n";
+std::cerr << "cc delivery_country [" << creditcard_info.get_delivery_country() << "]\n";
+
+std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
 #endif
 }
 

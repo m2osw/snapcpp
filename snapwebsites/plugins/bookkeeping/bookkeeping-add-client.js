@@ -87,8 +87,6 @@ snapwebsites.BookkeepingAddClient = function()
                 e.preventDefault();
                 e.stopPropagation();
 
-                snapwebsites.PopupInstance.darkenPage(0, true);
-
                 // We want to create a new page so for the purpose we
                 // use a ServerAccess object
                 //
@@ -97,6 +95,7 @@ snapwebsites.BookkeepingAddClient = function()
                     that.serverAccess_ = new snapwebsites.ServerAccess(that);
                 }
                 that.serverAccess_.setURI("/bookkeeping/client/add-client");
+                that.serverAccess_.showWaitScreen(1);
                 that.serverAccess_.setData(
                         {
                             client_name:     client_name    .getValue(),
@@ -159,24 +158,6 @@ snapwebsites.BookkeepingAddClient.prototype.closeAddClientPopup_ = function()
 {
     window.parent.snapwebsites.PopupInstance.hide(window.parent.snapwebsites.BookkeepingClient.addClientPopup_);
 };
-
-
-/** \brief Function called on AJAX completion.
- *
- * This function is called if the install or remove of a plugin succeeded.
- *
- * Here we make sure to change the interface accordingly.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- */
-snapwebsites.BookkeepingAddClient.prototype.serverAccessComplete = function(result) // virtual
-{
-    result.undarken = snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
-    snapwebsites.BookkeepingAddClient.superClass_.serverAccessComplete.call(this, result);
-};
-
-
 
 
 

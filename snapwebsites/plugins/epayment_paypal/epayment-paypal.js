@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment-paypal
- * Version: 0.0.1.18
+ * Version: 0.0.1.19
  * Browsers: all
  * Depends: epayment (>= 0.0.1)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -194,18 +194,15 @@ snapwebsites.ePaymentFacilityPayPal.prototype.buttonClicked = function()
     }
 
     this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.ePaymentFacilityPayPal.buttonClicked()") + "?a=view");
+    this.serverAccess_.showWaitScreen(150); // avoid extra clicks
     this.serverAccess_.setData(
         {
             epayment__epayment_paypal: "checkout"
         });
     this.serverAccess_.send();
 
-    // now we wait for an answer which should give us a URL to redirect
+    // now we wait for an answer, which should give us a URL to redirect
     // the user to a PayPal page
-
-    // darken the screen to avoid having the user click something else
-    // while processing...
-    snapwebsites.PopupInstance.darkenPage(150, true);
 };
 
 

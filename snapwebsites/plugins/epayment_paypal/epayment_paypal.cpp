@@ -328,7 +328,7 @@ int64_t epayment_paypal::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 12, 20, 21, 53, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 4, 7, 23, 45, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1262,7 +1262,7 @@ void epayment_paypal::cancel_invoice(QString const& token)
     content::path_info_t invoice_ipath;
     invoice_ipath.set_path(invoice);
 
-    epayment::epayment *epayment_plugin(epayment::epayment::instance());
+    epayment::epayment * epayment_plugin(epayment::epayment::instance());
 
     // the current state must be pending for us to cancel anythying
     epayment::name_t status(epayment_plugin->get_invoice_status(invoice_ipath));
