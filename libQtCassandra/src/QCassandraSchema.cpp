@@ -10,10 +10,10 @@
  *
  * License:
  *      Copyright (c) 2011-2016 Made to Order Software Corp.
- * 
+ *
  *      http://snapwebsites.org/
  *      contact@m2osw.com
- * 
+ *
  *      Permission is hereby granted, free of charge, to any person obtaining a
  *      copy of this software and associated documentation files (the
  *      "Software"), to deal in the Software without restriction, including
@@ -130,6 +130,24 @@ void SessionMeta::loadSchema()
             table->f_name     = QString::fromUtf8(name,len);
             keyspace->f_tables[table->f_name] = table;
 
+            iterator_pointer_t table_fields_iter
+                ( cass_iterator_fields_from_table_meta( p_table.get() )
+                , iteratorDeleter()
+                );
+            while( cass_iterator_next( table_fields_iter.get() ) )
+            {
+                CassError rc = cass_iterator_get_meta_field_name( table_fields_iter.get(), &name, &len );
+                if( rc != CASS_OK )
+                {
+                    throw std::runtime_error( "Cannot get field name from iterator!" );
+                }
+
+                const QString field_name( QString::fromUtf8(name,len) );
+                auto val( Value::create() );
+                val->readValue(table_fields_iter);
+                table->f_fields[field_name] = val;
+            }
+
             iterator_pointer_t columns_iter
                 ( cass_iterator_columns_from_table_meta( p_table.get() )
                 , iteratorDeleter()
@@ -227,6 +245,13 @@ const SessionMeta::map_t&
 }
 
 
+const SessionMeta::KeyspaceMeta::TableMeta::map_t&
+    SessionMeta::KeyspaceMeta::getTables() const
+{
+    return f_tables;
+}
+
+
 //================================================================/
 // TableMeta
 //
@@ -242,10 +267,10 @@ const QString& SessionMeta::KeyspaceMeta::TableMeta::getName() const
 }
 
 
-const SessionMeta::KeyspaceMeta::TableMeta::map_t&
-    SessionMeta::KeyspaceMeta::getTables() const
+const SessionMeta::map_t&
+    SessionMeta::KeyspaceMeta::TableMeta::getFields() const
 {
-    return f_tables;
+    return f_fields;
 }
 
 

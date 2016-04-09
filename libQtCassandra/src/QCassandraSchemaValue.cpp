@@ -81,6 +81,12 @@ void Value::readValue( value_pointer_t val )
 
 void Value::parseValue()
 {
+    f_map.clear();
+    f_list.clear();
+    f_stringMap.clear();
+    f_variant.clear();
+    f_stringOutput.clear();
+
     switch( f_cassType )
     {
         case CASS_VALUE_TYPE_UNKNOWN    :
@@ -162,7 +168,9 @@ void Value::parseMap()
 
         Value::pointer_t val( create() );
         val->readValue( value );
+        //
         f_map[key_str] = val;
+        f_stringMap[key_str.toStdString()] = val->variant().toString().toStdString();
     }
 }
 

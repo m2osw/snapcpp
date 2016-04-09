@@ -34,6 +34,8 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#pragma once
+
 #include "QtCassandra/QCassandraQuery.h"
 #include "QtCassandra/QCassandraSchemaValue.h"
 
@@ -86,7 +88,8 @@ public:
 
             TableMeta( KeyspaceMeta::pointer_t kysp );
 
-            const QString&  getName() const;
+            const QString&              getName()   const;
+            const SessionMeta::map_t&   getFields() const;
 
             class ColumnMeta
             {
@@ -121,6 +124,7 @@ public:
             KeyspaceMeta::pointer_t f_keyspace;
             QString					f_name;
             ColumnMeta::map_t       f_columns;
+            SessionMeta::map_t      f_fields;
 
             friend class SessionMeta;
         };

@@ -59,9 +59,10 @@ class Value
 {
 public:
     typedef enum { TypeUnknown, TypeVariant, TypeMap, TypeList } type_t;
-    typedef std::shared_ptr<Value>      pointer_t;
-    typedef std::vector<pointer_t>      list_t;
-    typedef std::map<QString,pointer_t> map_t;
+    typedef std::shared_ptr<Value>            pointer_t;
+    typedef std::vector<pointer_t>            list_t;
+    typedef std::map<QString,pointer_t>       map_t;
+    typedef std::map<std::string,std::string> string_map_t;
 
     Value();
 
@@ -71,9 +72,11 @@ public:
     void    readValue( CassTools::value_pointer_t iter );
     type_t  type() const { return f_type; }
 
-    const QVariant& variant() const { return f_variant; }
-    const list_t&   list()    const { return f_list;    }
-    const map_t&    map()     const { return f_map;     }
+    std::string         string()     const { return f_variant.toString().toStdString(); }
+    const QVariant&     variant()    const { return f_variant;   }
+    const list_t&       list()       const { return f_list;      }
+    const map_t&        map()        const { return f_map;       }
+    const string_map_t& stringMap()  const { return f_stringMap; }
 
     const QString& output() const;
 
@@ -84,6 +87,7 @@ private:
     QVariant                   f_variant;
     list_t                     f_list;
     map_t                      f_map;
+    string_map_t			   f_stringMap;
 
     mutable QString f_stringOutput;
 

@@ -39,6 +39,7 @@
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraContext.h"
 #include "QtCassandra/QCassandraQuery.h"
+#include "QtCassandra/QCassandraSchema.h"
 #include "QtCassandra/QCassandraVersion.h"
 
 #include <memory>
@@ -48,6 +49,7 @@ namespace QtCassandra
 
 class KsDef;
 class CfDef;
+class ColumnDef;
 
 // Handling of the transport and CassandraClient objects
 class QCassandra
@@ -108,9 +110,9 @@ private:
     void setCurrentContext(QCassandraContext::pointer_t c);
     void clearCurrentContextIf(const QCassandraContext& c);
 
-    void retrieveColumns  ( CfDef& cf_def ) const;
-    void retrieveTriggers ( CfDef& cf_def ) const;
-    void retrieveTables   ( KsDef& ks_def ) const;
+    void retrieveColumn   ( ColumnDef& cf_def, QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t column ) const;
+    void retrieveTable    ( CfDef& cf_def    , QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table ) const;
+    void retrieveContext  ( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace ) const;
     void retrieveContext  ( const QString& context_name ) const;
 
     friend class QCassandraContext;
