@@ -583,14 +583,18 @@ JSON::JSONValue::object_t const& JSON::JSONValue::get_object() const
  * \p name defines the member to change. The \p value is the new value
  * to save along that name.
  *
- * Note that the pointer to the value cannot be set to NULL.
- *
  * The \p name can be any string except the empty string. If name is set
  * to the empty string, then an exception is raised.
  *
  * If a member with the same name already exists, it gets overwritten
  * with this new value. If the name is new, then the object is modified
  * which may affect your copy of the object, if you have one.
+ *
+ * In order to remove an object member, set it to a null pointer:
+ *
+ * \code
+ *      set_member("clear_this", as2js::JSON::JSONValue::pointer_t());
+ * \endcode
  *
  * \exception exception_internal_error
  * If the JSONValue is not of type JSON_TYPE_OBJECT, then this function
@@ -616,13 +620,18 @@ void JSON::JSONValue::set_member(String const& name, JSONValue::pointer_t value)
         // TBD: is that really not allowed?
         throw exception_invalid_index("JSON::JSONValue::set_member() called with an empty string as the member name");
     }
-    if(!value)
-    {
-        throw exception_invalid_data("JSON::JSONValue::set_member() called with a null pointer as the value");
-    }
 
     // this one is easy enough
-    f_object[name] = value;
+    if(value)
+    {
+        // add/replace
+        f_object[name] = value;
+    }
+    else
+    {
+        // remove
+        f_object.erase(name);
+    }
 }
 
 
