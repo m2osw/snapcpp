@@ -310,6 +310,17 @@ QString epayment_creditcard_info_t::get_phone() const
 	return f_phone;
 }
 
+void epayment_creditcard_info_t::set_subscription(bool subscription)
+{
+    f_subscription = subscription;
+}
+
+
+bool epayment_creditcard_info_t::get_subscription() const
+{
+    return f_subscription;
+}
+
 
 SNAP_PLUGIN_EXTENSION_END()
 

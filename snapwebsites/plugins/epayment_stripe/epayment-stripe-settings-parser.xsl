@@ -23,9 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:snap="snap:snap">
 
 	<!-- some special variables to define the theme -->
-	<xsl:variable name="layout-area">epayment-strip-settings-parser</xsl:variable>
+	<xsl:variable name="layout-area">epayment-stripe-settings-parser</xsl:variable>
 	<xsl:variable name="layout-modified">2016-01-27 00:16:18</xsl:variable>
-	<xsl:variable name="layout-editor">epayment-strip-settings-page</xsl:variable>
+	<xsl:variable name="layout-editor">epayment-stripe-settings-page</xsl:variable>
 
 	<xsl:template match="snap">
 		<output><!-- lang="{$lang}"-->
@@ -48,12 +48,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<legend>Stripe Access Codes</legend>
 
 						<div class="editor-block">
-							<label for="client_id" class="settings-title">Client Identifier (client_id)</label>
-							<xsl:copy-of select="page/body/epayment_stripe/client_id/node()"/>
-						</div>
-
-						<div class="editor-block">
-							<label for="secret" class="settings-title">Secret (secret)</label>
+							<label for="secret" class="settings-title">Secret (sk_live_...)</label>
 							<xsl:copy-of select="page/body/epayment_stripe/secret/node()"/>
 						</div>
 
@@ -72,14 +67,26 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						</div>
 
 						<div class="editor-block">
-							<label for="sandbox_client_id" class="settings-title">Sandbox Client Identifier (client_id)</label>
-							<xsl:copy-of select="page/body/epayment_stripe/sandbox_client_id/node()"/>
+							<label for="secret" class="settings-title">Test (sk_test_...):</label>
+							<xsl:copy-of select="page/body/epayment_stripe/test_secret/node()"/>
+							<p>
+								You may use the stripe public key:
+								<strong>sk_test_BQokikJOvBiI2HlWgH4olfQ2</strong>
+								which anyone has access to and may end up using... so when
+								using that key, make sure not to enter data which you do
+								not want to become public.
+							</p>
+							<p>
+								Pretty much all the data you enter will be ignored when
+								in debug mode (although presence is important and enforced
+								by Snap! anyway.) However, the only accepted card numbers
+								while testing is limited. For example, you can use
+								4242-4242-4242-4242 and others as defined on the
+								<a href="https://stripe.com/docs/testing"
+								target="_blank">Testing</a> page of stripe.
+							</p>
 						</div>
 
-						<div class="editor-block">
-							<label for="sandbox_secret" class="settings-title">Sandbox Secret (secret)</label>
-							<xsl:copy-of select="page/body/epayment_stripe/sandbox_secret/node()"/>
-						</div>
 					</fieldset>
 
 				</div>

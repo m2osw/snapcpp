@@ -24,7 +24,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ENTITY % html-data "a|b|br|code|div|em|i|img|p|small|strong|table|tbody|td|tr|u|ul|ol|li">
 
 <!ELEMENT timeout EMPTY>
-<!ATTLIST timeout minutes CDATA #REQUIRED>
+<!ATTLIST timeout minutes CDATA #REQUIRED
+                  redirect CDATA #IMPLIED>
 
 <!ELEMENT auto-reset EMPTY>
 <!ATTLIST auto-reset minutes CDATA #REQUIRED>
@@ -133,7 +134,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT min-lines (#PCDATA)>
 <!ELEMENT max-lines (#PCDATA)>
 <!ELEMENT resize (#PCDATA)>
-<!ELEMENT filters (extensions|regex|min-value|max-value|min-date|max-date|min-time|max-time|uri|validate)+>
+<!ELEMENT filters (extensions|regex|min-value|max-value|min-date|max-date|min-time|max-time|uri|validate|country)+>
 <!ELEMENT extensions (#PCDATA)>
 <!ELEMENT min-value (#PCDATA)>
 <!ELEMENT max-value (#PCDATA)>
@@ -142,6 +143,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ELEMENT min-time (#PCDATA)>
 <!ELEMENT max-time (#PCDATA)>
 <!ELEMENT validate (#PCDATA)>
+
+<!ELEMENT country (#PCDATA)>
+<!ATTLIST country mode CDATA #IMPLIED>
 
 <!-- HTML tags that are used in default values or background values
      we're not trying to replicate the whole HTML DTD, so we simply here -->

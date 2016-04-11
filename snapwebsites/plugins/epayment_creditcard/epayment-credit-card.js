@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment-credit-card
- * Version: 0.0.1.3
+ * Version: 0.0.1.5
  * Browsers: all
  * Depends: epayment (>= 0.0.1.33)
  * Copyright: Copyright 2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -69,20 +69,14 @@ snapwebsites.ePaymentCreditCard = function(gateway)
     this.popup_ = {
         id: "e-payment-credit-card",
         title: "Credit Card Details",
-        path: "/epayment/credit-card?gateway=" + this.gateway_,
+        path: "/epayment/credit-card?gateway=" + this.gateway_ + "&from=" + jQuery("link[rel='canonical']").attr("href"),
         darken: 150,
         width: 500,
         height: 375
     };
 
-    /*this.popupWindow_ =*/ snapwebsites.PopupInstance.open(this.popup_);
+    snapwebsites.PopupInstance.open(this.popup_);
     snapwebsites.PopupInstance.show(this.popup_);
-
-//    jQuery("process", this.popupWindow_)
-//        .click(function(e)
-//            {
-//console.log("click received?!");
-//            });
 
     return this;
 };
@@ -127,14 +121,14 @@ snapwebsites.ePaymentCreditCard.prototype.popup_ = null;
 snapwebsites.ePaymentCreditCard.prototype.gateway_ = "";
 
 
-/** \brief The server access used by this facility.
- *
- * Used to send the credit card form to the server.
- *
- * @type {snapwebsites.ServerAccess}
- * @private
- */
-snapwebsites.ePaymentCreditCard.prototype.serverAccess_ = null;
+///** \brief The server access used by this facility.
+// *
+// * Used to send the credit card form to the server.
+// *
+// * @type {snapwebsites.ServerAccess}
+// * @private
+// */
+//snapwebsites.ePaymentCreditCard.prototype.serverAccess_ = null;
 
 
 /** \brief Close this credit card form instance.
@@ -148,30 +142,30 @@ snapwebsites.ePaymentCreditCard.prototype.closeWindow = function()
 };
 
 
-/** \brief This facility button was clicked.
- *
- * This Stripe implementation sends the click to the server directly.
- * It expects the server to register the invoice and start the checkout
- * process with Stripe Express.
- */
-snapwebsites.ePaymentCreditCard.prototype.buttonClicked = function()
-{
-    if(!this.serverAccess_)
-    {
-        this.serverAccess_ = new snapwebsites.ServerAccess(this);
-    }
-
-    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.ePaymentFacilityStripe.buttonClicked()") + "?a=view");
-    this.serverAccess_.showWaitScreen(1);
-    this.serverAccess_.setData(
-        {
-            epayment__epayment_stripe: "checkout"
-        });
-    this.serverAccess_.send();
-
-    // now we wait for an answer which should give us a URL to redirect
-    // the user to a Stripe page
-};
+///** \brief This facility button was clicked.
+// *
+// * This Stripe implementation sends the click to the server directly.
+// * It expects the server to register the invoice and start the checkout
+// * process with Stripe Express.
+// */
+//snapwebsites.ePaymentCreditCard.prototype.buttonClicked = function()
+//{
+//    if(!this.serverAccess_)
+//    {
+//        this.serverAccess_ = new snapwebsites.ServerAccess(this);
+//    }
+//
+//    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.ePaymentFacilityStripe.buttonClicked()") + "?a=view");
+//    this.serverAccess_.showWaitScreen(1);
+//    this.serverAccess_.setData(
+//        {
+//            epayment__epayment_stripe: "checkout"
+//        });
+//    this.serverAccess_.send();
+//
+//    // now we wait for an answer which should give us a URL to redirect
+//    // the user to a Stripe page
+//};
 
 
 

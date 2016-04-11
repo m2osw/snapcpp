@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<xsl:attribute name="timeout"><xsl:value-of select="page/body/editor/timeout/div/div/node()"/></xsl:attribute>
 
 				<xsl:copy-of select="page/body/epayment/gateway/node()"/>
+				<xsl:copy-of select="page/body/epayment/from/node()"/>
 
 				<ul class="epayment-credit-card-tab-list">
 					<li class="active" for="card-info">Card Info</li>
@@ -101,7 +102,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 						<div class="epayment-credit-card-billing-address">
 							<div class="editor-block epayment-credit-card-address-label">
-								<label for="address1" class="editor-title">Address:</label>
+								<label for="billing_address1" class="editor-title">Address:&#160;<span class="required">*</span></label>
 							</div>
 							<div class="editor-block epayment-credit-card-address-widgets">
 								<xsl:copy-of select="page/body/epayment/billing_address1/node()"/>
@@ -111,7 +112,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 						<div class="epayment-credit-card-billing-address">
 							<div class="editor-block epayment-billing-city">
-								<label for="billing_city" class="editor-title">City:</label>
+								<label for="billing_city" class="editor-title">City: <span class="required">*</span></label>
 								<xsl:copy-of select="page/body/epayment/billing_city/node()"/>
 							</div>
 
@@ -123,7 +124,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							</xsl:if>
 
 							<div class="editor-block epayment-billing-postal-code">
-								<label for="billing_postal_code" class="editor-title">Postal Code:</label>
+								<label for="billing_postal_code" class="editor-title">Postal Code: <span class="required">*</span></label>
 								<xsl:copy-of select="page/body/epayment/billing_postal_code/node()"/>
 							</div>
 						</div>
@@ -131,7 +132,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<xsl:if test="page/body/epayment/billing_country">
 							<div class="epayment-credit-card-billing-country">
 								<div class="editor-block epayment-credit-card-country-label">
-									<label for="billing_country" class="editor-title">Country:</label>
+									<label for="billing_country" class="editor-title">Country:&#160;<span class="required">*</span></label>
 								</div>
 								<div class="editor-block epayment-credit-card-country-widget">
 									<xsl:copy-of select="page/body/epayment/billing_country/node()"/>

@@ -442,7 +442,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 4, 7, 1, 45, 57, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 4, 10, 22, 19, 57, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1737,7 +1737,7 @@ void editor::editor_save(content::path_info_t & ipath, sessions::sessions::sessi
             }
             if(field_name.isEmpty() && widget_auto_save != "no")
             {
-                throw snap_logic_exception(QString("FIELD of a widget on line %1 found in an editor XML document is missing. It is required when auto-save is ON.").arg(widget.lineNumber()));
+                throw snap_logic_exception(QString("The \"field\" attribute of a widget on line %1 found in an editor XML document is missing. It is required when auto-save is ON.").arg(widget.lineNumber()));
             }
 
             if(f_snap->postenv_exists(widget_name))
@@ -4916,6 +4916,7 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
         }
     }
 
+    QString redirect_on_timeout;
     int timeout_int(g_default_timeout); // 24h in minutes
     {
         QDomElement timeout_tag(snap_dom::get_element(editor_widgets, "timeout", false));
@@ -4926,6 +4927,10 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
         {
             // save user defined value
             timeout_int = timeout_temp;
+
+            // if we use the minutes defined in this tag, we also have
+            // to use the redirect if defined
+            redirect_on_timeout = timeout_tag.attribute("redirect", "");
         }
 
         // TODO: limit this timing to the user session; there is no need
@@ -5076,7 +5081,14 @@ void editor::on_generate_page_content(content::path_info_t & ipath, QDomElement 
             else if(is_editor_timeout)
             {
                 found_timeout_widget = true;
-                current_value = QString("%1").arg(timeout_int);
+                if(redirect_on_timeout.isEmpty())
+                {
+                    current_value = QString("%1").arg(timeout_int);
+                }
+                else
+                {
+                    current_value = QString("%1,%2").arg(timeout_int).arg(redirect_on_timeout);
+                }
             }
             else if(is_editor_auto_reset)
             {

@@ -5078,7 +5078,7 @@ bool snap_child::verify_language_name(QString & lang)
  *
  * \return true if the country is valid, false in all other cases.
  */
-bool snap_child::verify_country_name(QString& country)
+bool snap_child::verify_country_name(QString & country)
 {
     country = country.toUpper();
     if(country.length() == 2)
@@ -8547,7 +8547,7 @@ snap_child::language_name_t const *snap_child::get_languages()
  *
  * \return A pointer to the table of countries.
  */
-snap_child::country_name_t const *snap_child::get_countries()
+snap_child::country_name_t const * snap_child::get_countries()
 {
     return g_country_names;
 }

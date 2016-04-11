@@ -444,6 +444,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     || n == "epayment::show_phone"
     || n == "epayment::show_province"
     || n == "epayment_paypal::debug"
+    || n == "epayment_stripe::debug"
     || n == "feed::allow_main_atom_xml"
     || n == "feed::allow_main_rss_xml"
     || n == "feed::publish_full_article"
@@ -574,13 +575,13 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return column_type_t::CT_float32_value;
     }
     else if(n == "epayment::price"
+         || n == "epayment::grand_total"
          || n == "finball::company_plan1" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::company_plan6" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::company_plan12" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::location_plan1" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::location_plan6" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::location_plan12" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::invoice_grand_total" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::promotion_amount" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::minimum_total" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::atm_fee" // TODO -- remove at some point since that is a cutomer's field
@@ -614,6 +615,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "editor::dropdown_date_edit_widget"
          || n == "epayment_paypal::last_attempt"
          || n == "epayment_paypal::oauth2_expires"
+         || n == "epayment_stripe::created"
          || n == "images::modified"
          || n == "list::last_updated"
          || n == "permissions::last_updated"

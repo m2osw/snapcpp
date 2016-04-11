@@ -2538,7 +2538,7 @@ void users::create_logged_in_user_session(QString const & user_key)
  * it is too dangerous to allow someone from the outside to temper with this
  * variable.
  *
- * WARNING WARNING WARNING
+ * WARNING WARNING WARNING<br/>
  * This returns the user key which is his email address. It does not
  * tell you that the user is logged in. For that purpose you MUST
  * use one of the user_is_logged_in() or user_has_administrative_rights()
@@ -3529,16 +3529,16 @@ void users::set_referrer( QString path )
     // page; if you send the user on a page that only redirects to /login
     // then the user will end up on his profile (/user/me)
     //
-    char const *loginref_name( get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER) );
+    char const * loginref_name( get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER) );
     if( sessions::sessions::instance()->get_from_session( *f_info, loginref_name ).isEmpty() )
     {
-        SNAP_LOG_DEBUG() << "name_t::SNAP_NAME_USERS_LOGIN_REFERRER being set to " << path << " for page path " << f_info->get_page_path();
+        SNAP_LOG_DEBUG("name_t::SNAP_NAME_USERS_LOGIN_REFERRER being set to ")(path)(" for page path ")(f_info->get_page_path());
 
         // verify that it is not /login or /logout because those cause
         // real problems!
-        QString const site_key(f_snap->get_site_key_with_slash());
-        if( path != site_key + "login"
-         && path != site_key + "logout")
+        QString const cpath(ipath.get_cpath());
+        if(cpath != "login"
+        && cpath != "logout")
         {
             // everything okay!
             attach_to_session( loginref_name, path );

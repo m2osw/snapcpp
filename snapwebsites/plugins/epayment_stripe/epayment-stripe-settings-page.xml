@@ -18,17 +18,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <editor-form owner="epayment_stripe" id="settings" content-modified="2016-01-27 00:15:15">
-  <timeout minutes="30"/> <!-- 30 minutes -->
+  <timeout minutes="30" redirect="/admin/settings/epayment"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
-  <focus refid="client_id"/>
+  <focus refid="secret"/>
   <on-save allow-edit="yes"/>
+  <no-toolbar/>
   <taborder>
-    <tabindex refid="client_id"/>
     <tabindex refid="secret"/>
+    <tabindex refid="maximum_repeat_failures"/>
     <tabindex refid="debug"/>
-    <tabindex refid="sandbox_client_id"/>
-    <tabindex refid="sandbox_secret"/>
   </taborder>
 
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
@@ -36,23 +35,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <widget id="editor-timeout" type="silent" field="editor::timeout" path="editor/timeout">
   </widget>
 
-  <widget id="client_id" type="line-edit" field="epayment_stripe::client_id" path="epayment_stripe/client_id" auto-save="plain" secret="secret">
-    <tooltip>The Stripe plugin makes use of users who have a specific client identifier and secret. This field is expected to be filled with the client_id.</tooltip>
-    <help>Help</help>
-    <sizes>
-      <min>1</min>
-      <max>200</max>
-    </sizes>
-    <background-value>client_id</background-value>
-  </widget>
   <widget id="secret" type="line-edit" field="epayment_stripe::secret" path="epayment_stripe/secret" auto-save="plain" secret="secret">
-    <tooltip>The Stripe plugin makes use of users who have a specific client identifier and secret. This field is expected to be filled with the secret.</tooltip>
-    <help>Help</help>
+    <tooltip>The Stripe system expects a client secret API key function. This field is expected to be filled with that secret API key.</tooltip>
+    <help>You get a secret API key whenever you register an account with Stripe. That key has to be copied here. Remember that it has to remain secret. Do not copy it anywhere else.</help>
     <sizes>
       <min>1</min>
       <max>200</max>
     </sizes>
-    <background-value>secret</background-value>
+    <background-value>sk_live_...</background-value>
   </widget>
   <widget id="maximum_repeat_failures" type="line-edit" field="epayment_stripe::maximum_repeat_failures" path="epayment_stripe/maximum-repeat-failures" auto-save="int8">
     <tooltip>The number of times the system will try to pass a recurring fee before it stops trying.</tooltip>
@@ -61,32 +51,26 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <min>1</min>
       <max>200</max>
     </sizes>
-    <value>5</value>
+    <default>5</default>
     <background-value>maximum number of failures</background-value>
   </widget>
   <widget id="debug" type="checkmark" field="epayment_stripe::debug" path="epayment_stripe/debug" auto-save="int8">
-    <label>Run in Debug mode. (WARNING: when Debug is turned on, no real charges are performed.)</label>
-    <tooltip>Check this box to run in debug mode. This means you can pass orders without actually passing real payments.</tooltip>
-    <help>Help</help>
+    <label>Run in Debug mode. (<strong>WARNING:</strong> when Debug is turned on, no real charges are performed.)</label>
+    <tooltip>Check this box to run in debug mode. This means you can pass orders without actually making real payments.</tooltip>
+    <help>
+      The Debug mode is useful for you to make sure that everything is
+      functional. Stripe offers a debug account that everyone can use
+      without you having to do anything more than check this box.
+    </help>
     <value>0</value>
   </widget>
-  <widget id="sandbox_client_id" type="line-edit" field="epayment_stripe::sandbox_client_id" path="epayment_stripe/sandbox_client_id" auto-save="plain" secret="secret">
-    <tooltip>When in debug mode, the Stripe plugin makes use of sandbox users who have a specific client identifier and secret. This field is expected to be filled with the client_id.</tooltip>
-    <help>Help</help>
+  <widget id="test_secret" type="line-edit" field="epayment_stripe::test_secret" path="epayment_stripe/test_secret" auto-save="plain" secret="secret">
+    <tooltip>The Stripe system also gives you a secret key for test purposes. This is useful if you want to make sure things work before you actually change your stripe system to live and run real credit card tests.</tooltip>
+    <help>You get a live and a test secret API key whenever you register an account with Stripe. That test key can be copied here. It is only required if you want to run tests to make sure that your website is working. Remember that it has to remain secret. Do not copy it anywhere else.</help>
     <sizes>
-      <min>1</min>
       <max>200</max>
     </sizes>
-    <background-value>client_id</background-value>
-  </widget>
-  <widget id="sandbox_secret" type="line-edit" field="epayment_stripe::sandbox_secret" path="epayment_stripe/sandbox_secret" auto-save="plain" secret="secret">
-    <tooltip>When in debug mode, the Stripe plugin makes use of sandbox users who have a specific client identifier and secret. This field is expected to be filled with the secret.</tooltip>
-    <help>Help</help>
-    <sizes>
-      <min>1</min>
-      <max>200</max>
-    </sizes>
-    <background-value>secret</background-value>
+    <background-value>sk_test_...</background-value>
   </widget>
 
 </editor-form>

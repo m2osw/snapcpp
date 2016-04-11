@@ -41,59 +41,36 @@ enum class name_t
 {
     SNAP_NAME_EPAYMENT_STRIPE_CANCEL_PLAN_URL,
     SNAP_NAME_EPAYMENT_STRIPE_CANCEL_URL,
+    SNAP_NAME_EPAYMENT_STRIPE_CHARGE_URI,
     SNAP_NAME_EPAYMENT_STRIPE_CLICKED_POST_FIELD,
+    SNAP_NAME_EPAYMENT_STRIPE_CREATED,
+    SNAP_NAME_EPAYMENT_STRIPE_CUSTOMER_KEY,
+    SNAP_NAME_EPAYMENT_STRIPE_CUSTOMER_URI,
     SNAP_NAME_EPAYMENT_STRIPE_DEBUG,
     SNAP_NAME_EPAYMENT_STRIPE_LAST_ATTEMPT,
     SNAP_NAME_EPAYMENT_STRIPE_MAXIMUM_REPEAT_FAILURES,
     SNAP_NAME_EPAYMENT_STRIPE_RETURN_PLAN_THANK_YOU,
-    SNAP_NAME_EPAYMENT_STRIPE_RETURN_PLAN_URL,
     SNAP_NAME_EPAYMENT_STRIPE_RETURN_THANK_YOU,
-    SNAP_NAME_EPAYMENT_STRIPE_RETURN_URL,
     SNAP_NAME_EPAYMENT_STRIPE_SETTINGS_PATH,
     SNAP_NAME_EPAYMENT_STRIPE_TABLE,
+    SNAP_NAME_EPAYMENT_STRIPE_TEST_KEY,
     SNAP_NAME_EPAYMENT_STRIPE_TOKEN_POST_FIELD,
+    SNAP_NAME_EPAYMENT_STRIPE_VERSION,
 
     // SECURE (saved in "secret" table)
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_ACTIVATED_PLAN,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_ACTIVATED_PLAN_HEADER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_AGREEMENT_ID,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_AGREEMENT_TOKEN,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_AGREEMENT_URL,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_BILL_PLAN,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_BILL_PLAN_HEADER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHECK_BILL_PLAN,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHECK_BILL_PLAN_HEADER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CLIENT_ID,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CREATED_AGREEMENT,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CREATED_AGREEMENT_HEADER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CREATED_PAYMENT,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CREATED_PAYMENT_HEADER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CREATED_PLAN,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CREATED_PLAN_HEADER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_EXECUTE_AGREEMENT,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_EXECUTED_AGREEMENT,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_EXECUTED_AGREEMENT_HEADER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_EXECUTED_PAYMENT,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_EXECUTED_PAYMENT_HEADER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_EXECUTE_PAYMENT,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_INVOICE_NUMBER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_INVOICE_SECRET_ID,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_OAUTH2_ACCESS_TOKEN,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_OAUTH2_APP_ID,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_OAUTH2_DATA,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_OAUTH2_EXPIRES,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_OAUTH2_HEADER,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_OAUTH2_SCOPE,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_OAUTH2_TOKEN_TYPE,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_PAYMENT_ID,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_PAYMENT_TOKEN,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_PAYER_ID,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_PLAN_ID,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_PLAN_URL,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHARGE_HEADER,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHARGE_INFO,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHARGE_KEY,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CREATE_CUSTOMER_HEADER,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_CUSTOMER_INFO,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_ERROR_REPLY,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_LAST_ERROR_MESSAGE,
     SNAP_SECURE_NAME_EPAYMENT_STRIPE_REPEAT_PAYMENT,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_SANDBOX_CLIENT_ID,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_SANDBOX_SECRET,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_SECRET
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_RETRIEVE_CUSTOMER_HEADER,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_SECRET,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_TEST_SECRET,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_UPDATE_CUSTOMER_ERROR,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_UPDATE_CUSTOMER_HEADER
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
@@ -106,12 +83,28 @@ public:
     explicit epayment_stripe_exception(QString const &     what_msg) : snap_exception("epayment_stripe", what_msg) {}
 };
 
+class epayment_stripe_exception_invalid_parameter : public snap_exception
+{
+public:
+    explicit epayment_stripe_exception_invalid_parameter(char const *        what_msg) : snap_exception("epayment_stripe", what_msg) {}
+    explicit epayment_stripe_exception_invalid_parameter(std::string const & what_msg) : snap_exception("epayment_stripe", what_msg) {}
+    explicit epayment_stripe_exception_invalid_parameter(QString const &     what_msg) : snap_exception("epayment_stripe", what_msg) {}
+};
+
 class epayment_stripe_exception_io_error : public snap_exception
 {
 public:
     explicit epayment_stripe_exception_io_error(char const *        what_msg) : snap_exception("epayment_stripe", what_msg) {}
     explicit epayment_stripe_exception_io_error(std::string const & what_msg) : snap_exception("epayment_stripe", what_msg) {}
     explicit epayment_stripe_exception_io_error(QString const &     what_msg) : snap_exception("epayment_stripe", what_msg) {}
+};
+
+class epayment_stripe_exception_invalid_error : public snap_exception
+{
+public:
+    explicit epayment_stripe_exception_invalid_error(char const *        what_msg) : snap_exception("epayment_stripe", what_msg) {}
+    explicit epayment_stripe_exception_invalid_error(std::string const & what_msg) : snap_exception("epayment_stripe", what_msg) {}
+    explicit epayment_stripe_exception_invalid_error(QString const &     what_msg) : snap_exception("epayment_stripe", what_msg) {}
 };
 
 
@@ -123,7 +116,7 @@ public:
 
 class epayment_stripe
         : public plugins::plugin
-        , public path::path_execute
+        //, public path::path_execute
         , public layout::layout_content
         , public epayment_creditcard::epayment_creditcard_gateway_t
 {
@@ -146,7 +139,7 @@ public:
     void                        on_table_is_accessible(QString const & table_name, server::accessible_flag_t & accessible);
 
     // path::path_execute implementation
-    virtual bool                on_path_execute(content::path_info_t & ipath);
+    //virtual bool                on_path_execute(content::path_info_t & ipath);
 
     // layout signals
     void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata);
@@ -160,7 +153,7 @@ public:
 
     // epayment_creditcard::epayment_creditcard_gateway_t implementation
     virtual void                gateway_features(epayment_creditcard::epayment_gateway_features_t & gateway_info);
-    virtual void                process_creditcard(epayment_creditcard::epayment_creditcard_info_t const & creditcard_info, editor::save_info_t & save_info);
+    virtual bool                process_creditcard(epayment_creditcard::epayment_creditcard_info_t & creditcard_info, editor::save_info_t & save_info);
 
 private:
     void                        initial_update(int64_t variables_timestamp);
@@ -169,15 +162,19 @@ private:
     bool                        get_oauth2_token(http_client_server::http_client & http, std::string & token_type, std::string & access_token);
     QString                     get_product_plan(http_client_server::http_client & http, std::string const & token_type, std::string const & access_token, epayment::epayment_product const & recurring_product, double const recurring_fee, QString & plan_id);
     bool                        get_debug();
+    QString                     get_stripe_key(bool const debug);
     int8_t                      get_maximum_repeat_failures();
-    std::string                 create_unique_request_id(QString const  & main_id);
+    std::string                 create_unique_request_id(QString const & main_id);
+    void                        log_error(http_client_server::http_response::pointer_t response, QtCassandra::QCassandraRow::pointer_t row);
 
     zpsnap_child_t                              f_snap;
     QtCassandra::QCassandraTable::pointer_t     f_epayment_stripe_table;
     controlled_vars::flbool_t                   f_debug_defined;
     controlled_vars::flbool_t                   f_debug;
     controlled_vars::flbool_t                   f_maximum_repeat_failures_defined;
+    controlled_vars::flbool_t                   f_stripe_key_defined[2]; // 0- live, 1- test
     controlled_vars::zint64_t                   f_maximum_repeat_failures;
+    QString                                     f_stripe_key[2]; // 0- live, 1- test
 };
 
 

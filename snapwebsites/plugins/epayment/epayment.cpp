@@ -53,6 +53,12 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_EPAYMENT_FAILED_PATH:
         return "epayment/failed";
 
+    case name_t::SNAP_NAME_EPAYMENT_GRAND_TOTAL:
+        return "epayment::grand_total";
+
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_NUMBER:
+        return "epayment::invoice_number";
+
     case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS:
         return "epayment::invoice_status";
 
@@ -119,11 +125,17 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_EPAYMENT_SKU:
         return "epayment::sku";
 
+    case name_t::SNAP_NAME_EPAYMENT_STORE_NAME:
+        return "epayment::store_name";
+
     case name_t::SNAP_NAME_EPAYMENT_THANK_YOU_PATH:
         return "epayment/thank-you";
 
     case name_t::SNAP_NAME_EPAYMENT_THANK_YOU_SUBSCRIPTION_PATH:
         return "epayment/thank-you-subscription";
+
+    case name_t::SNAP_NAME_EPAYMENT_TOTAL:
+        return "epayment::total";
 
     default:
         // invalid index
@@ -1500,7 +1512,7 @@ int64_t epayment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 4, 7, 1, 45, 45, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 4, 10, 22, 29, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1787,7 +1799,7 @@ bool epayment::set_invoice_status_impl(content::path_info_t& invoice_ipath, name
 
     }
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraRow::pointer_t row(content_table->row(invoice_ipath.get_key()));
     QString const current_status(row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
@@ -1837,7 +1849,7 @@ bool epayment::set_invoice_status_impl(content::path_info_t& invoice_ipath, name
  */
 bool epayment::repeat_payment_impl(content::path_info_t& first_invoice_ipath, content::path_info_t& previous_invoice_ipath, content::path_info_t& new_invoice_ipath)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
 
     switch(get_invoice_status(new_invoice_ipath))

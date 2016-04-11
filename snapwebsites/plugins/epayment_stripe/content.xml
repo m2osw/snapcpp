@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::cache_control" revision="global" overwrite="yes">no-store</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
-  <content path="/epayment/stripe" owner="epayment_stripe">
+  <!--content path="/epayment/stripe" owner="epayment_stripe">
     <param name="content::title" revision="revision">Various Stripe Specific Pages</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>We support several return URL pages to satisfy standard Stripe payments.</p>]]>
@@ -36,8 +36,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
   <content path="/epayment/stripe/return" owner="epayment_stripe">
-    <!-- on success user is then sent to /epayment/thank-you
-         on failure user is then sent to /epayment/failed -->
     <param name="content::title" revision="revision">Return From Approval</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This page is a placeholder to process the return GET from Stripe when a user approved a Stripe payment.</p>]]>
@@ -45,8 +43,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
   <content path="/epayment/stripe/return-plan" owner="epayment_stripe">
-    <!-- on success user is then sent to /epayment/thank-you-subscription
-         on failure user is then sent to /epayment/failed -->
     <param name="content::title" revision="revision">Return From Approval</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This page is a placeholder to process the return GET from Stripe when a user approved a Stripe agreement plan.</p>]]>
@@ -66,7 +62,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>We are sorry to see you cancel your subscription plan.</p>]]>
     </param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
-  </content>
+  </content-->
   <content path="/css/epayment" owner="output">
     <attachment name="epayment-stripe" type="attachment/public">
       <path>qrc:/css/epayment/epayment-stripe.css</path>

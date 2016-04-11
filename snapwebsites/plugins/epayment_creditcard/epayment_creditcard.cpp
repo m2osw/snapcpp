@@ -48,6 +48,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY:
         return "epayment::default_country";
 
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_GATEWAY:
+        return "epayment::gateway";
+
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH:
         return "admin/settings/epayment/credit-card";
 
@@ -72,6 +75,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PROVINCE:
         return "epayment::show_province";
 
+    case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_USER_ALLOWS_SAVING_TOKEN: // TODO: make this "magically" appear on the user's profiles
+        return "epayment::creditcard::user_allows_saving_token";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid name_t::SNAP_NAME_EPAYMENT_CREDITCARD_...");
@@ -84,6 +90,20 @@ char const * get_name(name_t name)
 /** \brief Initialize the epayment_creditcard plugin.
  *
  * This function is used to initialize the epayment_creditcard plugin object.
+ *
+ * \todo
+ * Add support for a list of countries and whether they support a postal
+ * code since we currently make the zip code a mandatory field...
+ * List of countries and whether they have a zip code:
+ *
+ * https://en.wikipedia.org/wiki/List_of_postal_codes
+ *
+ * \todo
+ * Add support for currencies per country. We want to support currencies
+ * so customers may not need to pay extra fees (i.e. that way we can
+ * charge the card in their currency and they avoid the conversion...
+ * but we have to have a way to know, at least more or less, the
+ * change for that currency.)
  */
 epayment_creditcard::epayment_creditcard()
     //: f_snap(nullptr) -- auto-init
@@ -184,7 +204,7 @@ int64_t epayment_creditcard::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 4, 7, 20, 36, 16, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 4, 10, 22, 48, 16, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -570,16 +590,26 @@ void epayment_creditcard::setup_form(
         {
             // for any other form, make sure the user defined a gateway
             //
-            // TODO: add support for a default gateway
-            //
-            if(!main_uri.has_query_option("gateway"))
+            if(main_uri.has_query_option("gateway"))
             {
-                throw epayment_creditcard_exception_gateway_missing("the \"?gateway=<plugin-name>\" is mandatory when loading a credit card form");
+                // "user" specified a gateway in the URI
+                //
+                gateway = main_uri.query_option("gateway");
+            }
+            else
+            {
+                // no gateway in the URI, try with the default
+                //
+                gateway = settings_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_GATEWAY))->value().stringValue();
             }
 
-            gateway = main_uri.query_option("gateway");
             if(gateway.isEmpty()
-            || !plugins::exists(gateway))
+            || gateway == "no-default")
+            {
+                throw epayment_creditcard_exception_gateway_missing("the \"?gateway=<plugin-name>\" is mandatory when loading a credit card form and no default gateway is defined");
+            }
+
+            if(!plugins::exists(gateway))
             {
                 throw epayment_creditcard_exception_gateway_missing(QString("could not find plugin \"%1\" to process credit card.").arg(gateway));
             }
@@ -597,6 +627,41 @@ void epayment_creditcard::setup_form(
                 QDomElement value(editor_widgets.createElement("value"));
                 result[0].appendChild(value);
                 snap_dom::append_plain_text_to_node(value, gateway);
+            }
+        }
+    }
+
+    // from URI
+    //
+    {
+        QString from;
+
+        snap_uri const & main_uri(f_snap->get_uri());
+        if(main_uri.has_query_option("from"))
+        {
+            from = main_uri.query_option("from");
+        }
+
+        {
+            // save the from URI in the corresponding widget if
+            // defined, otherwise remove the widget
+            //
+            QDomXPath dom_xpath;
+            dom_xpath.setXPath("/editor-form/widget[@id='from']");
+            QDomXPath::node_vector_t result(dom_xpath.apply(editor_widgets));
+            if(result.size() > 0
+            && result[0].isElement())
+            {
+                if(!from.isEmpty())
+                {
+                    QDomElement value(editor_widgets.createElement("value"));
+                    result[0].appendChild(value);
+                    snap_dom::append_plain_text_to_node(value, from);
+                }
+                else
+                {
+                    result[0].parentNode().removeChild(result[0]);
+                }
             }
         }
     }
@@ -627,6 +692,11 @@ void epayment_creditcard::setup_settings(QDomDocument & editor_widgets)
                 // save in temporary map so it gets sorted alphabetically
                 // (assuming all names are English it will be properly
                 // sorted...)
+                //
+                // TBD: should we not add the "epayment_creditcard" test
+                //      gateway here (since it really do absolutely nothing
+                //      and thus you cannot even test what happens if an
+                //      invoice gets paid...)
                 //
                 gateways[gateway_info.get_name()] = gateway_info.get_gateway();
             }
@@ -843,7 +913,20 @@ void epayment_creditcard::on_save_editor_fields(editor::save_info_t & save_info)
     // As far as the epayment_creditcard plugin is concerned, the result
     // of the processing are ignored here.
     //
-    gateway_processor->process_creditcard(creditcard_info, save_info);
+    if(gateway_processor->process_creditcard(creditcard_info, save_info))
+    {
+        // redirect the user to the Thank You page
+        //
+        // TODO: look into redirecting to the correct page, i.e.
+        //       o Thank You for Your Payment, or
+        //       o Thank You for Your Subscription
+        //
+        server_access::server_access * server_access_plugin(server_access::server_access::instance());
+        server_access_plugin->ajax_redirect(creditcard_info.get_subscription()
+                            ? "/epayment/thank-you-subscription"
+                            : "/epayment/thank-you",
+                    "_top");
+    }
 }
 
 
@@ -866,10 +949,10 @@ void epayment_creditcard::gateway_features(epayment_gateway_features_t & gateway
  * This function is used to test the credit card processing mechanism.
  * The function just logs a message to let you know that it worked.
  *
- * \param[in] creditcard_info  The credit card information.
+ * \param[in,out] creditcard_info  The credit card information.
  * \param[in,out] save_info  The information from the editor form.
  */
-void epayment_creditcard::process_creditcard(epayment_creditcard_info_t const & creditcard_info, editor::save_info_t & save_info)
+bool epayment_creditcard::process_creditcard(epayment_creditcard_info_t & creditcard_info, editor::save_info_t & save_info)
 {
     NOTUSED(creditcard_info);
     NOTUSED(save_info);
@@ -904,6 +987,8 @@ std::cerr << "cc delivery_country [" << creditcard_info.get_delivery_country() <
 
 std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
 #endif
+
+    return true;
 }
 
 

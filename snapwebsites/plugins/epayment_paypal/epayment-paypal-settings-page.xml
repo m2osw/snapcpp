@@ -18,14 +18,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <editor-form owner="epayment_paypal" id="settings" content-modified="2014-11-21 16:42:08">
-  <timeout minutes="30"/> <!-- 30 minutes -->
+  <timeout minutes="3" redirect="/admin/settings/epayment"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
   <focus refid="client_id"/>
   <on-save allow-edit="yes"/>
+  <no-toolbar/>
   <taborder>
     <tabindex refid="client_id"/>
     <tabindex refid="secret"/>
+    <tabindex refid="maximum_repeat_failures"/>
     <tabindex refid="debug"/>
     <tabindex refid="sandbox_client_id"/>
     <tabindex refid="sandbox_secret"/>
@@ -61,11 +63,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <min>1</min>
       <max>200</max>
     </sizes>
-    <value>5</value>
+    <default>5</default>
     <background-value>maximum number of failures</background-value>
   </widget>
   <widget id="debug" type="checkmark" field="epayment_paypal::debug" path="epayment_paypal/debug" auto-save="int8">
-    <label>Run in Debug mode. (WARNING: when Debug is turned on, no real charges are performed.)</label>
+    <label>Run in Debug mode. (<strong>WARNING:</strong> when Debug is turned on, no real charges are performed.)</label>
     <tooltip>Check this box to run in debug mode. This means you can pass orders without actually passing real payments.</tooltip>
     <help>Help</help>
     <value>0</value>

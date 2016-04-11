@@ -77,7 +77,7 @@ std::string http_request::get_path() const
 }
 
 
-std::string http_request::get_header(std::string const& name) const
+std::string http_request::get_header(std::string const & name) const
 {
     if(f_headers.find(name) == f_headers.end())
     {
@@ -87,7 +87,7 @@ std::string http_request::get_header(std::string const& name) const
 }
 
 
-std::string http_request::get_post(std::string const& name) const
+std::string http_request::get_post(std::string const & name) const
 {
     if(f_post.find(name) == f_post.end())
     {
@@ -251,7 +251,7 @@ std::string http_request::get_request(bool keep_alive) const
  *
  * \param[in] uri  The URI to save in this HTTP request.
  */
-void http_request::set_uri(std::string const& uri)
+void http_request::set_uri(std::string const & uri)
 {
     snap::snap_uri u(QString::fromUtf8(uri.c_str()));
     f_host = u.full_domain().toUtf8().data();
@@ -271,7 +271,7 @@ void http_request::set_uri(std::string const& uri)
 }
 
 
-void http_request::set_host(std::string const& host)
+void http_request::set_host(std::string const & host)
 {
     f_host = host;
 }
@@ -285,13 +285,13 @@ void http_request::set_port(int port)
 }
 
 
-void http_request::set_command(std::string const& command)
+void http_request::set_command(std::string const & command)
 {
     f_command = command;
 }
 
 
-void http_request::set_path(std::string const& path)
+void http_request::set_path(std::string const & path)
 {
     // TODO: better verify path validity
     if(path.empty())
@@ -309,7 +309,7 @@ void http_request::set_path(std::string const& path)
 }
 
 
-void http_request::set_header(std::string const& name, std::string const& value)
+void http_request::set_header(std::string const & name, std::string const & value)
 {
     // TODO: verify that the header name is compatible/valid
     // TODO: for known names, verify that the value is compatible/valid
@@ -331,7 +331,7 @@ void http_request::set_header(std::string const& name, std::string const& value)
 }
 
 
-void http_request::set_post(std::string const& name, std::string const& value)
+void http_request::set_post(std::string const & name, std::string const & value)
 {
     if(f_has_body || f_has_data)
     {
@@ -413,7 +413,7 @@ void http_request::set_data(std::string const & data)
 }
 
 
-void http_request::set_body(std::string const& body)
+void http_request::set_body(std::string const & body)
 {
     if(f_has_post || f_has_data)
     {
@@ -450,13 +450,13 @@ std::string http_response::get_http_message() const
 }
 
 
-bool http_response::has_header(std::string const& name) const
+bool http_response::has_header(std::string const & name) const
 {
     return f_header.find(name) != f_header.end();
 }
 
 
-std::string http_response::get_header(std::string const& name) const
+std::string http_response::get_header(std::string const & name) const
 {
     return f_header.at(name);
 }
@@ -468,7 +468,7 @@ std::string http_response::get_response() const
 }
 
 
-void http_response::append_original_header(std::string const& header)
+void http_response::append_original_header(std::string const & header)
 {
     f_original_header += header;
     f_original_header += "\r\n";
@@ -487,19 +487,19 @@ void http_response::set_response_code(int code)
 }
 
 
-void http_response::set_http_message(std::string const& message)
+void http_response::set_http_message(std::string const & message)
 {
     f_http_message = message;
 }
 
 
-void http_response::set_header(std::string const& name, std::string const& value)
+void http_response::set_header(std::string const& name, std::string const & value)
 {
     f_header[name] = value;
 }
 
 
-void http_response::set_response(std::string const& response)
+void http_response::set_response(std::string const & response)
 {
     f_response = response;
 }
@@ -540,7 +540,7 @@ void http_response::read_response(tcp_client_server::bio_client::pointer_t conne
         void read_protocol()
         {
             // first check that the protocol is HTTP and get the answer code
-SNAP_LOG_ERROR("*** read the protocol line");
+SNAP_LOG_TRACE("*** read the protocol line");
             std::string protocol;
             int const r(read_line(protocol));
             if(r < 0)
@@ -550,7 +550,7 @@ SNAP_LOG_ERROR("*** read the protocol line");
             }
             f_response->append_original_header(protocol);
 
-SNAP_LOG_ERROR("*** got protocol: ")(protocol);
+SNAP_LOG_TRACE("*** got protocol: ")(protocol);
             char const *p(protocol.c_str());
             if(strncmp(p, "HTTP/1.0 ", 9) == 0)
             {
@@ -584,11 +584,11 @@ SNAP_LOG_ERROR("*** got protocol: ")(protocol);
                 throw http_client_exception_io_error("unknown response code, expected exactly three digits");
             }
             f_response->set_response_code(response_code);
-SNAP_LOG_ERROR("***   +---> code: ")(response_code);
+SNAP_LOG_TRACE("***   +---> code: ")(response_code);
             // skip any spaces after the code
             for(; isspace(*p); ++p);
             f_response->set_http_message(p);
-SNAP_LOG_ERROR("***   +---> msg: ")(p);
+SNAP_LOG_TRACE("***   +---> msg: ")(p);
         }
 
         void read_header()
@@ -610,9 +610,9 @@ SNAP_LOG_ERROR("***   +---> msg: ")(p);
                 }
                 f_response->append_original_header(field);
 
-SNAP_LOG_ERROR("got a header field: ")(field);
-                char const *f(field.c_str());
-                char const *e(f);
+SNAP_LOG_TRACE("got a header field: ")(field);
+                char const * f(field.c_str());
+                char const * e(f);
                 for(; *e != ':' && *e != '\0'; ++e);
                 if(*e != ':')
                 {
@@ -628,7 +628,7 @@ SNAP_LOG_ERROR("got a header field: ")(field);
 
                 // skip the ':' and then left trimming of spaces
                 for(++e; isspace(*e); ++e);
-                char const *end(f + field.length());
+                char const * end(f + field.length());
                 for(; end > e && isspace(end[-1]); --end);
                 std::string const value(e, end - e);
 
@@ -644,7 +644,7 @@ SNAP_LOG_ERROR("got a header field: ")(field);
                 // it and do one "large" read
                 std::string const length(f_response->get_header("content-length"));
                 int64_t content_length(0);
-                for(char const *l(length.c_str()); *l != '\0'; ++l)
+                for(char const * l(length.c_str()); *l != '\0'; ++l)
                 {
                     if(*l < '0' || *l > '9')
                     {
@@ -663,7 +663,7 @@ SNAP_LOG_ERROR("got a header field: ")(field);
                 {
                     std::vector<char> buffer;
                     buffer.resize(content_length);
-SNAP_LOG_ERROR("reading ")(content_length)(" bytes...");
+SNAP_LOG_TRACE("reading ")(content_length)(" bytes...");
                     int const r(f_connection->read(&buffer[0], content_length));
                     if(r < 0)
                     {
@@ -676,7 +676,7 @@ SNAP_LOG_ERROR("reading ")(content_length)(" bytes...");
                         throw http_client_exception_io_error("read returned before the entire content buffer was read");
                     }
                     f_response->set_response(std::string(&buffer[0], content_length));
-SNAP_LOG_ERROR("body [")(f_response->get_response())("]...");
+SNAP_LOG_TRACE("body [")(f_response->get_response())("]...");
                 }
             }
             else

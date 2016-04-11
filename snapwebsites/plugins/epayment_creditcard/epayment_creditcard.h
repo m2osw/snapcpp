@@ -27,6 +27,7 @@ namespace epayment_creditcard
 enum class name_t
 {
     SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY,
+    SNAP_NAME_EPAYMENT_CREDITCARD_GATEWAY,
     SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH,
     SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ADDRESS2,
     SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_COUNTRY,
@@ -34,7 +35,8 @@ enum class name_t
     SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_DELIVERY,
     SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ONE_NAME,
     SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PHONE,
-    SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PROVINCE
+    SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PROVINCE,
+    SNAP_NAME_EPAYMENT_CREDITCARD_USER_ALLOWS_SAVING_TOKEN
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
@@ -140,6 +142,10 @@ public:
     void                        set_phone(QString const & phone);
     QString                     get_phone() const;
 
+    // set by processor
+    void                        set_subscription(bool subscription);
+    bool                        get_subscription() const;
+
 private:
     QString                     f_user_name;
     QString                     f_creditcard_number;
@@ -166,6 +172,8 @@ private:
     QString                     f_delivery_country;
 
     QString                     f_phone;
+
+    bool                        f_subscription = false;
 };
 
 
@@ -190,7 +198,7 @@ class epayment_creditcard_gateway_t
 {
 public:
     virtual void                gateway_features(epayment_gateway_features_t & gateway_info) = 0;
-    virtual void                process_creditcard(epayment_creditcard_info_t const & creditcard_info, editor::save_info_t & save_info) = 0;
+    virtual bool                process_creditcard(epayment_creditcard_info_t & creditcard_info, editor::save_info_t & save_info) = 0;
 };
 
 
@@ -222,7 +230,7 @@ public:
 
     // epayment_creditcard::epayment_creditcard_gateway_t implementation
     virtual void                gateway_features(epayment_gateway_features_t & gateway_info);
-    virtual void                process_creditcard(epayment_creditcard_info_t const & creditcard_info, editor::save_info_t & save_info);
+    virtual bool                process_creditcard(epayment_creditcard_info_t & creditcard_info, editor::save_info_t & save_info);
 
 private:
     void                        content_update(int64_t variables_timestamp);

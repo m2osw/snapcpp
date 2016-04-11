@@ -38,6 +38,8 @@ enum class name_t
     SNAP_NAME_EPAYMENT_CANCELED_PATH,
     SNAP_NAME_EPAYMENT_DESCRIPTION,
     SNAP_NAME_EPAYMENT_FAILED_PATH,
+    SNAP_NAME_EPAYMENT_GRAND_TOTAL,
+    SNAP_NAME_EPAYMENT_INVOICE_NUMBER,
     SNAP_NAME_EPAYMENT_INVOICE_STATUS,
     SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED,
     SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED,
@@ -60,8 +62,11 @@ enum class name_t
     SNAP_NAME_EPAYMENT_RECURRING,
     SNAP_NAME_EPAYMENT_RECURRING_SETUP_FEE,
     SNAP_NAME_EPAYMENT_SKU,
+    SNAP_NAME_EPAYMENT_STORE_NAME,
     SNAP_NAME_EPAYMENT_THANK_YOU_PATH,
-    SNAP_NAME_EPAYMENT_THANK_YOU_SUBSCRIPTION_PATH
+    SNAP_NAME_EPAYMENT_THANK_YOU_SUBSCRIPTION_PATH,
+    SNAP_NAME_EPAYMENT_TOTAL,
+    SNAP_NAME_EPAYMENT_USERS_ALLOW_SAVING_CREDIT_CARD_TOKEN
 };
 char const * get_name(name_t name) __attribute__ ((const));
 
@@ -171,7 +176,7 @@ private:
                         value_t(double const value);
 
         type_t          get_type() const;
-        QString const &  get_string_value(QString const  & name) const;
+        QString const & get_string_value(QString const  & name) const;
         int64_t         get_integer_value() const;
         double          get_float_value() const;
 

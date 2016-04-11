@@ -18,6 +18,7 @@
 #include "locale_widgets.h"
 
 #include "../locale/snap_locale.h"
+#include "../messages/messages.h"
 
 #include "log.h"
 #include "not_reached.h"
@@ -224,6 +225,7 @@ void locale_widgets::bootstrap(snap_child * snap)
     SNAP_LISTEN(locale_widgets, "editor", editor::editor, prepare_editor_form, _1);
     SNAP_LISTEN(locale_widgets, "editor", editor::editor, string_to_value, _1);
     SNAP_LISTEN(locale_widgets, "editor", editor::editor, value_to_string, _1);
+    SNAP_LISTEN(locale_widgets, "editor", editor::editor, validate_editor_post_for_widget, _1, _2, _3, _4, _5, _6, _7);
 }
 
 
@@ -393,6 +395,86 @@ void locale_widgets::on_value_to_string(editor::editor::value_to_string_info_t &
         return;
     }
 }
+
+
+/** \brief Add some new validations.
+ *
+ * This function adds support for the following validations:
+ *
+ * \li \<filters>\<country/>\</filters> -- make sure that
+ *     \p value represents a valid (known) country name.
+ */
+void locale_widgets::on_validate_editor_post_for_widget(
+            content::path_info_t & ipath,
+            sessions::sessions::session_info & info,
+            QDomElement const & widget,
+            QString const & widget_name,
+            QString const & widget_type,
+            QString const & value,
+            bool const is_secret)
+{
+    NOTUSED(ipath);
+    NOTUSED(widget_type);
+
+    messages::messages * messages(messages::messages::instance());
+
+    // the label corresponding to that widget for better/cleaner error
+    // messages
+    //
+    QString label(widget.firstChildElement("label").text());
+    if(label.isEmpty())
+    {
+        label = widget_name;
+    }
+
+    // verify that the entry is a country
+    QDomElement filters(widget.firstChildElement("filters"));
+    if(!filters.isNull()
+    && !value.isEmpty()) // emptiness was checked with the "required" test
+    {
+        QDomElement country_tag(filters.firstChildElement("country"));
+        if(!country_tag.isNull())
+        {
+            QString const mode(country_tag.attribute("mode"));
+
+            QString country(value);
+            bool valid(false);
+            if(mode == "2-letters")
+            {
+                if(country.length() == 2)
+                {
+                    valid = f_snap->verify_country_name(country);
+                }
+            }
+            else if(mode == "full-name")
+            {
+                if(country.length() > 2)
+                {
+                    valid = f_snap->verify_country_name(country);
+                }
+            }
+            else //if(mode == "any" or undefined)
+            {
+                valid = f_snap->verify_country_name(country);
+            }
+            //else -- TBD: should we err if invalid?
+
+            if(!valid)
+            {
+                messages->set_error(
+                    "Validation Failed",
+                    QString("\"%1\" is not a valid country name.")
+                            .arg(form::form::html_64max(value, is_secret)).arg(label),
+                    QString("\"%1\" is not the name of a known country.")
+                            .arg(widget_name),
+                    is_secret
+                ).set_widget_name(widget_name);
+                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+            }
+        }
+    }
+}
+
 
 
 //

@@ -72,6 +72,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<legend>Credit Card Gateway</legend>
 
 						<div class="editor-block">
+							<xsl:copy-of select="page/body/epayment/credit_card/allow_credit_card_tokens/node()"/>
+						</div>
+
+						<div class="editor-block">
 							<label>Default Gateway</label>
 							<xsl:copy-of select="page/body/epayment/credit_card/gateway/node()"/>
 							<p>

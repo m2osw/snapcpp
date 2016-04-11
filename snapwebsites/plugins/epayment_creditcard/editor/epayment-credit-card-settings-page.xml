@@ -100,6 +100,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </preset>
   </widget>
 
+  <widget id="allow_credit_card_tokens" type="checkmark" field="epayment::allow_credit_card_tokens" path="epayment/credit_card/allow_credit_card_tokens" auto-save="int8">
+    <tooltip>
+      Allow Snap! to register credit card tokens. This will allow
+      the system to re-charge a card in case you accept subscriptions.
+    </tooltip>
+    <help>
+      By default the Snap! system allows for subscriptions (repeat charges
+      to the same user on a specially scheduled time frame.) By turning off
+      this checkmark, you prevent such from happening with credit cards
+      (You may still offer services that allow for subscriptions such as
+      PayPal.) Such credit card tokens may be considered personal data
+      and thus may not be data you want to have on your website.
+    </help>
+    <label>Allow Snap! to register credit card tokens for subscriptions.</label>
+    <value>1</value>
+  </widget>
   <widget id="gateway" type="dropdown" field="epayment::gateway" path="epayment/credit_card/gateway" auto-save="string">
     <tooltip>Select the default gateway. It is possible to <em>force</em> the use of a credit card gateway by specifying it on the URI, otherwise this one is used.</tooltip>
     <help>In most cases, it is not required to define a default gateway because it will automatically be defined using a query string variable on the URI used to retrieve the user credit card information. However, if you offer multiple gateways, it can become useful to have a default one, just in case.</help>

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.916
+ * Version: 0.0.3.922
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -4753,6 +4753,9 @@ snapwebsites.EditorForm.prototype.readyForm_ = function()
  */
 snapwebsites.EditorForm.prototype.resetTimeout = function()
 {
+    // Note: the "timeout" attribute may include a redirect path as
+    //       well, the parseFloat() ignores it...
+    //
     var minutes = parseFloat(this.formWidget_.attr("timeout")),
         that = this;
 
@@ -4804,10 +4807,20 @@ snapwebsites.EditorForm.prototype.resetTimeout = function()
  * This function may be called more than once, although it
  * probably should not. There is no logic within this function
  * to know whether it was already called.
+ *
+ * It is possible to request the timeout to also redirect
+ * the user (found in the \<timeout ... redirect="..."> parameter
+ * of the editor form). In that case, the function returns but
+ * the browser will redirect the client to another page. This
+ * happens after your callback gets called.
+ *
+ * \sa setTimedoutCallback()
  */
 snapwebsites.EditorForm.prototype.formTimedout = function()
 {
-    var key;
+    var key,
+        timeout = /** @type {string} */ (this.formWidget_.attr("timeout")),
+        pos;
 
     // reset the timer if it is still considered active
     // (because this function is public and it may be called by a different
@@ -4853,6 +4866,16 @@ snapwebsites.EditorForm.prototype.formTimedout = function()
     {
         this.formTimedoutCallback_(this);
     }
+
+    // some forms required that the system redirect the user somewhere
+    // else (so the already saved data really gets hidden!)
+    //
+    pos = timeout.indexOf(",");
+    if(pos > 0)
+    {
+        // we assume that the redirect is always to another page
+        location.href = timeout.substr(pos + 1);
+    }
 };
 
 
@@ -4881,6 +4904,8 @@ snapwebsites.EditorForm.prototype.formTimedout = function()
  * function here, at some point.
  *
  * @param {function(snapwebsites.EditorForm)} f  The function to be called.
+ *
+ * \sa formTimedout()
  */
 snapwebsites.EditorForm.prototype.setTimedoutCallback = function(f)
 {

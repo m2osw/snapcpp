@@ -62,6 +62,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   <widget id="gateway" type="hidden" path="epayment/gateway" auto-save="no">
   </widget>
+  <widget id="from" type="hidden" path="epayment/from" auto-save="no">
+  </widget>
 
   <!-- card details -->
   <widget id="user_name" type="line-edit" path="epayment/user_name" no-toolbar="no-toolbar" auto-save="no">
@@ -75,7 +77,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>Enter all the digits of your credit or debit card in this field. You may enter spaces to separate groups of digits.</help>
     <sizes>
       <min>10</min>
-      <max>20</max>
+      <max>20</max> <!-- max is 16 digits, but the number may include spaces and dashes -->
     </sizes>
     <background-value>card number</background-value>
     <required>required</required>
@@ -88,8 +90,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       card. This is also called CVV.
     </help>
     <sizes>
-      <min>2</min>
-      <max>7</max>
+      <min>3</min>
+      <max>4</max>
     </sizes>
     <background-value>security code</background-value>
     <required>required</required>
@@ -114,13 +116,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tooltip>Enter the name of the business being billed.</tooltip>
     <help>Help</help>
     <background-value>business name</background-value>
-    <required>required</required>
   </widget>
   <widget id="billing_attention" type="line-edit" path="epayment/billing_attention" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Enter the name of the person who is being billed.</tooltip>
     <help>Help</help>
     <background-value>person name</background-value>
-    <required>required</required>
   </widget>
   <widget id="billing_address1" type="line-edit" path="epayment/billing_address1" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>First line of the address for which the credit card is registered.</tooltip>
@@ -129,30 +129,33 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <required>required</required>
   </widget>
   <widget id="billing_address2" type="line-edit" path="epayment/billing_address2" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>Second line of the address for which the credit catd is registered.</tooltip>
+    <tooltip>Second line of the address for which the credit card is registered.</tooltip>
     <help>Enter the second line of your credit card address. This information is optional.</help>
     <background-value>address line 2</background-value>
   </widget>
   <widget id="billing_city" type="line-edit" path="epayment/billing_city" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>The name of the city for which the credit catd is registered.</tooltip>
+    <tooltip>The name of the city for which the credit card is registered.</tooltip>
     <help>Enter the city name of your credit card address. This information is required.</help>
     <background-value>city</background-value>
     <required>required</required>
   </widget>
   <widget id="billing_province" type="line-edit" path="epayment/billing_province" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>The name of the province for which the credit catd is registered.</tooltip>
+    <tooltip>The name of the province for which the credit card is registered.</tooltip>
     <help>Enter the name of the province of your credit card address. This information is optional for most countries.</help>
     <background-value>province or state</background-value>
   </widget>
   <widget id="billing_postal_code" type="line-edit" path="epayment/billing_postal_code" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>The postal code for which the credit catd is registered.</tooltip>
+    <tooltip>The postal code for which the credit card is registered.</tooltip>
     <help>Enter the postal code of your credit card address. This information is required.</help>
     <background-value>postal code</background-value>
     <required>required</required>
   </widget>
   <widget id="billing_country" type="line-edit" path="epayment/billing_country" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>The name of the country in which the credit catd is registered.</tooltip>
+    <tooltip>The name of the country in which the credit card is registered.</tooltip>
     <help>Enter the name of the country of your credit card address. This field is required.</help>
+    <filters>
+      <country/>
+    </filters>
     <background-value>province or state</background-value>
     <required>required</required>
   </widget>
@@ -162,47 +165,44 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tooltip>Enter the name of business (optional).</tooltip>
     <help>Help</help>
     <background-value>business name</background-value>
-    <required>required</required>
   </widget>
   <widget id="delivery_attention" type="line-edit" path="epayment/delivery_attention" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>Enter the name of the person who will receive the package.</tooltip>
     <help>Help</help>
     <background-value>person name</background-value>
-    <required>required</required>
   </widget>
   <widget id="delivery_address1" type="line-edit" path="epayment/delivery_address1" no-toolbar="no-toolbar" auto-save="no">
     <tooltip>First line of the address for which the credit card is registered.</tooltip>
     <help>Enter the first line of your credit card address. This information is required.</help>
     <background-value>address line 1</background-value>
-    <required>required</required>
   </widget>
   <widget id="delivery_address2" type="line-edit" path="epayment/delivery_address2" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>Second line of the address for which the credit catd is registered.</tooltip>
+    <tooltip>Second line of the address for which the credit card is registered.</tooltip>
     <help>Enter the second line of your credit card address. This information is optional.</help>
     <background-value>address line 2</background-value>
   </widget>
   <widget id="delivery_city" type="line-edit" path="epayment/delivery_city" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>The name of the city for which the credit catd is registered.</tooltip>
+    <tooltip>The name of the city for which the credit card is registered.</tooltip>
     <help>Enter the city name of your credit card address. This information is required.</help>
     <background-value>city</background-value>
-    <required>required</required>
   </widget>
   <widget id="delivery_province" type="line-edit" path="epayment/delivery_province" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>The name of the province for which the credit catd is registered.</tooltip>
+    <tooltip>The name of the province for which the credit card is registered.</tooltip>
     <help>Enter the name of the province of your credit card address. This information is optional for most countries.</help>
     <background-value>province or state</background-value>
   </widget>
   <widget id="delivery_postal_code" type="line-edit" path="epayment/delivery_postal_code" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>The postal code for which the credit catd is registered.</tooltip>
+    <tooltip>The postal code for which the credit card is registered.</tooltip>
     <help>Enter the postal code of your credit card address. This information is required.</help>
     <background-value>postal code</background-value>
-    <required>required</required>
   </widget>
   <widget id="delivery_country" type="line-edit" path="epayment/delivery_country" no-toolbar="no-toolbar" auto-save="no">
-    <tooltip>The name of the country in which the credit catd is registered.</tooltip>
+    <tooltip>The name of the country in which the credit card is registered.</tooltip>
     <help>Enter the name of the country of your credit card address. This field is required.</help>
+    <filters>
+      <country/>
+    </filters>
     <background-value>province or state</background-value>
-    <required>required</required>
   </widget>
 
   <!-- other information -->

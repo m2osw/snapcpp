@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::direct::action::edit" to="permissions::link_back::edit" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/admin/settings/epayment/credit-card" owner="output">
-    <param name="content::title" revision="revision">Credit Card Form Settings</param>
+    <param name="content::title" revision="revision">Credit Card Settings</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This page allows one to tweak the set of widgets offered on the credit card form.</p>]]>
     </param>

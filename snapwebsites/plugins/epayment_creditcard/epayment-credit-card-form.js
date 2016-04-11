@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment-credit-card-form
- * Version: 0.0.1.35
+ * Version: 0.0.1.44
  * Browsers: all
  * Depends: epayment (>= 0.0.1.33)
  * Copyright: Copyright 2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -121,12 +121,25 @@ snapwebsites.ePaymentCreditCardForm = function()
         .makeButton()
         .click(function(e)
             {
-                var widget = credit_card_form.getWidgetByName("gateway"),
-                    gateway = widget.getValue();
+                var card_number_widget = credit_card_form.getWidgetByName("card_number"),
+                    card_number = card_number_widget.getValue(),
+                    gateway_widget = credit_card_form.getWidgetByName("gateway"),
+                    gateway = gateway_widget.getValue();
 
                 e.preventDefault();
 
-                credit_card_form.saveData("save", { gateway: gateway });
+                if(that.luhnCheck(card_number))
+                {
+                    credit_card_form.saveData("save", { gateway: gateway });
+                }
+                else
+                {
+                    snapwebsites.OutputInstance.displayOneMessage(
+                            "Invalid Field",
+                            "The credit card number you entered does not seem valid. Please verify you entered your card number properly.",
+                            "error",
+                            true);
+                }
             });
 
     // TODO: select "create user account" if the user is not currently
@@ -260,6 +273,73 @@ snapwebsites.ePaymentCreditCardForm.prototype.sendWrapper_ = null;
  * @private
  */
 snapwebsites.ePaymentCreditCardForm.prototype.cancel_ = null;
+
+
+/** \brief Compute the Luhn number and return true if valid.
+ *
+ * This function computes the Luhn number to validate the card
+ * number before forwarding the data to the server.
+ *
+ * @param {string} number  The credit card number to check.
+ *
+ * @return {boolean}  true if the number is considered valid.
+ */
+snapwebsites.ePaymentCreditCardForm.prototype.luhnCheck = function(number)
+{
+    var odd = true,
+        idx = number.length,
+        len = 0,
+        d,
+        luhn = 0;
+
+    // got through digits in reverse order
+    while(idx > 0)
+    {
+        --idx;
+
+        d = number.charCodeAt(idx);
+        if(d == 45  // '-'
+        || d == 32) // ' '
+        {
+            // we ignore dashes and spaces
+            //
+            continue;
+        }
+
+        if(d < 48  // '0'
+        || d > 57) // '9'
+        {
+            // we only accept digits otherwise
+            //
+            return false;
+        }
+        d -= 48;
+
+        // Luhn "math"
+        odd = !odd;
+        if(odd)  // WARNING: (idx & 1) is NOT correct because we start at length and it could be odd/even the "other way around"
+        {
+            d *= 2;
+        }
+        if(d > 9)
+        {
+            d -= 9;
+        }
+
+        ++len;
+        luhn += d;
+    }
+
+    // all credit card numbers are between 10 and 16 digits at this time
+    if(len < 10
+    || len > 16)
+    {
+        return false;
+    }
+
+    // Luhn number modulo 10 must be zero to be a valid card number
+    return luhn % 10 === 0;
+};
 
 
 /** \brief One of the tabs was clicked, show the corresponding form.

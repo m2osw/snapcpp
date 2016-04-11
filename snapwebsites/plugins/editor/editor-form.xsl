@@ -772,6 +772,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               </xsl:when>
             </xsl:choose>
           </xsl:when>
+          <xsl:when test="default">
+            <!-- use the default value when there is one -->
+            <xsl:copy-of select="default/node()"/>
+          </xsl:when>
         </xsl:choose>
       </div>
       <xsl:call-template name="snap:common-parts"/>
