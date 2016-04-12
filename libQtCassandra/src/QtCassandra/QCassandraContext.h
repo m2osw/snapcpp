@@ -35,8 +35,9 @@
  */
 #pragma once
 
-#include "QCassandraTable.h"
-#include "QCassandraPredicate.h"
+#include "QtCassandra/QCassandraPredicate.h"
+#include "QtCassandra/QCassandraSchema.h"
+#include "QtCassandra/QCassandraTable.h"
 
 #include <controlled_vars/controlled_vars_auto_init.h>
 
@@ -127,22 +128,24 @@ private:
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
 
-    void parseContextDefinition(const KsDef* ks);
-    void prepareContextDefinition(KsDef *ks) const;
+    void parseContextDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace );
+    //void prepareContextDefinition(KsDef *ks) const;
 
     friend class QCassandra;
     friend class KsDef;
     friend class QCassandraTable;
     friend class QCassandraLock;
 
-    std::unique_ptr<KsDef>                      f_private;
     // f_cassandra is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
     // Also, it cannot be a shared_ptr unless you make a restriction that
     // all instances must be allocated on the heap. Thus is the deficiency of
     // std::enabled_shared_from_this<>.
+    QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t		f_schema;
+    //
     std::shared_ptr<QCassandra>                 f_cassandra;
+    QString										f_contextName;
     QCassandraContextOptions                    f_options;
     QCassandraTables                   			f_tables;
     QString                                     f_host_name;

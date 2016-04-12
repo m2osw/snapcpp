@@ -277,7 +277,7 @@ class CfDef
         , key_alias()
         , compaction_strategy()
         , bloom_filter_fp_chance( 0 )
-        , caching( "keys_only" )
+        , caching( "" )
         , dclocal_read_repair_chance( 0 )
         , populate_io_cache_on_flush( 0 )
         , memtable_flush_period_in_ms( 0 )

@@ -80,7 +80,6 @@ find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapDoxygen        REQUIRED )
-find_package( Thrift             REQUIRED )
 find_package( ZLIB               REQUIRED )
 find_package( ZipIos             REQUIRED 2.1      )
 

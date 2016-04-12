@@ -72,11 +72,12 @@ public:
     void    readValue( CassTools::value_pointer_t iter );
     type_t  type() const { return f_type; }
 
-    std::string         string()     const { return f_variant.toString().toStdString(); }
     const QVariant&     variant()    const { return f_variant;   }
+    QVariant&     		variant()          { return f_variant;   }
     const list_t&       list()       const { return f_list;      }
+    list_t&       		list()             { return f_list;      }
     const map_t&        map()        const { return f_map;       }
-    const string_map_t& stringMap()  const { return f_stringMap; }
+    map_t&              map()              { return f_map;       }
 
     const QString& output() const;
 
@@ -87,7 +88,6 @@ private:
     QVariant                   f_variant;
     list_t                     f_list;
     map_t                      f_map;
-    string_map_t			   f_stringMap;
 
     mutable QString f_stringOutput;
 

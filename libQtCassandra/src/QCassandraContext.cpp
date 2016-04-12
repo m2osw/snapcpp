@@ -128,8 +128,8 @@ namespace QtCassandra
  * \sa lockTtl()
  */
 
-/** \var QCassandraContext::f_private
- * \brief The pointer to the KsDef object.
+/** \var QCassandraContext::f_schema
+ * \brief The pointer to the QCassandraSchema meta object.
  *
  * This pointer is a shared pointer to the private definition of
  * the Cassandra context (i.e. a keyspace definition.)
@@ -276,8 +276,8 @@ namespace QtCassandra
  * \sa QCassandra::synchronizeSchemaVersions()
  */
 QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
-    : f_private(new KsDef)
-    , f_cassandra(cassandra)
+    : f_cassandra(cassandra)
+    , f_contextName(context_name)
       //f_options() -- auto-init
       //f_tables() -- auto-init
       //f_host_name() -- auto-init
@@ -291,9 +291,6 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
     if(!re.exactMatch(context_name)) {
         throw std::runtime_error("invalid context name (does not match [A-Za-z][A-Za-z0-9_]*)");
     }
-
-    // we save the name and at this point we prevent it from being changed.
-    f_private->__set_name(context_name.toUtf8().data());
 
     // get the computer name as the host name
     char hostname[HOST_NAME_MAX + 1];
@@ -326,7 +323,7 @@ QCassandraContext::~QCassandraContext()
  */
 QString QCassandraContext::contextName() const
 {
-    return f_private->name.c_str();
+    return f_contextName;
 }
 
 /** \brief Set the context strategy class.
@@ -350,7 +347,10 @@ QString QCassandraContext::contextName() const
  */
 void QCassandraContext::setStrategyClass(const QString& strategy_class)
 {
-    f_private->__set_strategy_class(strategy_class.toUtf8().data());
+    if( f_schema )
+    {
+        (*f_schema)["strategy_class"]->variant() = strategy_class;
+    }
 }
 
 /** \brief Retrieve the name of the strategy class of this context.
@@ -367,7 +367,12 @@ void QCassandraContext::setStrategyClass(const QString& strategy_class)
  */
 QString QCassandraContext::strategyClass() const
 {
-    return f_private->strategy_class.c_str();
+    if( f_schema )
+    {
+        return (*f_schema)["strategy_class"]->variant().toString();
+    }
+    
+    return QString();
 }
 
 /** \brief Replace all the context description options.
@@ -770,54 +775,13 @@ bool QCassandraContext::durableWrites() const
  *
  * \sa prepareContextDefinition()
  */
-void QCassandraContext::parseContextDefinition(const KsDef* ks)
+void QCassandraContext::parseContextDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
 {
-    // name
-    if(ks->name != f_private->name) {
-        // what do we do here?
-        throw std::logic_error("KsDef and QCassandraContextPrivate names don't match");
-    }
-
-    // strategy class
-    f_private->__set_strategy_class(ks->strategy_class);
-
-    // replication factor
-    if(ks->__isset.replication_factor) {
-        f_private->__set_replication_factor(ks->replication_factor);
-    }
-    else {
-        f_private->__isset.replication_factor = false;
-    }
-
-    // durable writes
-    if(ks->__isset.durable_writes) {
-        f_private->__set_durable_writes(ks->durable_writes);
-    }
-    else {
-        f_private->__isset.durable_writes = false;
-    }
-
-    // the options is an array that we keep on our end
-    f_options.clear();
-    if(ks->__isset.strategy_options)
+    f_schema = keyspace_meta;
+    for( const auto pair : keyspace_meta->getTables() )
     {
-        for(std::map<std::string, std::string>::const_iterator
-            o = ks->strategy_options.begin();
-            o != ks->strategy_options.end();
-            ++o)
-        {
-            // TBD: can option strings include binary data?
-            f_options.insert(o->first.c_str(), o->second.c_str());
-        }
-    }
-
-    // table definitions (CfDef, column family definitions)
-    for(std::vector<CfDef>::const_iterator
-        cf = ks->cf_defs.begin(); cf != ks->cf_defs.end(); ++cf)
-    {
-        QCassandraTable::pointer_t t(table(cf->name.c_str()));
-        const CfDef& cf_def = *cf;
-        t->parseTableDefinition(&cf_def);
+        QCassandraTable::pointer_t t(table(pair.first));
+        t->parseTableDefinition(pair.second);
     }
 }
 

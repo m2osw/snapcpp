@@ -61,12 +61,6 @@ set( CMAKE_MODULE_PATH
 )
 find_package( SnapBuild REQUIRED )
 
-################################################################################
-# Third party libraries
-#
-ConfigureMakeProject( PROJECT_NAME thrift NOINC_DEBVERS )
-
-
 
 ################################################################################
 # Snap libraries
@@ -136,14 +130,14 @@ ConfigureMakeProject( PROJECT_NAME libQtCassandra
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS thrift snapCMakeModules controlled_vars as2js
+    DEPENDS snapCMakeModules controlled_vars as2js
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
     CONFIG_ARGS
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS thrift snapCMakeModules
+    DEPENDS snapCMakeModules
 )
 
 ConfigureMakeProject( PROJECT_NAME snapwebsites

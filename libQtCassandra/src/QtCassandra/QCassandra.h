@@ -110,8 +110,8 @@ private:
     void setCurrentContext(QCassandraContext::pointer_t c);
     void clearCurrentContextIf(const QCassandraContext& c);
 
-    void retrieveColumn   ( ColumnDef& cf_def, QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t column ) const;
-    void retrieveTable    ( CfDef& cf_def    , QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table ) const;
+    //void retrieveColumn   ( ColumnDef& cf_def, QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t column ) const;
+    //void retrieveTable    ( CfDef& cf_def    , QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table ) const;
     void retrieveContext  ( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace ) const;
     void retrieveContext  ( const QString& context_name ) const;
 

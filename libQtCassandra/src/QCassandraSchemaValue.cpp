@@ -83,7 +83,6 @@ void Value::parseValue()
 {
     f_map.clear();
     f_list.clear();
-    f_stringMap.clear();
     f_variant.clear();
     f_stringOutput.clear();
 
@@ -170,7 +169,6 @@ void Value::parseMap()
         val->readValue( value );
         //
         f_map[key_str] = val;
-        f_stringMap[key_str.toStdString()] = val->variant().toString().toStdString();
     }
 }
 
@@ -185,7 +183,11 @@ void Value::parseList()
     while( cass_iterator_next( iter.get() ) )
     {
         Value::pointer_t val( create() );
-        val->readValue( iter );
+        value_pointer_t p_val
+                ( cass_iterator_get_value(iter.get())
+                , valueDeleter()
+                );
+        val->readValue( p_val );
         f_list.push_back( val );
     }
 }

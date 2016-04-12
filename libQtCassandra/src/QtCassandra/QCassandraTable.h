@@ -40,6 +40,7 @@
 #include "QtCassandra/QCassandraPredicate.h"
 #include "QtCassandra/QCassandraQuery.h"
 #include "QtCassandra/QCassandraRow.h"
+#include "QtCassandra/QCassandraSchema.h"
 
 #include <controlled_vars/controlled_vars_auto_enum_init.h>
 
@@ -71,10 +72,6 @@ public:
 
     //void setTableName(const QString& name);
     QString tableName() const;
-    void setIdentifier(int32_t identifier);
-    void unsetIdentifier();
-    bool hasIdentifier() const;
-    int32_t identifier() const;
     void setComment(QString comment);
     void unsetComment();
     bool hasComment() const;
@@ -108,8 +105,8 @@ public:
     QString subcomparatorType() const;
 
     // columns information (specific)
-    QCassandraColumnDefinition::pointer_t columnDefinition(const QString& column_name);
-    const QCassandraColumnDefinitions& columnDefinitions() const;
+    //QCassandraColumnDefinition::pointer_t columnDefinition(const QString& column_name);
+    //const QCassandraColumnDefinitions& columnDefinitions() const;
 
     // cache handling
     void setCaching(const QString& caching); // since 1.1
@@ -242,8 +239,8 @@ private:
     QCassandraTable(std::shared_ptr<QCassandraContext> context, const QString& table_name);
 
     void        setFromCassandra();
-    void        parseTableDefinition( const CfDef* data );
-    void        prepareTableDefinition( CfDef* data ) const;
+    void        parseTableDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table_meta );
+    //void        prepareTableDefinition( CfDef* data ) const;
     void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
@@ -262,10 +259,11 @@ private:
     friend class QCassandraContext;
     friend class QCassandraRow;
 
+    QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t	f_schema;
+
     controlled_vars::zbool_t                    f_from_cassandra;
-    std::unique_ptr<CfDef>                      f_private;
     std::shared_ptr<QCassandraContext>          f_context;
-    QCassandraColumnDefinitions                 f_column_definitions;
+    //QCassandraColumnDefinitions                 f_column_definitions;
     QCassandraRows                              f_rows;
 
     QCassandraSession::pointer_t                f_session;

@@ -1147,6 +1147,7 @@ void QCassandra::clearCurrentContextIf( const QCassandraContext &c )
 }
 
 
+#if 0
 /** \brief Retrieve the description of all columns for each table
  *
  * \param[in,out]  cf_def  The "columnfamily" (i.e. table) information structure that we will populate from the query.
@@ -1155,23 +1156,29 @@ void QCassandra::retrieveColumn( ColumnDef& col_def, SessionMeta::KeyspaceMeta::
 {
     auto fields( column->getFields() );
 
-    col_def.__set_name             ( fields["column_name"   ]->string()    );
-    col_def.__set_index_name       ( fields["index_name"    ]->string()    );
-    col_def.__set_validation_class ( fields["validator"     ]->string()    );
-    col_def.__set_index_options    ( fields["index_options" ]->stringMap() );
+    col_def.__set_name( column->getName().toStdString() );
 
-    const QString index_type( fields["index_type"]->variant().toString().toLower() );
-    if( index_type == "keys" )
+    auto
+    fields_iter = fields.find("index_name");    if( fields_iter != fields.end() ) col_def.__set_index_name(       fields_iter->second->string()    );
+    fields_iter = fields.find("validator");     if( fields_iter != fields.end() ) col_def.__set_validation_class( fields_iter->second->string()    );
+    fields_iter = fields.find("index_options"); if( fields_iter != fields.end() ) col_def.__set_index_options(    fields_iter->second->stringMap() );
+
+    fields_iter = fields.find("index_type");
+    if( fields_iter != fields.end() )
     {
-        col_def.__set_index_type( IndexType::KEYS );
-    }
-    else if( index_type == "custom" )
-    {
-        col_def.__set_index_type( IndexType::CUSTOM );
-    }
-    else if( index_type == "composites" )
-    {
-        col_def.__set_index_type( IndexType::COMPOSITES );
+        const QString index_type( fields_iter->second->variant().toString().toLower() );
+        if( index_type == "keys" )
+        {
+            col_def.__set_index_type( IndexType::KEYS );
+        }
+        else if( index_type == "custom" )
+        {
+            col_def.__set_index_type( IndexType::CUSTOM );
+        }
+        else if( index_type == "composites" )
+        {
+            col_def.__set_index_type( IndexType::COMPOSITES );
+        }
     }
 }
 
@@ -1217,32 +1224,30 @@ void QCassandra::retrieveTable( CfDef& cf_def, SessionMeta::KeyspaceMeta::TableM
 {
     auto fields( table->getFields() );
 
-    cf_def.__set_keyspace                    ( table->getName().toStdString() );
-    cf_def.__set_name                        ( fields["columnfamily_name"]                   ->string() );
-    cf_def.__set_column_type                 ( fields["type"]                                ->string() );
-    cf_def.__set_comparator_type             ( fields["comparator"]                          ->string() );
-    cf_def.__set_subcomparator_type          ( fields["subcomparator"]                       ->string() );
-    cf_def.__set_comment                     ( fields["comment"]                             ->string() );
-    cf_def.__set_read_repair_chance          ( fields["read_repair_chance"]                  ->variant().toDouble() );
-    cf_def.__set_gc_grace_seconds            ( fields["gc_grace_seconds"]                    ->variant().toInt() );
-    cf_def.__set_default_validation_class    ( fields["default_validator"]                   ->string() );
-    cf_def.__set_id                          ( fields["cf_id"]                               ->variant().toInt() );
-    cf_def.__set_min_compaction_threshold    ( fields["min_compaction_threshold"]            ->variant().toInt() );
-    cf_def.__set_max_compaction_threshold    ( fields["max_compaction_threshold"]            ->variant().toInt() );
-    cf_def.__set_key_validation_class        ( fields["key_validator"]                       ->string() );
-    cf_def.__set_key_alias                   ( fields["key_aliases"]                         ->string() );
-    cf_def.__set_compaction_strategy         ( fields["compaction_strategy_class"]           ->string() );
-    cf_def.__set_compaction_strategy_options ( fields["compaction_strategy_options"]         ->stringMap() );
-    cf_def.__set_compression_options         ( fields["compression_parameters"]              ->stringMap() );
-    cf_def.__set_bloom_filter_fp_chance      ( fields["bloom_filter_fp_chance"]              ->variant().toDouble() );
-    cf_def.__set_caching                     ( fields["bloom_filter_fp_chance"]              ->string() );
-    cf_def.__set_caching                     ( fields["bloom_filter_fp_chance"]              ->string() );
-    cf_def.__set_memtable_flush_period_in_ms ( fields["memtable_flush_period_in_ms"]         ->variant().toInt() );
-    cf_def.__set_default_time_to_live        ( fields["default_time_to_live"]                ->variant().toInt() );
-    cf_def.__set_speculative_retry           ( fields["speculative_retry"]                   ->string() );
-    //
-    //retrieveColumns  ( cf_def );
-    //retrieveTriggers ( cf_def );
+    cf_def.__set_name( table->getName().toStdString() );
+
+    auto
+    fields_iter = fields.find("keyspace_name");               if( fields_iter != fields.end() ) cf_def.__set_keyspace(                    fields_iter->second->string()             );
+    fields_iter = fields.find("type");                        if( fields_iter != fields.end() ) cf_def.__set_column_type(                 fields_iter->second->string()             );
+    fields_iter = fields.find("comparator");                  if( fields_iter != fields.end() ) cf_def.__set_comparator_type(             fields_iter->second->string()             );
+    fields_iter = fields.find("subcomparator");               if( fields_iter != fields.end() ) cf_def.__set_subcomparator_type(          fields_iter->second->string()             );
+    fields_iter = fields.find("comment");                     if( fields_iter != fields.end() ) cf_def.__set_comment(                     fields_iter->second->string()             );
+    fields_iter = fields.find("read_repair_chance");          if( fields_iter != fields.end() ) cf_def.__set_read_repair_chance(          fields_iter->second->variant().toDouble() );
+    fields_iter = fields.find("gc_grace_seconds");            if( fields_iter != fields.end() ) cf_def.__set_read_repair_chance(          fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("default_validator");           if( fields_iter != fields.end() ) cf_def.__set_default_validation_class(    fields_iter->second->string()             );
+    fields_iter = fields.find("cf_id");                       if( fields_iter != fields.end() ) cf_def.__set_id(                          fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("min_compaction_threshold");    if( fields_iter != fields.end() ) cf_def.__set_min_compaction_threshold(    fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("max_compaction_threshold");    if( fields_iter != fields.end() ) cf_def.__set_max_compaction_threshold(    fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("key_validator");               if( fields_iter != fields.end() ) cf_def.__set_key_validation_class(        fields_iter->second->string()             );
+    fields_iter = fields.find("key_aliases");                 if( fields_iter != fields.end() ) cf_def.__set_key_alias(                   fields_iter->second->string()             );
+    fields_iter = fields.find("compaction_strategy_class");   if( fields_iter != fields.end() ) cf_def.__set_compaction_strategy(         fields_iter->second->string()             );
+    fields_iter = fields.find("compaction_strategy_options"); if( fields_iter != fields.end() ) cf_def.__set_compaction_strategy_options( fields_iter->second->stringMap()          );
+    fields_iter = fields.find("compression_parameters");      if( fields_iter != fields.end() ) cf_def.__set_compression_options(         fields_iter->second->stringMap()          );
+    fields_iter = fields.find("bloom_filter_fp_chance");      if( fields_iter != fields.end() ) cf_def.__set_bloom_filter_fp_chance(      fields_iter->second->variant().toDouble() );
+    fields_iter = fields.find("caching");                     if( fields_iter != fields.end() ) cf_def.__set_caching(                     fields_iter->second->string()             );
+    fields_iter = fields.find("memtable_flush_period_in_ms"); if( fields_iter != fields.end() ) cf_def.__set_memtable_flush_period_in_ms( fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("default_time_to_live");        if( fields_iter != fields.end() ) cf_def.__set_default_time_to_live(        fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("speculative_retry");           if( fields_iter != fields.end() ) cf_def.__set_speculative_retry(           fields_iter->second->string()             );
 
     std::vector<ColumnDef> col_def_list;
     for( const auto pair : table->getColumns() )
@@ -1253,6 +1258,7 @@ void QCassandra::retrieveTable( CfDef& cf_def, SessionMeta::KeyspaceMeta::TableM
     }
     cf_def.__set_column_metadata( col_def_list );
 }
+#endif
 
 
 /** \brief Retrieve the description of a keyspace.
@@ -1270,36 +1276,8 @@ void QCassandra::retrieveTable( CfDef& cf_def, SessionMeta::KeyspaceMeta::TableM
  */
 void QCassandra::retrieveContext( SessionMeta::KeyspaceMeta::pointer_t keyspace ) const
 {
-    // retrieve this keyspace from Cassandra
-    KsDef ks_def;
-
-    auto fields( keyspace->getFields() );
-    const bool    durable_writes   ( fields["durable_writes"]->variant().toBool()   );
-    const QString strategy_class   ( fields["strategy_class"]->variant().toString() );
-    const auto&   strategy_options ( fields["strategy_options"]->stringMap()        );
-
-    ks_def.__set_name             ( keyspace->getName().toStdString()   );
-    ks_def.__set_strategy_class   ( strategy_class.toStdString() );
-    ks_def.__set_strategy_options ( strategy_options             );
-
-    auto iter = ks_def.strategy_options.find( "replication_factor" );
-    if( iter != ks_def.strategy_options.end() )
-    {
-        ks_def.__set_replication_factor( atoi(iter->second.c_str()) );
-    }
-
-    std::vector<CfDef> cf_def_list;
-    for( const auto pair : keyspace->getTables() )
-    {
-        CfDef cf_def;
-        retrieveTable( cf_def, pair.second );
-        cf_def_list.push_back( cf_def );
-    }
-    ks_def.__set_cf_defs( cf_def_list );
-    ks_def.__set_durable_writes( durable_writes );
-
     QCassandraContext::pointer_t c( const_cast<QCassandra*>(this)->context(keyspace->getName()) );
-    c->parseContextDefinition( &ks_def );
+    c->parseContextDefinition( keyspace );
 }
 
 
@@ -1307,8 +1285,12 @@ void QCassandra::retrieveContext( const QString& context_name ) const
 {
     SessionMeta::pointer_t session_meta( SessionMeta::create(f_session) );
     session_meta->loadSchema();
-    auto keyspaces(session_meta->getKeyspaces());
-    retrieveContext( keyspaces[context_name] );
+    const auto& keyspaces(session_meta->getKeyspaces());
+    auto iter = keyspaces.find(context_name);
+    if( iter != keyspaces.end() )
+    {
+        retrieveContext( iter->second );
+    }
 }
 
 

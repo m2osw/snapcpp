@@ -80,6 +80,8 @@ public:
         const QString& 				getName()   const;
         const SessionMeta::map_t&   getFields() const;
 
+        Value::pointer_t operator[]( const QString& name );
+
         class TableMeta
         {
         public:
@@ -90,6 +92,8 @@ public:
 
             const QString&              getName()   const;
             const SessionMeta::map_t&   getFields() const;
+
+            Value::pointer_t operator[]( const QString& name );
 
             class ColumnMeta
             {
@@ -108,6 +112,8 @@ public:
                 const QString&              getName() const;
                 type_t                      getType() const;
                 const SessionMeta::map_t&   getFields() const;
+
+                Value::pointer_t operator[]( const QString& name );
 
             private:
                 TableMeta::pointer_t f_table;

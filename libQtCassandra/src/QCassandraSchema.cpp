@@ -245,6 +245,18 @@ const SessionMeta::map_t&
 }
 
 
+Value::pointer_t
+    SessionMeta::KeyspaceMeta::operator[]( const QString& name )
+{
+    if( f_fields.find(name) == f_fields.end() )
+    {
+        f_fields[name] = Value::create();
+    }
+
+    return f_fields[name];
+}
+
+
 const SessionMeta::KeyspaceMeta::TableMeta::map_t&
     SessionMeta::KeyspaceMeta::getTables() const
 {
@@ -271,6 +283,18 @@ const SessionMeta::map_t&
     SessionMeta::KeyspaceMeta::TableMeta::getFields() const
 {
     return f_fields;
+}
+
+
+Value::pointer_t
+    SessionMeta::KeyspaceMeta::TableMeta::operator[]( const QString& name )
+{
+    if( f_fields.find(name) == f_fields.end() )
+    {
+        f_fields[name] = Value::create();
+    }
+
+    return f_fields[name];
 }
 
 
@@ -308,6 +332,18 @@ const SessionMeta::map_t&
     SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getFields() const
 {
     return f_fields;
+}
+
+
+Value::pointer_t
+    SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::operator[]( const QString& name )
+{
+    if( f_fields.find(name) == f_fields.end() )
+    {
+        f_fields[name] = Value::create();
+    }
+
+    return f_fields[name];
 }
 
 
