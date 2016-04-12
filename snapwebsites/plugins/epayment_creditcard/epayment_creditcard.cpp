@@ -46,37 +46,37 @@ char const * get_name(name_t name)
     switch(name)
     {
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_DEFAULT_COUNTRY:
-        return "epayment::default_country";
+        return "epayment_creditcard::default_country";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_GATEWAY:
-        return "epayment::gateway";
+        return "epayment_creditcard::gateway";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH:
         return "admin/settings/epayment/credit-card";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ADDRESS2:
-        return "epayment::show_address2";
+        return "epayment_creditcard::show_address2";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_BUSINESS_NAME:
-        return "epayment::show_business_name";
+        return "epayment_creditcard::show_business_name";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_COUNTRY:
-        return "epayment::show_country";
+        return "epayment_creditcard::show_country";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_DELIVERY:
-        return "epayment::show_delivery";
+        return "epayment_creditcard::show_delivery";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_ONE_NAME:
-        return "epayment::show_one_name";
+        return "epayment_creditcard::show_one_name";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PHONE:
-        return "epayment::show_phone";
+        return "epayment_creditcard::show_phone";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SHOW_PROVINCE:
-        return "epayment::show_province";
+        return "epayment_creditcard::show_province";
 
     case name_t::SNAP_NAME_EPAYMENT_CREDITCARD_USER_ALLOWS_SAVING_TOKEN: // TODO: make this "magically" appear on the user's profiles
-        return "epayment::creditcard::user_allows_saving_token";
+        return "epayment_creditcard::user_allows_saving_token";
 
     default:
         // invalid index
@@ -141,7 +141,7 @@ epayment_creditcard * epayment_creditcard::instance()
  */
 QString epayment_creditcard::settings_path() const
 {
-    return "/admin/settings/epayment/creditcard";
+    return get_name(name_t::SNAP_NAME_EPAYMENT_CREDITCARD_SETTINGS_PATH);
 }
 
 

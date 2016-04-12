@@ -30,7 +30,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/css/epayment">
     <file>epayment.css</file>
   </qresource>
+  <qresource prefix="/xml/editor">
+    <file>epayment-settings-page.xml</file>
+  </qresource>
   <qresource prefix="/xsl/layout">
+    <file>epayment-settings-parser.xsl</file>
     <file>epayment-product-parser.xsl</file>
   </qresource>
 </RCC>

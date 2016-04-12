@@ -1615,7 +1615,7 @@ QString epayment_paypal::get_product_plan(http_client_server::http_client & http
     content::path_info_t product_ipath;
     product_ipath.set_path(guid);
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraRow::pointer_t row(revision_table->row(product_ipath.get_revision_key()));
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
@@ -3327,19 +3327,12 @@ void epayment_paypal::on_repeat_payment(content::path_info_t & first_invoice_ipa
 {
     NOTUSED(previous_invoice_ipath);
 
-    epayment::epayment * epayment_plugin(epayment::epayment::instance());
-    epayment::name_t status(epayment_plugin->get_invoice_status(new_invoice_ipath));
-    if(status == epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN)
-    {
-        // in case the programmer missed specifying the status... use CREATED
-        status = epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED;
-    }
-
     content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+
     QtCassandra::QCassandraRow::pointer_t first_secret_row(secret_table->row(first_invoice_ipath.get_key()));
-    QtCassandra::QCassandraValue agreement_id(first_secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID))->value());
+    QtCassandra::QCassandraValue const agreement_id(first_secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID))->value());
     if(agreement_id.nullValue())
     {
         // no PayPal agreement, we cannot repeat this payment in this
@@ -3529,6 +3522,8 @@ SNAP_LOG_DEBUG() << "answer is [" << QString::fromUtf8(response->get_response().
         }
     }
 
+    epayment::epayment * epayment_plugin(epayment::epayment::instance());
+
     // get the client invoice
     uint64_t invoice_number(0);
     epayment::epayment_product_list plist;
@@ -3647,6 +3642,13 @@ SNAP_LOG_DEBUG() << "answer is [" << QString::fromUtf8(response->get_response().
     //
     //    epayment_paypal::agreement_id  or  get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID)
     //
+
+    epayment::name_t status(epayment_plugin->get_invoice_status(new_invoice_ipath));
+    if(status == epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN)
+    {
+        // in case the programmer missed specifying the status... use CREATED
+        status = epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED;
+    }
 
     {
         // all parameters are go, mark as processing

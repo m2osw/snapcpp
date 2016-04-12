@@ -141,6 +141,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_UPDATE_CUSTOMER_HEADER:
         return "epayment_stripe::update_customer_header";
 
+    case name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_USER_KEY:
+        return "epayment_stripe::user_key";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid name_t::SNAP_NAME_EPAYMENT_STRIPE_...");
@@ -2245,455 +2248,197 @@ void epayment_stripe::on_repeat_payment(content::path_info_t & first_invoice_ipa
     NOTUSED(previous_invoice_ipath);
     NOTUSED(new_invoice_ipath);
 
-//    epayment::epayment * epayment_plugin(epayment::epayment::instance());
-//    epayment::name_t status(epayment_plugin->get_invoice_status(new_invoice_ipath));
-//    if(status == epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN)
-//    {
-//        // in case the programmer missed specifying the status... use CREATED
-//        status = epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED;
-//    }
-//
-//    content::content * content_plugin(content::content::instance());
-//    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-//    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-//    QtCassandra::QCassandraRow::pointer_t first_secret_row(secret_table->row(first_invoice_ipath.get_key()));
-//    QtCassandra::QCassandraValue agreement_id(first_secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_AGREEMENT_ID))->value());
-//    if(agreement_id.nullValue())
-//    {
-//        // no Stripe agreement, we cannot repeat this payment in this
-//        // plugin, just leave and let other plugins eventually do some work
-//        return;
-//    }
-//
-//    QtCassandra::QCassandraRow::pointer_t new_invoice_revision_row(revision_table->row(new_invoice_ipath.get_revision_key()));
-//    if(!new_invoice_revision_row)
-//    {
-//        // we have a big problem it looks like!
-//        return;
-//    }
-//
-//    // make sure we do not try too many times in a row
-//    int64_t const last_attempt(new_invoice_revision_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_LAST_ATTEMPT))->value().safeInt64Value());
-//    int64_t const start_date(f_snap->get_start_date());
-//    if(last_attempt + 24LL * 60LL * 60LL * 1000000LL > start_date)
-//    {
-//        // the last attempt was less than 24h, skip this auto-repeat payment
-//        // (i.e. in effect try at most once per day)
-//        // since this code is likely to run once every 5 min. and we could
-//        // have thousands of invoices, we do not print out an error message
-//        // nor an INFO log; still emit a DEBUG message, just in case
-//        SNAP_LOG_DEBUG("The Stripe recurring payment facility will not attempt plan processing of the same invoice (")(new_invoice_ipath.get_key())(") more than once a day.");
-//        return;
-//    }
-//    new_invoice_revision_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_LAST_ATTEMPT))->setValue(start_date);
-//
-//    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(new_invoice_ipath.get_key()));
-//    if(!secret_row)
-//    {
-//        // we have a big problem it looks like!
-//        return;
-//    }
-//
-//    // keep connection alive as long as possible
-//    http_client_server::http_client http;
-//    //http.set_keep_alive(true); -- this is the default
-//
-//    // get an access token
-//    std::string token_type;
-//    std::string access_token;
-//    if(!get_oauth2_token(http, token_type, access_token))
-//    {
-//        // a message was already generated if false
-//        //
-//        // TODO: add an error in the secret table so we know we tried,
-//        //       when, how, etc.
-//        //
-//        return;
-//    }
-//
-//    QString const agreement_url(first_secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_AGREEMENT_URL))->value().stringValue());
-//
-//    // check this agreement; if payment owed is still zero, just return
-//    // and try again tomorrow
-//    {
-//        http_client_server::http_request stripe_agreement_request;
-//        // In this case the URI has to be built by hand because it was not
-//        // provided in any JSON results we got so far
-//        //
-//        //    https://api.sandbox.stripe.com/v1/payments/billing-agreements/I-123
-//        //
-//std::cerr << "***\n*** agreement URL is [" << agreement_url << "]\n***\n";
-//        stripe_agreement_request.set_uri(agreement_url.toUtf8().data());
-//        //stripe_agreement_request.set_path("...");
-//        //stripe_agreement_request.set_port(443); // https
-//        stripe_agreement_request.set_header("Accept", "application/json");
-//        stripe_agreement_request.set_header("Accept-Language", "en_US");
-//        stripe_agreement_request.set_header("Content-Type", "application/json");
-//        stripe_agreement_request.set_header("Authorization", QString("%1 %2").arg(token_type.c_str()).arg(access_token.c_str()).toUtf8().data());
-//        // TODO: add "-attempt<number>" at the end of our ID
-//        //stripe_agreement_request.set_header("Stripe-Request-Id", new_invoice_ipath.get_key().toUtf8().data());
-//        http_client_server::http_response::pointer_t response(http.send_request(stripe_agreement_request));
-//
-//        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHECK_BILL_PLAN_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
-//        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHECK_BILL_PLAN))->setValue(QString::fromUtf8(response->get_response().c_str()));
-//std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response().c_str()) << "]\n***\n";
-//
-//        // we need a successful response (according to the documentation,
-//        // it should always be 204, but we are getting a 200 answer)
-//        if(response->get_response_code() != 200
-//        && response->get_response_code() != 201
-//        && response->get_response_code() != 204)
-//        {
-//            messages::messages::instance()->set_error(
-//                "Plan Not Accessible",
-//                "This Stripe Plan is not currently accessible.",
-//                QString("Tried to check plan %1 on this user's account and it was not accessible.").arg(agreement_id.stringValue()),
-//                false
-//            );
-//            return;
-//        }
-//
-//        // the agreement is available, check that there is a pending balance
-//        //
-//        //    agreement.agreement_details.outstanding_balance.value
-//        //
-//        as2js::JSON::pointer_t json(new as2js::JSON);
-//        as2js::StringInput::pointer_t in(new as2js::StringInput(response->get_response()));
-//        as2js::JSON::JSONValue::pointer_t value(json->parse(in));
-//        if(!value)
-//        {
-//            // TODO: change status of invoice to CANCELED?
-//            SNAP_LOG_ERROR("JSON parser failed parsing 'agreement' response");
-//            return;
-//        }
-//        as2js::JSON::JSONValue::object_t const& object(value->get_object());
-//
-//        // ID
-//        // verify that the agreement identifier corresponds to what we expect
-//        if(object.find("id") == object.end())
-//        {
-//            // TODO: change status of invoice to CANCELED?
-//            SNAP_LOG_ERROR("'id' missing in 'agreement' response");
-//            return;
-//        }
-//        QString const agreement_identifier(QString::fromUtf8(object.at("id")->get_string().to_utf8().c_str()));
-//        if(agreement_identifier != agreement_id.stringValue())
-//        {
-//            // TODO: change status of invoice to CANCELED?
-//            SNAP_LOG_ERROR("'id' in 'agreement' response is not the same as the invoice 'id'");
-//            return;
-//        }
-//
-//        // STATE
-//        // verify that the agreement state is "Active"
-//        if(object.find("state") == object.end())
-//        {
-//            // TODO: change status of invoice to CANCELED?
-//            SNAP_LOG_ERROR("'state' missing in 'agreement' response");
-//            return;
-//        }
-//        QString const agreement_state(QString::fromUtf8(object.at("id")->get_string().to_utf8().c_str()));
-//        if(agreement_state.compare("Active", Qt::CaseInsensitive) == 0)
-//        {
-//            // TODO: change status of invoice to CANCELED?
-//            SNAP_LOG_ERROR("'state' in 'agreement' response is not 'Active'");
-//            return;
-//        }
-//
-//        // AGREEMENT_DETAILS
-//        // retrieve the agreement details
-//        if(object.find("agreement_details") == object.end())
-//        {
-//            // TODO: change status of invoice to CANCELED?
-//            SNAP_LOG_ERROR("'agreement_details' missing in 'agreement' response");
-//            return;
-//        }
-//        as2js::JSON::JSONValue::object_t const& agreement_details(object.at("agreement_details")->get_object());
-//
-//        // OUSTANDING_BALANCE
-//        // retrieve the outstanding balance which is a currency object
-//        if(agreement_details.find("outstanding_balance") == agreement_details.end())
-//        {
-//            // TODO: change status of invoice to CANCELED?
-//            SNAP_LOG_ERROR("'outstanding_balance' missing in 'agreement.agreement_details' response");
-//            return;
-//        }
-//        as2js::JSON::JSONValue::object_t const& outstanding_balance(agreement_details.at("outstanding_balance")->get_object());
-//
-//        // VALUE
-//        // retrieve the amount of the outstanding balance
-//        if(outstanding_balance.find("value") == outstanding_balance.end())
-//        {
-//            // TODO: change status of invoice to CANCELED?
-//            SNAP_LOG_ERROR("'value' missing in 'agreement.agreement_details.outstand_balance' response");
-//            return;
-//        }
-//        // returned as a string even though it is a number
-//        QString const balance_value(QString::fromUtf8(outstanding_balance.at("value")->get_string().to_utf8().c_str()));
-//        bool ok(false);
-//        double const bv(balance_value.toDouble(&ok));
-//        if(!ok)
-//        {
-//            // TODO: change status of invoice to CANCELED?
-//            SNAP_LOG_ERROR("'agreement.agreement_details.outstand_balance.value' is not a valid double");
-//            return;
-//        }
-//
-//        if(bv <= 0.0)
-//        {
-//            // TODO: show invoice number
-//            SNAP_LOG_INFO("No outstanding balance according to Stripe. Try again later.");
-//            return;
-//        }
-//    }
-//
-//    // get the client invoice
-//    uint64_t invoice_number(0);
-//    epayment::epayment_product_list plist;
-//    epayment_plugin->retrieve_invoice(new_invoice_ipath, invoice_number, plist);
-//
-//    epayment::epayment_product const *recurring_product(nullptr);
-//    {
-//        size_t const max_products(plist.size());
-//        bool recurring_defined(false);
-//        epayment::recurring_t recurring;
-//        for(size_t idx(0); idx < max_products; ++idx)
-//        {
-//            epayment::epayment_product const& product(plist[idx]);
-//            if(product.has_property(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_RECURRING_SETUP_FEE)))
-//            {
-//                messages::messages::instance()->set_error(
-//                    "Unsupported Recurring Fee",
-//                    "The Stripe payment facility does not support a fee when charging a recurring payment.",
-//                    "We just cannot charge the fee when processing a recurring fee second or further payments.",
-//                    false
-//                );
-//                return;
-//            }
-//            else if(product.has_property(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_RECURRING)))
-//            {
-//                // A Stripe recurring payment necessitate a Plan which
-//                // may support multiple payment options (not tested), but
-//                // really only one single recurring payment product;
-//                // it is possible to have a varying setup fee though using
-//                // the "override_merchant_preferences" option
-//                if(recurring_defined)
-//                {
-//                    epayment::recurring_t second(product.get_string_property(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_RECURRING)));
-//                    messages::messages::instance()->set_error(
-//                        "Unsupported Recurring",
-//                        "The Stripe payment facility does not support billing more than one recurring fee at a time.",
-//                        QString("Got recurring \"%1\" and \"%2\" in the same invoice.").arg(recurring.to_string()).arg(second.to_string()),
-//                        false
-//                    );
-//                    return;
-//                }
-//                recurring.set(product.get_string_property(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_RECURRING)));
-//                if(!recurring.is_null())
-//                {
-//                    recurring_defined = true;
-//                    recurring_product = &product;
-//                }
-//            }
-//            else
-//            {
-//                messages::messages::instance()->set_error(
-//                    "Unsupported Recurring",
-//                    "The Stripe payment facility does not support a purchase with a subscription recurring billing.",
-//                    "Invoice includes additional products that are not supported here.",
-//                    false
-//                );
-//                return;
-//            }
-//        }
-//
-//        if(!recurring_defined)
-//        {
-//            messages::messages::instance()->set_error(
-//                "Subscription Missing",
-//                "A Stripe payment plan requires at least one product or service with a recurring fee.",
-//                "No item from the list is a recurring product.",
-//                false
-//            );
-//            return;
-//        }
-//    }
-//
-//    int64_t failures(0);
-//    {
-//        QtCassandra::QCassandraValue failures_value(new_invoice_revision_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_MAXIMUM_REPEAT_FAILURES))->value());
-//        if(failures_value.size() == sizeof(int8_t))
-//        {
-//            failures = failures_value.signedCharValue();
-//
-//            // the limit is a setting
-//            if(failures >= get_maximum_repeat_failures())
-//            {
-//                // too many attempts, we fail
-//                // the FAILED status does not prohibit a manual payment,
-//                // it will prevent an auto-repeat payment though
-//                epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
-//                messages::messages::instance()->set_error(
-//                    "Recurring Fee Failing",
-//                    "Somehow we could not process the recurring Stripe payment.",
-//                    "When trying to charge a fee at the wrong time a Stripe plan fails... this may be happening here.",
-//                    false
-//                );
-//                return;
-//            }
-//        }
-//        // else -- we did not try yet so it is zero
-//    }
-//
-//    // okay, that looks good, connect to Stripe and then try to process the payment
-//
-//    //
-//    // Stripe example:
-//    //
-//    // curl -v POST https://api.sandbox.stripe.com/v1/payments/billing-agreements/I-123/bill-balance
-//    //      -H 'Content-Type: application/json'
-//    //      -H 'Authorization: Bearer <Access-Token>'
-//    //      -d '{
-//    //              "note": "Billing Balance Amount",
-//    //              "amount": {
-//    //                  "value": "100",
-//    //                  "currency": "USD"
-//    //              }
-//    //          }'
-//    //
-//    // The agreement identifier is saved in out secret table as:
-//    //
-//    //    epayment_stripe::agreement_id  or  get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_AGREEMENT_ID)
-//    //
-//
-//    {
-//        // all parameters are go, mark as processing
-//        epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
-//
-//        as2js::String temp_str;
-//        as2js::Position pos;
-//        as2js::JSON::JSONValue::object_t empty_object;
-//        as2js::JSON::JSONValue::pointer_t field;
-//        as2js::JSON::JSONValue::pointer_t body(new as2js::JSON::JSONValue(pos, empty_object));
-//
-//        // NOTE
-//        {
-//            // "Reason for changing the state agreement"
-//            // ("changing" does not make sense here to me)
-//            temp_str = "Billing Balance Amount";
-//            field.reset(new as2js::JSON::JSONValue(pos, temp_str));
-//            body->set_member("note", field);
-//        }
-//
-//        // AMOUNT
-//        {
-//            as2js::JSON::JSONValue::pointer_t amount(new as2js::JSON::JSONValue(pos, empty_object));
-//            body->set_member("amount", amount);
-//
-//            // CURRENCY
-//            temp_str = "USD";
-//            field.reset(new as2js::JSON::JSONValue(pos, temp_str));
-//            amount->set_member("currency", field);
-//
-//            // VALUE (Stripe expects a string for value)
-//            // TODO: the number of decimals depends on the currency
-//            //       (from what I read it can be 0, 2, or 3)
-//            temp_str.from_utf8(QString("%1").arg(recurring_product->get_total(), 0, 'f', 2).toUtf8().data());
-//            field.reset(new as2js::JSON::JSONValue(pos, temp_str));
-//            amount->set_member("value", field);
-//        } // amount
-//
-//        http_client_server::http_request bill_outstanding_agreement_amounts_request;
-//        // In this case the URI has to be built by hand because it was not
-//        // provided in any JSON results we got so far
-//        // (although we should probably use the agreement URI + "/bill-balance")
-//        //
-//        //    https://api.sandbox.stripe.com/v1/payments/billing-agreements/I-123/bill-balance
-//        //
-//        bill_outstanding_agreement_amounts_request.set_uri(QString("https://api.sandbox.stripe.com/v1/payments/billing-agreements/%1/bill-balance").arg(agreement_id.stringValue()).toUtf8().data());
-//        //bill_outstanding_agreement_amounts_request.set_path("...");
-//        //bill_outstanding_agreement_amounts_request.set_port(443); // https
-//        bill_outstanding_agreement_amounts_request.set_header("Accept", "application/json");
-//        bill_outstanding_agreement_amounts_request.set_header("Accept-Language", "en_US");
-//        bill_outstanding_agreement_amounts_request.set_header("Content-Type", "application/json");
-//        bill_outstanding_agreement_amounts_request.set_header("Authorization", QString("%1 %2").arg(token_type.c_str()).arg(access_token.c_str()).toUtf8().data());
-//        // TODO: add "-attempt<number>" at the end of our ID
-//        bill_outstanding_agreement_amounts_request.set_header("Stripe-Request-Id", new_invoice_ipath.get_key().toUtf8().data());
-//        bill_outstanding_agreement_amounts_request.set_data(body->to_string().to_utf8());
-//        http_client_server::http_response::pointer_t response(http.send_request(bill_outstanding_agreement_amounts_request));
-//
-//        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_AGREEMENT_ID))->setValue(agreement_id);
-//        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_AGREEMENT_URL))->setValue(agreement_url);
-//        uint8_t const true_value(1);
-//        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_REPEAT_PAYMENT))->setValue(true_value);
-//        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_BILL_PLAN_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
-//        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_BILL_PLAN_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
-//        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_BILL_PLAN))->setValue(QString::fromUtf8(response->get_response().c_str()));
-//        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_INVOICE_NUMBER))->setValue(invoice_number);
-//std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response().c_str()) << "]\n***\n";
-//
-//        // parse the response which is always JSON even on errors
-//        as2js::JSON::pointer_t json(new as2js::JSON);
-//        as2js::StringInput::pointer_t in(new as2js::StringInput(response->get_response()));
-//        as2js::JSON::JSONValue::pointer_t value(json->parse(in));
-//
-//        // we need a successful response (according to the documentation,
-//        // it should always be 204, but we are getting a 200 answer)
-//        if(response->get_response_code() != 200
-//        && response->get_response_code() != 201
-//        && response->get_response_code() != 204)
-//        {
-//            // Note: We do not change the status in this case. It becomes
-//            //       FAILED once the maximum number of failures is reached.
-//            //
-//            ++failures;
-//            new_invoice_revision_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_MAXIMUM_REPEAT_FAILURES))->setValue(failures);
-//
-//            // in this case we mark the invoice paymnet as failed unless
-//            // we recognize the error and can use a different status
-//            epayment::name_t new_status(epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
-//            if(value)
-//            {
-//                as2js::JSON::JSONValue::object_t const& object(value->get_object());
-//
-//                // NAME
-//                // check the error name if defined
-//                if(object.find("name") != object.end())
-//                {
-//                    if(object.at("name")->get_string() == "INVALID_OUTSTANDING_BALANCE")
-//                    {
-//                        // restore the status to what it was on entry
-//                        // (i.e. we just failed a payment attempted)
-//                        new_status = status;
-//                    }
-//                }
-//            }
-//
-//            // restore the status, we are not processing anymore; this may
-//            // put the invoice back to CREATED (i.e. "new") -- at this time
-//            // we only allow CREATED invoices here so it will be that.
-//            //
-//            // TODO: we may have cases where the status should be set to
-//            //       FAILED instead of back to CREATED (i.e. when the
-//            //       error says the user canceled that plan)
-//            epayment_plugin->set_invoice_status(new_invoice_ipath, new_status);
-//
-//            SNAP_LOG_ERROR("processing recurring payment failed");
-//            throw epayment_stripe_exception_io_error("processing recurring payment failed");
-//        }
-//
-//        if(!value)
-//        {
-//            // this is double bad, completely failed
-//            epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
-//            SNAP_LOG_ERROR("JSON parser failed parsing auto-payment response");
-//            throw epayment_stripe_exception_io_error("JSON parser failed parsing auto-payment response");
-//        }
-//
-//        // TODO: make sure the payment was accepted and processed as expected
-//
-//        epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID);
-//    }
+    // if no stripe key defined, it cannot be a repeat of a stripe charge
+    //
+    bool const debug(get_debug());
+    QString const stripe_key(get_stripe_key(debug));
+    if(stripe_key.isEmpty())
+    {
+        // we already generated an error if empty, leave now
+        return;
+    }
+
+    content::content * content_plugin(content::content::instance());
+
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+    QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
+
+    QtCassandra::QCassandraRow::pointer_t first_secret_row(secret_table->row(first_invoice_ipath.get_key()));
+    QtCassandra::QCassandraValue customer_key(first_secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_USER_KEY))->value());
+    if(customer_key.nullValue())
+    {
+        // no Stripe customer, we cannot repeat this payment in this
+        // plugin, just leave and let other plugins eventually do some work
+        return;
+    }
+
+    QtCassandra::QCassandraRow::pointer_t customer_row(epayment_stripe_table->row(customer_key.binaryValue()));
+
+    int64_t const start_date(f_snap->get_start_date());
+
+    http_client_server::http_client http;
+
+    {
+        // Now actually charge the customer card
+        //
+        QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(new_invoice_ipath.get_key()));
+        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(new_invoice_ipath.get_revision_key()));
+
+        secret_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_CREATED))->setValue(start_date);
+
+        // create a charge now
+        //
+        http_client_server::http_request stripe_charge_request;
+
+        // the URI changes slightly in case we are updating
+        stripe_charge_request.set_uri(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_CHARGE_URI));
+
+        // the set_uri() does the set_path() and set_port() as expected
+        //stripe_create_request.set_path("...");
+        //stripe_create_request.set_port(443); // https
+        stripe_charge_request.set_header("Accept", "application/json");
+        stripe_charge_request.set_header("Stripe-Version", get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_VERSION)); // make sure our requests will work for the version we programmed them for
+        //stripe_create_request.set_header("Accept-Language", "en_US"); -- at this time, stripe's API is 100% English
+        //stripe_create_request.set_header("Content-Type", "application/x-www-form-urlencoded"); -- automatic with set_post() calls
+        stripe_charge_request.set_basic_auth(stripe_key.toUtf8().data(), "");
+
+        // POST variables
+
+        // Basic variables
+        double const grand_total(revision_row->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_GRAND_TOTAL))->value().safeDoubleValue());
+        stripe_charge_request.set_post("amount", QString("%1").arg(static_cast<uint64_t>(grand_total * 100.0)).toUtf8().data()); // amount in cents
+
+        // once we have time to add proper support for various currencies:
+        // https://support.stripe.com/questions/which-currencies-does-stripe-support
+        //
+        stripe_charge_request.set_post("currency", "usd"); // force USD for now
+        stripe_charge_request.set_post("capture", "true"); // make sure we always capture
+
+        // capturing a fee on that charge?
+        //stripe_charge_request.set_post("application_fee", 0); -- useful for systems like Order Made but not yet implemented
+        //stripe_charge_request.set_post("destination", ...); -- useful for systems like Order Made but not yet implemented
+
+        // pass the SNAP_NAME_CONTENT_TITLE as description, it often is
+        // the invoice number, but could be more descriptive...
+        //
+        QString const invoice_description(revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue());
+        stripe_charge_request.set_post("description", snap_dom::remove_tags(invoice_description).toUtf8().data());
+
+        stripe_charge_request.set_post("metadata[user_id]", customer_key.stringValue().toUtf8().data()); // can make it easier to find the customer this way
+
+        // We manage emails and setting the receipt_email would generate
+        // a double email so we do not do it!
+        //
+        //stripe_charge_request.set_post("receipt_email", user_email);
+
+        // If available, it is part of the customer's account
+        //
+        //stripe_charge_request.set_post("shipping[...]", ...);
+
+        // Customer
+        QString const customer_stripe_key(customer_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_CUSTOMER_KEY))->value().stringValue());
+        stripe_charge_request.set_post("customer", customer_stripe_key.toUtf8().data());
+
+        // Source
+        //stripe_charge_request.set_post("source[...]", ...); -- the customer information is enough, they will use the default source though
+        //                                                       once we support selecting any source, this will change with the source 'id'
+
+        // Description appearing on the credit card bank statements
+        //
+        content::path_info_t epayment_settings;
+        epayment_settings.set_path("admin/settings/epayment/store");
+        QtCassandra::QCassandraRow::pointer_t epayment_settings_row(revision_table->row(epayment_settings.get_revision_key()));
+        QString const store_name(epayment_settings_row->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_STORE_NAME))->value().stringValue());
+        QString const invoice_number(revision_row->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_NUMBER))->value().stringValue());
+        QString const statement(QString("%1 #%2").arg(store_name).arg(invoice_number));
+        stripe_charge_request.set_post("statement_descriptor", statement.toUtf8().data());
+
+        http_client_server::http_response::pointer_t charge_response(http.send_request(stripe_charge_request));
+
+        // we can save the reply header as is
+        //
+        QtCassandra::QCassandraValue value;
+        value.setStringValue(QString::fromUtf8(charge_response->get_original_header().c_str()));
+        value.setTtl(365 * 86400); // keep for about 1 year
+        secret_row->cell(QString("%1::%2")
+                            .arg(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHARGE_HEADER))
+                            .arg(start_date))
+                  ->setValue(value);
+
+        // NO DIRECT LOGGING OF RESPONSE, SEE WARNING AT START OF epayment_stripe::process_creditcard() FUNCTION
+        //secret_row->cell(...)->setValue(QString::fromUtf8(charge_response->get_response().c_str()));
+
+        // Stripe makes it simple, if anything fails, including a
+        // payment, then the response code is not 200
+        //
+        if(charge_response->get_response_code() != 200)
+        {
+            // in this case we can save the response as errors should never
+            // include sensitive data about the customer (TBD!)
+            //
+            // errors DO happen if the card is not valid (i.e. the customer
+            // info, including the card details are checked in this step),
+            // even though no charge gets triggered on creation or update!
+            //
+
+            log_error(charge_response, secret_row);
+            return;
+        }
+
+        // looks pretty good, check the actual answer...
+        as2js::JSON::pointer_t charge_json(new as2js::JSON);
+        as2js::StringInput::pointer_t charge_json_input(new as2js::StringInput(charge_response->get_response()));
+        as2js::JSON::JSONValue::pointer_t charge_json_value(charge_json->parse(charge_json_input));
+        if(!charge_json_value)
+        {
+            // TBD: should we not just delete our data and start over?
+            SNAP_LOG_FATAL("epayment_stripe::on_repeat_payment() JSON parser failed parsing 'create/update customer' response");
+            throw epayment_stripe_exception_io_error("JSON parser failed parsing 'create/update customer' response");
+        }
+        as2js::JSON::JSONValue::object_t root_object(charge_json_value->get_object());
+
+        // ID
+        if(root_object.find("id") == root_object.end())
+        {
+            SNAP_LOG_FATAL("epayment_stripe::on_repeat_payment() 'id' missing in 'charge' response");
+            throw epayment_stripe_exception_io_error("'id' missing in 'charge' response");
+        }
+        QString const charge_id(QString::fromUtf8(root_object.at("id")->get_string().to_utf8().c_str()));
+        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHARGE_KEY))->setValue(charge_id);
+
+        // to re-charge the same customer we need a link back to that customer
+        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_USER_KEY))->setValue(customer_key);
+
+        // now we want to save the JSON, only it includes some personal
+        // data about the user:
+        //
+        //    brand
+        //    dynamic_last4
+        //    exp_month
+        //    exp_year
+        //    fingerprint
+        //    last4
+        //
+        if(root_object.find("sources") != root_object.end())
+        {
+            as2js::JSON::JSONValue::pointer_t source(root_object.at("source"));
+            source->set_member("brand", as2js::JSON::JSONValue::pointer_t());
+            source->set_member("dynamic_last4", as2js::JSON::JSONValue::pointer_t());
+            source->set_member("exp_month", as2js::JSON::JSONValue::pointer_t());
+            source->set_member("exp_year", as2js::JSON::JSONValue::pointer_t());
+            source->set_member("fingerprint", as2js::JSON::JSONValue::pointer_t());
+            source->set_member("last4", as2js::JSON::JSONValue::pointer_t());
+        }
+
+        secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHARGE_INFO))
+                  ->setValue(QString::fromUtf8(charge_json_value->to_string().to_utf8().c_str()));
+
+        epayment::epayment * epayment_plugin(epayment::epayment::instance());
+        epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID);
+
+        SNAP_LOG_INFO("epayment_stripe::on_repeat_payment() subscription charge succeeded.");
+    }
 }
 
 
@@ -2869,6 +2614,13 @@ bool epayment_stripe::process_creditcard(epayment_creditcard::epayment_creditcar
 {
     NOTUSED(save_info);
 
+    //
+    // WARNING: do not log the JSON responses as is, many include the
+    //          expiration date and last 4 digits of the customer
+    //          credit card and we do not want that liability on our
+    //          systems!!!
+    //
+
     users::users * users_plugin(users::users::instance());
     content::content * content_plugin(content::content::instance());
     epayment::epayment * epayment_plugin(epayment::epayment::instance());
@@ -2879,13 +2631,6 @@ bool epayment_stripe::process_creditcard(epayment_creditcard::epayment_creditcar
     QtCassandra::QCassandraTable::pointer_t epayment_stripe_table(get_epayment_stripe_table());
 
     QtCassandra::QCassandraValue value;
-
-    //
-    // WARNING: do not log the JSON responses as is, many include the
-    //          expiration date and last 4 digits of the customer
-    //          credit card and we do not want that liability on our
-    //          systems!!!
-    //
 
     bool const debug(get_debug());
     int64_t const start_date(f_snap->get_start_date());
@@ -3442,6 +3187,9 @@ std::cerr << "cc phone [" << creditcard_info.get_phone() << "]\n";
             }
             QString const charge_id(QString::fromUtf8(root_object.at("id")->get_string().to_utf8().c_str()));
             secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_CHARGE_KEY))->setValue(charge_id);
+
+            // to re-charge the same customer we need a link back to that customer
+            secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_USER_KEY))->setValue(customer_key);
 
             // now we want to save the JSON, only it includes some personal
             // data about the user:

@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle payments via Stripe
-// Copyright (C) 2011-2016  Made to Order Software Corp.
+// Copyright (C) 2016  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -70,7 +70,8 @@ enum class name_t
     SNAP_SECURE_NAME_EPAYMENT_STRIPE_SECRET,
     SNAP_SECURE_NAME_EPAYMENT_STRIPE_TEST_SECRET,
     SNAP_SECURE_NAME_EPAYMENT_STRIPE_UPDATE_CUSTOMER_ERROR,
-    SNAP_SECURE_NAME_EPAYMENT_STRIPE_UPDATE_CUSTOMER_HEADER
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_UPDATE_CUSTOMER_HEADER,
+    SNAP_SECURE_NAME_EPAYMENT_STRIPE_USER_KEY
 };
 char const * get_name(name_t name) __attribute__ ((const));
 

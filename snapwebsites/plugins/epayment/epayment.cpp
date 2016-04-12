@@ -1845,9 +1845,10 @@ bool epayment::set_invoice_status_impl(content::path_info_t& invoice_ipath, name
  *                                    invoices were paid since.
  * \param[in] new_invoice_ipath  The new invoice you just created.
  *
- * \return true if the 3 ipath references are considered valid.
+ * \return true if the 3 ipath references are considered valid to possibly
+ *         generate a recurring payment.
  */
-bool epayment::repeat_payment_impl(content::path_info_t& first_invoice_ipath, content::path_info_t& previous_invoice_ipath, content::path_info_t& new_invoice_ipath)
+bool epayment::repeat_payment_impl(content::path_info_t & first_invoice_ipath, content::path_info_t & previous_invoice_ipath, content::path_info_t & new_invoice_ipath)
 {
     content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
@@ -1859,7 +1860,7 @@ bool epayment::repeat_payment_impl(content::path_info_t& first_invoice_ipath, co
     case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
     case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
     case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
-        // it was marked as paid or failed so ignore the request
+        // it was marked as paid or failed in some way so ignore the request
         SNAP_LOG_WARNING("repeat_payment() called with an invoice which is marked abandoned, canceled, paid, completed, or failed.");
         return false;
 
