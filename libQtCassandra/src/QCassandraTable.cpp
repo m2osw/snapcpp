@@ -39,8 +39,6 @@
 #include "QtCassandra/QCassandraContext.h"
 #include "QtCassandra/QCassandraSchema.h"
 
-#include "legacy/cassandra_types.h"
-
 #include <iostream>
 #include <stdexcept>
 #include <sstream>

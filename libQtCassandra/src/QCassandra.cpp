@@ -42,7 +42,6 @@
 
 #include "QtCassandra/QCassandra.h"
 #include "QtCassandra/QCassandraSchema.h"
-#include "legacy/cassandra_types.h"
 
 #include <QtCore>
 

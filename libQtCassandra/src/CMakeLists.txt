@@ -65,14 +65,8 @@ set( HEADER_FILES
     ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
 )
 
-set( LEGACY_FILES
-    legacy/cassandra_types.h
-    legacy/cassandra_types.cpp
-)
-
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
-    ${LEGACY_FILES}
     CassTools.cpp
     QCassandra.cpp
     QCassandraCell.cpp
