@@ -35,8 +35,6 @@
  */
 #pragma once
 
-#include "QtCassandra/QCassandraSchema.h"
-
 #include <QObject>
 #include <QString>
 #include <QMap>
@@ -88,20 +86,16 @@ public:
 private:
     QCassandraColumnDefinition(std::shared_ptr<QCassandraTable> table, const QString& name);
 
-    void parseColumnDefinition(
-        QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t column_meta
-        );
-    //void prepareColumnDefinition(ColumnDef* data) const;
+    void parseColumnDefinition(const ColumnDef* data);
+    void prepareColumnDefinition(ColumnDef* data) const;
 
     friend class QCassandraTable;
     friend class ColumnDef;
 
-    QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t f_schema;
-
+    std::unique_ptr<ColumnDef>         f_private;
     // f_table is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
-    QString							   f_columnName;
     std::shared_ptr<QCassandraTable>   f_table;
     QCassandraIndexOptions             f_index_options;
 };

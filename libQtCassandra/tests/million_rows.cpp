@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 
     auto& fields(context->fields());
     fields["replication"]    = replication;
-    fields["durable_writes"] = QtCassandra::QCassandraSchema::Value(true);
+    fields["durable_writes"] = QVariant(true);
 
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
     //
