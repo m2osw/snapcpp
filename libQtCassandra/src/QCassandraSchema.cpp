@@ -60,15 +60,15 @@ namespace QCassandraSchema
 //================================================================/
 // SessionMeta
 //
-SessionMeta::SessionMeta( QCassandraSession::pointer_t session )
-    : f_session(session)
+SessionMeta::SessionMeta( QCassandraSession::pointer_t s )
+    : f_session(s)
 {
 }
 
 
-SessionMeta::pointer_t SessionMeta::create( QCassandraSession::pointer_t session )
+SessionMeta::pointer_t SessionMeta::create( QCassandraSession::pointer_t s )
 {
-    return std::make_shared<SessionMeta>(session);
+    return std::make_shared<SessionMeta>(s);
 }
 
 

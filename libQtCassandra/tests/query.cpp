@@ -49,6 +49,8 @@ public:
     QueryTest( const QString& host );
     ~QueryTest();
 
+    void describeTest();
+
     void createSchema();
     void dropSchema();
 
@@ -77,6 +79,20 @@ QueryTest::QueryTest( const QString& host )
 QueryTest::~QueryTest()
 {
     f_session->disconnect();
+}
+
+
+void QueryTest::describeTest()
+{
+    // ONLY for debugging purposes--not called normall as this causes a Syntax Error.
+    QCassandraQuery q( f_session );
+    q.query( "DESCRIBE KEYSPACES" );
+    q.start();
+    while( q.nextRow() )
+    {
+        const std::string text = q.getStringColumn( 0 ).toStdString();
+        std::cout << text << std::endl;
+    }
 }
 
 
@@ -117,6 +133,7 @@ void QueryTest::createSchema()
         );
     q.start();
     q.end();
+    std::cout << "Dropping keyspace..." << std::endl;
 }
 
 
@@ -297,6 +314,7 @@ int main( int argc, char *argv[] )
     try
     {
         QueryTest test( host );
+        //test.describeTest();
         test.dropSchema();
         test.createSchema();
         test.simpleInsert();
