@@ -64,87 +64,27 @@ int main(int argc, char *argv[])
     QString name = cassandra->clusterName();
     qDebug() << "+ Cassandra Cluster Name is" << name;
 
-    const QtCassandra::QCassandraContexts& contexts = cassandra->contexts();
-    for(QtCassandra::QCassandraContexts::const_iterator
-            c = contexts.begin(); c != contexts.end(); ++c)
+    for( auto context : cassandra->contexts() )
     {
-        QString context_name = (*c)->contextName();
+        QString context_name = context->contextName();
         qDebug() << "  + Context Name" << context_name;
-        qDebug() << "    Strategy class" << (*c)->strategyClass();
-        const QtCassandra::QCassandraContext::QCassandraContextOptions options = (*c)->descriptionOptions();
-        for(QtCassandra::QCassandraContext::QCassandraContextOptions::const_iterator
-                o = options.begin(); o != options.end(); ++o)
+        for( const auto& pair : context->fields() )
         {
-            qDebug() << "    + Option" << o.key() << "=" << o.value();
+            qDebug() << "    + " << pair.first << " = " << pair.second.output();
         }
-        qDebug() << "    Replication Factor:" << (*c)->replicationFactor();
-        qDebug() << "    Durable Writes:" << (*c)->durableWrites();
+
         // Test to make sure we get a NULL pointer when we try to retrieve an undefined table
-        //QSharedPointer<QtCassandra::QCassandraTable> tbl = (*c)->table("random");
+        //QSharedPointer<QtCassandra::QCassandraTable> tbl = context->table("random");
         //qDebug() << " --- tbl" << tbl.isNull();
-        const QtCassandra::QCassandraTables& tables = (*c)->tables();
-        for(QtCassandra::QCassandraTables::const_iterator
-                t = tables.begin(); t != tables.end(); ++t)
+        for( auto table : context->tables() )
         {
-            qDebug() << "    + Table" << (*t)->tableName() << "/" << (*t)->identifier() << " (From Context" << (*t)->contextName() << ")";
-            QString comment = (*t)->comment();
-            if(!comment.isEmpty()) {
-                qDebug() << "      Comment:" << comment;
-            }
-            qDebug() << "      Column Type" << (*t)->columnType();
-            qDebug() << "      Default Validation Class" << (*t)->defaultValidationClass();
-            QString key_alias = (*t)->keyAlias();
-            if(key_alias.isEmpty()) {
-                qDebug() << "      Key Validation Class" << (*t)->keyValidationClass();
-            }
-            else {
-                qDebug() << "      Key Validation Class" << (*t)->keyValidationClass() << "and alias" << key_alias;
-            }
-            QString subcomparator = (*t)->subcomparatorType();
-            if(subcomparator.isEmpty()) {
-                qDebug() << "      Comparator Type" << (*t)->comparatorType();
-            }
-            else {
-                qDebug() << "      Comparator Type" << (*t)->comparatorType() << "and subtype" << subcomparator;
-            }
-            qDebug() << "      Row Cache Provider" << (*t)->rowCacheProvider();
-            qDebug() << "      Row Cache Size" << (*t)->rowCacheSize() << "for" << (*t)->rowCacheSavePeriodInSeconds() << "seconds";
-            qDebug() << "      Key Cache Size" << (*t)->keyCacheSize() << "for" << (*t)->keyCacheSavePeriodInSeconds() << "seconds";
-            qDebug() << "      Read repair chance" << (*t)->readRepairChance();
-            qDebug() << "      Compaction Threshold: minimum" << (*t)->minCompactionThreshold() << "maximum" << (*t)->maxCompactionThreshold();
-            qDebug() << "      Replicate on Write" << (*t)->replicateOnWrite();
-            qDebug() << "      Merge Shards Chance" << (*t)->mergeShardsChance();
-            qDebug() << "      Garbage Collection Grace Period" << (*t)->gcGraceSeconds() << "seconds";
-            qDebug() << "      Memory Tables Size (Mb)" << (*t)->memtableThroughputInMb()
-                               << "Flush After (min.)" << (*t)->memtableFlushAfterMins()
-                               << "Operations in Millions" << (*t)->memtableOperationsInMillions();
+            qDebug() << "      + Table" << table->tableName()
+                     //<< "/" << table->identifier()
+                     << " (From Context" << table->contextName() << ")";
 
-            const QtCassandra::QCassandraColumnDefinitions& columns = (*t)->columnDefinitions();
-            if(columns.begin() == columns.end()) {
-                qDebug() << "      No column defintions";
-            }
-            for(QtCassandra::QCassandraColumnDefinitions::const_iterator
-                    col = columns.begin(); col != columns.end(); ++col)
+            for( const auto& pair : table->fields() )
             {
-                qDebug() << "      + Column" << (*col)->columnName();
-                qDebug() << "        Validation Class" << (*col)->validationClass();
-                QString type;
-                switch((*col)->indexType()) {
-                case QtCassandra::QCassandraColumnDefinition::INDEX_TYPE_KEYS:
-                    type = "KEYS";
-                    break;
-
-                default: // unknown
-                    type = "Unknown";
-                    break;
-
-                }
-#pragma GCC push
-#pragma GCC diagnostic ignored "-Wsign-promo"
-                qDebug() << "        Index Type" << (*col)->indexType()
-                                                 << ("(" + type + ")");
-                qDebug() << "        Index Name" << (*col)->indexName();
-#pragma GCC pop
+                qDebug() << "      + " << pair.first << " = " << pair.second.output();
             }
         }
     }

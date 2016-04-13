@@ -46,14 +46,18 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
 
     const char *host("localhost");
-    for(int i(1); i < argc; ++i) {
-        if(strcmp(argv[i], "--help") == 0) {
+    for(int i(1); i < argc; ++i)
+    {
+        if(strcmp(argv[i], "--help") == 0)
+        {
             qDebug() << "Usage:" << argv[0] << "[-h <hostname>]";
             exit(1);
         }
-        if(strcmp(argv[i], "-h") == 0) {
+        if(strcmp(argv[i], "-h") == 0)
+        {
             ++i;
-            if(i >= argc) {
+            if(i >= argc)
+            {
                 qDebug() << "error: -h must be followed by a hostname.";
                 exit(1);
             }
@@ -65,41 +69,38 @@ int main(int argc, char *argv[])
     qDebug() << "Working on Cassandra Cluster Named" << cassandra->clusterName();
 
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_context"));
-    try {
+    //
+    QtCassandra::QCassandraSchema::Value replication;
+    auto& replication_map(replication.map());
+    replication_map["class"]              = QtCassandra::QCassandraSchema::Value("SimpleStrategy");
+    replication_map["replication_factor"] = QtCassandra::QCassandraSchema::Value(1);
+    //
+    auto& fields(context->fields());
+    fields["replication"]    = replication;
+    fields["durable_writes"] = QVariant(true);
+    //
+    try
+    {
         context->drop();
         cassandra->synchronizeSchemaVersions();
     }
-    catch(...) {
+    catch(...)
+    {
         // ignore errors, this happens when the context doesn't exist yet
     }
 
-    context->setStrategyClass("SimpleStrategy"); // default is LocalStrategy
-    //context->setDurableWrites(false); // by default this is 'true'
-    context->setReplicationFactor(1); // by default this is undefined
+    QtCassandra::QCassandraSchema::Value compaction_value;
+    auto& compaction_value_map(compaction_value.map());
+    compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+    compaction_value_map["min_threshold"] = QVariant(4);
+    compaction_value_map["max_threshold"] = QVariant(22);
 
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-    //table->setComment("Our test table.");
-    table->setColumnType("Standard"); // Standard or Super
-    table->setKeyValidationClass("BytesType");
-    table->setDefaultValidationClass("BytesType");
-    table->setComparatorType("BytesType");
-    table->setKeyCacheSavePeriodInSeconds(14400);
-    table->setMemtableFlushAfterMins(60);
-    //table->setMemtableThroughputInMb(247);
-    //table->setMemtableOperationsInMillions(1.1578125);
-    table->setGcGraceSeconds(864000);
-    table->setMinCompactionThreshold(4);
-    table->setMaxCompactionThreshold(22);
-    table->setReplicateOnWrite(1);
-
-    // Column definitions can be used to make sure the content is valid.
-    // It is also required if you want to index on such and such column
-    // using the internal Cassandra indexing mechanism.
-    QtCassandra::QCassandraColumnDefinition::pointer_t column1(table->columnDefinition("qt_cassandra_test_column1"));
-    column1->setValidationClass("UTF8Type");
-
-    QtCassandra::QCassandraColumnDefinition::pointer_t column2(table->columnDefinition("qt_cassandra_test_column2"));
-    column2->setValidationClass("IntegerType");
+    auto& table_fields( table->fields() );
+    table_fields["comment"]                     = QVariant("Our test table.");
+    table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+    table_fields["gc_grace_seconds"]            = QVariant(86400);
+    table_fields["compaction"]                  = compaction_value;
 
     try
     {
@@ -111,9 +112,6 @@ int main(int argc, char *argv[])
     {
         qDebug() << "Exception is [" << e.what() << "]";
     }
-
-    // now that it's created, we can access it with the [] operator
-    //QtCassandra::QCassandraTable& t((*cassandra)["qt_cassandra_test_context"]["qt_cassandra_test_table"]);
 
     context->drop();
     cassandra->synchronizeSchemaVersions();

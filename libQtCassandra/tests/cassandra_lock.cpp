@@ -171,37 +171,35 @@ int main(int argc, char *argv[])
         qDebug() << "+ Creating context with replication factor set to" << replication_factor;
 
         QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
-        try {
+        try
+        {
             context->drop();
             cassandra->synchronizeSchemaVersions();
         }
-        catch(...) {
+        catch(...)
+        {
             // ignore error, the context probably doesn't exist yet
         }
-        context->setStrategyClass("SimpleStrategy"); // default is LocalStrategy
-        //context->setDurableWrites(false); // by default this is 'true'
-        context->setReplicationFactor(replication_factor); // by default this is undefined
+
+        QtCassandra::QCassandraSchema::Value compaction_value;
+        auto& compaction_value_map(compaction_value.map());
+        compaction_value_map["class"]         = QtCassandra::QCassandraSchema::Value("SizeTieredCompactionStrategy");
+        compaction_value_map["min_threshold"] = QtCassandra::QCassandraSchema::Value(4);
+        compaction_value_map["max_threshold"] = QtCassandra::QCassandraSchema::Value(22);
 
         QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-        //table->setComment("Our test table.");
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        //table->setMemtableThroughputInMb(247);
-        //table->setMemtableOperationsInMillions(1.1578125);
-        //table->setGcGraceSeconds(864000); // 10 days (default)
-        table->setGcGraceSeconds(3600); // 1h.
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
+        auto& fields(table->fields());
+        fields["comment"]                     = QtCassandra::QCassandraSchema::Value("Our test table.");
+        fields["memtable_flush_period_in_ms"] = QtCassandra::QCassandraSchema::Value(60);
+        fields["gc_grace_seconds"]            = QtCassandra::QCassandraSchema::Value(3600);
+        fields["compaction"]                  = compaction_value;
 
-        try {
+        try
+        {
             context->create();
         }
-        catch(...) {
+        catch(...)
+        {
             qDebug() << "error: could not create the context, an exception occured.";
             throw;
         }
@@ -210,8 +208,10 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-    if(check_result > 0) {
-        if(check_result == 1) {
+    if(check_result > 0)
+    {
+        if(check_result == 1)
+        {
             // check the whole database for unique entries
             cassandra->connect(host);
             QString name = cassandra->clusterName();
