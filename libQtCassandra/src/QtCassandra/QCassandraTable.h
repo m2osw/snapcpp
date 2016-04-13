@@ -68,139 +68,13 @@ public:
     QCassandraSession::pointer_t session() const { return f_session; }
 
     // context name
-    QString contextName() const;
+    const QString& contextName() const;
+    const QString& tableName()   const;
 
-    //void setTableName(const QString& name);
-    QString tableName() const;
-    void setComment(QString comment);
-    void unsetComment();
-    bool hasComment() const;
-    QString comment() const;
-
-    // columns information (defaults)
-    void setColumnType(const QString& column_type);
-    void unsetColumnType();
-    bool hasColumnType() const;
-    QString columnType() const;
-    void setDefaultValidationClassForCounters();
-    void setDefaultValidationClass(const QString& validation_class);
-    void unsetDefaultValidationClass();
-    bool hasDefaultValidationClass() const;
-    QString defaultValidationClass() const;
-    void setKeyValidationClass(const QString& validation_class);
-    void unsetKeyValidationClass();
-    bool hasKeyValidationClass() const;
-    QString keyValidationClass() const;
-    void setKeyAlias(const QString& key_alias);
-    void unsetKeyAlias();
-    bool hasKeyAlias() const;
-    QString keyAlias() const;
-    void setComparatorType(const QString& comparator_type);
-    void unsetComparatorType();
-    bool hasComparatorType() const;
-    QString comparatorType() const;
-    void setSubcomparatorType(const QString& subcomparator_type);
-    void unsetSubcomparatorType();
-    bool hasSubcomparatorType() const;
-    QString subcomparatorType() const;
-
-    // columns information (specific)
-    //QCassandraColumnDefinition::pointer_t columnDefinition(const QString& column_name);
-    //const QCassandraColumnDefinitions& columnDefinitions() const;
-
-    // cache handling
-    void setCaching(const QString& caching); // since 1.1
-    void unsetCaching();
-    bool hasCaching() const;
-    QString caching() const;
-    void setRowCacheSize(double size); // deprecated in 1.1
-    void unsetRowCacheSize();
-    bool hasRowCacheSize() const;
-    double rowCacheSize() const;
-    void setRowCacheSavePeriodInSeconds(int32_t seconds); // deprecated in 1.1
-    void unsetRowCacheSavePeriodInSeconds();
-    bool hasRowCacheSavePeriodInSeconds() const;
-    int32_t rowCacheSavePeriodInSeconds() const;
-    void setKeyCacheSize(double size); // deprecated in 1.1
-    void unsetKeyCacheSize();
-    bool hasKeyCacheSize() const;
-    double keyCacheSize() const;
-    void setKeyCacheSavePeriodInSeconds(int32_t seconds); // deprecated in 1.1
-    void unsetKeyCacheSavePeriodInSeconds();
-    bool hasKeyCacheSavePeriodInSeconds() const;
-    int32_t keyCacheSavePeriodInSeconds() const;
-    void setRowCacheKeysToSave(int32_t count); // since 1.0 -- deprecated in 1.1
-    void unsetRowCacheKeysToSave();
-    bool hasRowCacheKeysToSave() const;
-    int32_t keyRowCacheKeysToSave() const;
-    void setBloomFilterFPChance(double chance); // since 1.0
-    void unsetBloomFilterFPChance();
-    bool hasBloomFilterFPChance() const;
-    double bloomFilterFPChance() const;
-
-    // ring maintenance
-    void setReadRepairChance(double repair_chance);
-    void unsetReadRepairChance();
-    bool hasReadRepairChance() const;
-    double readRepairChance() const;
-    void setDCLocalReadRepairChance(double repair_chance); // since 1.1
-    void unsetDCLocalReadRepairChance();
-    bool hasDCLocalReadRepairChance() const;
-    double dcLocalReadRepairChance() const;
-    void setReplicateOnWrite(bool replicate_on_write);
-    void unsetReplicateOnWrite();
-    bool hasReplicateOnWrite() const;
-    bool replicateOnWrite() const;
-    void setMergeShardsChance(double merge_shards_chance); // deprecated in 1.1
-    void unsetMergeShardsChance();
-    bool hasMergeShardsChance() const;
-    double mergeShardsChance() const;
-    void setRowCacheProvider(const QString& provider); // deprecated in 1.1
-    void unsetRowCacheProvider();
-    bool hasRowCacheProvider() const;
-    QString rowCacheProvider() const;
-
-    // memory handling
-    void setGcGraceSeconds(int32_t seconds);
-    void unsetGcGraceSeconds();
-    bool hasGcGraceSeconds() const;
-    int32_t gcGraceSeconds() const;
-    void setMemtableFlushAfterMins(int32_t minutes); // deprecated in 1.1
-    void unsetMemtableFlushAfterMins();
-    bool hasMemtableFlushAfterMins() const;
-    int32_t memtableFlushAfterMins() const;
-    void setMemtableThroughputInMb(int32_t megabytes); // deprecated in 1.1
-    void unsetMemtableThroughputInMb();
-    bool hasMemtableThroughputInMb() const;
-    int32_t memtableThroughputInMb() const;
-    void setMemtableOperationsInMillions(int32_t operations); // deprecated in 1.1
-    void unsetMemtableOperationsInMillions();
-    bool hasMemtableOperationsInMillions() const;
-    int32_t memtableOperationsInMillions() const;
-
-    // compression handling
-    void setMinCompactionThreshold(int32_t threshold);
-    void unsetMinCompactionThreshold();
-    bool hasMinCompactionThreshold() const;
-    double minCompactionThreshold() const;
-    void setMaxCompactionThreshold(int32_t threshold);
-    void unsetMaxCompactionThreshold();
-    bool hasMaxCompactionThreshold() const;
-    double maxCompactionThreshold() const;
-    void setCompactionStrategy(const QString& compaction_strategy); // since 1.0
-    void unsetCompactionStrategy();
-    bool hasCompactionStrategy() const;
-    QString compactionStrategy() const;
-    void setCompactionStrategyOption(const QString& option_name, const QString& value); // since 1.0
-    void unsetCompactionStrategyOption(const QString& option_name);
-    bool hasCompactionStrategyOption(const QString& option_name) const;
-    bool hasCompactionStrategyOptions() const;
-    QString compactionStrategyOption(const QString& option_name) const;
-    void setCompressionOption(const QString& option_name, const QString& value); // since 1.0
-    void unsetCompressionOption(const QString& option_name);
-    bool hasCompressionOption(const QString& option_name) const;
-    bool hasCompressionOptions() const;
-    QString compressionOption(const QString& option_name) const;
+    // fields
+    //
+    const QCassandraSchema::Value::map_t& fields() const;
+    QCassandraSchema::Value::map_t&       fields();
 
     // handling
     void create();
@@ -254,7 +128,7 @@ private:
     void 		loadTables();
     void		addRow( const QByteArray& row_key, const QByteArray& column_key, const QByteArray& data );
 
-    QString     getTableOptions( const CfDef& cf ) const;
+    QString     getTableOptions() const;
 
     friend class QCassandraContext;
     friend class QCassandraRow;
@@ -263,6 +137,7 @@ private:
 
     controlled_vars::zbool_t                    f_from_cassandra;
     std::shared_ptr<QCassandraContext>          f_context;
+    QString										f_tableName;
     //QCassandraColumnDefinitions                 f_column_definitions;
     QCassandraRows                              f_rows;
 

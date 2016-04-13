@@ -54,9 +54,9 @@ class SessionMeta
 {
 public:
     typedef std::shared_ptr<SessionMeta>        pointer_t;
-    typedef std::map<QString,Value::pointer_t>  map_t;
+    typedef std::map<QString,pointer_t>  		map_t;
 
-    SessionMeta( QCassandraSession::pointer_t session );
+    SessionMeta( QCassandraSession::pointer_t session = QCassandraSession::pointer_t() );
     ~SessionMeta();
 
     static pointer_t create( QCassandraSession::pointer_t session );
@@ -73,14 +73,15 @@ public:
         typedef std::shared_ptr<KeyspaceMeta> pointer_t;
         typedef std::map<QString,pointer_t>   map_t;
 
-        KeyspaceMeta( SessionMeta::pointer_t session_meta );
+        KeyspaceMeta( SessionMeta::pointer_t session_meta = SessionMeta::pointer_t() );
 
         QCassandraSession::pointer_t session() const;
 
         const QString& 				getName()   const;
-        const SessionMeta::map_t&   getFields() const;
+        const Value::map_t&   		getFields() const;
+        Value::map_t&   			getFields();
 
-        Value::pointer_t operator[]( const QString& name );
+        Value& operator[]( const QString& name );
 
         class TableMeta
         {
@@ -88,12 +89,13 @@ public:
             typedef std::shared_ptr<TableMeta>  pointer_t;
             typedef std::map<QString,pointer_t> map_t;
 
-            TableMeta( KeyspaceMeta::pointer_t kysp );
+            TableMeta( KeyspaceMeta::pointer_t kysp = KeyspaceMeta::pointer_t() );
 
-            const QString&              getName()   const;
-            const SessionMeta::map_t&   getFields() const;
+            const QString&        getName()   const;
+            const Value::map_t&   getFields() const;
+            Value::map_t&   	  getFields();
 
-            Value::pointer_t operator[]( const QString& name );
+            Value& operator[]( const QString& name );
 
             class ColumnMeta
             {
@@ -107,19 +109,20 @@ public:
                 }
                 type_t;
 
-                ColumnMeta( TableMeta::pointer_t tbl );
+                ColumnMeta( TableMeta::pointer_t tbl = TableMeta::pointer_t() );
 
-                const QString&              getName() const;
-                type_t                      getType() const;
-                const SessionMeta::map_t&   getFields() const;
+                const QString&        getName() const;
+                type_t                getType() const;
+                const Value::map_t&   getFields() const;
+                Value::map_t&   	  getFields();
 
-                Value::pointer_t operator[]( const QString& name );
+                Value& operator[]( const QString& name );
 
             private:
                 TableMeta::pointer_t f_table;
                 QString              f_name;
                 type_t               f_type;
-                SessionMeta::map_t   f_fields;
+                Value::map_t   		 f_fields;
 
                 friend class SessionMeta;
             };
@@ -130,7 +133,7 @@ public:
             KeyspaceMeta::pointer_t f_keyspace;
             QString					f_name;
             ColumnMeta::map_t       f_columns;
-            SessionMeta::map_t      f_fields;
+            Value::map_t      		f_fields;
 
             friend class SessionMeta;
         };
@@ -140,7 +143,7 @@ public:
     private:
         SessionMeta::pointer_t f_session;
         QString                f_name;
-        SessionMeta::map_t     f_fields;
+        Value::map_t     	   f_fields;
         TableMeta::map_t       f_tables;
 
         friend class SessionMeta;
@@ -151,7 +154,7 @@ public:
 private:
     QCassandraSession::pointer_t    f_session;
     QString                         f_name;
-    map_t                           f_fields;
+    Value::map_t                    f_fields;
     uint32_t                        f_version;
     KeyspaceMeta::map_t             f_keyspaces;
 };

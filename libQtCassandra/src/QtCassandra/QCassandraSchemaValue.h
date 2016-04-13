@@ -59,14 +59,14 @@ class Value
 {
 public:
     typedef enum { TypeUnknown, TypeVariant, TypeMap, TypeList } type_t;
-    typedef std::shared_ptr<Value>            pointer_t;
-    typedef std::vector<pointer_t>            list_t;
-    typedef std::map<QString,pointer_t>       map_t;
-    typedef std::map<std::string,std::string> string_map_t;
+    //typedef std::shared_ptr<Value>            pointer_t;
+    typedef std::vector<Value>            list_t;
+    typedef std::map<QString,Value>       map_t;
 
     Value();
+    Value( const QVariant& var );
 
-    static pointer_t create();
+    //static pointer_t create();
 
     void    readValue( CassTools::iterator_pointer_t iter );
     void    readValue( CassTools::value_pointer_t iter );

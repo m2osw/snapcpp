@@ -107,8 +107,8 @@ void SessionMeta::loadSchema()
             }
 
             const QString field_name( QString::fromUtf8(name,len) );
-            auto val( Value::create() );
-            val->readValue(fields_iter);
+            Value val;
+            val.readValue(fields_iter);
             keyspace->f_fields[field_name] = val;
         }
 
@@ -143,8 +143,8 @@ void SessionMeta::loadSchema()
                 }
 
                 const QString field_name( QString::fromUtf8(name,len) );
-                auto val( Value::create() );
-                val->readValue(table_fields_iter);
+                Value val;
+                val.readValue(table_fields_iter);
                 table->f_fields[field_name] = val;
             }
 
@@ -188,8 +188,8 @@ void SessionMeta::loadSchema()
                         throw std::runtime_error( "Cannot read field from set!" );
                     }
                     const QString field_name( QString::fromUtf8(name,len) );
-                    auto val( Value::create() );
-                    val->readValue(meta_iter);
+                    Value val;
+                    val.readValue(meta_iter);
                     column->f_fields[field_name] = val;
                 }
             }
@@ -238,21 +238,22 @@ const QString& SessionMeta::KeyspaceMeta::getName() const
 }
 
 
-const SessionMeta::map_t&
+const Value::map_t&
     SessionMeta::KeyspaceMeta::getFields() const
 {
     return f_fields;
 }
 
 
-Value::pointer_t
-    SessionMeta::KeyspaceMeta::operator[]( const QString& name )
+Value::map_t&
+    SessionMeta::KeyspaceMeta::getFields()
 {
-    if( f_fields.find(name) == f_fields.end() )
-    {
-        f_fields[name] = Value::create();
-    }
+    return f_fields;
+}
 
+
+Value& SessionMeta::KeyspaceMeta::operator[]( const QString& name )
+{
     return f_fields[name];
 }
 
@@ -279,21 +280,22 @@ const QString& SessionMeta::KeyspaceMeta::TableMeta::getName() const
 }
 
 
-const SessionMeta::map_t&
+const Value::map_t&
     SessionMeta::KeyspaceMeta::TableMeta::getFields() const
 {
     return f_fields;
 }
 
 
-Value::pointer_t
-    SessionMeta::KeyspaceMeta::TableMeta::operator[]( const QString& name )
+Value::map_t&
+    SessionMeta::KeyspaceMeta::TableMeta::getFields()
 {
-    if( f_fields.find(name) == f_fields.end() )
-    {
-        f_fields[name] = Value::create();
-    }
+    return f_fields;
+}
 
+
+Value& SessionMeta::KeyspaceMeta::TableMeta::operator[]( const QString& name )
+{
     return f_fields[name];
 }
 
@@ -328,21 +330,22 @@ SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::type_t
 }
 
 
-const SessionMeta::map_t&
+const Value::map_t&
     SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getFields() const
 {
     return f_fields;
 }
 
 
-Value::pointer_t
-    SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::operator[]( const QString& name )
+Value::map_t&
+    SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getFields()
 {
-    if( f_fields.find(name) == f_fields.end() )
-    {
-        f_fields[name] = Value::create();
-    }
+    return f_fields;
+}
 
+
+Value& SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::operator[]( const QString& name )
+{
     return f_fields[name];
 }
 

@@ -160,8 +160,9 @@ namespace QtCassandra
  * \param[in] table_name  The name of the table definition being created.
  */
 QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QString& table_name)
+    : f_schema(std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta>())
     //f_from_cassandra(false) -- auto-init
-    : f_context(context)
+    , f_context(context)
     //f_rows() -- auto-init
 {
     // verify the name here (faster than waiting for the server and good documentation)
@@ -170,7 +171,6 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
         throw std::runtime_error("invalid table name (does not match [A-Za-z][A-Za-z0-9_]*)");
     }
 
-    f_contextName = context->contextName();
     f_tableName   = table_name;
     f_session     = f_context->parentCassandra()->session();
 }
@@ -201,9 +201,9 @@ QCassandraTable::~QCassandraTable()
  *
  * \return The name of the context this table definition is defined in.
  */
-QString QCassandraTable::contextName() const
+const QString& QCassandraTable::contextName() const
 {
-    return f_contextName;
+    return f_context->contextName();
 }
 
 /** \brief Retrieve the name of this table.
@@ -213,11 +213,25 @@ QString QCassandraTable::contextName() const
  *
  * \return The table name.
  */
-QString QCassandraTable::tableName() const
+const QString& QCassandraTable::tableName() const
 {
     return f_tableName;
 }
 
+
+const QCassandraSchema::Value::map_t& QCassandraTable::fields() const
+{
+    return f_schema->getFields();
+}
+
+
+QCassandraSchema::Value::map_t& QCassandraTable::fields()
+{
+    return f_schema->getFields();
+}
+
+
+#if 0
 /** \brief Set the table comment.
  *
  * This function saves a new comment in the table definition.
@@ -651,7 +665,6 @@ QString QCassandraTable::subcomparatorType() const
     return "";
 }
 
-#if 0
 /** \brief Retrieve a column definition by name.
  *
  * This function is used to retrieve a column definition by name.
@@ -693,7 +706,6 @@ const QCassandraColumnDefinitions& QCassandraTable::columnDefinitions() const
 {
     return f_column_definitions;
 }
-#endif
 
 /** \brief Set the caching mode.
  *
@@ -1934,6 +1946,7 @@ QString QCassandraTable::compressionOption(const QString& option_name) const
     }
     return f_private->compression_options[option_name.toStdString()].c_str();
 }
+#endif
 
 /** \brief Mark this table as from Cassandra.
  *
@@ -1958,17 +1971,7 @@ void QCassandraTable::setFromCassandra()
  */
 void QCassandraTable::parseTableDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table_meta )
 {
-    f_schema = table_meta;
-
-#if 0
-    f_column_definitions.clear();
-    for( const auto pair : table_meta->getColumns() )
-    {
-        QCassandraColumnDefinition::pointer_t column_definition(this->columnDefinition(pair.first));
-        column_definition->parseColumnDefinition(pair.second);
-    }
-#endif
-
+    f_schema         = table_meta;
     f_from_cassandra = true;
 }
 
@@ -2020,58 +2023,22 @@ namespace
 }
 
 
-QString QCassandraTable::getTableOptions( const CfDef& cf ) const
+QString QCassandraTable::getTableOptions() const
 {
     QString q_str;
-
-    // TODO: We might want to add more options, but for now, this is what Snap! uses in each of their tables.
-    //
-    if( cf.__isset.bloom_filter_fp_chance )
+    for( const auto& pair : f_schema->getFields() )
     {
-        q_str += QString("AND bloom_filter_fp_chance = %1\n").arg(cf.bloom_filter_fp_chance);
-    }
-    if( cf.__isset.caching )
-    {
-        q_str += QString("AND caching = '%1'\n").arg(cf.caching.c_str());
-    }
-    if( cf.__isset.comment )
-    {
-        q_str += QString("AND comment = '%1'\n").arg(cf.comment.c_str());
-    }
-    if( cf.__isset.compaction_strategy_options )
-    {
-        q_str += QString("AND compaction = '%1'\n").arg(map_to_json(cf.compaction_strategy_options));
-    }
-    if( cf.__isset.compression_options )
-    {
-        q_str += QString("AND compression = '%1'\n").arg(map_to_json(cf.compression_options));
-    }
-    if( cf.__isset.dclocal_read_repair_chance )
-    {
-        q_str += QString("AND dclocal_read_repair_chance = %1\n").arg(cf.dclocal_read_repair_chance);
-    }
-    if( cf.__isset.default_time_to_live )
-    {
-        q_str += QString("AND default_time_to_live = %1\n").arg(cf.default_time_to_live);
-    }
-    if( cf.__isset.gc_grace_seconds )
-    {
-        q_str += QString("AND gc_grace_seconds = %1\n").arg(cf.gc_grace_seconds);
-    }
-    if( cf.__isset.memtable_flush_period_in_ms )
-    {
-        q_str += QString("AND memtable_flush_period_in_ms = %1\n").arg(cf.memtable_flush_period_in_ms);
-    }
-    if( cf.__isset.read_repair_chance )
-    {
-        q_str += QString("AND read_repair_chance = %1\n").arg(cf.read_repair_chance);
-    }
-    if( cf.__isset.speculative_retry )
-    {
-        q_str += QString("AND speculative_retry = '%1'\n").arg(cf.speculative_retry.c_str());
+        if( !q_str.isEmpty() )
+        {
+            q_str += "AND ";
+        }
+        q_str += QString("%1 = %2\n")
+                .arg(pair.first)
+                .arg(pair.second.output())
+                ;
     }
 
-    return q_str;
+    return QString("WITH %1").arg(q_str);
 }
 
 
@@ -2136,9 +2103,6 @@ QString QCassandraTable::getTableOptions( const CfDef& cf ) const
  */
 void QCassandraTable::create()
 {
-    CfDef cf;
-    prepareTableDefinition( &cf );
-
     QString value_type("BLOB");
 
     if( isCounterClass() )
@@ -2151,10 +2115,10 @@ void QCassandraTable::create()
         "WITH COMPACT STORAGE\n"
         "AND CLUSTERING ORDER BY (column1 ASC)\n" )
             .arg(f_context->contextName())
-            .arg(f_private->name.c_str())
+            .arg(f_tableName)
             .arg(value_type)
             );
-    query += getTableOptions( cf );
+    query += getTableOptions();
 
     // 1) Load exiting tables from the database,
     // 2) Create the table using the query string,
@@ -2193,7 +2157,7 @@ void QCassandraTable::truncate()
     const QString query(
         QString("TRUNCATE %1.%2;")
             .arg(f_context->contextName())
-            .arg(f_private->name.c_str())
+            .arg(f_tableName)
             );
 
     QCassandraQuery q( f_session );
@@ -2293,7 +2257,8 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
     {
         QString query( QString("SELECT key,column1,value FROM %1.%2")
                        .arg(f_context->contextName())
-                       .arg(f_private->name.c_str()) );
+                       .arg(f_tableName)
+                       );
         int bind_count = 0;
         if( row_predicate )
         {
@@ -2893,7 +2858,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
 
         query_string = QString("UPDATE %1.%2 SET value = value + ? WHERE key = ? AND column1 = ?;")
             .arg(f_context->contextName())
-            .arg(f_private->name.c_str())
+            .arg(f_tableName)
             ;
         value_id  = 0;
         row_id    = 1;
@@ -2903,7 +2868,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     {
         query_string = QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?);")
             .arg(f_context->contextName())
-            .arg(f_private->name.c_str())
+            .arg(f_tableName)
             ;
     }
 
@@ -2929,13 +2894,14 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
 
 bool QCassandraTable::isCounterClass()
 {
+#if 0
     if( !f_private->__isset.default_validation_class )
     {
         QCassandraQuery q( f_session );
         q.query(
             QString("SELECT validator FROM system.schema_columns WHERE keyspace_name = '%1' AND columnfamily_name = '%2'" )
             .arg(f_context->contextName())
-            .arg(f_private->name.c_str())
+            .arg(f_tableName)
             );
         q.start();
         if( !q.nextRow() )
@@ -2949,6 +2915,10 @@ bool QCassandraTable::isCounterClass()
     const auto& the_class( f_private->default_validation_class );
     return (the_class == "org.apache.cassandra.db.marshal.CounterColumnType")
         || (the_class == "CounterColumnType");
+#endif
+    // NOTE: this counter type has been deprecated, since it isn't used except in the tests.
+    // It looks like Cassandra 3x has eliminated the "validator" field anyway.
+    return false;
 }
 
 
@@ -2970,7 +2940,7 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
 {
     const QString q_str( QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
                          .arg(f_context->contextName())
-                         .arg(f_private->name.c_str()) );
+                         .arg(f_tableName) );
 
     QCassandraQuery q( f_session );
     q.query( q_str, 2 );
@@ -3025,7 +2995,7 @@ int32_t QCassandraTable::getCellCount
     {
         const QString query_string ( QString("SELECT COUNT(*) AS count FROM %1.%2")
             .arg(f_context->contextName())
-            .arg(f_private->name.c_str())
+            .arg(f_tableName)
             );
 
         QCassandraQuery q( f_session );
@@ -3061,7 +3031,7 @@ void QCassandraTable::remove
     const QString query(
         QString("DELETE FROM %1.%2 WHERE key=? AND column1=?;")
             .arg(f_context->contextName())
-            .arg(f_private->name.c_str())
+            .arg(f_tableName)
             );
 
     QCassandraQuery q( f_session );
@@ -3091,7 +3061,7 @@ void QCassandraTable::remove( const QByteArray& row_key )
     const QString query(
         QString("DELETE FROM %1.%2 WHERE key=?;")
             .arg(f_context->contextName())
-            .arg(f_private->name.c_str())
+            .arg(f_tableName)
             );
 
     QCassandraQuery q( f_session );

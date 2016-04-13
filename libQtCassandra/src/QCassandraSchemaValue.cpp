@@ -54,10 +54,20 @@ Value::Value()
 }
 
 
+Value::Value( const QVariant& var )
+    : f_type(TypeUnknown)
+    , f_cassType(CASS_VALUE_TYPE_UNKNOWN)
+    , f_variant(var)
+{
+}
+
+
+#if 0
 Value::pointer_t Value::create()
 {
     return std::make_shared<Value>();
 }
+#endif
 
 
 void Value::readValue( iterator_pointer_t iter )
@@ -165,8 +175,8 @@ void Value::parseMap()
             , valueDeleter()
             );
 
-        Value::pointer_t val( create() );
-        val->readValue( value );
+        Value val;
+        val.readValue( value );
         //
         f_map[key_str] = val;
     }
@@ -182,12 +192,12 @@ void Value::parseList()
 
     while( cass_iterator_next( iter.get() ) )
     {
-        Value::pointer_t val( create() );
         value_pointer_t p_val
                 ( cass_iterator_get_value(iter.get())
                 , valueDeleter()
                 );
-        val->readValue( p_val );
+        Value val;
+        val.readValue( p_val );
         f_list.push_back( val );
     }
 }
@@ -202,8 +212,8 @@ void Value::parseTuple()
 
     while( cass_iterator_next( iter.get() ) )
     {
-        Value::pointer_t val( create() );
-        val->readValue( iter );
+        Value val;
+        val.readValue( iter );
         f_list.push_back( val );
     }
 }
@@ -353,7 +363,14 @@ const QString& Value::output() const
                 throw std::runtime_error( "Uninitialized type!" );
 
             case TypeVariant:
-                f_stringOutput = f_variant.toString();
+                if( f_variant.type() == QVariant::String )
+                {
+                    f_stringOutput = QString("'%1'").arg(f_variant.toString());
+                }
+                else
+                {
+                    f_stringOutput = f_variant.toString();
+                }
                 break;
 
             case TypeMap:
@@ -365,9 +382,9 @@ const QString& Value::output() const
                         {
                             content += ", ";
                         }
-                        content += QString("'%1': '%2'")
+                        content += QString("'%1': %2")
                             .arg(pair.first)
-                            .arg(pair.second->variant().toString())
+                            .arg(pair.second.output())
                             ;
                     }
                     f_stringOutput = QString("{%1}").arg(content);
@@ -383,9 +400,7 @@ const QString& Value::output() const
                         {
                             content += ", ";
                         }
-                        content += QString("'%1'")
-                            .arg(entry->variant().toString())
-                            ;
+                        content += entry.output();
                     }
                     f_stringOutput = QString("{%1}").arg(content);
                 }

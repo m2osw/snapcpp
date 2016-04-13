@@ -46,9 +46,6 @@
 namespace QtCassandra
 {
 
-// Cassandra KsDef (Thrift legacy) object
-//
-class KsDef;
 class QCassandra;
 
 class QCassandraContext
@@ -64,16 +61,12 @@ public:
 
     virtual ~QCassandraContext();
 
-    QString contextName() const;
+    const QString& contextName() const;
 
-    void    setStrategyClass(const QString& strategy_class);
-    QString strategyClass() const;
-
-    void    setDescriptionOptions(const QCassandraContextOptions& options);
-    const   QCassandraContextOptions& descriptionOptions() const;
-    void    setDescriptionOption(const QString& option, const QString& value);
-    QString descriptionOption(const QString& option) const;
-    void    eraseDescriptionOption(const QString& option);
+    // fields
+    //
+    const QCassandraSchema::Value::map_t& fields() const;
+    QCassandraSchema::Value::map_t&       fields();
 
     // tables
     QCassandraTable::pointer_t table(const QString& table_name);
@@ -83,20 +76,7 @@ public:
     QCassandraTable& operator[] (const QString& table_name);
     const QCassandraTable& operator[] (const QString& table_name) const;
 
-    // replication
-    void setReplicationFactor(int32_t factor);
-    void unsetReplicationFactor();
-    bool hasReplicationFactor() const;
-    int32_t replicationFactor() const;
-    void setDurableWrites(bool durable_writes);
-    void unsetDurableWrites();
-    bool hasDurableWrites() const;
-    bool durableWrites() const;
-
-    // handling
-    //QString generateReplicationStanza() const;
-    QString getKeyspaceOptions( KsDef& ks );
-    //
+    // Context maintenance
     void create();
     void update();
     void drop();
@@ -131,8 +111,9 @@ private:
     void parseContextDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace );
     //void prepareContextDefinition(KsDef *ks) const;
 
+    QString getKeyspaceOptions();
+
     friend class QCassandra;
-    friend class KsDef;
     friend class QCassandraTable;
     friend class QCassandraLock;
 
