@@ -314,9 +314,9 @@ void QCassandraContext::resetSchema()
     replication_map["class"]              = QVariant("SimpleStrategy");
     replication_map["replication_factor"] = QVariant(1);
 
-    auto& fields(f_schema->getFields());
-    fields["replication"]    = replication;
-    fields["durable_writes"] = QVariant(true);
+    auto& field_map(f_schema->getFields());
+    field_map["replication"]    = replication;
+    field_map["durable_writes"] = QVariant(true);
 }
 
 /** \brief Retrieve the name of this context.
