@@ -120,7 +120,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/shorturl/no_shorturl</link>
   </content>
   <content path="/admin/settings/ecommerce" owner="output">
-    <param name="content::title" revision="revision">e-Commerce Global Settings</param>
+    <param name="content::title" revision="revision">e-Commerce</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Name and other global settings of your online store.</p>]]>
     </param>

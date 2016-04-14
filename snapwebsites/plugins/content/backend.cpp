@@ -51,20 +51,6 @@ SNAP_PLUGIN_EXTENSION_START(content)
  * of all the nodes, see the list of available resources to a website,
  * destroy a page (as in do not even trash it,) etc.
  *
- * \li content::snapbackend -- this is a special case which is used to
- *     implement the standard CRON backend processes; it calls the
- *     server::backend_process() signal and returns immediately after
- * \li content::resetstatus -- go through all the pages of a website and
- *     reset their status to Normal. This should be used by programmers
- *     when they make a mistake and mess up an entry; pages that are
- *     marked as Normal + something else will be changed to Normal
- *     + Not Working
- * \li content::forceresetstatus -- this is similar to the reset status only
- *     it resets all the pages whatever the current state; this means a
- *     page that's hidden or deleted will become normal again
- * \li content::dirresources -- show a directory of the resources; this is
- *     done here so you can see the available resources once all the
- *     plugins of a given website are
  * \li content::destroypage -- completely eliminate a page; this is
  *     considered VERY DANGEROUS; use at your own risk! That being said,
  *     quite practical for programmers so they don't have to reset their
@@ -72,12 +58,28 @@ SNAP_PLUGIN_EXTENSION_START(content)
  *     as the parameter PAGE_URL. We did not try, but you certainly can
  *     destroy "/" which means the entire website will go away and not
  *     function at all anymore.
+ * \li content::dirresources -- show a directory of the resources; this is
+ *     done here so you can see the available resources once all the
+ *     plugins of a given website are
+ * \li content::extractresource -- write a resource file from the library
+ *     or a plugin to a file.
+ * \li content::forceresetstatus -- this is similar to the reset status only
+ *     it resets all the pages whatever the current state; this means a
+ *     page that's hidden or deleted will become normal again
  * \li content::newfile -- add the specified md5 to the new row of the
  *     files table so that way that file will get rescanned and reprocessed
  *     in case it were necessary to do so (because you changed the code,
  *     for example.)
  * \li content::rebuildindex -- this action requests the system to rebuild
  *     the entire '*index*' row of the content table.
+ * \li content::resetstatus -- go through all the pages of a website and
+ *     reset their status to Normal. This should be used by programmers
+ *     when they make a mistake and mess up an entry; pages that are
+ *     marked as Normal + something else will be changed to Normal
+ *     + Not Working
+ * \li content::snapbackend -- this is a special case which is used to
+ *     implement the standard CRON backend processes; it calls the
+ *     server::backend_process() signal and returns immediately after
  *
  * \note
  * To extract the content of one cell, use the snapsiteinfo tool instead:
