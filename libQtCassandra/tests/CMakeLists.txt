@@ -158,6 +158,8 @@ if( ${RUN_MILLION_ROW_TEST} )
 endif()
 
 ################################################################################
+# This test has been deprecated because the "counter" column for "column1" is
+# no longer supported.
 project(simple_counter)
 
 add_executable(simple_counter
@@ -170,7 +172,7 @@ target_link_libraries(simple_counter
     ${THRIFT_LIBRARIES}
 )
 
-add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
+#add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
 #project(composite_type)
@@ -199,6 +201,7 @@ target_link_libraries(cassandra_lock
     ${QT_LIBRARIES}
 )
 
+add_test( NAME ${PROJECT_NAME}-create COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} -c 1 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} -i 4 -n 5 )
 
 # vim: ts=4 sw=4 et
