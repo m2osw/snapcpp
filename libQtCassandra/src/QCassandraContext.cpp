@@ -270,7 +270,7 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
     , f_contextName(context_name)
       //f_tables() -- auto-init
       //f_host_name() -- auto-init
-    , f_lock_table_name("libQtCassandraLockTable")
+    , f_lock_table_name("'libQtCassandraLockTable'")
       //f_lock_accessed(false) -- auto-init
       //f_lock_timeout(5) -- auto-init
       //f_lock_ttl(60) -- auto-init
