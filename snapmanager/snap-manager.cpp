@@ -709,37 +709,37 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
 
     // this is the default for contexts, but just in case we were
     // to change that default at a later time...
-    f_context->setDurableWrites(true);
+    //
+    auto& fields(f_context->fields());
+    fields["durable_writes"] = QVariant(true);
+
+    auto& replication_map(fields["replication"].map());
 
     // for developers testing with a few nodes in a single data center,
     // SimpleStrategy is good enough; for anything larger ("a real
     // cluster",) it won't work right
     if(strategy == 0 /*"simple"*/)
     {
-        f_context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
-
-        // for simple strategy, use the replication_factor parameter
-        // (see http://www.datastax.com/documentation/cql/3.0/cql/cql_reference/create_keyspace_r.html)
-        f_context->setReplicationFactor(replication_factor);
+        replication_map["class"]              = QVariant("SimpleStrategy");
+        replication_map["replication_factor"] = QVariant(1);
     }
     else
     {
-        if(strategy == 1 /*"local"*/)
+        if( strategy == 1 /*"local"*/ )
         {
-            f_context->setStrategyClass("org.apache.cassandra.locator.LocalStrategy");
+            throw std::runtime_error( "Local strategy is no longer supported!" );
         }
-        else
-        {
-            // else strategy == 2 /*"network"*/
-            f_context->setStrategyClass("org.apache.cassandra.locator.NetworkTopologyStrategy");
-        }
+
+        // else strategy == 2 /*"network"*/
+        //
+        replication_map["class"] = QVariant("NetworkTopologyStrategy");
 
         // here each data center gets a replication factor
         QString const replication(QString("%1").arg(replication_factor));
         int const max_names(data_centers.size());
         for(int idx(0); idx < max_names; ++idx)
         {
-            f_context->setDescriptionOption(data_centers[idx], replication);
+            replication_map[data_centers[idx]] = QVariant(replication);
         }
     }
 
@@ -771,19 +771,17 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
     {
         // table is not there yet, create it
         table = f_context->table(table_name);
-        table->setComment(comment);
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        //table->setMemtableThroughputInMb(247);
-        //table->setMemtableOperationsInMillions(1.1578125);
-        table->setGcGraceSeconds(864000);
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
+
+        auto& table_fields( table->fields() );
+        table_fields["comment"]                     = QVariant(comment);
+        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["gc_grace_seconds"]            = QVariant(864000);
+        //
+        auto& compaction_value_map(table_fields["compaction"].map());
+        compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+        compaction_value_map["min_threshold"] = QVariant(4);
+        compaction_value_map["max_threshold"] = QVariant(22);
+
         table->create();
     }
 }

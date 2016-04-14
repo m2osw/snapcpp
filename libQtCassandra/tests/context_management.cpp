@@ -70,14 +70,12 @@ int main(int argc, char *argv[])
 
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_context"));
     //
-    QtCassandra::QCassandraSchema::Value replication;
-    auto& replication_map(replication.map());
-    replication_map["class"]              = QtCassandra::QCassandraSchema::Value("SimpleStrategy");
-    replication_map["replication_factor"] = QtCassandra::QCassandraSchema::Value(1);
-    //
     auto& fields(context->fields());
-    fields["replication"]    = replication;
     fields["durable_writes"] = QVariant(true);
+    //
+    auto& replication_map(fields["replication"].map());
+    replication_map["class"]              = QVariant("SimpleStrategy");
+    replication_map["replication_factor"] = QVariant(1);
     //
     try
     {
