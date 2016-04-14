@@ -360,7 +360,8 @@ const QString& Value::output() const
         switch( f_type )
         {
             case TypeUnknown:
-                throw std::runtime_error( "Uninitialized type!" );
+                f_stringOutput.clear();
+                break;
 
             case TypeVariant:
                 if( f_variant.type() == QVariant::String )

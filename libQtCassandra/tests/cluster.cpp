@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
             for( const auto& pair : table->fields() )
             {
-                qDebug() << "      + " << pair.first << " = " << pair.second.output();
+                qDebug() << "        + " << pair.first << " = " << pair.second.output();
             }
         }
     }
