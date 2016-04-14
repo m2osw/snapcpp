@@ -55,7 +55,7 @@ Value::Value()
 
 
 Value::Value( const QVariant& var )
-    : f_type(TypeUnknown)
+    : f_type(TypeVariant)
     , f_cassType(CASS_VALUE_TYPE_UNKNOWN)
     , f_variant(var)
 {
@@ -360,7 +360,7 @@ const QString& Value::output() const
         switch( f_type )
         {
             case TypeUnknown:
-                f_stringOutput.clear();
+                f_stringOutput = "''";
                 break;
 
             case TypeVariant:

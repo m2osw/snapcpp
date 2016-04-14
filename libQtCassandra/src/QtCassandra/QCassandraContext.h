@@ -54,7 +54,6 @@ class QCassandraContext
 {
 public:
     typedef std::shared_ptr<QCassandraContext>  pointer_t;
-    typedef QMap<QString, QString>              QCassandraContextOptions;
     typedef unsigned short                      host_identifier_t;
     static const host_identifier_t              NULL_HOST_ID = 0;
     static const host_identifier_t              LARGEST_HOST_ID = 10000;
@@ -108,6 +107,7 @@ private:
     void makeCurrent();
     QCassandraContext(std::shared_ptr<QCassandra> cassandra, const QString& context_name);
 
+    void resetSchema();
     void parseContextDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace );
     //void prepareContextDefinition(KsDef *ks) const;
 
@@ -127,7 +127,6 @@ private:
     //
     std::shared_ptr<QCassandra>                 f_cassandra;
     QString										f_contextName;
-    QCassandraContextOptions                    f_options;
     QCassandraTables                   			f_tables;
     QString                                     f_host_name;
     QString                                     f_lock_table_name;

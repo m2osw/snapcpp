@@ -2026,17 +2026,13 @@ QString QCassandraTable::getTableOptions() const
     QString q_str;
     for( const auto& pair : f_schema->getFields() )
     {
-        if( !q_str.isEmpty() )
-        {
-            q_str += "AND ";
-        }
-        q_str += QString("%1 = %2\n")
+        q_str += QString("AND %1 = %2\n")
                 .arg(pair.first)
                 .arg(pair.second.output())
                 ;
     }
 
-    return QString("WITH %1").arg(q_str);
+    return q_str;
 }
 
 

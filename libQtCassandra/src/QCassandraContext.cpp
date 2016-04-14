@@ -156,16 +156,6 @@ namespace QtCassandra
  * functions don't actually test the pointer.
  */
 
-/** \var QCassandraContext::f_options
- * \brief List of tables.
- *
- * A map of name and value pairs representing options of the context.
- * Each context can have many options.
- *
- * The libQtCassandra doesn't make use of these options. It's only used
- * by the Cassandra server.
- */
-
 /** \var QCassandraContext::f_tables
  * \brief List of tables.
  *
@@ -275,10 +265,9 @@ namespace QtCassandra
  * \sa QCassandra::synchronizeSchemaVersions()
  */
 QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
-    : f_schema(std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>())
-    , f_cassandra(cassandra)
+    //: f_schema(std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>())
+    : f_cassandra(cassandra)
     , f_contextName(context_name)
-      //f_options() -- auto-init
       //f_tables() -- auto-init
       //f_host_name() -- auto-init
     , f_lock_table_name("libQtCassandraLockTable")
@@ -288,7 +277,8 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
 {
     // verify the name here (faster than waiting for the server and good documentation)
     QRegExp re("[A-Za-z][A-Za-z0-9_]*");
-    if(!re.exactMatch(context_name)) {
+    if(!re.exactMatch(context_name))
+    {
         throw std::runtime_error("invalid context name (does not match [A-Za-z][A-Za-z0-9_]*)");
     }
 
@@ -298,6 +288,8 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
     {
         f_host_name = hostname;
     }
+
+    resetSchema();
 }
 
 /** \brief Clean up the QCassandraContext object.
@@ -310,6 +302,21 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
  */
 QCassandraContext::~QCassandraContext()
 {
+}
+
+
+void QCassandraContext::resetSchema()
+{
+    f_schema = std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>();
+
+    QtCassandra::QCassandraSchema::Value replication;
+    auto& replication_map(replication.map());
+    replication_map["class"]              = QVariant("SimpleStrategy");
+    replication_map["replication_factor"] = QVariant(1);
+
+    auto& fields(f_schema->getFields());
+    fields["replication"]    = replication;
+    fields["durable_writes"] = QVariant(true);
 }
 
 /** \brief Retrieve the name of this context.
@@ -938,7 +945,11 @@ QString QCassandraContext::getKeyspaceOptions()
     QString q_str;
     for( const auto& pair : f_schema->getFields() )
     {
-        if( !q_str.isEmpty() )
+        if( q_str.isEmpty() )
+        {
+            q_str = "WITH ";
+        }
+        else
         {
             q_str += "AND ";
         }
@@ -948,7 +959,7 @@ QString QCassandraContext::getKeyspaceOptions()
                 ;
     }
 
-    return QString("WITH %1").arg(q_str);
+    return q_str;
 }
 
 
@@ -1083,6 +1094,10 @@ void QCassandraContext::drop()
     QCassandraQuery q( f_cassandra->session() );
     q.query( QString("DROP KEYSPACE IF EXISTS %1").arg(f_contextName) );
     q.start();
+    q.end();
+
+    resetSchema();
+    f_tables.clear();
 }
 
 
@@ -1187,7 +1202,7 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
 
     QCassandraSchema::Value compaction_value;
     auto& compaction_value_map(compaction_value.map());
-    compaction_value_map["class"]         = QCassandraSchema::Value("org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy");
+    compaction_value_map["class"]         = QCassandraSchema::Value("SizeTieredCompactionStrategy");
     compaction_value_map["max_threshold"] = QCassandraSchema::Value(22);
     compaction_value_map["min_threshold"] = QCassandraSchema::Value(4);
 

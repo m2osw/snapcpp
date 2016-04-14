@@ -73,11 +73,11 @@ public:
     type_t  type() const { return f_type; }
 
     const QVariant&     variant()    const { return f_variant;   }
-    QVariant&     		variant()          { return f_variant;   }
+    QVariant&     		variant()          { f_type = TypeVariant; return f_variant;   }
     const list_t&       list()       const { return f_list;      }
-    list_t&       		list()             { return f_list;      }
+    list_t&       		list()             { f_type = TypeList; return f_list;      }
     const map_t&        map()        const { return f_map;       }
-    map_t&              map()              { return f_map;       }
+    map_t&              map()              { f_type = TypeMap; return f_map;       }
 
     const QString& output() const;
 

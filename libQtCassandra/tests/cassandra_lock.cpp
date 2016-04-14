@@ -183,15 +183,15 @@ int main(int argc, char *argv[])
 
         QtCassandra::QCassandraSchema::Value compaction_value;
         auto& compaction_value_map(compaction_value.map());
-        compaction_value_map["class"]         = QtCassandra::QCassandraSchema::Value("SizeTieredCompactionStrategy");
-        compaction_value_map["min_threshold"] = QtCassandra::QCassandraSchema::Value(4);
-        compaction_value_map["max_threshold"] = QtCassandra::QCassandraSchema::Value(22);
+        compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+        compaction_value_map["min_threshold"] = QVariant(4);
+        compaction_value_map["max_threshold"] = QVariant(22);
 
         QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
         auto& fields(table->fields());
-        fields["comment"]                     = QtCassandra::QCassandraSchema::Value("Our test table.");
-        fields["memtable_flush_period_in_ms"] = QtCassandra::QCassandraSchema::Value(60);
-        fields["gc_grace_seconds"]            = QtCassandra::QCassandraSchema::Value(3600);
+        fields["comment"]                     = QVariant("Our test table.");
+        fields["memtable_flush_period_in_ms"] = QVariant(60);
+        fields["gc_grace_seconds"]            = QVariant(3600);
         fields["compaction"]                  = compaction_value;
 
         try
