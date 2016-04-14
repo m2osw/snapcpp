@@ -67,7 +67,6 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
 find_package( AdvGetOpt          REQUIRED )
 find_package( Boost              REQUIRED )
-find_package( CassandraCppDriver REQUIRED )
 find_package( CSSPP              REQUIRED )
 find_package( ControlledVars     REQUIRED )
 find_package( LibTLD             REQUIRED )

@@ -38,7 +38,7 @@
 
 // 3rd party libs
 //
-#include <cassandra.h>
+#include <QtCassandra/QCassandraQuery.h>
 
 #include <QtCore>
 
@@ -55,20 +55,11 @@ public:
     //void outputSchema();
     
 private:
-    typedef std::shared_ptr<CassCluster>      cluster_pointer_t;
-    typedef std::shared_ptr<CassFuture>       future_pointer_t;
-    typedef std::shared_ptr<CassIterator>     iterator_pointer_t;
-    typedef std::shared_ptr<const CassResult> result_pointer_t;
-    typedef std::shared_ptr<CassSession>      session_pointer_t;
-    typedef std::shared_ptr<CassStatement>    statement_pointer_t;
-
-    void appendRowsToSqliteDb( result_pointer_t result, const QString& table_name );
+    void appendRowsToSqliteDb( QtCassandra::QCassandraQuery& cass_query, const QString& table_name );
     void storeTables( const int count );
     void restoreTables();
 
-    std::shared_ptr<CassCluster>    f_cluster;
-    std::shared_ptr<CassSession>    f_session;
-    std::shared_ptr<CassFuture>     f_connection;
+    QtCassandra::QCassandraSession::pointer_t	f_session;
 };
 
 // vim: ts=4 sw=4 et
