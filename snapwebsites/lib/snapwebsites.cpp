@@ -1330,16 +1330,17 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
     {
         // table is not there yet, create it
         table = context->table(table_name);
-        table->setComment(comment);
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        //table->setMemtableThroughputInMb(247);
-        //table->setMemtableOperationsInMillions(1.1578125);
 
+        QtCassandra::QCassandraSchema::Value compaction;
+        auto& compaction_map(compaction.map());
+        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+        compaction_map["min_threshold"] = QVariant(4);
+        compaction_map["max_threshold"] = QVariant(22);
+
+        auto& table_fields(table->fields());
+        table_fields["comment"]                     = QVariant(comment);
+        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        //
         // about potential problems in regard to Gargbage Collection see:
         //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html
         //   http://stackoverflow.com/questions/21755286/what-exactly-happens-when-tombstone-limit-is-reached
@@ -1349,11 +1350,9 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
         // tables such as the "list", "backend" and "antihammering"
         // tables... we will have to fix that once we have our proper per
         // table definitions)
-        table->setGcGraceSeconds(86400);
+        table_fields["gc_grace_seconds"]            = QVariant(86400);
+        table_fields["compaction"]                  = compaction;
 
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
         table->create();
 
         f_created_table[table_name] = true;

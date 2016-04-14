@@ -703,19 +703,17 @@ void snap_layout::add_files()
         //
         // table is not there yet, create it
         table = context->table("layout");
-        table->setComment("Table of layouts");
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        //table->setMemtableThroughputInMb(247);
-        //table->setMemtableOperationsInMillions(1.1578125);
-        table->setGcGraceSeconds(864000);
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
+
+        auto& table_fields( table->fields() );
+        table_fields["comment"]                     = QVariant("Table of layouts");
+        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["gc_grace_seconds"]            = QVariant(86400);
+        //
+        auto& compaction_value(table_fields["compaction"].map());
+        compaction_value["class"]         = QVariant("SizeTieredCompactionStrategy");
+        compaction_value["min_threshold"] = QVariant(4);
+        compaction_value["max_threshold"] = QVariant(22);
+
         table->create();
     }
 

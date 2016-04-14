@@ -89,18 +89,16 @@ int main(int argc, char *argv[])
         // ignore errors, this happens when the context doesn't exist yet
     }
 
-    QtCassandra::QCassandraSchema::Value compaction_value;
-    auto& compaction_value_map(compaction_value.map());
-    compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
-    compaction_value_map["min_threshold"] = QVariant(4);
-    compaction_value_map["max_threshold"] = QVariant(22);
-
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
     auto& table_fields( table->fields() );
     table_fields["comment"]                     = QVariant("Our test table.");
     table_fields["memtable_flush_period_in_ms"] = QVariant(60);
     table_fields["gc_grace_seconds"]            = QVariant(86400);
-    table_fields["compaction"]                  = compaction_value;
+    //
+    auto& compaction_value_map(table_fields["compaction"].map());
+    compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+    compaction_value_map["min_threshold"] = QVariant(4);
+    compaction_value_map["max_threshold"] = QVariant(22);
 
     try
     {
