@@ -587,6 +587,7 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
     QString const id_key(QString("%1/%2").arg(f_snap->get_website_key()).arg(get_name(name_t::SNAP_NAME_SHORTURL_ID_ROW)));
     QString const identifier_key(get_name(name_t::SNAP_NAME_SHORTURL_IDENTIFIER));
     QtCassandra::QCassandraValue new_identifier;
+    new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
 
     {
         // the lock only needs to be unique on a per website basis
@@ -600,6 +601,7 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
         {
             QtCassandra::QCassandraRow::pointer_t id_row(shorturl_table->row(id_key));
             QtCassandra::QCassandraCell::pointer_t id_cell(id_row->cell(identifier_key));
+            id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
             QtCassandra::QCassandraValue current_identifier(id_cell->value());
             if(current_identifier.nullValue())
             {

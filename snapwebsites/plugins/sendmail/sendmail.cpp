@@ -2751,6 +2751,7 @@ void sendmail::attach_user_email(email const & e)
     QString const user_key(users_plugin->email_to_user_key(m.f_email_only.c_str()));
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(user_key));
     QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
+    cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue email_data(cell->value());
     if(email_data.nullValue())
     {

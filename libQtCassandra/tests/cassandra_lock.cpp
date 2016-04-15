@@ -61,9 +61,10 @@ int main(int argc, char *argv[])
     int check_result(0);
     const char *host("localhost");
     const char *computer_name(NULL);
+    QtCassandra::consistency_level_t consistency_level(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     for(int i(1); i < argc; ++i) {
         if(strcmp(argv[i], "--help") == 0) {
-            qDebug() << "Usage:" << argv[0] << "[--help] [-a | -r | -o <computer-name>] [-h <hostname>] [-i <count>] [-n <repeat>] [-c <replication-factor>] [-V] [-t]";
+            qDebug() << "Usage:" << argv[0] << "[--help] [-a | -r | -o <computer-name>] [-h <hostname>] [-i <count>] [-n <repeat>] [-c <replication-factor>] [-V] [-t] [-l <consistency level>]";
             qDebug() << "  where -h indicates the Cassandra IP address";
             qDebug() << "  where -i indicates the number of process to spawn total";
             qDebug() << "  where -n indicates the number of time each process will create a unique row";
@@ -73,6 +74,7 @@ int main(int argc, char *argv[])
             qDebug() << "  where -c indicates that the call is used to create the context with the specified replication factor; ignore -i and -n";
             qDebug() << "  where -V indicates you want to verify the database after a run";
             qDebug() << "  where -t indicates you want to truncate the test table (usually before a new test)";
+            qDebug() << "  where -l indicates the consistency level (one, quorum [default], local-quorum, each-quorum, all, two, three)";
             exit(1);
         }
         if(strcmp(argv[i], "-h") == 0) {
@@ -126,6 +128,38 @@ int main(int argc, char *argv[])
         else if(strcmp(argv[i], "-t") == 0) {
             check_result = 2;
         }
+        else if(strcmp(argv[i], "-l") == 0) {
+            ++i;
+            if(i >= argc) {
+                qDebug() << "error: -l must be followed by a consistency level.";
+                exit(1);
+            }
+            if(strcmp(argv[i], "one") == 0 || strcmp(argv[i], "1") == 0) {
+                consistency_level = QtCassandra::CONSISTENCY_LEVEL_ONE;
+            }
+            else if(strcmp(argv[i], "quorum") == 0) {
+                consistency_level = QtCassandra::CONSISTENCY_LEVEL_QUORUM;
+            }
+            else if(strcmp(argv[i], "local-quorum") == 0) {
+                consistency_level = QtCassandra::CONSISTENCY_LEVEL_LOCAL_QUORUM;
+            }
+            else if(strcmp(argv[i], "each-quorum") == 0) {
+                consistency_level = QtCassandra::CONSISTENCY_LEVEL_EACH_QUORUM;
+            }
+            else if(strcmp(argv[i], "all") == 0) {
+                consistency_level = QtCassandra::CONSISTENCY_LEVEL_ALL;
+            }
+            else if(strcmp(argv[i], "two") == 0 || strcmp(argv[i], "2") == 0) {
+                consistency_level = QtCassandra::CONSISTENCY_LEVEL_TWO;
+            }
+            else if(strcmp(argv[i], "three") == 0 || strcmp(argv[i], "3") == 0) {
+                consistency_level = QtCassandra::CONSISTENCY_LEVEL_THREE;
+            }
+            else {
+                qDebug() << "error: " << argv[i] << " is not a valid consistency level.";
+                exit(1);
+            }
+        }
     }
 
     if(replication_factor > 0) {
@@ -140,6 +174,7 @@ int main(int argc, char *argv[])
         try
         {
             context->drop();
+            cassandra->synchronizeSchemaVersions();
         }
         catch(...)
         {
@@ -169,6 +204,7 @@ int main(int argc, char *argv[])
             throw;
         }
         // attempt a synchronization so when we quit we can immediately use the context
+        cassandra->synchronizeSchemaVersions();
         exit(0);
     }
 
@@ -330,19 +366,25 @@ int main(int argc, char *argv[])
             QByteArray key;
             QtCassandra::appendUInt64Value(key, now);
             // acquire the lock; if it fails it will throw
-            QtCassandra::QCassandraLock lock(context, key );
+            QtCassandra::QCassandraLock lock(context, key, consistency_level);
             QtCassandra::QCassandraCell::pointer_t cell(table->row(key)->cell("winner"));
+            cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
             QtCassandra::QCassandraValue winner(cell->value());
             if(winner.nullValue()) {
                 // we're the first to lock that row!
                 QtCassandra::QCassandraValue win(getpid());
+                win.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
                 table->row(key)->cell("winner")->setValue(win);
                 QtCassandra::QCassandraValue unique(true);
+                // unique with a consistency of ONE would also work, but in a real
+                // world situation you probably would want to use QUORUM anyway
+                unique.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
                 table->row(key)->cell(QString("unique%1").arg(getpid()))->setValue(unique);
             }
             else {
                 // if we're not the winner still show that we were working on that row
                 QtCassandra::QCassandraValue loser(true);
+                loser.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
                 table->row(key)->cell(QString("loser%1").arg(getpid()))->setValue(loser);
             }
         }

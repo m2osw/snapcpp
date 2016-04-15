@@ -178,6 +178,11 @@ SNAP_TEST_PLUGIN_TEST_IMPL(list, test_add_page_twice)
     //     different instance or something of the sort
     list_table->clearCache();
     QtCassandra::QCassandraCell::pointer_t cell(list_table->row(site_key)->cell(value.binaryValue()));
+    // the consistency used to save values is ONE so QUORUM here
+    // would not be enough to make 100% sure that all nodes were
+    // checked before returning the result (it also means you need
+    // a 100% valid cassandra cluster...)
+    cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_ALL);
     QtCassandra::QCassandraValue no_value(cell->value());
 
     // value is 1 byte if the cell did not get deleted properly

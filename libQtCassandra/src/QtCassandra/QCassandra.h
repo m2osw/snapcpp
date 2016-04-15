@@ -36,6 +36,7 @@
  */
 #pragma once
 
+#include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraContext.h"
 #include "QtCassandra/QCassandraQuery.h"
 #include "QtCassandra/QCassandraSchema.h"
@@ -56,6 +57,9 @@ class QCassandra
     , public std::enable_shared_from_this<QCassandra>
 {
 public:
+    static const uint32_t SCHEMA_SYNCHRONIZATION_USE_DEFAULT = 0;
+    static const uint32_t SCHEMA_SYNCHRONIZATION_DEFAULT = 60;
+    typedef controlled_vars::auto_init<uint32_t, SCHEMA_SYNCHRONIZATION_USE_DEFAULT> schema_synchronization_timeout_t;
     typedef std::shared_ptr<QCassandra> pointer_t;
 
     static pointer_t create();
@@ -71,6 +75,8 @@ public:
     bool connect(const QStringList& hosts, const int port = 9042 );
     void disconnect();
     bool isConnected() const;
+    void synchronizeSchemaVersions(uint32_t timeout = SCHEMA_SYNCHRONIZATION_USE_DEFAULT);
+    void setSchemaSynchronizationTimeout(uint32_t timeout);
     const QString& clusterName() const;
     const QString& protocolVersion() const;
     //const QCassandraClusterInformation& clusterInformation() const;
@@ -89,6 +95,10 @@ public:
     const QCassandraContext& operator[] (const QString& context_name) const;
 
     void dropContext(const QString& context_name);
+
+    // default consistency level
+    consistency_level_t defaultConsistencyLevel() const;
+    void setDefaultConsistencyLevel(consistency_level_t default_consistency_level);
 
     // time stamp helper
     static int64_t timeofday();
@@ -116,6 +126,8 @@ private:
     //mutable QCassandraClusterInformation    f_cluster_information;
     QString                                 f_partitioner;
     QString                                 f_snitch;
+    consistency_level_t                     f_default_consistency_level;
+    schema_synchronization_timeout_t        f_schema_synchronization_timeout;
 };
 
 } // namespace QtCassandra

@@ -431,6 +431,18 @@ QString path_info_t::get_parameter(QString const & name) const
  * that case, the best is for your function to return and not process the
  * page in any way.
  *
+ * \important
+ * Access to the status values make use the QUORUM consistency instead
+ * of the default of ONE. This is to ensure that all instances see the
+ * same/latest value saved in the database. This does NOT ensure 100%
+ * consistency between various instances, however, it is not that likely
+ * that two people would apply status changes to a page so simultaneously
+ * that it would fail consistently (i.e. we do not use a lock to update
+ * the status.) Note that if a Cassandra node is down, it is likely to
+ * block the Snap! server as it has to wait on that one node (forever).
+ * It will eventually time out, but most certainly after Apache already
+ * said that the request could not be satisfied.
+ *
  * \note
  * The status is not cached in the path_info_t object because (1) we could
  * have multiple path_info_t objects, each with its own status; and (2) the
@@ -453,8 +465,10 @@ path_info_t::status_t path_info_t::get_status() const
         return result;
     }
 
+    // we set the consistency of the cell to QUORUM to make sure
     // we read the last written value
     QtCassandra::QCassandraCell::pointer_t cell(content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS)));
+    cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue value(cell->value());
     if(value.size() != sizeof(uint32_t))
     {
@@ -487,6 +501,13 @@ path_info_t::status_t path_info_t::get_status() const
  * SNAP_CONTENT_STATUS_CLONING, or SNAP_CONTENT_STATUS_REMOVING at time of
  * writing) should use RAII to make sure that the object gets a valid status
  * once the function is done dealing with the page.
+ *
+ * \important
+ * Status values are using the QUORUM consistency instead of the default of
+ * ONE. This is to ensure that all instances see the same/latest value
+ * saved in the database. However, it blocks the Snap! server until the
+ * write returns and that could be a problem, especially if a node is down.
+ * Such a write will eventually time out.
  *
  * \bug
  * At this point the function expects the status to be properly managed
@@ -535,6 +556,9 @@ void path_info_t::set_status(status_t const & status)
     }
     QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
 
+    // we use QUORUM in the consistency level to make sure that information
+    // is available on all Cassandra nodes all at once
+    //
     // we save the date when we changed the status so that way we know whether
     // the process when to lala land or is still working on the status; a
     // backend is responsible for fixing "invalid" status (i.e. after 10 min.
@@ -543,10 +567,12 @@ void path_info_t::set_status(status_t const & status)
     QtCassandra::QCassandraValue changed;
     int64_t const start_date(f_snap->get_start_date());
     changed.setInt64Value(start_date);
+    changed.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(changed);
 
     QtCassandra::QCassandraValue value;
     value.setUInt32Value(status.get_status());
+    value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->setValue(value);
 }
 

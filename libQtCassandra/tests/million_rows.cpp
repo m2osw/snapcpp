@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
         qDebug() << "++ Drop the old context";
         cassandra->dropContext("qt_cassandra_test_large_rw");
         qDebug() << "++ Synchronize after the drop";
+        cassandra->synchronizeSchemaVersions();
         if(drop) {
             // just do the drop and it succeeded
             exit(0);
@@ -122,6 +123,8 @@ int main(int argc, char *argv[])
     try
     {
         context->create();
+        qDebug() << "++ Synchronize new context...";
+        cassandra->synchronizeSchemaVersions();
         qDebug() << "++ Context and its table were created!";
     }
     catch(const std::exception& e) {
@@ -141,6 +144,7 @@ int main(int argc, char *argv[])
         int32_t r(rand());
         data.push_back(r);
         QtCassandra::QCassandraValue value(r);
+        value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
         QString row(QString("row%1").arg(i));
 //qDebug() << "Save row" << row << "with" << r;
         for(int retry(5); retry > 0; --retry)
@@ -167,6 +171,7 @@ int main(int argc, char *argv[])
                 sleep(1);
             }
         }
+        //cassandra->synchronizeSchemaVersions();
 
         // clear the cache once in a while so the 'count' rows don't stay in memory
         if(i % 100 == 0) {

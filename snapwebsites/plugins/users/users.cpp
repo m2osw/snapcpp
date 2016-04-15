@@ -2971,6 +2971,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(user_key));
 
     QtCassandra::QCassandraValue value;
+    value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     value.setStringValue(email); // this is what we save in the user table, with upper/lowercase as given by the end user
 
     int64_t identifier(0);
@@ -2981,6 +2982,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     QString const email_key(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
     QString const user_path(get_name(name_t::SNAP_NAME_USERS_PATH));
     QtCassandra::QCassandraValue new_identifier;
+    new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
 
     // Note that the email was already checked when coming from the Register
     // form, however, it was checked for validity as an email, not checked
@@ -3008,6 +3010,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
 
         // TODO: we have to look at all the possible email addresses
         QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
+        cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
         QtCassandra::QCassandraValue const email_data(cell->value());
         if(!email_data.nullValue())
         {
@@ -3078,6 +3081,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
             {
                 QtCassandra::QCassandraRow::pointer_t id_row(users_table->row(id_key));
                 QtCassandra::QCassandraCell::pointer_t id_cell(id_row->cell(identifier_key));
+                id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
                 QtCassandra::QCassandraValue const current_identifier(id_cell->value());
                 if(current_identifier.size() != sizeof(int64_t))
                 {

@@ -2359,6 +2359,30 @@ int main(int argc, char *argv[])
         ++err;
     }
 
+
+    // consistency level
+    qDebug() << "+ Testing consistency level";
+    for(int i(-10); i < QtCassandra::CONSISTENCY_LEVEL_THREE + 10; ++i) {
+        if(i < -1 || i == 0 || i > QtCassandra::CONSISTENCY_LEVEL_THREE) {
+            try {
+                value.setConsistencyLevel(i);
+                qDebug() << "error: setConsistencyLevel() accepted" << i << "which is an invalid value";
+                ++err;
+            }
+            catch(const std::runtime_error&) {
+            }
+        }
+        else {
+            // Note: -1 is used as our DEFAULT value
+            value.setConsistencyLevel(i);
+            if(value.consistencyLevel() != i) {
+                qDebug() << "error: setConsistencyLevel(" << i << ") was not read back as" << i;
+                ++err;
+            }
+        }
+    }
+
+
     // set the time stamp mode
     qDebug() << "+ Testing timestamp";
     value.setTimestampMode(QtCassandra::QCassandraValue::TIMESTAMP_MODE_CASSANDRA);
