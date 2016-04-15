@@ -815,7 +815,7 @@ void QCassandraRow::dropCell( const QByteArray& column_key, QCassandraValue::tim
         timestamp = c->timestamp();
     }
 
-    f_table->remove( f_key, column_key, c->consistencyLevel(), timestamp );
+    f_table->remove( f_key, column_key, timestamp, c->consistencyLevel() );
     f_cells.remove(column_key);
 }
 

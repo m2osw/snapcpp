@@ -82,9 +82,21 @@ public:
 
     void clearCache();
 
-    void dropCell(const char*       column_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
-    void dropCell(const QString&    column_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
-    void dropCell(const QByteArray& column_key,  QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0);
+    void dropCell
+        ( const char*       column_name
+        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
+        , int64_t timestamp = 0
+        );
+    void dropCell
+        ( const QString&    column_name
+        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
+        , int64_t timestamp = 0
+        );
+    void dropCell
+        ( const QByteArray& column_key
+        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
+        , int64_t timestamp = 0
+        );
 
     std::shared_ptr<QCassandraTable> parentTable() const;
 

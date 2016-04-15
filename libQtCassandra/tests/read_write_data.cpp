@@ -235,9 +235,9 @@ int main(int argc, char *argv[])
             ["qt_cassandra_test_table"]
             .dropRow
                 ( QString("http://www.snapwebsites.org/page/3")
-                , QtCassandra::CONSISTENCY_LEVEL_ONE
                 , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED
                 , QtCassandra::QCassandra::timeofday() + 10000000
+                , QtCassandra::CONSISTENCY_LEVEL_ONE
                 );
 
     context->drop();

@@ -974,16 +974,16 @@ const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) con
  */
 void QCassandraTable::dropRow
     ( const char *row_name
-    , consistency_level_t consistency_level
     , QCassandraValue::timestamp_mode_t mode
     , int64_t timestamp
+    , consistency_level_t consistency_level
     )
 {
     dropRow
         ( QByteArray::fromRawData(row_name, qstrlen(row_name))
-        , consistency_level
         , mode
         , timestamp
+        , consistency_level
         );
 }
 
@@ -1000,16 +1000,16 @@ void QCassandraTable::dropRow
  */
 void QCassandraTable::dropRow
     ( const QString& row_name
-    , consistency_level_t consistency_level
     , QCassandraValue::timestamp_mode_t mode
     , int64_t timestamp
+    , consistency_level_t consistency_level
     )
 {
     dropRow
         ( row_name.toUtf8()
-        , consistency_level
         , mode
         , timestamp
+        , consistency_level
         );
 }
 
@@ -1071,9 +1071,9 @@ void QCassandraTable::dropRow
  */
 void QCassandraTable::dropRow
     ( const QByteArray& row_key
-    , consistency_level_t consistency_level
     , QCassandraValue::timestamp_mode_t mode
     , int64_t timestamp
+    , consistency_level_t consistency_level
     )
 {
     if( QCassandraValue::TIMESTAMP_MODE_AUTO != mode
@@ -1091,8 +1091,8 @@ void QCassandraTable::dropRow
     }
 
     remove( row_key
-          , consistency_level
           , timestamp
+          , consistency_level
           );
     f_rows.remove( row_key );
 }
@@ -1352,8 +1352,8 @@ int32_t QCassandraTable::getCellCount
 void QCassandraTable::remove
     ( const QByteArray& row_key
     , const QByteArray& column_key
-    , consistency_level_t consistency_level
     , int64_t timestamp
+    , consistency_level_t consistency_level
     )
 {
     if( !f_from_cassandra )
@@ -1388,8 +1388,8 @@ void QCassandraTable::remove
  */
 void QCassandraTable::remove
     ( const QByteArray& row_key
-    , consistency_level_t consistency_level
     , int64_t timestamp
+    , consistency_level_t consistency_level
     )
 {
     if( !f_from_cassandra )
