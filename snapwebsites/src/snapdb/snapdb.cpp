@@ -47,7 +47,6 @@
 
 // 3rd party libs
 //
-#include <cassandra.h>
 #include <QtCore>
 #include <QtSql>
 #include <QtCassandra/QCassandra.h>
