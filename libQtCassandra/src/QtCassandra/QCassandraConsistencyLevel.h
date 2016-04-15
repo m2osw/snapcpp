@@ -34,8 +34,7 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef QCASSANDRA_CONSISTENCY_LEVEL_H
-#define QCASSANDRA_CONSISTENCY_LEVEL_H
+#pragma once
 
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <QString>
@@ -45,7 +44,6 @@
 
 namespace QtCassandra
 {
-
 
 
 // redefined from the Thrift definition since we do not want
@@ -69,9 +67,7 @@ extern const cassandra_consistency_level_t CONSISTENCY_LEVEL_THREE;
 typedef controlled_vars::auto_init<cassandra_consistency_level_t, -1> consistency_level_t;
 
 
+}
+// namespace QtCassandra
 
-
-} // namespace QtCassandra
-#endif
-//#ifndef QCASSANDRA_CONSISTENCY_LEVEL_H
 // vim: ts=4 sw=4 et

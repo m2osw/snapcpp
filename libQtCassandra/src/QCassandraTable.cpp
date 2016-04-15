@@ -972,9 +972,19 @@ const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) con
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
  * \param[in] consistency_level  Specify the timestamp to remove only rows that are have that timestamp or are older.
  */
-void QCassandraTable::dropRow(const char *row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level)
+void QCassandraTable::dropRow
+    ( const char *row_name
+    , consistency_level_t consistency_level
+    , QCassandraValue::timestamp_mode_t mode
+    , int64_t timestamp
+    )
 {
-    dropRow(QByteArray::fromRawData(row_name, qstrlen(row_name)), mode, timestamp, consistency_level);
+    dropRow
+        ( QByteArray::fromRawData(row_name, qstrlen(row_name))
+        , consistency_level
+        , mode
+        , timestamp
+        );
 }
 
 
@@ -988,9 +998,19 @@ void QCassandraTable::dropRow(const char *row_name, QCassandraValue::timestamp_m
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
  */
-void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level )
+void QCassandraTable::dropRow
+    ( const QString& row_name
+    , consistency_level_t consistency_level
+    , QCassandraValue::timestamp_mode_t mode
+    , int64_t timestamp
+    )
 {
-    dropRow(row_name.toUtf8(), mode, timestamp, consistency_level);
+    dropRow
+        ( row_name.toUtf8()
+        , consistency_level
+        , mode
+        , timestamp
+        );
 }
 
 /** \brief Drop the row from the Cassandra database.
@@ -1049,9 +1069,31 @@ void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestam
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older. Ignored.
  */
-void QCassandraTable::dropRow( const QByteArray& row_key, QCassandraValue::timestamp_mode_t /*mode*/, int64_t /*timestamp*/, consistency_level_t /*consistency_level*/ )
+void QCassandraTable::dropRow
+    ( const QByteArray& row_key
+    , consistency_level_t consistency_level
+    , QCassandraValue::timestamp_mode_t mode
+    , int64_t timestamp
+    )
 {
-    remove( row_key );
+    if( QCassandraValue::TIMESTAMP_MODE_AUTO != mode
+        && QCassandraValue::TIMESTAMP_MODE_DEFINED != mode)
+    {
+        throw std::runtime_error("invalid timestamp mode in dropRow()");
+    }
+
+    // default to the timestamp of the value (which is most certainly
+    // what people want in 99.9% of the cases.)
+    if(QCassandraValue::TIMESTAMP_MODE_AUTO == mode)
+    {
+        // at this point I think the best default for the drop is now
+        timestamp = QCassandra::timeofday();
+    }
+
+    remove( row_key
+          , consistency_level
+          , timestamp
+          );
     f_rows.remove( row_key );
 }
 
@@ -1140,6 +1182,27 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     // Insert or update the row values.
     //
     QCassandraQuery q( f_session );
+    q.setConsistencyLevel( value.consistencyLevel() );
+
+    const auto mode( value.timestampMode() );
+    // some older version of gcc require a cast here
+    switch( static_cast<QCassandraValue::def_timestamp_mode_t>(mode) )
+    {
+    case QCassandraValue::TIMESTAMP_MODE_AUTO:
+        // libQtCassandra default
+        q.setTimestamp( QCassandra::timeofday() );
+        break;
+
+    case QCassandraValue::TIMESTAMP_MODE_DEFINED:
+        // user defined
+        q.setTimestamp( value.timestamp() );
+        break;
+
+    case QCassandraValue::TIMESTAMP_MODE_CASSANDRA:
+        // let Cassandra use its own default
+        break;
+    }
+
     q.query( query_string, 3 );
     q.bindByteArray( row_id,    row_key    );
     q.bindByteArray( column_id, column_key );
@@ -1203,7 +1266,7 @@ bool QCassandraTable::isCounterClass()
  */
 bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
 {
-    const QString q_str( QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
+    const QString q_str( QString("SELECT value, WRITETIME(value) AS timestamp FROM %1.%2 WHERE key = ? AND column1 = ?")
                          .arg(f_context->contextName())
                          .arg(f_tableName) );
 
@@ -1235,6 +1298,7 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
     else
     {
         value = q.getByteArrayColumn( "value" );
+        value.setTimestamp(q.getInt64Column("timestamp"));
     }
 
     return true;
@@ -1280,12 +1344,16 @@ int32_t QCassandraTable::getCellCount
  * This function removes a cell from the Cassandra database as specified
  * by the parameters.
  *
- * \param[in] row_key  The row in which the cell is to be removed.
- * \param[in] column_key  The cell to be removed.
+ * \param[in] row_key           The row in which the cell is to be removed.
+ * \param[in] column_key        The cell to be removed.
+ * \param[in] consistency_level The consistency level to specify when dropping the row with respect to other data centers.
+ * \param[in] timestamp         The time when the key to be removed was created.
  */
 void QCassandraTable::remove
     ( const QByteArray& row_key
     , const QByteArray& column_key
+    , consistency_level_t consistency_level
+    , int64_t timestamp
     )
 {
     if( !f_from_cassandra )
@@ -1300,6 +1368,8 @@ void QCassandraTable::remove
             );
 
     QCassandraQuery q( f_session );
+    q.setConsistencyLevel(consistency_level);
+    q.setTimestamp( timestamp );
     q.query( query, 2 );
     size_t bind_num = 0;
     q.bindByteArray( bind_num++, row_key    );
@@ -1312,11 +1382,15 @@ void QCassandraTable::remove
  * This function removes a cell from the Cassandra database as specified
  * by the parameters.
  *
- * \param[in] row_key  The row in which the cell is to be removed.
- * \param[in] column_key  The cell to be removed.
- * \param[in] timestamp  The time when the key to be removed was created.
+ * \param[in] row_key           The row in which the cell is to be removed.
+ * \param[in] consistency_level The consistency level to specify when dropping the row with respect to other data centers.
+ * \param[in] timestamp         The time when the key to be removed was created.
  */
-void QCassandraTable::remove( const QByteArray& row_key )
+void QCassandraTable::remove
+    ( const QByteArray& row_key
+    , consistency_level_t consistency_level
+    , int64_t timestamp
+    )
 {
     if( !f_from_cassandra )
     {
@@ -1330,6 +1404,8 @@ void QCassandraTable::remove( const QByteArray& row_key )
             );
 
     QCassandraQuery q( f_session );
+    q.setConsistencyLevel(consistency_level);
+    q.setTimestamp( timestamp );
     q.query( query, 1 );
     q.bindByteArray( 0, row_key );
     q.start();

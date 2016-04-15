@@ -188,7 +188,7 @@ void QueryTest::simpleSelect()
 {
     std::cout << "Select from table 'data'..." << std::endl;
     QCassandraQuery q( f_session );
-    q.query( "SELECT * FROM qtcassandra_query_test.data" );
+    q.query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value,COUNT(*) AS count,WRITETIME(blob_value) AS timestamp FROM qtcassandra_query_test.data" );
     q.start();
     while( q.nextRow() )
     {
@@ -201,6 +201,7 @@ void QueryTest::simpleSelect()
         const QByteArray                    blob_value   = q.getByteArrayColumn ( "blob_value"   );
         const QCassandraQuery::string_map_t json_value   = q.getJsonMapColumn   ( "json_value"   );
         const QCassandraQuery::string_map_t map_value    = q.getMapColumn       ( "map_value"    );
+        const int64_t	                    timestamp    = q.getInt64Column     ( "timestamp"    );
 
         std::cout   << "id ="          << id                << std::endl
                     << "name="         << name              << std::endl
@@ -208,7 +209,9 @@ void QueryTest::simpleSelect()
                     << "count="        << count             << std::endl
                     << "float_value="  << float_value       << std::endl
                     << "double_value=" << double_value      << std::endl
-                    << "blob_value="   << blob_value.data() << std::endl;
+                    << "blob_value="   << blob_value.data() << std::endl
+                    << "timestamp="    << timestamp         << std::endl
+                    ;
 
         std::cout << "json_value:" << std::endl;
         for( auto pair : json_value )
@@ -255,7 +258,7 @@ void QueryTest::largeTableTest()
     std::map<int32_t,QString> string_map;
 
     std::cout << "Select from 'large_table' and test paging functionality..." << std::endl;
-    q.query( "SELECT id,name FROM qtcassandra_query_test.large_table" );
+    q.query( "SELECT id, name, WRITETIME(blob_value) AS timestamp FROM qtcassandra_query_test.large_table" );
     q.setPagingSize( 10 );
     q.start();
     do
@@ -265,7 +268,11 @@ void QueryTest::largeTableTest()
         {
             const int32_t id(q.getInt32Column("id"));
             const QString name(q.getStringColumn("name"));
-            std::cout << "id=" << id << ", name=" << name.toStdString() << std::endl;
+            std::cout
+                    << "id=" << id
+                    << ", name='" << name.toStdString() << "'"
+                    << ", timestamp=" << q.getInt64Column("timestamp")
+                    << std::endl;
             string_map[id] = name;
         }
     }

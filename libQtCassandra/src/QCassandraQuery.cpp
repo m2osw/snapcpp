@@ -309,7 +309,6 @@ void QCassandraSession::disconnect()
     f_cluster.reset();
 }
 
-
 /** \brief Check whether the object is connected to the server.
  *
  * This function returns true when this object is connected to the
@@ -354,6 +353,8 @@ future_pointer_t QCassandraSession::connection() const
  */
 QCassandraQuery::QCassandraQuery( QCassandraSession::pointer_t session )
     : f_session( session )
+    , f_consistencyLevel(CONSISTENCY_LEVEL_DEFAULT)
+    , f_timestamp(0)
 {
 }
 
@@ -366,6 +367,110 @@ QCassandraQuery::~QCassandraQuery()
 {
     end();
 }
+
+
+/** \brief Current consistency level
+ *
+ * The default is CONSISTENCY_LEVEL_DEFAULT, which leaves the level to whatever
+ * the cassandra-cpp-driver library deems appropriate.
+ */
+consistency_level_t	QCassandraQuery::consistencyLevel() const
+{
+    return f_consistencyLevel;
+}
+
+
+/** \brief Set the consistency level.
+ *
+ * Sets the consistency level to be added to the query statement. This
+ * can be called before or after the query() method.
+ *
+ * \sa query()
+ * \sa consistencyLevel()
+ */
+void QCassandraQuery::setConsistencyLevel( consistency_level_t level )
+{
+    f_consistencyLevel = level;
+    setStatementConsistency();
+}
+
+
+int64_t QCassandraQuery::timestamp() const
+{
+    return f_timestamp;
+}
+
+
+void QCassandraQuery::setTimestamp( int64_t timestamp )
+{
+    f_timestamp = timestamp;
+    setStatementTimestamp();
+}
+
+
+/** \brief Internal method which sets the consistency in the query statement.
+ */
+void QCassandraQuery::setStatementConsistency()
+{
+    if( !f_queryStmt )
+    {
+        // Do nothing if the statement hasn't been made yet.
+        return;
+    }
+
+    if( f_consistencyLevel == CONSISTENCY_LEVEL_DEFAULT )
+    {
+        // Don't set the level, leave the statement at system default.
+        return;
+    }
+
+    /* Unsuppored consistency levels
+       CASS_CONSISTENCY_SERIAL
+       CASS_CONSISTENCY_LOCAL_SERIAL
+       CASS_CONSISTENCY_LOCAL_ONE
+       */
+    CassConsistency consist( CASS_CONSISTENCY_UNKNOWN );
+
+    if     ( CONSISTENCY_LEVEL_ONE          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ONE;          
+    else if( CONSISTENCY_LEVEL_QUORUM       == f_consistencyLevel ) consist = CASS_CONSISTENCY_QUORUM;       
+    else if( CONSISTENCY_LEVEL_LOCAL_QUORUM == f_consistencyLevel ) consist = CASS_CONSISTENCY_LOCAL_QUORUM; 
+    else if( CONSISTENCY_LEVEL_EACH_QUORUM  == f_consistencyLevel ) consist = CASS_CONSISTENCY_EACH_QUORUM;  
+    else if( CONSISTENCY_LEVEL_ALL          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ALL;          
+    else if( CONSISTENCY_LEVEL_ANY          == f_consistencyLevel ) consist = CASS_CONSISTENCY_ANY;          
+    else if( CONSISTENCY_LEVEL_TWO          == f_consistencyLevel ) consist = CASS_CONSISTENCY_TWO;          
+    else if( CONSISTENCY_LEVEL_THREE        == f_consistencyLevel ) consist = CASS_CONSISTENCY_THREE;        
+    else throw std::runtime_error( "Unsupported consistency level!" );
+
+    if( consist == CASS_CONSISTENCY_UNKNOWN )
+    {
+        throw std::runtime_error( "This should never happen! Consistency has not been set!" );
+    }
+
+    cass_statement_set_consistency( f_queryStmt.get(), consist );
+}
+
+
+/** \brief Internal method which sets the timestamp in the query statement.
+ */
+void QCassandraQuery::setStatementTimestamp()
+{
+    if( !f_queryStmt )
+    {
+        // Do nothing if the statement hasn't been made yet.
+        return;
+    }
+
+    if( f_timestamp == 0 )
+    {
+        // Don't set the timestamp, leave the statement at system default.
+        return;
+    }
+
+    cass_int64_t cass_time( static_cast<cass_int64_t>(f_timestamp) );
+
+    cass_statement_set_timestamp( f_queryStmt.get(), cass_time );
+}
+
 
 /** \brief Create a query statement.
  *
@@ -389,6 +494,10 @@ void QCassandraQuery::query( const QString &query_string, const int bind_count )
         cass_statement_new( query_string.toStdString().c_str(), bind_count )
         , statementDeleter()
         );
+
+    setStatementConsistency();
+    setStatementTimestamp();
+
     f_queryString = query_string;
 }
 

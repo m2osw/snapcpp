@@ -36,6 +36,7 @@
  */
 #pragma once
 
+#include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraQuery.h"
 
 #include <controlled_vars/controlled_vars_auto_enum_init.h>
@@ -57,14 +58,18 @@ class QCassandraPredicate
 public:
     typedef std::shared_ptr<QCassandraPredicate> pointer_t;
 
-    QCassandraPredicate() : f_count(100) {}
+    QCassandraPredicate() : f_count(100), f_consistencyLevel(CONSISTENCY_LEVEL_DEFAULT) {}
     virtual ~QCassandraPredicate() {}
 
     int32_t count() const                       { return f_count; }
     void    setCount( const int32_t val = 100 ) { f_count = val;  }
 
+    consistency_level_t	consistencyLevel() const							{ return f_consistencyLevel;  }
+    void                setConsistencyLevel( consistency_level_t level )	{ f_consistencyLevel = level; }
+
 protected:
     cassandra_count_t   f_count;
+    consistency_level_t	f_consistencyLevel;
 
     virtual void appendQuery( QString& query, int& bind_count ) = 0;
     virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num ) = 0;

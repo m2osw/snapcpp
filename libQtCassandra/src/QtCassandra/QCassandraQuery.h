@@ -42,6 +42,8 @@
 #include <QString>
 #include <QByteArray>
 
+#include "QtCassandra/QCassandraConsistencyLevel.h"
+
 typedef struct CassCluster_      CassCluster;
 typedef struct CassCollection_   CassCollection;
 typedef struct CassColumnMeta_   CassColumnMeta;
@@ -113,6 +115,12 @@ public:
     QCassandraQuery( QCassandraSession::pointer_t session );
     ~QCassandraQuery();
 
+    consistency_level_t	consistencyLevel() const;
+    void                setConsistencyLevel( consistency_level_t level );
+
+    int64_t				timestamp() const;
+    void				setTimestamp( int64_t timestamp );
+
     void       query         ( const QString& query_string, const int bind_count = 0 );
     void       setPagingSize ( const int size );
 
@@ -160,7 +168,11 @@ private:
     CassTools::future_pointer_t    f_sessionFuture;
     CassTools::result_pointer_t    f_queryResult;
     CassTools::iterator_pointer_t  f_rowsIterator;
+    consistency_level_t			   f_consistencyLevel;
+    int64_t						   f_timestamp;
 
+    void 		    setStatementConsistency();
+    void 		    setStatementTimestamp();
     bool 		    getBoolFromValue      ( const CassValue* value ) const;
     QByteArray      getByteArrayFromValue ( const CassValue* value ) const;
     string_map_t    getMapFromValue       ( const CassValue* value ) const;

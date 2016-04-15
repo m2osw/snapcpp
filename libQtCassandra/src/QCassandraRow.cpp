@@ -801,10 +801,21 @@ void QCassandraRow::dropCell(const QString& column_name, QCassandraValue::timest
  * \sa cells()
  * \sa QCassandra::timeofday()
  */
-void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::timestamp_mode_t /*mode*/, int64_t /*timestamp*/)
+void QCassandraRow::dropCell( const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode, int64_t timestamp )
 {
     QCassandraCell::pointer_t c(cell(column_key));
-    f_table->remove(f_key, column_key);
+
+    // default to the timestamp of the value (which is most certainly
+    // what people want in 99.9% of the cases.)
+    if(QCassandraValue::TIMESTAMP_MODE_AUTO == mode)
+    {
+        // the current timestamp mode of f_value is currently ignored
+        // because we cannot really know whether the f_value.timestamp()
+        // value was assigned or not... (not from the mode that is)
+        timestamp = c->timestamp();
+    }
+
+    f_table->remove( f_key, column_key, c->consistencyLevel(), timestamp );
     f_cells.remove(column_key);
 }
 

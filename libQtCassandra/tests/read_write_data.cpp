@@ -230,19 +230,15 @@ int main(int argc, char *argv[])
 
     qDebug() << "cellCount()" << (*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"][QString("http://www.snapwebsites.org/page/3")].cellCount();
 
-    (*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"].dropRow(QString("http://www.snapwebsites.org/page/3"), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday() + 10000000, QtCassandra::CONSISTENCY_LEVEL_ONE);
-    //if((*cassandra)["qt_cassandra_test_rw"]["qt_cassandra_test_table"].exists(QString("http://www.snapwebsites.org/page/3"))) {
-    //    qDebug() << "error: dropped row still exists...";
-    //}
-    //else {
-    //    qDebug() << "dropped row does not exist anymore";
-    //}
-
-    //}
-    //catch(org::apache::cassandra::InvalidRequestException& e) {
-    //    qDebug() << "While Working: exception is [" << e.why.c_str() << "]";
-    //}
-
+    (*cassandra)
+            ["qt_cassandra_test_rw"]
+            ["qt_cassandra_test_table"]
+            .dropRow
+                ( QString("http://www.snapwebsites.org/page/3")
+                , QtCassandra::CONSISTENCY_LEVEL_ONE
+                , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED
+                , QtCassandra::QCassandra::timeofday() + 10000000
+                );
 
     context->drop();
 

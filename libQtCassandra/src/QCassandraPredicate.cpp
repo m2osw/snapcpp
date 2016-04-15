@@ -73,6 +73,7 @@ void QCassandraCellKeyPredicate::appendQuery( QString& query, int& bind_count )
 void QCassandraCellKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
 {
     q->bindByteArray( bind_num++, f_cellKey );
+    q->setConsistencyLevel(f_consistencyLevel);
 }
 
 
@@ -87,6 +88,7 @@ void QCassandraCellRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int&
 {
     q->bindByteArray( bind_num++, f_startCellKey );
     q->bindByteArray( bind_num++, f_endCellKey   );
+    q->setConsistencyLevel(f_consistencyLevel);
 }
 
 
@@ -102,6 +104,7 @@ void QCassandraRowKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& bi
 {
     q->bindByteArray( bind_num++, f_rowKey );
     f_cellPred->bindQuery( q, bind_num );
+    q->setConsistencyLevel(f_consistencyLevel);
 }
 
 
@@ -118,6 +121,7 @@ void QCassandraRowRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int& 
     q->bindByteArray( bind_num++, f_startRowKey );
     q->bindByteArray( bind_num++, f_endRowKey   );
     f_cellPred->bindQuery( q, bind_num );
+    q->setConsistencyLevel(f_consistencyLevel);
 }
 
 

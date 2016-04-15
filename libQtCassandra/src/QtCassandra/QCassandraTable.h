@@ -102,9 +102,24 @@ public:
     const QCassandraRow&        operator[] (const QString& row_name) const;
     const QCassandraRow&        operator[] (const QByteArray& row_name) const;
 
-    void dropRow(const char*       row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT );
-    void dropRow(const QString&    row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT );
-    void dropRow(const QByteArray& row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT );
+    void dropRow
+        ( const char*       row_name
+        , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
+        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
+        , int64_t timestamp = 0
+        );
+    void dropRow
+        ( const QString&    row_name
+        , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
+        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
+        , int64_t timestamp = 0
+        );
+    void dropRow
+        ( const QByteArray& row_name
+        , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
+        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
+        , int64_t timestamp = 0
+        );
 
     std::shared_ptr<QCassandraContext> parentContext() const;
 
@@ -113,14 +128,21 @@ private:
 
     void        setFromCassandra();
     void        parseTableDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table_meta );
-    //void        prepareTableDefinition( CfDef* data ) const;
     void        insertValue(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     bool        getValue(const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value);
     void        assignRow(const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value);
     int32_t     getCellCount(const QByteArray& row_key, QCassandraCellPredicate::pointer_t column_predicate);
-    //uint32_t    getColumnSlice(const QByteArray& row_key, QCassandraCellPredicate::pointer_t column_predicate);
-    void 		remove( const QByteArray& row_key, const QByteArray& column_key );
-    void 		remove( const QByteArray& row_key );
+    void 		remove
+                ( const QByteArray& row_key
+                , const QByteArray& column_key
+                , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
+                , int64_t timestamp = 0
+                );
+    void 		remove
+                ( const QByteArray& row_key
+                , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
+                , int64_t timestamp = 0
+                );
 
     bool		isCounterClass();
 
