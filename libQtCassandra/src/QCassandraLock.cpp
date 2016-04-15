@@ -525,9 +525,8 @@ CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
  * \param[in] context  The context where the lock is to be created.
  * \param[in] object_name  The name of the object to be locked as a QString.
  */
-QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name, cassandra_consistency_level_t level )
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name )
     : f_context(context)
-    , f_level(level)
       //f_table(NULL) -- auto-init
       //f_object_name() -- auto-init
       //f_ticket_id() -- auto-init
@@ -575,9 +574,8 @@ QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QStri
  * \sa lock()
  * \sa unlock()
  */
-QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_name, cassandra_consistency_level_t level )
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_name )
     : f_context(context)
-    , f_level(level)
       //f_table(NULL) -- auto-init
       //f_object_name() -- auto-init
       //f_locked(false) -- auto-init

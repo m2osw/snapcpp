@@ -36,7 +36,6 @@
 #pragma once
 
 #include "QCassandraValue.h"
-#include "QCassandraConsistencyLevel.h"
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <QObject>
 #include <QMap>
@@ -78,8 +77,6 @@ public:
 
     void clearCache();
 
-    consistency_level_t consistencyLevel() const;
-    void setConsistencyLevel(consistency_level_t level);
     int64_t timestamp() const;
     void setTimestamp(int64_t timestamp);
 

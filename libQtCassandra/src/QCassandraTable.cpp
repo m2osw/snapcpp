@@ -76,14 +76,9 @@ namespace QtCassandra
  * \note
  * A table can be created, updated, and dropped. In all those cases, the
  * functions return once the Cassandra instance with which you are
- * connected is ready. However, that is not enough if you are working with
- * a cluster because the other nodes do not get updated instantaneously.
- * Instead, you have to call the QCassandra::synchronizeSchemaVersions()
- * function of the QCassandra object to make sure that the table is fully
- * available across your cluster.
+ * connected is ready.
  *
  * \sa exists()
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 
 
@@ -2061,39 +2056,22 @@ QString QCassandraTable::getTableOptions() const
  *
  * \code
  * QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
- * table->setComment("Our test table.");
- * table->setColumnType("Standard"); // Standard or Super
- * table->setKeyValidationClass("BytesType");
- * table->setDefaultValidationClass("BytesType");
- * table->setComparatorType("BytesType");
- * table->setKeyCacheSavePeriodInSeconds(14400); // unused in 1.1+
- * table->setMemtableFlushAfterMins(60); // unused in 1.1+
- * // Memtable defaults are dynamic and usually a better bet
- * //table->setMemtableThroughputInMb(247); // unused in 1.1+
- * //table->setMemtableOperationsInMillions(1.1578125); // unused in 1.1+
- * table->setGcGraceSeconds(864000);
- * table->setMinCompactionThreshold(4);
- * table->setMaxCompactionThreshold(22);
- * table->setReplicateOnWrite(1);
+ *
+ * auto& table_fields( table->fields() );
+ * table_fields["comment"]                     = QVariant("Our test table.");
+ * table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+ * table_fields["gc_grace_seconds"]            = QVariant(86400);
+ *
+ * auto& compaction_value_map(table_fields["compaction"].map());
+ * compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+ * compaction_value_map["min_threshold"] = QVariant(4);
+ * compaction_value_map["max_threshold"] = QVariant(22);
+ *
  * table->create();
- *
- * // you also may want to call this function (see note below):
- * QCassandra::synchronizeSchemaVersions()
  * \endcode
- *
- * \note
- * Once the table->create(); function returns, the table was created in the
- * Cassandra node you are connect with, but it was not yet replicated. In
- * order to use the table, the replication needs to be complete. To know
- * once it is complete, call the QCassandra::synchronizeSchemaVersions()
- * function. If you are to create multiple tables, you can create all the
- * tables at once, then synchronize them all at once which should give
- * time for the Cassandra nodes to replicate the first few tables while
- * you create the last few and thus saving you time.
  *
  * \sa update()
  * \sa QCassandraContext::create()
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 void QCassandraTable::create()
 {
@@ -2202,9 +2180,6 @@ void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& colum
  *
  * This function reads a set of rows as defined by the row predicate.
  *
- * To change the consistency for this read, check out the
- * QCassandraCellPredicate::setConsistencyLevel() function.
- *
  * If the table is not connected to Cassandra (i.e. the table is
  * a memory table) then nothing happens.
  *
@@ -2234,7 +2209,6 @@ void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& colum
  * \return The number of rows read.
  *
  * \sa QCassandraRowPredicate (see detailed description of row predicate for an example)
- * \sa QCassandraCellPredicate::setConsistencyLevel()
  * \sa dropRow()
  */
 uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predicate )
@@ -2508,10 +2482,6 @@ bool QCassandraTable::exists(const QString& row_name) const
  * to completely disappear is not specified and it looks like it can take
  * days.)
  *
- * \todo
- * At this time there isn't a way to specify the consistency level of the
- * calls used by this function. The QCassandra default is used.
- *
  * \param[in] row_key  The binary key of the row to check for.
  *
  * \return true if the row exists in memory or in Cassandra.
@@ -2699,11 +2669,10 @@ const QCassandraRow& QCassandraTable::operator[] (const QByteArray& row_key) con
  * \param[in] row_name  Specify the name of the row to drop.
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
- * \param[in] consistency_level  Specify the timestamp to remove only rows that are have that timestamp or are older.
  */
-void QCassandraTable::dropRow(const char *row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level)
+void QCassandraTable::dropRow(const char *row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp )
 {
-    dropRow(QByteArray::fromRawData(row_name, qstrlen(row_name)), mode, timestamp, consistency_level);
+    dropRow(QByteArray::fromRawData(row_name, qstrlen(row_name)), mode, timestamp );
 }
 
 
@@ -2717,9 +2686,9 @@ void QCassandraTable::dropRow(const char *row_name, QCassandraValue::timestamp_m
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older.
  */
-void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp, consistency_level_t consistency_level )
+void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp )
 {
-    dropRow(row_name.toUtf8(), mode, timestamp, consistency_level);
+    dropRow(row_name.toUtf8(), mode, timestamp );
 }
 
 /** \brief Drop the row from the Cassandra database.
@@ -2752,12 +2721,6 @@ void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestam
  * QCassandraValue::TIMESTAMP_MODE_AUTO which means that we'll make use of
  * the current time (i.e. only a row created after this call will exist.)
  *
- * The consistency level is set to CONSISTENCY_LEVEL_ALL since you are likely
- * willing to delete the row on all the nodes. However, I'm not certain this
- * is the best choice here. So the default may change in the future. You
- * may specify CONSISTENCY_LEVEL_DEFAULT in which case the QCassandra object
- * default is used.
- *
  * \warning
  * Remember that a row doesn't actually get removed from the Cassandra database
  * until the next Garbage Collection runs. This is important for all your data
@@ -2778,7 +2741,7 @@ void QCassandraTable::dropRow(const QString& row_name, QCassandraValue::timestam
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only rows that are have that timestamp or are older. Ignored.
  */
-void QCassandraTable::dropRow( const QByteArray& row_key, QCassandraValue::timestamp_mode_t /*mode*/, int64_t /*timestamp*/, consistency_level_t /*consistency_level*/ )
+void QCassandraTable::dropRow( const QByteArray& row_key, QCassandraValue::timestamp_mode_t /*mode*/, int64_t /*timestamp*/ )
 {
     remove( row_key );
     f_rows.remove( row_key );

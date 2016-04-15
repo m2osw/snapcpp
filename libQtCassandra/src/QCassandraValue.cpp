@@ -2169,8 +2169,8 @@ QCassandraValue& QCassandraValue::operator = (const QByteArray& value)
  * This function returns true if this value and the rhs value are considered
  * equal.
  *
- * The equality takes the value buffer content, the TTL and the consistency
- * level in account. All three must be equal for the function to return true.
+ * The equality takes the value buffer content, the TTL level into account.
+ * Both must be equal for the function to return true.
  *
  * \param[in] rhs  The value to compare against this value.
  *
@@ -2192,8 +2192,8 @@ bool QCassandraValue::operator == (const QCassandraValue& rhs)
  * This function returns true if this value and the rhs value are considered
  * inequal.
  *
- * The inequality takes the value buffer content, the TTL and the consistency
- * level in account. Any of the three must be inequal for the function to
+ * The inequality takes the value buffer content and the TTL
+ * into account. Any of the two must be inequal for the function to
  * return true.
  *
  * \param[in] rhs  The value to compare against this value.
@@ -2217,8 +2217,7 @@ bool QCassandraValue::operator != (const QCassandraValue& rhs)
  * than the rhs value.
  *
  * The inequality comparison only takes the value buffers in account.
- * All the other parameters are ignored (i.e. TTL, timestamp, and
- * consistency level.)
+ * All the other parameters are ignored (i.e. TTL, timestamp).
  *
  * \param[in] rhs  The value to compare against this value.
  *
@@ -2243,8 +2242,7 @@ bool QCassandraValue::operator < (const QCassandraValue& rhs)
  * than or equal to the rhs value.
  *
  * The inequality comparison only takes the value buffers in account.
- * All the other parameters are ignored (i.e. TTL, timestamp, and
- * consistency level.)
+ * All the other parameters are ignored (i.e. TTL).
  *
  * \param[in] rhs  The value to compare against this value.
  *
@@ -2269,8 +2267,7 @@ bool QCassandraValue::operator <= (const QCassandraValue& rhs)
  * than the rhs value.
  *
  * The inequality comparison only takes the value buffers in account.
- * All the other parameters are ignored (i.e. TTL, timestamp, and
- * consistency level.)
+ * All the other parameters are ignored (i.e. TTL).
  *
  * \param[in] rhs  The value to compare against this value.
  *
@@ -2295,8 +2292,7 @@ bool QCassandraValue::operator > (const QCassandraValue& rhs)
  * than or equal to the rhs value.
  *
  * The inequality comparison only takes the value buffers in account.
- * All the other parameters are ignored (i.e. TTL, timestamp, and
- * consistency level.)
+ * All the other parameters are ignored (i.e. TTL).
  *
  * \param[in] rhs  The value to compare against this value.
  *
@@ -2354,75 +2350,6 @@ void QCassandraValue::setTtl(int32_t ttl_val)
     }
 
     f_ttl = ttl_val;
-}
-
-/** \brief Retrieve the current consistency level of this value.
- *
- * This function returns the consistency level of this value. By default
- * it is set to one (CONSISTENCY_LEVEL_ONE.)
- *
- * The consistency level can be set using the setConsistencyLevel() function.
- *
- * \return The consistency level of this value.
- *
- * \sa setConsistencyLevel()
- * \sa QCassandraCell::consistencyLevel()
- */
-consistency_level_t QCassandraValue::consistencyLevel() const
-{
-    return f_consistency_level;
-}
-
-/** \brief Define the consistency level of this value.
- *
- * This function defines the consistency level of this value. The level is
- * defined as a static value in the QCassandraValue.
- *
- * Note that this value is mandatory so defining the right value is probably
- * often a good idea. The default is set to one which means the data is only
- * saved on that one cluster you are connected to. One of the best value is
- * QUORUM. The default can be changed in your QCassandra object, set it with
- * your QCassandra::setDefaultConsistencyLevel() function.
- *
- * The available values are:
- *
- * \li CONSISTENCY_LEVEL_ONE
- * \li CONSISTENCY_LEVEL_QUORUM
- * \li CONSISTENCY_LEVEL_LOCAL_QUORUM
- * \li CONSISTENCY_LEVEL_EACH_QUORUM
- * \li CONSISTENCY_LEVEL_ALL
- * \li CONSISTENCY_LEVEL_ANY
- * \li CONSISTENCY_LEVEL_TWO
- * \li CONSISTENCY_LEVEL_THREE
- *
- * The consistency level is probably better explained in the Cassandra
- * documentations that here.
- *
- * \param[in] level  The new consistency level for this cell.
- *
- * \sa consistencyLevel()
- * \sa QCassandra::setDefaultConsistencyLevel()
- * \sa QCassandraCell::setConsistencyLevel()
- */
-void QCassandraValue::setConsistencyLevel(consistency_level_t level)
-{
-    // we cannot use a switch because these are not really
-    // constants (i.e. these are pointers to values); although
-    // we could cast to the Cassandra definition and switch on
-    // those...
-    if(level != CONSISTENCY_LEVEL_DEFAULT
-    && level != CONSISTENCY_LEVEL_ONE
-    && level != CONSISTENCY_LEVEL_QUORUM
-    && level != CONSISTENCY_LEVEL_LOCAL_QUORUM
-    && level != CONSISTENCY_LEVEL_EACH_QUORUM
-    && level != CONSISTENCY_LEVEL_ALL
-    && level != CONSISTENCY_LEVEL_ANY
-    && level != CONSISTENCY_LEVEL_TWO
-    && level != CONSISTENCY_LEVEL_THREE) {
-        throw std::runtime_error("invalid consistency level");
-    }
-
-    f_consistency_level = level;
 }
 
 /** \brief Retrieve the current timestamp mode.

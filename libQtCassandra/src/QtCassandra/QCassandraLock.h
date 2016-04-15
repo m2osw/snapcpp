@@ -37,7 +37,6 @@
  */
 #pragma once
 
-#include "QCassandraConsistencyLevel.h"
 #include "QCassandraContext.h"
 #include "QCassandraTable.h"
 
@@ -48,8 +47,8 @@ namespace QtCassandra
 class QCassandraLock : public QObject
 {
 public:
-    QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name = "", cassandra_consistency_level_t level = CONSISTENCY_LEVEL_DEFAULT );
-    QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_key   , cassandra_consistency_level_t level = CONSISTENCY_LEVEL_DEFAULT );
+    QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name = "" );
+    QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_key    );
     virtual ~QCassandraLock();
 
     bool lock(const QString& object_name);
@@ -60,7 +59,6 @@ private:
     void internal_init(const QByteArray& object_name);
 
     QCassandraContext::pointer_t   f_context;
-    cassandra_consistency_level_t  f_level;
     QCassandraTable::pointer_t     f_table;
     QByteArray                     f_object_name;
     QByteArray                     f_ticket_id;

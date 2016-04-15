@@ -80,7 +80,6 @@ int main(int argc, char *argv[])
     try
     {
         context->drop();
-        cassandra->synchronizeSchemaVersions();
     }
     catch(...)
     {
@@ -101,7 +100,6 @@ int main(int argc, char *argv[])
     try
     {
         context->create();
-        cassandra->synchronizeSchemaVersions();
         qDebug() << "Done!";
     }
     catch( const std::exception& e )
@@ -110,7 +108,6 @@ int main(int argc, char *argv[])
     }
 
     context->drop();
-    cassandra->synchronizeSchemaVersions();
 
     return 0;
 }

@@ -768,16 +768,6 @@ void QCassandraRow::dropCell(const QString& column_name, QCassandraValue::timest
  *     row->dropCell(cell_name, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
  * \endcode
  *
- * The consistency level of the cell f_value is also passed to the Cassandra
- * remove() function. This means that by default you'll get whatever the
- * default is from your QCassandra object, the default in the value or
- * whatever the value was when you last read the value. To change that
- * default you can retrieve the cell and set the consistency level as follow:
- *
- * \code
- *     QCassandraCell::pointer_t c(f_row->cell(f_cell));
- * \endcode
- *
  * These 2 lines of code do NOT create the cell in the Cassandra cluster.
  * It only creates it in memory unless it was read earlier in which case
  * the cached copy is returned.

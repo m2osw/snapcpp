@@ -290,8 +290,7 @@ void QCassandraSession::connect( const QStringList& host_list, const int port )
  * This function has the side effect of clearing the cluster name,
  * protocol version, and current context.
  *
- * The function does not clear the default consistency level or
- * the default time out used by the schema synchronization. Those
+ * The function does not clear the default time out used by the schema synchronization. Those
  * can be changed by calling their respective functions.
  */
 void QCassandraSession::disconnect()

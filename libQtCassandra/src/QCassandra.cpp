@@ -246,19 +246,6 @@ using namespace QCassandraSchema;
  * problem with the QRow::exists() function which creates a cell when it
  * doesn't exist so an empty value may not always be practical.)
  *
- * Note that when writing a value to a cell, the consistency level of the
- * value is used. When reading a cell, the value is returned so its
- * consistency level cannot be changed by you before the call. By default
- * the value as defined by the setDefaultConsistencyLevel() function is
- * used (the default being ONE.) You may change that default if you are
- * expected to use that consistency level in the majority of places.
- * Otherwise, you can also set the consistency level on a cell. Remember
- * that this is used for reads only. There are additional details in the
- * QCassandraCell::setConsistencyLevel() function
- *
- * Cell names can use UUIDs, in that case use a QUuid object and directly call
- * the different row functions that accept a cell key name.
- *
  * \li Values
  *
  * The cells are set to a specific value using the QCassandraValue class.
@@ -272,15 +259,9 @@ using namespace QCassandraSchema;
  * single write to the Cassandra database (i.e. the timestamp is ignored in
  * this case, see the QCassandraCell class for more info.)
  *
- * Values also include a consistency level. By default this is set to ONE
- * which may not be what you want to have... (in many cases QUORUM is
- * better for writes.) The consistency level is defined here because it can
- * then easily be propagated when using the array syntax.
- *
  * \code
  * QCassandraValue v;
  * v.setDoubleValue(3.14159);
- * v.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_EACH_QUORUM);
  * v.setTimestamp(counter);
  * v.setTtl(60 * 60 * 24);  // live for 1 day
  * ...
@@ -611,16 +592,6 @@ using namespace QCassandraSchema;
  * Schema synchronization can take a long time on large clusters.
  */
 
-/** \var QCassandra::SCHEMA_SYNCHRONIZATION_DEFAULT
- * \brief The default synchronization timeout value.
- *
- * This value represents the default timeout value for a synchronization
- * request. If it takes longer than this for the synchronization to complete,
- * then the synchronization functions fail by throwing an error.
- *
- * At this time the default is to wait for 1 minute (60 seconds.)
- */
-
 /** \typedef QCassandra::schema_synchronization_timeout_t
  * \brief The synchronization timeout type.
  *
@@ -698,14 +669,7 @@ using namespace QCassandraSchema;
  * the necessary data transfers between the QCassandra object and the
  * Cassandra server.
  *
- * Next you are expected to connect to the server and eventually
- * change the default consistency level and on larger system, you
- * may also want to consider changing the schema synchronization
- * time out.
- *
  * \sa connect()
- * \sa setDefaultConsistencyLevel()
- * \sa setSchemaSynchronizationTimeout()
  */
 QCassandra::QCassandra()
     : f_session( QCassandraSession::create() )
@@ -715,9 +679,6 @@ QCassandra::QCassandra()
     // f_protocol_version("") -- auto-init
     // f_partitioner("") -- auto-init
     // f_snitch("") -- auto-init
-    , f_default_consistency_level( CONSISTENCY_LEVEL_ONE )
-    // default is CONSISTENCY_LEVEL_DEFAULT
-    , f_schema_synchronization_timeout( SCHEMA_SYNCHRONIZATION_DEFAULT )
 {
     // we are passing this to the private object that we control
     // so we make make sure it is used wisely; at this time it is
@@ -844,8 +805,7 @@ bool QCassandra::connect( const QStringList &host_list, const int port )
  * This function has the side effect of clearing the cluster name,
  * protocol version, and current context.
  *
- * The function does not clear the default consistency level or
- * the default time out used by the schema synchronization. Those
+ * The function does not clear the default time out used by the schema synchronization. Those
  * can be changed by calling their respective functions.
  */
 void QCassandra::disconnect()
@@ -858,9 +818,6 @@ void QCassandra::disconnect()
     f_protocol_version = "";
     f_partitioner = "";
     f_snitch = "TODO";
-    f_default_consistency_level = CONSISTENCY_LEVEL_ONE;
-    f_schema_synchronization_timeout =
-        SCHEMA_SYNCHRONIZATION_DEFAULT;
 }
 
 /** \brief Check whether the object is connected to the server.
@@ -876,73 +833,6 @@ void QCassandra::disconnect()
 bool QCassandra::isConnected() const
 {
     return f_session->isConnected();
-}
-
-// TODO: I don't think we need this any more with Cassandra v2+ and CQL,
-// but it would be good to look into to be sure.
-//
-/** \brief Wait until all the nodes are synchronized.
- *
- * This function waits for the nodes to be synchronized. This means
- * that all the nodes end up with the exact same version. This is
- * required if you just created, modified, or dropped a context or
- * a table. Note that you can create, modifiy, or drop any number
- * of distinct contexts and tables without synchronization. However,
- * it is required to synchronize before you can add data to a context
- * or add data to a table (or expect other processes than yours to
- * do so.)
- *
- * Because of this required synchronization, you generally want to
- * make use of a backend process to setup your Cassandra environment
- * and then avoid all creates, modifies, and drops from your front
- * end software. The synchronization is very costly (it may wait
- * seconds!)
- *
- * \note
- * From a context, you may useparentCassandra() function to retrieve
- * the QCassandra object and then setup the schem.
- *
- * \code
- *      context->parentCassandra()->synchronizeSchemaVersions(3600);
- * \endcode
- *
- * \exception std::runtime_error()
- * If the nodes do not get synchronized in the number of seconds
- * specified here, the function throws this exception.
- *
- * \param[in] timeout  The number of seconds to wait at most.
- */
-void QCassandra::synchronizeSchemaVersions(uint32_t /*timeout*/)
-{
-#if 0
-    if(timeout == SCHEMA_SYNCHRONIZATION_USE_DEFAULT) {
-        timeout = f_schema_synchronization_timeout;
-    }
-    f_private->synchronizeSchemaVersions(timeout);
-#endif
-    // Does nothing
-}
-
-
-/** \brief Define the default schema synchronization timeout.
- *
- * This function defines the value to use as the default synchronization
- * time out value. This is set to 60 seconds by default. On larger Cassandra
- * clusters a larger amount may be necessary.
- *
- * \exception std::logic_error
- * This exception is raised if the input is set to
- * SCHEMA_SYNCHRONIZATION_USE_DEFAULT.
- *
- * \param[in] timeout  The new default timeout, it cannot be set to
- *                     SCHEMA_SYNCHRONIZATION_USE_DEFAULT
- */
-void QCassandra::setSchemaSynchronizationTimeout(uint32_t timeout)
-{
-    if(timeout == SCHEMA_SYNCHRONIZATION_USE_DEFAULT) {
-        throw std::logic_error("The default schema synchronization cannot be set to SCHEMA_SYNCHRONIZATION_USE_DEFAULT.");
-    }
-    f_schema_synchronization_timeout = timeout;
 }
 
 /** \brief Get the name of the Cassandra cluster.
@@ -1047,19 +937,11 @@ const QString &QCassandra::snitch() const
  *  context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
  *  context->setReplicationFactor(1);
  *  context->create();
- *
- *  // before using a context just created, make sure to synchronize
- *  cassandra.synchronizeSchemaVersions();
  * \endcode
  *
  * Note that if you do not know whether the context exists, use the
  * findContext()
  * function first, then check whether the context was found.
- *
- * \warning
- * Note that after creating a context you want to call the
- * synchronizeSchemaVersions() before using it or you will get
- * errors on a cluster with more than one node.
  *
  * \param[in] context_name  The name of the context to search.
  *
@@ -1431,10 +1313,6 @@ operator[]( const QString &context_name ) const
  * as dead whether you still have shared pointers on them or not.
  * (i.e. you cannot use them anymore.)
  *
- * The dropContext() should be followed by a synchronizeSchemaVersions()
- * call to make sure it was propagated to all the nodes (required if
- * you want to recreate the context like we do in our tests.)
- *
  * \warning
  * If the context does not exist in Cassandra, this function call
  * raises an exception in newer versions of the Cassandra system
@@ -1455,64 +1333,6 @@ void QCassandra::dropContext( const QString &context_name )
 
     // forget about this context in the QCassandra object
     f_contexts.remove( context_name );
-}
-
-/** \brief Retrieve the current default consistency level.
- *
- * This function returns the current default consistency level used by
- * most of the server functions. You may change the default from the
- * default Cassandra value of ONE (which is good for reads.) In many cases,
- * it is recommended that you use QUORUM, or at least LOCAL QUORUM.
- *
- * Different predicate and the value object have their own consistency
- * levels. If those are set to DEFAULT, then this very value is used
- * instead.
- *
- * \return The current default consistency level.
- */
-consistency_level_t QCassandra::defaultConsistencyLevel() const
-{
-    return f_default_consistency_level;
-}
-
-/** \brief Change the current default consistency level.
- *
- * This function changes the current default consistency level used by
- * most of the server functions. In many cases, it is recommended that
- * you use QUORUM, but it very much depends on your application and
- * node setup.
- *
- * Different predicate and the value object have their own consistency
- * levels. If those are set to DEFAULT (their default,) then this very
- * value is used instead.
- *
- * \note
- * This function does not accept the CONSISTENCY_LEVEL_DEFAULT since
- * that is not a valid Cassandra consistency level.
- *
- * \exception std::runtime_error
- * This exception is raised if the value passed to this function is not
- * a valid consistency level.
- *
- * \param[in] default_consistency_level  The new default consistency level.
- */
-void QCassandra::setDefaultConsistencyLevel(
-    consistency_level_t default_consistency_level )
-{
-    // make sure the consistency level exists
-    if ( default_consistency_level != CONSISTENCY_LEVEL_ONE &&
-         default_consistency_level != CONSISTENCY_LEVEL_QUORUM &&
-         default_consistency_level != CONSISTENCY_LEVEL_LOCAL_QUORUM &&
-         default_consistency_level != CONSISTENCY_LEVEL_EACH_QUORUM &&
-         default_consistency_level != CONSISTENCY_LEVEL_ALL &&
-         default_consistency_level != CONSISTENCY_LEVEL_ANY &&
-         default_consistency_level != CONSISTENCY_LEVEL_TWO &&
-         default_consistency_level != CONSISTENCY_LEVEL_THREE )
-    {
-        throw std::runtime_error( "invalid default server consistency level" );
-    }
-
-    f_default_consistency_level = default_consistency_level;
 }
 
 /** \brief Retrieve the major version number.

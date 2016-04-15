@@ -35,8 +35,6 @@
  */
 #pragma once
 
-#include "QtCassandra/QCassandraColumnDefinition.h"
-#include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraPredicate.h"
 #include "QtCassandra/QCassandraQuery.h"
 #include "QtCassandra/QCassandraRow.h"
@@ -103,9 +101,9 @@ public:
     const QCassandraRow&        operator[] (const QString& row_name) const;
     const QCassandraRow&        operator[] (const QByteArray& row_name) const;
 
-    void dropRow(const char*       row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT );
-    void dropRow(const QString&    row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT );
-    void dropRow(const QByteArray& row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0, consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT );
+    void dropRow(const char*       row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0 );
+    void dropRow(const QString&    row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0 );
+    void dropRow(const QByteArray& row_name, QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO, int64_t timestamp = 0 );
 
     std::shared_ptr<QCassandraContext> parentContext() const;
 
@@ -138,7 +136,6 @@ private:
     controlled_vars::zbool_t                    f_from_cassandra;
     std::shared_ptr<QCassandraContext>          f_context;
     QString										f_tableName;
-    //QCassandraColumnDefinitions                 f_column_definitions;
     QCassandraRows                              f_rows;
 
     QCassandraSession::pointer_t                f_session;
