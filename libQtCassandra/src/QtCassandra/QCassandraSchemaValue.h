@@ -36,7 +36,6 @@
 
 #pragma once
 
-#include "cassandra.h"
 #include "QtCassandra/QCassandraQuery.h"
 
 #include <map>
@@ -84,7 +83,6 @@ public:
 private:
     CassTools::value_pointer_t f_value;
     type_t                     f_type;
-    CassValueType              f_cassType;
     QVariant                   f_variant;
     list_t                     f_list;
     map_t                      f_map;

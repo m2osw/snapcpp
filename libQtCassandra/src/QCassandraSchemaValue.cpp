@@ -37,6 +37,7 @@
 #include "QtCassandra/QCassandraQuery.h"
 #include "QtCassandra/QCassandraSchemaValue.h"
 #include "CassTools.h"
+#include "cassandra.h"
 
 namespace QtCassandra
 {
@@ -49,14 +50,12 @@ namespace QCassandraSchema
 
 Value::Value()
     : f_type(TypeUnknown)
-    , f_cassType(CASS_VALUE_TYPE_UNKNOWN)
 {
 }
 
 
 Value::Value( const QVariant& var )
     : f_type(TypeVariant)
-    , f_cassType(CASS_VALUE_TYPE_UNKNOWN)
     , f_variant(var)
 {
 }
@@ -83,8 +82,6 @@ void Value::readValue( iterator_pointer_t iter )
 void Value::readValue( value_pointer_t val )
 {
     f_value = val;
-    f_cassType = cass_value_type( f_value.get() );
-
     parseValue();
 }
 
@@ -96,7 +93,7 @@ void Value::parseValue()
     f_variant.clear();
     f_stringOutput.clear();
 
-    switch( f_cassType )
+    switch( cass_value_type(f_value.get()) )
     {
         case CASS_VALUE_TYPE_UNKNOWN    :
         case CASS_VALUE_TYPE_CUSTOM     :
@@ -222,7 +219,7 @@ void Value::parseTuple()
 void Value::parseVariant()
 {
     CassError rc = CASS_OK;
-    switch( f_cassType )
+    switch( cass_value_type(f_value.get()) )
     {
         case CASS_VALUE_TYPE_BLOB       :
             {
