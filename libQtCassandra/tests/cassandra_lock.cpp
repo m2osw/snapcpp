@@ -174,7 +174,6 @@ int main(int argc, char *argv[])
         try
         {
             context->drop();
-            cassandra->synchronizeSchemaVersions();
         }
         catch(...)
         {
@@ -203,8 +202,6 @@ int main(int argc, char *argv[])
             qDebug() << "error: could not create the context, an exception occured.";
             throw;
         }
-        // attempt a synchronization so when we quit we can immediately use the context
-        cassandra->synchronizeSchemaVersions();
         exit(0);
     }
 

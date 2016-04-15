@@ -71,7 +71,6 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_sc"));
     try {
         context->drop();
-        cassandra->synchronizeSchemaVersions();
     }
     catch(...) {
         // ignore errors, this happens when the context doesn't exist yet
@@ -102,7 +101,6 @@ int main(int argc, char *argv[])
 
     try {
         context->create();
-        cassandra->synchronizeSchemaVersions();
         //table->create();
         qDebug() << "Context and its table were created!";
     }
@@ -163,7 +161,6 @@ int main(int argc, char *argv[])
 #pragma GCC pop
 
     context->drop();
-    cassandra->synchronizeSchemaVersions();
 
     if( err )
     {

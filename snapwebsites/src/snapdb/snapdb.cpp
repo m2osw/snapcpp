@@ -412,10 +412,6 @@ void snapdb::drop_tables()
     {
         context->dropTable( table_name );
     }
-
-    // wait until all the tables are 100% dropped
-    //
-    f_cassandra->synchronizeSchemaVersions();
 }
 
 
@@ -423,7 +419,6 @@ void snapdb::drop_context()
 {
     f_cassandra->connect(f_host, f_port);
     f_cassandra->dropContext( f_context );
-    f_cassandra->synchronizeSchemaVersions();
 }
 
 

@@ -249,11 +249,7 @@ namespace QtCassandra
  * \note
  * A context can be created, updated, and dropped. In all those cases, the
  * functions return once the Cassandra instance with which you are
- * connected is ready. However, that is not enough if you are working with
- * a cluster because the other nodes do not get updated instantaneously.
- * Instead, you have to call the QCassandra::synchronizeSchemaVersions()
- * function of the QCassandra object to make sure that the context is fully
- * available across your cluster.
+ * connected is ready.
  *
  * \param[in] cassandra  The QCassandra object owning this context.
  * \param[in] context_name  The name of the Cassandra context.
@@ -262,7 +258,6 @@ namespace QtCassandra
  * \sa setLockTableName()
  * \sa setLockHostName()
  * \sa QCassandra::context()
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
     //: f_schema(std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>())
@@ -920,14 +915,7 @@ void QCassandraContext::parseContextDefinition( QCassandraSchema::SessionMeta::K
  * already the current context, then no message is sent to the Cassandra
  * server.
  *
- * \note
- * If you just created a context, you want to call the
- * QCassandra::synchronizeSchemaVersions() function before calling this
- * function or you may get an exception saying that the context is not
- * availabe across your Cassandra cluster.
- *
  * \sa QCassandra::setContext()
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 void QCassandraContext::makeCurrent()
 {
@@ -1006,15 +994,7 @@ QString QCassandraContext::getKeyspaceOptions()
  * of 3 for the replication factor, and you probably want a minimum of
  * 3 nodes in any live cluster.
  *
- * \warning
- * After this call, if you are to use the context immediately, you want to
- * first call the synchronization function,
- * QCassandra::synchronizeSchemaVersions(), to make sure that all the nodes
- * are ready to use the new context. Otherwise you are likely to get errors
- * about things not being compatible or up to date.
- *
  * \sa QCassandraTable::create()
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 void QCassandraContext::create()
 {
@@ -1112,14 +1092,9 @@ void QCassandraContext::drop()
  * with the same name though.
  *
  * Note that tables get dropped immediately from the Cassandra database
- * (contrary to rows.) However, it can be a slow operation since all the
- * nodes need to be notified (i.e. consistency of ALL.) If you need to
- * know when the table is dropped from the entire cluster, call the
- * QCassandra::synchronizeSchemaVersions() function.
+ * (contrary to rows).
  *
  * \param[in] table_name  The name of the table to drop.
- *
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 void QCassandraContext::dropTable(const QString& table_name)
 {
@@ -1218,11 +1193,6 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
     fields_map["caching"]                     = caching_value;
 
     lock_table->create();
-
-    // we create the table when needed and then use it ASAP so we need
-    // to synchronize; since that happens just once per context the hit
-    // isn't that bad
-    //synchronizeSchemaVersions();
 
     return lock_table;
 }

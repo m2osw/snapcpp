@@ -35,7 +35,6 @@
  */
 #pragma once
 
-#include "QtCassandra/QCassandraColumnDefinition.h"
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraPredicate.h"
 #include "QtCassandra/QCassandraQuery.h"
@@ -138,7 +137,6 @@ private:
     controlled_vars::zbool_t                    f_from_cassandra;
     std::shared_ptr<QCassandraContext>          f_context;
     QString										f_tableName;
-    //QCassandraColumnDefinitions                 f_column_definitions;
     QCassandraRows                              f_rows;
 
     QCassandraSession::pointer_t                f_session;

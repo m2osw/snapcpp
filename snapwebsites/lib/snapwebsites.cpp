@@ -1362,9 +1362,6 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
         // one single synchronization call for all the tables created
         // thus far is enough.
         f_created_table.clear();
-
-        // table(s) were created, we must wait for them to be synchronized
-        context->parentCassandra()->synchronizeSchemaVersions();
     }
     return table;
 }

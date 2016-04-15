@@ -294,10 +294,6 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString con
         // a single synchronization is enough for all created tables
         //
         f_created_table.clear();
-
-        // table(s) were created, we must wait for them to be synchronized
-        //
-        context->parentCassandra()->synchronizeSchemaVersions();
     }
     return table;
 }

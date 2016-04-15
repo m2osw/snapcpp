@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
     try
     {
         context->drop();
-        cassandra->synchronizeSchemaVersions();
     }
     catch(...)
     {
@@ -102,7 +101,6 @@ int main(int argc, char *argv[])
     try
     {
         context->create();
-        cassandra->synchronizeSchemaVersions();
         qDebug() << "Context and its table were created!";
     }
     catch(const std::exception& e)
@@ -247,7 +245,6 @@ int main(int argc, char *argv[])
 
 
     context->drop();
-    cassandra->synchronizeSchemaVersions();
 
     exit(0);
 }

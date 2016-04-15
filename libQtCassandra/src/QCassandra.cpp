@@ -602,32 +602,6 @@ using namespace QCassandraSchema;
  * \sa versionPatch()
  */
 
-/** \var QCassandra::SCHEMA_SYNCHRONIZATION_USE_DEFAULT
- * \brief Request the use of the default synchronization timeout value.
- *
- * This value can be used to let the libQtCassandra library use the default
- * synchronization timeout value which at this time is defined as 1 minute.
- *
- * Schema synchronization can take a long time on large clusters.
- */
-
-/** \var QCassandra::SCHEMA_SYNCHRONIZATION_DEFAULT
- * \brief The default synchronization timeout value.
- *
- * This value represents the default timeout value for a synchronization
- * request. If it takes longer than this for the synchronization to complete,
- * then the synchronization functions fail by throwing an error.
- *
- * At this time the default is to wait for 1 minute (60 seconds.)
- */
-
-/** \typedef QCassandra::schema_synchronization_timeout_t
- * \brief The synchronization timeout type.
- *
- * This type represents the synchronization value. You should use this type so
- * as to avoid guessing the default value.
- */
-
 /** \var QCassandra::f_current_context
  * \brief A pointer to the current context.
  *
@@ -699,13 +673,10 @@ using namespace QCassandraSchema;
  * Cassandra server.
  *
  * Next you are expected to connect to the server and eventually
- * change the default consistency level and on larger system, you
- * may also want to consider changing the schema synchronization
- * time out.
+ * change the default consistency level and on larger system.
  *
  * \sa connect()
  * \sa setDefaultConsistencyLevel()
- * \sa setSchemaSynchronizationTimeout()
  */
 QCassandra::QCassandra()
     : f_session( QCassandraSession::create() )
@@ -717,7 +688,6 @@ QCassandra::QCassandra()
     // f_snitch("") -- auto-init
     , f_default_consistency_level( CONSISTENCY_LEVEL_ONE )
     // default is CONSISTENCY_LEVEL_DEFAULT
-    , f_schema_synchronization_timeout( SCHEMA_SYNCHRONIZATION_DEFAULT )
 {
     // we are passing this to the private object that we control
     // so we make make sure it is used wisely; at this time it is
@@ -843,10 +813,6 @@ bool QCassandra::connect( const QStringList &host_list, const int port )
  *
  * This function has the side effect of clearing the cluster name,
  * protocol version, and current context.
- *
- * The function does not clear the default consistency level or
- * the default time out used by the schema synchronization. Those
- * can be changed by calling their respective functions.
  */
 void QCassandra::disconnect()
 {
@@ -859,8 +825,6 @@ void QCassandra::disconnect()
     f_partitioner = "";
     f_snitch = "TODO";
     f_default_consistency_level = CONSISTENCY_LEVEL_ONE;
-    f_schema_synchronization_timeout =
-        SCHEMA_SYNCHRONIZATION_DEFAULT;
 }
 
 /** \brief Check whether the object is connected to the server.
@@ -876,73 +840,6 @@ void QCassandra::disconnect()
 bool QCassandra::isConnected() const
 {
     return f_session->isConnected();
-}
-
-// TODO: I don't think we need this any more with Cassandra v2+ and CQL,
-// but it would be good to look into to be sure.
-//
-/** \brief Wait until all the nodes are synchronized.
- *
- * This function waits for the nodes to be synchronized. This means
- * that all the nodes end up with the exact same version. This is
- * required if you just created, modified, or dropped a context or
- * a table. Note that you can create, modifiy, or drop any number
- * of distinct contexts and tables without synchronization. However,
- * it is required to synchronize before you can add data to a context
- * or add data to a table (or expect other processes than yours to
- * do so.)
- *
- * Because of this required synchronization, you generally want to
- * make use of a backend process to setup your Cassandra environment
- * and then avoid all creates, modifies, and drops from your front
- * end software. The synchronization is very costly (it may wait
- * seconds!)
- *
- * \note
- * From a context, you may useparentCassandra() function to retrieve
- * the QCassandra object and then setup the schem.
- *
- * \code
- *      context->parentCassandra()->synchronizeSchemaVersions(3600);
- * \endcode
- *
- * \exception std::runtime_error()
- * If the nodes do not get synchronized in the number of seconds
- * specified here, the function throws this exception.
- *
- * \param[in] timeout  The number of seconds to wait at most.
- */
-void QCassandra::synchronizeSchemaVersions(uint32_t /*timeout*/)
-{
-#if 0
-    if(timeout == SCHEMA_SYNCHRONIZATION_USE_DEFAULT) {
-        timeout = f_schema_synchronization_timeout;
-    }
-    f_private->synchronizeSchemaVersions(timeout);
-#endif
-    // Does nothing
-}
-
-
-/** \brief Define the default schema synchronization timeout.
- *
- * This function defines the value to use as the default synchronization
- * time out value. This is set to 60 seconds by default. On larger Cassandra
- * clusters a larger amount may be necessary.
- *
- * \exception std::logic_error
- * This exception is raised if the input is set to
- * SCHEMA_SYNCHRONIZATION_USE_DEFAULT.
- *
- * \param[in] timeout  The new default timeout, it cannot be set to
- *                     SCHEMA_SYNCHRONIZATION_USE_DEFAULT
- */
-void QCassandra::setSchemaSynchronizationTimeout(uint32_t timeout)
-{
-    if(timeout == SCHEMA_SYNCHRONIZATION_USE_DEFAULT) {
-        throw std::logic_error("The default schema synchronization cannot be set to SCHEMA_SYNCHRONIZATION_USE_DEFAULT.");
-    }
-    f_schema_synchronization_timeout = timeout;
 }
 
 /** \brief Get the name of the Cassandra cluster.
@@ -1047,19 +944,11 @@ const QString &QCassandra::snitch() const
  *  context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
  *  context->setReplicationFactor(1);
  *  context->create();
- *
- *  // before using a context just created, make sure to synchronize
- *  cassandra.synchronizeSchemaVersions();
  * \endcode
  *
  * Note that if you do not know whether the context exists, use the
  * findContext()
  * function first, then check whether the context was found.
- *
- * \warning
- * Note that after creating a context you want to call the
- * synchronizeSchemaVersions() before using it or you will get
- * errors on a cluster with more than one node.
  *
  * \param[in] context_name  The name of the context to search.
  *
@@ -1339,9 +1228,7 @@ const QCassandraContexts &QCassandra::contexts() const
  *
  * \todo
  * Add a way to distinguish in memory only contexts and Cassandra contexts.
- * This is important to know whether a synchronization is necessary when
- * creating, updating, and dropping tables or know whether a context can
- * be dropped.
+ * This is important to know whether a context can be dropped.
  *
  * \param[in] context_name  The name of the context to retrieve.
  *
@@ -1430,10 +1317,6 @@ operator[]( const QString &context_name ) const
  * the context, its tables, their rows, and cells are all marked
  * as dead whether you still have shared pointers on them or not.
  * (i.e. you cannot use them anymore.)
- *
- * The dropContext() should be followed by a synchronizeSchemaVersions()
- * call to make sure it was propagated to all the nodes (required if
- * you want to recreate the context like we do in our tests.)
  *
  * \warning
  * If the context does not exist in Cassandra, this function call

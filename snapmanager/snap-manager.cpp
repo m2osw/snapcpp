@@ -756,10 +756,6 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     //
     create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
     create_table(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
-
-    // tables were created, we must wait for them to be synchronized
-    //
-    f_context->parentCassandra()->synchronizeSchemaVersions();
 }
 
 

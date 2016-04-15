@@ -57,9 +57,6 @@ class QCassandra
     , public std::enable_shared_from_this<QCassandra>
 {
 public:
-    static const uint32_t SCHEMA_SYNCHRONIZATION_USE_DEFAULT = 0;
-    static const uint32_t SCHEMA_SYNCHRONIZATION_DEFAULT = 60;
-    typedef controlled_vars::auto_init<uint32_t, SCHEMA_SYNCHRONIZATION_USE_DEFAULT> schema_synchronization_timeout_t;
     typedef std::shared_ptr<QCassandra> pointer_t;
 
     static pointer_t create();
@@ -75,8 +72,6 @@ public:
     bool connect(const QStringList& hosts, const int port = 9042 );
     void disconnect();
     bool isConnected() const;
-    void synchronizeSchemaVersions(uint32_t timeout = SCHEMA_SYNCHRONIZATION_USE_DEFAULT);
-    void setSchemaSynchronizationTimeout(uint32_t timeout);
     const QString& clusterName() const;
     const QString& protocolVersion() const;
     //const QCassandraClusterInformation& clusterInformation() const;
@@ -127,7 +122,6 @@ private:
     QString                                 f_partitioner;
     QString                                 f_snitch;
     consistency_level_t                     f_default_consistency_level;
-    schema_synchronization_timeout_t        f_schema_synchronization_timeout;
 };
 
 } // namespace QtCassandra
