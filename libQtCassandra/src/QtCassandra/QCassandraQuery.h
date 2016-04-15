@@ -119,7 +119,7 @@ public:
     void                setConsistencyLevel( consistency_level_t level );
 
     int64_t				timestamp() const;
-    void				setTimestamp( int64_t timestamp );
+    void				setTimestamp( int64_t val );
 
     void       query         ( const QString& query_string, const int bind_count = 0 );
     void       setPagingSize ( const int size );

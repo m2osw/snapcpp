@@ -401,9 +401,9 @@ int64_t QCassandraQuery::timestamp() const
 }
 
 
-void QCassandraQuery::setTimestamp( int64_t timestamp )
+void QCassandraQuery::setTimestamp( int64_t val )
 {
-    f_timestamp = timestamp;
+    f_timestamp = val;
     setStatementTimestamp();
 }
 
