@@ -166,7 +166,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "port",
             NULL,
-            "port on the host to connect to (defaults to 9160)",
+            "port on the host to connect to (defaults to 9042)",
             advgetopt::getopt::optional_argument
         },
         {
@@ -210,7 +210,7 @@ using namespace QtCassandra;
 snapdb::snapdb(int argc, char * argv[])
     : f_cassandra( QCassandra::create() )
     , f_host("localhost") // default
-    , f_port(9160) //default
+    , f_port(9042) //default
     , f_count(100)
     , f_context("snap_websites")
     //, f_table("") -- auto-init

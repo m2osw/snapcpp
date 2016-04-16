@@ -47,7 +47,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
     restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
     //
     cassandraHost->setText  ( settings.value( "cassandra_host", "localhost" ).toString() );
-    cassandraPort->setText  ( settings.value( "cassandra_port", "9160"      ).toString() );
+    cassandraPort->setText  ( settings.value( "cassandra_port", "9042"      ).toString() );
     snapServerHost->setText ( settings.value( "snap_host",      "localhost" ).toString() );
     snapServerPort->setText ( settings.value( "snap_port",      "4004"      ).toString() );
 
@@ -504,7 +504,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     l = getChild<QLineEdit>(this, "cassandraPort");
     if(l->text().isEmpty())
     {
-        f_cassandra_port = 9160;
+        f_cassandra_port = 9042;
     }
     else
     {
@@ -927,13 +927,15 @@ void snap_manager::loadHosts()
 
     QtCassandra::QCassandraRow::pointer_t row(table->row(f_context->lockHostsKey()));
 
-    auto hosts_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+    QtCassandra::QCassandraCellPredicate::pointer_t hosts_predicate;
     QString filter(f_host_filter_string->text());
     if(filter.length() != 0)
     {
+        auto cell_range_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
         // assign the filter only if not empty
-        hosts_predicate->setStartCellKey(filter);
-        hosts_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
+        cell_range_predicate->setStartCellKey(filter);
+        cell_range_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
+        hosts_predicate = std::static_pointer_cast<QtCassandra::QCassandraCellPredicate>(cell_range_predicate);
     }
     row->clearCache(); // remove any previous load results
     row->readCells(hosts_predicate);
@@ -1185,13 +1187,15 @@ void snap_manager::loadDomains()
     }
     QtCassandra::QCassandraRow::pointer_t row(table->row(row_index_name));
 
-    auto domain_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+    QtCassandra::QCassandraCellPredicate::pointer_t domain_predicate;
     QString const filter(f_domain_filter_string->text());
     if(filter.length() != 0)
     {
         // assign the filter only if not empty
-        domain_predicate->setStartCellKey(filter);
-        domain_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
+        auto cell_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+        cell_predicate->setStartCellKey(filter);
+        cell_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
+        domain_predicate = std::static_pointer_cast<QtCassandra::QCassandraCellPredicate>(cell_predicate);
     }
     row->clearCache(); // remove any previous load results
     row->readCells(domain_predicate);

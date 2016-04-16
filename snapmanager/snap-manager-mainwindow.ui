@@ -27,7 +27,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab_connections">
        <attribute name="title">
@@ -135,7 +135,7 @@ p, li { white-space: pre-wrap; }
              <item row="2" column="1">
               <widget class="QLineEdit" name="cassandraPort">
                <property name="text">
-                <string>9160</string>
+                <string>9042</string>
                </property>
               </widget>
              </item>

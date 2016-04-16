@@ -90,7 +90,7 @@ advgetopt::getopt::option const g_options[] =
         'p',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "port",
-        "9160",
+        "9042",
         "Define the port used by the Cassandra node.",
         advgetopt::getopt::required_argument
     },

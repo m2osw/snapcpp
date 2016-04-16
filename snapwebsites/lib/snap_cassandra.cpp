@@ -46,7 +46,7 @@ void snap_cassandra::connect()
     QString port_str( f_parameters["cassandra_port"] );
     if(port_str.isEmpty())
     {
-        port_str = "9160";
+        port_str = "9042";
     }
     bool ok;
     f_cassandra_port = port_str.toLong(&ok);

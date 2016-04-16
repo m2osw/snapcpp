@@ -129,8 +129,8 @@ advgetopt::getopt::option const g_snaplayout_options[] =
         'p',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "port",
-        "9160",
-        "port on the host to which to connect [default=9160]",
+        "9042",
+        "port on the host to which to connect [default=9042]",
         advgetopt::getopt::optional_argument
     },
     {

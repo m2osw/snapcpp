@@ -1134,7 +1134,7 @@ size_t server::thread_count()
  * \li backend_nice -- the nice value to use with backends; if undefined, keep
  *     the default nice value (i.e. 0)
  * \li cassandra_host -- the IP address or server name to Cassandra; default is localhost
- * \li cassandra_port -- the port to use to connect to Cassandra; default is 9160
+ * \li cassandra_port -- the port to use to connect to Cassandra; default is 9042
  * \li data_path -- path to the directory holding the system data (images, js, css, counters, etc.)
  * \li default_plugins -- list of default plugins to initialize a new website
  * \li listen -- address:port to listen to (default 0.0.0.0:4004)

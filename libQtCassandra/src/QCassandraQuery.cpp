@@ -653,6 +653,7 @@ void QCassandraQuery::bindMap( const size_t num, const string_map_t& value )
  */
 void QCassandraQuery::start()
 {
+    std::cout << "Executing query=[" << f_queryString.toStdString() << "]" << std::endl;
     f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
     throwIfError( QString("Error in query string [%1]!").arg(f_queryString) );
     f_queryResult.reset( cass_future_get_result(f_sessionFuture.get()), resultDeleter() );
