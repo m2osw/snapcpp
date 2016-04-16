@@ -1,3 +1,9 @@
+libqtcassandra (0.5.22.96~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Fri, 15 Apr 2016 19:49:32 -0700
+
 libqtcassandra (0.5.22.95~trusty) trusty; urgency=high
 
   * Nightly build.
