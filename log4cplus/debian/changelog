@@ -1,3 +1,9 @@
+log4cplus (1.2.0.362~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sat, 16 Apr 2016 11:21:39 -0700
+
 log4cplus (1.2.0.361~trusty) trusty; urgency=high
 
   * Nightly build.

@@ -1,3 +1,9 @@
+libqtserialization (0.1.16.592~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sat, 16 Apr 2016 11:22:23 -0700
+
 libqtserialization (0.1.16.591~trusty) trusty; urgency=high
 
   * Nightly build.

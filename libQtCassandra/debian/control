@@ -3,7 +3,7 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, doxygen, graphviz, libqt4-dev (>= 4.8.3),
     libboost1.49-dev | libboost-dev, libssl-dev,
-    snapcmakemodules (>= 1.0.25.88~trusty), libcontrolledvars-dev (>= 1.4.16.332~trusty),
+    snapcmakemodules (>= 1.0.25.89~trusty), libcontrolledvars-dev (>= 1.4.16.333~trusty),
     libadvgetopt-dev (>= 1.0.2), libqtserialization-dev, libtld-dev,
     libas2js-dev (>=0.1.14), cassandra-cpp-driver-dev (>= 2.2.2-1)
 Standards-Version: 3.9.4

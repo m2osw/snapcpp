@@ -1,3 +1,9 @@
+googlerank (1.0.15.593~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Sat, 16 Apr 2016 11:22:13 -0700
+
 googlerank (1.0.15.592~trusty) trusty; urgency=high
 
   * Nightly build.
