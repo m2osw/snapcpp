@@ -38,8 +38,11 @@
 
 // 3rd party libs
 //
-#include <cassandra.h>
+#include <QtCassandra/QCassandraQuery.h>
+
 #include <QtCore>
+
+#include <memory>
 
 class sqlBackupRestore
 {
@@ -48,14 +51,15 @@ public:
 
     void storeContext( const int count );
     void restoreContext();
+
+    //void outputSchema();
     
 private:
+    void appendRowsToSqliteDb( QtCassandra::QCassandraQuery& cass_query, const QString& table_name );
     void storeTables( const int count );
     void restoreTables();
 
-    CassCluster*    f_cluster;
-    CassSession*    f_session;
-    CassFuture*     f_connection;
+    QtCassandra::QCassandraSession::pointer_t	f_session;
 };
 
 // vim: ts=4 sw=4 et

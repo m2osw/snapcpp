@@ -113,7 +113,9 @@ void snap_cassandra::init_context()
 
         // this is the default for contexts, but just in case we were
         // to change that default at a later time...
-        context->setDurableWrites(true);
+        auto& fields(context->fields());
+        fields["durable_writes"] = QVariant(true);
+        QtCassandra::QCassandraSchema::Value& replication_val = fields["replication"];
 
         // TODO: add support for replications defined as a % so if we
         //       discover 10 nodes, we user 5 when replication is 50%
@@ -139,20 +141,21 @@ void snap_cassandra::init_context()
         // for developers testing with a few nodes in a single data center,
         // SimpleStrategy is good enough; for anything larger ("a real
         // cluster",) it won't work right
+        auto& replication_map(replication_val.map());
         QString const strategy(f_parameters["cassandra_strategy"]);
         if(strategy == "simple")
         {
-            context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
+            replication_map["class"]              = QVariant("SimpleStrategy");
+            replication_map["replication_factor"] = QVariant(rep);
 
             // for simple strategy, use the replication_factor parameter
             // (see http://www.datastax.com/documentation/cql/3.0/cql/cql_reference/create_keyspace_r.html)
-            context->setReplicationFactor(rep);
         }
         else
         {
             if(strategy == "local")
             {
-                context->setStrategyClass("org.apache.cassandra.locator.LocalStrategy");
+                SNAP_LOG_FATAL("strategy \"local\" is no longer supported!");
             }
             else
             {
@@ -160,24 +163,22 @@ void snap_cassandra::init_context()
                 {
                     SNAP_LOG_ERROR("unknown strategy \"")(strategy)("\", falling back to \"network\"");
                 }
-                context->setStrategyClass("org.apache.cassandra.locator.NetworkTopologyStrategy");
+                replication_map["class"] = QVariant("NetworkTopologyStrategy");
             }
 
             // here each data center gets a replication factor
+            bool found(false);
             QString const data_centers(f_parameters["cassandra_data_centers"]);
             snap_string_list const names(data_centers.split(','));
-            bool found(false);
-            int const max_names(names.size());
-            for(int idx(0); idx < max_names; ++idx)
+            for( const auto& dc : names )
             {
-                // remove all spaces in each name
-                QString const name(names[idx].simplified());
-                if(!name.isEmpty())
+                if( !dc.isEmpty() )
                 {
-                    context->setDescriptionOption(name, replication);
+                    replication_map[dc] = QVariant(replication);
                     found = true;
                 }
             }
+            //
             if(!found)
             {
                 SNAP_LOG_FATAL("the list of data centers is required when creating a context in a cluster which is not using \"simple\" as its strategy");
@@ -271,19 +272,19 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString con
     {
         // table is not there yet, create it
         table = context->table(table_name);
-        table->setComment(comment);
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        //table->setMemtableThroughputInMb(247);
-        //table->setMemtableOperationsInMillions(1.1578125);
-        table->setGcGraceSeconds(864000);
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
+
+        QtCassandra::QCassandraSchema::Value compaction;
+        auto& compaction_map(compaction.map());
+        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+        compaction_map["min_threshold"] = QVariant(4);
+        compaction_map["max_threshold"] = QVariant(22);
+
+        auto& table_fields(table->fields());
+        table_fields["comment"]                     = QVariant(comment);
+        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["gc_grace_seconds"]            = QVariant(86400);
+        table_fields["compaction"]                  = compaction;
+
         table->create();
 
         f_created_table[table_name] = true;
@@ -293,10 +294,6 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString con
         // a single synchronization is enough for all created tables
         //
         f_created_table.clear();
-
-        // table(s) were created, we must wait for them to be synchronized
-        //
-        context->parentCassandra()->synchronizeSchemaVersions();
     }
     return table;
 }

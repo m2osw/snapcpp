@@ -56,14 +56,14 @@ public:
         virtual QString next();
 
     private:
-        mailinglist *                                   f_parent;
-        const QString                                   f_name;
-        QtCassandra::QCassandraTable::pointer_t         f_table;
-        QtCassandra::QCassandraRow::pointer_t           f_row;
-        QtCassandra::QCassandraColumnRangePredicate     f_column_predicate;
-        QtCassandra::QCassandraCells                    f_cells;
-        QtCassandra::QCassandraCells::const_iterator    f_c;
-        controlled_vars::fbool_t                        f_done;
+        mailinglist *                                        f_parent;
+        const QString                                        f_name;
+        QtCassandra::QCassandraTable::pointer_t              f_table;
+        QtCassandra::QCassandraRow::pointer_t                f_row;
+        QtCassandra::QCassandraCellRangePredicate::pointer_t f_column_predicate;
+        QtCassandra::QCassandraCells                         f_cells;
+        QtCassandra::QCassandraCells::const_iterator         f_c;
+        controlled_vars::fbool_t                             f_done;
     };
 
                         mailinglist();

@@ -126,7 +126,6 @@ namespace QtCassandra
 QCassandraCell::QCassandraCell(QCassandraRow::pointer_t row, const QByteArray& column_key)
     : f_row(row)
     , f_key(column_key)
-    //, f_cached(false) -- auto-init
     //, f_value() -- auto-init to "NULL" (nullValue() == true)
 {
     if(f_key.size() == 0) {
@@ -207,15 +206,9 @@ const QCassandraValue& QCassandraCell::value() const
 {
     if(!f_cached)
     {
-        auto row( f_row.lock() );
-        if( !row )
-        {
-            throw std::runtime_error("this cell was dropped, it cannot be used anymore.");
-        }
-        row->getValue(f_key, const_cast<QCassandraValue&>(f_value));
+        f_row->getValue( f_key, const_cast<QCassandraValue&>(f_value) );
         f_cached = true;
     }
-//printf("reading [%s]\n", f_key.data());
     return f_value;
 }
 
@@ -243,15 +236,10 @@ void QCassandraCell::setValue(const QCassandraValue& val)
 {
     if(!f_cached || f_value != val)
     {
-        auto row( f_row.lock() );
-        if( !row )
-        {
-            throw std::runtime_error("this cell was dropped, it cannot be used anymore.");
-        }
         // TODO: if the cell represents a counter, it should be resized
         //       to a 64 bit value to work in all places
         f_value = val;
-        row->insertValue(f_key, f_value);
+        f_row->insertValue(f_key, f_value);
     }
     f_cached = true;
 }
@@ -350,6 +338,7 @@ QCassandraCell::operator QCassandraValue () const
     return value();
 }
 
+
 /** \brief Add a value to a counter.
  *
  * This function is used to add a value to a counter.
@@ -365,11 +354,13 @@ QCassandraCell::operator QCassandraValue () const
 void QCassandraCell::add(int64_t val)
 {
     // if cached, we update the value in memory as it is expected to be
-    if(!f_value.nullValue()) {
+    if(!f_value.nullValue())
+    {
         // if the value is not defined, we'd have to read it before we can
         // increment it in memory; for this reason we don't do it at this point
         int64_t r(0);
-        switch(f_value.size()) {
+        switch(f_value.size())
+        {
         case 8:
             r = f_value.int64Value() + val;
             break;
@@ -394,7 +385,7 @@ void QCassandraCell::add(int64_t val)
         f_cached = true;
     }
 
-    f_row.lock()->addValue(f_key, val);
+    f_row->insertValue( f_key, f_value );
 }
 
 /** \brief Add to a counter.
@@ -539,42 +530,6 @@ QCassandraCell& QCassandraCell::operator -- (int)
     return *this;
 }
 
-/** \brief The value of a cell is automatically cached in memory.
- *
- * This function can be used to mark that the currently cached
- * value need to be reset on the next call to the QCassandraValue
- * casting operator.
- *
- * However, note that the data of the cell is NOT released by this
- * call. To release the data, look into clearing the row cache
- * instead.
- *
- * \note
- * Setting a cell to the null value (i.e. value.setNullValue()) will
- * clear the data in the Cassandra database too. So don't use that
- * function to clear the data from memory!
- *
- * \sa QCassandraRow::clearCache()
- */
-void QCassandraCell::clearCache()
-{
-    f_cached = false;
-    f_value.setNullValue();
-}
-
-/** \brief Internal function used to remove the parent row.
- *
- * This function is used to mark the cell as "lost". It is used
- * whenever the user calls QCassandraRow::dropCell(). It is
- * expected that after such a call the cell will not be used
- * again.
- */
-void QCassandraCell::unparent()
-{
-    f_row.reset();
-    clearCache();
-}
-
 /** \brief Retrieve the current consistency level of this value.
  *
  * This function returns the consistency level of this value. By default
@@ -645,13 +600,69 @@ void QCassandraCell::setTimestamp(int64_t val)
 }
 
 
+/** \brief The value of a cell is automatically cached in memory.
+ *
+ * This function can be used to mark that the currently cached
+ * value need to be reset on the next call to the QCassandraValue
+ * casting operator.
+ *
+ * However, note that the data of the cell is NOT released by this
+ * call. To release the data, look into clearing the row cache
+ * instead.
+ *
+ * \note
+ * Setting a cell to the null value (i.e. value.setNullValue()) will
+ * clear the data in the Cassandra database too. So don't use that
+ * function to clear the data from memory!
+ *
+ * \sa QCassandraRow::clearCache()
+ */
+void QCassandraCell::clearCache()
+{
+    f_cached = false;
+    f_value.setNullValue();
+}
+
+#if 0
+/** \brief Retrieve the current timestamp of this cell value.
+ *
+ * This function returns the timestamp of the value variable member defined
+ * in the cell. This value may be incorrect if the value wasn't read from
+ * the Cassandra database or was never set with setTimestamp().
+ *
+ * \return The timestamp 64bit value.
+ *
+ * \sa setTimestamp()
+ * \sa QCassandraValue::timestamp()
+ */
+int64_t QCassandraCell::timestamp() const
+{
+    return f_value.timestamp();
+}
+
+/** \brief Define your own timestamp for this cell value.
+ *
+ * Set the timestamp of the value variable member of this cell.
+ *
+ * \param[in] timestamp  The time used to mark this value.
+ *
+ * \sa timestamp()
+ * \sa QCassandraValue::setTimestamp()
+ */
+void QCassandraCell::setTimestamp(int64_t val)
+{
+    f_value.setTimestamp(val);
+}
+#endif
+
+
 /** \brief Get the pointer to the parent object.
  *
  * \return Shared pointer to the cassandra object.
  */
 QCassandraRow::pointer_t QCassandraCell::parentRow() const
 {
-    return f_row.lock();
+    return f_row;
 }
 
 

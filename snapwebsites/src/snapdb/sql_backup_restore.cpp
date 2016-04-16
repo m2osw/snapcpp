@@ -56,23 +56,8 @@
 
 using namespace QtCassandra;
 
-namespace
-{
-    void do_query( const QString& q_str )
-    {
-        QSqlQuery q;
-        if( !q.exec( q_str ) )
-        {
-            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-            throw std::runtime_error( q.lastError().text().toUtf8().data() );
-        }
-    }
-}
-
-
 sqlBackupRestore::sqlBackupRestore( const QString& host_name, const QString& sqlDbFile )
-    : f_cluster( cass_cluster_new() )
-    , f_session( cass_session_new() )
+    : f_session( QCassandraSession::create() )
 {
 	QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE" );
 	db.setDatabaseName( sqlDbFile );
@@ -82,21 +67,7 @@ sqlBackupRestore::sqlBackupRestore( const QString& host_name, const QString& sql
         throw std::runtime_error( error.toUtf8().data() );
     }
 
-    cass_cluster_set_contact_points( f_cluster, host_name.toUtf8().data() );
-    f_connection = cass_session_connect( f_session, f_cluster );
-
-    /* This operation will block until the result is ready */
-    CassError rc = cass_future_error_code(f_connection);
-    std::cout << "Connect result: [" << cass_error_desc(rc) << "]" << std::endl;
-
-    if( rc != CASS_OK )
-    {
-        const char* message;
-        size_t message_length;
-        cass_future_error_message(f_connection, &message, &message_length);
-        std::cerr << "Cannot connect to cassandra server! " << message << std::endl;
-        throw std::runtime_error( message );
-    }
+    f_session->connect( host_name );
 }
 
 
@@ -114,6 +85,27 @@ void sqlBackupRestore::restoreContext()
     restoreTables();
 }
 
+
+void sqlBackupRestore::appendRowsToSqliteDb( QCassandraQuery& cass_query, const QString& table_name )
+{
+    const QString q_str = QString( "INSERT OR REPLACE INTO %1 "
+            "(key, column1, value ) "
+            "VALUES "
+            "(:key, :column1, :value );"
+            ).arg(table_name);
+    QSqlQuery q;
+    q.prepare( q_str );
+    //
+    q.bindValue( ":key",     cass_query.getByteArrayColumn("key")     );
+    q.bindValue( ":column1", cass_query.getByteArrayColumn("column1") );
+    q.bindValue( ":value",   cass_query.getByteArrayColumn("value")   );
+    //
+    if( !q.exec() )
+    {
+        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+        throw std::runtime_error( q.lastError().text().toUtf8().data() );
+    }
+}
 
 /// \brief Backup snap_websites tables.
 //
@@ -150,71 +142,24 @@ void sqlBackupRestore::storeTables( const int count )
 
         std::cout << "Dumping table [" << table_name << "]" << std::endl;
 
-        const QString cql_select_string("SELECT key,column1,value FROM snap_websites.%1 LIMIT %2");
-        if( table_name == "libQtCassandraLockTable" )
+        const QString cql_select_string("SELECT key,column1,value FROM snap_websites.%1");
+        q_str = cql_select_string.arg(table_name);
+
+        QCassandraQuery cass_query( f_session );
+        cass_query.query( q_str );
+        cass_query.setPagingSize( count );
+        cass_query.start();
+
+        do
         {
-            // TODO: ugly hack! We need to correct this in the cassandra table itself.
-            q_str = cql_select_string.arg("\""+table_name+"\"").arg(count);
-        }
-        else
-        {
-            q_str = cql_select_string.arg(table_name).arg(count);
-        }
-        CassStatement* query_stmt    = cass_statement_new( q_str.toUtf8().data(), 0 );
-        CassFuture*    result_future = cass_session_execute( f_session, query_stmt );
-
-        if( cass_future_error_code( result_future ) != CASS_OK )
-        {
-            const char* message;
-            size_t message_length;
-            cass_future_error_message( result_future, &message, &message_length );
-            std::cerr << "Cassandra query error: " << message << std::endl;
-            cass_future_free(result_future);
-            cass_statement_free(query_stmt);
-            throw std::runtime_error( message );
-        }
-
-        const CassResult* result = cass_future_get_result(result_future);
-        CassIterator*     rows   = cass_iterator_from_result(result);
-
-        while( cass_iterator_next(rows) )
-        {
-            const CassRow*   row             = cass_iterator_get_row( rows );
-            const CassValue* key_value       = cass_row_get_column_by_name( row, "key"       );
-            const CassValue* column1_value   = cass_row_get_column_by_name( row, "column1"   );
-            const CassValue* value_value     = cass_row_get_column_by_name( row, "value"     );
-
-            const char *    byte_value;
-            size_t          value_len;
-
-            q_str = QString( "INSERT OR REPLACE INTO %1 "
-                    "(key, column1, value ) "
-                    "VALUES "
-                    "(:key, :column1, :value );"
-                    ).arg(table_name);
-            q.clear();
-            q.prepare( q_str );
-            //
-            cass_value_get_string( key_value, &byte_value, &value_len );
-            q.bindValue( ":key", QByteArray(byte_value, value_len) );
-            //
-            cass_value_get_string( column1_value, &byte_value, &value_len );
-            q.bindValue( ":column1", QByteArray(byte_value,value_len) );
-            //
-            cass_value_get_string( value_value, &byte_value, &value_len );
-            q.bindValue( ":value", QByteArray(byte_value,value_len) );
-            //
-            if( !q.exec() )
+            while( cass_query.nextRow() )
             {
-                std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-                throw std::runtime_error( q.lastError().text().toUtf8().data() );
+                appendRowsToSqliteDb( cass_query, table_name );
             }
         }
+        while( cass_query.nextPage() );
 
-        cass_result_free(result);
-        cass_iterator_free(rows);
-        cass_future_free(result_future);
-        cass_statement_free(query_stmt);
+        cass_query.end();
     }
 }
 
@@ -240,14 +185,6 @@ void sqlBackupRestore::restoreTables()
     {
         std::cout << "Restoring table [" << table_name << "]" << std::endl;
 
-        // TODO: Ugly hack!
-        //
-        const QString target_table_name(
-            table_name == "libQtCassandraLockTable"
-                ? "\"libQtCassandraLockTable\""
-                : table_name
-            );
-
         const QString sql_select_string ("SELECT key,column1,value FROM %1");
         QString q_str                   ( sql_select_string.arg(table_name) );
         QSqlQuery q;
@@ -269,32 +206,17 @@ void sqlBackupRestore::restoreTables()
             const QByteArray value     ( q.value( value_idx     ).toByteArray() );
 
             const QString cql_insert_string("INSERT INTO snap_websites.%1 (key,column1,value) VALUES (?,?,?);");
-            const QString qstr( cql_insert_string.arg(target_table_name) );
+            const QString qstr( cql_insert_string.arg(table_name) );
 
-            // TODO: put this into RAII class
-            //
-            CassStatement* query_stmt    = cass_statement_new( qstr.toUtf8().data(), 3 );
+            QCassandraQuery cass_query( f_session );
+            cass_query.query( qstr, 3 );
+            int bind_num = 0;
+            cass_query.bindByteArray( bind_num++, key     );
+            cass_query.bindByteArray( bind_num++, column1 );
+            cass_query.bindByteArray( bind_num++, value   );
 
-            cass_statement_bind_string_n( query_stmt, 0, key.constData(),     key.size()     );
-            cass_statement_bind_string_n( query_stmt, 1, column1.constData(), column1.size() );
-            cass_statement_bind_string_n( query_stmt, 2, value.constData(),   value.size()   );
-
-            CassFuture*    result_future = cass_session_execute( f_session, query_stmt );
-            cass_future_wait( result_future );
-            //
-            if( cass_future_error_code( result_future ) != CASS_OK )
-            {
-                const char* message;
-                size_t message_length;
-                cass_future_error_message( result_future, &message, &message_length );
-                std::cerr << "Cassandra query error: " << message << ", query=" << qstr << std::endl;
-                cass_future_free(result_future);
-                cass_statement_free(query_stmt);
-                throw std::runtime_error( message );
-            }
-            //
-            cass_future_free(result_future);
-            cass_statement_free(query_stmt);
+            cass_query.start();
+            cass_query.end();
         }
     }
 }

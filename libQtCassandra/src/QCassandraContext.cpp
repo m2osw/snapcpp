@@ -10,10 +10,10 @@
  *
  * License:
  *      Copyright (c) 2011-2016 Made to Order Software Corp.
- * 
+ *
  *      http://snapwebsites.org/
  *      contact@m2osw.com
- * 
+ *
  *      Permission is hereby granted, free of charge, to any person obtaining a
  *      copy of this software and associated documentation files (the
  *      "Software"), to deal in the Software without restriction, including
@@ -34,12 +34,16 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "QCassandraPrivate.h"
+#include "QtCassandra/QCassandraContext.h"
+#include "QtCassandra/QCassandra.h"
+
 #include <stdexcept>
 #include <unistd.h>
 
-#include <QRegExp>
-#include <QDebug>
+#include <sstream>
+
+#include <QtCore>
+//#include <QDebug>
 
 
 namespace QtCassandra
@@ -123,8 +127,8 @@ namespace QtCassandra
  * \sa lockTtl()
  */
 
-/** \var QCassandraContext::f_private
- * \brief The pointer to the QCassandraContextPrivate object.
+/** \var QCassandraContext::f_schema
+ * \brief The pointer to the QCassandraSchema meta object.
  *
  * This pointer is a shared pointer to the private definition of
  * the Cassandra context (i.e. a keyspace definition.)
@@ -150,16 +154,6 @@ namespace QtCassandra
  * If you look at the implementation, many functions call the
  * makeCurrent() which checks the f_cassandra pointer, thus these
  * functions don't actually test the pointer.
- */
-
-/** \var QCassandraContext::f_options
- * \brief List of tables.
- *
- * A map of name and value pairs representing options of the context.
- * Each context can have many options.
- *
- * The libQtCassandra doesn't make use of these options. It's only used
- * by the Cassandra server.
  */
 
 /** \var QCassandraContext::f_tables
@@ -190,7 +184,7 @@ namespace QtCassandra
  * implementation. This name should be set once early on when creating the
  * context. It cannot be changed once a lock was created.
  *
- * By default this name is set to: "libQtCassandraLockTable". You should not
+ * By default this name is set to: "lock_table". You should not
  * have to ever change it.
  */
 
@@ -230,22 +224,6 @@ namespace QtCassandra
  * will recover after a little while.
  */
 
-/** \brief Overload the KsDef to handle details.
- *
- * This class hides the KsDef from the outside. It will give a copy of the
- * KsDef to the QCassandraContext.
- *
- * Having this definition allows us to avoid the \#include of thrift
- * generated headers (which in turn \#include thrift headers) that your
- * applications would otherwise need to have access to.
- */
-class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
-
-
-
-
-
-
 
 /** \brief Initialize a QCassandraContext object.
  *
@@ -265,17 +243,13 @@ class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
  * The name of the lock table is defined at the time a cassandra context
  * object is created in memory. You must change it immediately with the
  * setLockTableName() if you do not want to use the default which is:
- * "libQtCassandraLockTable". See the QCassandraLock object for more
+ * "lock_table". See the QCassandraLock object for more
  * information about locks in a Cassandra environment.
  *
  * \note
  * A context can be created, updated, and dropped. In all those cases, the
  * functions return once the Cassandra instance with which you are
- * connected is ready. However, that is not enough if you are working with
- * a cluster because the other nodes do not get updated instantaneously.
- * Instead, you have to call the QCassandra::synchronizeSchemaVersions()
- * function of the QCassandra object to make sure that the context is fully
- * available across your cluster.
+ * connected is ready.
  *
  * \param[in] cassandra  The QCassandra object owning this context.
  * \param[in] context_name  The name of the Cassandra context.
@@ -284,33 +258,33 @@ class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
  * \sa setLockTableName()
  * \sa setLockHostName()
  * \sa QCassandra::context()
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QString& context_name)
-    : f_private(new QCassandraContextPrivate),
-      f_cassandra(cassandra),
-      //f_options() -- auto-init
+    //: f_schema(std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>())
+    : f_cassandra(cassandra)
+    , f_contextName(context_name)
       //f_tables() -- auto-init
       //f_host_name() -- auto-init
-      f_lock_table_name("libQtCassandraLockTable")
+    , f_lock_table_name("lock_table")
       //f_lock_accessed(false) -- auto-init
       //f_lock_timeout(5) -- auto-init
       //f_lock_ttl(60) -- auto-init
 {
     // verify the name here (faster than waiting for the server and good documentation)
     QRegExp re("[A-Za-z][A-Za-z0-9_]*");
-    if(!re.exactMatch(context_name)) {
+    if(!re.exactMatch(context_name))
+    {
         throw std::runtime_error("invalid context name (does not match [A-Za-z][A-Za-z0-9_]*)");
     }
 
-    // we save the name and at this point we prevent it from being changed.
-    f_private->__set_name(context_name.toUtf8().data());
-
     // get the computer name as the host name
     char hostname[HOST_NAME_MAX + 1];
-    if(gethostname(hostname, sizeof(hostname)) == 0) {
+    if(gethostname(hostname, sizeof(hostname)) == 0)
+    {
         f_host_name = hostname;
     }
+
+    resetSchema();
 }
 
 /** \brief Clean up the QCassandraContext object.
@@ -325,6 +299,21 @@ QCassandraContext::~QCassandraContext()
 {
 }
 
+
+void QCassandraContext::resetSchema()
+{
+    f_schema = std::make_shared<QCassandraSchema::SessionMeta::KeyspaceMeta>();
+
+    QtCassandra::QCassandraSchema::Value replication;
+    auto& replication_map(replication.map());
+    replication_map["class"]              = QVariant("SimpleStrategy");
+    replication_map["replication_factor"] = QVariant(1);
+
+    auto& field_map(f_schema->getFields());
+    field_map["replication"]    = replication;
+    field_map["durable_writes"] = QVariant(true);
+}
+
 /** \brief Retrieve the name of this context.
  *
  * This function returns the name of this context.
@@ -334,11 +323,38 @@ QCassandraContext::~QCassandraContext()
  *
  * \return A QString with the context name.
  */
-QString QCassandraContext::contextName() const
+const QString& QCassandraContext::contextName() const
 {
-    return f_private->name.c_str();
+    return f_contextName;
 }
 
+
+const QCassandraSchema::Value::map_t& QCassandraContext::fields() const
+{
+    return f_schema->getFields();
+}
+
+
+QCassandraSchema::Value::map_t& QCassandraContext::fields()
+{
+    return f_schema->getFields();
+}
+
+
+#if 0
+void QCassandraContext::getField( const QString& name, QCassandraSchema::Value& value ) const
+{
+    value = (*f_schema)[name];
+}
+
+
+void QCassandraContext::setField( const QString& name, const QCassandraSchema::Value& value )
+{
+    (*f_schema)[name] = value;
+}
+#endif
+
+#if 0
 /** \brief Set the context strategy class.
  *
  * This function is used to change the strategy class of the context to a
@@ -360,7 +376,10 @@ QString QCassandraContext::contextName() const
  */
 void QCassandraContext::setStrategyClass(const QString& strategy_class)
 {
-    f_private->__set_strategy_class(strategy_class.toUtf8().data());
+    if( f_schema )
+    {
+        (*f_schema)["strategy_class"]->variant() = strategy_class;
+    }
 }
 
 /** \brief Retrieve the name of the strategy class of this context.
@@ -377,7 +396,12 @@ void QCassandraContext::setStrategyClass(const QString& strategy_class)
  */
 QString QCassandraContext::strategyClass() const
 {
-    return f_private->strategy_class.c_str();
+    if( f_schema )
+    {
+        return (*f_schema)["strategy_class"]->variant().toString();
+    }
+    
+    return QString();
 }
 
 /** \brief Replace all the context description options.
@@ -411,10 +435,12 @@ void QCassandraContext::setDescriptionOptions(const QCassandraContextOptions& op
 {
     f_options = options;
 
-    if(f_options.contains("replication_factor")) {
+    if(f_options.contains("replication_factor"))
+    {
         f_private->__set_replication_factor(f_options["replication_factor"].toInt());
     }
-    else {
+    else
+    {
         f_private->__isset.replication_factor = false;
     }
 }
@@ -462,8 +488,9 @@ void QCassandraContext::setDescriptionOption(const QString& option, const QStrin
 {
     f_options[option] = value;
 
-    if(option == "replication_factor") {
-        f_private->__set_replication_factor(value.toInt());
+    if(option == "replication_factor")
+    {
+        f_private->__set_replication_factor(f_options["replication_factor"].toInt());
     }
 }
 
@@ -506,10 +533,13 @@ void QCassandraContext::eraseDescriptionOption(const QString& option)
 {
     f_options.erase(f_options.find(option));
 
-    if(option == "replication_factor") {
+    if(option == "replication_factor")
+    {
         f_private->__isset.replication_factor = false;
     }
 }
+#endif
+
 
 /** \brief Retrieve a table definition by name.
  *
@@ -533,17 +563,45 @@ void QCassandraContext::eraseDescriptionOption(const QString& option)
  */
 QCassandraTable::pointer_t QCassandraContext::table(const QString& table_name)
 {
-    // table already exists?
-    QCassandraTables::iterator ti(f_tables.find(table_name));
-    if(ti != f_tables.end()) {
-        return ti.value();
+    QCassandraTable::pointer_t t( findTable( table_name ) );
+    if( t != QCassandraTable::pointer_t() )
+    {
+        return t;
     }
 
     // this is a new table, allocate it
-    QCassandraTable::pointer_t t(new QCassandraTable(shared_from_this(), table_name));
-    f_tables.insert(table_name, t);
+    t.reset( new QCassandraTable(shared_from_this(), table_name) );
+    f_tables.insert( table_name, t );
     return t;
 }
+
+#if 0
+void QCassandraContext::loadTables()
+{
+    f_tables.clear();
+
+    // Load tables from schema
+    QCassandraQuery q( f_cassandra->session() );
+    q.query( QString("SELECT columnfamily_name FROM system.schema_columnfamilies WHERE keyspace_name = '%1';").arg(f_contextName) );
+    q.start();
+    QStringList table_list;
+    while( q.nextRow() )
+    {
+        table_list << q.getStringColumn( "columnfamily_name" );
+    }
+    q.end();
+
+    f_private->cf_defs.clear();
+
+    for( auto table_name : table_list )
+    {
+        QCassandraTable::pointer_t t(new QCassandraTable(shared_from_this(), table_name));
+        t->setFromCassandra();
+        f_tables.insert(table_name, t);
+    }
+}
+#endif
+
 
 /** \brief Retrieve a reference to the tables.
  *
@@ -554,8 +612,15 @@ QCassandraTable::pointer_t QCassandraContext::table(const QString& table_name)
  *
  * \return A reference to the table definitions of this context.
  */
-const QCassandraTables& QCassandraContext::tables() const
+const QCassandraTables& QCassandraContext::tables()
 {
+#if 0
+    if( f_tables.empty() )
+    {
+        loadTables();
+    }
+#endif
+
     return f_tables;
 }
 
@@ -573,8 +638,15 @@ const QCassandraTables& QCassandraContext::tables() const
  *
  * \return A shared pointer to the table.
  */
-QCassandraTable::pointer_t QCassandraContext::findTable(const QString& table_name) const
+QCassandraTable::pointer_t QCassandraContext::findTable(const QString& table_name)
 {
+#if 0
+    if( f_tables.empty() )
+    {
+        loadTables();
+    }
+#endif
+
     QCassandraTables::const_iterator it(f_tables.find(table_name));
     if(it == f_tables.end()) {
         QCassandraTable::pointer_t null;
@@ -611,60 +683,11 @@ QCassandraTable& QCassandraContext::operator [] (const QString& table_name)
     return *ptable;
 }
 
-/** \brief Retrieve a constant table reference.
- *
- * This array operator is the same as the other one, just this one deals
- * with constant tables. It can be used to retrieve values from the
- * Cassandra cluster you're connected to:
- *
- * \code
- * value = context[table_name][column_name];
- * \endcode
- *
- * \exception std::runtime_error
- * If the table doesn't exist, this function raises an exception
- * since otherwise the reference would be a NULL pointer.
- *
- * \param[in] table_name  The name of the table to retrieve.
- *
- * \return A constant reference to the named table.
- */
-const QCassandraTable& QCassandraContext::operator [] (const QString& table_name) const
-{
-    const QCassandraTable::pointer_t ptable( findTable(table_name) );
-    if( !ptable ) {
-        throw std::runtime_error("named table was not found, cannot return a reference");
-    }
 
-    return *ptable;
-}
-
+#if 0
 /** \brief Set the replication factor.
  *
  * This function sets the replication factor of the context.
- *
- * The replication factor is only used if you set the replication
- * strategy to "SimpleStrategy". In all other cases, it is ignored.
- *
- * When setting up the replication factor for a strategy set to
- * "NetworkTopologyStrategy", then you need to set replication
- * factors using data center names as in:
- *
- * \code
- *    // get a new context (assuming "my_context" does not exist in Cassandra)
- *    // (use findContext() to know whether a context exists)
- *    QtCassandra::QCassandraContext::pointer_t context = cassandra->context("my_context");
- *
- *    context->setStrategyClass("org.apache.cassandra.locator.NetworkTopologyStrategy");
- *
- *    QtCassandra::QCassandraContextOptions options;
- *    options["dc1"] = 3;
- *    options["dc2"] = 2;
- *    options["dc3"] = 5;
- *    context->setDescriptionOptions(options);
- *
- *    context->createContext();
- * \endcode
  *
  * \deprecated
  * Since version 1.1 of Cassandra, the context replication
@@ -676,10 +699,6 @@ const QCassandraTable& QCassandraContext::operator [] (const QString& table_name
  * older version of Cassandra. Let me know if that's the case.
  *
  * \param[in] factor  The new replication factor.
- *
- * \sa replicationFactor()
- * \sa unsetReplicationFactor()
- * \sa hasReplicationFactor()
  */
 void QCassandraContext::setReplicationFactor(int32_t factor)
 {
@@ -695,10 +714,6 @@ void QCassandraContext::setReplicationFactor(int32_t factor)
  * In general it is not necessary to call this function unless you
  * are initializing a new context and you want to make sure that
  * the default replication factor is used.
- *
- * \sa setReplicationFactor()
- * \sa replicationFactor()
- * \sa hasReplicationFactor()
  */
 void QCassandraContext::unsetReplicationFactor()
 {
@@ -710,10 +725,6 @@ void QCassandraContext::unsetReplicationFactor()
  * This function retrieves the current status of the replication factor parameter.
  *
  * \return True if the replication factor parameter is defined.
- *
- * \sa setReplicationFactor()
- * \sa replicationFactor()
- * \sa unsetReplicationFactor()
  */
 bool QCassandraContext::hasReplicationFactor() const
 {
@@ -728,10 +739,6 @@ bool QCassandraContext::hasReplicationFactor() const
  * If the replication factor is not defined, zero is returned.
  *
  * \return The current replication factor.
- *
- * \sa setReplicationFactor()
- * \sa hasReplicationFactor()
- * \sa unsetReplicationFactor()
  */
 int32_t QCassandraContext::replicationFactor() const
 {
@@ -748,10 +755,6 @@ int32_t QCassandraContext::replicationFactor() const
  * context (this is the default.)
  *
  * \param[in] durable_writes  Set whether writes are durable.
- *
- * \sa durableWrites()
- * \sa unsetDurableWrites()
- * \sa hasDurableWrites()
  */
 void QCassandraContext::setDurableWrites(bool durable_writes)
 {
@@ -763,10 +766,6 @@ void QCassandraContext::setDurableWrites(bool durable_writes)
  * This function marks the durable write flag as not set. This does
  * not otherwise change the flag. It will just not be sent over the
  * network and the default will be used when required.
- *
- * \sa durableWrites()
- * \sa setDurableWrites()
- * \sa hasDurableWrites()
  */
 void QCassandraContext::unsetDurableWrites()
 {
@@ -778,10 +777,6 @@ void QCassandraContext::unsetDurableWrites()
  * This function retrieves the current status of the durable writes parameter.
  *
  * \return True if the durable writes parameter is defined.
- *
- * \sa durableWrites()
- * \sa setDurableWrites()
- * \sa unsetDurableWrites()
  */
 bool QCassandraContext::hasDurableWrites() const
 {
@@ -794,10 +789,6 @@ bool QCassandraContext::hasDurableWrites() const
  * context is temporary (false) or permanent (true).
  *
  * \return The current durable writes flag status.
- *
- * \sa hasDurableWrites()
- * \sa setDurableWrites()
- * \sa unsetDurableWrites()
  */
 bool QCassandraContext::durableWrites() const
 {
@@ -807,64 +798,6 @@ bool QCassandraContext::durableWrites() const
     return false;
 }
 
-/** \brief This is an internal function used to parse a KsDef structure.
- *
- * This function is called internally to parse a KsDef object.
- *
- * \param[in] data  The pointer to the KsDef object.
- *
- * \sa prepareContextDefinition()
- */
-void QCassandraContext::parseContextDefinition(const void *data)
-{
-    const org::apache::cassandra::KsDef *ks = reinterpret_cast<const org::apache::cassandra::KsDef *>(data);
-
-    // name
-    if(ks->name != f_private->name) {
-        // what do we do here?
-        throw std::logic_error("KsDef and QCassandraContextPrivate names don't match");
-    }
-
-    // strategy class
-    f_private->__set_strategy_class(ks->strategy_class);
-
-    // replication factor
-    if(ks->__isset.replication_factor) {
-        f_private->__set_replication_factor(ks->replication_factor);
-    }
-    else {
-        f_private->__isset.replication_factor = false;
-    }
-
-    // durable writes
-    if(ks->__isset.durable_writes) {
-        f_private->__set_durable_writes(ks->durable_writes);
-    }
-    else {
-        f_private->__isset.durable_writes = false;
-    }
-
-    // the options is an array that we keep on our end
-    f_options.clear();
-    if(ks->__isset.strategy_options) {
-        for(std::map<std::string, std::string>::const_iterator
-                    o = ks->strategy_options.begin();
-                    o != ks->strategy_options.end();
-                    ++o) {
-            // TBD: can option strings include binary data?
-            f_options.insert(o->first.c_str(), o->second.c_str());
-        }
-    }
-
-    // table definitions (CfDef, column family definitions)
-    f_tables.clear();
-    for(std::vector<org::apache::cassandra::CfDef>::const_iterator
-                cf = ks->cf_defs.begin(); cf != ks->cf_defs.end(); ++cf) {
-        QCassandraTable::pointer_t t(table(cf->name.c_str()));
-        const org::apache::cassandra::CfDef& cf_def = *cf;
-        t->parseTableDefinition(&cf_def);
-    }
-}
 
 /** \brief Prepare the context.
  *
@@ -883,13 +816,12 @@ void QCassandraContext::parseContextDefinition(const void *data)
  *
  * \sa parseContextDefinition()
  */
-void QCassandraContext::prepareContextDefinition(void *data) const
+void QCassandraContext::prepareContextDefinition(KsDef *ks) const
 {
-    org::apache::cassandra::KsDef *ks(reinterpret_cast<org::apache::cassandra::KsDef *>(data));
     *ks = *f_private;
 
     if(ks->strategy_class == "") {
-        ks->strategy_class = "org.apache.cassandra.locator.LocalStrategy";
+        ks->strategy_class = "LocalStrategy";
     }
 
     // copy the options
@@ -907,17 +839,71 @@ void QCassandraContext::prepareContextDefinition(void *data) const
     // instead we have to loop through the table in the previous
     // level and update each column family separately
     ks->cf_defs.clear();
-    for(QtCassandra::QCassandraTables::const_iterator
-            t = f_tables.begin();
-            t != f_tables.end();
-            ++t)
+    for( auto t : f_tables )
     {
-        org::apache::cassandra::CfDef cf;
-        (*t)->prepareTableDefinition(&cf);
+        CfDef cf;
+        t->prepareTableDefinition(&cf);
         ks->cf_defs.push_back(cf);
     }
     //if(ks->cf_defs.empty()) ... problem? it's not optional...
 }
+
+
+/** \brief Generate the replication stanza for the CQL keyspace schema.
+ */
+QString QCassandraContext::generateReplicationStanza() const
+{
+    QString replication_stanza;
+    if( f_private->strategy_class == "SimpleStrategy" )
+    {
+        replication_stanza = QString("'class': 'SimpleStrategy', 'replication_factor' : %1")
+                             .arg(f_options["replication_factor"]);
+    }
+    else if( f_private->strategy_class == "NetworkTopologyStrategy" )
+    {
+        QString datacenters;
+        for( QString key : f_options.keys() )
+        {
+            if( !datacenters.isEmpty() )
+            {
+                datacenters += ", ";
+            }
+            datacenters += QString("'%1': %2").arg(key).arg(f_options[key]);
+        }
+        //
+        replication_stanza = QString("'class': 'NetworkTopologyStrategy', %1")
+                             .arg(datacenters);
+    }
+    else
+    {
+        std::stringstream ss;
+        ss << "This strategy class, '" << f_private->strategy_class << "', is not currently supported!";
+        throw std::runtime_error( ss.str().c_str() );
+    }
+
+    return replication_stanza;
+}
+#endif
+
+
+/** \brief This is an internal function used to parse a KsDef structure.
+ *
+ * This function is called internally to parse a KsDef object.
+ *
+ * \param[in] data  The pointer to the KsDef object.
+ *
+ * \sa prepareContextDefinition()
+ */
+void QCassandraContext::parseContextDefinition( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
+{
+    f_schema = keyspace_meta;
+    for( const auto pair : keyspace_meta->getTables() )
+    {
+        QCassandraTable::pointer_t t(table(pair.first));
+        t->parseTableDefinition(pair.second);
+    }
+}
+
 
 /** \brief Make this context the current context.
  *
@@ -929,28 +915,41 @@ void QCassandraContext::prepareContextDefinition(void *data) const
  * already the current context, then no message is sent to the Cassandra
  * server.
  *
- * \note
- * If you just created a context, you want to call the
- * QCassandra::synchronizeSchemaVersions() function before calling this
- * function or you may get an exception saying that the context is not
- * availabe across your Cassandra cluster.
- *
  * \sa QCassandra::setContext()
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 void QCassandraContext::makeCurrent()
 {
-    if(!f_cassandra) {
+    if(!f_cassandra)
+    {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    // we need a shared pointer to the context and the only way to
-    // get that is to retrieve it using our name... (somewhat slow
-    // but I don't see a cleaner way to do it without generating a
-    // pointer reference loop.)
-    QCassandraContext::pointer_t me(f_cassandra->context(f_private->name.c_str()));
-    f_cassandra->setCurrentContext(me);
+    f_cassandra->setCurrentContext( shared_from_this() );
 }
+
+
+QString QCassandraContext::getKeyspaceOptions()
+{
+    QString q_str;
+    for( const auto& pair : f_schema->getFields() )
+    {
+        if( q_str.isEmpty() )
+        {
+            q_str = "WITH ";
+        }
+        else
+        {
+            q_str += "AND ";
+        }
+        q_str += QString("%1 = %2\n")
+                .arg(pair.first)
+                .arg(pair.second.output())
+                ;
+    }
+
+    return q_str;
+}
+
 
 /** \brief Create a new context.
  *
@@ -995,42 +994,27 @@ void QCassandraContext::makeCurrent()
  * of 3 for the replication factor, and you probably want a minimum of
  * 3 nodes in any live cluster.
  *
- * \warning
- * After this call, if you are to use the context immediately, you want to
- * first call the synchronization function,
- * QCassandra::synchronizeSchemaVersions(), to make sure that all the nodes
- * are ready to use the new context. Otherwise you are likely to get errors
- * about things not being compatible or up to date.
- *
  * \sa QCassandraTable::create()
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 void QCassandraContext::create()
 {
-    if(!f_cassandra) {
+    if(!f_cassandra)
+    {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    f_cassandra->getPrivate()->createContext(*this);
+    QString q_str( QString("CREATE KEYSPACE IF NOT EXISTS %1\n").arg(contextName()) );
+    q_str += getKeyspaceOptions();
 
-    // If the user defined tables, we must mark them as loaded from Cassandra
-    // which in this case would not otherwise happen!
-    for(QtCassandra::QCassandraTables::const_iterator
-            t = f_tables.begin();
-            t != f_tables.end();
-            ++t)
+    QCassandraQuery q( f_cassandra->session() );
+    q.query( q_str );
+    q.start();
+    q.end();
+
+    for( auto t: f_tables )
     {
-        (*t)->setFromCassandra();
+        t->create();
     }
-
-    // TBD: Should we then call describe_keyspace() to make sure we've
-    //      got the right data (defaults) in this object, tables, and
-    //      column definitions?
-    //
-    //      Actually the describe_schema_versions() needs to be called
-    //      to make sure that all the nodes are synchronized properly.
-    //      This is done with the QCassandra::synchronizeSchemaVersions()
-    //      function.
 }
 
 /** \brief Update a context with new properties.
@@ -1041,12 +1025,20 @@ void QCassandraContext::create()
  */
 void QCassandraContext::update()
 {
-    if(!f_cassandra) {
+    if(!f_cassandra)
+    {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    f_cassandra->getPrivate()->updateContext(*this);
+    QString q_str( QString("ALTER KEYSPACE %1\n").arg(contextName()) );
+    q_str += getKeyspaceOptions();
+
+    QCassandraQuery q( f_cassandra->session() );
+    q.query( q_str );
+    q.start();
+    q.end();
 }
+
 
 /** \brief Drop this context.
  *
@@ -1074,12 +1066,20 @@ void QCassandraContext::update()
  */
 void QCassandraContext::drop()
 {
-    if( !f_cassandra ) {
+    if( !f_cassandra )
+    {
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    f_cassandra->getPrivate()->dropContext(*this);
+    QCassandraQuery q( f_cassandra->session() );
+    q.query( QString("DROP KEYSPACE IF EXISTS %1").arg(f_contextName) );
+    q.start();
+    q.end();
+
+    resetSchema();
+    f_tables.clear();
 }
+
 
 /** \brief Drop the specified table from the Cassandra database.
  *
@@ -1092,264 +1092,34 @@ void QCassandraContext::drop()
  * with the same name though.
  *
  * Note that tables get dropped immediately from the Cassandra database
- * (contrary to rows.) However, it can be a slow operation since all the
- * nodes need to be notified (i.e. consistency of ALL.) If you need to
- * know when the table is dropped from the entire cluster, call the
- * QCassandra::synchronizeSchemaVersions() function.
+ * (contrary to rows).
  *
  * \param[in] table_name  The name of the table to drop.
- *
- * \sa QCassandra::synchronizeSchemaVersions()
  */
 void QCassandraContext::dropTable(const QString& table_name)
 {
-    if(f_tables.find(table_name) != f_tables.end()) {
-        // keep a shared pointer on the table
-        QCassandraTable::pointer_t t(table(table_name));
-
-        // remove from the Cassandra database
-        makeCurrent();
-        f_cassandra->getPrivate()->dropTable(table_name);
-
-        // disconnect all the cached data from this table
-        t->unparent();
-        f_tables.remove(table_name);
+    if(f_tables.find(table_name) == f_tables.end())
+    {
+        return;
     }
+
+    // keep a shared pointer on the table
+    QCassandraTable::pointer_t t(table(table_name));
+
+    // remove from the Cassandra database
+    makeCurrent();
+    QCassandraQuery q( f_cassandra->session() );
+    q.query(  QString("DROP TABLE IF EXISTS %1.%2;")
+            .arg(f_contextName)
+            .arg(table_name)
+            );
+    q.start();
+    q.end();
+
+    // disconnect all the cached data from this table
+    f_tables.remove(table_name);
 }
 
-/** \brief Create a Cassandra table.
- *
- * This function creates a Cassandra table by sending the corresponding
- * order to the connected server.
- *
- * The creation of a table is not instantaneous in all the nodes of your
- * cluster. When this function returns, the table was created in the node
- * you're connected with. To make sure that all the nodes are up to date
- * (and before using this newly created table) you must call the
- * QCassandra::synchronizeSchemaVersions() function. You may create any
- * number of tables at once, then call the synchronization function to
- * make sure that your entire cluster is ready.
- *
- * \param[in] table  The table definition used to create the Cassandra table.
- *
- * \sa QCassandra::synchronizeSchemaVersions()
- */
-void QCassandraContext::createTable(const QCassandraTable *ptable)
-{
-    makeCurrent();
-    f_cassandra->getPrivate()->createTable(ptable);
-}
-
-/** \brief Update a Cassandra table.
- *
- * This function updates a Cassandra table by sending the corresponding
- * order to the connected server.
- *
- * It can be used to define new column types or changing existing
- * columns (although changing existing columns may not work as
- * expected, from what I understand.)
- *
- * This function is not instantaneous and will slowly replicate to all
- * your nodes. In other words, you cannot access the table until the schema
- * is full propagated throughout your cluster. If you need to access the
- * table immediately after an update, make sure to call the
- * QCassandra::synchronizeSchemaVersions()
- *
- * \param[in] table  The table to update in the Cassandra server.
- *
- * \sa QCassandra::synchronizeSchemaVersions()
- */
-void QCassandraContext::updateTable(const QCassandraTable *ptable)
-{
-    makeCurrent();
-    f_cassandra->getPrivate()->updateTable(ptable);
-}
-
-/** \brief Truncate a Cassandra table.
- *
- * This function truncates a Cassandra table by sending the corresponding
- * order to the connected server.
- *
- * \param[in] table  The table to drop from the Cassandra server.
- */
-void QCassandraContext::truncateTable(const QCassandraTable *ptable)
-{
-    makeCurrent();
-    f_cassandra->getPrivate()->truncateTable(ptable);
-}
-
-/** \brief Insert a new value in the Cassandra database.
- *
- * This function inserts a new \p value in this Context of the Cassandra
- * database referenced by the row_key and column_key.
- *
- * \param[in] table_name  Name of the table where the value is inserted.
- * \param[in] row_key  The key used to identify the row.
- * \param[in] column_key  The key used to identify the column.
- * \param[in] value  The new value of the cell.
- */
-void QCassandraContext::insertValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, const QCassandraValue& value)
-{
-    makeCurrent();
-    f_cassandra->getPrivate()->insertValue(table_name, row_key, column_key, value);
-}
-
-/** \brief Retrieve a value from the Cassandra database.
- *
- * This function gets a \p value from the Cassandra database
- * referenced by the \p row_key and \p column_key.
- *
- * If the column is not found, then the \p value parameter is
- * set to the null value and the function returns false.
- *
- * \warning
- * This function does not work for counters, use getCounter() instead.
- *
- * \param[in] table_name  Name of the table where the value is inserted.
- * \param[in] row_key  The key used to identify the row.
- * \param[in] column_key  The key used to identify the column.
- * \param[out] value  The new value of the cell.
- *
- * \return false when the value was not found in the database, true otherwise
- *
- * \sa getCounter()
- */
-bool QCassandraContext::getValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
-{
-    makeCurrent();
-    try {
-        f_cassandra->getPrivate()->getValue(table_name, row_key, column_key, value);
-    }
-    catch(const org::apache::cassandra::NotFoundException&) {
-        value.setNullValue();
-        return false;
-    }
-    return true;
-}
-
-/** \brief Retrieve a counter from the Cassandra database.
- *
- * This function gets a counter \p value from the Cassandra database
- * referenced by the \p table_name, \p row_key, and \p column_key.
- *
- * If the column is not found, then the \p value parameter is
- * set to zero and the function returns false.
- *
- * \warning
- * This function only works on counters, see getValue() for any other
- * type of data.
- *
- * \param[in] table_name  Name of the table where the value is inserted.
- * \param[in] row_key  The key used to identify the row.
- * \param[in] column_key  The key used to identify the column.
- * \param[out] value  The new value of the cell.
- *
- * \return false when the value was not found in the database, true otherwise
- *
- * \sa getValue()
- */
-bool QCassandraContext::getCounter(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, QCassandraValue& value)
-{
-    makeCurrent();
-    try {
-        f_cassandra->getPrivate()->getCounter(table_name, row_key, column_key, value);
-    }
-    catch(const org::apache::cassandra::NotFoundException&) {
-        value.setInt64Value(0);
-        return false;
-    }
-    return true;
-}
-
-/** \brief Add a value to a Cassandra counter.
- *
- * This function adds \p value to a Cassandra counter as
- * referenced by the \p row_key and \p column_key.
- *
- * \param[in] table_name  Name of the table where the value is inserted.
- * \param[in] row_key  The key used to identify the row.
- * \param[in] column_key  The key used to identify the column.
- * \param[out] value  The value to add to this counter.
- */
-void QCassandraContext::addValue(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t value)
-{
-    makeCurrent();
-    f_cassandra->getPrivate()->addValue(table_name, row_key, column_key, value);
-}
-
-/** \brief Get a table slice.
- *
- * This function reads a table slice from the Cassandra database.
- *
- * \param[in] table_name  The name of the table where the row is check is defined.
- * \param[in] row_key  The row for which this data is being counted.
- * \param[in] column_predicate  The predicate to use to count the cells.
- *
- * \return The number of columns defined in the specified row.
- */
-int32_t QCassandraContext::getCellCount(const QString& table_name, const QByteArray& row_key, const QCassandraColumnPredicate& column_predicate)
-{
-    makeCurrent();
-    return f_cassandra->getPrivate()->getCellCount(table_name, row_key, column_predicate);
-}
-
-/** \brief Get a table slice.
- *
- * This function reads a table slice from the Cassandra database.
- *
- * \note
- * The column_predicate is an [in,out] parameter because the start column
- * name is set to the name of the last column read. This allows for reading
- * all the columns of a row used as an index.
- *
- * \param[in] table  The table where the results is saved.
- * \param[in] row_key  The row for which this data is being counted.
- * \param[in,out] column_predicate  The predicate to use to count the cells.
- *
- * \return The number of columns read from Cassandra.
- */
-uint32_t QCassandraContext::getColumnSlice(QCassandraTable& rtable, const QByteArray& row_key, QCassandraColumnPredicate& column_predicate)
-{
-    makeCurrent();
-    return f_cassandra->getPrivate()->getColumnSlice(rtable, row_key, column_predicate);
-}
-
-/** \brief Remove a cell from the Cassandra database.
- *
- * This function calls the Cassandra server to remove a cell in the Cassandra
- * database.
- *
- * \param[in] table_name  The name of the column where the row is defined.
- * \param[in] row_key  The row in which the cell is to be removed, if empty all the rows.
- * \param[in] column_key  The cell to be removed, if empty all the cells.
- * \param[in] timestamp  The time when the key to be removed was created.
- * \param[in] consistency_level  The consistency level to use to remove this cell.
- */
-void QCassandraContext::remove(const QString& table_name, const QByteArray& row_key, const QByteArray& column_key, int64_t timestamp, consistency_level_t consistency_level)
-{
-    makeCurrent();
-    f_cassandra->getPrivate()->remove(table_name, row_key, column_key, timestamp, consistency_level);
-}
-
-/** \brief Retrieve a slice of rows from Cassandra.
- *
- * This function calls the Cassandra server to retrieve a set of rows as
- * defined by the row predicate. These rows get cells as defined by the
- * column predicate defined inside the row predicate object.
- *
- * Note that the function updates the predicate so the next call returns
- * the following rows as expected.
- *
- * \param[in] table  The table which is emitting this call.
- * \param[in,out] row_predicate  The predicate used to select the rows.
- *
- * \return The number of rows read on this call.
- */
-uint32_t QCassandraContext::getRowSlices(QCassandraTable& rtable, QCassandraRowPredicate& row_predicate)
-{
-    makeCurrent();
-    return f_cassandra->getPrivate()->getRowSlices(rtable, row_predicate);
-}
 
 /** \brief Clear the context cache.
  *
@@ -1360,45 +1130,8 @@ uint32_t QCassandraContext::getRowSlices(QCassandraTable& rtable, QCassandraRowP
  */
 void QCassandraContext::clearCache()
 {
-    // lose all the tables
-    for(QCassandraTables::iterator ti(f_tables.begin()); ti != f_tables.end(); ++ti) {
-        (*ti)->unparent();
-    }
     f_tables.clear();
-
-    // then reload those tables that still exist in this context
-    f_cassandra->getPrivate()->retrieve_context(f_private->name.c_str());
-}
-
-/** \brief Synchronize the schema versions.
- *
- * This function calls the cassandra synchronizeSchemaVersions(). This can be
- * called by the context children as required.
- *
- * If the context was already unparented, then nothing happens.
- *
- * \sa unparent()
- * \sa QCassandra::synchronizeSchemaVersions()
- */
-void QCassandraContext::synchronizeSchemaVersions()
-{
-    if(f_cassandra) {
-        f_cassandra->synchronizeSchemaVersions();
-    }
-}
-
-/** \brief Unparent the context.
- *
- * This function is called internally to mark the context as unparented.
- * This means you cannot use it anymore. This happens whenever you
- * call the dropContext() funtion on a QCassandra object.
- *
- * \sa QCassandra::dropContext()
- */
-void QCassandraContext::unparent()
-{
-    clearCache();
-    f_cassandra.reset();
+    f_cassandra->retrieveContext( f_contextName );
 }
 
 /** \brief The hosts are listed in the locks table under this name.
@@ -1417,7 +1150,7 @@ QString QCassandraContext::lockHostsKey() const
 
 /** \brief Retrieve the table used by the Lock implementation.
  *
- * This function retrieves the "libQtCassandraLockTable" table to use
+ * This function retrieves the "lock_table" table to use
  * with the different functions that handle the Cassandra interprocess
  * locking implementation.
  *
@@ -1441,22 +1174,25 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
 
     // TODO: determine what the best parameters are for a session table
     QCassandraTable::pointer_t lock_table(table(table_name));
-    lock_table->setColumnType("Standard");
-    lock_table->setKeyValidationClass("BytesType");
-    lock_table->setDefaultValidationClass("BytesType");
-    lock_table->setComparatorType("BytesType");
-    lock_table->setKeyCacheSavePeriodInSeconds(14400);
-    lock_table->setMemtableFlushAfterMins(60);
-    lock_table->setGcGraceSeconds(3600);
-    lock_table->setMinCompactionThreshold(4);
-    lock_table->setMaxCompactionThreshold(22);
-    lock_table->setReplicateOnWrite(1);
-    lock_table->create();
 
-    // we create the table when needed and then use it ASAP so we need
-    // to synchronize; since that happens just once per context the hit
-    // isn't that bad
-    synchronizeSchemaVersions();
+    QCassandraSchema::Value compaction_value;
+    auto& compaction_value_map(compaction_value.map());
+    compaction_value_map["class"]         = QCassandraSchema::Value("SizeTieredCompactionStrategy");
+    compaction_value_map["max_threshold"] = QCassandraSchema::Value(22);
+    compaction_value_map["min_threshold"] = QCassandraSchema::Value(4);
+
+    QCassandraSchema::Value caching_value;
+    auto& caching_value_map(caching_value.map());
+    caching_value_map["keys"]               = QCassandraSchema::Value("ALL");
+    caching_value_map["rows_per_partition"] = QCassandraSchema::Value("NONE");
+
+    auto& fields_map( lock_table->fields() );
+    fields_map["gc_grace_seconds"]            = QCassandraSchema::Value(3600);
+    fields_map["memtable_flush_period_in_ms"] = QCassandraSchema::Value(60);
+    fields_map["compaction"]                  = compaction_value;
+    fields_map["caching"]                     = caching_value;
+
+    lock_table->create();
 
     return lock_table;
 }
@@ -1494,9 +1230,8 @@ void QCassandraContext::addLockHost(const QString& host_name)
     QCassandraRow::pointer_t hosts_row(locks_table->row(lockHostsKey()));
     hosts_row->clearCache(); // make sure we have a clean slate
     const int hosts_count(hosts_row->cellCount());
-    QCassandraColumnRangePredicate hosts_predicate;
-    hosts_predicate.setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
-    hosts_predicate.setCount(hosts_count);
+    auto hosts_predicate( std::make_shared<QCassandraCellRangePredicate>() );
+    hosts_predicate->setCount(hosts_count);
     hosts_row->readCells(hosts_predicate);
     const QCassandraCells& hosts(hosts_row->cells());
     // note: there is an interesting way to find one or more missing numbers
@@ -1532,7 +1267,6 @@ void QCassandraContext::addLockHost(const QString& host_name)
         new_id = it - set.begin();
     }
     QCassandraValue value(new_id);
-    value.setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
     locks_table->row(lockHostsKey())->cell(host_name)->setValue(value);
 }
 
@@ -1557,7 +1291,6 @@ void QCassandraContext::removeLockHost(const QString& host_name)
     QCassandraTable::pointer_t locks_table(table(f_lock_table_name));
     QCassandraRow::pointer_t row(locks_table->row(lockHostsKey()));
     QCassandraCell::pointer_t c(row->cell(host_name));
-    c->setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
     row->dropCell(host_name, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
 }
 
@@ -1638,7 +1371,7 @@ void QCassandraContext::setLockTableName(const QString& lock_table_name)
 
 /** \brief Retrieve the current lock table name.
  *
- * The lock table name is set to "libQtCassandraLockTable"
+ * The lock table name is set to "lock_table"
  *
  * \return The name of the table used to create locks.
  */

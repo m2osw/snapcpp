@@ -35,6 +35,39 @@
 #
 
 ################################################################################
+include_directories(
+    ${AS2JS_INCLUDE_DIR}
+    ${CASSANDRACPPDRIVER_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_BINARY_DIR}
+    ${QtCassandra_SOURCE_DIR}
+    ${QtCassandra_BINARY_DIR}
+)
+
+################################################################################
+# Change the IP as required by your environment
+set( DEFAULT_CASSANDRA_IP "$ENV{CASSANDRA_IP}" )
+if( NOT DEFAULT_CASSANDRA_IP )
+    set( DEFAULT_CASSANDRA_IP "localhost" )
+endif()
+set( CASSANDRA_IP "${DEFAULT_CASSANDRA_IP}" CACHE STRING "IP address of the cassandra server" )
+
+################################################################################
+project(query)
+
+add_executable(${PROJECT_NAME}
+    query.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    ${AS2JS_LIBRARIES}
+    ${CASSANDRACPPDRIVER_LIBRARIES}
+    QtCassandra
+)
+
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
+
+###############################################################################
 project(cluster)
 
 
@@ -46,6 +79,7 @@ target_link_libraries(cluster
     QtCassandra
 )
 
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
 project(cassandra_value)
@@ -57,8 +91,9 @@ add_executable(cassandra_value
 target_link_libraries(cassandra_value
     QtCassandra
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
 )
+
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
 project(context_management)
@@ -70,8 +105,9 @@ add_executable(context_management
 target_link_libraries(context_management
     QtCassandra
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
 )
+
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
 project(read_write_data)
@@ -83,8 +119,9 @@ add_executable(read_write_data
 target_link_libraries(read_write_data
     QtCassandra
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
 )
+
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
 #project(read_uuid)
@@ -96,7 +133,6 @@ target_link_libraries(read_write_data
 #target_link_libraries(read_uuid
 #    QtCassandra
 #    ${QT_LIBRARIES}
-#    ${THRIFT_LIBRARIES}
 #)
 
 ################################################################################
@@ -109,10 +145,16 @@ add_executable(million_rows
 target_link_libraries(million_rows
     QtCassandra
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
 )
 
+option( RUN_MILLION_ROW_TEST "In addition to the normal tests, include the (very slow) 'million row' test." OFF )
+if( ${RUN_MILLION_ROW_TEST} )
+    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
+endif()
+
 ################################################################################
+# This test has been deprecated because the "counter" column for "column1" is
+# no longer supported.
 project(simple_counter)
 
 add_executable(simple_counter
@@ -122,21 +164,23 @@ add_executable(simple_counter
 target_link_libraries(simple_counter
     QtCassandra
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
 )
+
+#add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
-project(composite_type)
-
-add_executable(composite_type
-    composite_type.cpp
-)
-
-target_link_libraries(composite_type
-    QtCassandra
-    ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
-)
+#project(composite_type)
+#
+#add_executable(composite_type
+#    composite_type.cpp
+#)
+#
+#target_link_libraries(composite_type
+#    QtCassandra
+#    ${QT_LIBRARIES}
+#)
+#
+#add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 
 ################################################################################
 project(cassandra_lock)
@@ -148,53 +192,9 @@ add_executable(cassandra_lock
 target_link_libraries(cassandra_lock
     QtCassandra
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
 )
 
-################################################################################
-project(run_cassandra_tests)
-
-# Change the IP as required by your environment
-set(CASSANDRA_IP localhost)
-
-add_custom_target(run_cassandra_tests
-    COMMAND echo "========================================="
-    COMMAND echo "cluster -h ${CASSANDRA_IP}"
-    COMMAND cluster -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "cassandra_value -h ${CASSANDRA_IP}"
-    COMMAND cassandra_value -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "context_management -h ${CASSANDRA_IP}"
-    COMMAND context_management -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "read_write_data -h ${CASSANDRA_IP}"
-    COMMAND read_write_data -h ${CASSANDRA_IP}
-    # This test is actually not working, this is a Cassandra
-    # limitation; (i.e. flooding a server is not supported)
-    # http://www.datastax.com/dev/blog/bulk-loading
-    #COMMAND echo "========================================="
-    #COMMAND echo "million_rows -h ${CASSANDRA_IP}"
-    #COMMAND million_rows -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "simple_counter -h ${CASSANDRA_IP}"
-    COMMAND simple_counter -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "composite_type -h ${CASSANDRA_IP}"
-    COMMAND composite_type -h ${CASSANDRA_IP}
-    COMMAND echo "========================================="
-    COMMAND echo "cassandra_lock -h ${CASSANDRA_IP}"
-    COMMAND cassandra_lock -h ${CASSANDRA_IP} -i 4 -n 5
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS
-        cluster
-        cassandra_value
-        context_management
-        read_write_data
-        million_rows
-        simple_counter
-        composite_type
-        cassandra_lock
-)
+add_test( NAME ${PROJECT_NAME}-create COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} -c 1 )
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} -i 4 -n 5 )
 
 # vim: ts=4 sw=4 et

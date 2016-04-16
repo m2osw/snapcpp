@@ -51,8 +51,8 @@ QtCassandra::QCassandraRow::pointer_t find_unreference_row(QString const & site_
     QtCassandra::QCassandraTable::pointer_t listref_table(list_plugin->get_listref_table());
     QtCassandra::QCassandraRow::pointer_t ref_row(listref_table->row(ref_key));
 
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setCount(1000);
+    auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+    row_predicate->setCount(1000);
     for(;;)
     {
         content_table->clearCache();

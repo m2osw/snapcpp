@@ -497,7 +497,7 @@ link_context::link_context(snap_child * snap, link_info const & info, int const 
     : f_snap(snap)
     , f_info(info)
     //, f_row() -- auto-init
-    //, f_column_predicate() -- auto-init
+    , f_column_predicate( std::make_shared<QtCassandra::QCassandraCellRangePredicate>() )
     //, f_link() -- auto-init
 {
     // TODO: verify that unicity is equal on both sides?
@@ -534,8 +534,8 @@ link_context::link_context(snap_child * snap, link_info const & info, int const 
 
             f_row = links_table->row(f_info.link_key());
             // WARNING: Here the column names are the keys, not the link names...
-            f_column_predicate.setCount(count);
-            f_column_predicate.setIndex(); // behave like an index
+            f_column_predicate->setCount(count);
+            f_column_predicate->setIndex(); // behave like an index
             // we MUST clear the cache in case we read the same list of links twice
             f_row->clearCache();
             // at this point begin() == end()
@@ -1130,11 +1130,11 @@ link_info_pair::vector_t links::list_of_links(QString const & path)
     QString const links_namespace_end(QString("%1:;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
     int const start_pos(links_namespace_start.length());
 
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100);
-    column_predicate.setIndex(); // behave like an index
-    column_predicate.setStartColumnName(links_namespace_start); // limit the loading to links at least
-    column_predicate.setEndColumnName(links_namespace_end);
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(100);
+    column_predicate->setIndex(); // behave like an index
+    column_predicate->setStartCellKey(links_namespace_start); // limit the loading to links at least
+    column_predicate->setEndCellKey(links_namespace_end);
 
     // loop until all cells are handled
     for(;;)
@@ -1373,12 +1373,12 @@ void links::delete_link(link_info const& info, int const delete_record_count)
         // here we get the row, we do not delete it yet because we need
         // to go through the whole list first
         QtCassandra::QCassandraRow::pointer_t row(f_links_table->row(info.link_key()));
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
         // The columns names are keys (i.e. http://snap.m2osw.com/...)
-        //column_predicate.setStartColumnName(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
-        //column_predicate.setEndColumnName(QString("%1;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
-        column_predicate.setCount(delete_record_count);
-        column_predicate.setIndex(); // behave like an index
+        //column_predicate->setStartCellKey(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+        //column_predicate->setEndCellKey(QString("%1;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+        column_predicate->setCount(delete_record_count);
+        column_predicate->setIndex(); // behave like an index
         bool modified(false);
         for(;;)
         {
@@ -1547,11 +1547,11 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
     QString const destination_uri(destination_branch.mid(0, dst_branch_pos));
     snap_version::version_number_t const branch_number(destination_branch.mid(dst_branch_pos + 1).toULong());
 
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setStartColumnName(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
-    column_predicate.setEndColumnName(QString("%1;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
-    column_predicate.setCount(100);
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setStartCellKey(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+    column_predicate->setEndCellKey(QString("%1;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+    column_predicate->setCount(100);
+    column_predicate->setIndex(); // behave like an index
     int const src_branch_pos(source_branch.indexOf('#'));
     QString const source_uri(source_branch.mid(0, src_branch_pos));
     for(;;)

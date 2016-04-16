@@ -56,13 +56,17 @@ project( snapwebsites_project )
 enable_language( CXX )
 enable_language( C )
 
+option( RUN_TESTS "Enable tests to run via CTest" OFF )
+if( ${RUN_TESTS} )
+    enable_testing()
+endif()
+
 ## Include support modules
 ##
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
 find_package( AdvGetOpt          REQUIRED )
 find_package( Boost              REQUIRED )
-find_package( CassandraCppDriver REQUIRED )
 find_package( CSSPP              REQUIRED )
 find_package( ControlledVars     REQUIRED )
 find_package( LibTLD             REQUIRED )
@@ -75,7 +79,6 @@ find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapDoxygen        REQUIRED )
-find_package( Thrift             REQUIRED )
 find_package( ZLIB               REQUIRED )
 find_package( ZipIos             REQUIRED 2.1      )
 
@@ -119,7 +122,6 @@ include_directories(
     ${CMAKE_BINARY_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${LIBTLD_INCLUDE_DIRS}
-    ${THRIFT_INCLUDE_DIR}
 )
 
 ##

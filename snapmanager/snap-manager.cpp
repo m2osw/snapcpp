@@ -709,37 +709,37 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
 
     // this is the default for contexts, but just in case we were
     // to change that default at a later time...
-    f_context->setDurableWrites(true);
+    //
+    auto& fields(f_context->fields());
+    fields["durable_writes"] = QVariant(true);
+
+    auto& replication_map(fields["replication"].map());
 
     // for developers testing with a few nodes in a single data center,
     // SimpleStrategy is good enough; for anything larger ("a real
     // cluster",) it won't work right
     if(strategy == 0 /*"simple"*/)
     {
-        f_context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
-
-        // for simple strategy, use the replication_factor parameter
-        // (see http://www.datastax.com/documentation/cql/3.0/cql/cql_reference/create_keyspace_r.html)
-        f_context->setReplicationFactor(replication_factor);
+        replication_map["class"]              = QVariant("SimpleStrategy");
+        replication_map["replication_factor"] = QVariant(1);
     }
     else
     {
-        if(strategy == 1 /*"local"*/)
+        if( strategy == 1 /*"local"*/ )
         {
-            f_context->setStrategyClass("org.apache.cassandra.locator.LocalStrategy");
+            throw std::runtime_error( "Local strategy is no longer supported!" );
         }
-        else
-        {
-            // else strategy == 2 /*"network"*/
-            f_context->setStrategyClass("org.apache.cassandra.locator.NetworkTopologyStrategy");
-        }
+
+        // else strategy == 2 /*"network"*/
+        //
+        replication_map["class"] = QVariant("NetworkTopologyStrategy");
 
         // here each data center gets a replication factor
         QString const replication(QString("%1").arg(replication_factor));
         int const max_names(data_centers.size());
         for(int idx(0); idx < max_names; ++idx)
         {
-            f_context->setDescriptionOption(data_centers[idx], replication);
+            replication_map[data_centers[idx]] = QVariant(replication);
         }
     }
 
@@ -756,10 +756,6 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     //
     create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
     create_table(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
-
-    // tables were created, we must wait for them to be synchronized
-    //
-    f_context->parentCassandra()->synchronizeSchemaVersions();
 }
 
 
@@ -771,19 +767,17 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
     {
         // table is not there yet, create it
         table = f_context->table(table_name);
-        table->setComment(comment);
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        //table->setMemtableThroughputInMb(247);
-        //table->setMemtableOperationsInMillions(1.1578125);
-        table->setGcGraceSeconds(864000);
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
+
+        auto& table_fields( table->fields() );
+        table_fields["comment"]                     = QVariant(comment);
+        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["gc_grace_seconds"]            = QVariant(864000);
+        //
+        auto& compaction_value_map(table_fields["compaction"].map());
+        compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+        compaction_value_map["min_threshold"] = QVariant(4);
+        compaction_value_map["max_threshold"] = QVariant(22);
+
         table->create();
     }
 }
@@ -803,10 +797,10 @@ void snap_manager::reset_domains_index()
 
     // go through all the domain rows
     int count(0);
-    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
-    column_predicate->addColumnName("core::rules"); // get one column to avoid getting all!
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setColumnPredicate(column_predicate);
+    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
+    column_predicate->setCellKey("core::rules"); // get one column to avoid getting all!
+    auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
+    row_predicate->setCellPredicate(column_predicate);
     for(;;)
     {
         table->clearCache();
@@ -847,10 +841,10 @@ void snap_manager::reset_websites_index()
 
     // go through all the website rows
     int count(0);
-    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
-    column_predicate->addColumnName("core::rules"); // get one column to avoid getting all!
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setColumnPredicate(column_predicate);
+    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
+    column_predicate->setCellKey("core::rules"); // get one column to avoid getting all!
+    auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
+    row_predicate->setCellPredicate(column_predicate);
     for(;;)
     {
         table->clearCache();
@@ -933,13 +927,13 @@ void snap_manager::loadHosts()
 
     QtCassandra::QCassandraRow::pointer_t row(table->row(f_context->lockHostsKey()));
 
-    QtCassandra::QCassandraColumnRangePredicate hosts_predicate;
+    auto hosts_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
     QString filter(f_host_filter_string->text());
     if(filter.length() != 0)
     {
         // assign the filter only if not empty
-        hosts_predicate.setStartColumnName(filter);
-        hosts_predicate.setEndColumnName(filter + QtCassandra::QCassandraColumnPredicate::last_char);
+        hosts_predicate->setStartCellKey(filter);
+        hosts_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
     }
     row->clearCache(); // remove any previous load results
     row->readCells(hosts_predicate);
@@ -1191,13 +1185,13 @@ void snap_manager::loadDomains()
     }
     QtCassandra::QCassandraRow::pointer_t row(table->row(row_index_name));
 
-    QtCassandra::QCassandraColumnRangePredicate domain_predicate;
+    auto domain_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
     QString const filter(f_domain_filter_string->text());
     if(filter.length() != 0)
     {
         // assign the filter only if not empty
-        domain_predicate.setStartColumnName(filter);
-        domain_predicate.setEndColumnName(filter + QtCassandra::QCassandraColumnPredicate::last_char);
+        domain_predicate->setStartCellKey(filter);
+        domain_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
     }
     row->clearCache(); // remove any previous load results
     row->readCells(domain_predicate);
@@ -1514,9 +1508,9 @@ void snap_manager::on_domainDelete_clicked()
             // for that domain (m2osw.com:;).
             // Note that we're using our index row to read those entries because we do
             // not force a sort on row keys.
-            QtCassandra::QCassandraColumnRangePredicate domain_predicate;
-            domain_predicate.setStartColumnName(name + "::");
-            domain_predicate.setEndColumnName(name + ":;"); // ';' > ':'
+            auto domain_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+            domain_predicate->setStartCellKey(name + "::");
+            domain_predicate->setEndCellKey(name + ":;"); // ';' > ':'
             row->clearCache(); // remove any previous load results
             row->readCells(domain_predicate);
 
@@ -1599,9 +1593,9 @@ void snap_manager::loadWebsites()
     // it encompasses all the possible domain names (.m2osw.com).
     // Note that we're using our index row to read those entries because we do
     // not force a sort on row keys.
-    QtCassandra::QCassandraColumnRangePredicate domain_predicate;
-    domain_predicate.setStartColumnName(f_domain_org_name + "::");
-    domain_predicate.setEndColumnName(f_domain_org_name + ":;"); // ';' > ':'
+    auto domain_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
+    domain_predicate->setStartCellKey(f_domain_org_name + "::");
+    domain_predicate->setEndCellKey(f_domain_org_name + ":;"); // ';' > ':'
     row->clearCache(); // remove any previous load results
     row->readCells(domain_predicate);
 

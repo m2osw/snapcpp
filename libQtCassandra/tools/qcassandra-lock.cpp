@@ -8,7 +8,7 @@
  *
  * Documentation:
  *      This tool offers you a way to add and remove hosts from the list
- *      of hosts defined in the libQtCassandraLockTable table. Each
+ *      of hosts defined in the lock_Table table. Each
  *      named host has the ability to lock something in the
  *      Cassandra cluster with the help of the QCassandraLock object.
  *      You must add the name in this way (or your own application software)
@@ -175,9 +175,8 @@ void list_hosts()
     }
     else {
         // show all the computer names in this context
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setIndex();
-        column_predicate.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+        auto column_predicate( std::make_shared<QtCassandra::QCassandraCellRangePredicate>() );
+        column_predicate->setIndex();
         hosts->readCells(column_predicate);
         QtCassandra::QCassandraCells cells(hosts->cells());
         if(cells.count() == 0) {

@@ -37,12 +37,18 @@
 
 #pragma GCC push
 #pragma GCC diagnostic ignored "-Wundef"
-#include "QCassandraPrivate.h"
-#include <protocol/TBinaryProtocol.h>
-#include <transport/TSocket.h>
-#include <transport/TTransportUtils.h>
 #include <sys/time.h>
 #pragma GCC pop
+
+#include "QtCassandra/QCassandra.h"
+#include "QtCassandra/QCassandraSchema.h"
+
+#include <QtCore>
+
+#include <cassandra.h>
+
+#include <iostream>
+#include <sstream>
 
 /** \brief The QtCassandra namespace includes all the Cassandra extensions.
  *
@@ -60,6 +66,8 @@
  */
 namespace QtCassandra
 {
+
+using namespace QCassandraSchema;
 
 /** \mainpage
  *
@@ -138,7 +146,7 @@ namespace QtCassandra
  * all the calls to the Cassandra Thrift interface and convert those
  * exception in a libQtCassandra exception.
  *
- * \subsection organization The libQtCassandra organization 
+ * \subsection organization The libQtCassandra organization
  *
  * \li Cluster
  *
@@ -361,7 +369,8 @@ namespace QtCassandra
  * If you plan to have multiple threads, I currently suggest you create one
  * QCassandra object per thread. The results will be similar, although it will
  * make use of more memory and more accesses to the Cassandra server (assuming
- * each thread accesses the common data, in that case you probably want to manage
+ * each thread accesses the common data, in that case you probably want to
+ * manage
  * your own cache of the data.)
  *
  * \subsection qt Why Qt?
@@ -527,297 +536,9 @@ namespace QtCassandra
  *
  * Actual Cassandra's FAQ: http://wiki.apache.org/cassandra/FAQ
  *
- * \section changes Changes between versions
- *
- * \li version 0.5.22
- *
- * . Applied a fix to the QCassandraLock so if a process trying to obtain
- *   a lock crashes (abort) or gets killed (KILL, computer loses power)
- *   then the entering::... key still gets deleted.
- *
- * . Bumped copyright notice to 2016.
- *
- * . Fixed the qcassandra-lock top comment which was from the lock test.
- *
- * . Finally took care of the debian/copyright file.
- *
- * . Changed the README.txt to a README.md file instead.
- *
- * \li version 0.5.21
- *
- * . Added support for a regular expression to search rows.
- *
- * . Note: versions 0.5.8 to 0.5.20 were nightly builds changing the "wrong"
- *   version number.
- *
- * \li version 0.5.7
- *
- * . Updated the headers to support the new controlled_vars enum.
- *
- * . Tweaked the include_directories() to support system and local headers.
- *
- * \li version 0.5.6
- *
- * . Repaired warning-as-error regarding strict-overflow. Alexis added the
- *   special-edge case.
- *
- * \li version 0.5.5
- *
- * . Added fix for clearTable() to work as expected.
- *
- * \li version 0.5.4
- *
- * . Added documentation about the fact that the QMap is always started from
- *   smallest to largest even if you set the reverse flag on.
- *
- * \li version 0.5.3
- *
- * . Updated the C++ warnings: reduced the strict-overlow to 4 instead of 5,
- *   tested with -Wconversion and fixed many errors.
- *
- * . "Fixed" comparison between floating point numbers (== and !=).
- *
- * . Removed some debug code.
- *
- * \li version 0.5.2
- *
- * . Put the limit size of a buffer inside the throw raised when the limit is
- *   reached.
- *
- * \li version 0.5.0-2
- *
- * . Changed all shared pointer with std::share_ptr<> so we can use weak
- *   pointers properly.
- *
- * \li version 0.5.0-1
- *
- * . Fixed broken package because of the info file, which was not needed.
- *
- * \li version 0.5.0
- *
- * . Added support for debian packaging with pbuilder.
- *
- * \li version 0.4.7
- *
- * . Added the QCassandraLock object to lock any number of processes
- *   using the Cassandra database system and the Lamport bakery algorithm.
- *
- * . Fixed some documentation.
- *
- * . Added support for specifying the consistency level of a read
- *   via the f_value of a cell.
- *
- * . Added a synchronization function so we can wait and have all the
- *   nodes running with the same schema version.
- *
- * . Fixed the QCassandra::Snitch() so it returns the snitch, not the
- *   protocol version.
- *
- * . Added a test to verify that locks work when processes run on any
- *   number of clients. 
- *
- * . Updated the tests to properly work in a cluster environment.
- *
- * . Added a unit test for the QCassandraValue class which checks
- *   a large number of cases, this allowed me to apply several fixes.
- *
- * . The <, <=, >, >= QCassandraValue operators were invalid
- *
- * . Added Bool support in the QCassandraValue object
- *
- * . Added an index to the QCassandraValue data to read any value in
- *   an array or structure; and a size for strings and binaries
- *   (although a size of a UTF-8 string...)
- *
- * . Moved the read of values to global functions so they are
- *   accessible from other functions without having to use
- *   QCassandraValue variables (only the writes were accessible)
- *
- * . Fixed the findContext() so it loads the Cassandra contexts first
- *   if not yet loaded.
- *
- * . Fixed the disconnect() function so it clears all the variables
- *   and the same Cassandra object can safely be reused.
- *
- * . Fixed the QCassandraPrivate::getColumnSlice() and
- *   QCassandraPrivate::getRowSlices() functions which would not
- *   first transform the column key to a QByteArray and thus binary
- *   keys with null characters would invariably fail.
- *
- * . Fixed the QCassandraRow::dropCell() as it would emit a read of
- *   the cell before actually dropping it. The read would retrive the
- *   consistency value and/or the timestamp. These values are retrieved
- *   from memory only now, if defined.
- *
- * . Fixed the CMakeLists.txt so the thrift library is linked against
- *   the libQtCassandra library itself; that way it is not required in
- *   the binaries that link against the libQtCassandra library.
- *
- * . Removed all references to the boost_system library.
- *
- * . Added some #include of \<unistd.h> for Ubuntu 12.10 and over.
- *
- * . Reviewed the SSL connection capability. It is still not considered
- *   to be working but the password can now be specified from your
- *   application.
- *
- * . Included 2013 in copyright notices.
- *
- * \li version 0.4.6
- *
- * . Added direct support for QUuid as row and column keys.
- *
- * . Added direct support for char * and wchar_t * so we do not
- *   have to first cast strings to QString everywhere.
- *
- * . Fixed bug testing row key size to limit of 64535 instead
- *   of 65535.
- *
- * . Added a test as row and column keys cannot be empty. It will
- *   now throw an error immediately if so.
- *
- * . Updated some documentation accordingly and with enhancements.
- *
- * \li version 0.4.5
- *
- * . Added a first_char and last_char variables (QChar) in column predicate
- *   which can be used to define "[nearly] All column names".
- *
- * . Fixed the names of two functions: setFinishColumnName() and
- *   setFinishColumnKey() are now setEndColumnName() and setEndColumnKey()
- *   respectively (as documented and so it matches the getters.)
- *
- * . Added support for indexes defined with columns. The column predicate
- *   now has a setIndex() function and that allows you to call readCells()
- *   repititively until all the columns matching the predicate were
- *   returned (very similar to reading a large set of rows.)
- *
- * . Fixed a few things in the documentation.
- *
- * \li Version 0.4.4
- *
- * . Added support for composite columns. It was functional before but with
- *   knowledge on how to build the column key which is actually quite
- *   complicated (okay, not that hard, but libQtCassandra is here to hide
- *   that sort of thing!) Use the compositeCell() function of your
- *   QCassandraRow objects.
- *
- * \li Version 0.4.3
- *
- * . Added support for counters.
- *
- * . Fixed several usage of keys so 0 bytes works as expected. (in getValue()
- *   and insertValue())
- *
- * . Small fixes to documentation.
- *
- * \li Version 0.4.2 (see also)
- *
- * . Fixed the QCassandraTable::readRows() so it automatically updates the
- *   row predicate with the last row as the new start key. This is very
- *   important because the rows returned to you get sorted by key in the
- *   table, whereas, in Cassandra they are not sorted that way at all.
- *   (At least not by default when you use the RandomPartitioner which
- *   is very likely.)
- *
- * . Fixed the QCassandraContext::descriptionOption() which would create
- *   empty options when the sought option did not exist in the context.
- *
- * . Upgraded the version of Thrift to 0.8.0. There are some problems with
- *   the output of the thrift command line option (some missing \#include
- *   and invalid references.) I fixed the generated code as required so
- *   it compiles and the result works as expected.
- *
- * . Made updates to the code so it works with version 1.1 of Cassandra.
- *   This includes proper support for the replication factor which was
- *   deprecated as a direct field in the KsDef structure. The other
- *   deprecated fields are simply ignored at this point (those are
- *   in Tables, see CfDef in interface/cassandra.thrift of Cassandra 1.1)
- *
- * . Fixed replicateOnWrite() which now returns the expected value.
- *
- * . Fixed all the context and table get...() functions so if the value
- *   is marked as unset, empty or zero is returned instead of the current
- *   value saved in the object (which may not reflect what the database
- *   is defined as.)
- *
- * . Added the million_rows test to ensure we can create over 1 million
- *   rows and read them back. At this time, in my environment, it often
- *   crashes the Cassandra server... Java problems?
- *
- * . Added functions that return the partitioner and snitch information
- *   from the cluster.
- *
- * . Fixed QCassandraContext::prepareContextDefinition() which would
- *   force the replication factor to 1 instead of the user defined value.
- *
- * . The CMakeLists.txt now properly defines the folder where the compiled
- *   thrift library lies so it can link with it in the standalone version
- *   of the library.
- *
- * \li Version 0.4.1
- *
- * . Fixed the size of the buffer used to save 64 bit integers.
- *
- * . Fixed the size of integers used to handle floating points.
- *
- * . Fixed the double being read as 8 bytes and somehow converted
- *   to a float instead of a double.
- *
- * . Fixed the test of the string set in a value to limit the UTF-8
- *   version of the string to 64Mb (instead of the number of UCS-2
- *   characters held by a QString.)
- *
- * . Enhanced documentation about the findRow() and findCell()
- *   which do not look for a row or cell in the Cassandra system,
- *   it only checks in memory!
- *
- * . Better support older versions of g++ (4.1 cannot properly
- *   cast the controlled variables for enumerations) -- thank
- *   you to John Griswold for reporting the problem.
- *
- * . Added some missing documentation.
- *
- * \li Version 0.4.0
- *
- * . Enhanced the cmake scripts
- *
- * . Enhanced documentation of different functions
- *
- * . Removed all the Qt sub-folders from all the \#include
- *
- * . Removed all unwanted files from the source package using
- *   a CPACK variable
- *
- * . Added some try/catch to avoid a certain number of exceptions
- *   from Cassandra
- *
- * . Fixed the column and row predicates to make use the whole key
- *   instead of just the string up to the first null terminator
- *
- * . Updated the copyright version to include 2012
- *
- * \li Version 0.3.2
- *
- * . Fixed the creation of a row predicate as it wasn't defining a
- *   column predicate which is necessary when we call readRows()
- *   with the default parameters on a table.
- *
- * \li Version 0.3.1
- *
- * . Added support for installation targets and generation of binary packages.
- *
- * \li Version 0.3.0
- *
- * . Added a dropContext() in the QCassandra object.
- *
- * . Added proper unparenting of the context and table classes.
- *
- * . Started to make use of the Controlled Variables (requires 1.3.0 or better.)
- *
  * \section copyright libQtCassandra copyright and license
  *
- * Copyright (c) 2011-2013 Made to Order Software Corp.
+ * Copyright (c) 2011-2016 Made to Order Software Corp.
  *
  * http://snapwebsites.org/<br/>
  * contact@m2osw.com
@@ -841,9 +562,6 @@ namespace QtCassandra
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
-
-
 
 /** \class QCassandra
  * \brief The Cassandra class definition.
@@ -882,41 +600,6 @@ namespace QtCassandra
  * runtime use QCassandra::versionPatch().
  *
  * \sa versionPatch()
- */
-
-/** \var QCassandra::SCHEMA_SYNCHRONIZATION_USE_DEFAULT
- * \brief Request the use of the default synchronization timeout value.
- *
- * This value can be used to let the libQtCassandra library use the default
- * synchronization timeout value which at this time is defined as 1 minute.
- *
- * Schema synchronization can take a long time on large clusters.
- */
-
-/** \var QCassandra::SCHEMA_SYNCHRONIZATION_DEFAULT
- * \brief The default synchronization timeout value.
- *
- * This value represents the default timeout value for a synchronization
- * request. If it takes longer than this for the synchronization to complete,
- * then the synchronization functions fail by throwing an error.
- *
- * At this time the default is to wait for 1 minute (60 seconds.)
- */
-
-/** \typedef QCassandra::schema_synchronization_timeout_t
- * \brief The synchronization timeout type.
- *
- * This type represents the synchronization value. You should use this type so
- * as to avoid guessing the default value.
- */
-
-/** \var QCassandra::f_private
- * \brief A pointer to a QCassandraPrivate object.
- *
- * The QCassandra object accesses the Cassandra server via functions defined
- * in the QCassandraPrivate object. This pointer holds that object.
- *
- * This pointer is assigned at the time the QCassandra object gets allocated.
  */
 
 /** \var QCassandra::f_current_context
@@ -981,21 +664,6 @@ namespace QtCassandra
  * Cassandra cluster.
  */
 
-/** \var QCassandra::f_default_consistency_level
- * \brief The consistency level used by default.
- *
- * Whenever a value or some other function makes use of the special
- * consistency named CONSISTENCY_LEVEL_DEFAULT this default value is
- * used instead.
- *
- * By default, the default consistency is set to CONSISTENCY_LEVEL_ONE which is
- * great for reads which do not need full synchronization.
- *
- * It is not uncommon to change this default value to CONSISTENCY_LEVEL_QUORUM
- * (quorum among your entire system) or CONSISTENCY_LEVEL_LOCAL_QUORUM
- * (local to a data center).
- */
-
 /** \brief Initialize the QCassandra object.
  *
  * This function makes the QCassandra object ready.
@@ -1005,31 +673,26 @@ namespace QtCassandra
  * Cassandra server.
  *
  * Next you are expected to connect to the server and eventually
- * change the default consistency level and on larger system, you
- * may also want to consider changing the schema synchronization
- * time out.
+ * change the default consistency level and on larger system.
  *
  * \sa connect()
  * \sa setDefaultConsistencyLevel()
- * \sa setSchemaSynchronizationTimeout()
  */
 QCassandra::QCassandra()
-    : f_private(new QCassandraPrivate(this)),
-      //f_current_context(nullptr) -- auto-init
-      //f_contexts_read(false) -- auto-init
-      //f_contexts() -- auto-init
-      //f_cluster_name("") -- auto-init
-      //f_protocol_version("") -- auto-init
-      //f_partitioner("") -- auto-init
-      //f_snitch("") -- auto-init
-      f_default_consistency_level(CONSISTENCY_LEVEL_ONE), // default is CONSISTENCY_LEVEL_DEFAULT
-      f_schema_synchronization_timeout(SCHEMA_SYNCHRONIZATION_DEFAULT)
+    : f_session( QCassandraSession::create() )
+    // f_current_context(nullptr) -- auto-init
+    // f_contexts() -- auto-init
+    // f_cluster_name("") -- auto-init
+    // f_protocol_version("") -- auto-init
+    // f_partitioner("") -- auto-init
+    // f_snitch("") -- auto-init
+    , f_default_consistency_level( CONSISTENCY_LEVEL_ONE )
+    // default is CONSISTENCY_LEVEL_DEFAULT
 {
     // we are passing this to the private object that we control
     // so we make make sure it is used wisely; at this time it is
     // just saved in a variable member
 }
-
 
 /** \brief Create the QCassandra instance.
  *
@@ -1043,7 +706,6 @@ QCassandra::pointer_t QCassandra::create()
     return pointer_t( new QCassandra );
 }
 
-
 /** \brief Cleanup the Cassandra object.
  *
  * This function cleans up the QCassandra object.
@@ -1053,31 +715,16 @@ QCassandra::pointer_t QCassandra::create()
  */
 QCassandra::~QCassandra()
 {
+    disconnect();
 }
-
-
-/** \brief Internal function to give others access to the Cassandra server.
- *
- * This function internally gives other objects a way to access the private
- * definitions.
- *
- * For example, the QCassandraContext uses this function to call functions
- * such as createContext().
- *
- * \return A bare pointer to the QCassandraPrivate object attached to this QCassandra instance.
- */
-QCassandraPrivate *QCassandra::getPrivate()
-{
-    return f_private.get();
-}
-
 
 /** \brief Connect to a Cassandra Cluster.
  *
  * This function connects to a Cassandra Cluster. Which cluster is determined
  * by the host and port parameters.
  *
- * One cluster may include many database contexts (i.e. keyspaces.) Each database
+ * One cluster may include many database contexts (i.e. keyspaces.) Each
+ * database
  * context (keyspace) has a set of parameters defining its duplication mechanism
  * among other things. Before working with a database context, one must call the
  * the setCurrentContext() function.
@@ -1090,23 +737,75 @@ QCassandraPrivate *QCassandra::getPrivate()
  * Note that the previous connection is lost whether or not the new one
  * succeeds.
  *
- * \param[in] host  The host, defaults to "localhost" (an IP address, computer
- *                  hostname, domain name, etc.)
- * \param[in] port  The connection port, defaults to 9160.
+ * \param[in] host      The host, defaults to "localhost" (an IP address,
+ * computer
+ *                      hostname, domain name, etc.)
+ * \param[in] port      The connection port, defaults to 9042.
  * \param[in] password  Whether the connection makes use of encryption and a
  *                      password (if password is not an empty string).
  *
- * \return true if the connection succeeds, false otherwise
+ * \return true if the connection succeeds, throws otherwise
  */
-bool QCassandra::connect(const QString& host, const int port, const QString& password)
+bool QCassandra::connect( const QString &host, const int port )
 {
-    // first make sure we're disconnected from the other cluster
-    disconnect();
-
-    // then we reconnect
-    return f_private->connect(host, port, password);
+    QStringList host_list;
+    host_list << host;
+    return connect( host_list, port );
 }
 
+/** \brief Connect to a Cassandra Cluster.
+ *
+ * This function connects to a Cassandra Cluster. Which cluster is determined
+ * by the host and port parameters.
+ *
+ * One cluster may include many database contexts (i.e. keyspaces.) Each
+ * database
+ * context (keyspace) has a set of parameters defining its duplication mechanism
+ * among other things. Before working with a database context, one must call the
+ * the setCurrentContext() function.
+ *
+ * The function first disconnects the existing connection when there is one.
+ *
+ * Many other functions require you to call this connect() function first. You
+ * are likely to get a runtime exception if you don't.
+ *
+ * Note that the previous connection is lost whether or not the new one
+ * succeeds.
+ *
+ * \param[in] host_list The list of hosts, AKA contact points (IP addresses,
+ * computer
+ *                      hostnames, domain names, etc.)
+ * \param[in] port      The connection port, defaults to 9042.
+ *
+ * \return true if the connection succeeds, throws otherwise
+ */
+bool QCassandra::connect( const QStringList &host_list, const int port )
+{
+    // disconnect any existing connection
+    disconnect();
+
+    f_session = QCassandraSession::create();
+    f_session->connect( host_list, port ); // throws on failure!
+
+    QCassandraQuery local_table( f_session );
+    local_table.query( "SELECT cluster_name, native_protocol_version, partitioner FROM system.local" );
+    local_table.start();
+    //
+    if( !local_table.nextRow() )
+    {
+        throw std::runtime_error( "Error in database table system.local!" );
+    }
+
+    f_cluster_name     = local_table.getStringColumn( "cluster_name"            );
+    f_protocol_version = local_table.getStringColumn( "native_protocol_version" );
+    f_partitioner      = local_table.getStringColumn( "partitioner"             );
+    //
+    // I have no idea how to get this from the new CQL-based c++ interface.
+    //
+    f_snitch = "TODO!";
+
+    return true;
+}
 
 /** \brief Break the connection to Cassandra.
  *
@@ -1114,25 +813,19 @@ bool QCassandra::connect(const QString& host, const int port, const QString& pas
  *
  * This function has the side effect of clearing the cluster name,
  * protocol version, and current context.
- *
- * The function does not clear the default consistency level or
- * the default time out used by the schema synchronization. Those
- * can be changed by calling their respective functions.
  */
 void QCassandra::disconnect()
 {
-    f_private->disconnect();
+    f_session.reset();
+
     f_current_context.reset();
-    f_contexts_read = false;
     f_contexts.clear();
     f_cluster_name = "";
     f_protocol_version = "";
     f_partitioner = "";
-    f_snitch = "";
-    //f_default_consistency_level = CONSISTENCY_LEVEL_ONE; -- keep current value
-    //f_schema_synchronization_timeout = SCHEMA_SYNCHRONIZATION_DEFAULT; -- keep current value
+    f_snitch = "TODO";
+    f_default_consistency_level = CONSISTENCY_LEVEL_ONE;
 }
-
 
 /** \brief Check whether the object is connected to the server.
  *
@@ -1146,71 +839,8 @@ void QCassandra::disconnect()
  */
 bool QCassandra::isConnected() const
 {
-    return f_private->isConnected();
+    return f_session->isConnected();
 }
-
-
-/** \brief Wait until all the nodes are synchronized.
- *
- * This function waits for the nodes to be synchronized. This means
- * that all the nodes end up with the exact same version. This is
- * required if you just created, modified, or dropped a context or
- * a table. Note that you can create, modifiy, or drop any number
- * of distinct contexts and tables without synchronization. However,
- * it is required to synchronize before you can add data to a context
- * or add data to a table (or expect other processes than yours to
- * do so.)
- *
- * Because of this required synchronization, you generally want to
- * make use of a backend process to setup your Cassandra environment
- * and then avoid all creates, modifies, and drops from your front
- * end software. The synchronization is very costly (it may wait
- * seconds!)
- *
- * \note
- * From a context, you may useparentCassandra() function to retrieve
- * the QCassandra object and then setup the schem.
- *
- * \code
- *      context->parentCassandra()->synchronizeSchemaVersions(3600);
- * \endcode
- *
- * \exception std::runtime_error()
- * If the nodes do not get synchronized in the number of seconds
- * specified here, the function throws this exception.
- *
- * \param[in] timeout  The number of seconds to wait at most.
- */
-void QCassandra::synchronizeSchemaVersions(uint32_t timeout)
-{
-    if(timeout == SCHEMA_SYNCHRONIZATION_USE_DEFAULT) {
-        timeout = f_schema_synchronization_timeout;
-    }
-    f_private->synchronizeSchemaVersions(timeout);
-}
-
-
-/** \brief Define the default schema synchronization timeout.
- *
- * This function defines the value to use as the default synchronization
- * time out value. This is set to 60 seconds by default. On larger Cassandra
- * clusters a larger amount may be necessary.
- *
- * \exception std::logic_error
- * This exception is raised if the input is set to
- * SCHEMA_SYNCHRONIZATION_USE_DEFAULT.
- *
- * \param[in] timeout  The new default timeout, it cannot be set to
- *                     SCHEMA_SYNCHRONIZATION_USE_DEFAULT
- */
-void QCassandra::setSchemaSynchronizationTimeout(uint32_t timeout)
-{
-    if(timeout == SCHEMA_SYNCHRONIZATION_USE_DEFAULT) {
-        throw std::logic_error("The default schema synchronization cannot be set to SCHEMA_SYNCHRONIZATION_USE_DEFAULT.");
-    }
-    f_schema_synchronization_timeout = timeout;
-}
-
 
 /** \brief Get the name of the Cassandra cluster.
  *
@@ -1230,15 +860,10 @@ void QCassandra::setSchemaSynchronizationTimeout(uint32_t timeout)
  *
  * \return The name of the cluster.
  */
-const QString& QCassandra::clusterName() const
+const QString &QCassandra::clusterName() const
 {
-    if(f_cluster_name.isEmpty()) {
-        // retrieve the name of the cluster once
-        const_cast<QString&>(f_cluster_name) = f_private->clusterName();
-    }
     return f_cluster_name;
 }
-
 
 /** \brief Get the version of the cluster protocol.
  *
@@ -1256,59 +881,12 @@ const QString& QCassandra::clusterName() const
  * is a const. This is a cache so it makes sense. The variable is
  * NOT marked mutable because this is the only case where it happens.
  *
- * \note
- * The protocol version is actually this constant string:
- * org::apache::cassandra::cassandraConstants::VERSION
- *
  * \return The version of the protocol.
  */
-const QString& QCassandra::protocolVersion() const
+const QString &QCassandra::protocolVersion() const
 {
-    if(f_protocol_version.isEmpty()) {
-        // retrieve the version of the protocol once
-        const_cast<QString&>(f_protocol_version) = f_private->protocolVersion();
-    }
     return f_protocol_version;
 }
-
-
-///** \brief Get the cluster information.
-// *
-// * This function reads the ring data from this Cassandra connection.
-// * This data includes information from the various Cassandra node
-// * such as the start and end token of each item
-// *
-// * \todo
-// * At this time this function requires that you first setup
-// * a context as the current context. We may later move this
-// * function from QCassandra to QCassandraContext if it really
-// * is always linked to a context or just make use of any one
-// * context available (or maybe force the context to "system"?)
-// *
-// * \todo
-// * This does not currently work.
-// *
-// * \return An array of node details.
-// *
-// * \sa readRows()
-// */
-//const QCassandraClusterInformation& QCassandra::clusterInformation() const
-//{
-//    if(f_cluster_information.isEmpty()) {
-//        // having to have a context does not make sense for such a
-//        // function; we will have to see whether we can avoid this
-//        // once we use CQL, otherwise it may make more sense to have
-//        // this function called from the context in question instead
-//        //if(!f_current_context)
-//        //{
-//        //    throw std::runtime_error("clusterInformation() cannot be retrieved without a context definition");
-//        //}
-//        // retrieve the cluster information once
-//        f_private->clusterInformation(f_cluster_information);//f_current_context->contextName());
-//    }
-//    return f_cluster_information;
-//}
-
 
 /** \brief Get the partitioner of the cluster.
  *
@@ -1325,15 +903,10 @@ const QString& QCassandra::protocolVersion() const
  *
  * \sa readRows()
  */
-const QString& QCassandra::partitioner() const
+const QString &QCassandra::partitioner() const
 {
-    if(f_partitioner.isEmpty()) {
-        // retrieve the partitioner once
-        const_cast<QString&>(f_partitioner) = f_private->partitioner();
-    }
     return f_partitioner;
 }
-
 
 /** \brief Get the snitch of the cluster.
  *
@@ -1342,17 +915,14 @@ const QString& QCassandra::partitioner() const
  *
  * \return The name of the snitch.
  *
+ * \todo I have no idea how to read this using CQL!
+ *
  * \sa readRows()
  */
-const QString& QCassandra::snitch() const
+const QString &QCassandra::snitch() const
 {
-    if(f_snitch.isEmpty()) {
-        // retrieve the snitch once
-        const_cast<QString&>(f_snitch) = f_private->snitch();
-    }
     return f_snitch;
 }
-
 
 /** \brief Retrieve a context by name.
  *
@@ -1374,40 +944,35 @@ const QString& QCassandra::snitch() const
  *  context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
  *  context->setReplicationFactor(1);
  *  context->create();
- *
- *  // before using a context just created, make sure to synchronize
- *  cassandra.synchronizeSchemaVersions();
  * \endcode
  *
- * Note that if you do not know whether the context exists, use the findContext()
+ * Note that if you do not know whether the context exists, use the
+ * findContext()
  * function first, then check whether the context was found.
- *
- * \warning
- * Note that after creating a context you want to call the
- * synchronizeSchemaVersions() before using it or you will get
- * errors on a cluster with more than one node.
  *
  * \param[in] context_name  The name of the context to search.
  *
  * \return A shared pointer to a cassandra context.
  */
-QCassandraContext::pointer_t QCassandra::context(const QString& context_name)
+QCassandraContext::pointer_t QCassandra::context( const QString &context_name )
 {
     // get the list of existing contexts
-    const QCassandraContexts& cs = contexts();
+    const QCassandraContexts &cs = contexts();
 
     // already exists?
-    QCassandraContexts::const_iterator ci = cs.find(context_name);
-    if(ci != cs.end()) {
+    QCassandraContexts::const_iterator ci = cs.find( context_name );
+    if ( ci != cs.end() )
+    {
         return ci.value();
     }
 
     // otherwise create a new one
-    QCassandraContext::pointer_t c(new QCassandraContext(shared_from_this(), context_name));
-    f_contexts.insert(context_name, c);
+    QCassandraContext::pointer_t c(
+        new QCassandraContext( shared_from_this(), context_name ) );
+    f_contexts.insert( context_name, c );
+    retrieveContext( context_name );
     return c;
 }
-
 
 /** \brief Make the specified context the current context.
  *
@@ -1442,17 +1007,17 @@ QCassandraContext::pointer_t QCassandra::context(const QString& context_name)
  * \sa currentContext()
  * \sa QCassandraContext::makeCurrent()
  */
-void QCassandra::setCurrentContext(QCassandraContext::pointer_t c)
+void QCassandra::setCurrentContext( QCassandraContext::pointer_t c )
 {
     // emit the change only if not the same context
-    if(f_current_context != c) {
-        f_private->setContext(c->contextName());
+    if ( f_current_context != c )
+    {
+        // f_private->setContext( c->contextName() );
         // we save the current context only AFTER the call to setContext()
         // in case it throws (and then the current context would be wrong)
         f_current_context = c;
     }
 }
-
 
 /** \brief Internal function that clears the current context as required.
  *
@@ -1461,10 +1026,158 @@ void QCassandra::setCurrentContext(QCassandraContext::pointer_t c)
  *
  * \param[in] c  The context that is about to be dropped.
  */
-void QCassandra::clearCurrentContextIf(const QCassandraContext& c)
+void QCassandra::clearCurrentContextIf( const QCassandraContext &c )
 {
-    if(f_current_context.get() == &c) {
+    if ( f_current_context.get() == &c )
+    {
         f_current_context.reset();
+    }
+}
+
+
+#if 0
+/** \brief Retrieve the description of all columns for each table
+ *
+ * \param[in,out]  cf_def  The "columnfamily" (i.e. table) information structure that we will populate from the query.
+ */
+void QCassandra::retrieveColumn( ColumnDef& col_def, SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t column ) const
+{
+    auto fields( column->getFields() );
+
+    col_def.__set_name( column->getName().toStdString() );
+
+    auto
+    fields_iter = fields.find("index_name");    if( fields_iter != fields.end() ) col_def.__set_index_name(       fields_iter->second->string()    );
+    fields_iter = fields.find("validator");     if( fields_iter != fields.end() ) col_def.__set_validation_class( fields_iter->second->string()    );
+    fields_iter = fields.find("index_options"); if( fields_iter != fields.end() ) col_def.__set_index_options(    fields_iter->second->stringMap() );
+
+    fields_iter = fields.find("index_type");
+    if( fields_iter != fields.end() )
+    {
+        const QString index_type( fields_iter->second->variant().toString().toLower() );
+        if( index_type == "keys" )
+        {
+            col_def.__set_index_type( IndexType::KEYS );
+        }
+        else if( index_type == "custom" )
+        {
+            col_def.__set_index_type( IndexType::CUSTOM );
+        }
+        else if( index_type == "composites" )
+        {
+            col_def.__set_index_type( IndexType::COMPOSITES );
+        }
+    }
+}
+
+
+#if 0
+/** \brief Retrieve the description of all triggers for each table
+ *
+ * \param[in,out]  cf_def  The "columnfamily" (i.e. table) information structure that we will populate from the query.
+ */
+void QCassandra::retrieveTriggers( CfDef& cf_def ) const
+{
+    const QString query( QString("SELECT trigger_name, trigger_options "
+                                 "FROM system.schema_triggers "
+                                 "WHERE keyspace_name = '%1' "
+                                 "AND columnfamily_name = '%2'")
+                         .arg(cf_def.keyspace.c_str())
+                         .arg(cf_def.name.c_str())
+                         );
+
+    QCassandraQuery the_query( f_session );
+    the_query.query( query );
+    the_query.start();
+
+    std::vector<TriggerDef> trig_def_list;
+    while( the_query.nextRow() )
+    {
+        TriggerDef trig_def;
+        trig_def.__set_name    ( the_query.getStringColumn ("trigger_name").toStdString() );
+        trig_def.__set_options ( the_query.getMapColumn    ("trigger_options")            );
+        trig_def_list.push_back( trig_def );
+    }
+
+    cf_def.__set_triggers( trig_def_list );
+}
+#endif
+
+
+/** \brief Retrieve the description of all tables.
+ *
+ * \param[in,out]  ks_def  The keyspace information structure that we will populate from the query.
+ */
+void QCassandra::retrieveTable( CfDef& cf_def, SessionMeta::KeyspaceMeta::TableMeta::pointer_t table ) const
+{
+    auto fields( table->getFields() );
+
+    cf_def.__set_name( table->getName().toStdString() );
+
+    auto
+    fields_iter = fields.find("keyspace_name");               if( fields_iter != fields.end() ) cf_def.__set_keyspace(                    fields_iter->second->string()             );
+    fields_iter = fields.find("type");                        if( fields_iter != fields.end() ) cf_def.__set_column_type(                 fields_iter->second->string()             );
+    fields_iter = fields.find("comparator");                  if( fields_iter != fields.end() ) cf_def.__set_comparator_type(             fields_iter->second->string()             );
+    fields_iter = fields.find("subcomparator");               if( fields_iter != fields.end() ) cf_def.__set_subcomparator_type(          fields_iter->second->string()             );
+    fields_iter = fields.find("comment");                     if( fields_iter != fields.end() ) cf_def.__set_comment(                     fields_iter->second->string()             );
+    fields_iter = fields.find("read_repair_chance");          if( fields_iter != fields.end() ) cf_def.__set_read_repair_chance(          fields_iter->second->variant().toDouble() );
+    fields_iter = fields.find("gc_grace_seconds");            if( fields_iter != fields.end() ) cf_def.__set_read_repair_chance(          fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("default_validator");           if( fields_iter != fields.end() ) cf_def.__set_default_validation_class(    fields_iter->second->string()             );
+    fields_iter = fields.find("cf_id");                       if( fields_iter != fields.end() ) cf_def.__set_id(                          fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("min_compaction_threshold");    if( fields_iter != fields.end() ) cf_def.__set_min_compaction_threshold(    fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("max_compaction_threshold");    if( fields_iter != fields.end() ) cf_def.__set_max_compaction_threshold(    fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("key_validator");               if( fields_iter != fields.end() ) cf_def.__set_key_validation_class(        fields_iter->second->string()             );
+    fields_iter = fields.find("key_aliases");                 if( fields_iter != fields.end() ) cf_def.__set_key_alias(                   fields_iter->second->string()             );
+    fields_iter = fields.find("compaction_strategy_class");   if( fields_iter != fields.end() ) cf_def.__set_compaction_strategy(         fields_iter->second->string()             );
+    fields_iter = fields.find("compaction_strategy_options"); if( fields_iter != fields.end() ) cf_def.__set_compaction_strategy_options( fields_iter->second->stringMap()          );
+    fields_iter = fields.find("compression_parameters");      if( fields_iter != fields.end() ) cf_def.__set_compression_options(         fields_iter->second->stringMap()          );
+    fields_iter = fields.find("bloom_filter_fp_chance");      if( fields_iter != fields.end() ) cf_def.__set_bloom_filter_fp_chance(      fields_iter->second->variant().toDouble() );
+    fields_iter = fields.find("caching");                     if( fields_iter != fields.end() ) cf_def.__set_caching(                     fields_iter->second->string()             );
+    fields_iter = fields.find("memtable_flush_period_in_ms"); if( fields_iter != fields.end() ) cf_def.__set_memtable_flush_period_in_ms( fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("default_time_to_live");        if( fields_iter != fields.end() ) cf_def.__set_default_time_to_live(        fields_iter->second->variant().toInt()    );
+    fields_iter = fields.find("speculative_retry");           if( fields_iter != fields.end() ) cf_def.__set_speculative_retry(           fields_iter->second->string()             );
+
+    std::vector<ColumnDef> col_def_list;
+    for( const auto pair : table->getColumns() )
+    {
+        ColumnDef col_def;
+        retrieveColumn( col_def, pair.second );
+        col_def_list.push_back( col_def );
+    }
+    cf_def.__set_column_metadata( col_def_list );
+}
+#endif
+
+
+/** \brief Retrieve the description of a keyspace.
+ *
+ * This function requests for the descriptions of a specific keyspace
+ * (context). It is used to rebuild the list of tables after a clearCache()
+ * call on a context object.
+ *
+ * The QCassandra object is responsible for caching the result. The result
+ * should not change until we create a new table although if another process
+ * on another machine changes the Cassandra cluster structure, it will not
+ * be seen until the cache gets cleared.
+ *
+ * \param[in] context_name  The name of the context to re-describe.
+ */
+void QCassandra::retrieveContext( SessionMeta::KeyspaceMeta::pointer_t keyspace ) const
+{
+    QCassandraContext::pointer_t c( const_cast<QCassandra*>(this)->context(keyspace->getName()) );
+    c->parseContextDefinition( keyspace );
+}
+
+
+void QCassandra::retrieveContext( const QString& context_name ) const
+{
+    SessionMeta::pointer_t session_meta( SessionMeta::create(f_session) );
+    session_meta->loadSchema();
+    const auto& keyspaces(session_meta->getKeyspaces());
+    auto iter = keyspaces.find(context_name);
+    if( iter != keyspaces.end() )
+    {
+        retrieveContext( iter->second );
     }
 }
 
@@ -1486,15 +1199,22 @@ void QCassandra::clearCurrentContextIf(const QCassandraContext& c)
  *
  * \return A reference to the internal map of contexts.
  */
-const QCassandraContexts& QCassandra::contexts() const
+const QCassandraContexts &QCassandra::contexts() const
 {
-    if(!f_contexts_read) {
+    if( !f_contexts_read )
+    {
+        SessionMeta::pointer_t session_meta( SessionMeta::create(f_session) );
+        session_meta->loadSchema();
+
         f_contexts_read = true;
-        f_private->contexts();
+
+        for( auto keyspace : session_meta->getKeyspaces() )
+        {
+            retrieveContext( keyspace.second );
+        }
     }
     return f_contexts;
 }
-
 
 /** \brief Search for a context.
  *
@@ -1508,9 +1228,7 @@ const QCassandraContexts& QCassandra::contexts() const
  *
  * \todo
  * Add a way to distinguish in memory only contexts and Cassandra contexts.
- * This is important to know whether a synchronization is necessary when
- * creating, updating, and dropping tables or know whether a context can
- * be dropped.
+ * This is important to know whether a context can be dropped.
  *
  * \param[in] context_name  The name of the context to retrieve.
  *
@@ -1519,16 +1237,16 @@ const QCassandraContexts& QCassandra::contexts() const
  * \sa contexts()
  * \sa QCassandraContext::create()
  */
-QCassandraContext::pointer_t QCassandra::findContext(const QString& context_name) const
+QCassandraContext::pointer_t QCassandra::findContext( const QString &context_name ) const
 {
-    QCassandraContexts::const_iterator ci(contexts().find(context_name));
-    if(ci == f_contexts.end()) {
+    QCassandraContexts::const_iterator ci( contexts().find( context_name ) );
+    if ( ci == f_contexts.end() )
+    {
         QCassandraContext::pointer_t null;
         return null;
     }
     return *ci;
 }
-
 
 /** \brief Retrieve a context reference.
  *
@@ -1548,16 +1266,17 @@ QCassandraContext::pointer_t QCassandra::findContext(const QString& context_name
  *
  * \return A reference to the named context.
  */
-QCassandraContext& QCassandra::operator [] (const QString& context_name)
+QCassandraContext &QCassandra::operator[]( const QString &context_name )
 {
-    QCassandraContext::pointer_t context_obj( findContext(context_name) );
-    if( !context_obj ) {
-        throw std::runtime_error("named context was not found, cannot return a reference");
+    QCassandraContext::pointer_t context_obj( findContext( context_name ) );
+    if ( !context_obj )
+    {
+        throw std::runtime_error(
+            "named context was not found, cannot return a reference" );
     }
 
     return *context_obj;
 }
-
 
 /** \brief Retrieve a constant context reference.
  *
@@ -1577,16 +1296,19 @@ QCassandraContext& QCassandra::operator [] (const QString& context_name)
  *
  * \return A constant reference to the named context.
  */
-const QCassandraContext& QCassandra::operator [] (const QString& context_name) const
+const QCassandraContext &QCassandra::
+operator[]( const QString &context_name ) const
 {
-    const QCassandraContext::pointer_t context_obj( findContext(context_name) );
-    if( !context_obj ) {
-        throw std::runtime_error("named context was not found, cannot return a reference");
+    const QCassandraContext::pointer_t context_obj(
+        findContext( context_name ) );
+    if ( !context_obj )
+    {
+        throw std::runtime_error(
+            "named context was not found, cannot return a reference" );
     }
 
     return *context_obj;
 }
-
 
 /** \brief Drop a context from the database and memory.
  *
@@ -1595,10 +1317,6 @@ const QCassandraContext& QCassandra::operator [] (const QString& context_name) c
  * the context, its tables, their rows, and cells are all marked
  * as dead whether you still have shared pointers on them or not.
  * (i.e. you cannot use them anymore.)
- *
- * The dropContext() should be followed by a synchronizeSchemaVersions()
- * call to make sure it was propagated to all the nodes (required if
- * you want to recreate the context like we do in our tests.)
  *
  * \warning
  * If the context does not exist in Cassandra, this function call
@@ -1611,20 +1329,16 @@ const QCassandraContext& QCassandra::operator [] (const QString& context_name) c
  *
  * \sa QCassandraContext::drop()
  */
-void QCassandra::dropContext(const QString& context_name)
+void QCassandra::dropContext( const QString &context_name )
 {
-    QCassandraContext::pointer_t c(context(context_name));
+    QCassandraContext::pointer_t c( context( context_name ) );
 
     // first do the context drop in Cassandra
     c->drop();
 
-    // now unparent so the memory is returned to the user
-    c->unparent();
-
     // forget about this context in the QCassandra object
-    f_contexts.remove(context_name);
+    f_contexts.remove( context_name );
 }
-
 
 /** \brief Retrieve the current default consistency level.
  *
@@ -1643,7 +1357,6 @@ consistency_level_t QCassandra::defaultConsistencyLevel() const
 {
     return f_default_consistency_level;
 }
-
 
 /** \brief Change the current default consistency level.
  *
@@ -1666,23 +1379,24 @@ consistency_level_t QCassandra::defaultConsistencyLevel() const
  *
  * \param[in] default_consistency_level  The new default consistency level.
  */
-void QCassandra::setDefaultConsistencyLevel(consistency_level_t default_consistency_level)
+void QCassandra::setDefaultConsistencyLevel(
+    consistency_level_t default_consistency_level )
 {
     // make sure the consistency level exists
-    if(default_consistency_level != CONSISTENCY_LEVEL_ONE
-    && default_consistency_level != CONSISTENCY_LEVEL_QUORUM
-    && default_consistency_level != CONSISTENCY_LEVEL_LOCAL_QUORUM
-    && default_consistency_level != CONSISTENCY_LEVEL_EACH_QUORUM
-    && default_consistency_level != CONSISTENCY_LEVEL_ALL
-    && default_consistency_level != CONSISTENCY_LEVEL_ANY
-    && default_consistency_level != CONSISTENCY_LEVEL_TWO
-    && default_consistency_level != CONSISTENCY_LEVEL_THREE) {
-        throw std::runtime_error("invalid default server consistency level");
+    if ( default_consistency_level != CONSISTENCY_LEVEL_ONE &&
+         default_consistency_level != CONSISTENCY_LEVEL_QUORUM &&
+         default_consistency_level != CONSISTENCY_LEVEL_LOCAL_QUORUM &&
+         default_consistency_level != CONSISTENCY_LEVEL_EACH_QUORUM &&
+         default_consistency_level != CONSISTENCY_LEVEL_ALL &&
+         default_consistency_level != CONSISTENCY_LEVEL_ANY &&
+         default_consistency_level != CONSISTENCY_LEVEL_TWO &&
+         default_consistency_level != CONSISTENCY_LEVEL_THREE )
+    {
+        throw std::runtime_error( "invalid default server consistency level" );
     }
 
     f_default_consistency_level = default_consistency_level;
 }
-
 
 /** \brief Retrieve the major version number.
  *
@@ -1695,7 +1409,6 @@ int QCassandra::versionMajor()
     return QT_CASSANDRA_LIBRARY_VERSION_MAJOR;
 }
 
-
 /** \brief Retrieve the minor version number.
  *
  * This function dynamically returns the library minor version.
@@ -1707,7 +1420,6 @@ int QCassandra::versionMinor()
     return QT_CASSANDRA_LIBRARY_VERSION_MINOR;
 }
 
-
 /** \brief Retrieve the patch version number.
  *
  * This function dynamically returns the library patch version.
@@ -1718,7 +1430,6 @@ int QCassandra::versionPatch()
 {
     return QT_CASSANDRA_LIBRARY_VERSION_PATCH;
 }
-
 
 /** \brief Retrieve the library version number in the form of a string.
  *
@@ -1733,7 +1444,6 @@ const char *QCassandra::version()
     return QT_CASSANDRA_LIBRARY_VERSION_STRING;
 }
 
-
 /** \brief Get the time of day.
  *
  * This function returns the time of day in micro seconds. It is a
@@ -1747,11 +1457,11 @@ int64_t QCassandra::timeofday()
     struct timeval tv;
 
     // we ignore timezone as it can also generate an error
-    gettimeofday(&tv, NULL);
+    gettimeofday( &tv, NULL );
 
-    return static_cast<int64_t>(tv.tv_sec) * 1000000 + static_cast<int64_t>(tv.tv_usec);
+    return static_cast<int64_t>( tv.tv_sec ) * 1000000 +
+           static_cast<int64_t>( tv.tv_usec );
 }
-
 
 } // namespace QtCassandra
 // vim: ts=4 sw=4 et

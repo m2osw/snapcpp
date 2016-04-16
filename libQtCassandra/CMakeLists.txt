@@ -44,39 +44,37 @@ project(libQtCassandra)
 
 ## Include support modules
 ##
-find_package( ControlledVars   )
-find_package( SnapCMakeModules )
-find_package( SnapDoxygen      )
-find_package( Thrift           )
-find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
+find_package( As2Js              REQUIRED )
+find_package( CassandraCppDriver REQUIRED )
+find_package( ControlledVars     REQUIRED )
+find_package( SnapCMakeModules   REQUIRED )
+find_package( SnapDoxygen        REQUIRED )
+find_package( Qt4 4.8.1          REQUIRED QtCore QtXml )
+
+## Qt4
+##
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 
-# This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
-#
+## This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
+##
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
-include_directories(
-    SYSTEM
-        ${THRIFT_INCLUDE_DIRS}
-        ${QT_INCLUDES}
-)
+include_directories( SYSTEM ${QT_INCLUDES} )
 
 include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_BINARY_DIR}
-    ${PROJECT_BINARY_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}/src
     ${CMAKE_BINARY_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIR}
 )
 
-# Create a configure script
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+option( RUN_TESTS "Enable CTest support and turn on the 'test' make target." OFF )
+if( ${RUN_TESTS} )
+    enable_testing()
+endif()
 
 add_subdirectory(cmake)
-add_subdirectory(thrift-gencpp-cassandra)
-add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(tools)
 add_subdirectory(tests)

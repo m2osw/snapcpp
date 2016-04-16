@@ -1843,11 +1843,11 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
     char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
     int const len(static_cast<int>(strlen(ordered_pages) + 2));
 
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setStartColumnName(QString("%1::").arg(ordered_pages));
-    column_predicate.setEndColumnName(QString("%1;").arg(ordered_pages));
-    column_predicate.setCount(std::min(100, count)); // optimize the number of cells transferred
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setStartCellKey(QString("%1::").arg(ordered_pages));
+    column_predicate->setEndCellKey(QString("%1;").arg(ordered_pages));
+    column_predicate->setCount(std::min(100, count)); // optimize the number of cells transferred
+    column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         // clear the cache before reading the next load
@@ -2099,8 +2099,8 @@ void list::add_all_pages_to_list_table(QString const & site_key)
 
     // TODO: use the '*index*' row which is sorted
 
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setCount(1000);
+    auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
+    row_predicate->setCount(1000);
     for(;;)
     {
         content_table->clearCache();
@@ -2523,9 +2523,9 @@ int list::generate_all_lists(QString const & site_key)
     // Note: because it is sorted by timestamp,
     //       the oldest entries are automatically worked on first
     //
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100);
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(100);
+    column_predicate->setIndex(); // behave like an index
 
     int did_work(0);
     int64_t const loop_start_time(f_snap->get_current_date());
@@ -2908,11 +2908,11 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
 
         // count the new total number of ordered pages
         int32_t count(0);
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setStartColumnName(QString("%1::").arg(ordered_pages));
-        column_predicate.setEndColumnName(QString("%1;").arg(ordered_pages));
-        column_predicate.setCount(100);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setStartCellKey(QString("%1::").arg(ordered_pages));
+        column_predicate->setEndCellKey(QString("%1;").arg(ordered_pages));
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             // clear the cache before reading the next load

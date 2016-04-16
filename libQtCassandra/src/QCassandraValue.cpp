@@ -504,19 +504,6 @@ namespace QtCassandra
  * you can still retrieve the timestamp with the timestamp() function.
  */
 
-/** \var QCassandraValue::f_consistency_level
- * \brief The consitency level for this value.
- *
- * Whenever saving or retrieving a value, you need to specify the consistency
- * level to use to do so. This parameter defines this consistency level.
- *
- * By default it is set to CONSISTENCY_LEVEL_DEFAULT which means that the
- * system will make use of the default consistency value defined in the
- * QCassandra object.
- *
- * \sa QCassandra::setDefaultConsistencyLevel()
- */
-
 /** \var QCassandraValue::f_value
  * \brief The actual data of this value object.
  *
@@ -579,7 +566,6 @@ namespace QtCassandra
 QCassandraValue::QCassandraValue()
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -596,7 +582,6 @@ QCassandraValue::QCassandraValue()
 QCassandraValue::QCassandraValue(bool value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -614,7 +599,6 @@ QCassandraValue::QCassandraValue(bool value)
 QCassandraValue::QCassandraValue(char value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -631,7 +615,6 @@ QCassandraValue::QCassandraValue(char value)
 QCassandraValue::QCassandraValue(signed char value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -648,7 +631,6 @@ QCassandraValue::QCassandraValue(signed char value)
 QCassandraValue::QCassandraValue(unsigned char value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -665,7 +647,6 @@ QCassandraValue::QCassandraValue(unsigned char value)
 QCassandraValue::QCassandraValue(int16_t value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -682,7 +663,6 @@ QCassandraValue::QCassandraValue(int16_t value)
 QCassandraValue::QCassandraValue(uint16_t value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -699,7 +679,6 @@ QCassandraValue::QCassandraValue(uint16_t value)
 QCassandraValue::QCassandraValue(int32_t value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -716,7 +695,6 @@ QCassandraValue::QCassandraValue(int32_t value)
 QCassandraValue::QCassandraValue(uint32_t value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -733,7 +711,6 @@ QCassandraValue::QCassandraValue(uint32_t value)
 QCassandraValue::QCassandraValue(int64_t value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -750,7 +727,6 @@ QCassandraValue::QCassandraValue(int64_t value)
 QCassandraValue::QCassandraValue(uint64_t value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -767,7 +743,6 @@ QCassandraValue::QCassandraValue(uint64_t value)
 QCassandraValue::QCassandraValue(float value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -784,7 +759,6 @@ QCassandraValue::QCassandraValue(float value)
 QCassandraValue::QCassandraValue(double value)
     //: f_value() -- auto-init
     //  f_ttl(TTL_PERMANENT) -- auto-init
-    //  f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
     //  f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
     //  f_timestamp(0) -- auto-init
 {
@@ -801,7 +775,6 @@ QCassandraValue::QCassandraValue(double value)
 QCassandraValue::QCassandraValue(const QString& value)
     : f_value(value.toUtf8())
       //f_ttl(TTL_PERMANENT) -- auto-init
-      //f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
       //f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
       //f_timestamp(0) -- auto-init
 {
@@ -817,7 +790,6 @@ QCassandraValue::QCassandraValue(const QString& value)
 QCassandraValue::QCassandraValue(const QByteArray& value)
     : f_value(value)
       //f_ttl(TTL_PERMANENT) -- auto-init
-      //f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
       //f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
       //f_timestamp(0) -- auto-init
 {
@@ -834,7 +806,6 @@ QCassandraValue::QCassandraValue(const QByteArray& value)
 QCassandraValue::QCassandraValue(const char *data, int data_size)
     : f_value(data, data_size)
       //f_ttl(TTL_PERMANENT) -- auto-init
-      //f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
       //f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
       //f_timestamp(0) -- auto-init
 {
@@ -2213,9 +2184,6 @@ bool QCassandraValue::operator == (const QCassandraValue& rhs)
     if(f_ttl != rhs.f_ttl) {
         return false;
     }
-    if(f_consistency_level != rhs.f_consistency_level) {
-        return false;
-    }
     return memcmp(f_value.data(), rhs.f_value.data(), f_value.size()) == 0;
 }
 
@@ -2238,9 +2206,6 @@ bool QCassandraValue::operator != (const QCassandraValue& rhs)
         return true;
     }
     if(f_ttl != rhs.f_ttl) {
-        return true;
-    }
-    if(f_consistency_level != rhs.f_consistency_level) {
         return true;
     }
     return memcmp(f_value.data(), rhs.f_value.data(), f_value.size()) != 0;

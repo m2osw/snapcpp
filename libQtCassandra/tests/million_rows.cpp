@@ -46,7 +46,8 @@
 
 #include <QtCassandra/QCassandra.h>
 #include <QtCore/QDebug>
-#include <thrift-gencpp-cassandra/cassandra_types.h>
+
+#include <unistd.h>
 
 int main(int argc, char *argv[])
 {
@@ -83,7 +84,6 @@ int main(int argc, char *argv[])
         qDebug() << "++ Drop the old context";
         cassandra->dropContext("qt_cassandra_test_large_rw");
         qDebug() << "++ Synchronize after the drop";
-        cassandra->synchronizeSchemaVersions();
         if(drop) {
             // just do the drop and it succeeded
             exit(0);
@@ -95,34 +95,37 @@ int main(int argc, char *argv[])
     }
     qDebug() << "++ Setup new context...";
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_large_rw"));
-    context->setStrategyClass("SimpleStrategy"); // default is LocalStrategy
-    //context->setDurableWrites(false); // by default this is 'true'
-    context->setReplicationFactor(2); // by default this is undefined
+    //
+    QtCassandra::QCassandraSchema::Value replication;
+    auto& replication_map(replication.map());
+    replication_map["class"]              = QVariant("SimpleStrategy");
+    replication_map["replication_factor"] = QVariant(2);
+
+    auto& fields(context->fields());
+    fields["replication"]    = replication;
+    fields["durable_writes"] = QVariant(true);
 
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-    //table->setComment("Our test table.");
-    table->setColumnType("Standard"); // Standard or Super
-    table->setKeyValidationClass("BytesType");
-    table->setDefaultValidationClass("BytesType");
-    table->setComparatorType("BytesType");
-    table->setKeyCacheSavePeriodInSeconds(14400);
-    table->setMemtableFlushAfterMins(60);
-    //table->setMemtableThroughputInMb(247);
-    //table->setMemtableOperationsInMillions(1.1578125);
-    //table->setGcGraceSeconds(864000); // 10 days (default)
-    table->setGcGraceSeconds(3600); // 1h.
-    table->setMinCompactionThreshold(4);
-    table->setMaxCompactionThreshold(22);
-    table->setReplicateOnWrite(1);
+    //
+    QtCassandra::QCassandraSchema::Value compaction;
+    auto& compaction_map(compaction.map());
+    compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+    compaction_map["min_threshold"] = QVariant(4);
+    compaction_map["max_threshold"] = QVariant(22);
 
-    try {
+    auto& table_fields(table->fields());
+    table_fields["comment"]                     = QVariant("Our test table.");
+    table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+    table_fields["gc_grace_seconds"]            = QVariant(3600);
+    table_fields["compaction"]                  = compaction;
+
+    try
+    {
         context->create();
-        qDebug() << "++ Synchronize new context...";
-        cassandra->synchronizeSchemaVersions();
         qDebug() << "++ Context and its table were created!";
     }
-    catch(org::apache::cassandra::InvalidRequestException& e) {
-        qDebug() << "Exception is [" << e.why.c_str() << "]";
+    catch(const std::exception& e) {
+        qDebug() << "Exception is [" << e.what() << "]";
         exit(1);
     }
 
@@ -141,12 +144,15 @@ int main(int argc, char *argv[])
         value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
         QString row(QString("row%1").arg(i));
 //qDebug() << "Save row" << row << "with" << r;
-        for(int retry(5); retry > 0; --retry) {
-            try {
+        for(int retry(5); retry > 0; --retry)
+        {
+            try
+            {
                 (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"][row]["value"] = value;
                 retry = 0;
             }
-            catch(const org::apache::cassandra::TimedOutException& e) {
+            catch(const std::exception& /*e*/)
+            {
                 printf("*");
                 fflush(stdout);
                 if(retry == 1) {
@@ -162,7 +168,6 @@ int main(int argc, char *argv[])
                 sleep(1);
             }
         }
-        //cassandra->synchronizeSchemaVersions();
 
         // clear the cache once in a while so the 'count' rows don't stay in memory
         if(i % 100 == 0) {
@@ -185,10 +190,10 @@ int main(int argc, char *argv[])
     fflush(stdout);
 
     // now read the data
-    QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
-    column_predicate->addColumnName("value");
-    QtCassandra::QCassandraRowPredicate row_predicate;
-    row_predicate.setColumnPredicate(column_predicate);
+    auto column_predicate( std::make_shared<QtCassandra::QCassandraCellKeyPredicate>() );
+    column_predicate->setCellKey("value");
+    auto row_predicate( std::make_shared<QtCassandra::QCassandraRowPredicate>() );
+    row_predicate->setCellPredicate(column_predicate);
     //row_predicate.setWrap();
     //row_predicate.setStartRowName("");
     //row_predicate.setEndRowName("");

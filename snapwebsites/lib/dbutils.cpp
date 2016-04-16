@@ -86,9 +86,9 @@ void dbutils::copy_row(QtCassandra::QCassandraTable::pointer_t ta, QString const
 {
     QtCassandra::QCassandraRow::pointer_t source_row(ta->row(a));
     QtCassandra::QCassandraRow::pointer_t destination_row(tb->row(b));
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100); // we have to copy everything also it is likely very small (i.e. 10 fields...)
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(100); // we have to copy everything also it is likely very small (i.e. 10 fields...)
+    column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         source_row->clearCache();
@@ -524,7 +524,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "sitemapxml::count"
          || n == "sessions::id"
          || n == "sessions::time_to_live"
-         || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
+         || (f_tableName == "lock_table" && f_rowName == "hosts")
          )
     {
         return column_type_t::CT_uint32_value;

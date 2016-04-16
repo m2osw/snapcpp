@@ -385,7 +385,7 @@ CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
  *
  * Note that the name of the lock table can be changed in your context
  * if done early enough (i.e. before any lock is ever created by that
- * process.) By default it is set to "libQtCassandraLockTable". See the
+ * process.) By default it is set to "lock_table". See the
  * QCassandraContext::set_lock_table_name() function for details.
  *
  * Locks are created to lock any resource that you want to lock. It
@@ -537,15 +537,14 @@ CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
  *
  * \param[in] context  The context where the lock is to be created.
  * \param[in] object_name  The name of the object to be locked as a QString.
- * \param[in] consistency_level  The level to use for the lock, defaults to QUORUM.
  */
-QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name, cassandra_consistency_level_t consistency_level)
-    : f_context(context),
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name, cassandra_consistency_level_t level )
+    : f_context(context)
+    , f_consistency(level)
       //f_table(NULL) -- auto-init
       //f_object_name() -- auto-init
       //f_ticket_id() -- auto-init
       //f_locked(false) -- auto-init
-      f_consistency(consistency_level)
 {
     // make sure user gives us a context
     if(!context) {
@@ -582,7 +581,6 @@ QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QStri
  *
  * \param[in] context  The context where the lock is created.
  * \param[in] object_name  The resource to be locked.
- * \param[in] consistency_level  The level to use for the lock, defaults to QUORUM.
  *
  * \sa QCassandraContext::addLockHost()
  * \sa QCassandraContext::setLockTimeout()
@@ -590,12 +588,12 @@ QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QStri
  * \sa lock()
  * \sa unlock()
  */
-QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_name, cassandra_consistency_level_t consistency_level)
-    : f_context(context),
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_name, cassandra_consistency_level_t level )
+    : f_context(context)
+    , f_consistency(level)
       //f_table(NULL) -- auto-init
       //f_object_name() -- auto-init
       //f_locked(false) -- auto-init
-      f_consistency(consistency_level)
 {
     // make sure user gives us a context
     if(!context) {
@@ -700,9 +698,9 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     {
     public:
         autoDrop(const QCassandraRow::pointer_t row, const QByteArray& cell, const cassandra_consistency_level_t consistency_level)
-            : f_row(row),
-              f_cell(cell),
-              f_consistency(consistency_level)
+            : f_row(row)
+            , f_cell(cell)
+            , f_consistency(consistency_level)
         {
         }
 
@@ -718,7 +716,8 @@ bool QCassandraLock::lock(const QByteArray& object_name)
 
         void dropNow()
         {
-            if(f_row) {
+            if(f_row)
+            {
                 QCassandraCell::pointer_t c(f_row->cell(f_cell));
                 c->setConsistencyLevel(f_consistency);
                 f_row->dropCell(f_cell, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
@@ -817,8 +816,8 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     tickets_row->clearCache(); // make sure we have a clean slate
 
     // for all the QCassandraRow::cellCounts() calls
-    QCassandraColumnPredicate column_count;
-    column_count.setConsistencyLevel(f_consistency);
+    auto column_count(std::make_shared<QCassandraCellPredicate>());
+    column_count->setConsistencyLevel(f_consistency);
 
     // retrieve the largest ticket (ticket[i] = 1 + max(ticket[1], ..., ticket[NUM_THREADS]))
     //
@@ -831,15 +830,15 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     //                 processes; again that is fine since we can sort the
     //                 processes using their host identifier and pid.
     //
-    QCassandraColumnRangePredicate tickets_predicate;
-    tickets_predicate.setConsistencyLevel(f_consistency);
-    tickets_predicate.setCount(tickets_row->cellCount(column_count) + 100);
+    auto tickets_predicate(std::make_shared<QCassandraCellRangePredicate>());
+    tickets_predicate->setCount(tickets_row->cellCount(column_count) + 100);
     tickets_row->readCells(tickets_predicate);
     const QCassandraCells& tickets(tickets_row->cells());
 
 //fprintf(stderr, "%6d -- %d tickets already exist\n", getpid(), tickets.count());
     uint32_t our_ticket(0);
-    for(QCassandraCells::const_iterator j(tickets.begin()); j != tickets.end(); ++j) {
+    for(QCassandraCells::const_iterator j(tickets.begin()); j != tickets.end(); ++j)
+    {
         QByteArray jticket_key((*j)->columnKey());
         uint32_t jticket(uint32Value(jticket_key, 0));
         if(our_ticket < jticket) {
@@ -853,7 +852,8 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     // connections a second and need to lock a row for all of them and it
     // takes too long to do all of that... you pile up and soon enough you
     // get over 4 billion tickets!)
-    if(our_ticket == static_cast<uint32_t>(-1)) {
+    if(our_ticket == static_cast<uint32_t>(-1))
+    {
         throw std::logic_error("somehow the ticket numbers have reached the maximum allowed of 4 billion?");
     }
     ++our_ticket;
@@ -897,9 +897,9 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     //                 processes using their host identifier and pid.
     //
     entering_row->clearCache(); // <- very important or we'd miss those who entered just after us
-    QCassandraColumnRangePredicate entering_predicate;
-    entering_predicate.setConsistencyLevel(f_consistency);
-    entering_predicate.setCount(entering_row->cellCount(column_count) + 100);
+    auto entering_predicate(std::make_shared<QCassandraCellRangePredicate>());
+    entering_predicate->setConsistencyLevel(f_consistency);
+    entering_predicate->setCount(entering_row->cellCount(column_count) + 100);
     entering_row->readCells(entering_predicate);
     // get those cells by copy because we expect to reset that map again and again
     const QCassandraCells entering_processes(entering_row->cells());
@@ -941,14 +941,15 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     // turn, very fast! (okay, the poll afterward is not that fast
     // but it would be required either way...)
     tickets_row->clearCache(); // <- very important or we'd miss those who entered just after us
-    tickets_predicate.setCount(tickets_row->cellCount(column_count) + 100);
-    tickets_predicate.setEndColumnKey(f_ticket_id);
+    tickets_predicate->setCount(tickets_row->cellCount(column_count) + 100);
+    tickets_predicate->setEndCellKey(f_ticket_id);
     tickets_row->readCells(tickets_predicate);
     // make a copy of those cells because we're about to reset and
     // re-establish that array over and over again
     const QCassandraCells all_tickets(tickets_row->cells());
 
-    for(QCassandraCells::const_iterator j(all_tickets.begin()); j != all_tickets.end(); ++j) {
+    for(QCassandraCells::const_iterator j(all_tickets.begin()); j != all_tickets.end(); ++j)
+    {
         // read the that ticket information
         QByteArray jticket_key((*j)->columnKey());
         uint32_t jticket(uint32Value(jticket_key, 0));

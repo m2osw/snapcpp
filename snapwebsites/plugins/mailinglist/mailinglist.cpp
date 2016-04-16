@@ -74,13 +74,14 @@ mailinglist::list::list(mailinglist * parent, QString const & list_name)
     , f_name(list_name)
     , f_table(f_parent->get_mailinglist_table())
     , f_row(f_table->row(f_name))
-    //, f_column_predicate() -- auto-init
+    , f_column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>())
     //, f_cells() -- auto-init
     , f_c(f_cells.end())
     //, f_done(false) -- auto-init;
 {
-    f_column_predicate.setCount(1000);
-    f_column_predicate.setIndex();
+    f_column_predicate->setCount(1000);
+    f_column_predicate->setIndex();
+    //f_c = f_cells.end();
 }
 
 

@@ -11,10 +11,10 @@
  *
  * License:
  *      Copyright (c) 2011-2016 Made to Order Software Corp.
- * 
+ *
  *      http://snapwebsites.org/
  *      contact@m2osw.com
- * 
+ *
  *      Permission is hereby granted, free of charge, to any person obtaining a
  *      copy of this software and associated documentation files (the
  *      "Software"), to deal in the Software without restriction, including
@@ -36,10 +36,27 @@
  */
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
-#include "thrift-gencpp-cassandra/Cassandra.h"
 
 namespace QtCassandra
 {
+
+struct ConsistencyLevel
+{
+    enum type
+    {
+        ONE          = 1,
+        QUORUM       = 2,
+        LOCAL_QUORUM = 3,
+        EACH_QUORUM  = 4,
+        ALL          = 5,
+        ANY          = 6,
+        TWO          = 7,
+        THREE        = 8,
+        SERIAL       = 9,
+        LOCAL_SERIAL = 10
+    };
+};
+
 
 /** \brief Ask the system to use the default consistency level.
  *
@@ -51,28 +68,31 @@ namespace QtCassandra
  *
  * Details http://www.datastax.com/docs/1.0/dml/data_consistency
  */
-const cassandra_consistency_level_t CONSISTENCY_LEVEL_DEFAULT      = -1;
+const cassandra_consistency_level_t CONSISTENCY_LEVEL_DEFAULT = -1;
 
 /** \brief Write to one computer.
  *
  * Write the data to the one computer we're connected to. Do not
  * duplicate the data.
  */
-const cassandra_consistency_level_t CONSISTENCY_LEVEL_ONE          = org::apache::cassandra::ConsistencyLevel::ONE;
+const cassandra_consistency_level_t CONSISTENCY_LEVEL_ONE =
+    ConsistencyLevel::ONE;
 
 /** \brief Write to a quorum of computers.
  *
  * Write the data to the total number of all the computers divided
  * by 2 plus one. This ensures data safety.
  */
-const cassandra_consistency_level_t CONSISTENCY_LEVEL_QUORUM       = org::apache::cassandra::ConsistencyLevel::QUORUM;
+const cassandra_consistency_level_t CONSISTENCY_LEVEL_QUORUM =
+    ConsistencyLevel::QUORUM;
 
 /** \brief Write to a quorum of local computers.
  *
  * Write the data to the total number of local computers divided by 2
  * plus one. This ensures data safety.
  */
-const cassandra_consistency_level_t CONSISTENCY_LEVEL_LOCAL_QUORUM = org::apache::cassandra::ConsistencyLevel::LOCAL_QUORUM;
+const cassandra_consistency_level_t CONSISTENCY_LEVEL_LOCAL_QUORUM =
+    ConsistencyLevel::LOCAL_QUORUM;
 
 /** \brief Write to a quorum of computers in each data center.
  *
@@ -83,13 +103,15 @@ const cassandra_consistency_level_t CONSISTENCY_LEVEL_LOCAL_QUORUM = org::apache
  * This is generally the best value if you have multiple centers
  * and want to have safe data.
  */
-const cassandra_consistency_level_t CONSISTENCY_LEVEL_EACH_QUORUM  = org::apache::cassandra::ConsistencyLevel::EACH_QUORUM;
+const cassandra_consistency_level_t CONSISTENCY_LEVEL_EACH_QUORUM =
+    ConsistencyLevel::EACH_QUORUM;
 
 /** \brief Write to all computers.
  *
  * Write the data to all the computers.
  */
-const cassandra_consistency_level_t CONSISTENCY_LEVEL_ALL          = org::apache::cassandra::ConsistencyLevel::ALL;
+const cassandra_consistency_level_t CONSISTENCY_LEVEL_ALL =
+    ConsistencyLevel::ALL;
 
 /** \brief Write to any computer.
  *
@@ -97,19 +119,22 @@ const cassandra_consistency_level_t CONSISTENCY_LEVEL_ALL          = org::apache
  * to is too slow or filled up, then another may be selected for
  * this data.
  */
-const cassandra_consistency_level_t CONSISTENCY_LEVEL_ANY          = org::apache::cassandra::ConsistencyLevel::ANY;
+const cassandra_consistency_level_t CONSISTENCY_LEVEL_ANY =
+    ConsistencyLevel::ANY;
 
 /** \brief Write to two computers.
  *
  * Write the data to two computers.
  */
-const cassandra_consistency_level_t CONSISTENCY_LEVEL_TWO          = org::apache::cassandra::ConsistencyLevel::TWO;
+const cassandra_consistency_level_t CONSISTENCY_LEVEL_TWO =
+    ConsistencyLevel::TWO;
 
 /** \brief Write to three computers.
  *
  * Write the data to three computers.
  */
-const cassandra_consistency_level_t CONSISTENCY_LEVEL_THREE        = org::apache::cassandra::ConsistencyLevel::THREE;
+const cassandra_consistency_level_t CONSISTENCY_LEVEL_THREE =
+    ConsistencyLevel::THREE;
 
 } // namespace QtCassandra
 // vim: ts=4 sw=4 et

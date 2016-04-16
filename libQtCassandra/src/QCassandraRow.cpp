@@ -38,8 +38,8 @@
 
 #include "QtCassandra/QCassandraRow.h"
 #include "QtCassandra/QCassandraTable.h"
-#include "QCassandraPrivate.h"
-#include "thrift-gencpp-cassandra/cassandra_types.h"
+
+#include <iostream>
 #include <stdexcept>
 
 namespace QtCassandra
@@ -125,10 +125,10 @@ namespace QtCassandra
  * \param[in] table  The parent table of this row.
  * \param[in] row_key  The key of this row.
  */
-QCassandraRow::QCassandraRow(QCassandraTable::pointer_t table, const QByteArray& row_key)
-    : f_table(table),
-      f_key(row_key)
-      //f_cells() -- auto-init
+QCassandraRow::QCassandraRow(std::shared_ptr<QCassandraTable> table, const QByteArray& row_key)
+    : f_table(table)
+    , f_key(row_key)
+    //f_cells() -- auto-init
 {
     if(f_key.size() == 0) {
         throw std::runtime_error("row key cannot be empty");
@@ -198,16 +198,14 @@ const QByteArray& QCassandraRow::rowKey() const
  *
  * \return The number of cells defined in this row.
  *
- * \sa cells()
+ * \note This method no longer changes the row set from the query!
+ *
+ * \sa cells(), QCassandraTable::readRows()
  */
-int QCassandraRow::cellCount(const QCassandraColumnPredicate& column_predicate)
+int QCassandraRow::cellCount( const QCassandraCellPredicate::pointer_t column_predicate )
 {
-    auto table( f_table.lock() );
-    if(!table)
-    {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
-    return table->getCellCount(f_key, column_predicate);
+    //return static_cast<int>(f_cells.size());
+    return f_table->getCellCount(f_key, column_predicate);
 }
 
 /** \brief Read the cells as defined by a default column predicate.
@@ -242,26 +240,20 @@ int QCassandraRow::cellCount(const QCassandraColumnPredicate& column_predicate)
  */
 uint32_t QCassandraRow::readCells()
 {
-    auto table( f_table.lock() );
-    if(!table)
-    {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
-    QCassandraColumnPredicate column_predicate;
-    return table->getColumnSlice(f_key, column_predicate);
+    return f_cells.size();
 }
 
 /** \brief Read the cells as defined by the predicate.
  *
  * This function reads a set of cells as specified by the specified
- * predicate. If you use the default QCassandraColumnPredicate, then
+ * predicate. If you use the default QCassandraCellPredicate, then
  * the first 100 cells are read.
  *
  * If you are using columns as an index, then the column_predicate
  * parameter gets modified by this function. The start column name
  * is updated with the name of the last row read on each iteration.
  *
- * See the QCassandraColumnPredicate for more information on how to
+ * See the QCassandraCellPredicate for more information on how to
  * select columns.
  *
  * This function is often called to read an entire row in memory all
@@ -272,59 +264,64 @@ uint32_t QCassandraRow::readCells()
  *
  * \param[in,out] column_predicate  The predicate used to select which columns to read.
  *
- * \sa setIndex()
+ * \note This method no longer changes the row set from the query!
+ *
+ * \sa setIndex(), QCassandraTable::readRows()
  */
-uint32_t QCassandraRow::readCells(QCassandraColumnPredicate& column_predicate)
+uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_predicate )
 {
-    auto table( f_table.lock() );
-    if(!table)
+    if( f_query )
     {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
+        if( !f_query->nextPage() )
+        {
+            f_query.reset();
+            return 0;
+        }
     }
-    return table->getColumnSlice(f_key, column_predicate);
-}
+    else
+    {
+        auto row_predicate = std::make_shared<QCassandraRowKeyPredicate>();
+        row_predicate->setRowKey( f_key );
 
-/** \brief Retrieve a cell from the row.
- *
- * This function retrieves a cell from this row. If the cell
- * does not exist, it is created.
- *
- * Note that the cell is not saved in the Cassandra database
- * unless you save a value in it (and assuming the context does
- * not only exist in memory.)
- *
- * This function accepts a column name as UTF-8 which is used directly
- * to access Cassandra.
- *
- * \param[in] column_name  The name of the column referencing this cell.
- *
- * \return A shared pointer to the cell.
- */
-QCassandraCell::pointer_t QCassandraRow::cell(const char *column_name)
-{
-    return cell(QByteArray::fromRawData(column_name, qstrlen(column_name)));
-}
+        QString query( QString("SELECT column1,value FROM %1.%2")
+                       .arg(f_table->contextName())
+                       .arg(f_table->tableName())
+                       );
+        int bind_count = 0;
+        if( column_predicate )
+        {
+            row_predicate->setCellPredicate( column_predicate );
+        }
+        row_predicate->appendQuery( query, bind_count );
+        query += " ALLOW FILTERING";
+        //
+        //std::cout << "query=[" << query.toStdString() << "]" << std::endl;
+        f_query = std::make_shared<QCassandraQuery>(f_table->session());
+        f_query->query( query, bind_count );
+        //
+        int bind_num = 0;
+        row_predicate->bindQuery( f_query, bind_num );
+        //
+        if( column_predicate )
+        {
+            f_query->setPagingSize( column_predicate->count() );
+        }
+        //
 
-/** \brief Retrieve a cell from the row.
- *
- * This function retrieves a cell from this row. If the cell
- * does not exist, it is created.
- *
- * Note that the cell is not saved in the Cassandra database
- * unless you save a value in it (and assuming the context does
- * not only exist in memory.)
- *
- * This function accepts a column name. The input is either UCS-4
- * (most Unix) or UCS-2 (MS-Windows). It will be converted to UTF-8
- * when accessing the Cassandra database.
- *
- * \param[in] column_name  The name of the column referencing this cell.
- *
- * \return A shared pointer to the cell.
- */
-QCassandraCell::pointer_t QCassandraRow::cell(const wchar_t *column_name)
-{
-    return cell(QString::fromWCharArray(column_name, (column_name ? wcslen(column_name) : 0)));
+        f_query->start();
+    }
+
+    size_t result_size = 0;
+    for( ; f_query->nextRow(); ++result_size )
+    {
+        const QByteArray column_key ( f_query->getByteArrayColumn( "column1" ) );
+        const QByteArray data       ( f_query->getByteArrayColumn( "value"   ) );
+
+        QCassandraCell::pointer_t new_cell( cell( column_key ) );
+        new_cell->assignValue( QCassandraValue(data) );
+    }
+
+    return result_size;
 }
 
 /** \brief Retrieve a cell from the row.
@@ -343,29 +340,13 @@ QCassandraCell::pointer_t QCassandraRow::cell(const wchar_t *column_name)
  *
  * \return A shared pointer to the cell.
  */
+QCassandraCell::pointer_t QCassandraRow::cell(const char* column_name)
+{
+    return cell( QByteArray::fromRawData(column_name,qstrlen(column_name)) );
+}
 QCassandraCell::pointer_t QCassandraRow::cell(const QString& column_name)
 {
     return cell(column_name.toUtf8());
-}
-
-/** \brief Retrieve a cell from the row.
- *
- * This function retrieves a cell from this row. If the cell
- * does not exist, it is created.
- *
- * Note that the cell is not saved in the Cassandra database
- * unless you save a value in it (and assuming the context does
- * not only exist in memory.)
- *
- * This function accepts a UUID as the name of the column.
- *
- * \param[in] column_uuid  The name of the column referencing this cell in the form of a UUID.
- *
- * \return A shared pointer to the cell.
- */
-QCassandraCell::pointer_t QCassandraRow::cell(const QUuid& column_uuid)
-{
-    return cell(column_uuid.toRfc4122());
 }
 
 /** \brief Retrieve a cell from the row.
@@ -445,121 +426,6 @@ const QCassandraCells& QCassandraRow::cells() const
 
 /** \brief Retrieve a cell from the row.
  *
- * This function retrieves a cell with a composite name. If the cell
- * does not exist, it returns an empty buffer (i.e. nullValue() on the
- * returned reference is true, note however that an empty string has
- * the property of returning true when nullValue() is called...)
- *
- * This function accepts a set of column names defined in QCassandraValue
- * objects. The type of each object ("name") must correspond one to one to
- * the type defined in the ComparatorType of the table. The libQtCassandra
- * library doesn't check to avoid wasting time (otherwise it would need
- * to check for every call, and since Cassandra checks anyway...)
- *
- * \exception std::runtime_error
- * The name of a column is limited to 64Kb minus 1 (65535 bytes). If larger
- * then this exception is raised. This is because each name has its length
- * passed along in an unsigned short (2 bytes.)
- *
- * \param[in] composite_names  An array of composite names defined as QCassandraValue.
- *
- * \return A reference to the cell.
- *
- * \sa compositeCell() const
- * \sa cell()
- * \sa exists()
- */
-QCassandraCell& QCassandraRow::compositeCell(const composite_column_names_t& composite_names)
-{
-    QByteArray key;
-
-    for(composite_column_names_t::const_iterator cn(composite_names.begin());
-                            cn != composite_names.end(); ++cn)
-    {
-        if(cn->size() > 65535) {
-            throw std::runtime_error("composite column name too large, limit is 64Kb minus 1 (0xFFFF or 65535)");
-        }
-        appendUInt16Value(key, cn->size());
-        appendBinaryValue(key, cn->binaryValue());
-        appendUnsignedCharValue(key, 0);
-    }
-
-    return *cell(key);
-}
-
-/** \brief Retrieve a cell from the row.
- *
- * This function is the same as the compositeCell() function with the
- * addition of const-ness.
- *
- * \param[in] composite_names  An array of composite names defined as QCassandraValue.
- *
- * \return A reference to the cell.
- *
- * \sa compositeCell()
- * \sa cell()
- * \sa exists()
- */
-const QCassandraCell& QCassandraRow::compositeCell(const composite_column_names_t& composite_names) const
-{
-    return const_cast<QCassandraRow *>(this)->compositeCell(composite_names);
-}
-
-/** \brief Retrieve a cell from the row.
- *
- * This function retrieves a cell from this row. If the cell
- * does not exist, it returns a NULL pointer (i.e. isNull() on the
- * shared pointer returns true.)
- *
- * This function accepts a column name as UTF-8 which is used to
- * retrieve the data from Cassandra.
- *
- * \warning
- * This function does NOT attempt to read the cell from the Cassandra database
- * system. It only checks whether the cell already exists in memory. To check
- * whether the cell exists in the database, use the exists() function instead.
- *
- * \param[in] column_name  The name of the column referencing this cell.
- *
- * \return A shared pointer to the cell.
- *
- * \sa cell()
- * \sa exists()
- */
-QCassandraCell::pointer_t QCassandraRow::findCell(const char *column_name) const
-{
-    return findCell(QByteArray(column_name, qstrlen(column_name)));
-}
-
-/** \brief Retrieve a cell from the row.
- *
- * This function retrieves a cell from this row. If the cell
- * does not exist, it returns a NULL pointer (i.e. isNull() on the
- * shared pointer returns true.)
- *
- * This function accepts a column name. The name is viewed as either
- * UCS-4 (most Unix) or UCS-2 (MS-Windows). It gets converted to
- * UTF-8 which is used to retrieve the data from Cassandra.
- *
- * \warning
- * This function does NOT attempt to read the cell from the Cassandra database
- * system. It only checks whether the cell already exists in memory. To check
- * whether the cell exists in the database, use the exists() function instead.
- *
- * \param[in] column_name  The name of the column referencing this cell.
- *
- * \return A shared pointer to the cell.
- *
- * \sa cell()
- * \sa exists()
- */
-QCassandraCell::pointer_t QCassandraRow::findCell(const wchar_t *column_name) const
-{
-    return findCell(QString::fromWCharArray(column_name, (column_name ? wcslen(column_name) : 0)));
-}
-
-/** \brief Retrieve a cell from the row.
- *
  * This function retrieves a cell from this row. If the cell
  * does not exist, it returns a NULL pointer (i.e. isNull() on the
  * shared pointer returns true.)
@@ -582,32 +448,6 @@ QCassandraCell::pointer_t QCassandraRow::findCell(const wchar_t *column_name) co
 QCassandraCell::pointer_t QCassandraRow::findCell(const QString& column_name) const
 {
     return findCell(column_name.toUtf8());
-}
-
-/** \brief Retrieve a cell from the row.
- *
- * This function retrieves a cell from this row. If the cell
- * does not exist, it returns a NULL pointer (i.e. isNull() on the
- * shared pointer returns true.)
- *
- * This function accepts a column name as a UUID. The binary version of the
- * UUID is used to retrieve the data from Cassandra.
- *
- * \warning
- * This function does NOT attempt to read the cell from the Cassandra database
- * system. It only checks whether the cell already exists in memory. To check
- * whether the cell exists in the database, use the exists() function instead.
- *
- * \param[in] column_uuid  The name of the column referencing this cell.
- *
- * \return A shared pointer to the cell.
- *
- * \sa cell()
- * \sa exists()
- */
-QCassandraCell::pointer_t QCassandraRow::findCell(const QUuid& column_uuid) const
-{
-    return findCell(column_uuid.toRfc4122());
 }
 
 /** \brief Retrieve a cell from the row.
@@ -649,27 +489,6 @@ QCassandraCell::pointer_t QCassandraRow::findCell(const QByteArray& column_key) 
  * Look into why a cell is created when just checking for its existance.
  *
  * \bug
- * At this time this function CREATES the cell if it does not yet
- * exist!
- *
- * \param[in] column_name  The column name.
- *
- * \return true if the cell exists, false otherwise.
- */
-bool QCassandraRow::exists(const char *column_name) const
-{
-    return exists(QByteArray::fromRawData(column_name, qstrlen(column_name)));
-}
-
-/** \brief Check whether a cell exists in this row.
- *
- * The check is happening in memory first. If the cell doesn't exist in memory,
- * then the row checks in the Cassandra database.
- *
- * \todo
- * Look into why a cell is created when just checking for its existance.
- *
- * \bug
  * At this time this function CREATES the cell if it did not yet
  * exist!
  *
@@ -677,9 +496,9 @@ bool QCassandraRow::exists(const char *column_name) const
  *
  * \return true if the cell exists, false otherwise.
  */
-bool QCassandraRow::exists(const wchar_t *column_name) const
+bool QCassandraRow::exists(const char* column_name) const
 {
-    return exists(QString::fromWCharArray(column_name, (column_name ? wcslen(column_name) : 0)));
+    return exists(QString(column_name));
 }
 
 /** \brief Check whether a cell exists in this row.
@@ -708,53 +527,34 @@ bool QCassandraRow::exists(const QString& column_name) const
  * The check is happening in memory first. If the cell doesn't exist in memory,
  * then the row checks in the Cassandra database.
  *
- * \todo
- * Look into why a cell is created when just checking for its existance.
- *
- * \bug
- * At this time this function CREATES the cell if it did not yet
- * exist!
- *
- * \param[in] column_uuid  The column name.
- *
- * \return true if the cell exists, false otherwise.
- */
-bool QCassandraRow::exists(const QUuid& column_uuid) const
-{
-    return exists(column_uuid.toRfc4122());
-}
-
-/** \brief Check whether a cell exists in this row.
- *
- * The check is happening in memory first. If the cell doesn't exist in memory,
- * then the row checks in the Cassandra database.
- *
  * \param[in] column_key  The column binary key.
  *
  * \return true if the cell exists, false otherwise.
  */
 bool QCassandraRow::exists(const QByteArray& column_key) const
 {
-    auto table( f_table.lock() );
-    if(!table)
-    {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
     QCassandraCells::const_iterator ci(f_cells.find(column_key));
-    if(ci != f_cells.end()) {
+    if(ci != f_cells.end())
+    {
         // exists in the cache already
         return true;
     }
 
+    // This is already done by the readRows() method of QCassandraTable.
+    // If you have an instance of this class without going through the
+    // QCassandraTable interface, it won't work right.
+    //
     // try reading this cell
     QCassandraValue value;
-    try {
-        if(!table->getValue(f_key, column_key, value)) {
+    try
+    {
+        if(!f_table->getValue(f_key, column_key, value))
+        {
             return false;
         }
     }
-    catch(const org::apache::cassandra::NotFoundException&) {
-        // it doesn't exist in Cassandra either
+    catch( const std::exception& )
+    {
         return false;
     }
 
@@ -779,27 +579,7 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
  *
  * \return A shared pointer to the cell.
  */
-QCassandraCell& QCassandraRow::operator [] (const char *column_name)
-{
-    return *cell(column_name);
-}
-
-/** \brief Retrieve a cell from the row.
- *
- * This function retrieves a reference to a cell from this row in
- * array syntax.
- *
- * This version returns a writable cell and it creates a new cell
- * when one with the specified name doesn't already exist.
- *
- * This function accepts a column name. The UTF-8 version of it is used to
- * retrieve the data from Cassandra.
- *
- * \param[in] column_name  The name of the column referencing this cell.
- *
- * \return A shared pointer to the cell.
- */
-QCassandraCell& QCassandraRow::operator [] (const wchar_t *column_name)
+QCassandraCell& QCassandraRow::operator [] (const char* column_name)
 {
     return *cell(column_name);
 }
@@ -832,26 +612,6 @@ QCassandraCell& QCassandraRow::operator [] (const QString& column_name)
  * This version returns a writable cell and it creates a new cell
  * when one with the specified name doesn't already exist.
  *
- * This function accepts a UUID as the column name. The binary version of
- * it is used to retrieve the data from Cassandra.
- *
- * \param[in] column_uuid  The UUID of the column referencing this cell.
- *
- * \return A shared pointer to the cell.
- */
-QCassandraCell& QCassandraRow::operator [] (const QUuid& column_uuid)
-{
-    return *cell(column_uuid);
-}
-
-/** \brief Retrieve a cell from the row.
- *
- * This function retrieves a reference to a cell from this row in
- * array syntax.
- *
- * This version returns a writable cell and it creates a new cell
- * when one with the specified name doesn't already exist.
- *
  * This function makes use of a binary key to reference the cell.
  *
  * \param[in] column_key  The binary key of the column referencing this cell.
@@ -868,7 +628,7 @@ QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key)
  * This function retrieves a constant reference to a cell from this row
  * in array syntax.
  *
- * This version returns a read-only cell. If the cell doesn't exist, 
+ * This version returns a read-only cell. If the cell doesn't exist,
  * the funtion raises an exception.
  *
  * This function accepts a column name. The UTF-8 version of it is used to
@@ -882,33 +642,9 @@ QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key)
  *
  * \return A shared pointer to the cell.
  */
-const QCassandraCell& QCassandraRow::operator [] (const char *column_name) const
+const QCassandraCell& QCassandraRow::operator [] (const char* column_name) const
 {
-    return operator [] (QByteArray::fromRawData(column_name, qstrlen(column_name)));
-}
-
-/** \brief Retrieve a cell from the row.
- *
- * This function retrieves a constant reference to a cell from this row
- * in array syntax.
- *
- * This version returns a read-only cell. If the cell doesn't exist, 
- * the funtion raises an exception.
- *
- * This function accepts a column name. The UTF-8 version of it is used to
- * retrieve the data from Cassandra.
- *
- * \exception std::runtime_error
- * This function requires that the cell being accessed already exist
- * in memory. If not, this exception is raised.
- *
- * \param[in] column_name  The name of the column referencing this cell.
- *
- * \return A shared pointer to the cell.
- */
-const QCassandraCell& QCassandraRow::operator [] (const wchar_t *column_name) const
-{
-    return operator [] (QString::fromWCharArray(column_name, (column_name ? wcslen(column_name) : 0)));
+    return operator [] (QString(column_name));
 }
 
 /** \brief Retrieve a cell from the row.
@@ -937,30 +673,6 @@ const QCassandraCell& QCassandraRow::operator [] (const QString& column_name) co
 
 /** \brief Retrieve a cell from the row.
  *
- * This function retrieves a constant reference to a cell from this row
- * in array syntax.
- *
- * This version returns a read-only cell. If the cell doesn't exist, 
- * the funtion raises an exception.
- *
- * This function accepts a column name. The UTF-8 version of it is used to
- * retrieve the data from Cassandra.
- *
- * \exception std::runtime_error
- * This function requires that the cell being accessed already exist
- * in memory. If not, this exception is raised.
- *
- * \param[in] column_uuid  The name of the column referencing this cell.
- *
- * \return A shared pointer to the cell.
- */
-const QCassandraCell& QCassandraRow::operator [] (const QUuid& column_uuid) const
-{
-    return operator [] (column_uuid.toRfc4122());
-}
-
-/** \brief Retrieve a cell from the row.
- *
  * This function retrieves a cell from this row in array syntax.
  *
  * This version returns a writable cell and it creates a new cell
@@ -975,7 +687,8 @@ const QCassandraCell& QCassandraRow::operator [] (const QUuid& column_uuid) cons
 const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) const
 {
     QCassandraCell::pointer_t p_cell( findCell(column_key) );
-    if( !p_cell ) {
+    if( !p_cell )
+    {
         throw std::runtime_error("named column while retrieving a cell was not found, cannot return a reference");
     }
 
@@ -991,9 +704,6 @@ const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) 
  */
 void QCassandraRow::clearCache()
 {
-    for(QCassandraCells::iterator ci(f_cells.begin()); ci != f_cells.end(); ++ci) {
-        (*ci)->unparent();
-    }
     f_cells.clear();
 }
 
@@ -1007,24 +717,9 @@ void QCassandraRow::clearCache()
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only cells that are equal or older.
  */
-void QCassandraRow::dropCell(const char *column_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
+void QCassandraRow::dropCell(const char* column_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
 {
-    dropCell(QByteArray::fromRawData(column_name, qstrlen(column_name)), mode, timestamp);
-}
-
-/** \brief Drop the named cell.
- *
- * This function is the same as the dropCell() that accepts a QByteArray
- * as its column key. It simply calls it after changing the column name into
- * a key.
- *
- * \param[in] column_name  The name of the column to drop.
- * \param[in] mode  Specify the timestamp mode.
- * \param[in] timestamp  Specify the timestamp to remove only cells that are equal or older.
- */
-void QCassandraRow::dropCell(const wchar_t *column_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
-{
-    dropCell(QString::fromWCharArray(column_name, (column_name ? wcslen(column_name) : 0)), mode, timestamp);
+    dropCell(QByteArray::fromRawData(column_name,qstrlen(column_name)), mode, timestamp);
 }
 
 /** \brief Drop the named cell.
@@ -1040,21 +735,6 @@ void QCassandraRow::dropCell(const wchar_t *column_name, QCassandraValue::timest
 void QCassandraRow::dropCell(const QString& column_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
 {
     dropCell(column_name.toUtf8(), mode, timestamp);
-}
-
-/** \brief Drop the named cell.
- *
- * This function is the same as the dropCell() that accepts a QByteArray
- * as its column key. It simply calls it after changing the column name into
- * a key.
- *
- * \param[in] column_uuid  The name of the column to drop.
- * \param[in] mode  Specify the timestamp mode.
- * \param[in] timestamp  Specify the timestamp to remove only cells that are equal or older.
- */
-void QCassandraRow::dropCell(const QUuid& column_uuid, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
-{
-    dropCell(column_uuid.toRfc4122(), mode, timestamp);
 }
 
 /** \brief Drop the specified cell from the Cassandra database.
@@ -1096,7 +776,6 @@ void QCassandraRow::dropCell(const QUuid& column_uuid, QCassandraValue::timestam
  *
  * \code
  *     QCassandraCell::pointer_t c(f_row->cell(f_cell));
- *     c->setConsistencyLevel(CONSISTENCY_LEVEL_QUORUM);
  * \endcode
  *
  * These 2 lines of code do NOT create the cell in the Cassandra cluster.
@@ -1121,31 +800,23 @@ void QCassandraRow::dropCell(const QUuid& column_uuid, QCassandraValue::timestam
  * \sa cell()
  * \sa cells()
  * \sa QCassandra::timeofday()
- * \sa QCassandraCell::setConsistencyLevel()
  */
-void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
+void QCassandraRow::dropCell( const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode, int64_t timestamp )
 {
-    auto table( f_table.lock() );
-    if(!table) {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
-    if(QCassandraValue::TIMESTAMP_MODE_AUTO != mode && QCassandraValue::TIMESTAMP_MODE_DEFINED != mode) {
-        throw std::runtime_error("invalid timestamp mode in dropCell()");
-    }
-
     QCassandraCell::pointer_t c(cell(column_key));
 
     // default to the timestamp of the value (which is most certainly
     // what people want in 99.9% of the cases.)
-    if(QCassandraValue::TIMESTAMP_MODE_AUTO == mode) {
+    if(QCassandraValue::TIMESTAMP_MODE_AUTO == mode)
+    {
         // the current timestamp mode of f_value is currently ignored
         // because we cannot really know whether the f_value.timestamp()
         // value was assigned or not... (not from the mode that is)
         timestamp = c->timestamp();
     }
-    table->remove(f_key, column_key, timestamp, c->consistencyLevel());
+
+    f_table->remove( f_key, column_key, timestamp, c->consistencyLevel() );
     f_cells.remove(column_key);
-    c->unparent();
 }
 
 
@@ -1155,7 +826,7 @@ void QCassandraRow::dropCell(const QByteArray& column_key, QCassandraValue::time
  */
 QCassandraTable::pointer_t QCassandraRow::parentTable() const
 {
-    return f_table.lock();
+    return f_table;
 }
 
 
@@ -1169,12 +840,9 @@ QCassandraTable::pointer_t QCassandraRow::parentTable() const
  */
 void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraValue& value)
 {
-    auto table( f_table.lock() );
-    if(!table) {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
-    table->insertValue(f_key, column_key, value);
+    f_table->insertValue(f_key, column_key, value);
 }
+
 
 /** \brief Get a cell value from Cassandra.
  *
@@ -1190,12 +858,9 @@ void QCassandraRow::insertValue(const QByteArray& column_key, const QCassandraVa
  */
 bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& value)
 {
-    auto table( f_table.lock() );
-    if(!table) {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
-    return table->getValue(f_key, column_key, value);
+    return f_table->getValue(f_key, column_key, value);
 }
+
 
 /** \brief Add a value to a Cassandra counter.
  *
@@ -1204,34 +869,19 @@ bool QCassandraRow::getValue(const QByteArray& column_key, QCassandraValue& valu
  *
  * If the cell counter does not exist yet, then value is set to the specified
  * value.
+ * 
+ * \note this is a synonym for QCassandraRow::insertValue(), since counters
+ * are automatically sensed and handled with an "UPDATE" instead of an "INSERT".
  *
  * \param[in] column_key  The key used to identify the column.
  * \param[in] value  To value to add to this counter.
  */
 void QCassandraRow::addValue(const QByteArray& column_key, int64_t value)
 {
-    auto table( f_table.lock() );
-    if(!table) {
-        throw std::runtime_error("row was dropped and is not attached to a table anymore");
-    }
-    return table->addValue(f_key, column_key, value);
+    return f_table->insertValue(f_key, column_key, value);
 }
 
-/** \brief This internal function marks the row as unusable.
- *
- * This function is called whenever you drop a row which means that all the
- * data in that row is now not accessible (at least not on Cassandra.)
- *
- * Any future function call that require the parent will fail with an
- * exception.
- *
- * Further, this call releases its cells also calling unparent() on them.
- */
-void QCassandraRow::unparent()
-{
-    f_table.reset();
-    clearCache();
-}
 
 } // namespace QtCassandra
+
 // vim: ts=4 sw=4 et

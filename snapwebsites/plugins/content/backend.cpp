@@ -182,10 +182,10 @@ void content::backend_action_reset_status(bool const force)
 
     // TODO: use the '*index*' row instead of the entire content table
 
-    QtCassandra::QCassandraRowPredicate row_predicate;
+    auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
     QString const site_key(f_snap->get_site_key_with_slash());
     // process 100 in a row
-    row_predicate.setCount(100);
+    row_predicate->setCount(100);
     for(;;)
     {
         content_table->clearCache();
@@ -338,11 +338,11 @@ void content::backend_action_new_file()
     // otherwise nothing happens...
     //
     QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(key));
-    QtCassandra::QCassandraColumnRangePredicate reference_column_predicate;
-    reference_column_predicate.setStartColumnName(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE));
-    reference_column_predicate.setEndColumnName(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
-    reference_column_predicate.setCount(100);
-    reference_column_predicate.setIndex(); // behave like an index
+    auto reference_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    reference_column_predicate->setStartCellKey(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE));
+    reference_column_predicate->setEndCellKey(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
+    reference_column_predicate->setCount(100);
+    reference_column_predicate->setIndex(); // behave like an index
     unsigned char const one(1);
     for(;;)
     {
@@ -408,9 +408,9 @@ void content::backend_action_rebuild_index()
         QtCassandra::QCassandraValue ready;
         ready.setSignedCharValue(1);
 
-        QtCassandra::QCassandraRowPredicate row_predicate;
+        auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
         // process 100 in a row
-        row_predicate.setCount(100);
+        row_predicate->setCount(100);
         for(;;)
         {
             content_table->clearCache();
@@ -458,9 +458,9 @@ void content::backend_action_rebuild_index()
     {
         QtCassandra::QCassandraRow::pointer_t row(content_table->row(get_name(name_t::SNAP_NAME_CONTENT_INDEX)));
 
-        QtCassandra::QCassandraColumnRangePredicate column_predicate;
-        column_predicate.setCount(100);
-        column_predicate.setIndex(); // behave like an index
+        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        column_predicate->setCount(100);
+        column_predicate->setIndex(); // behave like an index
         for(;;)
         {
             row->clearCache();
@@ -542,13 +542,13 @@ void content::backend_process_status()
     // TODO: use the '*index*' row instead of the entire content table
 
     // only process files for the website currently being processed
-    QtCassandra::QCassandraRowPredicate row_predicate;
+    auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
     QString const site_key(f_snap->get_site_key_with_slash());
     // These are not defined in alphabetical order, unfortunately
-    //row_predicate.setStartRowName(site_key);
-    //row_predicate.setEndRowName(site_key + QtCassandra::QCassandraColumnPredicate::last_char);
+    //row_predicate->setStartRowName(site_key);
+    //row_predicate->setEndRowName(site_key + QtCassandra::QCassandraCellPredicate::last_char);
     // process 100 in a row
-    row_predicate.setCount(100);
+    row_predicate->setCount(100);
     for(;;)
     {
         processing_table->clearCache();
@@ -678,9 +678,9 @@ void content::backend_process_files()
 //files_table->row(QByteArray::fromHex("1f2bcb1bd25c07eb88373f7c9f50adb6"))->cell("content::files::reference::http://csnap.m2osw.com/css/finball/style.css")->setValue(ref);
 //std::cerr << "-------------------------------------- backend_process_files() START\n";
 
-    QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(100); // should this be a parameter?
-    column_predicate.setIndex(); // behave like an index
+    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    column_predicate->setCount(100); // should this be a parameter?
+    column_predicate->setIndex(); // behave like an index
     for(;;)
     {
         new_row->clearCache();
@@ -705,11 +705,11 @@ void content::backend_process_files()
                 QByteArray file_key(new_cell->columnKey());
 
                 QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(file_key));
-                QtCassandra::QCassandraColumnRangePredicate reference_column_predicate;
-                reference_column_predicate.setStartColumnName(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE));
-                reference_column_predicate.setEndColumnName(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
-                reference_column_predicate.setCount(100);
-                reference_column_predicate.setIndex(); // behave like an index
+                auto reference_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+                reference_column_predicate->setStartCellKey(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE));
+                reference_column_predicate->setEndCellKey(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
+                reference_column_predicate->setCount(100);
+                reference_column_predicate->setIndex(); // behave like an index
                 bool first(true); // load the files only once each
                 permission_flag secure;
                 for(;;)

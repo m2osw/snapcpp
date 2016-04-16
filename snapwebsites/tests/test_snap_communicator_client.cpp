@@ -28,6 +28,8 @@
 
 #include "snap_communicator.h"
 
+#include "snap_tests.h"
+
 #include "snapwebsites.h"
 
 #include <sstream>
@@ -121,23 +123,23 @@ void usage()
 
 int main(int argc, char * argv[])
 {
-    char const * addr("127.0.0.1");
     int port(4010);
 
     for(int i(1); i < argc; ++i)
     {
-        if(strcmp(argv[i], "--help") == 0)
+        const std::string arg(argv[i]);
+        if( arg == "--help" )
         {
             usage();
             snap::NOTREACHED();
         }
-        else if(strcmp(argv[i], "--version") == 0)
+        else if( arg == "--version" )
         {
             std::cout << SNAPWEBSITES_VERSION_STRING << std::endl;
             exit(0);
             snap::NOTREACHED();
         }
-        else if(strcmp(argv[i], "--host") == 0)
+        else if( arg == "--host" )
         {
             ++i;
             if(i >= argc)
@@ -146,9 +148,9 @@ int main(int argc, char * argv[])
                 exit(1);
                 snap::NOTREACHED();
             }
-            addr = argv[i];
+            snap_test::host(argv[i]);
         }
-        else if(strcmp(argv[i], "--port") == 0)
+        else if( arg == "--port" )
         {
             ++i;
             if(i >= argc)
@@ -162,7 +164,7 @@ int main(int argc, char * argv[])
     }
 
     snap::snap_communicator::pointer_t communicator(snap::snap_communicator::instance());
-    connection_impl::pointer_t connection(new connection_impl(addr, port));
+    connection_impl::pointer_t connection(new connection_impl(snap_test::host(), port));
     connection->set_name("CLIENT: created connection");
     communicator->add_connection(connection);
 

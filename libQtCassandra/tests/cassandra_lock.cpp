@@ -171,47 +171,44 @@ int main(int argc, char *argv[])
         qDebug() << "+ Creating context with replication factor set to" << replication_factor;
 
         QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
-        try {
+        try
+        {
             context->drop();
-            cassandra->synchronizeSchemaVersions();
         }
-        catch(...) {
+        catch(...)
+        {
             // ignore error, the context probably doesn't exist yet
         }
-        context->setStrategyClass("SimpleStrategy"); // default is LocalStrategy
-        //context->setDurableWrites(false); // by default this is 'true'
-        context->setReplicationFactor(replication_factor); // by default this is undefined
+
+        QtCassandra::QCassandraSchema::Value compaction_value;
+        auto& compaction_value_map(compaction_value.map());
+        compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+        compaction_value_map["min_threshold"] = QVariant(4);
+        compaction_value_map["max_threshold"] = QVariant(22);
 
         QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-        //table->setComment("Our test table.");
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        //table->setMemtableThroughputInMb(247);
-        //table->setMemtableOperationsInMillions(1.1578125);
-        //table->setGcGraceSeconds(864000); // 10 days (default)
-        table->setGcGraceSeconds(3600); // 1h.
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
+        auto& fields(table->fields());
+        fields["comment"]                     = QVariant("Our test table.");
+        fields["memtable_flush_period_in_ms"] = QVariant(60);
+        fields["gc_grace_seconds"]            = QVariant(3600);
+        fields["compaction"]                  = compaction_value;
 
-        try {
+        try
+        {
             context->create();
         }
-        catch(...) {
+        catch(...)
+        {
             qDebug() << "error: could not create the context, an exception occured.";
             throw;
         }
-        // attempt a synchronization so when we quit we can immediately use the context
-        cassandra->synchronizeSchemaVersions();
         exit(0);
     }
 
-    if(check_result > 0) {
-        if(check_result == 1) {
+    if(check_result > 0)
+    {
+        if(check_result == 1)
+        {
             // check the whole database for unique entries
             cassandra->connect(host);
             QString name = cassandra->clusterName();
@@ -224,11 +221,11 @@ int main(int argc, char *argv[])
                 exit(1);
             }
             QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-            QtCassandra::QCassandraColumnRangePredicate::pointer_t col_predicate(new QtCassandra::QCassandraColumnRangePredicate);
-            col_predicate->setStartColumnName("unique");
-            col_predicate->setEndColumnName("uo");
-            QtCassandra::QCassandraRowPredicate row_predicate;
-            row_predicate.setColumnPredicate(col_predicate);
+            auto col_predicate( std::make_shared<QtCassandra::QCassandraCellRangePredicate>() );
+            col_predicate->setStartCellKey("unique");
+            col_predicate->setEndCellKey("uo");
+            auto row_predicate( std::make_shared<QtCassandra::QCassandraRowPredicate>() );
+            row_predicate->setCellPredicate(col_predicate);
             int row_count(0);
             int err(0);
             for(;;) {
@@ -239,10 +236,11 @@ int main(int argc, char *argv[])
                     break;
                 }
                 const QtCassandra::QCassandraRows& r(table->rows());
-                for(QtCassandra::QCassandraRows::const_iterator o(r.begin()); o != r.end(); ++o) {
-                    QtCassandra::QCassandraColumnRangePredicate inner_col_predicate;
-                    inner_col_predicate.setStartColumnName("unique");
-                    inner_col_predicate.setEndColumnName("uo");
+                for(QtCassandra::QCassandraRows::const_iterator o(r.begin()); o != r.end(); ++o)
+                {
+                    auto inner_col_predicate( std::make_shared<QtCassandra::QCassandraCellRangePredicate>() );
+                    inner_col_predicate->setStartCellKey("unique");
+                    inner_col_predicate->setEndCellKey("uo");
                     // TODO XXX What?!
                     // Having a predicate only here does not work, it needs
                     // to be on the readRows()!!!

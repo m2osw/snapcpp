@@ -11,7 +11,6 @@ set( PROJECT_LIST
 	libtld
 	snapCMakeModules
 	snapwebsites
-	thrift
 )
 
 find_program( BZR bzr /usr/bin )
@@ -26,9 +25,7 @@ foreach( project ${PROJECT_LIST} )
 	set( RECIPE_FILE ${CMAKE_CURRENT_BINARY_DIR}/${project}.recipe )
 	file( WRITE ${RECIPE_FILE} "# bzr-builder format 0.3 deb-version {debupstream}\n" )
 	file( APPEND ${RECIPE_FILE} "lp:~snapcpp/snapcpp/${project}\n" )
-	if( NOT ${project} STREQUAL "thrift" )
-		file( APPEND ${RECIPE_FILE} "nest-part src lp:snapcpp ${project} src\n" )
-	endif()
+	file( APPEND ${RECIPE_FILE} "nest-part src lp:snapcpp ${project} src\n" )
 	#
 	set( BUILD_DIR  ${CMAKE_CURRENT_BINARY_DIR}/${project} )
 	set( SOURCE_DIR ${BUILD_DIR}/${project}-{debversion}   )

@@ -61,7 +61,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     #${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     #dl
 )

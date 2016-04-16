@@ -58,7 +58,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     dl
 )
@@ -82,7 +81,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     dl
 )
@@ -153,7 +151,6 @@ target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
 )
 
@@ -177,7 +174,6 @@ add_subdirectory( snapdb )
 #    ${ADVGETOPT_LIBRARIES}
 #    ${QTCASSANDRA_LIBRARIES}
 #    ${QT_LIBRARIES}
-#    ${THRIFT_LIBRARIES}
 #    ${LIBTLD_LIBRARIES}
 #)
 #
@@ -199,7 +195,6 @@ target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
@@ -222,7 +217,6 @@ target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
@@ -245,7 +239,6 @@ target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
@@ -272,7 +265,6 @@ target_link_libraries(${PROJECT_NAME}
 	${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
 	${ZIPIOSCC_LIBRARIES}
     dl
@@ -296,7 +288,6 @@ target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
@@ -319,7 +310,6 @@ target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
@@ -342,7 +332,6 @@ target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
@@ -368,7 +357,6 @@ target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
@@ -397,7 +385,6 @@ target_link_libraries(${PROJECT_NAME}
     ${UUID}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )

@@ -238,13 +238,13 @@ private:
 
     link_context(::snap::snap_child *snap, link_info const & info, const int count);
 
-    zpsnap_child_t                                  f_snap;
-    link_info                                       f_info;
-    QtCassandra::QCassandraRow::pointer_t           f_row;
-    QtCassandra::QCassandraColumnRangePredicate     f_column_predicate;
-    QtCassandra::QCassandraCells                    f_cells;
-    QtCassandra::QCassandraCells::const_iterator    f_cell_iterator;
-    QString                                         f_link;
+    zpsnap_child_t                                  		f_snap;
+    link_info                                       		f_info;
+    QtCassandra::QCassandraRow::pointer_t           		f_row;
+    QtCassandra::QCassandraCellRangePredicate::pointer_t    f_column_predicate;
+    QtCassandra::QCassandraCells                    		f_cells;
+    QtCassandra::QCassandraCells::const_iterator    		f_cell_iterator;
+    QString                                         		f_link;
 };
 
 class links_cloned

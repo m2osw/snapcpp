@@ -36,45 +36,54 @@
 
 project( QtCassandra )
 
-get_property( THRIFT_HEADER_FILES GLOBAL PROPERTY thrift-gencpp-cassandra_HEADER_FILES )
-get_property( THRIFT_SOURCE_FILES GLOBAL PROPERTY thrift-gencpp-cassandra_SOURCE_FILES )
+include_directories(
+    ${AS2JS_INCLUDE_DIR}
+    ${CASSANDRACPPDRIVER_INCLUDE_DIR}
+)
+
+configure_file(
+		QtCassandra/QCassandraVersion.h.in
+		${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+		)
+
+set( HEADER_FILES
+    CassTools.h
+    QtCassandra/QCassandra.h
+    QtCassandra/QCassandraCell.h
+    QtCassandra/QCassandraConsistencyLevel.h
+    QtCassandra/QCassandraContext.h
+    QtCassandra/QCassandraLock.h
+    QtCassandra/QCassandraPredicate.h
+    QtCassandra/QCassandraQuery.h
+    QtCassandra/QCassandraRow.h
+    QtCassandra/QCassandraSchema.h
+    QtCassandra/QCassandraSchemaValue.h
+    QtCassandra/QCassandraTable.h
+    QtCassandra/QCassandraValue.h
+    QtCassandra/QCassandraVersion.h.in
+    ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+)
 
 add_library(${PROJECT_NAME} SHARED
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraCell.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraClusterInformation.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraColumnDefinition.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraColumnPredicate.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraConsistencyLevel.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraContext.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraLock.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraRow.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraRowPredicate.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraTable.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandraValue.h
-    ${libQtCassandra_includes_SOURCE_DIR}/QtCassandra/QCassandra.h.in
-    ${libQtCassandra_includes_BINARY_DIR}/QtCassandra/QCassandra.h
+    ${HEADER_FILES}
+    CassTools.cpp
     QCassandra.cpp
-    QCassandraPrivate.cpp
-    QCassandraContext.cpp
-    QCassandraTable.cpp
-    QCassandraClusterInformation.cpp
-    QCassandraColumnDefinition.cpp
-    QCassandraColumnPredicate.cpp
-    QCassandraLock.cpp
-    QCassandraRow.cpp
-    QCassandraRowPredicate.cpp
     QCassandraCell.cpp
-    QCassandraValue.cpp
     QCassandraConsistencyLevel.cpp
-
-    # Low level thrift code
-    #
-    ${THRIFT_HEADER_FILES}
-    ${THRIFT_SOURCE_FILES}
+    QCassandraContext.cpp
+    QCassandraLock.cpp
+    QCassandraPredicate.cpp
+    QCassandraQuery.cpp
+    QCassandraRow.cpp
+    QCassandraSchema.cpp
+    QCassandraSchemaValue.cpp
+    QCassandraTable.cpp
+    QCassandraValue.cpp
 )
 
 target_link_libraries(QtCassandra
-    ${THRIFT_LIBRARIES}
+    ${AS2JS_LIBRARIES}
+    ${CASSANDRACPPDRIVER_LIBRARIES}
     ${QT_LIBRARIES}
 )
 
@@ -85,11 +94,21 @@ set_target_properties( QtCassandra PROPERTIES
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( ${PROJECT_NAME} thrift-build controlled_vars.h )
+    add_dependencies( ${PROJECT_NAME} controlled_vars.h )
 endif()
 
 install(
     TARGETS QtCassandra LIBRARY DESTINATION lib
+)
+
+install(
+	FILES ${HEADER_FILES}
+	DESTINATION include/QtCassandra
+)
+
+install(
+	FILES ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
+	DESTINATION include/QtCassandra/
 )
 
 # vim: ts=4 sw=4 et
