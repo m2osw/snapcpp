@@ -60,7 +60,6 @@ include_directories(
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/include
     ${CMAKE_BINARY_DIR}
-    ${THRIFT_INCLUDE_DIRS}
     ${QT_INCLUDES}
 )
 

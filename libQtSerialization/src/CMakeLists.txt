@@ -48,7 +48,6 @@ add_library(${PROJECT_NAME} SHARED
 
 target_link_libraries( ${PROJECT_NAME}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES

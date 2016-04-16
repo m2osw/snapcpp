@@ -80,7 +80,6 @@ if(CATCH_FOUND)
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         dl
     )
 
@@ -109,7 +108,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --host ${CASSANDRA_HOST_IP} )
@@ -131,7 +129,6 @@ target_link_libraries(test_snap_cgi
     #QtCore
     #QtXml
     #QtNetwork
-    #thrift
     #tld
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -148,7 +145,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -174,7 +170,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -191,7 +186,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -207,7 +201,6 @@ add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 ##    ${QTCASSANDRA_LIBRARIES}
 ##    ${LIBTLD_LIBRARIES}
 ##    ${QT_LIBRARIES}
-##    ${THRIFT_LIBRARIES}
 ##    dl
 ##)
 
@@ -222,7 +215,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -239,7 +231,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -256,7 +247,6 @@ target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -278,7 +268,6 @@ target_link_libraries(${PROJECT_NAME}
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
 	${QT_LIBRARIES}
-	${THRIFT_LIBRARIES}
 	dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -299,7 +288,6 @@ target_link_libraries(${PROJECT_NAME}
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
 	${QT_LIBRARIES}
-	${THRIFT_LIBRARIES}
 	dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -315,7 +303,6 @@ target_link_libraries(${PROJECT_NAME}
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
 	${QT_LIBRARIES}
-	${THRIFT_LIBRARIES}
 	dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -334,7 +321,6 @@ target_link_libraries(${PROJECT_NAME}
 	#${QTCASSANDRA_LIBRARIES}
 	#${LIBTLD_LIBRARIES}
 	${QT_LIBRARIES}
-	#${THRIFT_LIBRARIES}
 	#dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
@@ -353,7 +339,6 @@ target_link_libraries(${PROJECT_NAME}
 	#${QTCASSANDRA_LIBRARIES}
 	#${LIBTLD_LIBRARIES}
 	#${QT_LIBRARIES}
-	#${THRIFT_LIBRARIES}
 	#dl
 )
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )

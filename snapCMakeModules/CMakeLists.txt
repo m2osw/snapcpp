@@ -50,7 +50,6 @@ set( MODULES_LIST
 	SnapBuild
 	SnapCMakeModules
 	SnapDoxygen
-	Thrift
 )
 
 foreach( _module ${MODULES_LIST} )

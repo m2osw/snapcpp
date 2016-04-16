@@ -63,7 +63,6 @@ find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 #find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
-find_package( Thrift           REQUIRED )
 #find_package( ZLIB             REQUIRED )
 #find_package( ZipIos++         REQUIRED 0.1.5.9 )
 #find_program( ZIP zip REQUIRED )
@@ -96,7 +95,6 @@ include_directories(
     ##${CMAKE_BINARY_DIR}
     ##${CONTROLLEDVARS_INCLUDE_DIRS}
     ##${LIBTLD_INCLUDE_DIRS}
-    ##${THRIFT_INCLUDE_DIR}
 )
 
 ##

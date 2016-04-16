@@ -139,7 +139,6 @@ target_link_libraries( ${PROJECT_NAME}
     ${MAGIC_LIBRARY}
     ${LIBPROCPS_LIBRARIES}
     ${OPENSSL_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     ${UUID}
     pthread
     dl

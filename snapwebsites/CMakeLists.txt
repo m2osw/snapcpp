@@ -122,7 +122,6 @@ include_directories(
     ${CMAKE_BINARY_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${LIBTLD_INCLUDE_DIRS}
-    ${THRIFT_INCLUDE_DIR}
 )
 
 ##

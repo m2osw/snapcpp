@@ -126,8 +126,7 @@ ConfigureMakeProject( PROJECT_NAME googlerank
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
-    CONFIG_ARGS
-        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules controlled_vars as2js
@@ -135,14 +134,12 @@ ConfigureMakeProject( PROJECT_NAME libQtCassandra
 
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
     CONFIG_ARGS
-        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules
 )
 
 ConfigureMakeProject( PROJECT_NAME snapwebsites
     CONFIG_ARGS
-        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
@@ -153,7 +150,6 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
 
 ConfigureMakeProject( PROJECT_NAME snapwatchdog
     CONFIG_ARGS
-        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
@@ -163,7 +159,6 @@ ConfigureMakeProject( PROJECT_NAME snapwatchdog
 
 ConfigureMakeProject( PROJECT_NAME snapmanager
     CONFIG_ARGS
-        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
@@ -174,7 +169,6 @@ ConfigureMakeProject( PROJECT_NAME snapmanager
 
 ConfigureMakeProject( PROJECT_NAME cassview
     CONFIG_ARGS
-        -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
