@@ -67,7 +67,6 @@ find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
-find_package( Thrift           REQUIRED )
 
 #
 include( ${QT_USE_FILE} )
@@ -129,7 +128,6 @@ target_link_libraries( ${PROJECT_NAME}
     ${QTSERIALIZATION_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}
-    ${THRIFT_LIBRARIES}
     dl
 )
 
