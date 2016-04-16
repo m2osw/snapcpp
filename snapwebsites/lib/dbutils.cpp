@@ -524,7 +524,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "sitemapxml::count"
          || n == "sessions::id"
          || n == "sessions::time_to_live"
-         || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
+         || (f_tableName == "lock_table" && f_rowName == "hosts")
          )
     {
         return column_type_t::CT_uint32_value;

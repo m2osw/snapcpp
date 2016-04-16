@@ -8,7 +8,7 @@
  *
  * Documentation:
  *      This tool offers you a way to add and remove hosts from the list
- *      of hosts defined in the libQtCassandraLockTable table. Each
+ *      of hosts defined in the lock_Table table. Each
  *      named host has the ability to lock something in the
  *      Cassandra cluster with the help of the QCassandraLock object.
  *      You must add the name in this way (or your own application software)

@@ -385,7 +385,7 @@ CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
  *
  * Note that the name of the lock table can be changed in your context
  * if done early enough (i.e. before any lock is ever created by that
- * process.) By default it is set to "libQtCassandraLockTable". See the
+ * process.) By default it is set to "lock_table". See the
  * QCassandraContext::set_lock_table_name() function for details.
  *
  * Locks are created to lock any resource that you want to lock. It

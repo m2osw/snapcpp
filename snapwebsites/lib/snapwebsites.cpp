@@ -1283,7 +1283,7 @@ void server::prepare_cassandra()
     if(f_opt->is_defined("add-host"))
     {
         // The libQtCassandra library creates a lock table named
-        // libQtCassandraLockTable. That table needs to include each host as
+        // lock_table. That table needs to include each host as
         // any one host may need to lock the system.
         QString host_name(f_opt->get_string("add-host").c_str());
         if(host_name.isEmpty())

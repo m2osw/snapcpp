@@ -143,15 +143,7 @@ void sqlBackupRestore::storeTables( const int count )
         std::cout << "Dumping table [" << table_name << "]" << std::endl;
 
         const QString cql_select_string("SELECT key,column1,value FROM snap_websites.%1");
-        if( table_name == "libQtCassandraLockTable" )
-        {
-            // TODO: ugly hack! We need to correct this in the cassandra table itself.
-            q_str = cql_select_string.arg("\""+table_name+"\"");
-        }
-        else
-        {
-            q_str = cql_select_string.arg(table_name);
-        }
+        q_str = cql_select_string.arg(table_name);
 
         QCassandraQuery cass_query( f_session );
         cass_query.query( q_str );
@@ -193,14 +185,6 @@ void sqlBackupRestore::restoreTables()
     {
         std::cout << "Restoring table [" << table_name << "]" << std::endl;
 
-        // TODO: Ugly hack!
-        //
-        const QString target_table_name(
-            table_name == "libQtCassandraLockTable"
-                ? "\"libQtCassandraLockTable\""
-                : table_name
-            );
-
         const QString sql_select_string ("SELECT key,column1,value FROM %1");
         QString q_str                   ( sql_select_string.arg(table_name) );
         QSqlQuery q;
@@ -222,7 +206,7 @@ void sqlBackupRestore::restoreTables()
             const QByteArray value     ( q.value( value_idx     ).toByteArray() );
 
             const QString cql_insert_string("INSERT INTO snap_websites.%1 (key,column1,value) VALUES (?,?,?);");
-            const QString qstr( cql_insert_string.arg(target_table_name) );
+            const QString qstr( cql_insert_string.arg(table_name) );
 
             QCassandraQuery cass_query( f_session );
             cass_query.query( qstr, 3 );

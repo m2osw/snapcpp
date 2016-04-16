@@ -184,7 +184,7 @@ namespace QtCassandra
  * implementation. This name should be set once early on when creating the
  * context. It cannot be changed once a lock was created.
  *
- * By default this name is set to: "libQtCassandraLockTable". You should not
+ * By default this name is set to: "lock_table". You should not
  * have to ever change it.
  */
 
@@ -243,7 +243,7 @@ namespace QtCassandra
  * The name of the lock table is defined at the time a cassandra context
  * object is created in memory. You must change it immediately with the
  * setLockTableName() if you do not want to use the default which is:
- * "libQtCassandraLockTable". See the QCassandraLock object for more
+ * "lock_table". See the QCassandraLock object for more
  * information about locks in a Cassandra environment.
  *
  * \note
@@ -265,7 +265,7 @@ QCassandraContext::QCassandraContext(QCassandra::pointer_t cassandra, const QStr
     , f_contextName(context_name)
       //f_tables() -- auto-init
       //f_host_name() -- auto-init
-    , f_lock_table_name("'libQtCassandraLockTable'")
+    , f_lock_table_name("lock_table")
       //f_lock_accessed(false) -- auto-init
       //f_lock_timeout(5) -- auto-init
       //f_lock_ttl(60) -- auto-init
@@ -1150,7 +1150,7 @@ QString QCassandraContext::lockHostsKey() const
 
 /** \brief Retrieve the table used by the Lock implementation.
  *
- * This function retrieves the "libQtCassandraLockTable" table to use
+ * This function retrieves the "lock_table" table to use
  * with the different functions that handle the Cassandra interprocess
  * locking implementation.
  *
@@ -1371,7 +1371,7 @@ void QCassandraContext::setLockTableName(const QString& lock_table_name)
 
 /** \brief Retrieve the current lock table name.
  *
- * The lock table name is set to "libQtCassandraLockTable"
+ * The lock table name is set to "lock_table"
  *
  * \return The name of the table used to create locks.
  */
