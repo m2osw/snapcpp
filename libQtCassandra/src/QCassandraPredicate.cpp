@@ -36,6 +36,8 @@
 
 #include "QtCassandra/QCassandraPredicate.h"
 
+#include <iostream>
+
 namespace QtCassandra
 {
 

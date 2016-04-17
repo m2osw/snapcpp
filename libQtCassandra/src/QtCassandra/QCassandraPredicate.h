@@ -174,7 +174,6 @@ public:
     virtual void bindQuery( QCassandraQuery::pointer_t /*query*/, int& /*bind_num*/ ) {}
 
 protected:
-    typedef controlled_vars::limited_auto_init<int32_t, 1, INT_MAX, 100> cassandra_count_t;
     QCassandraCellPredicate::pointer_t      f_cellPred;
     QRegExp                                 f_row_name_match;
 };

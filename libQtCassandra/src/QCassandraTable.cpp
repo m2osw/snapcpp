@@ -619,7 +619,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         }
         query += " ALLOW FILTERING";
         //
-        //std::cout << "query=[" << query.toStdString() << "]" << std::endl;
+        //std::cout << "query=[" << query.toUtf8().data() << "]" << std::endl;
         f_query = std::make_shared<QCassandraQuery>(f_session);
         f_query->query( query, bind_count );
         //
@@ -1326,7 +1326,7 @@ bool QCassandraTable::isCounterClass()
         {
             throw std::runtime_error( "Critical database error! Cannot read system.schema_columns!" );
         }
-        f_private->__set_default_validation_class( q.getStringColumn( 0 ).toStdString() );
+        f_private->__set_default_validation_class( q.getStringColumn( 0 ).toUtf8().data() );
         q.end();
     }
 

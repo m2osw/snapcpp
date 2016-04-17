@@ -1042,7 +1042,7 @@ void QCassandra::retrieveColumn( ColumnDef& col_def, SessionMeta::KeyspaceMeta::
 {
     auto fields( column->getFields() );
 
-    col_def.__set_name( column->getName().toStdString() );
+    col_def.__set_name( column->getName().toUtf8().data() );
 
     auto
     fields_iter = fields.find("index_name");    if( fields_iter != fields.end() ) col_def.__set_index_name(       fields_iter->second->string()    );
@@ -1092,8 +1092,8 @@ void QCassandra::retrieveTriggers( CfDef& cf_def ) const
     while( the_query.nextRow() )
     {
         TriggerDef trig_def;
-        trig_def.__set_name    ( the_query.getStringColumn ("trigger_name").toStdString() );
-        trig_def.__set_options ( the_query.getMapColumn    ("trigger_options")            );
+        trig_def.__set_name    ( the_query.getStringColumn ("trigger_name").toUtf8().data() );
+        trig_def.__set_options ( the_query.getMapColumn    ("trigger_options")              );
         trig_def_list.push_back( trig_def );
     }
 
@@ -1110,7 +1110,7 @@ void QCassandra::retrieveTable( CfDef& cf_def, SessionMeta::KeyspaceMeta::TableM
 {
     auto fields( table->getFields() );
 
-    cf_def.__set_name( table->getName().toStdString() );
+    cf_def.__set_name( table->getName().toUtf8().data() );
 
     auto
     fields_iter = fields.find("keyspace_name");               if( fields_iter != fields.end() ) cf_def.__set_keyspace(                    fields_iter->second->string()             );

@@ -295,7 +295,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         row_predicate->appendQuery( query, bind_count );
         query += " ALLOW FILTERING";
         //
-        //std::cout << "query=[" << query.toStdString() << "]" << std::endl;
+        //std::cout << "query=[" << query.toUtf8().data() << "]" << std::endl;
         f_query = std::make_shared<QCassandraQuery>(f_table->session());
         f_query->query( query, bind_count );
         //
@@ -340,14 +340,33 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
  *
  * \return A shared pointer to the cell.
  */
-QCassandraCell::pointer_t QCassandraRow::cell(const char* column_name)
+QCassandraCell::pointer_t QCassandraRow::cell(const char *column_name)
 {
     return cell( QByteArray::fromRawData(column_name,qstrlen(column_name)) );
 }
+
+
+/** \brief Retrieve a cell from the row.
+ *
+ * This function retrieves a cell from this row. If the cell
+ * does not exist, it is created.
+ *
+ * Note that the cell is not saved in the Cassandra database
+ * unless you save a value in it (and assuming the context does
+ * not only exist in memory.)
+ *
+ * This function accepts a column name. The UTF-8 version of it is used to
+ * retrieve the data from Cassandra.
+ *
+ * \param[in] column_name  The name of the column referencing this cell.
+ *
+ * \return A shared pointer to the cell.
+ */
 QCassandraCell::pointer_t QCassandraRow::cell(const QString& column_name)
 {
     return cell(column_name.toUtf8());
 }
+
 
 /** \brief Retrieve a cell from the row.
  *
@@ -704,6 +723,11 @@ const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) 
  */
 void QCassandraRow::clearCache()
 {
+    if( f_query )
+    {
+        f_query->end();
+    }
+    f_query.reset();
     f_cells.clear();
 }
 
