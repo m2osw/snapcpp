@@ -803,7 +803,6 @@ void snap_manager::reset_domains_index()
     row_predicate->setCellPredicate(column_predicate);
     for(;;)
     {
-        table->clearCache();
         uint32_t max(table->readRows(row_predicate));
         if(max == 0)
         {
@@ -1257,7 +1256,7 @@ bool snap_manager::domainChanged()
     || f_domain_org_rules != f_domain_rules->toPlainText())
     {
         QMessageBox msg(QMessageBox::Critical, "Domain Modified", "You made changes to this entry and did not Save it yet. Do you really want to continue? If you click Ok you will lose your changes.", QMessageBox::Ok | QMessageBox::Cancel, this);
-        int choice = msg.exec();
+        int const choice(msg.exec());
         if(choice != QMessageBox::Ok)
         {
             return false;
