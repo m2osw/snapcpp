@@ -159,13 +159,96 @@ QCassandraTable::QCassandraTable(QCassandraContext::pointer_t context, const QSt
     //f_rows() -- auto-init
 {
     // verify the name here (faster than waiting for the server and good documentation)
-    QRegExp re("[A-Za-z][A-Za-z0-9_]*");
-    if(!re.exactMatch(table_name)) {
-        throw std::runtime_error("invalid table name (does not match [A-Za-z][A-Za-z0-9_]*)");
+    //
+    // TODO: decide whether we want to support uppercase names...
+    //       it may be best to support such, and make sure all accesses
+    //       always add the double quotes? (either that or we transform
+    //       the name to "Blah" instead of just Blah in our f_tableName?)
+    //
+    bool has_quotes(false);
+    bool has_uppercase(false);
+    bool quotes_are_valid(false);
+    int const max(table_name.length());
+    for(int idx(0); idx < max; ++idx)
+    {
+        ushort c(table_name.at(idx).unicode());
+        switch(c)
+        {
+        case '"':
+            if(idx == 0)
+            {
+                has_quotes = true;
+            }
+            else if(idx == max - 1)
+            {
+                if(!has_quotes)
+                {
+                    throw std::runtime_error(QString("'%1' is not a valid table name (it cannot end with a double quote (\") if it does not start with a double quote.)")
+                            .arg(table_name).toUtf8().data());
+                }
+                quotes_are_valid = true;
+            }
+            else
+            {
+                throw std::runtime_error(QString("'%1' is not a valid table name (a table name can be surrounded by double quotes, but it cannot itself include a double quote.)")
+                            .arg(table_name).toUtf8().data());
+            }
+            break;
+
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '_':
+            if(idx == 0
+            || (idx == 1 && has_quotes))
+            {
+                throw std::runtime_error(QString("'%1' is not a valid table name (a table name cannot start with a digit or an underscore (_), even when quoted.)")
+                            .arg(table_name).toUtf8().data());
+            }
+            break;
+
+        default:
+            // lowercase are always fine
+            if(c >= 'a' && c <= 'z')
+            {
+                break;
+            }
+            if(c >= 'A' && c <= 'Z')
+            {
+                has_uppercase = true;
+                break;
+            }
+            // the regex shown in the error message is simplified, the double
+            // quotes must not appear at all or be defined at the start AND
+            // the end
+            //
+            throw std::runtime_error(QString("'%1' is an invalid table name (does not match \"?[a-zA-Z][a-zA-Z0-9_]*\"?)").arg(table_name).toUtf8().data());
+
+        }
+    }
+    if(has_quotes && !quotes_are_valid)
+    {
+        throw std::runtime_error(QString("'%1' is not a valid table name (it cannot start with a double quote (\") if it does not end with a double quote.)")
+                .arg(table_name).toUtf8().data());
     }
 
-    f_tableName   = table_name;
-    f_session     = f_context->parentCassandra()->session();
+    if(has_uppercase && !has_quotes)
+    {
+        // surround the name with double quotes...
+        f_tableName = QString("\"%1\"").arg(table_name);
+    }
+    else
+    {
+        f_tableName = table_name;
+    }
+    f_session = f_context->parentCassandra()->session();
 }
 
 /** \brief Clean up the QCassandraTable object.
@@ -206,8 +289,13 @@ const QString& QCassandraTable::contextName() const
  *
  * \return The table name.
  */
-const QString& QCassandraTable::tableName() const
+QString QCassandraTable::tableName() const
 {
+    if(f_tableName[0] == '"')
+    {
+        // remove the quotes if present
+        return f_tableName.mid(1, f_tableName.length() - 2);
+    }
     return f_tableName;
 }
 
@@ -527,7 +615,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
         int bind_count = 0;
         if( row_predicate )
         {
-                row_predicate->appendQuery( query, bind_count );
+            row_predicate->appendQuery( query, bind_count );
         }
         query += " ALLOW FILTERING";
         //
@@ -1160,6 +1248,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
 
             default:
                 throw std::runtime_error("value has an invalid size for a counter value");
+
         }
         value.setInt64Value( add );
 
@@ -1201,6 +1290,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
     case QCassandraValue::TIMESTAMP_MODE_CASSANDRA:
         // let Cassandra use its own default
         break;
+
     }
 
     q.query( query_string, 3 );
@@ -1245,7 +1335,7 @@ bool QCassandraTable::isCounterClass()
         || (the_class == "CounterColumnType");
 #endif
     // NOTE: this counter type has been deprecated, since it isn't used except in the tests.
-    // It looks like Cassandra 3x has eliminated the "validator" field anyway.
+    // It looks like Cassandra 3.x has eliminated the "validator" field anyway.
     return false;
 }
 

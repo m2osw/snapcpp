@@ -201,7 +201,7 @@ QCassandraSession::pointer_t QCassandraSession::create()
  *
  * \return throws std::runtime_error on failure
  */
-void QCassandraSession::connect( const QString &host, const int port )
+void QCassandraSession::connect( const QString& host, const int port )
 {
     QStringList host_list;
     host_list << host;
@@ -229,8 +229,7 @@ void QCassandraSession::connect( const QString &host, const int port )
  * succeeds.
  *
  * \param[in] host_list The list of hosts, AKA contact points (IP addresses,
- * computer
- *                      hostnames, domain names, etc.)
+ *                      computer hostnames, domain names, etc.)
  * \param[in] port      The connection port, defaults to 9042.
  *
  * \return throws std::runtime_error on failure
@@ -254,9 +253,7 @@ void QCassandraSession::connect( const QStringList& host_list, const int port )
     cass_cluster_set_contact_points( f_cluster.get(),
                                      contact_points.str().c_str() );
 
-    std::stringstream port_str;
-    port_str << port;
-    cass_cluster_set_contact_points( f_cluster.get(), port_str.str().c_str() );
+    cass_cluster_set_port( f_cluster.get(), port );
     //
     f_session.reset( cass_session_new(), sessionDeleter() );
     f_connection.reset(
@@ -878,7 +875,7 @@ double QCassandraQuery::getDoubleColumn( const int num ) const
  *
  * \param value[in] pointer to a Cassandra value
  */
-QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue* value ) const
+QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue * value ) const
 {
     const char *    byte_value = 0;
     size_t          value_len  = 0;
@@ -891,7 +888,7 @@ QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue* value ) cons
  *
  * \param name[in] name of column
  */
-QString QCassandraQuery::getStringColumn( const QString &name ) const
+QString QCassandraQuery::getStringColumn( const QString& name ) const
 {
     return getByteArrayColumn( name ).data();
 }

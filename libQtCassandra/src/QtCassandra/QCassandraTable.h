@@ -67,8 +67,8 @@ public:
     QCassandraSession::pointer_t session() const { return f_session; }
 
     // context name
-    const QString& contextName() const;
-    const QString& tableName()   const;
+    const QString&  contextName() const;
+    QString         tableName()   const;
 
     // fields
     //

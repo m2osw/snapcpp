@@ -240,8 +240,8 @@ void QCassandraCell::setValue(const QCassandraValue& val)
         //       to a 64 bit value to work in all places
         f_value = val;
         f_row->insertValue(f_key, f_value);
+        f_cached = true;
     }
-    f_cached = true;
 }
 
 /** \brief Change the value as if read from Cassandra.

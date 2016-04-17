@@ -124,7 +124,8 @@ int main(int argc, char *argv[])
         context->create();
         qDebug() << "++ Context and its table were created!";
     }
-    catch(const std::exception& e) {
+    catch(const std::exception& e)
+    {
         qDebug() << "Exception is [" << e.what() << "]";
         exit(1);
     }
@@ -137,7 +138,8 @@ int main(int argc, char *argv[])
     static const int count(1200000);
     std::vector<int32_t> data;
     data.reserve(count);
-    for(int i(0); i < count; ++i) {
+    for(int i(0); i < count; ++i)
+    {
         int32_t r(rand());
         data.push_back(r);
         QtCassandra::QCassandraValue value(r);
@@ -151,14 +153,16 @@ int main(int argc, char *argv[])
                 (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"][row]["value"] = value;
                 retry = 0;
             }
-            catch(const std::exception& /*e*/)
+            catch(const std::exception& e)
             {
-                printf("*");
+                printf(" [pause because we got exception: %s]", e.what());
                 fflush(stdout);
-                if(retry == 1) {
+                if(retry == 1)
+                {
                     // well... after 5 sec. still timing out, maybe the
                     // server is under super heavy load or completely
                     // disconnected from other nodes
+                    printf(" timed out after %d rows inserted\n", i);
                     throw;
                 }
                 // if you do not have enough nodes or have a slow network

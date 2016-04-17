@@ -741,12 +741,10 @@ QCassandra::~QCassandra()
  * computer
  *                      hostname, domain name, etc.)
  * \param[in] port      The connection port, defaults to 9042.
- * \param[in] password  Whether the connection makes use of encryption and a
- *                      password (if password is not an empty string).
  *
  * \return true if the connection succeeds, throws otherwise
  */
-bool QCassandra::connect( const QString &host, const int port )
+bool QCassandra::connect( const QString& host, const int port )
 {
     QStringList host_list;
     host_list << host;
@@ -779,7 +777,7 @@ bool QCassandra::connect( const QString &host, const int port )
  *
  * \return true if the connection succeeds, throws otherwise
  */
-bool QCassandra::connect( const QStringList &host_list, const int port )
+bool QCassandra::connect( const QStringList& host_list, const int port )
 {
     // disconnect any existing connection
     disconnect();
