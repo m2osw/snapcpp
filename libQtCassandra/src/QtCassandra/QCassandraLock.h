@@ -51,12 +51,12 @@ public:
     QCassandraLock
         ( QCassandraContext::pointer_t context
         , const QString& object_name = ""
-        , cassandra_consistency_level_t level = CONSISTENCY_LEVEL_DEFAULT
+        , cassandra_consistency_level_t consistency_level = CONSISTENCY_LEVEL_QUORUM
         );
     QCassandraLock
         ( QCassandraContext::pointer_t context
         , const QByteArray& object_key
-        , cassandra_consistency_level_t level = CONSISTENCY_LEVEL_DEFAULT
+        , cassandra_consistency_level_t consistency_level = CONSISTENCY_LEVEL_QUORUM
         );
     virtual ~QCassandraLock();
 

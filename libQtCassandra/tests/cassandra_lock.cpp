@@ -7,15 +7,22 @@
  *      as expected when running this test on any number of computers.
  *
  * Documentation:
- *      Start the first instance with the -h option to define the
- *      Cassandra's host (defaults to 127.0.0.1 if undefined) and
- *      the -i to tell the first instance how many instances you
- *      want to run simultaneously. For example, if you have 4
- *      processors, you may want to use -i 4 or -i 8. It also
- *      accepts the number of times the processes will attempt the
- *      lock with -n. By default that count is 60 (1 minute). You
- *      can set it to 86400 for about 1 day test and a multiple
- *      thereof to run the test for multiple days.
+ *      Before you can actually run the test for real, you need to
+ *      setup the environment. This is done with -c and -a. Once
+ *      setup, then you start one instance of the test and it will
+ *      fork() a number of times equal to what you specify with -i.
+ *      You may also want to use -n to run for more than 1 minute.
+ *      So something like the following:
+ *
+ *      * cassandra_lock -h 127.0.0.1 -c 1
+ *      * cassandra_lock -h 127.0.0.1 -a my_computer
+ *      * cassandra_lock -h 127.0.0.1 -i 4 -n 120
+ *
+ *      If you recompile to test further, you should not have to re-run
+ *      step 1 and 2 unless you want to start from scratch. You can
+ *      delete the context using the -r option:
+ *
+ *      * cassandra_lock -h 127.0.0.1 -r 1
  *
  * License:
  *      Copyright (c) 2013-2016 Made to Order Software Corp.
@@ -48,6 +55,7 @@
 #include <QtCassandra/QCassandraValue.h>
 #include <QtCore/QDebug>
 #include <unistd.h>
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
@@ -62,8 +70,10 @@ int main(int argc, char *argv[])
     const char *host("localhost");
     const char *computer_name(NULL);
     QtCassandra::consistency_level_t consistency_level(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-    for(int i(1); i < argc; ++i) {
-        if(strcmp(argv[i], "--help") == 0) {
+    for(int i(1); i < argc; ++i)
+    {
+        if(strcmp(argv[i], "--help") == 0)
+        {
             qDebug() << "Usage:" << argv[0] << "[--help] [-a | -r | -o <computer-name>] [-h <hostname>] [-i <count>] [-n <repeat>] [-c <replication-factor>] [-V] [-t] [-l <consistency level>]";
             qDebug() << "  where -h indicates the Cassandra IP address";
             qDebug() << "  where -i indicates the number of process to spawn total";
@@ -75,17 +85,25 @@ int main(int argc, char *argv[])
             qDebug() << "  where -V indicates you want to verify the database after a run";
             qDebug() << "  where -t indicates you want to truncate the test table (usually before a new test)";
             qDebug() << "  where -l indicates the consistency level (one, quorum [default], local-quorum, each-quorum, all, two, three)";
+            qDebug() << "to run the test you need to create the context, the lock table and then run all the tests in parallel (about 1 per CPU)";
+            qDebug() << "to do so run the following commands, in order (change the host according to your setup):";
+            qDebug() << "  tests/cassandra_lock -h 127.0.0.1 -c 1             # '1' represents the replication factor";
+            qDebug() << "  tests/cassandra_lock -h 127.0.0.1 -a hostname      # 'hostname' is whatever you call your test computer";
+            qDebug() << "  tests/cassandra_lock -h 127.0.0.1 -i 4 -n 60       # '4' is the number of CPU and '60' is the duration of the run";
             exit(1);
         }
-        if(strcmp(argv[i], "-h") == 0) {
+        if(strcmp(argv[i], "-h") == 0)
+        {
             ++i;
-            if(i >= argc) {
+            if(i >= argc)
+            {
                 qDebug() << "error: -h must be followed by a hostname.";
                 exit(1);
             }
             host = argv[i];
         }
-        else if(strcmp(argv[i], "-i") == 0) {
+        else if(strcmp(argv[i], "-i") == 0)
+        {
             ++i;
             if(i >= argc) {
                 qDebug() << "error: -i must be followed by a number.";
@@ -101,10 +119,12 @@ int main(int argc, char *argv[])
             }
             repeat = atol(argv[i]);
         }
-        else if(strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "-r") == 0) {
+        else if(strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "-r") == 0)
+        {
             mode = argv[i][1] == 'a' ? 1 : (argv[i][1] == 'r' ? 2 : 0);
             ++i;
-            if(i >= argc) {
+            if(i >= argc)
+            {
                 qDebug() << "error: -o, -a, and -r must be followed by a computer name.";
                 exit(1);
             }
@@ -162,11 +182,12 @@ int main(int argc, char *argv[])
         }
     }
 
-    if(replication_factor > 0) {
+    if(replication_factor > 0)
+    {
         // each child must have a separate connection, so we have a specific
         // connection for the context handling
         cassandra->connect(host);
-        QString name = cassandra->clusterName();
+        QString const name = cassandra->clusterName();
         qDebug() << "+ Cassandra Cluster Name is" << name;
         qDebug() << "+ Creating context with replication factor set to" << replication_factor;
 
@@ -211,12 +232,13 @@ int main(int argc, char *argv[])
         {
             // check the whole database for unique entries
             cassandra->connect(host);
-            QString name = cassandra->clusterName();
+            QString const name = cassandra->clusterName();
             qDebug() << "+ Cassandra Cluster Name is" << name;
             qDebug() << "+ Verifying test table" << replication_factor;
 
             QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
-            if(!context) {
+            if(!context)
+            {
                 qDebug() << "warning: could not find the context, did you run the test yet?";
                 exit(1);
             }
@@ -263,11 +285,12 @@ int main(int argc, char *argv[])
                 qDebug() << "warning: " << err << " errors occured.";
             }
         }
-        else if(check_result == 2) {
+        else if(check_result == 2)
+        {
             // truncate the table so we can start a new clean test
             // without having to delete everything
             cassandra->connect(host);
-            QString name = cassandra->clusterName();
+            QString const name = cassandra->clusterName();
             qDebug() << "+ Cassandra Cluster Name is" << name;
             qDebug() << "+ Truncating the test table";
 
@@ -282,55 +305,66 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-    if(mode != 0) {
-        if(computer_name == NULL) {
+    if(mode != 0)
+    {
+        if(computer_name == NULL)
+        {
             qDebug() << "error: -o is required to add or remove the host name from the cluster";
             exit(1);
         }
 
         cassandra->connect(host);
-        QString name = cassandra->clusterName();
+        QString const name = cassandra->clusterName();
         qDebug() << "+ Cassandra Cluster Name is" << name;
         qDebug() << "+" << (mode == 1 ? "Adding" : "Removing") << computer_name << "to the lock table";
 
         QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
-        if(!context) {
+        if(!context)
+        {
             qDebug() << "error: could not retrive the qt_cassandra_test_lock context, did you run once with -c?";
             exit(1);
         }
-        if(mode == 1) {
+        if(mode == 1)
+        {
             context->addLockHost(computer_name);
             printf("%s added to the database.\n", computer_name);
         }
-        else {
+        else
+        {
             context->removeLockHost(computer_name);
             printf("%s removed from the database.\n", computer_name);
         }
         exit(0);
     }
 
-    if(process_count < 1) {
+    if(process_count < 1)
+    {
         qDebug() << "error: -i must be followed by a valid decimal number larger than 0";
         exit(1);
     }
-    if(process_count > 100) {
+    if(process_count > 100)
+    {
         qDebug() << "error: -i must be followed by a valid decimal number up to 100";
         exit(1);
     }
 
-    if(repeat < 1) {
+    if(repeat < 1)
+    {
         qDebug() << "error: -n must be followed by a valid decimal number larger than 0";
         exit(1);
     }
-    if(repeat > 10000000) { // TBD: reduce this maximum?
+    if(repeat > 10000000) // TBD: reduce this maximum?
+    {
         qDebug() << "error: -n must be followed by a number smaller or equal to 10,000,000";
         exit(1);
     }
 
     qDebug() << "+ Starting test with" << process_count << "processes and repeat the lock" << repeat << "times";
 
-    for(int i(1); i < process_count; ++i) {
-        if(fork() == 0) {
+    for(int i(1); i < process_count; ++i)
+    {
+        if(fork() == 0)
+        {
             // the children don't create other processes
             break;
         }
@@ -338,25 +372,30 @@ int main(int argc, char *argv[])
 
     // the child connects to Cassandra
     cassandra->connect(host);
-    QString name = cassandra->clusterName();
+    QString const name = cassandra->clusterName();
     qDebug() << "+ Cassandra Cluster Name is" << name << "for child" << getpid();
     QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_lock"));
-    if(!context) {
+    if(!context)
+    {
         qDebug() << "error: could not retrive the qt_cassandra_test_lock context, did you run once with -c?";
         exit(1);
     }
-    if(computer_name != NULL) {
+    if(computer_name != NULL)
+    {
         context->setHostName(computer_name);
     }
 
     QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-    if(!table) {
+    if(!table)
+    {
         qDebug() << "error: could not retrive the qt_cassandra_test_table, did you run once with -c?";
         exit(1);
     }
 
-    try {
-        for(int i(0); i < repeat; ++i) {
+    try
+    {
+        for(int i(0); i < repeat; ++i)
+        {
             sleep(1);
             // define a common key
             time_t now(time(NULL));
@@ -367,7 +406,8 @@ int main(int argc, char *argv[])
             QtCassandra::QCassandraCell::pointer_t cell(table->row(key)->cell("winner"));
             cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
             QtCassandra::QCassandraValue winner(cell->value());
-            if(winner.nullValue()) {
+            if(winner.nullValue())
+            {
                 // we're the first to lock that row!
                 QtCassandra::QCassandraValue win(getpid());
                 win.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
@@ -378,7 +418,8 @@ int main(int argc, char *argv[])
                 unique.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
                 table->row(key)->cell(QString("unique%1").arg(getpid()))->setValue(unique);
             }
-            else {
+            else
+            {
                 // if we're not the winner still show that we were working on that row
                 QtCassandra::QCassandraValue loser(true);
                 loser.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
@@ -386,8 +427,9 @@ int main(int argc, char *argv[])
             }
         }
     }
-    catch(const std::exception& e) {
-        fprintf(stderr, "!!! exception [%d]: %s !!!\n", getpid(), e.what());
+    catch(const std::exception& e)
+    {
+        std::cerr << "!!! exception [" << getpid() << "]: " << e.what() << std::endl;
     }
 }
 

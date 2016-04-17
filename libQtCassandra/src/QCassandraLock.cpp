@@ -537,10 +537,11 @@ CONTROLLED_VARS_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t));
  *
  * \param[in] context  The context where the lock is to be created.
  * \param[in] object_name  The name of the object to be locked as a QString.
+ * \param[in] consistency_level  The level to use for the lock, defaults to QUORUM.
  */
-QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name, cassandra_consistency_level_t level )
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QString& object_name, cassandra_consistency_level_t consistency_level )
     : f_context(context)
-    , f_consistency(level)
+    , f_consistency(consistency_level)
       //f_table(NULL) -- auto-init
       //f_object_name() -- auto-init
       //f_ticket_id() -- auto-init
@@ -581,6 +582,7 @@ QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QStri
  *
  * \param[in] context  The context where the lock is created.
  * \param[in] object_name  The resource to be locked.
+ * \param[in] consistency_level  The level to use for the lock, defaults to QUORUM.
  *
  * \sa QCassandraContext::addLockHost()
  * \sa QCassandraContext::setLockTimeout()
@@ -588,9 +590,9 @@ QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QStri
  * \sa lock()
  * \sa unlock()
  */
-QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_name, cassandra_consistency_level_t level )
+QCassandraLock::QCassandraLock(QCassandraContext::pointer_t context, const QByteArray& object_name, cassandra_consistency_level_t consistency_level )
     : f_context(context)
-    , f_consistency(level)
+    , f_consistency(consistency_level)
       //f_table(NULL) -- auto-init
       //f_object_name() -- auto-init
       //f_locked(false) -- auto-init
@@ -831,6 +833,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     //                 processes using their host identifier and pid.
     //
     auto tickets_predicate(std::make_shared<QCassandraCellRangePredicate>());
+    tickets_predicate->setConsistencyLevel(f_consistency);
     tickets_predicate->setCount(tickets_row->cellCount(column_count) + 100);
     tickets_row->readCells(tickets_predicate);
     const QCassandraCells& tickets(tickets_row->cells());
