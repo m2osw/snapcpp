@@ -846,7 +846,6 @@ void snap_manager::reset_websites_index()
     row_predicate->setCellPredicate(column_predicate);
     for(;;)
     {
-        table->clearCache();
         uint32_t max(table->readRows(row_predicate));
         if(max == 0)
         {
