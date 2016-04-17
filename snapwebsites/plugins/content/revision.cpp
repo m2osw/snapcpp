@@ -343,6 +343,7 @@ void content::copy_branch(QString const & key, snap_version::version_number_t co
         // no source, ignore
         return;
     }
+    source_row->clearCache();
 
     path_info_t destination_uri;
     destination_uri.set_path(key);
@@ -355,7 +356,6 @@ void content::copy_branch(QString const & key, snap_version::version_number_t co
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
-        source_row->clearCache();
         source_row->readCells(column_predicate);
         QtCassandra::QCassandraCells source_cells(source_row->cells());
         if(source_cells.isEmpty())

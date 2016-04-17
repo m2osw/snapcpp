@@ -179,6 +179,7 @@ void content::backend_action_reset_status(bool const force)
     SNAP_LOG_TRACE("content::backend_action_reset_status(): Content status reset status.");
 
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+    content_table->clearCache();
 
     // TODO: use the '*index*' row instead of the entire content table
 
@@ -188,7 +189,6 @@ void content::backend_action_reset_status(bool const force)
     row_predicate->setCount(100);
     for(;;)
     {
-        content_table->clearCache();
         uint32_t const count(content_table->readRows(row_predicate));
         if(count == 0)
         {

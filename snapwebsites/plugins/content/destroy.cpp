@@ -172,11 +172,11 @@ void content::destroy_page_done(path_info_t & ipath)
         //
         snap_string_list revision_keys;
         QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
+        revision_table->clearCache();
         auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
         row_predicate->setCount(1000);
         for(;;)
         {
-            revision_table->clearCache();
             uint32_t const count(revision_table->readRows(row_predicate));
             if(count == 0)
             {
@@ -228,11 +228,11 @@ void content::destroy_page_done(path_info_t & ipath)
         //
         snap_string_list branch_keys;
         QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
+        branch_table->clearCache();
         auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
         row_predicate->setCount(1000);
         for(;;)
         {
-            branch_table->clearCache();
             uint32_t const count(branch_table->readRows(row_predicate));
             if(count == 0)
             {
@@ -327,7 +327,7 @@ bool content::destroy_revision_impl(QString const & revision_key)
             QtCassandra::QCassandraCells const cells(files_row->cells());
             if(cells.isEmpty())
             {
-                // no more references, get rid of the while file
+                // no more references, get rid of the file itself
                 files_table->dropRow(attachment_md5.binaryValue(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
             }
 

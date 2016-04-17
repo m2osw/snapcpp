@@ -84,14 +84,15 @@ dbutils::dbutils( QString const & table_name, QString const & row_name )
 void dbutils::copy_row(QtCassandra::QCassandraTable::pointer_t ta, QString const & a, // source
                        QtCassandra::QCassandraTable::pointer_t tb, QString const & b) // destination
 {
+    // just in case there is still a previous query, clear the cache ahead of time
     QtCassandra::QCassandraRow::pointer_t source_row(ta->row(a));
+    source_row->clearCache();
     QtCassandra::QCassandraRow::pointer_t destination_row(tb->row(b));
     auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
     column_predicate->setCount(100); // we have to copy everything also it is likely very small (i.e. 10 fields...)
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
-        source_row->clearCache();
         source_row->readCells(column_predicate);
         QtCassandra::QCassandraCells const source_cells(source_row->cells());
         if(source_cells.isEmpty())

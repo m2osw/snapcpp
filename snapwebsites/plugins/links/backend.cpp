@@ -291,7 +291,9 @@ void links::cleanup_links()
     content::content * content_plugin(content::content::instance());
 
     QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    branch_table->clearCache();
 
     QString const site_key(f_snap->get_site_key_with_slash());
 
@@ -311,7 +313,6 @@ void links::cleanup_links()
     row_predicate->setCount(100);
     for(;;)
     {
-        branch_table->clearCache();
         uint32_t const count(branch_table->readRows(row_predicate));
         if(count == 0)
         {
@@ -322,14 +323,16 @@ void links::cleanup_links()
         for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
                 o != rows.end(); ++o)
         {
-            // within each row, check all the columns
-            QtCassandra::QCassandraRow::pointer_t row(*o);
             QString const key(QString::fromUtf8(o.key().data()));
             if(!key.startsWith(site_key))
             {
                 // not this website, try another key
                 continue;
             }
+
+            // within each row, check all the columns
+            QtCassandra::QCassandraRow::pointer_t row(*o);
+            row->clearCache();
 
             auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
             column_predicate->setCount(100);
@@ -340,7 +343,6 @@ void links::cleanup_links()
             // loop until all cells are handled
             for(;;)
             {
-                row->clearCache();
                 row->readCells(column_predicate);
                 QtCassandra::QCassandraCells const cells(row->cells());
                 if(cells.isEmpty())

@@ -2048,12 +2048,12 @@ void sendmail::check_bounced_emails()
     //
     QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     QtCassandra::QCassandraRow::pointer_t raw_row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED_RAW)));
+    raw_row->clearCache();
     auto all_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
     all_column_predicate->setCount(100); // should this be a parameter?
     all_column_predicate->setIndex(); // behave like an index
     for(;;)
     {
-        raw_row->clearCache();
         raw_row->readCells(all_column_predicate);
         QtCassandra::QCassandraCells const cells(raw_row->cells());
         if(cells.isEmpty())
@@ -2087,14 +2087,14 @@ void sendmail::check_bounced_emails()
     //SNAP_LOG_TRACE("process \"")(website_key)("\" bounced emails");
 
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_BOUNCED)));
-    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    row->clearCache();
+    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
     column_predicate->setStartCellKey(website_key + "/");
     column_predicate->setEndCellKey(website_key + "0");
     column_predicate->setCount(100); // should this be a parameter?
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
-        row->clearCache();
         row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(row->cells());
         if(cells.isEmpty())
@@ -2561,12 +2561,12 @@ void sendmail::process_emails()
 
     QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW)));
+    row->clearCache();
     auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
     column_predicate->setCount(100); // should this be a parameter?
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
-        row->clearCache();
         row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(row->cells());
         if(cells.isEmpty())
@@ -2978,8 +2978,9 @@ void sendmail::attach_user_email(email const & e)
 void sendmail::run_emails()
 {
     QtCassandra::QCassandraTable::pointer_t emails_table(get_emails_table());
-    const char *index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
+    const char * index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
     QtCassandra::QCassandraRow::pointer_t row(emails_table->row(index));
+    row->clearCache();
     auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
     column_predicate->setStartCellKey("0");
     // we use +1 otherwise immediate emails are sent 5 min. later!
@@ -2990,7 +2991,6 @@ void sendmail::run_emails()
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
-        row->clearCache();
         row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(row->cells());
         if(cells.isEmpty())

@@ -613,6 +613,7 @@ void content::remove_files_compressor(int64_t variables_timestamp)
     NOTUSED(variables_timestamp);
 
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
+    files_table->clearCache();
 
     auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
     QString const site_key(f_snap->get_site_key_with_slash());
@@ -620,7 +621,6 @@ void content::remove_files_compressor(int64_t variables_timestamp)
     row_predicate->setCount(100);
     for(;;)
     {
-        files_table->clearCache();
         uint32_t const count(files_table->readRows(row_predicate));
         if(count == 0)
         {
@@ -3988,6 +3988,7 @@ void content::add_javascript(QDomDocument doc, QString const & name)
         NOTREACHED();
     }
     QtCassandra::QCassandraRow::pointer_t javascript_row(files_table->row(get_name(name_t::SNAP_NAME_CONTENT_FILES_JAVASCRIPTS)));
+    javascript_row->clearCache();
 
     // TODO: at this point I read all the entries with "name_..."
     //       we will want to first check with the user's browser and
@@ -4008,7 +4009,6 @@ void content::add_javascript(QDomDocument doc, QString const & name)
     column_predicate->setReversed(); // read the last first
     for(;;)
     {
-        javascript_row->clearCache();
         javascript_row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(javascript_row->cells());
         if(cells.isEmpty())
@@ -4119,7 +4119,8 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             // be included first, so there is another sub-loop for that
             // note that all of those must be loaded first but the order
             // we read them as does not matter
-            auto dependencies_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            row->clearCache();
+            auto dependencies_column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
             dependencies_column_predicate->setCount(100);
             dependencies_column_predicate->setIndex(); // behave like an index
             QString const start_dep(QString("%1:").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
@@ -4127,7 +4128,6 @@ void content::add_javascript(QDomDocument doc, QString const & name)
             dependencies_column_predicate->setEndCellKey(start_dep + ";");
             for(;;)
             {
-                row->clearCache();
                 row->readCells(dependencies_column_predicate);
                 QtCassandra::QCassandraCells const dep_cells(row->cells());
                 if(dep_cells.isEmpty())
@@ -4332,6 +4332,7 @@ void content::add_css(QDomDocument doc, QString const & name)
         NOTREACHED();
     }
     QtCassandra::QCassandraRow::pointer_t css_row(files_table->row("css"));
+    css_row->clearCache();
 
     // TODO: at this point I read all the entries with "name_..."
     //       we will want to first check with the user's browser and
@@ -4351,7 +4352,6 @@ void content::add_css(QDomDocument doc, QString const & name)
     column_predicate->setReversed(); // read the last first
     for(;;)
     {
-        css_row->clearCache();
         css_row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(css_row->cells());
         if(cells.isEmpty())
@@ -4446,7 +4446,8 @@ void content::add_css(QDomDocument doc, QString const & name)
             // be included first, so there is another sub-loop for that
             // note that all of those must be loaded first but the order
             // we read them as does not matter
-            auto dependencies_column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            row->clearCache();
+            auto dependencies_column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
             dependencies_column_predicate->setCount(100);
             dependencies_column_predicate->setIndex(); // behave like an index
             QString const start_dep(QString("%1::").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
@@ -4454,7 +4455,6 @@ void content::add_css(QDomDocument doc, QString const & name)
             dependencies_column_predicate->setEndCellKey(start_dep + QtCassandra::QCassandraCellPredicate::last_char);
             for(;;)
             {
-                row->clearCache();
                 row->readCells(dependencies_column_predicate);
                 QtCassandra::QCassandraCells const dep_cells(row->cells());
                 if(dep_cells.isEmpty())

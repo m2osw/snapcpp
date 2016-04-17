@@ -1839,6 +1839,7 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
 
     QString const branch_key(ipath.get_branch_key());
     QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(branch_key));
+    list_row->clearCache();
 
     char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
     int const len(static_cast<int>(strlen(ordered_pages) + 2));
@@ -1851,7 +1852,6 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
     for(;;)
     {
         // clear the cache before reading the next load
-        list_row->clearCache();
         list_row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(list_row->cells());
         if(cells.empty())
@@ -2095,6 +2095,8 @@ void list::add_all_pages_to_list_table(QString const & site_key)
 {
     content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    content_table->clearCache();
+
     safe_priority_t safe_priority(LIST_PRIORITY_REVIEW);
 
     // TODO: use the '*index*' row which is sorted
@@ -2103,7 +2105,6 @@ void list::add_all_pages_to_list_table(QString const & site_key)
     row_predicate->setCount(1000);
     for(;;)
     {
-        content_table->clearCache();
         uint32_t const count(content_table->readRows(row_predicate));
         if(count == 0)
         {
@@ -2496,7 +2497,9 @@ int list::generate_new_list_for_hand_picked_pages(QString const & site_key, cont
 int list::generate_all_lists(QString const & site_key)
 {
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
+
     QtCassandra::QCassandraRow::pointer_t list_row(list_table->row(site_key));
+    list_row->clearCache();
 
     // the algorithm makes use of multiple limits to keep the time as
     // low as possible and give other websites a chance to update their
@@ -2532,7 +2535,6 @@ int list::generate_all_lists(QString const & site_key)
     bool continue_work(true);
     do
     {
-        list_row->clearCache();
         list_row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(list_row->cells());
         if(cells.isEmpty())
@@ -2904,6 +2906,8 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     //
     if(did_work != 0)
     {
+        list_row->clearCache();
+
         char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
 
         // count the new total number of ordered pages
@@ -2916,7 +2920,6 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
         for(;;)
         {
             // clear the cache before reading the next load
-            list_row->clearCache();
             list_row->readCells(column_predicate);
             QtCassandra::QCassandraCells const cells(list_row->cells());
             if(cells.empty())

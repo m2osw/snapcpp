@@ -82,6 +82,7 @@ mailinglist::list::list(mailinglist * parent, QString const & list_name)
     f_column_predicate->setCount(1000);
     f_column_predicate->setIndex();
     //f_c = f_cells.end();
+    f_row->clearCache();  // make sure no query is laying around (cannot do that in next() anymore)
 }
 
 
@@ -123,7 +124,7 @@ QString mailinglist::list::next()
 
     if(f_c == f_cells.end())
     {
-        f_row->clearCache();
+        //f_row->clearCache();
         f_row->readCells(f_column_predicate);
         f_cells = f_row->cells();
         f_c = f_cells.begin();

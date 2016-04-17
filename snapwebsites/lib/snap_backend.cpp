@@ -933,13 +933,13 @@ void snap_backend::process_tick()
 
         // if a site exists then it has a "core::last_updated" entry
         //
+        f_sites_table->clearCache(); // just in case, make sure we do not have a query still laying around
         auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
         column_predicate->setCellKey(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
         auto row_predicate = std::make_shared<QtCassandra::QCassandraRowPredicate>();
         row_predicate->setCellPredicate(column_predicate);
         for(;;)
         {
-            f_sites_table->clearCache();
             if(f_sites_table->readRows(row_predicate) == 0)
             {
                 // no more websites to process
@@ -1006,13 +1006,13 @@ bool snap_backend::process_timeout()
         // if the user did not give us a specific website to work on
         // we want to check for the next entry in our backend table
         //
+        QtCassandra::QCassandraRow::pointer_t row(f_backend_table->row(f_action));
+        row->clearCache(); // just in case, make sure we do not have a query laying around
         auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
         column_predicate->setCount(1); // read only the first row -- WARNING: if you increase that number you MUST add a sub-loop
         column_predicate->setIndex(); // behave like an index
-        QtCassandra::QCassandraRow::pointer_t row(f_backend_table->row(f_action));
         for(;;)
         {
-            row->clearCache();
             row->readCells(column_predicate);
             QtCassandra::QCassandraCells const cells(row->cells());
             if(cells.isEmpty())

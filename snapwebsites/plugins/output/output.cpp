@@ -367,22 +367,22 @@ void output::on_generate_main_content(content::path_info_t & ipath, QDomElement 
     //       so it can be cached and retrieved quickly
     //
     {
+        QtCassandra::QCassandraRow::pointer_t page_row(content_table->row(ipath.get_key()));
+        page_row->clearCache();
         snap_version::version_number_t const branch(ipath.get_branch());
         QString const revision_key(QString("%1::%2::%3::")
                 .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
                 .arg(branch));
         int const revision_key_length(revision_key.length());
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
         column_predicate->setCount(100);
         column_predicate->setIndex(); // behave like an index
         column_predicate->setStartCellKey(revision_key + "@");
         column_predicate->setEndCellKey(revision_key + "~");
-        QtCassandra::QCassandraRow::pointer_t page_row(content_table->row(ipath.get_key()));
         bool first(true);
         for(;;)
         {
-            page_row->clearCache();
             page_row->readCells(column_predicate);
             QtCassandra::QCassandraCells const cells(page_row->cells());
             if(cells.isEmpty())

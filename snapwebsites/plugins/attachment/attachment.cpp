@@ -847,14 +847,15 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
             page_ipath.force_branch(b);
 
             QtCassandra::QCassandraRow::pointer_t branch_row(branch_table->row(page_ipath.get_branch_key()));
-            auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            branch_row->clearCache();
+
+            auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
             column_predicate->setStartCellKey(content_attachment_reference);
             column_predicate->setEndCellKey(QString("%1;").arg(attachment_reference));
             column_predicate->setCount(100);
             column_predicate->setIndex(); // behave like an index
             for(;;)
             {
-                branch_row->clearCache();
                 branch_row->readCells(column_predicate);
                 QtCassandra::QCassandraCells const branch_cells(branch_row->cells());
                 if(branch_cells.isEmpty())

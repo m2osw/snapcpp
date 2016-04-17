@@ -681,6 +681,7 @@ void snap_firewall::setup_firewall()
     int64_t const limit(now + 60LL * 1000000LL);
 
     QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
+    row->clearCache();
 
     // the first row we keep has a date we use to know when to wake up
     // next and drop that IP from our firewall
@@ -694,7 +695,6 @@ void snap_firewall::setup_firewall()
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
-        row->clearCache();
         row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(row->cells());
         if(cells.isEmpty())
@@ -785,6 +785,7 @@ void snap_firewall::process_timeout()
     int64_t const now(snap::snap_communicator::get_current_date());
 
     QtCassandra::QCassandraRow::pointer_t row(f_firewall_table->row(f_server_name));
+    row->clearCache();
 
     // unblock IP addresses which have a timeout in the past
     //
@@ -798,7 +799,6 @@ void snap_firewall::process_timeout()
     column_predicate->setIndex(); // behave like an index
     for(;;)
     {
-        row->clearCache();
         row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(row->cells());
         if(cells.isEmpty())

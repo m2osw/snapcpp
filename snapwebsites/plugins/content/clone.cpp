@@ -289,13 +289,13 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
             // few other things; also that way we can immediately fix
             // the branch and revision URIs
             QtCassandra::QCassandraRow::pointer_t source_row(f_content_table->row(source.get_key()));
+            source_row->clearCache();
             QtCassandra::QCassandraRow::pointer_t destination_row(f_content_table->row(destination.get_key()));
             auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
             column_predicate->setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
             column_predicate->setIndex(); // behave like an index
             for(;;)
             {
-                source_row->clearCache();
                 source_row->readCells(column_predicate);
                 QtCassandra::QCassandraCells const source_cells(source_row->cells());
                 if(source_cells.isEmpty())
@@ -392,13 +392,13 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
                     // it could cause all sorts of weird side effects (i.e.
                     // wrong parent, wrong children to cite only those two...)
                     QtCassandra::QCassandraRow::pointer_t source_row(f_branch_table->row(source_uri));
+                    source_row->clearCache();
                     QtCassandra::QCassandraRow::pointer_t destination_row(f_branch_table->row(destination_uri));
                     auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
                     column_predicate->setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
                     column_predicate->setIndex(); // behave like an index
                     for(;;)
                     {
-                        source_row->clearCache();
                         source_row->readCells(column_predicate);
                         QtCassandra::QCassandraCells const source_cells(source_row->cells());
                         if(source_cells.isEmpty())
@@ -474,15 +474,15 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
                     .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
                     .arg(cloned_branch.f_branch));
 
-            auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+            auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
             column_predicate->setCount(10000); // 4 bytes per entry + row name of under 100 bytes, that's 1Mb max.
             column_predicate->setIndex(); // behave like an index
             column_predicate->setStartCellKey(last_revision_key); // no language (fully neutral) is a valid entry
             column_predicate->setEndCellKey(last_revision_key + "|"); // languages are limited to letters
             QtCassandra::QCassandraRow::pointer_t revision_row(f_content_table->row(source_key));
+            revision_row->clearCache();
             for(;;)
             {
-                revision_row->clearCache();
                 revision_row->readCells(column_predicate);
                 QtCassandra::QCassandraCells const new_cells(revision_row->cells());
                 if(new_cells.isEmpty())

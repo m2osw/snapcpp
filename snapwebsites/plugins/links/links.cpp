@@ -604,7 +604,6 @@ bool link_context::next_link(link_info& info)
             if(f_cell_iterator == f_cells.end())
             {
                 // no more cells available in the cells, try to read more
-                f_row->clearCache();
                 f_row->readCells(f_column_predicate);
                 f_cells = f_row->cells();
                 f_cell_iterator = f_cells.begin();
@@ -1125,6 +1124,7 @@ link_info_pair::vector_t links::list_of_links(QString const & path)
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
     QtCassandra::QCassandraRow::pointer_t row(branch_table->row(ipath.get_branch_key()));
+    row->clearCache();
 
     QString const links_namespace_start(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
     QString const links_namespace_end(QString("%1:;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
@@ -1139,7 +1139,6 @@ link_info_pair::vector_t links::list_of_links(QString const & path)
     // loop until all cells are handled
     for(;;)
     {
-        row->clearCache();
         row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(row->cells());
         if(cells.isEmpty())
@@ -1373,7 +1372,9 @@ void links::delete_link(link_info const& info, int const delete_record_count)
         // here we get the row, we do not delete it yet because we need
         // to go through the whole list first
         QtCassandra::QCassandraRow::pointer_t row(f_links_table->row(info.link_key()));
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        row->clearCache();
+
+        auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
         // The columns names are keys (i.e. http://snap.m2osw.com/...)
         //column_predicate->setStartCellKey(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
         //column_predicate->setEndCellKey(QString("%1;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
@@ -1383,7 +1384,6 @@ void links::delete_link(link_info const& info, int const delete_record_count)
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
-            row->clearCache();
             row->readCells(column_predicate);
             QtCassandra::QCassandraCells const cells(row->cells());
             if(cells.empty())
@@ -1541,13 +1541,15 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
     init_tables();
 
     QtCassandra::QCassandraRow::pointer_t source_row(f_branch_table->row(source_branch));
-    QtCassandra::QCassandraRow::pointer_t destination_row(f_branch_table->row(destination_branch));
+    source_row->clearCache();
+
+    //QtCassandra::QCassandraRow::pointer_t destination_row(f_branch_table->row(destination_branch));
 
     int const dst_branch_pos(destination_branch.indexOf('#'));
     QString const destination_uri(destination_branch.mid(0, dst_branch_pos));
     snap_version::version_number_t const branch_number(destination_branch.mid(dst_branch_pos + 1).toULong());
 
-    auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
     column_predicate->setStartCellKey(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
     column_predicate->setEndCellKey(QString("%1;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
     column_predicate->setCount(100);
@@ -1557,7 +1559,6 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
     for(;;)
     {
         // we MUST clear the cache in case we read the same list of links twice
-        source_row->clearCache();
         source_row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(source_row->cells());
         if(cells.empty())

@@ -44,7 +44,9 @@ QtCassandra::QCassandraRow::pointer_t find_unreference_row(QString const & site_
 {
     content::content * content_plugin(content::content::instance());
     list * list_plugin(list::list::instance());
+
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    content_table->clearCache();
 
     // if the ref_row does not exist, then no list were worked on for a while
     // and thus we can return the first row that the next loop returns
@@ -55,12 +57,11 @@ QtCassandra::QCassandraRow::pointer_t find_unreference_row(QString const & site_
     row_predicate->setCount(1000);
     for(;;)
     {
-        content_table->clearCache();
         uint32_t const count(content_table->readRows(row_predicate));
         if(count == 0)
         {
             // no more lists to process
-SNAP_LOG_ERROR("content_table rows vs listref cells all failed (")(site_key)(")");
+            SNAP_LOG_ERROR("content_table rows vs listref cells all failed (")(site_key)(")");
             return QtCassandra::QCassandraRow::pointer_t();
         }
         QtCassandra::QCassandraRows const rows(content_table->rows());

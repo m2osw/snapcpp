@@ -1034,6 +1034,7 @@ int64_t images::transform_images()
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
     files_table->clearCache();
     QtCassandra::QCassandraRow::pointer_t images_row(files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW)));
+    images_row->clearCache();
     QString const site_key(f_snap->get_site_key_with_slash());
 
     // we use a smaller number (100) instead of a larger number (1000)
@@ -1048,7 +1049,6 @@ int64_t images::transform_images()
     {
         // Note: because it is sorted, the oldest entries are worked on first
         //
-        images_row->clearCache();
         images_row->readCells(column_predicate);
         QtCassandra::QCassandraCells const cells(images_row->cells());
         if(cells.isEmpty())
