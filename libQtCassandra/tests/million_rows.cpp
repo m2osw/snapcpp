@@ -54,22 +54,37 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
 
     bool drop(false);
+    int replication_factor(1);
     const char *host("localhost");
-    for(int i(1); i < argc; ++i) {
-        if(strcmp(argv[i], "--help") == 0) {
-            qDebug() << "Usage:" << argv[0] << "[-h <hostname>]";
+    for(int i(1); i < argc; ++i)
+    {
+        if(strcmp(argv[i], "--help") == 0)
+        {
+            qDebug() << "Usage:" << argv[0] << "[-h <hostname>] [-r <replication-factor>]";
             exit(1);
         }
-        if(strcmp(argv[i], "-h") == 0) {
+        if(strcmp(argv[i], "-h") == 0)
+        {
             ++i;
-            if(i >= argc) {
+            if(i >= argc)
+            {
                 qDebug() << "error: -h must be followed by a hostname.";
                 exit(1);
             }
             host = argv[i];
         }
-        else if(strcmp(argv[i], "-d") == 0) {
+        else if(strcmp(argv[i], "-d") == 0)
+        {
             drop = 1;
+        }
+        else if(strcmp(argv[i], "-r") == 0)
+        {
+            ++i;
+            if(i >= argc) {
+                qDebug() << "error: -r must be followed by the number of replication to create in your context.";
+                exit(1);
+            }
+            replication_factor = atol(argv[i]);
         }
     }
 
@@ -80,16 +95,19 @@ int main(int argc, char *argv[])
     qDebug() << "+ Initialization";
     qDebug() << "++ Got an old context?";
     QtCassandra::QCassandraContext::pointer_t oldctxt(cassandra->findContext("qt_cassandra_test_large_rw"));
-    if(oldctxt) {
+    if(oldctxt)
+    {
         qDebug() << "++ Drop the old context";
         cassandra->dropContext("qt_cassandra_test_large_rw");
         qDebug() << "++ Synchronize after the drop";
-        if(drop) {
+        if(drop)
+        {
             // just do the drop and it succeeded
             exit(0);
         }
     }
-    else if(drop) {
+    else if(drop)
+    {
         qDebug() << "warning: no old table to drop";
         exit(0);
     }
@@ -99,7 +117,7 @@ int main(int argc, char *argv[])
     QtCassandra::QCassandraSchema::Value replication;
     auto& replication_map(replication.map());
     replication_map["class"]              = QVariant("SimpleStrategy");
-    replication_map["replication_factor"] = QVariant(2);
+    replication_map["replication_factor"] = QVariant(replication_factor);
 
     auto& fields(context->fields());
     fields["replication"]    = replication;
@@ -174,10 +192,12 @@ int main(int argc, char *argv[])
         }
 
         // clear the cache once in a while so the 'count' rows don't stay in memory
-        if(i % 100 == 0) {
+        if(i % 100 == 0)
+        {
             (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"].clearCache();
         }
-        if((i % 5000) == 0) {
+        if((i % 5000) == 0)
+        {
             printf(".");
             fflush(stdout);
             // some faster computers will really flood Cassandra which will then
@@ -204,18 +224,22 @@ int main(int argc, char *argv[])
     int err(0);
     std::map<int32_t, bool> unique;
     //unique.reserve(count);
-    for(int i(0); i < count * 2;) {
+    for(int i(0); i < count * 2;)
+    {
         table->clearCache();
         uint32_t max(table->readRows(row_predicate));
-        if(max == 0) {
+        if(max == 0)
+        {
             // we expect to exit here on success
             break;
         }
         QString row_name;
         const QtCassandra::QCassandraRows& r(table->rows());
-        for(QtCassandra::QCassandraRows::const_iterator o(r.begin()); o != r.end(); ++o, ++i) {
+        for(QtCassandra::QCassandraRows::const_iterator o(r.begin()); o != r.end(); ++o, ++i)
+        {
             const QtCassandra::QCassandraCells& c(o.value()->cells());
-            if(c.size() != 1) {
+            if(c.size() != 1)
+            {
                 fprintf(stderr, "error: invalid number of cells, excepted exactly 1.\n");
                 ++err;
             }
@@ -224,18 +248,22 @@ int main(int argc, char *argv[])
             int32_t l(n.int32Value());
             row_name = o.value()->rowName();
             int32_t rn(row_name.mid(3).toInt());
-            if(data[rn] != l) {
+            if(data[rn] != l)
+            {
                 fprintf(stderr, "error: expected value %d, got %d instead\n", data[rn], l);
                 ++err;
             }
-            if(unique.find(rn) != unique.end()) {
+            if(unique.find(rn) != unique.end())
+            {
                 fprintf(stderr, "error: row \"%s\" found twice.\n", row_name.toUtf8().data());
                 ++err;
             }
-            else {
+            else
+            {
                 unique[rn] = true;
             }
-            if((i % 5000) == 0) {
+            if((i % 5000) == 0)
+            {
                 printf(".");
                 fflush(stdout);
             }
@@ -246,8 +274,10 @@ int main(int argc, char *argv[])
     fflush(stdout);
 
     // verify that we got it all by checking out the map
-    for(int i(0); i < count; ++i) {
-        if(unique.find(i) == unique.end()) {
+    for(int i(0); i < count; ++i)
+    {
+        if(unique.find(i) == unique.end())
+        {
             fprintf(stderr, "error: row \"%d\" never found.\n", i);
             ++err;
         }
