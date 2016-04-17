@@ -27,9 +27,9 @@ namespace snap
 {
 
 
-snap_initialize_website::snap_initialize_website_runner::snap_initialize_website_runner(snap_initialize_website *parent,
-                                                QString const& snap_host, int snap_port,
-                                                QString const& website_uri, int destination_port)
+snap_initialize_website::snap_initialize_website_runner::snap_initialize_website_runner(snap_initialize_website * parent,
+                                                QString const & snap_host, int snap_port,
+                                                QString const & website_uri, int destination_port)
     : snap_runner("initialize_website")
     , f_parent(parent)
     //, f_mutex() -- auto-init
