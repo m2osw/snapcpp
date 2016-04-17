@@ -151,6 +151,7 @@ public:
     double     getDoubleColumn    ( const int      num   ) const;
     QString    getStringColumn    ( const QString& name  ) const;
     QString    getStringColumn    ( const int      num   ) const;
+    QByteArray getByteArrayColumn ( const char *   name  ) const;
     QByteArray getByteArrayColumn ( const QString& name  ) const;
     QByteArray getByteArrayColumn ( const int      num   ) const;
 

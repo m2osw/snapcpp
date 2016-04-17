@@ -598,6 +598,8 @@ void QCassandraTable::addRow( const QByteArray& row_key, const QByteArray& colum
  */
 uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predicate )
 {
+    f_rows.clear();
+
     if( f_query )
     {
         if( !f_query->nextPage() )
@@ -858,6 +860,12 @@ bool QCassandraTable::exists(const QString& row_name) const
  * returns false in that case.
  *
  * \warning
+ * If you can avoid calling this function, all the better. It may be
+ * very slow against a table that has many tombstones since it will
+ * have to go through those to know whether there is at least one valid
+ * row.
+ *
+ * \warning
  * If you dropped the row recently, IT STILL EXISTS. This is a "bug" in
  * Cassandra and there isn't really a way around it except by testing
  * whether a specific cell exists in the row. We cannot really test for
@@ -865,7 +873,7 @@ bool QCassandraTable::exists(const QString& row_name) const
  * really only tells you that (1) the row was never created; or (2) the
  * row was drop "a while back" (the amount of time it takes for a row
  * to completely disappear is not specified and it looks like it can take
- * days.)
+ * days.) [This warning may not apply since we now use CQL]
  *
  * \todo
  * At this time there isn't a way to specify the consistency level of the
@@ -892,18 +900,28 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
 
     auto row_predicate( std::make_shared<QCassandraRowKeyPredicate>() );
     row_predicate->setRowKey(row_key);
+    row_predicate->setCount(1); // read as little as possible (TBD verify that works even with many tombstones)
 
-#if 0
-    // Alexis: WHY?!
-    // define a key range that is quite unlikely to match any column
-    QCassandraCellRangePredicate::pointer_t cell_pred( new QCassandraCellRangePredicate );
-    QByteArray key;
-    setInt32Value(key, 0x00000000);
-    cell_pred->setStartCellKey(key);
-    setInt32Value(key, 0x00000001);
-    cell_pred->setEndCellKey(key);
-    row_predicate->setCellPredicate( std::static_pointer_cast<QCassandraCellPredicate>( cell_pred ) );
-#endif
+    class save_current_query_t
+    {
+    public:
+        save_current_query_t(QCassandraQuery::pointer_t & query)
+            : f_query_ref(query)
+            , f_saved_query(query)
+        {
+            query.reset();
+        }
+
+        ~save_current_query_t()
+        {
+            f_query_ref = f_saved_query;
+        }
+
+    private:
+        QCassandraQuery::pointer_t &        f_query_ref;
+        QCassandraQuery::pointer_t          f_saved_query;
+    };
+    save_current_query_t save_query(const_cast<QCassandraTable *>(this)->f_query);
 
     return const_cast<QCassandraTable *>(this)
             ->readRows( std::static_pointer_cast<QCassandraRowPredicate>(row_predicate) ) != 0;
@@ -1365,6 +1383,28 @@ bool QCassandraTable::getValue(const QByteArray& row_key, const QByteArray& colu
     size_t bind_num = 0;
     q.bindByteArray( bind_num++, row_key    );
     q.bindByteArray( bind_num++, column_key );
+
+    q.setConsistencyLevel( value.consistencyLevel() );
+
+    const auto mode( value.timestampMode() );
+    // some older version of gcc require a cast here
+    switch( static_cast<QCassandraValue::def_timestamp_mode_t>(mode) )
+    {
+    case QCassandraValue::TIMESTAMP_MODE_AUTO:
+        // libQtCassandra default
+        q.setTimestamp( QCassandra::timeofday() );
+        break;
+
+    case QCassandraValue::TIMESTAMP_MODE_DEFINED:
+        // user defined
+        q.setTimestamp( value.timestamp() );
+        break;
+
+    case QCassandraValue::TIMESTAMP_MODE_CASSANDRA:
+        // let Cassandra use its own default
+        break;
+
+    }
 
     q.start();
 

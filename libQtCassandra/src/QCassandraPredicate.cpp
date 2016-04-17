@@ -82,14 +82,31 @@ void QCassandraCellKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& b
 /// \brief Cell range predicate query handlers
 void QCassandraCellRangePredicate::appendQuery( QString& query, int& bind_count )
 {
-    query += " AND column1 >= ? AND column1 <= ?";
-    bind_count += 2;
+    if(!f_startCellKey.isEmpty())
+    {
+        query += " AND column1 >= ?";
+        bind_count += 1;
+    }
+
+    if(!f_endCellKey.isEmpty())
+    {
+        query += " AND column1 <= ?";
+        bind_count += 1;
+    }
 }
 
 void QCassandraCellRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
 {
-    q->bindByteArray( bind_num++, f_startCellKey );
-    q->bindByteArray( bind_num++, f_endCellKey   );
+    if(!f_startCellKey.isEmpty())
+    {
+        q->bindByteArray( bind_num++, f_startCellKey );
+    }
+
+    if(!f_endCellKey.isEmpty())
+    {
+        q->bindByteArray( bind_num++, f_endCellKey );
+    }
+
     q->setConsistencyLevel(f_consistencyLevel);
 }
 

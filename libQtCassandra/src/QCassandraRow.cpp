@@ -270,6 +270,8 @@ uint32_t QCassandraRow::readCells()
  */
 uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_predicate )
 {
+    f_cells.clear();
+
     if( f_query )
     {
         if( !f_query->nextPage() )
@@ -342,7 +344,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
  */
 QCassandraCell::pointer_t QCassandraRow::cell(const char *column_name)
 {
-    return cell( QByteArray::fromRawData(column_name,qstrlen(column_name)) );
+    return cell( QByteArray::fromRawData(column_name, qstrlen(column_name)) );
 }
 
 
@@ -515,7 +517,7 @@ QCassandraCell::pointer_t QCassandraRow::findCell(const QByteArray& column_key) 
  *
  * \return true if the cell exists, false otherwise.
  */
-bool QCassandraRow::exists(const char* column_name) const
+bool QCassandraRow::exists(const char * column_name) const
 {
     return exists(QString(column_name));
 }
@@ -577,8 +579,10 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
         return false;
     }
 
+    // since we just got the value, we might as well cache it
+    //
     QCassandraCell::pointer_t c(const_cast<QCassandraRow *>(this)->cell(column_key));
-    c->setValue(value);
+    c->assignValue(value);
 
     return true;
 }
@@ -598,7 +602,7 @@ bool QCassandraRow::exists(const QByteArray& column_key) const
  *
  * \return A shared pointer to the cell.
  */
-QCassandraCell& QCassandraRow::operator [] (const char* column_name)
+QCassandraCell& QCassandraRow::operator [] (const char * column_name)
 {
     return *cell(column_name);
 }
