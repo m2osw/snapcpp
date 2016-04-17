@@ -98,7 +98,7 @@ void QueryTest::describeTest()
 
 void QueryTest::createSchema()
 {
-    std::cout << "Creating keyspace..." << std::endl;
+    std::cout << "Creating keyspace and tables..." << std::endl;
     QCassandraQuery q( f_session );
     q.query( "CREATE KEYSPACE IF NOT EXISTS qtcassandra_query_test "
         "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'} "
@@ -133,13 +133,13 @@ void QueryTest::createSchema()
         );
     q.start();
     q.end();
-    std::cout << "Dropping keyspace..." << std::endl;
+    std::cout << "Keyspace and tables created..." << std::endl;
 }
 
 
 void QueryTest::dropSchema()
 {
-    std::cout << "Dropping keyspace..." << std::endl;
+    std::cout << "Dropping keyspace... (this may timeout if auto_snapshot is true in conf/cassandra.yaml)" << std::endl;
 
     QCassandraQuery q( f_session );
     q.query( "DROP KEYSPACE IF EXISTS qtcassandra_query_test" );
@@ -263,16 +263,16 @@ void QueryTest::largeTableTest()
     q.start();
     do
     {
-        std::cout << "Iterate through page..." << std::endl;
+//        std::cout << "Iterate through page..." << std::endl;
         while( q.nextRow() )
         {
             const int32_t id(q.getInt32Column("id"));
             const QString name(q.getStringColumn("name"));
-            std::cout
-                    << "id=" << id
-                    << ", name='" << name.toStdString() << "'"
-                    << ", timestamp=" << q.getInt64Column("timestamp")
-                    << std::endl;
+//            std::cout
+//                    << "id=" << id
+//                    << ", name='" << name.toStdString() << "'"
+//                    << ", timestamp=" << q.getInt64Column("timestamp")
+//                    << std::endl;
             string_map[id] = name;
         }
     }
