@@ -41,17 +41,6 @@ project( snapwebsites_main )
 
 
 ################################################################################
-# TODO: doesn't work...
-#
-#include( ProcessorCount )
-#ProcessorCount( NUM_PROCS )
-#
-#math( EXPR NUM_JOBS "${NUM_PROCS}*2" )
-#set( ENV{MAKEFLAGS} -j${NUM_JOBS} )    # Doesn't work. Nice idea, but no dice
-#message( "ENV{MAKEFLAGS}=$ENV{MAKEFLAGS}" )
-
-
-################################################################################
 # Load up necessary modules
 #
 set( CMAKE_MODULE_PATH
