@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *p)
 
     f_context = settings.value("context", "snap_websites").toString();
 
-    f_cassandra = QCassandra::create();
+    f_session = QCassandraSession::create();
     connectCassandra();
 
     f_contextCombo->setModel( &f_cassandraModel );
@@ -32,7 +32,7 @@ MainWindow::MainWindow(QWidget *p)
     f_rows->setModel( &f_tableModel );
 	f_cells->setModel( &f_rowModel );
 
-    f_cassandraModel.setCassandra( f_cassandra );
+    f_cassandraModel.setCassandra( f_session );
     int const idx = f_contextCombo->findText( f_context );
     if( idx != -1 )
     {
@@ -85,10 +85,10 @@ void MainWindow::connectCassandra()
     int     const port( settings.value( "cassandra_port" ).toInt()    );
     try
     {
-        f_cassandra->connect( host, port );
+        f_session->connect( host, port );
         //
-        qDebug() << "Working on Cassandra Cluster Named"    << f_cassandra->clusterName();
-        qDebug() << "Working on Cassandra Protocol Version" << f_cassandra->protocolVersion();
+        qDebug() << "Working on Cassandra Cluster Named"    << f_session->clusterName();
+        qDebug() << "Working on Cassandra Protocol Version" << f_session->protocolVersion();
 
         QString const hostname( tr("%1:%2").arg(host).arg(port) );
         setWindowTitle( tr("Cassandra View [%1]").arg(hostname) );
@@ -122,7 +122,7 @@ void MainWindow::fillTableList()
     f_tableModel.setTable( QCassandraTable::pointer_t(), QRegExp() );
     f_rowModel.setRow( QCassandraRow::pointer_t() );
 
-    QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
+    QCassandraContext::pointer_t qcontext( f_session->findContext(f_context) );
 	f_contextModel.setContext( qcontext );
 
     const int idx = f_contextCombo->findText( f_context );
@@ -182,7 +182,7 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
     try
     {
         f_rowModel.setRow( QCassandraRow::pointer_t() );
-        QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
+        QCassandraContext::pointer_t qcontext( f_session->findContext(f_context) );
         QCassandraTable::pointer_t table( qcontext->findTable(table_name) );
         if(table)
         {
