@@ -188,7 +188,10 @@ void QueryTest::simpleSelect()
 {
     std::cout << "Select from table 'data'..." << std::endl;
     QCassandraQuery q( f_session );
-    q.query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value,COUNT(*) AS count,WRITETIME(blob_value) AS timestamp FROM qtcassandra_query_test.data" );
+    q.query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value\n"
+             //",COUNT(*) AS count\n"
+             ",WRITETIME(blob_value) AS timestamp\n"
+             "FROM qtcassandra_query_test.data" );
     q.start();
     while( q.nextRow() )
     {
