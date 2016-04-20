@@ -33,8 +33,8 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project( snapCMakeModules )
 
-# Backwards compatibility for 2.8
 install( FILES Modules/CheckCXXAbstractClass.cmake DESTINATION share/cmake-2.8/Modules )
+install( FILES Modules/CheckCXXAbstractClass.cmake DESTINATION share/cmake-3.5/Modules )
 
 set( MODULES_LIST
 	CassandraCppDriver
