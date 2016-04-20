@@ -58,6 +58,7 @@ set( HEADER_FILES
     QtCassandra/QCassandraRow.h
     QtCassandra/QCassandraSchema.h
     QtCassandra/QCassandraSchemaValue.h
+    QtCassandra/QCassandraSession.h
     QtCassandra/QCassandraTable.h
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
@@ -77,6 +78,7 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraRow.cpp
     QCassandraSchema.cpp
     QCassandraSchemaValue.cpp
+    QCassandraSession.cpp
     QCassandraTable.cpp
     QCassandraValue.cpp
 )

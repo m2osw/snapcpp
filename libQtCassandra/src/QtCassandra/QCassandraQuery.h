@@ -43,67 +43,11 @@
 #include <QByteArray>
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
-
-typedef struct CassCluster_      CassCluster;
-typedef struct CassCollection_   CassCollection;
-typedef struct CassColumnMeta_   CassColumnMeta;
-typedef struct CassFuture_       CassFuture;
-typedef struct CassIterator_     CassIterator;
-typedef struct CassKeyspaceMeta_ CassKeyspaceMeta;
-typedef struct CassResult_       CassResult;
-typedef struct CassSchemaMeta_   CassSchemaMeta;
-typedef struct CassSession_      CassSession;
-typedef struct CassStatement_    CassStatement;
-typedef struct CassTableMeta_    CassTableMeta;
-typedef struct CassValue_        CassValue;
+#include "QtCassandra/QCassandraSession.h"
 
 
 namespace QtCassandra
 {
-
-
-namespace CassTools
-{
-    typedef std::shared_ptr<CassCluster>            cluster_pointer_t;
-    typedef std::shared_ptr<CassCollection>         collection_pointer_t;
-    typedef std::shared_ptr<const CassColumnMeta>   column_meta_pointer_t;
-    typedef std::shared_ptr<CassFuture>             future_pointer_t;
-    typedef std::shared_ptr<CassIterator>           iterator_pointer_t;
-    typedef std::shared_ptr<const CassKeyspaceMeta> keyspace_meta_pointer_t;
-    typedef std::shared_ptr<const CassResult>       result_pointer_t;
-    typedef std::shared_ptr<const CassSchemaMeta>   schema_meta_pointer_t;
-    typedef std::shared_ptr<const CassTableMeta>    table_meta_pointer_t;
-    typedef std::shared_ptr<CassSession>            session_pointer_t;
-    typedef std::shared_ptr<CassStatement>          statement_pointer_t;
-    typedef std::shared_ptr<const CassValue>        value_pointer_t;
-}
-
-
-class QCassandraSession
-        : public std::enable_shared_from_this<QCassandraSession>
-{
-public:
-    typedef std::shared_ptr<QCassandraSession> pointer_t;
-
-    static pointer_t create();
-    ~QCassandraSession();
-
-    void connect( const QString& host = "localhost", const int port = 9042 );
-    void connect( const QStringList& host_list     , const int port = 9042 );
-    void disconnect();
-    bool isConnected() const;
-
-    CassTools::cluster_pointer_t cluster()    const;
-    CassTools::session_pointer_t session()    const;
-    CassTools::future_pointer_t  connection() const;
-
-private:
-    QCassandraSession();
-
-    CassTools::cluster_pointer_t       f_cluster;
-    CassTools::session_pointer_t       f_session;
-    CassTools::future_pointer_t        f_connection;
-};
 
 
 class QCassandraQuery
