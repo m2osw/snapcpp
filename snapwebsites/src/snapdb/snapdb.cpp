@@ -376,7 +376,7 @@ bool snapdb::confirm_drop_check() const
     }
 
     std::cout << "WARNING! This command is about to drop vital tables from the Snap!" << std::endl
-              << "         database and is IRREVERSABLE!" << std::endl
+              << "         database and is IRREVERSIBLE!" << std::endl
               << std::endl
               << "Make sure you know what you are doing and have appropriate backups" << std::endl
               << "before proceeding!" << std::endl
@@ -410,7 +410,17 @@ void snapdb::drop_tables()
     snapTableList   list;
     for( auto table_name : list.tablesToDrop() )
     {
-        context->dropTable( table_name );
+        try
+        {
+            context->dropTable( table_name );
+        }
+        catch(std::exception const & e)
+        {
+            std::cerr << "table \""
+                      << table_name
+                      << "\" could not be dropped, maybe it did not exist (was not created.) Exception: "
+                      << e.what();
+        }
     }
 }
 
