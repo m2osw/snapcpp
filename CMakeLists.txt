@@ -70,60 +70,46 @@ ConfigureMakeProject( PROJECT_NAME log4cplus
 )
 
 ConfigureMakeProject( PROJECT_NAME iplock
-    CONFIG_ARGS
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules
 )
 
 ConfigureMakeProject( PROJECT_NAME controlled_vars
-    CONFIG_ARGS
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules
 )
 
 ConfigureMakeProject( PROJECT_NAME libtld
-    CONFIG_ARGS
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules
 )
 
 ConfigureMakeProject( PROJECT_NAME advgetopt
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules controlled_vars
 )
 
 ConfigureMakeProject( PROJECT_NAME as2js
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules controlled_vars advgetopt
 )
 
 ConfigureMakeProject( PROJECT_NAME csspp
-    CONFIG_ARGS
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules advgetopt
 )
 
 ConfigureMakeProject( PROJECT_NAME googlerank
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules controlled_vars
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
         CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules controlled_vars as2js libtld
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
-    CONFIG_ARGS
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules
 )
 
@@ -133,7 +119,6 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
         -DCSSPP_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS zipios2 libQtCassandra libQtSerialization libtld as2js log4cplus csspp
 )
 
@@ -142,7 +127,6 @@ ConfigureMakeProject( PROJECT_NAME snapwatchdog
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapwebsites
 )
 
@@ -152,7 +136,6 @@ ConfigureMakeProject( PROJECT_NAME snapmanager
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTCASSANDRA_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtCassandra
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapwebsites
 )
 
@@ -162,7 +145,6 @@ ConfigureMakeProject( PROJECT_NAME cassview
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
         -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapwebsites
 )
 
