@@ -726,12 +726,7 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     }
     else
     {
-        if( strategy == 1 /*"local"*/ )
-        {
-            throw std::runtime_error( "Local strategy is no longer supported!" );
-        }
-
-        // else strategy == 2 /*"network"*/
+        // else strategy == 1 /*"network"*/
         //
         replication_map["class"] = QVariant("NetworkTopologyStrategy");
 
@@ -770,11 +765,13 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
         table = f_context->table(table_name);
 
         auto& table_fields( table->fields() );
+        table_fields.clear();
         table_fields["comment"]                     = QVariant(comment);
         table_fields["memtable_flush_period_in_ms"] = QVariant(60);
         table_fields["gc_grace_seconds"]            = QVariant(864000);
         //
         auto& compaction_value_map(table_fields["compaction"].map());
+        compaction_value_map.clear();
         compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
         compaction_value_map["min_threshold"] = QVariant(4);
         compaction_value_map["max_threshold"] = QVariant(22);

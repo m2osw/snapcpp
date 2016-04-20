@@ -25,7 +25,16 @@
      <property name="sizeConstraint">
       <enum>QLayout::SetMinimumSize</enum>
      </property>
-     <property name="margin">
+     <property name="leftMargin">
+      <number>10</number>
+     </property>
+     <property name="topMargin">
+      <number>10</number>
+     </property>
+     <property name="rightMargin">
+      <number>10</number>
+     </property>
+     <property name="bottomMargin">
       <number>10</number>
      </property>
      <item row="1" column="0">
@@ -62,7 +71,7 @@ p, li { white-space: pre-wrap; }
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter the number of times your data will be replicated. Make sure to not enter a number large than the total number of nodes you have available.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
-        <string>3</string>
+        <string>1</string>
        </property>
       </widget>
      </item>
@@ -121,11 +130,6 @@ p, li { white-space: pre-wrap; }
        <item>
         <property name="text">
          <string>Simple</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Local</string>
         </property>
        </item>
        <item>
