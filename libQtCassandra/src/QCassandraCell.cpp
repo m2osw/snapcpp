@@ -38,7 +38,9 @@
 
 #include "QtCassandra/QCassandraCell.h"
 #include "QtCassandra/QCassandraRow.h"
+
 #include <stdexcept>
+#include <iostream>
 
 namespace QtCassandra
 {

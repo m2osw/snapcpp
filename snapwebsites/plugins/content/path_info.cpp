@@ -469,7 +469,7 @@ path_info_t::status_t path_info_t::get_status() const
     // we read the last written value
     QtCassandra::QCassandraCell::pointer_t cell(content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS)));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-    QtCassandra::QCassandraValue value(cell->value());
+    QtCassandra::QCassandraValue const & value(cell->value());
     if(value.size() != sizeof(uint32_t))
     {
         // this case is legal, it happens when creating a new page
