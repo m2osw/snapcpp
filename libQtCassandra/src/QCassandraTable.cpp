@@ -662,7 +662,7 @@ uint32_t QCassandraTable::readRows( QCassandraRowPredicate::pointer_t row_predic
 
 QCassandraRow::pointer_t QCassandraTable::row(const char* row_name)
 {
-    return row( QByteArray::fromRawData(row_name,qstrlen(row_name)) );
+    return row( QByteArray(row_name,qstrlen(row_name)) );
 }
 
 
@@ -757,7 +757,7 @@ const QCassandraRows& QCassandraTable::rows()
  */
 QCassandraRow::pointer_t QCassandraTable::findRow(const char* row_name) const
 {
-    return findRow( QByteArray::fromRawData(row_name, qstrlen(row_name)) );
+    return findRow( QByteArray(row_name, qstrlen(row_name)) );
 }
 
 
@@ -1086,7 +1086,7 @@ void QCassandraTable::dropRow
     )
 {
     dropRow
-        ( QByteArray::fromRawData(row_name, qstrlen(row_name))
+        ( QByteArray(row_name, qstrlen(row_name))
         , mode
         , timestamp
         , consistency_level

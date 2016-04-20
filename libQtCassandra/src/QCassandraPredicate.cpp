@@ -93,6 +93,11 @@ void QCassandraCellRangePredicate::appendQuery( QString& query, int& bind_count 
         query += " AND column1 <= ?";
         bind_count += 1;
     }
+
+    if(f_reversed)
+    {
+        query += " ORDER BY column1 DESC";
+    }
 }
 
 void QCassandraCellRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
