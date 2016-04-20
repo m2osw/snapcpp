@@ -78,6 +78,8 @@ namespace QtSerialization
  *
  * \sa readField()
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 void QComposite::addField(const QString& name, QField& field)
 {
     // we prevent users from adding more than one field
@@ -87,6 +89,7 @@ void QComposite::addField(const QString& name, QField& field)
     }
     f_fields[name] = &field;
 }
+#pragma GCC diagnostic pop
 
 
 /** \brief Read the named field of this composite.
@@ -106,6 +109,8 @@ void QComposite::addField(const QString& name, QField& field)
  *
  * \sa addField()
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 void QComposite::readField(QReader& r, const QString& name)
 {
     if(f_fields.contains(name)) {
@@ -117,6 +122,7 @@ printf("Could not find field named \"%s\".\n", name.toUtf8().data());
         throw QExceptionNotSupported("reading of unknown fields is not yet supported");
     }
 }
+#pragma GCC diagnostic pop
 
 
 } // namespace QtSerialization
