@@ -483,7 +483,7 @@ path_info_t::status_t::status_type path_info_t::status_t::get_status() const
 }
 
 
-/** \brief Get 
+/** \brief Verify status transition validity.
  * 
  * Verify that going from the current status (this) to the \p destination
  * status is acceptable.
@@ -548,7 +548,7 @@ bool path_info_t::status_t::valid_transition(status_t destination) const
     case subfunc::status_combo(state_t::DELETED,    working_t::CLONING,     state_t::DELETED,   working_t::NOT_WORKING):
     case subfunc::status_combo(state_t::DELETED,    working_t::NOT_WORKING, state_t::NORMAL,    working_t::NOT_WORKING): // in case of a "re-use that page"
 
-    // see error handle prior to this switch
+    // see error handling prior to this switch
     //case subfunc::status_combo(state_t::UNDEFINED,  working_t::NOT_WORKING, state_t::CREATE,    working_t::CREATING):
 
     case subfunc::status_combo(state_t::CREATE,     working_t::CREATING,    state_t::CREATE,    working_t::CREATING):

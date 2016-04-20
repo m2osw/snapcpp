@@ -1,0 +1,124 @@
+
+
+Important parts of Cassandra that we are using:
+
+ * Load balancing by having X nodes running and sending further requests
+   to a node that is not currently overwhelmed
+
+ * Replication capability having data sent to several nodes for "backup"
+   and also faster retrieval (i.e. data can be retrieved from any computer
+   that has a copy, not just the original)
+
+ * Simple database with (1) context [keyspace], (2) tables, (3) rows,
+   (4) columns, and (5) values. Nothing more.
+
+ * "Only columns are sorted." (rows are sorted, but using their MD5 sum
+   so it is generally not viewed as a useful sort.) We created indexes
+   using those columns.
+
+   * However, in most cases the fact that columns are sorted is not
+     important; we could look into having three "types" of data added
+     to a row:
+
+     1. sorted rows so one can create an index (the way to sort should
+        also be a  function--sort by number, ASCII, locale, time, where
+        would a "null" go, etc. [can we have a column representing null
+	in the first place?! not at this time])
+
+     2. blob of X number of fields (something similar to what Cassandra
+        first offered where we transfer the whole blob with all the fields
+        in one go instead of many small fields which take forever,
+        especially when the connection is encrypted) -- this should be
+        100% transparent to the end user except for the fact that we need
+        be able to tell which field can be in the blob and which cannot be
+        (unless the system decides automatically using the size of the value)
+        the "X" number could be managed by the system so once we reach a
+        certain number, the system automatically breaks blobs in pieces
+	(if I'm correct, this is what CQL offers with there CREATE TABLE
+	since you may now create any number of "columns"; however, supported
+	a full fledge set of column names that would possibly be symetrical
+	in all rows is not what we want at all.)
+
+     3. regular fields that are "not sorted" (it still needs to be sorted
+        but does not need to be an exact sort like (1) implies.)
+
+ * Consistency: the use of various types of consistencies (ONE, QUORUM,
+   ALL are those we use. We should also look into supporting LOCAL_...
+   once for the local DC opposed to remote DCs) This means we have to
+   read/write the data in at least ONE, at least QUORUM, or ALL replication
+   nodes. This means communication between nodes to make sure we have the
+   latest data (i.e. a write may have happened on node 3 and that means
+   a read from node 7 needs the data on node 3 since node 7 was not yet
+   updated.)
+
+   (i.e. If your replication factor is 3 and you have 12 nodes, ALL means
+   the data will be saved on 3 nodes before the database says it is done
+   with it. It will never copy the data on the 12 nodes.)
+
+   * Cassandra also offers a consistency of ZERO (write can fail) and
+     a consistency of ANY (write can happen on any node, even if that's
+     not a matching destination--i.e. token mismatch--although our own
+     system would want to send the data to a matching node, if no such
+     node is available, sending the data to a mismatched node would at
+     least offer us a way to save that data in the database at some point.)
+
+ * Gossip between nodes to maintain various information about the
+   nodes (keep a list of existing and running nodes; would certainly
+   be part of the load balancing work.)
+
+ * Journaling, incoming data is first saved in a journal; this should allow
+   us to save all the incoming data in a file used as a queue and once done
+   with that queue, it gets deleted
+
+
+What we use Cassandra for, but should not because these "activate"
+anti-patterns:
+
+ * Inter-front ends Lock capability. (We could implement this one in
+   our proxy instead--because we lock Cassandra, but really it is used
+   to just block all front ends but one while doing certain work.)
+
+ * Queues for backend processes. (The list, for example, adds paths
+   to the listref, or some such table, so the pagelist backend can
+   work on those pages once it wakes up and it is decided that the
+   data is ready.)
+
+ * Local cache within libQtCassandra could be somehow replicated using
+   our "proxy" front end server; this is send a "I have data from this
+   timestamp" and the server can just say "you're good".
+
+
+What the Cassandra cpp-driver offers that we would be using to ease
+access to the cluster (i.e. this is not part of Cassandra servers):
+
+ * Multi-backend connections, which is neat, but really it creates
+   such connections in each child!!! This is not a good idea.
+
+
+Somethings not offered by Cassandra:
+
+ * "Proxy" server -- this is not currently true, that is, the driver
+   itself is a standalone library but it should be relatively easy
+   to have a proxy from that; the idea is that from the computer
+   on which you run apps that have to access the Cluster, we need
+   to have a proxy so that way we can have connections that are
+   kept alive forever and a system that handles disconnect/reconnect
+   automatically
+
+ * Do permanent external backups (i.e. send a copy to another set of nodes
+   that are there only to keep a copy of the data and not to participate
+   in the cluster.)
+
+ * "timed server"; Cassandra does not tell you whether the nodes and
+   computers running the "Proxy server" are not synchronized time wise.
+   This would be useful to make sure that the cluster works as expected
+   over long period of time (i.e. if one clock drifts backward or fardward
+   compare to the others, then it will possibly save data with the wrong
+   timestamps if you do not run a proper timed service.)
+
+ * Pre-compression on the client's node; depending on whether the network
+   is super fast (i.e. no encryption between nodes) or slow (i.e. running
+   with a VPN) we could ask the proxy to compress the data before sending
+   it to the backend.
+
+

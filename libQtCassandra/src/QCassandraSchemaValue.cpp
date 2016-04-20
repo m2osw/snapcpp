@@ -226,7 +226,7 @@ void Value::parseVariant()
                 const cass_byte_t* buff;
                 size_t len = 0;
                 rc = cass_value_get_bytes( f_value.get(), &buff, &len );
-                f_variant = QByteArray::fromRawData( reinterpret_cast<const char*>(buff), len );
+                f_variant = QByteArray( reinterpret_cast<const char *>(buff), len );
             }
             break;
 

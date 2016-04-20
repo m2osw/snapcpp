@@ -344,7 +344,7 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
  */
 QCassandraCell::pointer_t QCassandraRow::cell(const char *column_name)
 {
-    return cell( QByteArray::fromRawData(column_name, qstrlen(column_name)) );
+    return cell( QByteArray(column_name, qstrlen(column_name)) );
 }
 
 
@@ -745,9 +745,9 @@ void QCassandraRow::clearCache()
  * \param[in] mode  Specify the timestamp mode.
  * \param[in] timestamp  Specify the timestamp to remove only cells that are equal or older.
  */
-void QCassandraRow::dropCell(const char* column_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
+void QCassandraRow::dropCell(const char * column_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
 {
-    dropCell(QByteArray::fromRawData(column_name,qstrlen(column_name)), mode, timestamp);
+    dropCell(QByteArray(column_name,qstrlen(column_name)), mode, timestamp);
 }
 
 /** \brief Drop the named cell.

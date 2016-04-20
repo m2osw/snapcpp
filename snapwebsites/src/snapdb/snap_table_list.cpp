@@ -69,7 +69,7 @@ void snapTableList::initList()
         addEntry("files"                   , true,  true  );
         addEntry("firewall"                , true,  false );
         addEntry("layout"                  , true,  true  );
-        addEntry("lock_table"              , true,  true  );    // TODO: Not sure why, but our implementation is creating this table name in cassandra with quotes.
+        addEntry("lock_table"              , false, true  );
         addEntry("links"                   , true,  true  );
         addEntry("list"                    , true,  false );
         addEntry("listref"                 , true,  true  );

@@ -121,7 +121,7 @@ private:
     bool 		    getBoolFromValue      ( const CassValue* value ) const;
     QByteArray      getByteArrayFromValue ( const CassValue* value ) const;
     string_map_t    getMapFromValue       ( const CassValue* value ) const;
-    void            throwIfError          ( const QString& msg     );
+    bool            throwIfError          ( const QString& msg     );
 };
 
 

@@ -130,12 +130,12 @@ public:
     QCassandraCellRangePredicate() {}
 
     const QByteArray& startCellKey() const                        { return f_startCellKey;     }
-    void              setStartCellKey(const char* cell_key)       { setStartCellKey(QByteArray::fromRawData(cell_key,qstrlen(cell_key))); }
+    void              setStartCellKey(const char* cell_key)       { setStartCellKey(QByteArray(cell_key,qstrlen(cell_key))); }
     void              setStartCellKey(const QString& cell_key)    { setStartCellKey(cell_key.toUtf8()); }
     void              setStartCellKey(const QByteArray& cell_key) { f_startCellKey = cell_key; }
 
     const QByteArray& endCellKey() const                          { return f_endCellKey;       }
-    void              setEndCellKey(const char* cell_key)         { setEndCellKey(QByteArray::fromRawData(cell_key,qstrlen(cell_key))); }
+    void              setEndCellKey(const char* cell_key)         { setEndCellKey(QByteArray(cell_key,qstrlen(cell_key))); }
     void              setEndCellKey(const QString& cell_key)      { setEndCellKey(cell_key.toUtf8()); }
     void              setEndCellKey(const QByteArray& cell_key)   { f_endCellKey = cell_key;   }
 

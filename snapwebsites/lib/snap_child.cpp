@@ -117,6 +117,7 @@ char const * g_minimum_plugins[] =
     "locale",
     "menu",
     "messages",
+    "mimetype", // this should not be required
     "output",
     "password",
     "path",

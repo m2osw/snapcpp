@@ -697,7 +697,7 @@ QCassandra::QCassandra()
 /** \brief Create the QCassandra instance.
  *
  * This factory creates a new object wrapped in a shared pointer. The contructor
- * is private, so this must be used.
+ * is private, so this function must be used.
  *
  * \sa QCassandra()
  */

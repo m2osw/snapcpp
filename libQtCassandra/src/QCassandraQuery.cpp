@@ -126,6 +126,7 @@ namespace
 }
 
 
+
 /** \brief Construct a query object and manage the lifetime of the query session.
  *
  * \sa QCassandraQuery
@@ -432,9 +433,105 @@ void QCassandraQuery::bindMap( const size_t num, const string_map_t& value )
  */
 void QCassandraQuery::start()
 {
-//std::cout << "Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
+#if 0
+// The following loops are a couple of attempts to get things to work when we
+// send loads of data to Cassandra all at once. All failed though. The cluster
+// still crashes if too much data gets there all at once.
+
+    CassMetrics metrics;
+    cass_session_get_metrics(f_session->session().get(), &metrics);
+
+    double load_avg(0.0);
+    {
+        std::ifstream load_avg_file;
+        load_avg_file.open("/proc/loadavg", std::ios_base::in);
+        if(load_avg_file.is_open())
+        {
+            char buf[256];
+            load_avg_file.getline(buf, sizeof(buf));
+            buf[sizeof(buf) - 1] = '\0';
+            load_avg = atof(buf);
+        }
+        else
+        {
+            load_avg = 0.0;
+        }
+    }
+
+std::cerr << "*** ongoing metrics info: " << metrics.requests.mean_rate << " and " << load_avg << "\n";
+
+    if(metrics.stats.total_connections != 0
+    && (metrics.stats.available_connections <= 0 || metrics.requests.mean_rate >= 60 || load_avg > 2.5))
+    {
+std::cerr << "*** pausing, waiting for a connection to be available! ***\n";
+        do
+        {
+            // no connection currently available, wait for one to
+            // become available before sending more data
+            sleep(1);
+
+            cass_session_get_metrics(f_session->session().get(), &metrics);
+            std::ifstream load_avg_file;
+            load_avg_file.open("/proc/loadavg", std::ios_base::in);
+            if(load_avg_file.is_open())
+            {
+                char buf[256];
+                load_avg_file.getline(buf, sizeof(buf));
+                buf[sizeof(buf) - 1] = '\0';
+                load_avg = atof(buf);
+            }
+            else
+            {
+                load_avg = 0.0;
+            }
+std::cerr << "  pause with " << metrics.requests.mean_rate << " and " << load_avg << "\n";
+
+//    "          total_connections: " << metrics.stats.total_connections      << "\n"
+// << "      available_connections: " << metrics.stats.available_connections  << "\n"
+// << "                  mean_rate: " << metrics.requests.mean_rate           << "\n"
+// << "            one_minute_rate: " << metrics.requests.one_minute_rate     << "\n"
+// << "           five_minute_rate: " << metrics.requests.five_minute_rate    << "\n"
+// << "        fifteen_minute_rate: " << metrics.requests.fifteen_minute_rate << "\n"
+// << "                OS load_avg: " << load_avg << "\n"
+//
+//;
+        }
+        while(metrics.requests.mean_rate >= 10.0 || load_avg > 0.9);
+std::cerr << "*** ...pause is over... ***\n";
+    }
+
+//std::cerr << "Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
+    // we repeat the request when it times out
+    int max_repeat(10);
+    do
+    {
+        if(max_repeat == 0)
+        {
+            // TODO: this error does not automatically use the correct error
+            //       code (i.e. the throwIfError() function checks various
+            //       codes as "timed out")
+            //
+            const char * message = 0;
+            size_t length        = 0;
+            cass_future_error_message( f_sessionFuture.get(), &message, &length );
+            QByteArray errmsg( message, length );
+            std::stringstream ss;
+            ss << "Query could not execute (timed out)! Cassandra error: code=" << static_cast<unsigned int>(CASS_ERROR_LIB_REQUEST_TIMED_OUT)
+               << ", error={" << cass_error_desc(CASS_ERROR_LIB_REQUEST_TIMED_OUT )
+               << "}, message={" << errmsg.data()
+               << "} aborting operation!";
+            throw std::runtime_error( ss.str().c_str() );
+        }
+        --max_repeat;
+        f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
+    }
+    while(throwIfError( QString("Error in query string [%1]!").arg(f_queryString) ));
+#endif
+
+//std::cerr << "Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
     f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
     throwIfError( QString("Error in query string [%1]!").arg(f_queryString) );
+
     f_queryResult.reset( cass_future_get_result(f_sessionFuture.get()), resultDeleter() );
     f_rowsIterator.reset( cass_iterator_from_result(f_queryResult.get()), iteratorDeleter() );
 }
@@ -496,9 +593,12 @@ bool QCassandraQuery::nextPage()
 
 /** \brief Internal method for throwing after the query fails.
  *
+ * \return true if a timeout error occurred and we want the query repeated.
+ *         (always return false in current implementation!)
+ *
  * \sa start()
  */
-void QCassandraQuery::throwIfError( const QString& msg )
+bool QCassandraQuery::throwIfError( const QString& msg )
 {
     const CassError code( cass_future_error_code( f_sessionFuture.get() ) );
     if( code != CASS_OK )
@@ -514,7 +614,46 @@ void QCassandraQuery::throwIfError( const QString& msg )
            << "} aborting operation!";
         throw std::runtime_error( ss.str().c_str() );
     }
+
+    return false;
 }
+
+
+#if 0
+{
+    const CassError code( cass_future_error_code( f_sessionFuture.get() ) );
+    switch( code )
+    {
+    case CASS_OK:
+        // everything was okay
+        return false;
+
+    //case CASS_ERROR_LIB_REQUEST_TIMED_OUT:
+    //case CASS_ERROR_SERVER_WRITE_TIMEOUT:
+    //case CASS_ERROR_SERVER_READ_TIMEOUT:
+    //    sleep(1);
+    //    return true;
+
+    default:
+        // some error occurred and we just throw on any others that
+        // we do not handle here
+        //
+        {
+            const char * message = 0;
+            size_t length        = 0;
+            cass_future_error_message( f_sessionFuture.get(), &message, &length );
+            QByteArray errmsg( message, length );
+            std::stringstream ss;
+            ss << msg.toUtf8().data() << "! Cassandra error: code=" << static_cast<unsigned int>(code)
+               << ", error={" << cass_error_desc(code)
+               << "}, message={" << errmsg.data()
+               << "} aborting operation!";
+            throw std::runtime_error( ss.str().c_str() );
+        }
+
+    }
+}
+#endif
 
 
 /** \brief Internal method to get Boolean value from row
@@ -666,7 +805,7 @@ QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue * value ) con
     const char *    byte_value = nullptr;
     size_t          value_len  = 0;
     cass_value_get_string( value, &byte_value, &value_len );
-    return QByteArray::fromRawData( byte_value, value_len );
+    return QByteArray( byte_value, value_len );
 }
 
 
@@ -763,10 +902,10 @@ QCassandraQuery::string_map_t QCassandraQuery::getMapFromValue( const CassValue*
         const char *    byte_value = 0;
         size_t          value_len  = 0;
         cass_value_get_string( key, &byte_value, &value_len );
-        QByteArray ba_key( QByteArray::fromRawData( byte_value, value_len ) );
+        QByteArray ba_key( byte_value, value_len );
         //
         cass_value_get_string( val, &byte_value, &value_len );
-        QByteArray ba_val( QByteArray::fromRawData( byte_value, value_len ) );
+        QByteArray ba_val( byte_value, value_len );
 
         ret_map[ba_key.data()] = ba_val.data();
     }

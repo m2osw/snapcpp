@@ -3454,10 +3454,30 @@ void content::on_save_content()
         // initializing on a remote machine, it may be slow enough to
         // make sense to present such
         QString const cpath(ipath.get_cpath());
-        snap_string_list const cpath_segments(cpath.split('/'));
-        if(cpath_segments.size() < 3)
+        snap_string_list const & segments(ipath.get_segments());
+        if(segments.size() < 3)
         {
             f_snap->trace(QString("Saving \"%1\".\n").arg(ipath.get_key()));
+        }
+
+        // make sure we have a parent page (pages are sorted in the
+        // blocks so a parent always appears first and thus it gets
+        // created first, otherwise it is missing)
+        //
+        if(!cpath.isEmpty())   // ignore the root
+        {
+            path_info_t parent_ipath;
+            ipath.get_parent(parent_ipath);
+            if(!content_table->exists(parent_ipath.get_key())
+            || !content_table->row(parent_ipath.get_key())->exists(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))
+            {
+                // we do not allow a parent to got missing, the programmer
+                // has to fix his deal here!
+                //
+                throw content_exception_invalid_content_xml(QString("on_save_content(): Page \"%1\" is missing its parent page \"%2\".")
+                        .arg(cpath)
+                        .arg(parent_ipath.get_cpath()));
+            }
         }
 
         path_info_t::status_t status(ipath.get_status());
@@ -3696,15 +3716,33 @@ void content::on_save_content()
 
         // link this entry to its parent automatically
         // first we need to remove the site key from the path
+        //f_snap->trace("Generate missing parent links.\n");
         QString const path(d->f_path.mid(site_key.length()));
         snap_string_list parts(path.split('/', QString::SkipEmptyParts));
-        while(parts.count() > 0)
+        if(parts.count() > 0)
         {
             QString src(parts.join("/"));
             src = site_key + src;
             parts.pop_back();
             QString dst(parts.join("/"));
             dst = site_key + dst;
+
+            path_info_t dst_ipath;
+            dst_ipath.set_path(dst);
+            if(!content_table->exists(dst_ipath.get_key())
+            || !content_table->row(dst_ipath.get_key())->exists(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))
+            {
+                // we do not allow a parent to got missing, the programmer
+                // has to fix his deal here!
+                //
+                // NOTE: This should NEVER happens since we already checked
+                //       this earlier in the loop.
+                //
+                throw content_exception_invalid_content_xml(QString("on_save_content(): Page \"%1\" is missing its parent page \"%2\" when attempting to create the parent/child link.")
+                        .arg(src)
+                        .arg(dst));
+            }
+
             links::link_info source(get_name(name_t::SNAP_NAME_CONTENT_PARENT), true, src, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
             links::link_info destination(get_name(name_t::SNAP_NAME_CONTENT_CHILDREN), false, dst, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
 
@@ -4004,8 +4042,8 @@ void content::add_javascript(QDomDocument doc, QString const & name)
     auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
     column_predicate->setCount(10); // small because we generally really only are interested by the first 1 unless marked as insecure or not yet updated on that website
     column_predicate->setIndex(); // behave like an index
-    column_predicate->setStartCellKey(name + "`"); // start/end keys are reversed
-    column_predicate->setEndCellKey(name + "_");
+    column_predicate->setStartCellKey(name + "_"); // start/end keys not reversed since using CQL...
+    column_predicate->setEndCellKey(name + "`");
     column_predicate->setReversed(); // read the last first
     for(;;)
     {
@@ -4347,8 +4385,8 @@ void content::add_css(QDomDocument doc, QString const & name)
     auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
     column_predicate->setCount(10); // small because we are really only interested by the first 1 unless marked as insecure
     column_predicate->setIndex(); // behave like an index
-    column_predicate->setStartCellKey(name + "`"); // start/end keys are reversed
-    column_predicate->setEndCellKey(name + "_");
+    column_predicate->setStartCellKey(name + "_"); // start/end keys not reversed since using CQL
+    column_predicate->setEndCellKey(name + "`");
     column_predicate->setReversed(); // read the last first
     for(;;)
     {
