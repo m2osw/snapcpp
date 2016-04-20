@@ -7,7 +7,7 @@
 #include <snapwebsites/table_model.h>
 #include <snapwebsites/row_model.h>
 
-#include <QtCassandra/QCassandra.h>
+#include <QtCassandra/QCassandraSession.h>
 #include <QtGui>
 
 class MainWindow
@@ -38,8 +38,8 @@ private slots:
     void on_f_refreshView_clicked();
 
 private:
-    typedef QtCassandra::QCassandra::pointer_t cassandra_t;
-    cassandra_t       f_cassandra;
+    typedef QtCassandra::QCassandraSession::pointer_t cassandra_t;
+    cassandra_t       f_session;
     CassandraModel    f_cassandraModel;
     ContextModel      f_contextModel;
     snap::table_model f_tableModel;

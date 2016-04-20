@@ -714,6 +714,7 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     fields["durable_writes"] = QVariant(true);
 
     auto& replication_map(fields["replication"].map());
+    replication_map.clear();
 
     // for developers testing with a few nodes in a single data center,
     // SimpleStrategy is good enough; for anything larger ("a real
