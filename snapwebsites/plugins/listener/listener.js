@@ -166,7 +166,7 @@ snapwebsites.ListenerRequest.prototype.resultXML_ = null;
  * This variable member holds the function that is to be called in case
  * the request succeeds.
  *
- * @type {function(snapwebsites.ListenerRequest)|null}
+ * @type {?function(snapwebsites.ListenerRequest)}
  * @private
  */
 snapwebsites.ListenerRequest.prototype.success_ = null;
@@ -183,7 +183,7 @@ snapwebsites.ListenerRequest.prototype.success_ = null;
  * \li The server refused the request (probably permission denied).
  * \li The client tried for too long and the system decides to timeout.
  *
- * @type {function(snapwebsites.ListenerRequest)|null}
+ * @type {?function(snapwebsites.ListenerRequest)}
  * @private
  */
 snapwebsites.ListenerRequest.prototype.error_ = null;
@@ -194,7 +194,7 @@ snapwebsites.ListenerRequest.prototype.error_ = null;
  * This variable member holds a function that is to be called once
  * the listener request is done.
  *
- * @type {function(snapwebsites.ListenerRequest)|null}
+ * @type {?function(snapwebsites.ListenerRequest)}
  * @private
  */
 snapwebsites.ListenerRequest.prototype.complete_ = null;

@@ -113,11 +113,11 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  *
  * @typedef {{server_access_: snapwebsites.ServerAccess,
  *            result_status: string,
- *            messages: (NodeList|null),
+ *            messages: (?NodeList),
  *            error_message: string,
  *            ajax_error_message: string,
  *            hide_messages: boolean,
- *            jqxhr: (Object|null),
+ *            jqxhr: (?Object),
  *            result_data: string,
  *            userdata: (Object|null|undefined)}}
  */
@@ -740,7 +740,7 @@ snapwebsites.ServerAccess.prototype.setData = function(data)
  * More info can be found on WikiPedia:
  * https://en.wikipedia.org/wiki/XMLHttpRequest
  *
- * @param {Object|null=} opt_userdata  Any userdata that will be attached to
+ * @param {?Object=} opt_userdata  Any userdata that will be attached to
  *                                     the result sent to your callbacks.
  */
 snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
