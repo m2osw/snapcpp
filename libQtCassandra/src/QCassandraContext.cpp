@@ -1188,7 +1188,7 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
 
     auto& fields_map( lock_table->fields() );
     fields_map["gc_grace_seconds"]            = QCassandraSchema::Value(3600);
-    fields_map["memtable_flush_period_in_ms"] = QCassandraSchema::Value(60);
+    fields_map["memtable_flush_period_in_ms"] = QCassandraSchema::Value(3600000); // 1 hour
     fields_map["compaction"]                  = compaction_value;
     fields_map["caching"]                     = caching_value;
 
@@ -1291,7 +1291,7 @@ void QCassandraContext::removeLockHost(const QString& host_name)
     QCassandraTable::pointer_t locks_table(table(f_lock_table_name));
     QCassandraRow::pointer_t row(locks_table->row(lockHostsKey()));
     QCassandraCell::pointer_t c(row->cell(host_name));
-    row->dropCell(host_name, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
+    row->dropCell(host_name);
 }
 
 

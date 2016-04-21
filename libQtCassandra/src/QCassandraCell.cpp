@@ -571,37 +571,6 @@ void QCassandraCell::setConsistencyLevel(consistency_level_t level)
     f_value.setConsistencyLevel(level);
 }
 
-/** \brief Retrieve the current timestamp of this cell value.
- *
- * This function returns the timestamp of the value variable member defined
- * in the cell. This value may be incorrect if the value wasn't read from
- * the Cassandra database or was never set with setTimestamp().
- *
- * \return The timestamp 64bit value.
- *
- * \sa setTimestamp()
- * \sa QCassandraValue::timestamp()
- */
-int64_t QCassandraCell::timestamp() const
-{
-    return f_value.timestamp();
-}
-
-/** \brief Define your own timestamp for this cell value.
- *
- * Set the timestamp of the value variable member of this cell.
- *
- * \param[in] timestamp  The time used to mark this value.
- *
- * \sa timestamp()
- * \sa QCassandraValue::setTimestamp()
- */
-void QCassandraCell::setTimestamp(int64_t val)
-{
-    f_value.setTimestamp(val);
-}
-
-
 /** \brief The value of a cell is automatically cached in memory.
  *
  * This function can be used to mark that the currently cached

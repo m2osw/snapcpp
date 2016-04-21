@@ -102,24 +102,9 @@ public:
     const QCassandraRow&        operator[] (const QString& row_name) const;
     const QCassandraRow&        operator[] (const QByteArray& row_name) const;
 
-    void dropRow
-        ( const char*       row_name
-        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
-        , int64_t timestamp = 0
-        , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
-        );
-    void dropRow
-        ( const QString&    row_name
-        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
-        , int64_t timestamp = 0
-        , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
-        );
-    void dropRow
-        ( const QByteArray& row_name
-        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
-        , int64_t timestamp = 0
-        , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
-        );
+    void dropRow(const char *      row_name);
+    void dropRow(const QString&    row_name);
+    void dropRow(const QByteArray& row_name);
 
     std::shared_ptr<QCassandraContext> parentContext() const;
 
@@ -135,14 +120,9 @@ private:
     void 		remove
                 ( const QByteArray& row_key
                 , const QByteArray& column_key
-                , int64_t timestamp = 0
                 , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
                 );
-    void 		remove
-                ( const QByteArray& row_key
-                , int64_t timestamp = 0
-                , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
-                );
+    void 		remove( const QByteArray& row_key );
 
     bool		isCounterClass();
 

@@ -1197,7 +1197,7 @@ void QCassandra::retrieveContext( const QString& context_name ) const
  *
  * \return A reference to the internal map of contexts.
  */
-const QCassandraContexts &QCassandra::contexts() const
+const QCassandraContexts& QCassandra::contexts() const
 {
     if( !f_contexts_read )
     {
@@ -1235,7 +1235,7 @@ const QCassandraContexts &QCassandra::contexts() const
  * \sa contexts()
  * \sa QCassandraContext::create()
  */
-QCassandraContext::pointer_t QCassandra::findContext( const QString &context_name ) const
+QCassandraContext::pointer_t QCassandra::findContext( const QString& context_name ) const
 {
     QCassandraContexts::const_iterator ci( contexts().find( context_name ) );
     if ( ci == f_contexts.end() )
@@ -1264,7 +1264,7 @@ QCassandraContext::pointer_t QCassandra::findContext( const QString &context_nam
  *
  * \return A reference to the named context.
  */
-QCassandraContext &QCassandra::operator[]( const QString &context_name )
+QCassandraContext& QCassandra::operator[]( const QString &context_name )
 {
     QCassandraContext::pointer_t context_obj( findContext( context_name ) );
     if ( !context_obj )
@@ -1295,7 +1295,7 @@ QCassandraContext &QCassandra::operator[]( const QString &context_name )
  * \return A constant reference to the named context.
  */
 const QCassandraContext &QCassandra::
-operator[]( const QString &context_name ) const
+operator[]( const QString& context_name ) const
 {
     const QCassandraContext::pointer_t context_obj(
         findContext( context_name ) );
@@ -1327,7 +1327,7 @@ operator[]( const QString &context_name ) const
  *
  * \sa QCassandraContext::drop()
  */
-void QCassandra::dropContext( const QString &context_name )
+void QCassandra::dropContext( const QString& context_name )
 {
     QCassandraContext::pointer_t c( context( context_name ) );
 
@@ -1455,7 +1455,10 @@ int64_t QCassandra::timeofday()
     struct timeval tv;
 
     // we ignore timezone as it can also generate an error
-    gettimeofday( &tv, NULL );
+    if(gettimeofday( &tv, NULL ) != 0)
+    {
+        throw std::runtime_error("gettimeofday() failed.");
+    }
 
     return static_cast<int64_t>( tv.tv_sec ) * 1000000 +
            static_cast<int64_t>( tv.tv_usec );

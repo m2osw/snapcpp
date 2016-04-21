@@ -121,7 +121,7 @@ private:
     //mutable QCassandraClusterInformation    f_cluster_information;
     QString                                 f_partitioner;
     QString                                 f_snitch;
-    consistency_level_t                     f_default_consistency_level;
+    consistency_level_t                     f_default_consistency_level = CONSISTENCY_LEVEL_ONE;
 };
 
 } // namespace QtCassandra

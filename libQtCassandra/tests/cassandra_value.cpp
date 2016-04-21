@@ -2383,53 +2383,6 @@ int main(int argc, char *argv[])
     }
 
 
-    // set the time stamp mode
-    qDebug() << "+ Testing timestamp";
-    value.setTimestampMode(QtCassandra::QCassandraValue::TIMESTAMP_MODE_CASSANDRA);
-    if(QtCassandra::QCassandraValue::TIMESTAMP_MODE_CASSANDRA != value.timestampMode()) {
-#pragma GCC push
-#pragma GCC diagnostic ignored "-Wsign-promo"
-        qDebug() << "error: the timestampMode() value does not match" << QtCassandra::QCassandraValue::TIMESTAMP_MODE_CASSANDRA << "; Got" << value.timestampMode() << "instead.";
-#pragma GCC pop
-        ++err;
-    }
-    value.setTimestampMode(QtCassandra::QCassandraValue::TIMESTAMP_MODE_AUTO);
-    if(QtCassandra::QCassandraValue::TIMESTAMP_MODE_AUTO != value.timestampMode()) {
-#pragma GCC push
-#pragma GCC diagnostic ignored "-Wsign-promo"
-        qDebug() << "error: the timestampMode() value does not match" << QtCassandra::QCassandraValue::TIMESTAMP_MODE_AUTO << "; Got" << value.timestampMode() << "instead.";
-#pragma GCC pop
-        ++err;
-    }
-    try {
-        value.setTimestampMode(QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED);
-#pragma GCC push
-#pragma GCC diagnostic ignored "-Wsign-promo"
-        qDebug() << "error: timestampMode() worked with" << QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED << "(Defined)";
-#pragma GCC pop
-        ++err;
-    }
-    catch(const std::runtime_error&) {
-    }
-
-
-    // check the timestamp
-    for(int i(0); i < 256; ++i) {
-        int64_t r(my_rand());
-        value.setTimestampMode(r & 1 ? QtCassandra::QCassandraValue::TIMESTAMP_MODE_CASSANDRA : QtCassandra::QCassandraValue::TIMESTAMP_MODE_AUTO);
-        value.setTimestamp(r);
-        if(value.timestamp() != r) {
-            qDebug() << "error: setTimestamp() and timestamp() do not seem to agree";
-            ++err;
-        }
-        if(QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED != value.timestampMode()) {
-#pragma GCC push
-#pragma GCC diagnostic ignored "-Wsign-promo"
-            qDebug() << "error: the timestampMode() value does not match" << QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED << "; Got" << value.timestampMode() << "instead.";
-#pragma GCC pop
-            ++err;
-        }
-    }
 
 
 

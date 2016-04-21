@@ -742,12 +742,10 @@ void QCassandraRow::clearCache()
  * a key.
  *
  * \param[in] column_name  The name of the column to drop.
- * \param[in] mode  Specify the timestamp mode.
- * \param[in] timestamp  Specify the timestamp to remove only cells that are equal or older.
  */
-void QCassandraRow::dropCell(const char * column_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
+void QCassandraRow::dropCell(const char * column_name)
 {
-    dropCell(QByteArray(column_name,qstrlen(column_name)), mode, timestamp);
+    dropCell(QByteArray(column_name, qstrlen(column_name)));
 }
 
 /** \brief Drop the named cell.
@@ -757,12 +755,10 @@ void QCassandraRow::dropCell(const char * column_name, QCassandraValue::timestam
  * a key.
  *
  * \param[in] column_name  The name of the column to drop.
- * \param[in] mode  Specify the timestamp mode.
- * \param[in] timestamp  Specify the timestamp to remove only cells that are equal or older.
  */
-void QCassandraRow::dropCell(const QString& column_name, QCassandraValue::timestamp_mode_t mode, int64_t timestamp)
+void QCassandraRow::dropCell(const QString& column_name)
 {
-    dropCell(column_name.toUtf8(), mode, timestamp);
+    dropCell(column_name.toUtf8());
 }
 
 /** \brief Drop the specified cell from the Cassandra database.
@@ -829,21 +825,11 @@ void QCassandraRow::dropCell(const QString& column_name, QCassandraValue::timest
  * \sa cells()
  * \sa QCassandra::timeofday()
  */
-void QCassandraRow::dropCell( const QByteArray& column_key, QCassandraValue::timestamp_mode_t mode, int64_t timestamp )
+void QCassandraRow::dropCell( const QByteArray& column_key )
 {
     QCassandraCell::pointer_t c(cell(column_key));
 
-    // default to the timestamp of the value (which is most certainly
-    // what people want in 99.9% of the cases.)
-    if(QCassandraValue::TIMESTAMP_MODE_AUTO == mode)
-    {
-        // the current timestamp mode of f_value is currently ignored
-        // because we cannot really know whether the f_value.timestamp()
-        // value was assigned or not... (not from the mode that is)
-        timestamp = c->timestamp();
-    }
-
-    f_table->remove( f_key, column_key, timestamp, c->consistencyLevel() );
+    f_table->remove( f_key, column_key, c->consistencyLevel() );
     f_cells.remove(column_key);
 }
 

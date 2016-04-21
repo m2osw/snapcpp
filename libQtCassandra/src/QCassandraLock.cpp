@@ -722,7 +722,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
             {
                 QCassandraCell::pointer_t c(f_row->cell(f_cell));
                 c->setConsistencyLevel(f_consistency);
-                f_row->dropCell(f_cell, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
+                f_row->dropCell(f_cell);
                 f_row.reset();
             }
         }
@@ -1019,7 +1019,7 @@ void QCassandraLock::unlock()
     QCassandraRow::pointer_t r(f_table->row("tickets::" + f_object_name));
     QCassandraCell::pointer_t c(r->cell(f_ticket_id));
     c->setConsistencyLevel(f_consistency);
-    r->dropCell(f_ticket_id, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
+    r->dropCell(f_ticket_id);
 
 //QString host_name(f_context->lockHostName());
 //fprintf(stderr, "unlock() host_name [%s] pid: %d\n", host_name.toUtf8().data(), getpid());

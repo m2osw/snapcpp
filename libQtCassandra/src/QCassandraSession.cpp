@@ -257,6 +257,21 @@ future_pointer_t QCassandraSession::connection() const
     return f_connection;
 }
 
+CassTools::timeout_t QCassandraSession::timeout() const
+{
+    return f_timeout;
+}
+
+
+int64_t QCassandraSession::setTimeout(CassTools::timeout_t timeout_ms)
+{
+    CassTools::timeout_t const old_timeout(f_timeout);
+    f_timeout = timeout_ms;
+//std::cerr << "*** setting cluster timeout to: " << f_timeout << "\n";
+    cass_cluster_set_request_timeout(f_cluster.get(), static_cast<unsigned>(f_timeout));
+    return old_timeout;
+}
+
 
 } // namespace QtCassandra
 

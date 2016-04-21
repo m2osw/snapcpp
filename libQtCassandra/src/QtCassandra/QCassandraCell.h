@@ -80,8 +80,6 @@ public:
 
     consistency_level_t consistencyLevel() const;
     void setConsistencyLevel(consistency_level_t level);
-    int64_t timestamp() const;
-    void setTimestamp(int64_t timestamp);
 
     std::shared_ptr<QCassandraRow> parentRow() const;
 

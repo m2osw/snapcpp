@@ -939,14 +939,7 @@ public:
     consistency_level_t consistencyLevel() const;
     void setConsistencyLevel(consistency_level_t level);
 
-    timestamp_mode_t timestampMode() const;
-    void setTimestampMode(timestamp_mode_t mode);
-    int64_t timestamp() const;
-    void setTimestamp(int64_t timestamp);
-
 private:
-    void assignTimestamp(int64_t timestamp);
-
     // prevent share pointer assignments (i.e. output of
     // row->cell() instead of row->cell()->value())
     template<class T> QCassandraValue& operator = (std::shared_ptr<T>);
