@@ -1337,7 +1337,10 @@ tld_result tld_email_list::tld_email_t::parse_group(const std::string& group)
 
         case '(':
             count = 1;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
             for(++s; count > 0; ++s)
+#pragma GCC diagnostic pop
             {
                 if(*s == '\0')
                 {

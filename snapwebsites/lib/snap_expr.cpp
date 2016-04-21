@@ -3507,8 +3507,11 @@ private:
 
         }
 #endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
         if(idx >= 0)
         {
+#pragma GCC diagnostic pop
             if(static_cast<uint32_t>(idx) >= static_cast<uint32_t>(f_children.size()))
             {
                 if(static_cast<uint32_t>(idx) != static_cast<uint32_t>(f_children.size())

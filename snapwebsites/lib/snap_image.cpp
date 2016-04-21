@@ -295,11 +295,14 @@ bool snap_image::info_ico(unsigned char const *s, size_t l, unsigned char const 
         uint32_t size(q[8] + q[9] * 256 + q[10] * 65536 + q[11] * 16777216);
         uint32_t offset(q[12] + q[13] * 256 + q[14] * 65536 + q[15] * 16777216);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
         if(offset + size > l || size < 40)
         {
             // invalid offset/size (out of bounds)
             return false;
         }
+#pragma GCC diagnostic pop
 
         unsigned char const *b(s + offset);
         if(b[0] == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G')
@@ -382,8 +385,11 @@ bool snap_image::info_ico(unsigned char const *s, size_t l, unsigned char const 
 bool snap_image::info_bmp(unsigned char const *s, size_t l, unsigned char const *e)
 {
     uint32_t headerinfosize(s[14] + s[15] * 256 + s[16] * 65536 + s[17] * 16777216);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
     if(headerinfosize < 40) // v1.0 is 40 bytes
     {
+#pragma GCC diagnostic pop
         // invalid BITMAPINFOHEADER size
         return false;
     }

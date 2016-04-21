@@ -91,7 +91,8 @@ void snap_manager_createcontext::cancel()
     }
 }
 
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 void snap_manager_createcontext::createcontext()
 {
     int const s(strategy->currentIndex());
@@ -175,6 +176,7 @@ void snap_manager_createcontext::createcontext()
         sm->context_is_valid();
     }
 }
+#pragma GCC diagnostic pop
 
 
 // vim: ts=4 sw=4 et
