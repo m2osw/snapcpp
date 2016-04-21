@@ -448,7 +448,7 @@ void snapdb::display_columns() const
 
     if(f_opt->is_defined("drop-row"))
     {
-        table->dropRow(row_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        table->dropRow(row_key);
         return;
     }
 
@@ -502,7 +502,7 @@ void snapdb::display_cell() const
     // drop or display?
     if(f_opt->is_defined("drop-cell"))
     {
-        row->dropCell(f_cell, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        row->dropCell(f_cell);
     }
     else if(f_opt->is_defined("save-cell"))
     {

@@ -1310,7 +1310,7 @@ void users::user_logout()
         // the same, hence the previous test to make sure we only delete
         // the session identifier that correspond to the last session
         //
-        row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION));
     }
 
     f_user_key.clear();
@@ -1894,7 +1894,7 @@ void users::verify_user(content::path_info_t & ipath)
             // the same, hence the previous test to make sure we only delete
             // the session identifier that correspond to the last session
             //
-            row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            row->dropCell(get_name(name_t::SNAP_NAME_USERS_LOGIN_SESSION));
         }
 
         f_user_key.clear();

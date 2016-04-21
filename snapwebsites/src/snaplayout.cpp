@@ -706,7 +706,7 @@ void snap_layout::add_files()
 
         auto& table_fields( table->fields() );
         table_fields["comment"]                     = QVariant("Table of layouts");
-        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // 1 hour
         table_fields["gc_grace_seconds"]            = QVariant(86400);
         //
         auto& compaction_value(table_fields["compaction"].map());
@@ -938,7 +938,7 @@ void snap_layout::set_theme()
     if( theme.isEmpty() )
     {
         // remove the theme definition
-        table->row(key)->dropCell(field, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        table->row(key)->dropCell(field);
     }
     else
     {

@@ -480,7 +480,7 @@ void content::backend_action_rebuild_index()
                 ipath.set_path(key);
                 if(!content_table->row(ipath.get_key())->exists(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))
                 {
-                    row->dropCell(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    row->dropCell(ipath.get_key());
                 }
             }
         }
@@ -581,7 +581,7 @@ void content::backend_process_status()
                         // working status as expected so drop it (we do that first
                         // so in case it gets re-created in between, we will reset
                         // again later)
-                        processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                        processing_table->dropRow(ipath.get_key());
 
                         // it has been more than 10 minutes, reset the state
                         path_info_t::status_t status(ipath.get_status());
@@ -600,7 +600,7 @@ void content::backend_process_status()
                 {
                     // the row was deleted in between... or something of
                     // the sort, just ignore that entry altogether
-                    processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    processing_table->dropRow(ipath.get_key());
                 }
             }
         }

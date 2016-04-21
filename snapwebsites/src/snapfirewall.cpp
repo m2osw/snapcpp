@@ -726,7 +726,7 @@ void snap_firewall::setup_firewall()
             {
                 // drop that row, it is too old
                 //
-                row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, now);
+                row->dropCell(key);
             }
             else
             {
@@ -829,7 +829,7 @@ void snap_firewall::process_timeout()
             // now drop that row
             //
             QByteArray const key(cell->columnKey());
-            row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, now);
+            row->dropCell(key);
         }
     }
 

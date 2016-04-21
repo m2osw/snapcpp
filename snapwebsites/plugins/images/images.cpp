@@ -842,7 +842,7 @@ void images::on_modified_content(content::path_info_t & ipath)
             QByteArray old_key;
             QtCassandra::appendInt64Value(old_key, old_date);
             QtCassandra::appendStringValue(old_key, ipath.get_key());
-            files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW))->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW))->dropCell(old_key);
         }
 
         // we include the date in the key so that way older things get
@@ -1109,7 +1109,7 @@ int64_t images::transform_images()
             if(do_image_transformations(image_key))
             {
                 // we handled that image so drop it now
-                images_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                images_row->dropCell(key);
             }
 
             // quickly end this process if the user requested a stop

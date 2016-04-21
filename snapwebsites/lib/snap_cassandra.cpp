@@ -281,7 +281,7 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString con
 
         auto& table_fields(table->fields());
         table_fields["comment"]                     = QVariant(comment);
-        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
         table_fields["gc_grace_seconds"]            = QVariant(86400);
         table_fields["compaction"]                  = compaction;
 

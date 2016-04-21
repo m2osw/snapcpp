@@ -823,10 +823,10 @@ QString password::check_password_against_policy(QString const & user_key, QStrin
                     QString const old_password_salt_name    (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_SALT    )).arg(idx));
                     QString const old_password_digest_name  (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST  )).arg(idx));
 
-                    row->dropCell(old_password_name         , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-                    row->dropCell(old_password_modified_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-                    row->dropCell(old_password_salt_name    , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-                    row->dropCell(old_password_digest_name  , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    row->dropCell(old_password_name);
+                    row->dropCell(old_password_modified_name);
+                    row->dropCell(old_password_salt_name);
+                    row->dropCell(old_password_digest_name);
                 }
                 break;
             }
@@ -1228,10 +1228,10 @@ void password::on_save_password(QtCassandra::QCassandraRow::pointer_t row, QStri
             QString const password_salt_name    (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_SALT    )).arg(drop));
             QString const password_digest_name  (QString("%1_%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PASSWORD_DIGEST  )).arg(drop));
 
-            row->dropCell(password_name         , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-            row->dropCell(password_modified_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-            row->dropCell(password_salt_name    , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-            row->dropCell(password_digest_name  , QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            row->dropCell(password_name);
+            row->dropCell(password_modified_name);
+            row->dropCell(password_salt_name);
+            row->dropCell(password_digest_name);
         }
     }
 }

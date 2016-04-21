@@ -1260,7 +1260,7 @@ void links::delete_link(link_info const& info, int const delete_record_count)
         QtCassandra::QCassandraValue link(src_row->cell(unique_link_name)->value());
 
         // delete the source link right now
-        src_row->dropCell(unique_link_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        src_row->dropCell(unique_link_name);
 
         // we read the link so that way we have information about the
         // destination and can delete it too
@@ -1283,7 +1283,7 @@ void links::delete_link(link_info const& info, int const delete_record_count)
         if(dst_row->exists(dest_cell_unique_name))
         {
             // unique links are easy to handle!
-            dst_row->dropCell(dest_cell_unique_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            dst_row->dropCell(dest_cell_unique_name);
 
             // in this case, it is easy enough; note that we first use
             // destination to match the other case on multiple links
@@ -1327,7 +1327,7 @@ void links::delete_link(link_info const& info, int const delete_record_count)
 
             // we can drop that link immediately, since we got the information we needed
             // (this is a drop in the "links" table)
-            dst_multi_row->dropCell(info.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            dst_multi_row->dropCell(info.key());
 
             // TODO: should we drop the row if empty?
             //       I think it automatically happens when a row is empty
@@ -1337,7 +1337,7 @@ void links::delete_link(link_info const& info, int const delete_record_count)
             QString dest_cell_multi_name(destination_link.stringValue());
             if(dst_row->exists(dest_cell_multi_name))
             {
-                dst_row->dropCell(dest_cell_multi_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                dst_row->dropCell(dest_cell_multi_name);
 
                 // this worked as expected, tell that both destination and
                 // source were changed (in that order to match the other
@@ -1413,16 +1413,16 @@ void links::delete_link(link_info const& info, int const delete_record_count)
                     destination_info.from_data(src_row->cell(field_name)->value().stringValue());
 
                     // drop the branch cell in the source page
-                    src_row->dropCell(field_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    src_row->dropCell(field_name);
 
                     // drop the cell in the "links" table
-                    row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    row->dropCell(key);
 
                     // drop the destination info
                     if(destination_info.is_unique())
                     {
                         // here we have a "*:1"
-                        f_branch_table->row(destination_info.row_key())->dropCell(destination_info.cell_name(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                        f_branch_table->row(destination_info.row_key())->dropCell(destination_info.cell_name());
 
                         // let others know that a link changed on a page
                         modified_link(destination_info, false);
@@ -1433,8 +1433,8 @@ void links::delete_link(link_info const& info, int const delete_record_count)
                         if(dst_row->exists(info.key())) // should always be true
                         {
                             QString const dst_key(dst_row->cell(info.key())->value().stringValue());
-                            dst_row->dropCell(info.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-                            f_branch_table->row(destination_info.row_key())->dropCell(dst_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                            dst_row->dropCell(info.key());
+                            f_branch_table->row(destination_info.row_key())->dropCell(dst_key);
 
                             // let others know that a link changed on a page
                             modified_link(destination_info, false);
@@ -1507,8 +1507,8 @@ void links::delete_this_link(link_info const & source, link_info const & destina
     if(src_row->exists(destination.key())) // should always be true
     {
         QString src_key(src_row->cell(destination.key())->value().stringValue());
-        src_row->dropCell(destination.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-        f_branch_table->row(source.row_key())->dropCell(src_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        src_row->dropCell(destination.key());
+        f_branch_table->row(source.row_key())->dropCell(src_key);
 
         modified_link(source, false);
     }
@@ -1518,8 +1518,8 @@ void links::delete_this_link(link_info const & source, link_info const & destina
     if(dst_row->exists(source.key())) // should always be true
     {
         QString dst_key(dst_row->cell(source.key())->value().stringValue());
-        dst_row->dropCell(source.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-        f_branch_table->row(destination.row_key())->dropCell(dst_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        dst_row->dropCell(source.key());
+        f_branch_table->row(destination.row_key())->dropCell(dst_key);
 
         modified_link(destination, false);
     }

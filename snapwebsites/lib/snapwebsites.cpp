@@ -1272,6 +1272,7 @@ void server::prepare_cassandra()
     // create missing tables
     create_table(context, get_name(name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
     create_table(context, get_name(name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
+    create_table(context, get_name(name_t::SNAP_NAME_BACKEND),  "List of sites to run backends against.");
 
     // --prepare-cassandra used?
     if(f_opt->is_defined("prepare-cassandra"))
@@ -1339,7 +1340,7 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
 
         auto& table_fields(table->fields());
         table_fields["comment"]                     = QVariant(comment);
-        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
         //
         // about potential problems in regard to Gargbage Collection see:
         //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html

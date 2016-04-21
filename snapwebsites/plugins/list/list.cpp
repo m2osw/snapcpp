@@ -1572,7 +1572,7 @@ void list::on_modified_content(content::path_info_t & ipath)
                 // same page over and over again within the same child process,
                 // then the key will not change.)
                 //
-                list_table->row(site_key)->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+                list_table->row(site_key)->dropCell(old_key); // was using start_date instead of "now"...
             }
         }
         else
@@ -1610,8 +1610,8 @@ void list::on_modified_content(content::path_info_t & ipath)
     // are compiled so quickly that it won't matter.)
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QString const branch_key(ipath.get_branch_key());
-    branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
-    branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+    branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT)); // was using start_date instead of "now"...
+    branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT)); // was using start_date instead of "now"...
 
     f_ping_backend = true;
 }
@@ -2055,7 +2055,6 @@ void list::on_backend_action(QString const & action)
         content::content * content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
-        int64_t const start_date(f_snap->get_start_date());
         content::path_info_t ipath;
         QString const site_key(f_snap->get_site_key_with_slash());
         ipath.set_path(site_key + get_name(name_t::SNAP_NAME_LIST_TAXONOMY_PATH));
@@ -2067,8 +2066,8 @@ void list::on_backend_action(QString const & action)
             QString const key(child_info.key());
             content::path_info_t list_ipath;
             list_ipath.set_path(key);
-            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
-            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT)); // was using start_date instead of "now"...
+            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT)); // was using start_date instead of "now"...
         }
     }
     else
@@ -2559,7 +2558,7 @@ int list::generate_all_lists(QString const & site_key)
             if(static_cast<size_t>(key.size()) < sizeof(unsigned char) + sizeof(int64_t))
             {
                 // drop any invalid entries, no need to keep them here
-                list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                list_row->dropCell(key);
                 continue;
             }
 
@@ -2621,7 +2620,7 @@ int list::generate_all_lists(QString const & site_key)
 
             // we handled that page for all the lists that we have on
             // this website, so drop it now
-            list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            list_row->dropCell(key);
             did_work |= 1; // since we delete an entry, we did something and we have to return did_work != 0
 
             SNAP_LOG_TRACE("list is done working on this column.");
@@ -2812,7 +2811,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 {
                     // it changed, we have to delete the old one and
                     // create a new one
-                    list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    list_row->dropCell(current_item_key_full);
                     list_row->cell(new_item_key_full)->setValue(page_ipath.get_key());
                     page_branch_row->cell(list_key_in_page)->setValue(new_item_key);
 
@@ -2854,8 +2853,8 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
                 QString const current_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
 
-                list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-                page_branch_row->dropCell(list_key_in_page, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                list_row->dropCell(current_item_key_full);
+                page_branch_row->dropCell(list_key_in_page);
 
                 bool const source_unique(false);
                 bool const destination_unique(false);

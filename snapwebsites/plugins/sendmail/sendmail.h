@@ -269,6 +269,7 @@ public:
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()
 
 private:
+    void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
     void                    check_bounced_emails();
     void                    reorganize_bounce_email(QByteArray const & column_key, QString const & bounce_report);
