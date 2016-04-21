@@ -382,8 +382,11 @@ bool snap_image::info_ico(unsigned char const *s, size_t l, unsigned char const 
 bool snap_image::info_bmp(unsigned char const *s, size_t l, unsigned char const *e)
 {
     uint32_t headerinfosize(s[14] + s[15] * 256 + s[16] * 65536 + s[17] * 16777216);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
     if(headerinfosize < 40) // v1.0 is 40 bytes
     {
+#pragma GCC diagnostic pop
         // invalid BITMAPINFOHEADER size
         return false;
     }
