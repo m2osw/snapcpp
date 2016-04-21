@@ -5,12 +5,33 @@ Important parts of Cassandra that we are using:
  * Load balancing by having X nodes running and sending further requests
    to a node that is not currently overwhelmed
 
+   * Implementation wise, this is done by computing a hash (md5) to
+     first index rows on specific computers; the cool result in this:
+     the data gets sent to nodes X,Y,Z directly and this is very fast;
+     the huge problem though, is adding and/or removing nodes; now we
+     have data on various computers that should not be there and where
+     it should be, it is not there yet... so that makes for a rather
+     complicated algorithm to re-distribute the data quicly
+
+     (Note: this hashing method is based on an indexed sequantial
+     exploit which is well known to DBMS implementers)
+
  * Replication capability having data sent to several nodes for "backup"
    and also faster retrieval (i.e. data can be retrieved from any computer
    that has a copy, not just the original)
 
+   * Implementation wise, this works simply by sending the data to X
+     nodes (X being the replication factor); this is generally done
+     by sending the data to one node and then the node sending a copy
+     of the data to the other X - 1 nodes
+
  * Simple database with (1) context [keyspace], (2) tables, (3) rows,
    (4) columns, and (5) values. Nothing more.
+
+   * Cassandra makes use of multiple contexts; we have to see the usefulness
+     as it does not look like we would even want to have more than one for
+     ourselves (although they have separate contexts to handle the system
+     data)
 
  * "Only columns are sorted." (rows are sorted, but using their MD5 sum
    so it is generally not viewed as a useful sort.) We created indexes
@@ -62,9 +83,30 @@ Important parts of Cassandra that we are using:
      node is available, sending the data to a mismatched node would at
      least offer us a way to save that data in the database at some point.)
 
+   * Implementation wise, the consistency means that we want to copy
+     the data on Y nodes, where Y is 0, 1, 2, 3, QUORUM ((X + 1) / 2),
+     or ALL; and that locally, rack wise, data center wise... Until
+     all the writes happen (that many nodes say A-okay), we sit around...
+     (note: Y = 0 is the ANY consistency meaning that we send the data
+     to any one node and expect the write to somehow happen at some point)
+     With QUORUM reads and QUORUM writes you get full consistency. Another
+     way is to do writes with ALL and read of ONE, however, that will make
+     for slow writes and the consistency is not as good as with QUORUM.
+
+   * To implementation the consistency (i.e. the replication property)
+     you need to send the request to all the nodes that accept a similar
+     hash; requests are always timestamped and it is always the one with
+     the largest timestamp is kept, therefore the gossiping for replication
+     first sends the exact hash and timestamp and if data is newer than
+     what the other node has, it gets sent there.
+
  * Gossip between nodes to maintain various information about the
    nodes (keep a list of existing and running nodes; would certainly
    be part of the load balancing work.)
+
+   * Gossiping should be used for the following:
+     . maintain information about capacity and load of nodes
+     . 
 
  * Journaling, incoming data is first saved in a journal; this should allow
    us to save all the incoming data in a file used as a queue and once done
