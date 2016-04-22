@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.25.93~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 22 Apr 2016 03:00:58 -0700
+
 snapcmakemodules (1.0.25.92~trusty) trusty; urgency=high
 
   * Nightly build.
