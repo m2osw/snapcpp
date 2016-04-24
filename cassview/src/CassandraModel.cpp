@@ -1,17 +1,13 @@
 #include "CassandraModel.h"
 
-#include <QtCassandra/QCassandraSchema.h>
-
 #include <iostream>
 
 using namespace QtCassandra;
 using namespace QCassandraSchema;
 
-
 void CassandraModel::setCassandra( QCassandraSession::pointer_t c )
 {
-    f_session     = c;
-    f_sessionMeta = SessionMeta::create( f_session );
+    f_sessionMeta = SessionMeta::create( c );
     f_sessionMeta->loadSchema();
     reset();
 }
@@ -25,7 +21,7 @@ Qt::ItemFlags CassandraModel::flags( const QModelIndex & /*idx*/ ) const
 
 QVariant CassandraModel::data( const QModelIndex & idx, int role ) const
 {
-    if( !f_session )
+    if( !f_sessionMeta )
     {
         return QVariant();
     }
@@ -59,7 +55,7 @@ QVariant CassandraModel::headerData( int /*section*/, Qt::Orientation /*orientat
 
 int CassandraModel::rowCount( const QModelIndex & /*parent*/ ) const
 {
-    if( !f_session )
+    if( !f_sessionMeta )
     {
         return 0;
     }

@@ -2,7 +2,7 @@
 
 #include "ui_MainWindow.h"
 #include "CassandraModel.h"
-#include "ContextModel.h"
+#include "KeyspaceModel.h"
 
 #include <snapwebsites/table_model.h>
 #include <snapwebsites/row_model.h>
@@ -41,9 +41,9 @@ private:
     typedef QtCassandra::QCassandraSession::pointer_t cassandra_t;
     cassandra_t       f_session;
     CassandraModel    f_cassandraModel;
-    ContextModel      f_contextModel;
-    snap::table_model f_tableModel;
-    snap::row_model   f_rowModel;
+    KeyspaceModel     f_contextModel;
+    TableModel		  f_tableModel;
+    RowModel		  f_rowModel;
     QString           f_context;
 
     void        connectCassandra();
