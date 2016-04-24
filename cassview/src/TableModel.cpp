@@ -24,6 +24,7 @@
 #include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 
+#include <QTimer>
 #include <QVariant>
 
 #include <iostream>
@@ -65,6 +66,38 @@ void TableModel::setSession
             );
     f_query->setPagingSize( f_rowCount );
     f_query->start( false /*don't block*/ );
+
+    fireTimer();
+}
+
+
+/** \brief Single shot timer.
+ */
+void TableModel::fireTimer()
+{
+    QTimer::singleShot( 500, this, SLOT(TableModel::onTimer()));
+}
+
+
+void TableModel::onTimer()
+{
+    if( !f_query->isReady() )
+    {
+        fireTimer();
+        return;
+    }
+
+    while( f_query->nextRow() )
+    {
+        // insert corresponding rows from the dataset
+    }
+
+    if( f_query->nextPage( false /*block*/ ) )
+    {
+        fireTimer();
+    }
+
+    // Otherwise, done.
 }
 
 

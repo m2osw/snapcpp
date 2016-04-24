@@ -52,12 +52,17 @@ public:
     virtual bool            canFetchMore ( QModelIndex const & index ) const;
     virtual void            fetchMore    ( QModelIndex const & index );
 
+private slots:
+    void onTimer();
+
 private:
     QString                                   f_keyspaceName;
     QString                                   f_tableName;
     std::map<int,QVariant>                    f_rows;
     QtCassandra::QCassandraSession::pointer_t f_session;
     QtCassandra::QCassandraQuery::pointer_t   f_query;
+
+    void fireTimer();
 
     //controlled_vars::mint32_t               		f_rowCount;
     //controlled_vars::zint32_t               		f_rowsRemaining;
