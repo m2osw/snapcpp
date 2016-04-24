@@ -429,9 +429,11 @@ void QCassandraQuery::bindMap( const size_t num, const string_map_t& value )
  * This method assumes that you have called the query() method already, and
  * optionally specified the paging size and any binding values to the query.
  *
+ * \param block[in]	if true, then the method blocks while waiting for completion. It does not block if false.
+ *
  * \sa query(), setPagingSize(), bindInt32(), bindInt64(), bindString(), bindByteArray()
  */
-void QCassandraQuery::start()
+void QCassandraQuery::start( const bool block )
 {
 #if 0
 // The following loops are a couple of attempts to get things to work when we
@@ -530,6 +532,37 @@ std::cerr << "*** ...pause is over... ***\n";
 
 //std::cerr << "Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
     f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
+    if( block )
+    {
+        getQueryResult();
+    }
+}
+
+
+/** \brief Non-blocking call to see if query has completed.
+ *
+ * If query has not yet completed (Cassandra future is not ready), then
+ * the method immediately returns false.
+ *
+ * If it has completed, then the result is checked and throws on error.
+ * If it was a valid result (CASS_OK), then true is returned
+ *
+ * /sa nextRow(), nextPage(), query(), getQueryResult()
+ *
+ * /return false if not ready, true otherwise
+ */
+bool QCassandraQuery::isReady() const
+{
+    return cass_future_ready( f_sessionFuture.get() );
+}
+
+
+/** \brief Get the query result. This method blocks if the result is not ready yet.
+ *
+ * /sa isReady(), query()
+ */
+void QCassandraQuery::getQueryResult()
+{
     throwIfError( QString("Error in query string [%1]!").arg(f_queryString) );
 
     f_queryResult.reset( cass_future_get_result(f_sessionFuture.get()), resultDeleter() );
@@ -574,7 +607,7 @@ bool QCassandraQuery::nextRow()
  *
  * \sa query(), start(), setPagingSize(), nextRow()
  */
-bool QCassandraQuery::nextPage()
+bool QCassandraQuery::nextPage( const bool block )
 {
     if( !cass_result_has_more_pages( f_queryResult.get() ) )
     {
@@ -585,7 +618,7 @@ bool QCassandraQuery::nextPage()
 
     // Reset the current query session, and run the next page
     //
-    start();
+    start( block );
 
     return true;
 }

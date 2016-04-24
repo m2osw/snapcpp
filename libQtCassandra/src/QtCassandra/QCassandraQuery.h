@@ -78,9 +78,11 @@ public:
     void       bindJsonMap   ( const size_t num, const string_map_t& value );
     void       bindMap       ( const size_t num, const string_map_t& value );
 
-    void       start();
+    void       start( const bool block = true );
+    bool	   isReady() const;
+    void       getQueryResult();
     bool       nextRow();
-    bool       nextPage();
+    bool       nextPage( const bool block = true );
     void       end();
 
     bool       getBoolColumn      ( const QString& name  ) const;

@@ -52,7 +52,7 @@ void TableModel::setSession
     , const int32_t row_count
     )
 {
-    f_session      = session
+    f_session      = session;
     f_keyspaceName = keyspace_name;
     f_tableName    = table_name;
     f_rowCount     = row_count;
@@ -64,7 +64,7 @@ void TableModel::setSession
             .arg(f_tableName)
             );
     f_query->setPagingSize( f_rowCount );
-    f_query->start();
+    f_query->start( false /*don't block*/ );
 }
 
 
