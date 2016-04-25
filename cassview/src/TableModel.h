@@ -47,10 +47,12 @@ public:
     virtual QVariant        headerData  ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
     virtual int             rowCount    ( QModelIndex const & parent = QModelIndex() ) const;
 
+#if 0
     // Fecth more
     //
     virtual bool            canFetchMore ( QModelIndex const & index ) const;
     virtual void            fetchMore    ( QModelIndex const & index );
+#endif
 
 private slots:
     void onTimer();
@@ -58,7 +60,7 @@ private slots:
 private:
     QString                                   f_keyspaceName;
     QString                                   f_tableName;
-    std::map<int,QVariant>                    f_rows;
+    std::vector<QVariant>                     f_rows;
     QtCassandra::QCassandraSession::pointer_t f_session;
     QtCassandra::QCassandraQuery::pointer_t   f_query;
 

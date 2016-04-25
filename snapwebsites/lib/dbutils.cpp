@@ -294,11 +294,17 @@ void dbutils::set_display_len( int const val )
 
 QString dbutils::get_row_name( QCassandraRow::pointer_t p_r ) const
 {
+    QByteArray key(p_r->rowKey());
+    return get_row_name( key );
+}
+
+
+QString dbutils::get_row_name( const QByteArray& key )
+{
     QString ret;
     if(f_tableName == "files")
     {
         // these are raw MD5 keys
-        QByteArray key(p_r->rowKey());
         if(key.size() == 16)
         {
             ret = key_to_string( key );
@@ -313,7 +319,7 @@ QString dbutils::get_row_name( QCassandraRow::pointer_t p_r ) const
     }
     else
     {
-        ret = p_r->rowName();
+        ret = QString::fromUtf8( key.data() );
     }
 
     return ret;

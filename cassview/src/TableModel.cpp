@@ -24,6 +24,7 @@
 #include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 
+#include <QSettings>
 #include <QTimer>
 #include <QVariant>
 
@@ -87,10 +88,19 @@ void TableModel::onTimer()
         return;
     }
 
+    const int start_pos = static_cast<int>(f_rows.size()-1);
+    beginInsertRows
+        ( QModelIndex()
+        , start_pos
+        , start_pos + f_rowCount
+        );
+    //
     while( f_query->nextRow() )
     {
-        // insert corresponding rows from the dataset
+        f_rows.push_back( f_query->getByteArrayColumn("key") );
     }
+    //
+    endInsertRows();
 
     if( f_query->nextPage( false /*block*/ ) )
     {
@@ -101,6 +111,7 @@ void TableModel::onTimer()
 }
 
 
+#if 0
 bool TableModel::canFetchMore(QModelIndex const & model_index) const
 {
     return f_rows.find( model_index.row() ) == f_rows.end();
@@ -138,6 +149,7 @@ void TableModel::fetchMore(QModelIndex const & model_index)
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
 }
+#endif
 
 
 Qt::ItemFlags TableModel::flags( QModelIndex const & idx ) const
@@ -189,31 +201,26 @@ QVariant TableModel::headerData( int section, Qt::Orientation orientation, int r
 
 QVariant TableModel::data( QModelIndex const & idx, int role ) const
 {
-    if( !f_table )
+    if( f_rows.size() <= idx.row() )
     {
         return QVariant();
     }
 
+    QSettings settings;
+    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
     try
     {
         if( role == Qt::DisplayRole || role == Qt::EditRole )
         {
-            QtCassandra::QCassandraContext::pointer_t context( f_table->parentContext() );
-            auto const & rows = f_table->rows();
-            if( rows.size() <= idx.row() )
-            {
-                return QVariant();
-            }
-            auto const row( (rows.begin() + idx.row()).value() );
             QString ret_name;
-            if( context->contextName() == "snap_websites" )
+            if( f_keyspaceName == snap_keyspace )
             {
-                snap::dbutils du( f_table->tableName(), "" );
-                ret_name = du.get_row_name( row );
+                snap::dbutils du( f_tableName, "" );
+                ret_name = du.get_row_name( f_rows[idx.row()] );
             }
             else
             {
-                ret_name = row->rowName();
+                ret_name = QString::fromUtf8( f_rows[idx.row()].data() );
             }
             //
             return ret_name;
