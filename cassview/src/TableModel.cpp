@@ -166,27 +166,22 @@ QVariant TableModel::headerData( int section, Qt::Orientation orientation, int r
         return QVariant();
     }
 
-    if( !f_table )
-    {
-        return QVariant();
-    }
-
+#if 0
     try
     {
         // the rows array is used immediately, so we can keep a temporary
         // reference here
-        auto const & rows( f_table->rows() );
-        if( rows.size() <= section )
+        if( f_rows.size() <= section )
         {
             return QVariant();
         }
 
         if( orientation == Qt::Horizontal )
         {
-            auto const & row( *(rows.begin()) );
+            auto const & row( *(f_rows.begin()) );
             Q_ASSERT(row);
 
-            auto const & cell( *(row->cells().begin() + section) );
+            auto const & cell( *(f_row->cells().begin() + section) );
             return cell->columnName();
         }
     }
@@ -194,8 +189,9 @@ QVariant TableModel::headerData( int section, Qt::Orientation orientation, int r
     {
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
+#endif
 
-    return QVariant();
+    return QVariant("Table Name");
 }
 
 
@@ -225,17 +221,6 @@ QVariant TableModel::data( QModelIndex const & idx, int role ) const
             //
             return ret_name;
         }
-
-        if( role == Qt::UserRole )
-        {
-            auto const & rows = f_table->rows();
-            if( rows.size() <= idx.row() )
-            {
-                return QVariant();
-            }
-            auto const row( (rows.begin() + idx.row()).value() );
-            return row->rowKey();
-        }
     }
     catch( std::exception const & x )
     {
@@ -248,11 +233,6 @@ QVariant TableModel::data( QModelIndex const & idx, int role ) const
 
 int TableModel::rowCount( QModelIndex const & prnt ) const
 {
-    if( !f_table )
-    {
-        return 0;
-    }
-
     if( prnt.isValid() )
     {
         return 1;
@@ -260,8 +240,7 @@ int TableModel::rowCount( QModelIndex const & prnt ) const
 
     try
     {
-        auto const & rows = f_table->rows();
-        return rows.size();
+        return f_rows.size();
     }
     catch( std::exception const & x )
     {
