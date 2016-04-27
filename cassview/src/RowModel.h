@@ -62,7 +62,6 @@ public:
 
     // Resizable methods
     //
-    bool            insertNewRow  ( const QString & new_row );
     bool            insertRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
     bool            removeRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
 
@@ -81,9 +80,7 @@ private:
     QString									    f_keyspaceName;
     QString										f_tableName;
     QByteArray									f_rowKey;
-    //
-    QString                                 	f_newName;
-    QString                                 	f_newValue;
+    std::vector<QVariant>                     	f_columns;
 };
 
 

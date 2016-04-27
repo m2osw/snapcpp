@@ -384,20 +384,7 @@ void MainWindow::onSectionClicked( int section )
 
 void MainWindow::on_action_InsertColumn_triggered()
 {
-    QSettings settings;
-    const QString edit_key( "InputDialog/EditValue" );
-    //
-    InputDialog dlg;
-    dlg.f_inputLabel->setText( tr("Enter Column Name:") );
-    dlg.f_inputEdit->setText( settings.value( edit_key, tr("New Column") ).toString() );
-    dlg.f_inputEdit->selectAll();
-    //
-    if( dlg.exec() == QDialog::Accepted )
-    {
-        const QString& new_key( dlg.f_inputEdit->text() );
-        settings.setValue( edit_key, new_key );
-        f_rowModel.insertNewRow( new_key, tr("New Column") );
-    }
+    f_rowModel.insertRows( 0, 0 );
 }
 
 

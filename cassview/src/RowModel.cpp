@@ -110,7 +110,7 @@ void RowModel::onTimer()
         //
         if( add )
         {
-            f_rows.push_back( key );
+            f_columns.push_back( key );
         }
     }
     //
@@ -149,7 +149,7 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
         return QVariant();
     }
 
-    if( role != Qt::DisplayRole && role != Qt::EditRole && role != Qt::UserRole )
+    if( role != Qt::DisplayRole && role != Qt::EditRole ) //&& role != Qt::UserRole )
     {
         return QVariant();
     }
@@ -162,35 +162,24 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
 
     try
     {
-        QCassandraCells const& cell_list(f_row->cells());
-        auto const cell( (cell_list.begin() + idx.row()).value() );
+        auto const column_name( *(f_columns.begin() + idx.row()) );
 
+#if 0
         if( role == Qt::UserRole )
         {
             return cell->columnKey();
         }
+#endif
 
         const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
         if( f_keyspaceName == snap_keyspace )
         {
             snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
-            switch( idx.column() )
-            {
-                case 0:
-                    du.set_display_len( 24 );
-                    return du.get_column_name( cell );
-
-                case 1:
-                    du.set_display_len( 64 );
-                    return du.get_column_value( cell, role == Qt::DisplayRole /*display_only*/ );
-            }
-
-            Q_ASSERT(false);
-            return QVariant();
+            du.set_display_len( 24 );
+            return du.get_column_name( column_name );
         }
 
-        auto const value( idx.column() == 0 ? cell->columnName(): cell->value() );
-        return value.stringValue();
+        return column_name;
     }
     catch( std::exception const& except )
     {
@@ -214,22 +203,7 @@ QVariant RowModel::headerData( int section, Qt::Orientation orientation, int rol
 
 int RowModel::rowCount( QModelIndex const & /*parent*/ ) const
 {
-    if( !f_row )
-    {
-        return 0;
-    }
-
-    try
-    {
-        QCassandraCells const& cell_list(f_row->cells());
-        return cell_list.size();
-    }
-    catch( std::exception const& except )
-    {
-        displayError( except, tr("Cannot obtain row count from database.") );
-    }
-
-    return 0;
+    return f_columns.size();
 }
 
 
@@ -267,6 +241,17 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
             QtCassandra::setStringValue( save_value, value );
         }
 
+        QCassandraQuery q( f_session );
+        q.query(
+                    QString("UPDATE %1.%2 SET column1 = ? WHERE key = ?")
+                        .arg(f_keyspaceName)
+                        .arg(f_tableName)
+                    );
+        q.bindByteArray( 0, save_value );
+        q.bindByteArray( 1, f_rowKey   );
+        q.start();
+        q.end();
+
         Q_EMIT dataChanged( idx, idx );
 
         return true;
@@ -286,47 +271,27 @@ bool RowModel::setHeaderData( int /*section*/, Qt::Orientation /*orientation*/, 
 }
 
 
-bool RowModel::insertNewRow( const QString& new_name, const QString& new_value )
+bool RowModel::insertRows ( int row, int count, const QModelIndex & parent_index )
 {
-    f_newName  = new_name;
-    f_newValue = new_value;
+    beginInsertRows( parent_index, row, row+count );
+    auto key( (*f_row)[f_newName].columnKey() );
+    auto cell( f_row->findCell( key ) );
+    cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
 
-    return insertRows( 0, 0 );
-}
-
-
-bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & parent_index )
-{
-    bool retval( true );
-    try
+    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
+    if( f_keyspaceName == snap_keyspace )
     {
-        beginInsertRows( parent_index, rowCount(), 1 );
-        auto key( (*f_row)[f_newName].columnKey() );
-        auto cell( f_row->findCell( key ) );
-        cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
-
-        const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
-        if( f_keyspaceName == snap_keyspace )
-        {
-            snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
-            du.set_column_value( cell, f_newValue );
-        }
-        else
-        {
-            QCassandraValue v;
-            v.setStringValue( f_newValue );
-            cell->setValue( v );
-        }
-        endInsertRows();
-        reset();
+        snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
+        du.set_column_value( cell, f_newValue );
     }
-    catch( const std::exception& except )
+    else
     {
-        endInsertRows();
-        displayError( except, tr("Cannot add rows to database.") );
-        retval = false;
+        QCassandraValue v;
+        v.setStringValue( f_newValue );
+        cell->setValue( v );
     }
-    return retval;
+    endInsertRows();
+    reset();
 }
 
 
