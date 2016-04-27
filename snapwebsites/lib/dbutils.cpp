@@ -301,28 +301,34 @@ QString dbutils::get_row_name( QCassandraRow::pointer_t p_r ) const
 
 QString dbutils::get_row_name( const QByteArray& key ) const
 {
-    QString ret;
     if(f_tableName == "files")
     {
         // these are raw MD5 keys
-        if(key.size() == 16)
+        if( key.size() == 16 )
         {
-            ret = key_to_string( key );
+            return key_to_string( key );
         }
-        else
-        {
-            // except for a few special cases
-            // TODO: add tests to make sure only known keys do not get
-            //       defined as MD5 sums
-            ret = key;
-        }
+
+        // except for a few special cases
+        // TODO: add tests to make sure only known keys do not get
+        //       defined as MD5 sums
     }
-    else
+    return QString::fromUtf8( key.data() );
+}
+
+
+QByteArray dbutils::set_row_name( const QString& name, const QByteArray& orig_key ) const
+{
+    if(f_tableName == "files")
     {
-        ret = QString::fromUtf8( key.data() );
+        // these are raw MD5 keys
+        if( orig_key.size() == 16 )
+        {
+            return string_to_key( name );
+        }
     }
 
-    return ret;
+    return name.toUtf8();
 }
 
 

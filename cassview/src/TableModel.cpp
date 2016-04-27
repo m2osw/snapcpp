@@ -51,12 +51,14 @@ void TableModel::setSession
     ( QCassandraSession::pointer_t session
     , const QString& keyspace_name
     , const QString& table_name
+    , const QRegExp& filter
     , const int32_t row_count
     )
 {
     f_session      = session;
     f_keyspaceName = keyspace_name;
     f_tableName    = table_name;
+    f_filter       = filter;
     f_rowCount     = row_count;
 
     f_query = std::make_shared<QCassandraQuery>(f_session);
@@ -68,7 +70,19 @@ void TableModel::setSession
     f_query->setPagingSize( f_rowCount );
     f_query->start( false /*don't block*/ );
 
+    reset();
+
     fireTimer();
+}
+
+
+void TableModel::clear()
+{
+    f_query.reset();
+    f_session.reset();
+    f_keyspaceName.clear();
+    f_tableName.clear();
+    reset();
 }
 
 
@@ -76,7 +90,7 @@ void TableModel::setSession
  */
 void TableModel::fireTimer()
 {
-    QTimer::singleShot( 500, this, SLOT(TableModel::onTimer()));
+    QTimer::singleShot( 500, this, SLOT(TableModel::onTimer()) );
 }
 
 
@@ -97,7 +111,21 @@ void TableModel::onTimer()
     //
     while( f_query->nextRow() )
     {
-        f_rows.push_back( f_query->getByteArrayColumn("key") );
+        bool add = true;
+        const QByteArray key( f_query->getByteArrayColumn("key") );
+        if( !f_filter.isEmpty() )
+        {
+            snap::dbutils du( f_tableName, "" );
+            if( f_filter.indexIn( du.get_row_name(key) ) == -1 )
+            {
+                add = false;
+            }
+        }
+        //
+        if( add )
+        {
+            f_rows.push_back( key );
+        }
     }
     //
     endInsertRows();
@@ -191,7 +219,7 @@ QVariant TableModel::headerData( int section, Qt::Orientation orientation, int r
     }
 #endif
 
-    return QVariant("Table Name");
+    return QVariant("Row Key");
 }
 
 

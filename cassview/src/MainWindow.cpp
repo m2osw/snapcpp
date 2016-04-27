@@ -29,8 +29,8 @@ MainWindow::MainWindow(QWidget *p)
 
     f_contextCombo->setModel( &f_cassandraModel );
     f_tables->setModel( &f_contextModel );
-    f_rows->setModel( &f_tableModel );
-	f_cells->setModel( &f_rowModel );
+    f_rowsView->setModel( &f_tableModel );
+    f_cellsView->setModel( &f_rowModel );
 
     f_cassandraModel.setCassandra( f_session );
     int const idx = f_contextCombo->findText( f_context );
@@ -44,21 +44,23 @@ MainWindow::MainWindow(QWidget *p)
     f_mainSplitter->setStretchFactor( 0, 0 );
     f_mainSplitter->setStretchFactor( 1, 1 );
 
-    f_cells->setContextMenuPolicy( Qt::CustomContextMenu );
-    f_cells->setWordWrap( true ); // this is true by default anyway, and it does not help when we have a column with a super long string...
+    f_cellsView->setContextMenuPolicy( Qt::CustomContextMenu );
+    f_cellsView->setWordWrap( true ); // this is true by default anyway, and it does not help when we have a column with a super long string...
 
     action_InsertColumn->setEnabled( false );
     action_DeleteColumns->setEnabled( false );
 
-    connect( f_cells, SIGNAL(customContextMenuRequested(const QPoint&)),
-             this, SLOT(onShowContextMenu(const QPoint&)) );
-    connect( f_rows->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
+    connect( f_cellsView, SIGNAL(customContextMenuRequested(const QPoint&)),
+             this, SLOT(onShowCellsContextMenu(const QPoint&)) );
+    connect( f_cellsView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
+             this, SLOT(onCellsCurrentChanged(QModelIndex,QModelIndex)) );
+    connect( f_rowsView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
              this, SLOT(onRowsCurrentChanged(QModelIndex,QModelIndex)) );
     connect( &f_rowModel, SIGNAL(modelReset()),
              this, SLOT(onCellsModelReset()) );
     connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(onAboutToQuit()) );
-    connect( f_cells->horizontalHeader(), SIGNAL(sectionClicked(int)),
-             this, SLOT(onSectionClicked(int)) );
+    //connect( f_cellsView->horizontalHeader(), SIGNAL(sectionClicked(int)),
+             //this, SLOT(onSectionClicked(int)) );
     connect( f_filterEdit, SIGNAL(returnPressed()), this, SLOT(on_f_applyFilter_clicked()) );
 }
 
@@ -109,6 +111,8 @@ void MainWindow::connectCassandra()
 
 void MainWindow::onAboutToQuit()
 {
+    saveValue();
+
     QSettings settings( this );
     settings.setValue( "geometry",      saveGeometry()                );
     settings.setValue( "state",         saveState()                   );
@@ -119,11 +123,18 @@ void MainWindow::onAboutToQuit()
 
 void MainWindow::fillTableList()
 {
-    f_tableModel.setTable( QCassandraTable::pointer_t(), QRegExp() );
-    f_rowModel.setRow( QCassandraRow::pointer_t() );
+    f_tableModel.clear();
+    f_rowModel.clear();
 
-    QCassandraContext::pointer_t qcontext( f_session->findContext(f_context) );
-	f_contextModel.setContext( qcontext );
+    QCassandraSchema::SessionMeta meta( f_session );
+    //QCassandraContext::pointer_t qcontext( f_session->findContext(f_context) );
+    //f_contextModel.setContext( qcontext );
+    std::vector<QString> strings;
+    for( const auto& pair : meta.getKeyspaces() )
+    {
+        strings.push_back( pair.first );
+    }
+    f_contextModel.setTableNames( strings );
 
     const int idx = f_contextCombo->findText( f_context );
     if( idx != -1 )
@@ -133,15 +144,15 @@ void MainWindow::fillTableList()
 }
 
 
-void MainWindow::onShowContextMenu( const QPoint& mouse_pos )
+void MainWindow::onShowCellsContextMenu( const QPoint& mouse_pos )
 {
-    if( !f_rows->selectionModel()->hasSelection() )
+    if( !f_rowsView->selectionModel()->hasSelection() )
     {
         // Do nothing, as something must be selected in the rows!
         return;
     }
 
-    QPoint global_pos( f_cells->mapToGlobal(mouse_pos) );
+    QPoint global_pos( f_cellsView->mapToGlobal(mouse_pos) );
 
     QMenu menu( this );
     menu.addAction( action_InsertColumn );
@@ -152,12 +163,14 @@ void MainWindow::onShowContextMenu( const QPoint& mouse_pos )
 
 void MainWindow::onCellsModelReset()
 {
-    f_cells->resizeColumnsToContents();
+    f_cellsView->resizeColumnsToContents();
 }
 
 
 void MainWindow::on_action_Settings_triggered()
 {
+    saveValue();
+
     try
     {
         SettingsDialog dlg(this);
@@ -170,38 +183,39 @@ void MainWindow::on_action_Settings_triggered()
     catch( const std::exception& except )
     {
         displayError( except
-                    , tr("Connection Error")
-                    , tr("Error connecting to the server!")
-                    );
+                      , tr("Connection Error")
+                      , tr("Error connecting to the server!")
+                      );
     }
 }
 
 
 void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 {
+    saveValue();
+
     try
     {
-        f_rowModel.setRow( QCassandraRow::pointer_t() );
-        QCassandraContext::pointer_t qcontext( f_session->findContext(f_context) );
-        QCassandraTable::pointer_t table( qcontext->findTable(table_name) );
-        if(table)
+        f_rowModel.clear();
+        QString filter_text( f_filterEdit->text( ) );
+        QRegExp filter( filter_text );
+        if(!filter.isValid() && !filter_text.isEmpty())
         {
-            table->clearCache();
-            QString filter_text( f_filterEdit->text( ) );
-            QRegExp filter( filter_text );
-            if(!filter.isValid() && !filter_text.isEmpty())
-            {
-                // reset the filter
-                filter = QRegExp();
+            // reset the filter
+            filter = QRegExp();
 
-                QMessageBox::warning( QApplication::activeWindow()
-                    , tr("Warning!")
-                    , tr("Warning!\nThe filter regular expression is not valid. It will not be used.")
-                    , QMessageBox::Ok
-                    );
-            }
-            f_tableModel.setTable( table, filter );
+            QMessageBox::warning( QApplication::activeWindow()
+                , tr("Warning!")
+                , tr("Warning!\nThe filter regular expression is not valid. It will not be used.")
+                , QMessageBox::Ok
+                );
         }
+        f_tableModel.setSession
+                ( f_session
+                , f_context
+                , table_name
+                , filter
+                );
     }
     catch( const std::exception& except )
     {
@@ -215,6 +229,8 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 
 void MainWindow::on_f_applyFilter_clicked()
 {
+    saveValue();
+
     QString const table_name( f_tables->currentText( ) );
     on_f_tables_currentIndexChanged( table_name );
 }
@@ -222,6 +238,8 @@ void MainWindow::on_f_applyFilter_clicked()
 
 void MainWindow::on_f_refreshView_clicked()
 {
+    saveValue();
+
     QString const table_name( f_tables->currentText( ) );
     on_f_tables_currentIndexChanged( table_name );
 }
@@ -229,6 +247,8 @@ void MainWindow::on_f_refreshView_clicked()
 
 void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
 {
+    saveValue();
+
     if( arg1.isEmpty() )
     {
         return;
@@ -251,13 +271,64 @@ void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
 
 void MainWindow::changeRow(const QModelIndex &index)
 {
-    const QByteArray row_key( f_tableModel.data(index, Qt::UserRole).toByteArray() );
-    QCassandraRow::pointer_t row( f_tableModel.getTable()->findRow(row_key) );
+    saveValue();
 
-    f_rowModel.setRow( row );
+    const QByteArray row_key( f_tableModel.data(index, Qt::UserRole).toByteArray() );
+
+    f_rowModel.setSession
+        ( f_session
+        , f_tableModel.keyspaceName()
+        , f_tableModel.tableName()
+        , row_key
+        );
 
     action_InsertColumn->setEnabled( true );
     action_DeleteColumns->setEnabled( true );
+}
+
+
+void MainWindow::changeCell(const QModelIndex &index)
+{
+    saveValue();
+
+    const QByteArray row_key( f_tableModel.data(index, Qt::UserRole).toByteArray() );
+
+    f_rowModel.setSession
+        ( f_session
+        , f_tableModel.keyspaceName()
+        , f_tableModel.tableName()
+        , row_key
+        );
+
+    action_InsertColumn->setEnabled( true );
+    action_DeleteColumns->setEnabled( true );
+}
+
+
+void MainWindow::saveValue()
+{
+    auto& doc( f_valueEdit->document() );
+    if( doc->isModified() )
+    {
+        auto selected_rows( f_cellsView->selectionModel()->selectedRows() );
+        if( selected_rows.size() == 1 )
+        {
+            const QByteArray key( f_rowModel.data( *(selected_rows.begin()) ).toByteArray() );
+            const QString q_str(
+                QString("UPDATE %1.%2 SET value = ?")
+                    .arg(f_rowModel.keyspaceName())
+                    .arg(f_rowModel.tableName())
+                );
+            QCassandraQuery query( f_session );
+            query.query( q_str );
+            query.bindByteArray( 0, doc->toPlainText().toUtf8() );
+            query.start();
+            query.end();
+
+            // TODO: handle error... This probably should be run asynchronously;
+            // i.e. query.start( false /*block*/ );
+        }
+    }
 }
 
 
@@ -266,6 +337,22 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
     try
     {
         changeRow( current );
+    }
+    catch( const std::exception& except )
+    {
+        displayError( except
+                    , tr("Connection Error")
+                    , tr("Error connecting to the server!")
+                    );
+    }
+}
+
+
+void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ )
+{
+    try
+    {
+        changeCell( current );
     }
     catch( const std::exception& except )
     {
@@ -291,7 +378,7 @@ void MainWindow::on_action_AboutQt_triggered()
 
 void MainWindow::onSectionClicked( int section )
 {
-    f_cells->resizeColumnToContents( section );
+    f_cellsView->resizeColumnToContents( section );
 }
 
 
@@ -318,17 +405,17 @@ void MainWindow::on_action_DeleteColumns_triggered()
 {
     try
     {
-        const QModelIndexList selectedItems( f_cells->selectionModel()->selectedRows() );
+    return QString::fromUtf8(f_key.data());
+        const QModelIndexList selectedItems( f_cellsView->selectionModel()->selectedRows() );
         if( !selectedItems.isEmpty() )
         {
-            auto row( f_rowModel.getRow() );
             QMessageBox::StandardButton result
                     = QMessageBox::warning( QApplication::activeWindow()
                     , tr("Warning!")
                     , tr("Warning!\nYou are about to remove %1 columns from row '%2', in table '%3'.\nThis cannot be undone!")
                       .arg(selectedItems.size())
-                      .arg(row->rowName())
-                      .arg(row->parentTable()->tableName())
+                      .arg(QString::fromUtf8(f_rowModel.rowKey().data()))
+                      .arg(f_rowModel.tableName())
                     , QMessageBox::Ok | QMessageBox::Cancel
                     );
             if( result == QMessageBox::Ok )

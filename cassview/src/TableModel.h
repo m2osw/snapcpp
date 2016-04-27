@@ -18,10 +18,12 @@
 
 #include <controlled_vars/controlled_vars_need_init.h>
 
-#include <QtCassandra/QCassandraSchema.h>
+#include <QtCassandra/QCassandraQuery.h>
+#include <QtCassandra/QCassandraSession.h>
 
 #include <QAbstractListModel>
 #include <QModelIndex>
+#include <QRegExp>
 
 #include <memory>
 
@@ -37,8 +39,13 @@ public:
         ( QCassandraSession::pointer_t session
         , const QString& keyspace_name
         , const QString& table_name
+        , const QRegExp& filter = QRegExp()
         , const int32_t row_count = 100
         );
+    void clear();
+
+    const QString& keyspaceName() const { return f_keyspaceName; }
+    const QString& tableName()    const { return f_tableName;    }
 
     // Read only access
     //
@@ -60,6 +67,7 @@ private slots:
 private:
     QString                                   f_keyspaceName;
     QString                                   f_tableName;
+    QRegExp									  f_filter;
     std::vector<QVariant>                     f_rows;
     QtCassandra::QCassandraSession::pointer_t f_session;
     QtCassandra::QCassandraQuery::pointer_t   f_query;

@@ -3,9 +3,9 @@
 #include "ui_MainWindow.h"
 #include "CassandraModel.h"
 #include "KeyspaceModel.h"
-
-#include <snapwebsites/table_model.h>
-#include <snapwebsites/row_model.h>
+#include "TableModel.h"
+#include "RowModel.h"
+#include "ValueModel.h"
 
 #include <QtCassandra/QCassandraSession.h>
 #include <QtGui>
@@ -21,13 +21,14 @@ public:
     ~MainWindow();
 
 private slots:
-    void onShowContextMenu( const QPoint& pos );
+    void onShowCellsContextMenu( const QPoint& pos );
     void onCellsModelReset();
     void on_action_Settings_triggered();
     void onAboutToQuit();
     void on_f_tables_currentIndexChanged(const QString &table_name);
     void on_f_contextCombo_currentIndexChanged(const QString &arg1);
     void onRowsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
+    void onCellsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
     void on_action_About_triggered();
     void on_action_AboutQt_triggered();
     void onSectionClicked( int section );
@@ -49,6 +50,8 @@ private:
     void        connectCassandra();
     void        fillTableList();
     void        changeRow(const QModelIndex &index);
+    void        changeCell(const QModelIndex &index);
+    void	 	saveValue();
 };
 
 

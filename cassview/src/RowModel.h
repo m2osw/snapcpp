@@ -18,7 +18,9 @@
 
 #pragma once
 
-#include <QtCassandra/QCassandraRow.h>
+#include <QtCassandra/QCassandraQuery.h>
+#include <QtCassandra/QCassandraSession.h>
+
 #include <QAbstractTableModel>
 #include <QModelIndex>
 #include <QString>
@@ -27,15 +29,25 @@
 #include <memory>
 
 class RowModel
-    : public QAbstractTableModel
+    : public QAbstractListModel
 {
     Q_OBJECT
 
 public:
     RowModel() {}
 
-    QtCassandra::QCassandraRow::pointer_t   getRow() const;
-    void                                    setRow( QtCassandra::QCassandraRow::pointer_t c );
+    void setSession
+        ( QCassandraSession::pointer_t session
+        , const QString& keyspace_name
+        , const QString& table_name
+        , const QByteArray& row_key
+        );
+
+    const QString&		keyspaceName() const { return f_keyspaceName; }
+    const QString&		tableName() const	 { return f_tableName; }
+    const QByteArray&	rowKey() const		 { return f_rowKey; }
+
+    void clear();
 
     Qt::ItemFlags   flags         ( const QModelIndex & index ) const;
     QVariant        data          ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -50,19 +62,28 @@ public:
 
     // Resizable methods
     //
-    bool            insertNewRow  ( const QString & new_name, const QString & new_value );
+    bool            insertNewRow  ( const QString & new_row );
     bool            insertRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
     bool            removeRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
 
 signals:
     void            exceptionCaught( const QString & what, const QString & message ) const;
 
+private slots:
+    void 			onTimer();
+
 private:
     void            displayError( const std::exception & except, const QString & message ) const;
 
-    QtCassandra::QCassandraRow::pointer_t   f_row;
-    QString                                 f_newName;
-    QString                                 f_newValue;
+    QtCassandra::QCassandraSession::pointer_t 	f_session;
+    QtCassandra::QCassandraQuery::pointer_t   	f_query;
+    //
+    QString									    f_keyspaceName;
+    QString										f_tableName;
+    QByteArray									f_rowKey;
+    //
+    QString                                 	f_newName;
+    QString                                 	f_newValue;
 };
 
 

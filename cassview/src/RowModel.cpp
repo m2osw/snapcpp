@@ -29,16 +29,99 @@
 
 using namespace QtCassandra;
 
-void RowModel::setRow( QCassandraRow::pointer_t c )
+
+namespace
 {
-    f_row = c;
+    const int g_row_count = 100;
+}
+
+void RowModel::clear()
+{
+    f_query.reset();
+    f_session.reset();
+    f_keyspaceName.clear();
+    f_tableName.clear();
+    f_rowKey.clear();
     reset();
 }
 
 
-QCassandraRow::pointer_t RowModel::getRow() const
+void RowModel::setSession
+        ( QCassandraSession::pointer_t session
+        , const QString& keyspace_name
+        , const QString& table_name
+        , const QByteArray& row_key
+        )
 {
-    return f_row;
+    f_session      = session;
+    f_keyspaceName = keyspace_name;
+    f_tableName    = table_name;
+    f_rowKey       = row_key;
+
+    f_query = std::make_shared<QCassandraQuery>(f_session);
+    f_query->query(
+        QString("SELECT column1 FROM %1.%2 WHERE key = ?")
+            .arg(f_keyspaceName)
+            .arg(f_tableName)
+            );
+    f_query->setPagingSize( g_row_count );
+    f_query->bindByteArray( 0, f_rowKey );
+    f_query->start( false /*don't block*/ );
+
+    reset();
+}
+
+
+/** \brief Single shot timer.
+ */
+void RowModel::fireTimer()
+{
+    QTimer::singleShot( 500, this, SLOT(RowModel::onTimer()) );
+}
+
+
+void RowModel::onTimer()
+{
+    if( !f_query->isReady() )
+    {
+        fireTimer();
+        return;
+    }
+
+    const int start_pos = static_cast<int>(f_rows.size()-1);
+    beginInsertRows
+        ( QModelIndex()
+        , start_pos
+        , start_pos + g_row_count
+        );
+    //
+    while( f_query->nextRow() )
+    {
+        bool add = true;
+        const QByteArray key( f_query->getByteArrayColumn("key") );
+        if( !f_filter.isEmpty() )
+        {
+            snap::dbutils du( f_tableName, "" );
+            if( f_filter.indexIn( du.get_row_name(key) ) == -1 )
+            {
+                add = false;
+            }
+        }
+        //
+        if( add )
+        {
+            f_rows.push_back( key );
+        }
+    }
+    //
+    endInsertRows();
+
+    if( f_query->nextPage( false /*block*/ ) )
+    {
+        fireTimer();
+    }
+
+    // Otherwise, done.
 }
 
 
@@ -87,10 +170,10 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
             return cell->columnKey();
         }
 
-        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
-        if( context->contextName() == "snap_websites" )
+        const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
+        if( f_keyspaceName == snap_keyspace )
         {
-            snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
+            snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
             switch( idx.column() )
             {
                 case 0:
@@ -125,13 +208,7 @@ QVariant RowModel::headerData( int section, Qt::Orientation orientation, int rol
         return QVariant();
     }
 
-    switch( section )
-    {
-        case 0: return tr("Name");
-        case 1: return tr("Value");
-    }
-
-    return QVariant();
+    return "Row Name";
 }
 
 
@@ -158,7 +235,7 @@ int RowModel::rowCount( QModelIndex const & /*parent*/ ) const
 
 int RowModel::columnCount( const QModelIndex & /*parent*/ ) const
 {
-    return 2;
+    return 1;
 }
 
 
@@ -177,19 +254,17 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
     try
     {
         QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
-        const auto cell( f_row->findCell(key) );
+        QByteArray save_value;
 
-        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
-        if( context->contextName() == "snap_websites" )
+        const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
+        if( f_keyspaceName == snap_keyspace )
         {
-            snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
-            du.set_column_value( cell, value.toString() );
+            snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
+            du.set_column_value( key, save_value, value.toString() );
         }
         else
         {
-            QCassandraValue v;
-            v.setStringValue( value.toString() );
-            cell->setValue( v );
+            QtCassandra::setStringValue( save_value, value );
         }
 
         Q_EMIT dataChanged( idx, idx );
@@ -230,11 +305,10 @@ bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & pare
         auto cell( f_row->findCell( key ) );
         cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
 
-        QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
-        Q_ASSERT(context);
-        if( context->contextName() == "snap_websites" )
+        const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
+        if( f_keyspaceName == snap_keyspace )
         {
-            snap::dbutils du( f_row->parentTable()->tableName(), f_row->rowName() );
+            snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
             du.set_column_value( cell, f_newValue );
         }
         else

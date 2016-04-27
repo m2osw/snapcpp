@@ -72,6 +72,8 @@ public:
     QString             get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
     QString             get_row_name( const QByteArray& key ) const;
 
+    QByteArray			set_row_name( const QString& name, const QByteArray& orig_key ) const;
+
     QString             get_column_name ( QtCassandra::QCassandraCell::pointer_t c ) const;
     QString				get_column_name ( const QByteArray& key ) const;
 
