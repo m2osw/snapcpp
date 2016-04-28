@@ -34,8 +34,8 @@
 #include "poison.h"
 
 
-using QtCassandra;
-using QCassandraSchema;
+using namespace QtCassandra;
+using namespace QCassandraSchema;
 
 
 TableModel::TableModel()
@@ -60,6 +60,7 @@ void TableModel::setSession
     f_tableName    = table_name;
     f_filter       = filter;
     f_rowCount     = row_count;
+    f_rows.clear();
 
     f_query = std::make_shared<QCassandraQuery>(f_session);
     f_query->query(
@@ -72,7 +73,7 @@ void TableModel::setSession
 
     reset();
 
-    fireTimer();
+    fireQueryTimer();
 }
 
 
@@ -82,33 +83,44 @@ void TableModel::clear()
     f_session.reset();
     f_keyspaceName.clear();
     f_tableName.clear();
+    f_rows.clear();
     reset();
 }
 
 
-/** \brief Single shot timer.
+/** \brief Fire single-shot query timer.
  */
-void TableModel::fireTimer()
+void TableModel::fireQueryTimer()
 {
-    QTimer::singleShot( 500, this, SLOT(TableModel::onTimer()) );
+    QTimer::singleShot( 500, this, SLOT(onQueryTimer()) );
 }
 
 
-void TableModel::onTimer()
+/** \brief Fire single-shot page timer.
+ */
+void TableModel::firePageTimer()
 {
-    if( !f_query->isReady() )
+    QTimer::singleShot( 500, this, SLOT(onPageTimer()) );
+}
+
+
+void TableModel::onQueryTimer()
+{
+    if( f_query->isReady() )
     {
-        fireTimer();
+        f_query->getQueryResult();
+        firePageTimer();
         return;
     }
 
+    fireQueryTimer();
+}
+
+
+void TableModel::onPageTimer()
+{
     const int start_pos = static_cast<int>(f_rows.size()-1);
-    beginInsertRows
-        ( QModelIndex()
-        , start_pos
-        , start_pos + f_rowCount
-        );
-    //
+    int count = 0;
     while( f_query->nextRow() )
     {
         bool add = true;
@@ -125,17 +137,21 @@ void TableModel::onTimer()
         if( add )
         {
             f_rows.push_back( key );
+            count++;
         }
     }
     //
+    beginInsertRows
+        ( QModelIndex()
+        , start_pos
+        , start_pos + count
+        );
     endInsertRows();
 
     if( f_query->nextPage( false /*block*/ ) )
     {
-        fireTimer();
+        firePageTimer();
     }
-
-    // Otherwise, done.
 }
 
 
@@ -182,13 +198,16 @@ void TableModel::fetchMore(QModelIndex const & model_index)
 
 Qt::ItemFlags TableModel::flags( QModelIndex const & idx ) const
 {
-    NOTUSED(idx);
+    snap::NOTUSED(idx);
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
 
 QVariant TableModel::headerData( int section, Qt::Orientation orientation, int role ) const
 {
+    snap::NOTUSED(section);
+    snap::NOTUSED(orientation);
+
     if( role != Qt::DisplayRole )
     {
         return QVariant();
@@ -225,34 +244,27 @@ QVariant TableModel::headerData( int section, Qt::Orientation orientation, int r
 
 QVariant TableModel::data( QModelIndex const & idx, int role ) const
 {
-    if( f_rows.size() <= idx.row() )
+    if( static_cast<int>(f_rows.size()) <= idx.row() )
     {
         return QVariant();
     }
 
     QSettings settings;
-    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
-    try
+    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
+    if( role == Qt::DisplayRole || role == Qt::EditRole )
     {
-        if( role == Qt::DisplayRole || role == Qt::EditRole )
+        QString ret_name;
+        if( f_keyspaceName == snap_keyspace )
         {
-            QString ret_name;
-            if( f_keyspaceName == snap_keyspace )
-            {
-                snap::dbutils du( f_tableName, "" );
-                ret_name = du.get_row_name( f_rows[idx.row()] );
-            }
-            else
-            {
-                ret_name = QString::fromUtf8( f_rows[idx.row()].data() );
-            }
-            //
-            return ret_name;
+            snap::dbutils du( f_tableName, "" );
+            ret_name = du.get_row_name( f_rows[idx.row()] );
         }
-    }
-    catch( std::exception const & x )
-    {
-        SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
+        else
+        {
+            ret_name = QString::fromUtf8( f_rows[idx.row()].data() );
+        }
+        //
+        return ret_name;
     }
 
     return QVariant();

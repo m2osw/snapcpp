@@ -5,7 +5,6 @@
 #include "KeyspaceModel.h"
 #include "TableModel.h"
 #include "RowModel.h"
-#include "ValueModel.h"
 
 #include <QtCassandra/QCassandraSession.h>
 #include <QtGui>

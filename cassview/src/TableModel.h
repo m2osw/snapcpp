@@ -36,7 +36,7 @@ public:
     TableModel();
 
     void setSession
-        ( QCassandraSession::pointer_t session
+        ( QtCassandra::QCassandraSession::pointer_t session
         , const QString& keyspace_name
         , const QString& table_name
         , const QRegExp& filter = QRegExp()
@@ -62,19 +62,21 @@ public:
 #endif
 
 private slots:
-    void onTimer();
+    void onQueryTimer();
+    void onPageTimer();
 
 private:
     QString                                   f_keyspaceName;
     QString                                   f_tableName;
     QRegExp									  f_filter;
-    std::vector<QVariant>                     f_rows;
+    controlled_vars::zint32_t                 f_rowCount;
+    std::vector<QByteArray>                   f_rows;
     QtCassandra::QCassandraSession::pointer_t f_session;
     QtCassandra::QCassandraQuery::pointer_t   f_query;
 
-    void fireTimer();
+    void fireQueryTimer();
+    void firePageTimer();
 
-    //controlled_vars::mint32_t               		f_rowCount;
     //controlled_vars::zint32_t               		f_rowsRemaining;
     //controlled_vars::zint32_t               		f_pos;
 };

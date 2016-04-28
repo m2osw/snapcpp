@@ -25,6 +25,8 @@
 #include <QtCassandra/QCassandraSchema.h>
 #include <QtCassandra/QCassandraSession.h>
 
+#include <QtCore>
+
 #include "poison.h"
 
 using namespace QtCassandra;
@@ -42,6 +44,7 @@ void RowModel::clear()
     f_keyspaceName.clear();
     f_tableName.clear();
     f_rowKey.clear();
+    f_columns.clear();
     reset();
 }
 
@@ -51,22 +54,29 @@ void RowModel::setSession
         , const QString& keyspace_name
         , const QString& table_name
         , const QByteArray& row_key
+        , const QRegExp& filter
         )
 {
+    f_columns.clear();
+
     f_session      = session;
     f_keyspaceName = keyspace_name;
     f_tableName    = table_name;
     f_rowKey       = row_key;
+    f_filter	   = filter;
 
     f_query = std::make_shared<QCassandraQuery>(f_session);
     f_query->query(
         QString("SELECT column1 FROM %1.%2 WHERE key = ?")
             .arg(f_keyspaceName)
             .arg(f_tableName)
-            );
+        , 1
+        );
     f_query->setPagingSize( g_row_count );
     f_query->bindByteArray( 0, f_rowKey );
     f_query->start( false /*don't block*/ );
+
+    fireQueryTimer();
 
     reset();
 }
@@ -74,31 +84,39 @@ void RowModel::setSession
 
 /** \brief Single shot timer.
  */
-void RowModel::fireTimer()
+void RowModel::fireQueryTimer()
 {
-    QTimer::singleShot( 500, this, SLOT(RowModel::onTimer()) );
+    QTimer::singleShot( 500, this, SLOT(onQueryTimer()) );
 }
 
 
-void RowModel::onTimer()
+void RowModel::firePageTimer()
 {
-    if( !f_query->isReady() )
+    QTimer::singleShot( 500, this, SLOT(onPageTimer()) );
+}
+
+
+void RowModel::onQueryTimer()
+{
+    if( f_query->isReady() )
     {
-        fireTimer();
+        f_query->getQueryResult();
+        firePageTimer();
         return;
     }
 
-    const int start_pos = static_cast<int>(f_rows.size()-1);
-    beginInsertRows
-        ( QModelIndex()
-        , start_pos
-        , start_pos + g_row_count
-        );
-    //
+    fireQueryTimer();
+}
+
+
+void RowModel::onPageTimer()
+{
+    const int start_pos = static_cast<int>(f_columns.size()-1);
+    int count = 0;
     while( f_query->nextRow() )
     {
         bool add = true;
-        const QByteArray key( f_query->getByteArrayColumn("key") );
+        const QByteArray key( f_query->getByteArrayColumn("column1") );
         if( !f_filter.isEmpty() )
         {
             snap::dbutils du( f_tableName, "" );
@@ -111,14 +129,20 @@ void RowModel::onTimer()
         if( add )
         {
             f_columns.push_back( key );
+            count++;
         }
     }
     //
+    beginInsertRows
+        ( QModelIndex()
+        , start_pos
+        , start_pos + count
+        );
     endInsertRows();
 
     if( f_query->nextPage( false /*block*/ ) )
     {
-        fireTimer();
+        firePageTimer();
     }
 
     // Otherwise, done.
@@ -128,7 +152,7 @@ void RowModel::onTimer()
 Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
 {
     Qt::ItemFlags f = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-    if( idx.column() == 1 )
+    if( idx.column() == 0 )
     {
         f |= Qt::ItemIsEditable;
     }
@@ -144,11 +168,6 @@ void RowModel::displayError( std::exception const& except, QString const& messag
 
 QVariant RowModel::data( QModelIndex const & idx, int role ) const
 {
-    if( !f_row )
-    {
-        return QVariant();
-    }
-
     if( role != Qt::DisplayRole && role != Qt::EditRole ) //&& role != Qt::UserRole )
     {
         return QVariant();
@@ -160,37 +179,21 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
         return QVariant();
     }
 
-    try
+    QSettings settings;
+    auto const column_name( *(f_columns.begin() + idx.row()) );
+    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
+    if( f_keyspaceName == snap_keyspace )
     {
-        auto const column_name( *(f_columns.begin() + idx.row()) );
-
-#if 0
-        if( role == Qt::UserRole )
-        {
-            return cell->columnKey();
-        }
-#endif
-
-        const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
-        if( f_keyspaceName == snap_keyspace )
-        {
-            snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
-            du.set_display_len( 24 );
-            return du.get_column_name( column_name );
-        }
-
-        return column_name;
-    }
-    catch( std::exception const& except )
-    {
-        displayError( except, tr("Cannot read data from database.") );
+        snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
+        du.set_display_len( 24 );
+        return du.get_column_name( column_name );
     }
 
-    return QVariant();
+    return column_name;
 }
 
 
-QVariant RowModel::headerData( int section, Qt::Orientation orientation, int role ) const
+QVariant RowModel::headerData( int /*section*/, Qt::Orientation orientation, int role ) const
 {
     if( role != Qt::DisplayRole || orientation != Qt::Horizontal )
     {
@@ -215,11 +218,6 @@ int RowModel::columnCount( const QModelIndex & /*parent*/ ) const
 
 bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int role )
 {
-    if( !f_row )
-    {
-        return false;
-    }
-
     if( role != Qt::EditRole )
     {
         return false;
@@ -230,7 +228,8 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
         QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
         QByteArray save_value;
 
-        const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
+        QSettings settings;
+        const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
         if( f_keyspaceName == snap_keyspace )
         {
             snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
@@ -238,7 +237,7 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
         }
         else
         {
-            QtCassandra::setStringValue( save_value, value );
+            QtCassandra::setStringValue( save_value, value.toString() );
         }
 
         QCassandraQuery q( f_session );
@@ -246,6 +245,7 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
                     QString("UPDATE %1.%2 SET column1 = ? WHERE key = ?")
                         .arg(f_keyspaceName)
                         .arg(f_tableName)
+                    , 2
                     );
         q.bindByteArray( 0, save_value );
         q.bindByteArray( 1, f_rowKey   );
@@ -274,57 +274,68 @@ bool RowModel::setHeaderData( int /*section*/, Qt::Orientation /*orientation*/, 
 bool RowModel::insertRows ( int row, int count, const QModelIndex & parent_index )
 {
     beginInsertRows( parent_index, row, row+count );
-    auto key( (*f_row)[f_newName].columnKey() );
-    auto cell( f_row->findCell( key ) );
-    cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
+    for( int i = 0; i < count; ++i )
+    {
+        const QByteArray newcol( QString("New column %1").arg(i).toUtf8() );
+        f_columns.push_back(newcol);
 
-    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites") );
-    if( f_keyspaceName == snap_keyspace )
-    {
-        snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
-        du.set_column_value( cell, f_newValue );
-    }
-    else
-    {
-        QCassandraValue v;
-        v.setStringValue( f_newValue );
-        cell->setValue( v );
+        // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
+        //
+        QCassandraQuery q( f_session );
+        q.query(
+                    QString("INSERT INTO %1.%2 VALUES (key,column1) = (?,?)")
+                    .arg(f_keyspaceName)
+                    .arg(f_tableName)
+                    , 2
+                    );
+        q.bindByteArray( 0, f_rowKey );
+        q.bindByteArray( 1, newcol   );
+        q.start();
+        q.end();
     }
     endInsertRows();
-    reset();
+
+    return true;
 }
 
 
-bool RowModel::removeRows ( int row, int count, const QModelIndex & )
+bool RowModel::removeRows( int row, int count, const QModelIndex & )
 {
-    try
+    // Make a list of the keys we will drop
+    //
+    QList<QByteArray> key_list;
+    for( int idx = 0; idx < count; ++idx )
     {
-        // Make a list of the keys we will drop
-        //
-        QList<QByteArray> key_list;
-        for( int idx = 0; idx < count; ++idx )
-        {
-            const QByteArray key( data( index(idx + row, 0), Qt::UserRole ).toByteArray() );
-            key_list << key;
-        }
-
-        // Drop each key
-        //
-        for( auto key : key_list )
-        {
-            f_row->dropCell( key );
-        }
-
-        reset();
-
-        return true;
-    }
-    catch( const std::exception& except )
-    {
-        displayError( except, tr("Cannot remove rows to database.") );
+        const QByteArray key(f_columns[idx + row]);
+        key_list << key;
     }
 
-    return false;
+    // Drop each key
+    //
+    for( auto key : key_list )
+    {
+        // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
+        //
+        QCassandraQuery q( f_session );
+        q.query(
+                    QString("DELETE FROM %1.%2 WHERE key = ? AND column1 = ?")
+                    .arg(f_keyspaceName)
+                    .arg(f_tableName)
+                    , 2
+                    );
+        q.bindByteArray( 0, f_rowKey );
+        q.bindByteArray( 1, key 	 );
+        q.start();
+        q.end();
+    }
+
+    // Remove the columns from the model
+    //
+    beginRemoveRows( QModelIndex(), row, row+count );
+    f_columns.erase( f_columns.begin()+row, f_columns.begin()+row+count );
+    endRemoveRows();
+
+    return true;
 }
 
 

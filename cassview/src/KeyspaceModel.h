@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCassandra/QCassandraSchema.h>
 #include <QtGui>
 
 #include <memory>
@@ -15,7 +16,7 @@ class KeyspaceModel
 
         KeyspaceModel() {}
 
-        void setTableNames( const string_list_t& list );
+        void setCassandra( QtCassandra::QCassandraSession::pointer_t c, const QString& keyspace_name );
 
 		Qt::ItemFlags	flags 		( const QModelIndex & index ) const;
 		QVariant		data 		( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -23,7 +24,7 @@ class KeyspaceModel
 		int 			rowCount   	( const QModelIndex & parent = QModelIndex() ) const;
 
 	private:
-		string_list_t	f_tableNames;
+        string_list_t	f_tableNames;
 };
 
 

@@ -23,6 +23,7 @@
 
 #include <QAbstractTableModel>
 #include <QModelIndex>
+#include <QRegExp>
 #include <QString>
 #include <QVariant>
 
@@ -37,10 +38,11 @@ public:
     RowModel() {}
 
     void setSession
-        ( QCassandraSession::pointer_t session
+        ( QtCassandra::QCassandraSession::pointer_t session
         , const QString& keyspace_name
         , const QString& table_name
         , const QByteArray& row_key
+        , const QRegExp& filter = QRegExp()
         );
 
     const QString&		keyspaceName() const { return f_keyspaceName; }
@@ -69,7 +71,8 @@ signals:
     void            exceptionCaught( const QString & what, const QString & message ) const;
 
 private slots:
-    void 			onTimer();
+    void 			onQueryTimer();
+    void			onPageTimer();
 
 private:
     void            displayError( const std::exception & except, const QString & message ) const;
@@ -80,7 +83,11 @@ private:
     QString									    f_keyspaceName;
     QString										f_tableName;
     QByteArray									f_rowKey;
-    std::vector<QVariant>                     	f_columns;
+    QRegExp									    f_filter;
+    std::vector<QByteArray>                     f_columns;
+
+    void 		    fireQueryTimer();
+    void 		    firePageTimer();
 };
 
 

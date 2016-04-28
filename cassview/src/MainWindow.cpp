@@ -89,8 +89,8 @@ void MainWindow::connectCassandra()
     {
         f_session->connect( host, port );
         //
-        qDebug() << "Working on Cassandra Cluster Named"    << f_session->clusterName();
-        qDebug() << "Working on Cassandra Protocol Version" << f_session->protocolVersion();
+        //qDebug() << "Working on Cassandra Cluster Named"    << f_session->clusterName();
+        //qDebug() << "Working on Cassandra Protocol Version" << f_session->protocolVersion();
 
         QString const hostname( tr("%1:%2").arg(host).arg(port) );
         setWindowTitle( tr("Cassandra View [%1]").arg(hostname) );
@@ -126,15 +126,7 @@ void MainWindow::fillTableList()
     f_tableModel.clear();
     f_rowModel.clear();
 
-    QCassandraSchema::SessionMeta meta( f_session );
-    //QCassandraContext::pointer_t qcontext( f_session->findContext(f_context) );
-    //f_contextModel.setContext( qcontext );
-    std::vector<QString> strings;
-    for( const auto& pair : meta.getKeyspaces() )
-    {
-        strings.push_back( pair.first );
-    }
-    f_contextModel.setTableNames( strings );
+    f_contextModel.setCassandra( f_session, f_context );
 
     const int idx = f_contextCombo->findText( f_context );
     if( idx != -1 )
@@ -163,7 +155,7 @@ void MainWindow::onShowCellsContextMenu( const QPoint& mouse_pos )
 
 void MainWindow::onCellsModelReset()
 {
-    f_cellsView->resizeColumnsToContents();
+    //f_cellsView->resizeColumnsToContents();
 }
 
 
@@ -194,22 +186,29 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 {
     saveValue();
 
+    f_rowModel.clear();
+
+    if( table_name.isEmpty() )
+    {
+        return;
+    }
+
+    QString filter_text( f_filterEdit->text( ) );
+    QRegExp filter( filter_text );
+    if(!filter.isValid() && !filter_text.isEmpty())
+    {
+        // reset the filter
+        filter = QRegExp();
+
+        QMessageBox::warning( QApplication::activeWindow()
+            , tr("Warning!")
+            , tr("Warning!\nThe filter regular expression is not valid. It will not be used.")
+            , QMessageBox::Ok
+            );
+    }
+
     try
     {
-        f_rowModel.clear();
-        QString filter_text( f_filterEdit->text( ) );
-        QRegExp filter( filter_text );
-        if(!filter.isValid() && !filter_text.isEmpty())
-        {
-            // reset the filter
-            filter = QRegExp();
-
-            QMessageBox::warning( QApplication::activeWindow()
-                , tr("Warning!")
-                , tr("Warning!\nThe filter regular expression is not valid. It will not be used.")
-                , QMessageBox::Ok
-                );
-        }
         f_tableModel.setSession
                 ( f_session
                 , f_context
@@ -273,7 +272,7 @@ void MainWindow::changeRow(const QModelIndex &index)
 {
     saveValue();
 
-    const QByteArray row_key( f_tableModel.data(index, Qt::UserRole).toByteArray() );
+    const QByteArray row_key( f_tableModel.data(index).toByteArray() );
 
     f_rowModel.setSession
         ( f_session
@@ -291,7 +290,7 @@ void MainWindow::changeCell(const QModelIndex &index)
 {
     saveValue();
 
-    const QByteArray row_key( f_tableModel.data(index, Qt::UserRole).toByteArray() );
+    const QByteArray row_key( f_tableModel.data(index).toByteArray() );
 
     f_rowModel.setSession
         ( f_session
@@ -307,7 +306,7 @@ void MainWindow::changeCell(const QModelIndex &index)
 
 void MainWindow::saveValue()
 {
-    auto& doc( f_valueEdit->document() );
+    auto doc( f_valueEdit->document() );
     if( doc->isModified() )
     {
         auto selected_rows( f_cellsView->selectionModel()->selectedRows() );
@@ -376,9 +375,9 @@ void MainWindow::on_action_AboutQt_triggered()
 }
 
 
-void MainWindow::onSectionClicked( int section )
+void MainWindow::onSectionClicked( int /*section*/ )
 {
-    f_cellsView->resizeColumnToContents( section );
+    //f_cellsView->resizeColumnToContents( section );
 }
 
 
@@ -392,7 +391,6 @@ void MainWindow::on_action_DeleteColumns_triggered()
 {
     try
     {
-    return QString::fromUtf8(f_key.data());
         const QModelIndexList selectedItems( f_cellsView->selectionModel()->selectedRows() );
         if( !selectedItems.isEmpty() )
         {

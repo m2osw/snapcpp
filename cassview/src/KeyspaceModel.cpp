@@ -6,9 +6,22 @@ using namespace QtCassandra;
 using namespace QCassandraSchema;
 
 
-void KeyspaceModel::setTableNames( const string_list_t& list )
+void KeyspaceModel::setCassandra( QCassandraSession::pointer_t c, const QString& keyspace_name )
 {
-	f_tableNames = list;
+    auto sessionMeta = SessionMeta::create( c );
+    sessionMeta->loadSchema();
+
+    f_tableNames.clear();
+    const auto& keyspaces( sessionMeta->getKeyspaces() );
+    const auto& keyspace ( keyspaces.find(keyspace_name) );
+    if( keyspace != keyspaces.end() )
+    {
+        for( const auto& pair : keyspace->second->getTables() )
+        {
+            f_tableNames.push_back( pair.first );
+        }
+    }
+
     reset();
 }
 
@@ -21,26 +34,12 @@ Qt::ItemFlags KeyspaceModel::flags( const QModelIndex & /*idx*/ ) const
 
 QVariant KeyspaceModel::data( const QModelIndex & idx, int role ) const
 {
-    if( !f_meta )
-    {
-        return QVariant();
-    }
-
     if( role != Qt::DisplayRole && role != Qt::EditRole )
     {
         return QVariant();
     }
 
-    try
-    {
-        return f_tableNames[idx.row()];
-    }
-    catch( const std::exception& x )
-    {
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
-    }
-
-    return QVariant();
+    return f_tableNames[idx.row()];
 }
 
 
@@ -53,21 +52,7 @@ QVariant KeyspaceModel::headerData( int /*section*/, Qt::Orientation /*orientati
 
 int KeyspaceModel::rowCount( const QModelIndex & /*parent*/ ) const
 {
-    if( !f_meta )
-    {
-        return 0;
-    }
-
-    try
-    {
-        return static_cast<int>(f_tableNames.size());
-    }
-    catch( const std::exception& x )
-    {
-        std::cerr << "Exception caught! [" << x.what() << "]" << std::endl;
-    }
-
-    return 0;
+    return static_cast<int>(f_tableNames.size());
 }
 
 

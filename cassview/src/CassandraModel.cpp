@@ -34,7 +34,9 @@ QVariant CassandraModel::data( const QModelIndex & idx, int role ) const
     try
     {
         const auto& keyspace_list( f_sessionMeta->getKeyspaces() );
-        const QString& keyspace_name( (keyspace_list.begin()+idx.row())->first );
+        auto iter = keyspace_list.begin();
+        for( int r = 0; r < idx.row(); ++r ) iter++;
+        const QString& keyspace_name( iter->first );
         return keyspace_name;
     }
     catch( const std::exception& x )
