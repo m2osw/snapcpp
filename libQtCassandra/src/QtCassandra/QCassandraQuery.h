@@ -39,6 +39,7 @@
 #include <memory>
 #include <string>
 
+#include <QObject>
 #include <QString>
 #include <QByteArray>
 
@@ -51,7 +52,10 @@ namespace QtCassandra
 
 
 class QCassandraQuery
+    : public QObject
 {
+    Q_OBJECT
+
 public:
     typedef std::shared_ptr<QCassandraQuery>  pointer_t;
     typedef std::map<std::string,std::string> string_map_t;
@@ -106,6 +110,9 @@ public:
     string_map_t getMapColumn     ( const QString& name ) const;
     string_map_t getMapColumn     ( const int num ) const;
 
+signals:
+    void queryFinished();
+
 private:
     // Current query
     //
@@ -124,6 +131,8 @@ private:
     QByteArray      getByteArrayFromValue ( const CassValue* value ) const;
     string_map_t    getMapFromValue       ( const CassValue* value ) const;
     bool            throwIfError          ( const QString& msg     );
+
+    static void		queryCallbackFunc( CassFuture* future, void *data );
 };
 
 

@@ -34,18 +34,16 @@ using namespace QtCassandra;
 
 namespace
 {
-    const int g_row_count = 100;
+    const int g_row_count = 1000;
+    const int g_timer_res = 0;
 }
 
-void RowModel::clear()
+
+RowModel::RowModel()
+    : f_queryTimer(this)
+    , f_stopTimer(false)
 {
-    f_query.reset();
-    f_session.reset();
-    f_keyspaceName.clear();
-    f_tableName.clear();
-    f_rowKey.clear();
-    f_columns.clear();
-    reset();
+    connect( &f_queryTimer, SIGNAL(timeout()), this, SLOT(onQueryTimer()) );
 }
 
 
@@ -66,6 +64,7 @@ void RowModel::setSession
     f_filter	   = filter;
 
     f_query = std::make_shared<QCassandraQuery>(f_session);
+    connect( f_query.get(), SIGNAL(queryFinished()), this, SLOT(onFetchQueryFinished()) );
     f_query->query(
         QString("SELECT column1 FROM %1.%2 WHERE key = ?")
             .arg(f_keyspaceName)
@@ -76,76 +75,71 @@ void RowModel::setSession
     f_query->bindByteArray( 0, f_rowKey );
     f_query->start( false /*don't block*/ );
 
-    fireQueryTimer();
+    reset();
 
+    f_queryTimer.start(g_timer_res);
+}
+
+
+void RowModel::clear()
+{
+    f_query.reset();
+    f_session.reset();
+    f_keyspaceName.clear();
+    f_tableName.clear();
+    f_rowKey.clear();
+    f_columns.clear();
+    f_queryTimer.stop();
+    while( !f_pendingColumns.empty() ) f_pendingColumns.pop();
     reset();
 }
 
 
-/** \brief Single shot timer.
- */
-void RowModel::fireQueryTimer()
+void RowModel::onFetchQueryFinished()
 {
-    QTimer::singleShot( 500, this, SLOT(onQueryTimer()) );
-}
+    QMutexLocker locker( &f_mutex );
 
+    f_query->getQueryResult();
 
-void RowModel::firePageTimer()
-{
-    QTimer::singleShot( 500, this, SLOT(onPageTimer()) );
+    while( f_query->nextRow() )
+    {
+        f_pendingColumns.push( f_query->getByteArrayColumn(0) );
+    }
+
+    if( !f_query->nextPage( false /*block*/ ) )
+    {
+        f_stopTimer = true;
+    }
 }
 
 
 void RowModel::onQueryTimer()
 {
-    if( f_query->isReady() )
+    QMutexLocker locker( &f_mutex );
+
+    f_queryTimer.stop();
+
+    if( !f_pendingColumns.empty() )
     {
-        f_query->getQueryResult();
-        firePageTimer();
-        return;
+        const size_t size( f_columns.size()-1 );
+        beginInsertRows
+                ( QModelIndex()
+                  , size
+                  , size//+f_pendingColumns.size()
+                  );
+        f_columns.push_back( f_pendingColumns.top() );
+        f_pendingColumns.pop();
+        endInsertRows();
     }
 
-    fireQueryTimer();
-}
-
-
-void RowModel::onPageTimer()
-{
-    const int start_pos = static_cast<int>(f_columns.size()-1);
-    int count = 0;
-    while( f_query->nextRow() )
+    if( f_stopTimer && f_pendingColumns.empty() )
     {
-        bool add = true;
-        const QByteArray key( f_query->getByteArrayColumn("column1") );
-        if( !f_filter.isEmpty() )
-        {
-            snap::dbutils du( f_tableName, "" );
-            if( f_filter.indexIn( du.get_row_name(key) ) == -1 )
-            {
-                add = false;
-            }
-        }
-        //
-        if( add )
-        {
-            f_columns.push_back( key );
-            count++;
-        }
+        f_stopTimer = false;
     }
-    //
-    beginInsertRows
-        ( QModelIndex()
-        , start_pos
-        , start_pos + count
-        );
-    endInsertRows();
-
-    if( f_query->nextPage( false /*block*/ ) )
+    else
     {
-        firePageTimer();
+        f_queryTimer.start(g_timer_res);
     }
-
-    // Otherwise, done.
 }
 
 

@@ -23,11 +23,15 @@
 
 #include <QAbstractTableModel>
 #include <QModelIndex>
+#include <QMutex>
 #include <QRegExp>
 #include <QString>
 #include <QVariant>
+#include <QTimer>
 
 #include <memory>
+#include <stack>
+#include <vector>
 
 class RowModel
     : public QAbstractListModel
@@ -35,7 +39,7 @@ class RowModel
     Q_OBJECT
 
 public:
-    RowModel() {}
+    RowModel();
 
     void setSession
         ( QtCassandra::QCassandraSession::pointer_t session
@@ -71,23 +75,24 @@ signals:
     void            exceptionCaught( const QString & what, const QString & message ) const;
 
 private slots:
-    void 			onQueryTimer();
-    void			onPageTimer();
+    void			onFetchQueryFinished();
+    void			onQueryTimer();
 
 private:
     void            displayError( const std::exception & except, const QString & message ) const;
 
-    QtCassandra::QCassandraSession::pointer_t 	f_session;
-    QtCassandra::QCassandraQuery::pointer_t   	f_query;
+    QtCassandra::QCassandraSession::pointer_t f_session;
+    QtCassandra::QCassandraQuery::pointer_t   f_query;
     //
-    QString									    f_keyspaceName;
-    QString										f_tableName;
-    QByteArray									f_rowKey;
-    QRegExp									    f_filter;
-    std::vector<QByteArray>                     f_columns;
-
-    void 		    fireQueryTimer();
-    void 		    firePageTimer();
+    QString                                   f_keyspaceName;
+    QString                                   f_tableName;
+    QByteArray                                f_rowKey;
+    QRegExp                                   f_filter;
+    std::vector<QByteArray>                   f_columns;
+    std::stack<QByteArray>                    f_pendingColumns;
+    QMutex                                    f_mutex;
+    QTimer                                    f_queryTimer;
+    bool                                      f_stopTimer;
 };
 
 

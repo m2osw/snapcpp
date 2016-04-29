@@ -24,6 +24,7 @@
 #include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 
+#include <QMutexLocker>
 #include <QSettings>
 #include <QTimer>
 #include <QVariant>
@@ -37,13 +38,17 @@
 using namespace QtCassandra;
 using namespace QCassandraSchema;
 
+namespace
+{
+    const int g_timer_res = 0;
+}
+
 
 TableModel::TableModel()
-    //: f_tableName(name)
-    //, f_rowCount(row_count)
-    //, f_rowsRemaining(0) -- auto-init
-    //, f_pos(0)           -- auto-init
+    : f_queryTimer(this)
+    , f_stopTimer(false)
 {
+    connect( &f_queryTimer, SIGNAL(timeout()), this, SLOT(onQueryTimer()) );
 }
 
 
@@ -52,148 +57,94 @@ void TableModel::setSession
     , const QString& keyspace_name
     , const QString& table_name
     , const QRegExp& filter
-    , const int32_t row_count
+    , const int32_t page_row_count
     )
 {
+    QMutexLocker locker( &f_mutex );
     f_session      = session;
     f_keyspaceName = keyspace_name;
     f_tableName    = table_name;
     f_filter       = filter;
-    f_rowCount     = row_count;
+    f_pageRowCount = page_row_count;
     f_rows.clear();
 
     f_query = std::make_shared<QCassandraQuery>(f_session);
+    connect( f_query.get(), SIGNAL(queryFinished()), this, SLOT(onFetchQueryFinished()) );
+
     f_query->query(
         QString("SELECT key FROM %1.%2")
             .arg(f_keyspaceName)
             .arg(f_tableName)
             );
-    f_query->setPagingSize( f_rowCount );
+    f_query->setPagingSize( f_pageRowCount );
     f_query->start( false /*don't block*/ );
 
     reset();
 
-    fireQueryTimer();
+    f_queryTimer.start(g_timer_res);
 }
 
 
 void TableModel::clear()
 {
+    QMutexLocker locker( &f_mutex );
     f_query.reset();
     f_session.reset();
     f_keyspaceName.clear();
     f_tableName.clear();
     f_rows.clear();
+    f_queryTimer.stop();
+    while( !f_pendingRows.empty() ) f_pendingRows.pop();
     reset();
 }
 
 
-/** \brief Fire single-shot query timer.
- */
-void TableModel::fireQueryTimer()
+void TableModel::onFetchQueryFinished()
 {
-    QTimer::singleShot( 500, this, SLOT(onQueryTimer()) );
-}
+    QMutexLocker locker( &f_mutex );
 
+    f_query->getQueryResult();
 
-/** \brief Fire single-shot page timer.
- */
-void TableModel::firePageTimer()
-{
-    QTimer::singleShot( 500, this, SLOT(onPageTimer()) );
+    while( f_query->nextRow() )
+    {
+        f_pendingRows.push( f_query->getByteArrayColumn(0) );
+    }
+
+    if( !f_query->nextPage( false /*block*/ ) )
+    {
+        f_stopTimer = true;
+    }
 }
 
 
 void TableModel::onQueryTimer()
 {
-    if( f_query->isReady() )
+    QMutexLocker locker( &f_mutex );
+
+    f_queryTimer.stop();
+
+    if( !f_pendingRows.empty() )
     {
-        f_query->getQueryResult();
-        firePageTimer();
-        return;
-    }
-
-    fireQueryTimer();
-}
-
-
-void TableModel::onPageTimer()
-{
-    const int start_pos = static_cast<int>(f_rows.size()-1);
-    int count = 0;
-    while( f_query->nextRow() )
-    {
-        bool add = true;
-        const QByteArray key( f_query->getByteArrayColumn("key") );
-        if( !f_filter.isEmpty() )
-        {
-            snap::dbutils du( f_tableName, "" );
-            if( f_filter.indexIn( du.get_row_name(key) ) == -1 )
-            {
-                add = false;
-            }
-        }
-        //
-        if( add )
-        {
-            f_rows.push_back( key );
-            count++;
-        }
-    }
-    //
-    beginInsertRows
-        ( QModelIndex()
-        , start_pos
-        , start_pos + count
-        );
-    endInsertRows();
-
-    if( f_query->nextPage( false /*block*/ ) )
-    {
-        firePageTimer();
-    }
-}
-
-
-#if 0
-bool TableModel::canFetchMore(QModelIndex const & model_index) const
-{
-    return f_rows.find( model_index.row() ) == f_rows.end();
-}
-
-
-void TableModel::fetchMore(QModelIndex const & model_index)
-{
-    if( !f_query )
-    {
-        f_query = std::make_shared<QCassandraQuery>(f_sessionMeta
-    }
-
-    NOTUSED(model_index);
-
-    if( !f_table )
-    {
-        return;
-    }
-
-    try
-    {
-        //f_table->clearCache();
-        f_rowsRemaining = f_table->readRows( f_rowp );
-
-        int32_t const itemsToFetch( qMin(static_cast<int32_t>(f_rowCount), static_cast<int32_t>(f_rowsRemaining)) );
-
-        beginInsertRows( QModelIndex(), f_pos, f_pos + itemsToFetch - 1 );
+        const size_t size( f_rows.size()-1 );
+        beginInsertRows
+                ( QModelIndex()
+                  , size
+                  , size//+f_pendingRows.size()
+                  );
+        f_rows.push_back( f_pendingRows.top() );
+        f_pendingRows.pop();
         endInsertRows();
-
-        f_pos += itemsToFetch;
     }
-    catch( std::exception const & x )
+
+    if( f_stopTimer && f_pendingRows.empty() )
     {
-        SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
+        f_stopTimer = false;
+    }
+    else
+    {
+        f_queryTimer.start(g_timer_res);
     }
 }
-#endif
 
 
 Qt::ItemFlags TableModel::flags( QModelIndex const & idx ) const

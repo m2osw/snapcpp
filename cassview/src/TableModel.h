@@ -23,9 +23,13 @@
 
 #include <QAbstractListModel>
 #include <QModelIndex>
+#include <QMutex>
 #include <QRegExp>
+#include <QTimer>
 
 #include <memory>
+#include <stack>
+#include <vector>
 
 class TableModel
     : public QAbstractListModel
@@ -40,7 +44,7 @@ public:
         , const QString& keyspace_name
         , const QString& table_name
         , const QRegExp& filter = QRegExp()
-        , const int32_t row_count = 100
+        , const int32_t page_row_count = 1000
         );
     void clear();
 
@@ -54,31 +58,23 @@ public:
     virtual QVariant        headerData  ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
     virtual int             rowCount    ( QModelIndex const & parent = QModelIndex() ) const;
 
-#if 0
-    // Fecth more
-    //
-    virtual bool            canFetchMore ( QModelIndex const & index ) const;
-    virtual void            fetchMore    ( QModelIndex const & index );
-#endif
-
 private slots:
+    void onFetchQueryFinished();
     void onQueryTimer();
-    void onPageTimer();
 
 private:
-    QString                                   f_keyspaceName;
-    QString                                   f_tableName;
-    QRegExp									  f_filter;
-    controlled_vars::zint32_t                 f_rowCount;
-    std::vector<QByteArray>                   f_rows;
     QtCassandra::QCassandraSession::pointer_t f_session;
     QtCassandra::QCassandraQuery::pointer_t   f_query;
 
-    void fireQueryTimer();
-    void firePageTimer();
-
-    //controlled_vars::zint32_t               		f_rowsRemaining;
-    //controlled_vars::zint32_t               		f_pos;
+    QString                                   f_keyspaceName;
+    QString                                   f_tableName;
+    QRegExp									  f_filter;
+    controlled_vars::zint32_t                 f_pageRowCount;
+    std::vector<QByteArray>                   f_rows;
+    std::stack<QByteArray>					  f_pendingRows;
+    QMutex									  f_mutex;
+    QTimer									  f_queryTimer;
+    bool                                      f_stopTimer;
 };
 
 

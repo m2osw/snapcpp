@@ -424,6 +424,18 @@ void QCassandraQuery::bindMap( const size_t num, const string_map_t& value )
 }
 
 
+void QCassandraQuery::queryCallbackFunc( CassFuture* future, void *data )
+{
+    QCassandraQuery* this_query( reinterpret_cast<QCassandraQuery*>(data) );
+    if( this_query->f_sessionFuture.get() != future )
+    {
+        throw std::runtime_error( "Unexpected future!" );
+    }
+
+    this_query->queryFinished();
+}
+
+
 /** \brief Start the query
  *
  * This method assumes that you have called the query() method already, and
@@ -535,6 +547,10 @@ std::cerr << "*** ...pause is over... ***\n";
     if( block )
     {
         getQueryResult();
+    }
+    else
+    {
+        cass_future_set_callback( f_sessionFuture.get(), &QCassandraQuery::queryCallbackFunc, reinterpret_cast<void*>(this) );
     }
 }
 
