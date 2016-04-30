@@ -314,6 +314,14 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "connect",
+            nullptr,
+            "The address and port information to connect to snapcommunicator (defined in /etc/snapwebsites/snapinit.xml).",
+            advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "cron-action",
             nullptr,
             "Specify a server CRON action.",
@@ -384,6 +392,22 @@ namespace
             nullptr,
             "Create the cassandra \"domans\" and \"websites\" tables and exit. This should not be used anymore since that feature was moved to the snapmanager instead.",
             advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "server-name",
+            nullptr,
+            "The name of the server that is going to run this instance of snapserver (defined in /etc/snapwebsites/snapinit.conf), this parameter is required.",
+            advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "snapdbproxy",
+            nullptr,
+            "The address and port information to connect to snapdbproxy (defined in /etc/snapwebsites/snapinit.xml).",
+            advgetopt::getopt::required_argument
         },
         {
             '\0',
@@ -891,9 +915,7 @@ void server::config(int argc, char * argv[])
 
     // Parse command-line options...
     //
-    f_opt.reset(
-        new advgetopt::getopt( argc, argv, g_snapserver_options, g_configuration_files, "SNAPSERVER_OPTIONS" )
-    );
+    f_opt = std::make_shared<advgetopt::getopt>( argc, argv, g_snapserver_options, g_configuration_files, "SNAPSERVER_OPTIONS" );
 
     if(f_opt->is_defined("version"))
     {
@@ -1017,20 +1039,46 @@ void server::config(int argc, char * argv[])
         exit(1);
     }
 
-    // the name of the server is mandatory, use hostname by default
-    if(f_parameters["server_name"] == "")
+    // the name of the server is mandatory
+    //
+    // it cannot be specified in the .conf file though
+    //
+    if(f_parameters["server_name"] != "")
     {
-        char host[HOST_NAME_MAX + 1];
-        if(gethostname(host, sizeof(host)) != 0)
-        {
-            std::stringstream ss;
-            ss << "hostname is not available as the server name";
-            SNAP_LOG_ERROR() << ss.str() << ".";
-            syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
-            exit(1);
-        }
-        f_parameters["server_name"] = host;
+        char const * msg("variable \"server_name\" cannot be defined in snapserver.conf, it is specified with --server-name now, which is automatically passed by snapinit.");
+        SNAP_LOG_FATAL(msg);
+        syslog( LOG_CRIT, "%s", msg );
+        exit(1);
     }
+    f_parameters["server_name"] = f_opt->get_string( "server-name" ).c_str();
+
+    // the name of the snapcommunicator is optional, but it cannot appear in the config file
+    //
+    // it cannot be specified in the .conf file though
+    //
+    if(f_parameters["snapcommunicator_listen"] != "")
+    {
+        char const * msg("variable \"snapcommunicator_listen\" cannot be defined in snapserver.conf or some other .conf, it is specified with --connect now, which is automatically passed by snapinit and the address and port are defined in /etc/snapwebsites/snapinit.xml.");
+        SNAP_LOG_FATAL(msg);
+        syslog( LOG_CRIT, "%s", msg );
+        exit(1);
+    }
+    if(f_opt->is_defined( "connect" ))
+    {
+        f_parameters["snapcommunicator_listen"] = f_opt->get_string( "connect" ).c_str();
+    }
+
+    // the connection to the data store is done through snapdbproxy
+    // which information we get on the command line
+    //
+    if(f_parameters["snapdbproxy_listen"] != "")
+    {
+        char const * msg("variable \"snapdbproxy_listen\" cannot be defined in snapserver.conf or some other .conf, it is specified with --snapdbproxy, which is automatically passed by snapinit and the address and port are defined in /etc/snapwebsites/snapinit.xml.");
+        SNAP_LOG_FATAL(msg);
+        syslog( LOG_CRIT, "%s", msg );
+        exit(1);
+    }
+    f_parameters["snapdbproxy_listen"] = f_opt->get_string("snapdbproxy").c_str();
 
     // Finally we can initialize the log system
     //
@@ -1247,8 +1295,8 @@ void server::set_translation(QString const xml_data)
  * slow on large cluster.
  *
  * \todo
- * If this function does not get called, the f_cassandra_host and
- * f_cassandra_port do not get defined. This is a problem that should
+ * If this function does not get called, the f_snapdbproxy_addr and
+ * f_snapdbproxy_port do not get defined. This is a problem that should
  * be addressed at some point.
  */
 void server::prepare_cassandra()
@@ -1263,8 +1311,8 @@ void server::prepare_cassandra()
         exit(1);
     }
     //
-    f_cassandra_host = cassandra.get_cassandra_host();
-    f_cassandra_port = cassandra.get_cassandra_port();
+    f_snapdbproxy_addr = cassandra.get_snapdbproxy_addr();
+    f_snapdbproxy_port = cassandra.get_snapdbproxy_port();
 
     // setup the server name, this is important for locks
     context->setHostName(f_parameters["server_name"]);

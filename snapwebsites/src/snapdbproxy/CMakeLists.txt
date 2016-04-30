@@ -1,15 +1,17 @@
 #
 # File:
-#      conf/CMakeLists.txt
+#      src/snapdbproxy/CMakeLists.txt
 #
 # Description:
-#      Install configuration files and samples.
+#      A proxy to access the Cassandra database cluster without having to
+#      reconnect to Cassandra on each attempt and also in order to hide
+#      the problematic threads of the C/C++ Cassandra driver.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2016 Made to Order Software Corp.
+#      Copyright (c) 2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -29,35 +31,31 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+
 #################################################################################
-## Config files
+## Snap DB Proxy daemon
 ##
+project(snapdbproxy)
+
+add_executable(${PROJECT_NAME}
+    snapdbproxy.cpp
+    main.cpp
+    snapdbproxy_connection.cpp
+    snapdbproxy_listener.cpp
+    snapdbproxy_messager.cpp
+    snapdbproxy_thread.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    ${ADVGETOPT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+)
+
 install(
-    FILES 
-        # log4cplus properties
-        loggingserver.properties
-        log.properties
-        logserver.properties
-        snapcgi.properties
-        snapcommunicator.properties
-        snapdbproxy.properties
-        snapfirewall.properties
-        snapinit.properties
-
-        # snap configuration files
-        snap-apache2.conf
-        snapcgi.conf
-        snapcommunicator.conf
-        snapdbproxy.conf
-        snapfirewall.conf
-        snapinit.conf
-        snapserver.conf
-
-        # various other files
-        snapinit.xml
-
-    DESTINATION
-        share/snapwebsites/conf
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 

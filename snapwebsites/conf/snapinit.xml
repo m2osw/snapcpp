@@ -44,6 +44,19 @@
                   work that well on a small VPN server.
 
       <service>
+      <safe>      Define a name that will be sent to snapinit via Snap
+                  Communicator. Until that message is received, the
+                  snapinit system blocks waiting for the message. No
+                  other service can be started until then.
+
+                  If the snapinit service receives an invalid name, then
+                  the initialization process stops and the Snap! server
+                  does not start. If it "never" receives the name, it
+                  will wait forever. (TODO: we should have a timeout
+                  for this case because if the process fails starting
+                  we should not block forever, but quit.)
+
+      <service>
       <config>    Define the path and filename of the configuration file
                   for this service. Pretty much all services will load a
                   default configuration file from /etc/snapwebsites if
@@ -150,10 +163,21 @@
 
   -->
   <service name="snapcommunicator" required="required">
-    <priority>-10</priority>
+    <priority>-20</priority>
     <config>/etc/snapwebsites/snapcommunicator.conf</config>
     <connect>127.0.0.1:4040</connect>
     <wait>1</wait>
+  </service>
+  <service name="snapdbproxy" required="required">
+    <priority>-10</priority>
+    <config>/etc/snapwebsites/snapdbproxy.conf</config>
+    <snapdbproxy>127.0.0.1:4042</snapdbproxy>
+    <safe>snapdbproxy</safe> <!-- TODO: some day, use something else than "safe" for snapdbproxy -->
+  </service>
+  <service name="snaplock" required="required">
+    <priority>-10</priority>
+    <config>/etc/snapwebsites/snaplock.conf</config>
+    <safe>snaplock</safe> <!-- TODO: some day, use something else than "safe" for snaplock -->
   </service>
   <service name="snapfirewall" required="required">
     <priority>-5</priority>

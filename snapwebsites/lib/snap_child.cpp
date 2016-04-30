@@ -4092,11 +4092,11 @@ void snap_child::connect_cassandra()
     bool connected(false);
     try
     {
-        connected = f_cassandra->connect(server->cassandra_host(), server->cassandra_port());
+        connected = f_cassandra->connect(server->snapdbproxy_addr(), server->snapdbproxy_port());
     }
     catch(std::exception const & e)
     {
-        SNAP_LOG_FATAL("Could not connect to Cassandra server (")(server->cassandra_host())(":")(server->cassandra_port())("). Reason: ")(e.what());
+        SNAP_LOG_FATAL("Could not connect to the snapdbproxy server (")(server->snapdbproxy_addr())(":")(server->snapdbproxy_port())("). Reason: ")(e.what());
         connected = false; // make double sure this is still false
     }
     if(!connected)

@@ -497,6 +497,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return column_type_t::CT_uint8_value;
     }
     else if(n == "list::number_of_items"
+         || (f_tableName == "domains" && f_rowName == "*test_snap_lock*" && n == "counter")
          )
     {
         return column_type_t::CT_int32_value;

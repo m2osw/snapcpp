@@ -34,75 +34,39 @@ snap_cassandra::snap_cassandra( snap_config const & parameters )
 
 void snap_cassandra::connect()
 {
-    // This function connects to the Cassandra database, but it doesn't
-    // keep the connection. We are the server and the connection would
-    // not be shared properly between all the children.
-    f_cassandra_host = f_parameters["cassandra_host"];
-    if(f_cassandra_host.isEmpty())
-    {
-        f_cassandra_host = "localhost";
-    }
+    // We now connect to our proxy instead. This allows us to have many
+    // permanent connections to Cassandra (or some other data store) and
+    // not have to have threads (at least the C/C++ driver forces us to
+    // have threads for asynchronous and timeout handling...)
     //
-    QString port_str( f_parameters["cassandra_port"] );
-    if(port_str.isEmpty())
+    tcp_client_server::get_addr_port(f_parameters["snapdbproxy_listen"], f_snapdbproxy_addr, f_snapdbproxy_port, "tcp");
+
+//std::cerr << "snap proxy info: " << f_snapdbproxy_addr << " and " << f_snapdbproxy_port << "\n";
+    f_cassandra = QtCassandra::QCassandra::create();
+    if(!f_cassandra)
     {
-        port_str = "9042";
-    }
-    bool ok;
-    f_cassandra_port = port_str.toLong(&ok);
-    if(!ok)
-    {
-        SNAP_LOG_FATAL("invalid cassandra_port, a valid number was expected instead of \"")(port_str)("\".");
-        exit(1);
-    }
-    if(f_cassandra_port < 1 || f_cassandra_port > 65535)
-    {
-        SNAP_LOG_FATAL("invalid cassandra_port, a port must be between 1 and 65535, ")(f_cassandra_port)(" is not.");
-        exit(1);
+        QString msg("could not create the QCassandra instance.");
+        SNAP_LOG_FATAL(msg);
+        throw snap_cassandra_not_available_exception(msg);
     }
 
-    // TODO:
-    // We must stay "alive" waiting for the cassandra server to come up.
-    // This takes entries into the f_parameters file:
-    // wait_interval and wait_max_tries.
-    //
-    int wait_interval(f_parameters["wait_interval"].toInt());
-    if(wait_interval < 5)
+    if( !f_cassandra->connect(f_snapdbproxy_addr, f_snapdbproxy_port) )
     {
-        wait_interval = 5;
-    }
-    int wait_max_tries(f_parameters["wait_max_tries"].toInt());
-    f_cassandra = QtCassandra::QCassandra::create();
-    Q_ASSERT(f_cassandra);
-    while( !f_cassandra->connect(f_cassandra_host, f_cassandra_port) )
-    {
-        // if wait_max_tries is 1 we're about to call exit(1) so we are not going
-        // to retry once more
-        if(wait_max_tries != 1)
-        {
-            SNAP_LOG_WARNING()
-                << "The connection to the Cassandra server failed ("
-                << f_cassandra_host << ":" << f_cassandra_port << "). "
-                << "Try again in " << wait_interval << " secs.";
-            sleep( wait_interval );
-        }
-        //
-        if( wait_max_tries > 0 )
-        {
-            if( --wait_max_tries <= 0 )
-            {
-                SNAP_LOG_FATAL("TIMEOUT: Could not connect to remote Cassandra server at ")
-                    (f_cassandra_host)(":")(f_cassandra_port)(".");
-                exit(1);
-            }
-        }
+        QString msg("could not connect QCassandra to snapdbproxy.");
+        SNAP_LOG_FATAL(msg);
+        throw snap_cassandra_not_available_exception(msg);
     }
 }
 
 
 void snap_cassandra::init_context()
 {
-    // create the context if it doesn't exist yet
+// WARNING: This function should not be used anymore (only to check whether
+//          the context exists,) because the context is normally created
+//          by snapmanager now.
+SNAP_LOG_WARNING("snap_cassandra::init_context() should not be used anymore...");
+
+    // create the context if it does not exist yet
     QtCassandra::QCassandraContext::pointer_t context( get_snap_context() );
     if( !context )
     {
@@ -113,9 +77,9 @@ void snap_cassandra::init_context()
 
         // this is the default for contexts, but just in case we were
         // to change that default at a later time...
-        auto& fields(context->fields());
+        auto & fields(context->fields());
         fields["durable_writes"] = QVariant(true);
-        QtCassandra::QCassandraSchema::Value& replication_val = fields["replication"];
+        QtCassandra::QCassandraSchema::Value & replication_val = fields["replication"];
 
         // TODO: add support for replications defined as a % so if we
         //       discover 10 nodes, we user 5 when replication is 50%
@@ -196,8 +160,9 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
 {
     if( !f_cassandra )
     {
-        SNAP_LOG_FATAL("You must connect to cassandra first!");
-        exit(1);
+        QString msg("You must connect to cassandra first!");
+        SNAP_LOG_FATAL(msg);
+        throw snap_cassandra_not_available_exception(msg);
     }
 
     // we need to read all the contexts in order to make sure the
@@ -209,15 +174,15 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
 }
 
 
-QString snap_cassandra::get_cassandra_host() const
+QString snap_cassandra::get_snapdbproxy_addr() const
 {
-    return f_cassandra_host;
+    return f_snapdbproxy_addr;
 }
 
 
-int32_t snap_cassandra::get_cassandra_port() const
+int32_t snap_cassandra::get_snapdbproxy_port() const
 {
-    return f_cassandra_port;
+    return f_snapdbproxy_port;
 }
 
 

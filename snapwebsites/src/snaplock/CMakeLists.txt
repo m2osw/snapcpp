@@ -1,15 +1,16 @@
 #
 # File:
-#      conf/CMakeLists.txt
+#      src/snaplock/CMakeLists.txt
 #
 # Description:
-#      Install configuration files and samples.
+#      A daemon to synchronize processes between any number of computers
+#      by blocking all of them but one.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2016 Made to Order Software Corp.
+#      Copyright (c) 2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -29,35 +30,30 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+
 #################################################################################
-## Config files
+## Snap Lock daemon
 ##
+project(snaplock)
+
+add_executable(${PROJECT_NAME}
+    snaplock.cpp
+    main.cpp
+    snaplock_messager.cpp
+    snaplock_ticket.cpp
+)
+    #snaplock_entering.cpp -- there is a one to one relationship between tickets and entering so we have a single object
+
+target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    ${ADVGETOPT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+)
+
 install(
-    FILES 
-        # log4cplus properties
-        loggingserver.properties
-        log.properties
-        logserver.properties
-        snapcgi.properties
-        snapcommunicator.properties
-        snapdbproxy.properties
-        snapfirewall.properties
-        snapinit.properties
-
-        # snap configuration files
-        snap-apache2.conf
-        snapcgi.conf
-        snapcommunicator.conf
-        snapdbproxy.conf
-        snapfirewall.conf
-        snapinit.conf
-        snapserver.conf
-
-        # various other files
-        snapinit.xml
-
-    DESTINATION
-        share/snapwebsites/conf
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 

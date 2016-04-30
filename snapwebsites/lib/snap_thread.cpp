@@ -19,6 +19,8 @@
 
 #include "log.h"
 
+#include <signal.h>
+
 #include "poison.h"
 
 
@@ -1050,7 +1052,7 @@ void snap_thread::stop()
 
         // We cannot join since our threads are detached (change?)
         //void *ignore;
-        //pthread_join(f_thread_id, &ignore);
+        //pthread_join(f_thread_id.ptr(), &ignore);
     }
 
     // if the child died because of a standard exception, rethrow it now
@@ -1065,6 +1067,26 @@ void snap_thread::stop()
     // process thread as soon as the lock is released. Yet the only thing
     // left in the thread is exiting.
 }
+
+
+/** \brief Send a signal to this thread.
+ *
+ * This function sends a signal to a specific thread.
+ *
+ * You have to be particularly careful with Unix signal and threads as they
+ * do not always work as expected. This is yet particularly useful if you
+ * want to send a signal such as SIGUSR1 and SIGUSR2 to a thread so it
+ * reacts one way or another (i.e. you are using poll() over a socket and
+ * need to be stopped without using a possibly long time out, you can use
+ * the signalfd() function to transform SIGUSR1 into a pollable signal.)
+ *
+ * \param[in] sig  The signal to send to this thread.
+ */
+void snap_thread::kill(int sig)
+{
+    pthread_kill(f_thread_id, sig);
+}
+
 
 
 } // namespace snap

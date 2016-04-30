@@ -160,29 +160,6 @@ install(
 
 
 #################################################################################
-## Snap DB process
-##
-add_subdirectory( snapdb )
-#project(snapdb)
-#
-#add_executable(${PROJECT_NAME}
-#    snapdb.cpp
-#)
-#
-#target_link_libraries(${PROJECT_NAME}
-#    snapwebsites
-#    ${ADVGETOPT_LIBRARIES}
-#    ${QTCASSANDRA_LIBRARIES}
-#    ${QT_LIBRARIES}
-#    ${LIBTLD_LIBRARIES}
-#)
-#
-#install(
-#    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-#)
-
-
-#################################################################################
 ## Snap signal manager
 ##
 project(snapcommunicator)
@@ -428,6 +405,14 @@ add_executable(${PROJECT_NAME}
 install(
     TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
+
+
+#################################################################################
+## Other tools found in sub-directories
+##
+add_subdirectory( snapdb )
+add_subdirectory( snapdbproxy )
+add_subdirectory( snaplock )
 
 
 # vim: ts=4 sw=4 et

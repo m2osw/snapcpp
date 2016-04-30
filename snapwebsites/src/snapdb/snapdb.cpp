@@ -68,16 +68,16 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "Usage: %p [-<opt>] [table [row]]",
             advgetopt::getopt::help_argument
         },
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "where -<opt> is one or more of:",
             advgetopt::getopt::help_argument
         },
@@ -85,7 +85,7 @@ namespace
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
-            NULL,
+            nullptr,
             "show this help output",
             advgetopt::getopt::no_argument
         },
@@ -93,7 +93,7 @@ namespace
             '\0',
             0,
             "context",
-            NULL,
+            nullptr,
             "name of the context from which to read",
             advgetopt::getopt::optional_argument
         },
@@ -101,7 +101,7 @@ namespace
             '\0',
             0,
             "count",
-            NULL,
+            nullptr,
             "specify the number of rows to display",
             advgetopt::getopt::optional_argument
         },
@@ -109,7 +109,7 @@ namespace
             '\0',
             0,
             "drop-tables",
-            NULL,
+            nullptr,
             "drop all the content tables of the specified context",
             advgetopt::getopt::no_argument
         },
@@ -117,7 +117,7 @@ namespace
             '\0',
             0,
             "drop-context",
-            NULL,
+            nullptr,
             "drop the snapwebsites context (and ALL of the tables)",
             advgetopt::getopt::no_argument
         },
@@ -125,7 +125,7 @@ namespace
             '\0',
             0,
             "dump-context",
-            NULL,
+            nullptr,
             "dump the snapwebsites context to SQLite database",
             advgetopt::getopt::required_argument
         },
@@ -133,7 +133,7 @@ namespace
             '\0',
             0,
             "tables-to-dump",
-            NULL,
+            nullptr,
             "specify the list of tables to dump to SQLite database",
             advgetopt::getopt::required_multiple_argument
         },
@@ -141,7 +141,7 @@ namespace
             '\0',
             0,
             "restore-context",
-            NULL,
+            nullptr,
             "restore the snapwebsites context from SQLite database (requires confirmation)",
             advgetopt::getopt::optional_argument
         },
@@ -149,7 +149,7 @@ namespace
             '\0',
             0,
             "yes-i-know-what-im-doing",
-            NULL,
+            nullptr,
             "Force the dropping of tables, without warning and stdin prompt. Only use this if you know what you're doing!",
             advgetopt::getopt::no_argument
         },
@@ -157,7 +157,7 @@ namespace
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "host",
-            NULL,
+            nullptr,
             "host IP address or name (defaults to localhost)",
             advgetopt::getopt::optional_argument
         },
@@ -165,7 +165,7 @@ namespace
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "port",
-            NULL,
+            nullptr,
             "port on the host to connect to (defaults to 9042)",
             advgetopt::getopt::optional_argument
         },
@@ -173,7 +173,7 @@ namespace
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "info",
-            NULL,
+            nullptr,
             "print out the cluster name and protocol version",
             advgetopt::getopt::no_argument
         },
@@ -188,17 +188,17 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             "[table [row]]",
             advgetopt::getopt::default_multiple_argument
         },
         {
             '\0',
             0,
-            NULL,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
+            nullptr,
             advgetopt::getopt::end_of_options
         }
     };
@@ -210,12 +210,12 @@ using namespace QtCassandra;
 snapdb::snapdb(int argc, char * argv[])
     : f_cassandra( QCassandra::create() )
     , f_host("localhost") // default
-    , f_port(9042) //default
+    , f_port(4042) //default to connect to snapdbproxy
     , f_count(100)
     , f_context("snap_websites")
     //, f_table("") -- auto-init
     //, f_row("") -- auto-init
-    , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, NULL ) )
+    , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, nullptr ) )
 {
     if(f_opt->is_defined("version"))
     {
@@ -347,7 +347,6 @@ void snapdb::info()
         std::cout << "Working on Cassandra Cluster Named \""    << f_cassandra->clusterName()     << "\"." << std::endl;
         std::cout << "Working on Cassandra Protocol Version \"" << f_cassandra->protocolVersion() << "\"." << std::endl;
         std::cout << "Using Cassandra Partitioner \"" << f_cassandra->partitioner() << "\"." << std::endl;
-        std::cout << "Using Cassandra Snitch \"" << f_cassandra->snitch() << "\"." << std::endl;
 
         // At this time the following does not work, we will need CQL support first
         //const QCassandraClusterInformation& cluster_info(f_cassandra->clusterInformation());

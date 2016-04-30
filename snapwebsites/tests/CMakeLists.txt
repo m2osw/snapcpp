@@ -309,6 +309,25 @@ add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 
 ##
+## Test the snap_lock from one or multiple computers
+##
+project(test_snap_lock)
+add_executable( ${PROJECT_NAME}
+    test_snap_lock.cpp
+)
+add_dependencies( ${PROJECT_NAME} test_prereqs )
+target_link_libraries(${PROJECT_NAME}
+	snapwebsites
+	${QTCASSANDRA_LIBRARIES}
+	${LIBTLD_LIBRARIES}
+	${QT_LIBRARIES}
+	dl
+)
+add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
+
+
+
+##
 ## String Speed (testing a Qt feature)
 ##
 project(string_speed)

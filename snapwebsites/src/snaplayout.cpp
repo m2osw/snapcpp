@@ -664,24 +664,20 @@ void snap_layout::load_image( QString const & filename, QByteArray const & conte
 
 QtCassandra::QCassandraContext::pointer_t snap_layout::get_snap_context()
 {
-    // Use command line options if they are set...
+    // Use command line options if they are set... (i.e. optional for this tool)
     //
-    if( f_opt->is_defined( "host" ) )
+    if(f_opt->is_defined("snapdbproxy"))
     {
-        f_parameters["cassandra_host"] = f_opt->get_string( "host" ).c_str();
-    }
-    if( f_opt->is_defined( "port" ) )
-    {
-        f_parameters["cassandra_port"] = f_opt->get_string( "port" ).c_str();
+        f_parameters["snapdbproxy_listen"] = f_opt->get_string("snapdbproxy").c_str();
     }
 
     f_cassandra.connect();
     if( !f_cassandra.is_connected() )
     {
-        std::cerr << "error: connecting to cassandra server on host='"
-            << f_cassandra.get_cassandra_host()
+        std::cerr << "error: connecting to Cassandra via snapdbproxy server failed on host='"
+            << f_cassandra.get_snapdbproxy_addr()
             << "', port="
-            << f_cassandra.get_cassandra_port()
+            << f_cassandra.get_snapdbproxy_port()
             << "!"
             << std::endl;
         exit(1);
