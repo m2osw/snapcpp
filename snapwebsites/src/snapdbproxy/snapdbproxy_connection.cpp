@@ -444,7 +444,7 @@ void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery * q, QtCass
     //
     if(order.timeout() != 0)
     {
-        QCassandraRequestTimeout request_timeout(order.timeout());
+        QtCassandra::QCassandraRequestTimeout request_timeout(f_session, order.timeout());
         q->start();
     }
     else
