@@ -270,13 +270,28 @@ uint32_t QCassandraRow::readCells()
  */
 uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_predicate )
 {
+    size_t idx(0);
+    QCassandraOrderResult selected_cells_result;
+
     f_cells.clear();
 
-    if( f_query )
+    if( f_cursor_index != -1 )
     {
-        if( !f_query->nextPage() )
+        // Note: the "FETCH" is ignored, only the type is used in this case
+        //
+        QCassandraOrder select_more_cells;
+        select_more_cells.setCql("FETCH", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_FETCH);
+        select_more_cells.setCursorIndex(f_cursor_index);
+        QCassandraOrderResult select_more_cells_result(f_table->proxy()->sendOrder(select_more_cells));
+        selected_cells_result.swap(select_more_cells_result);
+        if(!selected_cells_result.succeeded())
         {
-            f_query.reset();
+            throw std::runtime_error("select cells failed");
+        }
+
+        if(selected_cells_result.resultCount() == 0)
+        {
+            closeCursor();
             return 0;
         }
     }
@@ -285,7 +300,8 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         auto row_predicate = std::make_shared<QCassandraRowKeyPredicate>();
         row_predicate->setRowKey( f_key );
 
-        QString query( QString("SELECT column1,value FROM %1.%2")
+        // prepare the CQL order
+        QString query_string( QString("SELECT column1,value FROM %1.%2")
                        .arg(f_table->contextName())
                        .arg(f_table->tableName())
                        );
@@ -294,30 +310,60 @@ uint32_t QCassandraRow::readCells( QCassandraCellPredicate::pointer_t column_pre
         {
             row_predicate->setCellPredicate( column_predicate );
         }
-        row_predicate->appendQuery( query, bind_count );
-        query += " ALLOW FILTERING";
+        row_predicate->appendQuery( query_string, bind_count );
+        query_string += " ALLOW FILTERING";
+
         //
-        //std::cout << "query=[" << query.toUtf8().data() << "]" << std::endl;
-        f_query = std::make_shared<QCassandraQuery>(f_table->session());
-        f_query->query( query, bind_count );
-        //
-        int bind_num = 0;
-        row_predicate->bindQuery( f_query, bind_num );
+//std::cerr << "query=[" << query_string.toUtf8().data() << "]" << std::endl;
+        QCassandraOrder select_cells;
+        select_cells.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_DECLARE);
+        select_cells.setColumnCount(2);
+
+        row_predicate->bindOrder( select_cells );
+
         //
         if( column_predicate )
         {
-            f_query->setPagingSize( column_predicate->count() );
+            select_cells.setPagingSize( column_predicate->count() );
         }
         //
 
-        f_query->start();
+        QCassandraOrderResult select_cells_result(f_table->proxy()->sendOrder(select_cells));
+        selected_cells_result.swap(select_cells_result);
+        if(!selected_cells_result.succeeded())
+        {
+            throw std::runtime_error("select cells failed");
+        }
+
+        if(selected_cells_result.resultCount() < 1)
+        {
+            throw std::runtime_error("select cells did not return a cursor index");
+        }
+        f_cursor_index = int32Value(selected_cells_result.result(0));
+        if(f_cursor_index < 0)
+        {
+            throw std::logic_error("received a negative number as cursor index");
+        }
+
+        // ignore parameter one, it is not a row of data
+        idx = 1;
     }
 
-    size_t result_size = 0;
-    for( ; f_query->nextRow(); ++result_size )
+    size_t const max_results(selected_cells_result.resultCount());
+#ifdef _DEBUG
+    if((max_results - idx) % 2 != 0)
     {
-        const QByteArray column_key ( f_query->getByteArrayColumn( "column1" ) );
-        const QByteArray data       ( f_query->getByteArrayColumn( "value"   ) );
+        // the number of results must be a multiple of 3, although on
+        // the SELECT (first time in) we expect one additional result
+        // which represents the cursor index
+        throw std::logic_error("the number of results must be an exact multipled of 2!");
+    }
+#endif
+    size_t result_size = 0;
+    for(; idx < max_results; idx += 2, ++result_size )
+    {
+        const QByteArray column_key( selected_cells_result.result( idx + 0 ) );
+        const QByteArray data      ( selected_cells_result.result( idx + 1 ) );
 
         QCassandraCell::pointer_t new_cell( cell( column_key ) );
         new_cell->assignValue( QCassandraValue(data) );
@@ -727,13 +773,35 @@ const QCassandraCell& QCassandraRow::operator [] (const QByteArray& column_key) 
  */
 void QCassandraRow::clearCache()
 {
-    if( f_query )
-    {
-        f_query->end();
-    }
-    f_query.reset();
+    closeCursor();
+
     f_cells.clear();
 }
+
+
+/** \brief Close the current cursor.
+ *
+ * This function closes the current cursor (i.e. the cursor used
+ * to gather a set of rows and their data from a table.)
+ */
+void QCassandraRow::closeCursor()
+{
+    if(f_cursor_index >= 0)
+    {
+        // Note: the "CLOSE" CQL string is ignored
+        //
+        QCassandraOrder close_cursor;
+        close_cursor.setCql("CLOSE", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_CLOSE);
+        close_cursor.setCursorIndex(f_cursor_index);
+        QCassandraOrderResult close_cursor_result(f_table->proxy()->sendOrder(close_cursor));
+        if(!close_cursor_result.succeeded())
+        {
+            throw std::runtime_error("QCassandraTable::clearCache(): closing cursor failed.");
+        }
+        f_cursor_index = -1;
+    }
+}
+
 
 /** \brief Drop the named cell.
  *

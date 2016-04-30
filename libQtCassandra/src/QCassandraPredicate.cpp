@@ -79,6 +79,13 @@ void QCassandraCellKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& b
 }
 
 
+void QCassandraCellKeyPredicate::bindOrder( QCassandraOrder& order )
+{
+    order.addParameter( f_cellKey );
+    order.setConsistencyLevel(f_consistencyLevel);
+}
+
+
 /// \brief Cell range predicate query handlers
 void QCassandraCellRangePredicate::appendQuery( QString& query, int& bind_count )
 {
@@ -116,19 +123,44 @@ void QCassandraCellRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int&
 }
 
 
+void QCassandraCellRangePredicate::bindOrder( QCassandraOrder& order )
+{
+    if(!f_startCellKey.isEmpty())
+    {
+        order.addParameter( f_startCellKey );
+    }
+
+    if(!f_endCellKey.isEmpty())
+    {
+        order.addParameter( f_endCellKey );
+    }
+
+    order.setConsistencyLevel(f_consistencyLevel);
+}
+
+
 /// \brief Row key predicate query handlers
 void QCassandraRowKeyPredicate::appendQuery( QString& query, int& bind_count )
 {
     query += " WHERE key = ?";
-    bind_count++;
+    ++bind_count;
     f_cellPred->appendQuery( query, bind_count );
 }
+
 
 void QCassandraRowKeyPredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
 {
     q->bindByteArray( bind_num++, f_rowKey );
     f_cellPred->bindQuery( q, bind_num );
-    q->setConsistencyLevel(f_consistencyLevel);
+    q->setConsistencyLevel(f_consistencyLevel);  // TODO: is that one correct? If the cell predicate already has a consistency?
+}
+
+
+void QCassandraRowKeyPredicate::bindOrder( QCassandraOrder& order)
+{
+    order.addParameter( f_rowKey );
+    f_cellPred->bindOrder( order );
+    order.setConsistencyLevel( f_consistencyLevel );  // TODO: is that one correct? If the cell predicate already has a consistency?
 }
 
 
@@ -140,12 +172,22 @@ void QCassandraRowRangePredicate::appendQuery( QString& query, int& bind_count )
     f_cellPred->appendQuery( query, bind_count );
 }
 
+
 void QCassandraRowRangePredicate::bindQuery( QCassandraQuery::pointer_t q, int& bind_num )
 {
     q->bindByteArray( bind_num++, f_startRowKey );
     q->bindByteArray( bind_num++, f_endRowKey   );
     f_cellPred->bindQuery( q, bind_num );
-    q->setConsistencyLevel(f_consistencyLevel);
+    q->setConsistencyLevel(f_consistencyLevel);  // TODO: is that one correct? If the cell predicate already has a consistency?
+}
+
+
+void QCassandraRowRangePredicate::bindOrder( QCassandraOrder& order )
+{
+    order.addParameter( f_startRowKey );
+    order.addParameter( f_endRowKey );
+    f_cellPred->bindOrder( order );
+    order.setConsistencyLevel( f_consistencyLevel );  // TODO: is that one correct? If the cell predicate already has a consistency?
 }
 
 

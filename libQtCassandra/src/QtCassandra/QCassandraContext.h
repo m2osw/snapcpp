@@ -35,8 +35,6 @@
  */
 #pragma once
 
-#include "QtCassandra/QCassandraPredicate.h"
-#include "QtCassandra/QCassandraSchema.h"
 #include "QtCassandra/QCassandraTable.h"
 
 #include <controlled_vars/controlled_vars_auto_init.h>

@@ -292,8 +292,9 @@ void QCassandraQuery::query( const QString &query_string, const int bind_count )
  * will not be paged properly (it will default to a LIMIT of 10000 records.
  * See the cassandra-cpp docs).
  *
- * \sa query()
+ * \param[in] size  The number of rows or cells to read per page.
  *
+ * \sa query()
  */
 void QCassandraQuery::setPagingSize( const int size )
 {
@@ -819,7 +820,7 @@ QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue * value ) con
  */
 QString QCassandraQuery::getStringColumn( const QString& name ) const
 {
-    return getByteArrayColumn( name ).data();
+    return QString::fromUtf8(getByteArrayColumn( name ).data());
 }
 
 
@@ -829,7 +830,7 @@ QString QCassandraQuery::getStringColumn( const QString& name ) const
  */
 QString QCassandraQuery::getStringColumn( const int num ) const
 {
-    return getByteArrayColumn( num ).data();
+    return QString::fromUtf8(getByteArrayColumn( num ).data());
 }
 
 

@@ -37,7 +37,7 @@
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraPredicate.h"
-#include "QtCassandra/QCassandraQuery.h"
+#include "QtCassandra/QCassandraProxy.h"
 #include "QtCassandra/QCassandraRow.h"
 #include "QtCassandra/QCassandraSchema.h"
 
@@ -64,7 +64,7 @@ public:
 
     virtual ~QCassandraTable();
 
-    QCassandraSession::pointer_t session() const { return f_session; }
+    QCassandraProxy::pointer_t proxy() const { return f_proxy; }
 
     // context name
     const QString&  contextName() const;
@@ -123,6 +123,7 @@ private:
                 , consistency_level_t consistency_level = CONSISTENCY_LEVEL_DEFAULT
                 );
     void 		remove( const QByteArray& row_key );
+    void        closeCursor();
 
     bool		isCounterClass();
 
@@ -141,8 +142,8 @@ private:
     QString										f_tableName;
     QCassandraRows                              f_rows;
 
-    QCassandraSession::pointer_t                f_session;
-    QCassandraQuery::pointer_t                  f_query;
+    QCassandraProxy::pointer_t                  f_proxy;
+    int32_t                                     f_cursor_index = -1;
 };
 
 // list of table definitions mapped against their name (see tableName())

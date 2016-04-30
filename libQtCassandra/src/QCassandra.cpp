@@ -50,24 +50,26 @@
 #include <iostream>
 #include <sstream>
 
+#include <unistd.h>
+
+
 /** \brief The QtCassandra namespace includes all the Cassandra extensions.
  *
  * This namespace includes all the Cassandra extensions in Qt. Note that we
  * suggest that you try to avoid using this namespace as in:
  *
  * \code
- * using QtCassandra;
+ * using namespace QtCassandra;
  * \endcode
  *
- * Yet... without using the namespace, all the [] operators are not accessible
- * so the advanced C++ syntax is not available to you. In other words, you
- * should have such statements wherever you want to access the QtCassandra
- * data with the advanced C++ syntax.
+ * Yet... in older C++ compilers, without using the namespace, all
+ * the [] operators are not accessible so the advanced C++ syntax is
+ * not available to you. In other words, you should have such statements
+ * wherever you want to access the QtCassandra data with the advanced
+ * C++ syntax.
  */
 namespace QtCassandra
 {
-
-using namespace QCassandraSchema;
 
 /** \mainpage
  *
@@ -563,6 +565,7 @@ using namespace QCassandraSchema;
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
 /** \class QCassandra
  * \brief The Cassandra class definition.
  *
@@ -571,6 +574,7 @@ using namespace QCassandraSchema;
  *
  * This is the first object you want to create as all things come out of it.
  */
+
 
 /** \var const int QT_CASSANDRA_LIBRARY_VERSION_MAJOR;
  * \brief The major library version.
@@ -582,6 +586,7 @@ using namespace QCassandraSchema;
  * \sa versionMajor()
  */
 
+
 /** \var const int QT_CASSANDRA_LIBRARY_VERSION_MINOR;
  * \brief The minor library version.
  *
@@ -592,6 +597,7 @@ using namespace QCassandraSchema;
  * \sa versionMinor()
  */
 
+
 /** \var const int QT_CASSANDRA_LIBRARY_VERSION_PATCH;
  * \brief The patch library version.
  *
@@ -601,6 +607,7 @@ using namespace QCassandraSchema;
  *
  * \sa versionPatch()
  */
+
 
 /** \var QCassandra::f_current_context
  * \brief A pointer to the current context.
@@ -613,6 +620,7 @@ using namespace QCassandraSchema;
  * QCassandraContext::makeCurrent() function
  */
 
+
 /** \var QCassandra::f_contexts_read
  * \brief Whether the map of contexts were read from Cassandra.
  *
@@ -620,6 +628,7 @@ using namespace QCassandraSchema;
  * not. This allows to call the describe_keyspaces() function a maximum
  * of one time per connection.
  */
+
 
 /** \var QCassandra::f_contexts
  * \brief The map of contexts defined in memory.
@@ -634,6 +643,7 @@ using namespace QCassandraSchema;
  * Context::create() function.)
  */
 
+
 /** \var QCassandra::f_cluster_name
  * \brief The name of the cluster we're connected to.
  *
@@ -641,6 +651,7 @@ using namespace QCassandraSchema;
  * is connected to. This variable caches the cluster name so we don't
  * have to query the cluster about its name more than once.
  */
+
 
 /** \var QCassandra::f_protocol_version
  * \brief The version of the protocol we're connected to.
@@ -650,6 +661,7 @@ using namespace QCassandraSchema;
  * have to query the cluster about its protocol version more than once.
  */
 
+
 /** \var QCassandra::f_partitioner
  * \brief The partitioner available in this Cassandra cluster.
  *
@@ -657,12 +669,14 @@ using namespace QCassandraSchema;
  * Cassandra cluster.
  */
 
+
 /** \var QCassandra::f_snitch
  * \brief The snitch used by this Cassandra cluster.
  *
  * This variable caches the name of the snitch as read from the
  * Cassandra cluster.
  */
+
 
 /** \brief Initialize the QCassandra object.
  *
@@ -679,20 +693,19 @@ using namespace QCassandraSchema;
  * \sa setDefaultConsistencyLevel()
  */
 QCassandra::QCassandra()
-    : f_session( QCassandraSession::create() )
+    // f_session( QCassandraSession::create() ) -- was this really correct? (i.e. the disconnect resets that pointer...)
+    // f_proxy( nullptr )
     // f_current_context(nullptr) -- auto-init
     // f_contexts() -- auto-init
     // f_cluster_name("") -- auto-init
     // f_protocol_version("") -- auto-init
     // f_partitioner("") -- auto-init
     // f_snitch("") -- auto-init
-    , f_default_consistency_level( CONSISTENCY_LEVEL_ONE )
+    // f_default_consistency_level( CONSISTENCY_LEVEL_ONE )
     // default is CONSISTENCY_LEVEL_DEFAULT
 {
-    // we are passing this to the private object that we control
-    // so we make make sure it is used wisely; at this time it is
-    // just saved in a variable member
 }
+
 
 /** \brief Create the QCassandra instance.
  *
@@ -706,6 +719,7 @@ QCassandra::pointer_t QCassandra::create()
     return pointer_t( new QCassandra );
 }
 
+
 /** \brief Cleanup the Cassandra object.
  *
  * This function cleans up the QCassandra object.
@@ -718,92 +732,95 @@ QCassandra::~QCassandra()
     disconnect();
 }
 
-/** \brief Connect to a Cassandra Cluster.
+
+/** \brief Connect to a snapdbproxy daemon.
  *
- * This function connects to a Cassandra Cluster. Which cluster is determined
- * by the host and port parameters.
+ * This function connects to a Cassandra Cluster through a snapdbproxy
+ * daemon. In most cases the default host and port information are enough.
+ * (localhost and 4042, respectively.)
  *
- * One cluster may include many database contexts (i.e. keyspaces.) Each
- * database
- * context (keyspace) has a set of parameters defining its duplication mechanism
- * among other things. Before working with a database context, one must call the
- * the setCurrentContext() function.
+ * One cluster may include many database contexts (i.e. keyspaces.)
+ * Each database context (keyspace) has a set of parameters defining
+ * its duplication mechanism among other things. Before working with
+ * a database context, one must call the the setCurrentContext()
+ * function.
  *
- * The function first disconnects the existing connection when there is one.
+ * The function first disconnects the existing connection when
+ * there is one.
  *
- * Many other functions require you to call this connect() function first. You
- * are likely to get a runtime exception if you don't.
+ * Many other functions require you to call this connect() function
+ * first. You are likely to get a runtime exception if you do not.
  *
- * Note that the previous connection is lost whether or not the new one
- * succeeds.
+ * Note that the previous connection is lost whether or not the new
+ * one succeeds.
  *
- * \param[in] host      The host, defaults to "localhost" (an IP address,
- * computer
- *                      hostname, domain name, etc.)
- * \param[in] port      The connection port, defaults to 9042.
+ * \warning
+ * Note that the handling of the Cassandra cluster is done in the
+ * snapdbproxy. i.e. it will connect to any number of nodes and
+ * retrieve the data using any one of those nodes and stay connected
+ * with those nodes so things should be pretty fast (faster than
+ * having to connect directly to a node each time--or worst, connected
+ * to 5 or 6 nodes...)
+ *
+ * \warning
+ * The proxy does not connect in its constructor, instead it waits until
+ * the first use of the proxy. Luckily, there is such a use within the
+ * connect() function to gather the cluster basic information. So on return
+ * of the connect() you can safely call the isConnected() function and get
+ * the expected response (true). However, the proxy works in a different
+ * way than the old connection: if we lose the connection, the proxy tries
+ * to reconnect, automatically.
+ *
+ * \exception std::runtime_error
+ * If the function cannot gather the cluster information, then it raises
+ * this exception.
+ *
+ * \param[in] host  The host, defaults to "localhost" (an IP address,
+ *                  computer hostname, domain name, etc.)
+ * \param[in] port  The connection port, defaults to 4042.
  *
  * \return true if the connection succeeds, throws otherwise
  */
 bool QCassandra::connect( const QString& host, const int port )
 {
-    QStringList host_list;
-    host_list << host;
-    return connect( host_list, port );
-}
-
-/** \brief Connect to a Cassandra Cluster.
- *
- * This function connects to a Cassandra Cluster. Which cluster is determined
- * by the host and port parameters.
- *
- * One cluster may include many database contexts (i.e. keyspaces.) Each
- * database
- * context (keyspace) has a set of parameters defining its duplication mechanism
- * among other things. Before working with a database context, one must call the
- * the setCurrentContext() function.
- *
- * The function first disconnects the existing connection when there is one.
- *
- * Many other functions require you to call this connect() function first. You
- * are likely to get a runtime exception if you don't.
- *
- * Note that the previous connection is lost whether or not the new one
- * succeeds.
- *
- * \param[in] host_list The list of hosts, AKA contact points (IP addresses,
- * computer
- *                      hostnames, domain names, etc.)
- * \param[in] port      The connection port, defaults to 9042.
- *
- * \return true if the connection succeeds, throws otherwise
- */
-bool QCassandra::connect( const QStringList& host_list, const int port )
-{
     // disconnect any existing connection
+    //
     disconnect();
 
-    f_session = QCassandraSession::create();
-    f_session->connect( host_list, port ); // throws on failure!
-
-    QCassandraQuery local_table( f_session );
-    local_table.query( "SELECT cluster_name, native_protocol_version, partitioner FROM system.local" );
-    local_table.start();
+    // connect to snapdbproxy
     //
-    if( !local_table.nextRow() )
+    f_proxy.reset(new QCassandraProxy(host, port));
+
+    // get cluster information
+    //
+    QCassandraOrder local_table;
+    local_table.setCql( "SELECT cluster_name,native_protocol_version,partitioner FROM system.local", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_ROWS );
+    local_table.setColumnCount(3);
+    QCassandraOrderResult const local_table_result(f_proxy->sendOrder(local_table));
+
+    // even just cluster info cannot be retrieved, forget it
+    //
+    if( !local_table_result.succeeded() )
     {
-        throw std::runtime_error( "Error in database table system.local!" );
+        throw std::runtime_error( "Error reading database table system.local!" );
     }
 
-    f_cluster_name     = local_table.getStringColumn( "cluster_name"            );
-    f_protocol_version = local_table.getStringColumn( "native_protocol_version" );
-    f_partitioner      = local_table.getStringColumn( "partitioner"             );
+    // got success but not data?!
     //
-    // I have no idea how to get this from the new CQL-based c++ interface.
+    if( local_table_result.resultCount() != 3 )
+    {
+        throw std::runtime_error( "Somehow system.local could not return the Cassandra cluster name, native protocol and partitioner information" );
+    }
+
+    // save data here
     //
-    f_snitch = "TODO!";
+    f_cluster_name     = local_table_result.result( 0 );
+    f_protocol_version = local_table_result.result( 1 );
+    f_partitioner      = local_table_result.result( 2 );
 
     return true;
 }
+
 
 /** \brief Break the connection to Cassandra.
  *
@@ -814,16 +831,19 @@ bool QCassandra::connect( const QStringList& host_list, const int port )
  */
 void QCassandra::disconnect()
 {
-    f_session.reset();
+    // TBD: should we send a "CLOSE" to the proxy?
+    //      (the socket should receive the HUP signal anyway)
+    //
+    f_proxy.reset();
 
     f_current_context.reset();
     f_contexts.clear();
     f_cluster_name = "";
     f_protocol_version = "";
     f_partitioner = "";
-    f_snitch = "TODO";
     f_default_consistency_level = CONSISTENCY_LEVEL_ONE;
 }
+
 
 /** \brief Check whether the object is connected to the server.
  *
@@ -837,8 +857,13 @@ void QCassandra::disconnect()
  */
 bool QCassandra::isConnected() const
 {
-    return f_session->isConnected();
+    if(!f_proxy)
+    {
+        return false;
+    }
+    return f_proxy->isConnected();
 }
+
 
 /** \brief Get the name of the Cassandra cluster.
  *
@@ -858,10 +883,11 @@ bool QCassandra::isConnected() const
  *
  * \return The name of the cluster.
  */
-const QString &QCassandra::clusterName() const
+const QString& QCassandra::clusterName() const
 {
     return f_cluster_name;
 }
+
 
 /** \brief Get the version of the cluster protocol.
  *
@@ -881,10 +907,11 @@ const QString &QCassandra::clusterName() const
  *
  * \return The version of the protocol.
  */
-const QString &QCassandra::protocolVersion() const
+const QString& QCassandra::protocolVersion() const
 {
     return f_protocol_version;
 }
+
 
 /** \brief Get the partitioner of the cluster.
  *
@@ -901,26 +928,11 @@ const QString &QCassandra::protocolVersion() const
  *
  * \sa readRows()
  */
-const QString &QCassandra::partitioner() const
+const QString& QCassandra::partitioner() const
 {
     return f_partitioner;
 }
 
-/** \brief Get the snitch of the cluster.
- *
- * This function retrieves the name of the snitch in use by the
- * cluster.
- *
- * \return The name of the snitch.
- *
- * \todo I have no idea how to read this using CQL!
- *
- * \sa readRows()
- */
-const QString &QCassandra::snitch() const
-{
-    return f_snitch;
-}
 
 /** \brief Retrieve a context by name.
  *
@@ -945,32 +957,61 @@ const QString &QCassandra::snitch() const
  * \endcode
  *
  * Note that if you do not know whether the context exists, use the
- * findContext()
- * function first, then check whether the context was found.
+ * findContext() function first, then check whether the context was found.
  *
  * \param[in] context_name  The name of the context to search.
  *
  * \return A shared pointer to a cassandra context.
  */
-QCassandraContext::pointer_t QCassandra::context( const QString &context_name )
+QCassandraContext::pointer_t QCassandra::context( const QString& context_name )
 {
     // get the list of existing contexts
-    const QCassandraContexts &cs = contexts();
+    const QCassandraContexts& cs(contexts());
 
     // already exists?
-    QCassandraContexts::const_iterator ci = cs.find( context_name );
+    QCassandraContexts::const_iterator ci(cs.find( context_name ));
     if ( ci != cs.end() )
     {
         return ci.value();
     }
 
     // otherwise create a new one
-    QCassandraContext::pointer_t c(
-        new QCassandraContext( shared_from_this(), context_name ) );
+    QCassandraContext::pointer_t c( new QCassandraContext( shared_from_this(), context_name ) );
     f_contexts.insert( context_name, c );
-    retrieveContext( context_name );
+    retrieveContextMeta( c, context_name );
+
     return c;
 }
+
+
+/** \brief Create a context from a keyspace.
+ *
+ *
+ * \param[in] keyspace  A pointer to the context keyspace.
+ *
+ * \return A shared pointer to a cassandra context.
+ */
+QCassandraContext::pointer_t QCassandra::context( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta )
+{
+    // get the list of existing contexts
+    const QCassandraContexts& cs(contexts());
+
+    // already exists?
+    QCassandraContexts::const_iterator ci(cs.find( keyspace_meta->getName() ));
+    if ( ci != cs.end() )
+    {
+        return ci.value();
+    }
+
+    // otherwise create a new one
+    QCassandraContext::pointer_t c( new QCassandraContext( shared_from_this(), keyspace_meta->getName() ) );
+    f_contexts.insert( keyspace_meta->getName(), c );
+    //retrieveContextMeta( context_name ); -- we have the keyspace, just use it
+    c->parseContextDefinition( keyspace_meta );
+
+    return c;
+}
+
 
 /** \brief Make the specified context the current context.
  *
@@ -1017,6 +1058,7 @@ void QCassandra::setCurrentContext( QCassandraContext::pointer_t c )
     }
 }
 
+
 /** \brief Internal function that clears the current context as required.
  *
  * Whenever a context is being dropped, it cannot remain the current context.
@@ -1024,7 +1066,7 @@ void QCassandra::setCurrentContext( QCassandraContext::pointer_t c )
  *
  * \param[in] c  The context that is about to be dropped.
  */
-void QCassandra::clearCurrentContextIf( const QCassandraContext &c )
+void QCassandra::clearCurrentContextIf( const QCassandraContext& c )
 {
     if ( f_current_context.get() == &c )
     {
@@ -1033,149 +1075,44 @@ void QCassandra::clearCurrentContextIf( const QCassandraContext &c )
 }
 
 
-#if 0
-/** \brief Retrieve the description of all columns for each table
+/** \brief Retrieve a context by name.
  *
- * \param[in,out]  cf_def  The "columnfamily" (i.e. table) information structure that we will populate from the query.
- */
-void QCassandra::retrieveColumn( ColumnDef& col_def, SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t column ) const
-{
-    auto fields( column->getFields() );
-
-    col_def.__set_name( column->getName().toUtf8().data() );
-
-    auto
-    fields_iter = fields.find("index_name");    if( fields_iter != fields.end() ) col_def.__set_index_name(       fields_iter->second->string()    );
-    fields_iter = fields.find("validator");     if( fields_iter != fields.end() ) col_def.__set_validation_class( fields_iter->second->string()    );
-    fields_iter = fields.find("index_options"); if( fields_iter != fields.end() ) col_def.__set_index_options(    fields_iter->second->stringMap() );
-
-    fields_iter = fields.find("index_type");
-    if( fields_iter != fields.end() )
-    {
-        const QString index_type( fields_iter->second->variant().toString().toLower() );
-        if( index_type == "keys" )
-        {
-            col_def.__set_index_type( IndexType::KEYS );
-        }
-        else if( index_type == "custom" )
-        {
-            col_def.__set_index_type( IndexType::CUSTOM );
-        }
-        else if( index_type == "composites" )
-        {
-            col_def.__set_index_type( IndexType::COMPOSITES );
-        }
-    }
-}
-
-
-#if 0
-/** \brief Retrieve the description of all triggers for each table
+ * This function creates a new context by name. It first searches the
+ * list of existing keyspaces, if it finds one with the specified name,
+ * then it creates a corresponding QCassandraContext.
  *
- * \param[in,out]  cf_def  The "columnfamily" (i.e. table) information structure that we will populate from the query.
+ * \param[in] context_name  The name of the context to create in memory.
  */
-void QCassandra::retrieveTriggers( CfDef& cf_def ) const
+void QCassandra::retrieveContextMeta( QCassandraContext::pointer_t c, const QString& context_name ) const
 {
-    const QString query( QString("SELECT trigger_name, trigger_options "
-                                 "FROM system.schema_triggers "
-                                 "WHERE keyspace_name = '%1' "
-                                 "AND columnfamily_name = '%2'")
-                         .arg(cf_def.keyspace.c_str())
-                         .arg(cf_def.name.c_str())
-                         );
-
-    QCassandraQuery the_query( f_session );
-    the_query.query( query );
-    the_query.start();
-
-    std::vector<TriggerDef> trig_def_list;
-    while( the_query.nextRow() )
+    if(!f_proxy)
     {
-        TriggerDef trig_def;
-        trig_def.__set_name    ( the_query.getStringColumn ("trigger_name").toUtf8().data() );
-        trig_def.__set_options ( the_query.getMapColumn    ("trigger_options")              );
-        trig_def_list.push_back( trig_def );
+        throw std::runtime_error( "QCassandra::retrieveContextMeta(): called when not connected" );
     }
 
-    cf_def.__set_triggers( trig_def_list );
-}
-#endif
+    // note: the "DESCRIBE CLUSTER" is ignored
+    //
+    QCassandraOrder describe_cluster;
+    describe_cluster.setCql( "DESCRIBE CLUSTER", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_DESCRIBE );
+    QCassandraOrderResult const describe_cluster_result(f_proxy->sendOrder(describe_cluster));
 
-
-/** \brief Retrieve the description of all tables.
- *
- * \param[in,out]  ks_def  The keyspace information structure that we will populate from the query.
- */
-void QCassandra::retrieveTable( CfDef& cf_def, SessionMeta::KeyspaceMeta::TableMeta::pointer_t table ) const
-{
-    auto fields( table->getFields() );
-
-    cf_def.__set_name( table->getName().toUtf8().data() );
-
-    auto
-    fields_iter = fields.find("keyspace_name");               if( fields_iter != fields.end() ) cf_def.__set_keyspace(                    fields_iter->second->string()             );
-    fields_iter = fields.find("type");                        if( fields_iter != fields.end() ) cf_def.__set_column_type(                 fields_iter->second->string()             );
-    fields_iter = fields.find("comparator");                  if( fields_iter != fields.end() ) cf_def.__set_comparator_type(             fields_iter->second->string()             );
-    fields_iter = fields.find("subcomparator");               if( fields_iter != fields.end() ) cf_def.__set_subcomparator_type(          fields_iter->second->string()             );
-    fields_iter = fields.find("comment");                     if( fields_iter != fields.end() ) cf_def.__set_comment(                     fields_iter->second->string()             );
-    fields_iter = fields.find("read_repair_chance");          if( fields_iter != fields.end() ) cf_def.__set_read_repair_chance(          fields_iter->second->variant().toDouble() );
-    fields_iter = fields.find("gc_grace_seconds");            if( fields_iter != fields.end() ) cf_def.__set_read_repair_chance(          fields_iter->second->variant().toInt()    );
-    fields_iter = fields.find("default_validator");           if( fields_iter != fields.end() ) cf_def.__set_default_validation_class(    fields_iter->second->string()             );
-    fields_iter = fields.find("cf_id");                       if( fields_iter != fields.end() ) cf_def.__set_id(                          fields_iter->second->variant().toInt()    );
-    fields_iter = fields.find("min_compaction_threshold");    if( fields_iter != fields.end() ) cf_def.__set_min_compaction_threshold(    fields_iter->second->variant().toInt()    );
-    fields_iter = fields.find("max_compaction_threshold");    if( fields_iter != fields.end() ) cf_def.__set_max_compaction_threshold(    fields_iter->second->variant().toInt()    );
-    fields_iter = fields.find("key_validator");               if( fields_iter != fields.end() ) cf_def.__set_key_validation_class(        fields_iter->second->string()             );
-    fields_iter = fields.find("key_aliases");                 if( fields_iter != fields.end() ) cf_def.__set_key_alias(                   fields_iter->second->string()             );
-    fields_iter = fields.find("compaction_strategy_class");   if( fields_iter != fields.end() ) cf_def.__set_compaction_strategy(         fields_iter->second->string()             );
-    fields_iter = fields.find("compaction_strategy_options"); if( fields_iter != fields.end() ) cf_def.__set_compaction_strategy_options( fields_iter->second->stringMap()          );
-    fields_iter = fields.find("compression_parameters");      if( fields_iter != fields.end() ) cf_def.__set_compression_options(         fields_iter->second->stringMap()          );
-    fields_iter = fields.find("bloom_filter_fp_chance");      if( fields_iter != fields.end() ) cf_def.__set_bloom_filter_fp_chance(      fields_iter->second->variant().toDouble() );
-    fields_iter = fields.find("caching");                     if( fields_iter != fields.end() ) cf_def.__set_caching(                     fields_iter->second->string()             );
-    fields_iter = fields.find("memtable_flush_period_in_ms"); if( fields_iter != fields.end() ) cf_def.__set_memtable_flush_period_in_ms( fields_iter->second->variant().toInt()    );
-    fields_iter = fields.find("default_time_to_live");        if( fields_iter != fields.end() ) cf_def.__set_default_time_to_live(        fields_iter->second->variant().toInt()    );
-    fields_iter = fields.find("speculative_retry");           if( fields_iter != fields.end() ) cf_def.__set_speculative_retry(           fields_iter->second->string()             );
-
-    std::vector<ColumnDef> col_def_list;
-    for( const auto pair : table->getColumns() )
+    if(!describe_cluster_result.succeeded())
     {
-        ColumnDef col_def;
-        retrieveColumn( col_def, pair.second );
-        col_def_list.push_back( col_def );
+        throw std::runtime_error( "QCassandra::retrieveContextMeta(): DESCRIBE CLUSTER failed" );
     }
-    cf_def.__set_column_metadata( col_def_list );
-}
-#endif
 
+    if(describe_cluster_result.resultCount() != 1)
+    {
+        throw std::runtime_error( "QCassandra::retrieveContextMeta(): result does not have one blob as expected" );
+    }
 
-/** \brief Retrieve the description of a keyspace.
- *
- * This function requests for the descriptions of a specific keyspace
- * (context). It is used to rebuild the list of tables after a clearCache()
- * call on a context object.
- *
- * The QCassandra object is responsible for caching the result. The result
- * should not change until we create a new table although if another process
- * on another machine changes the Cassandra cluster structure, it will not
- * be seen until the cache gets cleared.
- *
- * \param[in] context_name  The name of the context to re-describe.
- */
-void QCassandra::retrieveContext( SessionMeta::KeyspaceMeta::pointer_t keyspace ) const
-{
-    QCassandraContext::pointer_t c( const_cast<QCassandra*>(this)->context(keyspace->getName()) );
-    c->parseContextDefinition( keyspace );
-}
-
-
-void QCassandra::retrieveContext( const QString& context_name ) const
-{
-    SessionMeta::pointer_t session_meta( SessionMeta::create(f_session) );
-    session_meta->loadSchema();
-    const auto& keyspaces(session_meta->getKeyspaces());
-    auto iter = keyspaces.find(context_name);
+    QCassandraSchema::SessionMeta::pointer_t session_meta(new QCassandraSchema::SessionMeta);
+    session_meta->decodeSessionMeta(describe_cluster_result.result(0));
+    const auto & keyspaces(session_meta->getKeyspaces());
+    auto iter(keyspaces.find(context_name));
     if( iter != keyspaces.end() )
     {
-        retrieveContext( iter->second );
+        c->parseContextDefinition( iter->second );
     }
 }
 
@@ -1199,20 +1136,51 @@ void QCassandra::retrieveContext( const QString& context_name ) const
  */
 const QCassandraContexts& QCassandra::contexts() const
 {
+    if(!f_proxy)
+    {
+        throw std::runtime_error( "QCassandra::contexts(): called when not connected" );
+    }
+
     if( !f_contexts_read )
     {
-        SessionMeta::pointer_t session_meta( SessionMeta::create(f_session) );
-        session_meta->loadSchema();
+        // note: the "DESCRIBE CLUSTER" is ignored
+        //
+        QCassandraOrder describe_cluster;
+        describe_cluster.setCql( "DESCRIBE CLUSTER", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_DESCRIBE );
+        QCassandraOrderResult const describe_cluster_result(f_proxy->sendOrder(describe_cluster));
 
+        if(!describe_cluster_result.succeeded())
+        {
+            throw std::runtime_error( "QCassandra::contexts(): DESCRIBE CLUSTER failed" );
+        }
+
+        if(describe_cluster_result.resultCount() != 1)
+        {
+            throw std::runtime_error( "QCassandra::contexts(): result does not have one blob as expected" );
+        }
+
+        // WARNING: the location where this flag is set to true is very
+        //          important, we do not want to put it too soon in case
+        //          we throw and never actually initialize any contexts
+        //          and we do not want to have it after the following
+        //          for() statement because otherwise we get a looping
+        //          call to contexts()
+        //
         f_contexts_read = true;
+
+        QCassandraSchema::SessionMeta::pointer_t session_meta(new QCassandraSchema::SessionMeta);
+        session_meta->decodeSessionMeta(describe_cluster_result.result(0));
 
         for( auto keyspace : session_meta->getKeyspaces() )
         {
-            retrieveContext( keyspace.second );
+            const_cast<QCassandra *>(this)->context(keyspace.second);
         }
+
     }
+
     return f_contexts;
 }
+
 
 /** \brief Search for a context.
  *
@@ -1240,8 +1208,7 @@ QCassandraContext::pointer_t QCassandra::findContext( const QString& context_nam
     QCassandraContexts::const_iterator ci( contexts().find( context_name ) );
     if ( ci == f_contexts.end() )
     {
-        QCassandraContext::pointer_t null;
-        return null;
+        return QCassandraContext::pointer_t();
     }
     return *ci;
 }

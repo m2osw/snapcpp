@@ -36,10 +36,7 @@
  */
 #pragma once
 
-#include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraContext.h"
-#include "QtCassandra/QCassandraQuery.h"
-#include "QtCassandra/QCassandraSchema.h"
 #include "QtCassandra/QCassandraVersion.h"
 
 #include <memory>
@@ -68,17 +65,15 @@ public:
     static const char *version();
 
     // connection functions
-    bool connect(const QString& host = "localhost", const int port = 9042 );
-    bool connect(const QStringList& hosts, const int port = 9042 );
+    bool connect( const QString& host = "localhost", const int port = 4042 );
     void disconnect();
     bool isConnected() const;
     const QString& clusterName() const;
     const QString& protocolVersion() const;
     //const QCassandraClusterInformation& clusterInformation() const;
     const QString& partitioner() const;
-    const QString& snitch() const;
 
-    QCassandraSession::pointer_t    session() const { return f_session; }
+    QCassandraProxy::pointer_t      proxy() const { return f_proxy; }
 
     // context functions (the database [Cassandra keyspace])
     QCassandraContext::pointer_t currentContext() const { return f_current_context; }
@@ -105,22 +100,18 @@ private:
     void setCurrentContext(QCassandraContext::pointer_t c);
     void clearCurrentContextIf(const QCassandraContext& c);
 
-    //void retrieveColumn   ( ColumnDef& cf_def, QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t column ) const;
-    //void retrieveTable    ( CfDef& cf_def    , QCassandraSchema::SessionMeta::KeyspaceMeta::TableMeta::pointer_t table ) const;
-    void retrieveContext  ( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace ) const;
-    void retrieveContext  ( const QString& context_name ) const;
+    QCassandraContext::pointer_t context( QCassandraSchema::SessionMeta::KeyspaceMeta::pointer_t keyspace_meta );
+    void retrieveContextMeta( QCassandraContext::pointer_t c, const QString& context_name ) const;
 
     friend class QCassandraContext;
 
-    QCassandraSession::pointer_t            f_session;
+    QCassandraProxy::pointer_t              f_proxy;
     QCassandraContext::pointer_t            f_current_context;
     mutable controlled_vars::flbool_t       f_contexts_read;
     QCassandraContexts                      f_contexts;
     QString                                 f_cluster_name;
     QString                                 f_protocol_version;
-    //mutable QCassandraClusterInformation    f_cluster_information;
     QString                                 f_partitioner;
-    QString                                 f_snitch;
     consistency_level_t                     f_default_consistency_level = CONSISTENCY_LEVEL_ONE;
 };
 
