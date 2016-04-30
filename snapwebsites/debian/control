@@ -2,17 +2,17 @@ Source: snapwebsites
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake,
-    libqt4-dev (>= 4.8.3), doxygen, graphviz, liblog4cplus-dev (>= 1.2.0.364~trusty),
+    libqt4-dev (>= 4.8.3), doxygen, graphviz, liblog4cplus-dev (>= 1.2.0.372~trusty),
     libssl-dev, libmagic-dev, libmagick++-dev (>= 6.7.7.10-6ubuntu3), libicu-dev,
     libqtwebkit-dev, libboost-dev, libxml2-utils, python-pip (>= 1.4.1-2),
-    libprocps3-dev | libprocps4-dev, libzipios-dev (>= 2.1.2.91~trusty), zip, uuid-dev,
+    libprocps3-dev | libprocps4-dev, libzipios-dev (>= 2.1.2.99~trusty), zip, uuid-dev,
     snapcmakemodules (>= 1.0.23.231~trusty),
     libcontrolledvars-dev (>= 1.4.15.231~trusty), libadvgetopt-dev (>= 1.0.15.231~trusty),
-    libtld-dev (>= 1.5.1.281~trusty), libqtcassandra-dev (>= 0.6.0.2~trusty),
-    libqtserialization-dev (>= 0.1.16.594~trusty), closure-linter (>= 2.3.13),
-    libas2js-dev (>= 0.1.14.89~trusty), libssl-dev (>= 1.0.1),
-    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.10.16~trusty),
-    catch (>= 1.0), csspp (>= 1.0.10.16~trusty)
+    libtld-dev (>= 1.5.1.289~trusty), libqtcassandra-dev (>= 0.6.0.10~trusty),
+    libqtserialization-dev (>= 0.1.16.602~trusty), closure-linter (>= 2.3.13),
+    libas2js-dev (>= 0.1.14.97~trusty), libssl-dev (>= 1.0.1),
+    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.10.24~trusty),
+    catch (>= 1.0), csspp (>= 1.0.10.24~trusty)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
