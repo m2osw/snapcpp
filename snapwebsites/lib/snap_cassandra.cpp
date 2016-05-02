@@ -45,14 +45,14 @@ void snap_cassandra::connect()
     f_cassandra = QtCassandra::QCassandra::create();
     if(!f_cassandra)
     {
-        QString msg("could not create the QCassandra instance.");
+        QString const msg("could not create the QCassandra instance.");
         SNAP_LOG_FATAL(msg);
         throw snap_cassandra_not_available_exception(msg);
     }
 
     if( !f_cassandra->connect(f_snapdbproxy_addr, f_snapdbproxy_port) )
     {
-        QString msg("could not connect QCassandra to snapdbproxy.");
+        QString const msg("could not connect QCassandra to snapdbproxy.");
         SNAP_LOG_FATAL(msg);
         throw snap_cassandra_not_available_exception(msg);
     }

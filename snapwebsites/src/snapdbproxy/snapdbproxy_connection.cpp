@@ -62,13 +62,48 @@
 
 // OS libs
 //
+#include <sys/eventfd.h>
 #include <sys/ioctl.h>
+#include <sys/syscall.h>
+
+
+// a mutex to manage data common to all connections
+//
+snap::snap_thread::snap_mutex  g_connections_mutex;
+
+// the DESCRIBE CLUSTER is very slow, this is a cached version which
+// is reset once in a while when certain orders happen (i.e. create
+// remove a context, table, or alter a context, table, column.)
+//
+QByteArray  g_cluster_description;
 
 
 void signalfd_deleted(int s)
 {
     close(s);
 }
+
+int64_t timeofday()
+{
+    struct timeval tv;
+
+    // we ignore timezone as it can also generate an error
+    if(gettimeofday( &tv, NULL ) != 0)
+    {
+        throw std::runtime_error("gettimeofday() failed.");
+    }
+
+    return static_cast<int64_t>( tv.tv_sec ) * 1000000 +
+           static_cast<int64_t>( tv.tv_usec );
+}
+
+
+pid_t gettid()
+{
+    return syscall(SYS_gettid);
+}
+
+
 
 
 
@@ -78,6 +113,7 @@ snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::p
     //, f_cursors() -- auto-init
     , f_socket(s)
 {
+    // mark socket as non-blocking
     int optval(1);
     ioctl(f_socket, FIONBIO, &optval);
 
@@ -91,16 +127,11 @@ snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::p
     // just given
     //
 
-    sigset_t set;
-    sigemptyset(&set);
-    sigaddset(&set, SIGUSR1);
-    pthread_sigmask(SIGUSR1, &set, nullptr);
-    f_signal = signalfd(-1, &set, SFD_NONBLOCK | SFD_CLOEXEC);
+    f_signal = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
     if(f_signal == -1)
     {
-        int const e(errno);
-        SNAP_LOG_ERROR("signalfd() failed to create a signal listener for signal ")(f_signal)(" (errno: ")(e)(" -- ")(strerror(e))(")");
-        throw snap::snap_communicator_runtime_error("signalfd() failed to create a signal listener.");
+        close(s);
+        throw snap::snap_communicator_runtime_error("eventfd() failed to create an event.");
     }
 
     // initializes the poll() environment
@@ -125,7 +156,6 @@ snapdbproxy_connection::~snapdbproxy_connection()
 
 void snapdbproxy_connection::run()
 {
-SNAP_LOG_WARNING("got inside the connection::run() function!");
     try
     {
         do
@@ -140,7 +170,8 @@ SNAP_LOG_WARNING("got inside the connection::run() function!");
             {
                 // order can be executed now
                 //
-SNAP_LOG_WARNING("got an order: ")(static_cast<int>(order.get_type_of_result()))(", CQL \"")(order.cql())("\" (")(order.columnCount())(" columns).");
+//SNAP_LOG_WARNING("got an order: ")(static_cast<int>(order.get_type_of_result()))(", CQL \"")(order.cql())("\" (")(order.columnCount())(" columns).");
+//std::cerr << "[" << getpid() << ":" << gettid() << "] got new order \"" << order.cql() << "\" in snapdbproxy at " << timeofday() << "\n";
                 switch(order.get_type_of_result())
                 {
                 case QtCassandra::QCassandraOrder::TYPE_OF_RESULT_CLOSE:
@@ -176,7 +207,7 @@ SNAP_LOG_WARNING("got an order: ")(static_cast<int>(order.get_type_of_result()))
                 // or some transmission error (although really, with
                 // TCP/IP transmission errors rarely happen.)
                 //
-SNAP_LOG_WARNING("socket is gone or order was invalid... ")(f_socket);
+//SNAP_LOG_WARNING("socket is gone or order was invalid... ")(f_socket);
                 f_socket = -1;
             }
         }
@@ -241,28 +272,10 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
     //       after too long a pause?
     //
     f_poll_fds[0].events = POLLIN | POLLPRI | POLLRDHUP;
+    f_poll_fds[0].revents = POLLIN; // always immediately attempt one read on entry
     ssize_t size(-1);
     for(;;)
     {
-        int const r(poll(f_poll_fds, sizeof(f_poll_fds) / sizeof(f_poll_fds[0]), -1));
-
-        if(r < 0)
-        {
-            // poll() returned an error (r < 0)
-            //
-            return size;
-        }
-        if(f_poll_fds[1].revents != 0)
-        {
-            // we received the SIGUSR1 signal
-            //
-            // Note: we should be reading from f_signal, but since we
-            //       are leaving, the descriptor will get closed shortly
-            //
-            errno = ECANCELED;
-            return size;
-        }
-
         if(f_poll_fds[0].revents != 0)
         {
             // did the client hang up?
@@ -300,6 +313,24 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
                 }
                 buf = reinterpret_cast<char *>(buf) + sz;
             }
+        }
+	    int const r(poll(f_poll_fds, sizeof(f_poll_fds) / sizeof(f_poll_fds[0]), -1));
+
+        if(r < 0)
+        {
+            // poll() returned an error (r < 0)
+            //
+            return size;
+        }
+        if(f_poll_fds[1].revents != 0)
+        {
+            // we received the SIGUSR1 signal
+            //
+            // Note: we should be reading from f_signal, but since we
+            //       are leaving, the descriptor will get closed shortly
+            //
+            errno = ECANCELED;
+            return size;
         }
     }
 }
@@ -409,6 +440,16 @@ ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
 }
 
 
+void snapdbproxy_connection::kill()
+{
+    // what we send does not matter, it is ignored; it needs to be a number
+    // other than zero and INT64_MAX
+    //
+    uint64_t one(1);
+    ::write(f_signal, &one, 8);
+}
+
+
 void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery * q, QtCassandra::QCassandraOrder const & order)
 {
     size_t const count(order.parameterCount());
@@ -491,13 +532,23 @@ void snapdbproxy_connection::describe_cluster(QtCassandra::QCassandraOrder const
 {
     snap::NOTUSED(order);
 
-    // load the meta data
-    QtCassandra::QCassandraSchema::SessionMeta::pointer_t session_meta( QtCassandra::QCassandraSchema::SessionMeta::create(f_session) );
-    session_meta->loadSchema();
-
-    // convert the meta data to a blob and send it over the wire
     QtCassandra::QCassandraOrderResult result;
-    result.addResult( session_meta->encodeSessionMeta() );
+
+    {
+        snap::snap_thread::snap_lock lock(g_connections_mutex);
+
+        if(g_cluster_description.isEmpty())
+        {
+            // load the meta data
+            QtCassandra::QCassandraSchema::SessionMeta::pointer_t session_meta( QtCassandra::QCassandraSchema::SessionMeta::create(f_session) );
+            session_meta->loadSchema();
+            g_cluster_description = session_meta->encodeSessionMeta();
+        }
+
+        // convert the meta data to a blob and send it over the wire
+        result.addResult( g_cluster_description );
+    }
+
     result.setSucceeded(true);
 
     if(!f_proxy.sendResult(*this, result))

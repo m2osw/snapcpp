@@ -120,6 +120,8 @@ public:
     virtual ssize_t             read(void * buf, size_t count);
     virtual ssize_t             write(void const * buf, size_t count);
 
+    void                        kill();
+
 private:
     struct cursor_t
     {

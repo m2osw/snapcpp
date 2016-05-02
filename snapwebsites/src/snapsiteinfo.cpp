@@ -243,7 +243,7 @@ private:
 snapdb::snapdb(int argc, char * argv[])
     : f_cassandra( QCassandra::create() )
     , f_host("localhost")           // default
-    , f_port(9042)                  // default
+    , f_port(4042)                  // default
     , f_count(100)                  // default
     , f_context("snap_websites")    // default
     , f_table("sites")              // forced to "sites" by default

@@ -46,17 +46,13 @@
 // our lib
 //
 #include "log.h"
-//#include "snap_table_list.h"
-//#include "sql_backup_restore.h"
 #include "qstring_stream.h"
 #include "dbutils.h"
 
 // 3rd party libs
 //
 #include <QtCore>
-//#include <QtSql>
 #include <QtCassandra/QCassandra.h>
-//#include <controlled_vars/controlled_vars_need_init.h>
 #include <advgetopt/advgetopt.h>
 
 // system (C++)

@@ -753,11 +753,11 @@ void snap_backend::run_backend()
     }
     catch( snap_exception const & e )
     {
-        SNAP_LOG_FATAL("snap_backend::run_backend(): snap exception caught: ")(e.what());
+        SNAP_LOG_FATAL("snap_backend::run_backend(): snap_exception caught: ")(e.what());
     }
     catch( std::exception const & e )
     {
-        SNAP_LOG_FATAL("snap_backend::run_backend(): standard exception caught: ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("snap_backend::run_backend(): std::exception caught: ")(e.what());
     }
     catch( ... )
     {

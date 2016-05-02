@@ -80,7 +80,7 @@ snapdbproxy_thread::snapdbproxy_thread(QtCassandra::QCassandraSession::pointer_t
  */
 snapdbproxy_thread::~snapdbproxy_thread()
 {
-    f_thread.kill(SIGUSR1);
+    f_connection.kill();
     f_thread.stop();
     close(f_socket);
 }
