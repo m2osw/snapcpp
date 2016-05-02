@@ -215,6 +215,7 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
                 , table_name
                 , filter
                 );
+        f_tableModel.doQuery();
     }
     catch( const std::exception& except )
     {

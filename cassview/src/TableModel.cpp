@@ -45,10 +45,10 @@ namespace
 
 
 TableModel::TableModel()
-    : f_queryTimer(this)
-    , f_stopTimer(false)
+    //: f_queryTimer(this)
+    //, f_stopTimer(false)
 {
-    connect( &f_queryTimer, SIGNAL(timeout()), this, SLOT(onQueryTimer()) );
+    //connect( &f_queryTimer, SIGNAL(timeout()), this, SLOT(onQueryTimer()) );
 }
 
 
@@ -66,6 +66,10 @@ void TableModel::setSession
     f_tableName    = table_name;
     f_filter       = filter;
     f_pageRowCount = page_row_count;
+}
+
+void TableModel::doQuery()
+{
     f_rows.clear();
 
     f_query = std::make_shared<QCassandraQuery>(f_session);
@@ -81,7 +85,7 @@ void TableModel::setSession
 
     reset();
 
-    f_queryTimer.start(g_timer_res);
+    //f_queryTimer.start(g_timer_res);
 }
 
 
@@ -110,13 +114,36 @@ void TableModel::onFetchQueryFinished()
         f_pendingRows.push( f_query->getByteArrayColumn(0) );
     }
 
-    if( !f_query->nextPage( false /*block*/ ) )
-    {
-        f_stopTimer = true;
-    }
+    f_query->nextPage( false /*block*/ );
 }
 
+bool TableModel::canFetchMore ( const QModelIndex & parent ) const
+{
+    QMutexLocker locker( &f_mutex );
+    return !f_pendingRows.empty();
+}
 
+void TableModel::fetchMore ( const QModelIndex & parent )
+{
+    QMutexLocker locker( &f_mutex );
+
+    const int start_size = f_rows.size();
+
+    while( !f_pendingRows.empty() )
+    {
+        f_rows.push_back( f_pendingRows.top() );
+        f_pendingRows.pop();
+    }
+
+    beginInsertRows
+            ( QModelIndex()
+              , start_size
+              , f_rows.size() + start_size
+              );
+    endInsertRows();
+}
+
+#if 0
 void TableModel::onQueryTimer()
 {
     QMutexLocker locker( &f_mutex );
@@ -126,14 +153,16 @@ void TableModel::onQueryTimer()
     if( !f_pendingRows.empty() )
     {
         const size_t size( f_rows.size()-1 );
+#if 0
         beginInsertRows
                 ( QModelIndex()
                   , size
                   , size//+f_pendingRows.size()
                   );
-        f_rows.push_back( f_pendingRows.top() );
+#endif
+        f_rows[f_rows.size()] = f_pendingRows.top();
         f_pendingRows.pop();
-        endInsertRows();
+        //endInsertRows();
     }
 
     if( f_stopTimer && f_pendingRows.empty() )
@@ -145,6 +174,7 @@ void TableModel::onQueryTimer()
         f_queryTimer.start(g_timer_res);
     }
 }
+#endif
 
 
 Qt::ItemFlags TableModel::flags( QModelIndex const & idx ) const

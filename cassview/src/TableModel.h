@@ -46,6 +46,7 @@ public:
         , const QRegExp& filter = QRegExp()
         , const int32_t page_row_count = 1000
         );
+    void doQuery();
     void clear();
 
     const QString& keyspaceName() const { return f_keyspaceName; }
@@ -60,7 +61,7 @@ public:
 
 private slots:
     void onFetchQueryFinished();
-    void onQueryTimer();
+    //void onQueryTimer();
 
 private:
     QtCassandra::QCassandraSession::pointer_t f_session;
@@ -73,8 +74,8 @@ private:
     std::vector<QByteArray>                   f_rows;
     std::stack<QByteArray>					  f_pendingRows;
     QMutex									  f_mutex;
-    QTimer									  f_queryTimer;
-    bool                                      f_stopTimer;
+    //QTimer									  f_queryTimer;
+    //bool                                      f_stopTimer;
 };
 
 
