@@ -791,6 +791,11 @@ inline QByteArray binaryValue(const QByteArray& array, const int index = 0, int 
 class QCassandraEncoder
 {
 public:
+    QCassandraEncoder(int reserve_size)
+    {
+        f_array.reserve(reserve_size);
+    }
+
     void appendSignedCharValue(signed char value)
     {
         QtCassandra::appendSignedCharValue(f_array, value);
@@ -858,7 +863,17 @@ public:
         QtCassandra::appendBinaryValue(f_array, value);
     }
 
-    const QByteArray& result()
+    void replaceUInt32Value(uint32_t value, int index)
+    {
+        QtCassandra::replaceUInt32Value(f_array, value, index);
+    }
+
+    size_t size() const
+    {
+        return f_array.size();
+    }
+
+    const QByteArray& result() const
     {
         return f_array;
     }

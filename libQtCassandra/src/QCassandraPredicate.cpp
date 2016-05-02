@@ -142,7 +142,7 @@ void QCassandraCellRangePredicate::bindOrder( QCassandraOrder& order )
 /// \brief Row key predicate query handlers
 void QCassandraRowKeyPredicate::appendQuery( QString& query, int& bind_count )
 {
-    query += " WHERE key = ?";
+    query += " WHERE key=?";
     ++bind_count;
     f_cellPred->appendQuery( query, bind_count );
 }

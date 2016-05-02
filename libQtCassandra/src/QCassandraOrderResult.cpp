@@ -141,17 +141,45 @@ void QCassandraOrderResult::addResult(QByteArray const & data)
  */
 QByteArray QCassandraOrderResult::encodeResult() const
 {
-    QCassandraEncoder encoder;
-
-    // success or failure is encoded in the 4 letter we first send
-    // when replying to the client so we do not need to encode that
-    // flag in the blob
-    //
-
     if(f_result.size() > 65535)
     {
         throw std::runtime_error("result has too make values, limit is 64Kb - 1 value (a maximum of about 20,000 rows in one go)");
     }
+
+    // the expected size of the final buffer, to avoid realloc() calls,
+    // possibly many such calls, we use the final size in a reserve()
+    // before adding the data
+    //
+    uint32_t expected_size(4 + 4 + 2);
+    for(auto r : f_result)
+    {
+        expected_size += 4 + r.size();
+    }
+    QCassandraEncoder encoder(expected_size);
+
+    // success or failure is encoded in the 4 letter we first send
+    // when replying to the client
+    //
+    if(f_succeeded)
+    {
+        encoder.appendSignedCharValue('S');
+        encoder.appendSignedCharValue('U');
+        encoder.appendSignedCharValue('C');
+        encoder.appendSignedCharValue('S');
+    }
+    else
+    {
+        encoder.appendSignedCharValue('E');
+        encoder.appendSignedCharValue('R');
+        encoder.appendSignedCharValue('O');
+        encoder.appendSignedCharValue('R');
+    }
+
+    // we already have the size, contrary to the order, this size does
+    // not vary depending on certain flags, so we can directly save the
+    // correct value at once
+    //
+    encoder.appendUInt32Value(expected_size - 8);
 
     // save the number of result buffers
     //
@@ -162,6 +190,13 @@ QByteArray QCassandraOrderResult::encodeResult() const
     {
         encoder.appendBinaryValue(r);
     }
+
+#ifdef _DEBUG
+    if(encoder.size() != expected_size)
+    {
+        throw std::logic_error( "QCassandraOrderResult::encodeResult(): the expected and encoded sizes do not match..." );
+    }
+#endif
 
     return encoder.result();
 }

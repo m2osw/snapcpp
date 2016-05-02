@@ -462,10 +462,10 @@ QString QCassandraTable::getTableOptions() const
  */
 void QCassandraTable::create()
 {
-    QString query_string( QString( "CREATE TABLE IF NOT EXISTS %1.%2\n"
-        "(key BLOB,column1 BLOB,value BLOB,PRIMARY KEY (key, column1))\n"
-        "WITH COMPACT STORAGE\n"
-        "AND CLUSTERING ORDER BY (column1 ASC)\n" )
+    QString query_string( QString( "CREATE TABLE IF NOT EXISTS %1.%2"
+        "(key BLOB,column1 BLOB,value BLOB,PRIMARY KEY(key, column1))"
+        "WITH COMPACT STORAGE"
+        " AND CLUSTERING ORDER BY(column1 ASC)" )
                 .arg(f_context->contextName())
                 .arg(f_tableName)
             );
@@ -1263,7 +1263,7 @@ void QCassandraTable::insertValue( const QByteArray& row_key, const QByteArray& 
         return;
     }
 
-    const QString query_string(QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
+    const QString query_string(QString("INSERT INTO %1.%2(key,column1,value)VALUES(?,?,?)")
         .arg(f_context->contextName())
         .arg(f_tableName)
         );

@@ -258,7 +258,45 @@ void QCassandraOrder::addParameter(QByteArray const & data)
  */
 QByteArray QCassandraOrder::encodeOrder() const
 {
-    QCassandraEncoder encoder;
+    // Size of an order:
+    //    4     tag (CQLP)
+    //    4     size
+    //    2     flags
+    //    1     consistency level
+    //    2     CQL length
+    //  ...     length of CQL string
+    //    8     timestamp
+    //    4     timeout
+    //    1     column count
+    //    4     paging size
+    //    2     cursor index
+    //    2     number of parameters
+    //    {
+    //    4     parameter size
+    //  ...     length of parameter
+    //    }*
+    //
+    // Byte providing the expected size we get a single malloc()
+    // instead of 1 malloc + X realloc()
+    //
+    uint32_t expected_size(4 + 4 + 2 + 1 + 2 + f_cql.length() + 8 + 4 + 1 + 4 + 2 + 2);
+    for(auto param : f_parameter)
+    {
+        expected_size += 4 + param.size();
+    }
+    QCassandraEncoder encoder(expected_size);
+
+    // Sending plain CQL (P for plain). We may later support CQLZ to send
+    // a compressed QByteArray. (i.e. right now all snapdbproxies are
+    // expected to be local so compression is not that useful, especially
+    // for orders that are generally small except when uploading a file.)
+    //
+    encoder.appendSignedCharValue('C');
+    encoder.appendSignedCharValue('Q');
+    encoder.appendSignedCharValue('L');
+    encoder.appendSignedCharValue('P');
+
+    encoder.appendUInt32Value(expected_size - 8);
 
     // TBD: should we err if the f_valid flag is false?
 
@@ -337,6 +375,10 @@ QByteArray QCassandraOrder::encodeOrder() const
     {
         encoder.appendBinaryValue(param);
     }
+
+    // adjust the size to match the buffer size exactly
+    //
+    encoder.replaceUInt32Value(encoder.size() - 8, 4);
 
     return encoder.result();
 }

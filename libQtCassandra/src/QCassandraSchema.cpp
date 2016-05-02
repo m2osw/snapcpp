@@ -224,7 +224,10 @@ const SessionMeta::KeyspaceMeta::map_t& SessionMeta::getKeyspaces()
  */
 QByteArray SessionMeta::encodeSessionMeta() const
 {
-    QCassandraEncoder encoder;
+    // at this time ours is nearly 120Kb... so reserve one block
+    // 200Kb from the get go
+    //
+    QCassandraEncoder encoder(200 * 1024);
 
     // save the number of keyspaces
     //

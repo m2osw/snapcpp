@@ -38,6 +38,7 @@
 // ourselves
 //
 #include "QtCassandra/QCassandraProxy.h"
+#include "QtCassandra/QCassandra.h"
 
 // 3rd party lib
 //
@@ -170,34 +171,9 @@ QCassandraOrderResult QCassandraProxy::sendOrder(QCassandraOrder const & order)
 
     QByteArray const encoded(order.encodeOrder());
 
-    // send a command (always exactly 4 bytes)
+    // send the encoded buffer in one write
     //
-    // Sending plain CQL (P for plain). We may later support CQLZ to send
-    // a compressed QByteArray. (i.e. right now all snapdbproxies are
-    // expected to be local so compression is not that useful.)
-    //
-    if(bio_write("CQLP", 4) != 4)
-    {
-        return result;
-    }
-
-    // send the byte size of the order in big endian
-    // (we suspect that it will never be over 4Gb)
-    //
-    uint32_t size(encoded.size());
-    unsigned char buf[5];
-    buf[0] = (size >> 24) & 255;
-    buf[1] = (size >> 16) & 255;
-    buf[2] = (size >>  8) & 255;
-    buf[3] = (size >>  0) & 255;
-    if(bio_write(buf, 4) != 4)
-    {
-        return result;
-    }
-
-    // now send the encoded buffer
-    //
-    if(static_cast<uint32_t>(bio_write(encoded.data(), size)) != size)
+    if(static_cast<int>(bio_write(encoded.data(), encoded.size())) != encoded.size())
     {
         return result;
     }
@@ -210,23 +186,19 @@ QCassandraOrderResult QCassandraProxy::sendOrder(QCassandraOrder const & order)
         // what we are receiving, a size, and the result buffer
         // of data encoded as per the QCassandraOrderResult scheme
         //
-        if(bio_read(buf, 4) != 4) // 4 letters
+        unsigned char buf[8];
+        if(bio_read(buf, 8) != 8) // 4 letters + 4 bytes for size
         {
             return result;
         }
 
-        buf[4] = '\0';
-        std::string command(reinterpret_cast<char const *>(buf));
+        std::string command(reinterpret_cast<char const *>(buf), 4);
 
-        if(bio_read(buf, 4) != 4) // uint32_t size
-        {
-            return result;
-        }
         uint32_t const reply_size(
-                      (buf[0] << 24)
-                    | (buf[1] << 16)
-                    | (buf[2] <<  8)
-                    | (buf[3] <<  0));
+                      (buf[4] << 24)
+                    | (buf[5] << 16)
+                    | (buf[6] <<  8)
+                    | (buf[7] <<  0));
 
         fast_buffer reply(reply_size);
         if(reply_size > 0)
@@ -289,31 +261,23 @@ QCassandraOrder QCassandraProxy::receiveOrder(QCassandraProxyIO & io)
 
     // each order starts with a 4 letter command
     //
-    char buf[5];
-    if(io.read(buf, 4) != 4)
-    {
-        return order;
-    }
-
-    buf[4] = '\0';
-    std::string const command(buf);
-    if(command != "CQLP")
-    {
-        return order;
-    }
-
-    // read the size which is 4 bytes in big endian
-    //
-    if(io.read(buf, 4) != 4)
+    unsigned char buf[8];
+    if(io.read(buf, 8) != 8)
     {
         return order;
     }
 
     uint32_t const order_size(
-                  (buf[0] << 24)
-                | (buf[1] << 16)
-                | (buf[2] <<  8)
-                | (buf[3] <<  0));
+                  (buf[4] << 24)
+                | (buf[5] << 16)
+                | (buf[6] <<  8)
+                | (buf[7] <<  0));
+
+    std::string const command(reinterpret_cast<char const *>(buf), 4);
+    if(command != "CQLP")
+    {
+        return order;
+    }
 
     // now we want to read the order itself, so we need a buffer
     //
@@ -360,34 +324,9 @@ bool QCassandraProxy::sendResult(QCassandraProxyIO & io, QCassandraOrderResult c
 
     QByteArray const encoded(result.encodeResult());
 
-    // send a command (always exactly 4 bytes)
+    // now send the encoded buffer all at once
     //
-    // Sending plain CQL (P for plain). We may later support CQLZ to send
-    // a compressed QByteArray. (i.e. right now all snapdbproxies are
-    // expected to be local so compression is not that useful.)
-    //
-    if(io.write(result.succeeded() ? "SUCS" : "EROR", 4) != 4)
-    {
-        return false;
-    }
-
-    // send the byte size of the order in big endian
-    // (we suspect that it will never be over 4Gb)
-    //
-    uint32_t size(encoded.size());
-    unsigned char buf[5];
-    buf[0] = (size >> 24) & 255;
-    buf[1] = (size >> 16) & 255;
-    buf[2] = (size >>  8) & 255;
-    buf[3] = (size >>  0) & 255;
-    if(io.write(buf, 4) != 4)
-    {
-        return false;
-    }
-
-    // now send the encoded buffer
-    //
-    if(io.write(encoded.data(), size) != size)
+    if(io.write(encoded.data(), encoded.size()) != encoded.size())
     {
         return false;
     }
@@ -423,6 +362,12 @@ void QCassandraProxy::bio_get()
             throw std::runtime_error("QCassandraProxy::bio_get(): failed initializing a BIO object");
         }
 
+        // it is supposed to be non-blocking by default, but just in case,
+        // mark that one as such; although even that does not prevent the
+        // BIO_read() and BIO_write() functions from returning early!
+        //
+        BIO_set_nbio(bio.get(), 0);
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
         BIO_set_conn_hostname(bio.get(), const_cast<char *>(f_host.toUtf8().data()));
@@ -451,60 +396,98 @@ void QCassandraProxy::bio_reset()
 
 int QCassandraProxy::bio_read(void * buf, size_t size)
 {
+    if(size == 0)
+    {
+        return 0;
+    }
+
     if(!f_bio)
     {
         bio_get();
     }
 
-    int const r(static_cast<int>(BIO_read(f_bio.get(), buf, size)));
-    if(r <= -2)
+    // even though we open the BIO as blocking, somehow, we can get
+    // the BIO_read() to return too soon... so here we loop until
+    // all of the expected data got transferred
+    //
+    int count(0);
+    int r(static_cast<int>(BIO_read(f_bio.get(), buf, size)));
+    while(r >= -1)
     {
-        // the BIO is not implemented
-        // XXX: do we have to set errno?
-        ERR_print_errors_fp(stderr);
-        return -1;
-    }
-    if(r == -1 || r == 0)
-    {
-        if(BIO_should_retry(f_bio.get()))
+        if(r <= 0)
         {
-            return 0;
+            if(!BIO_should_retry(f_bio.get()))
+            {
+                break;
+            }
         }
-        // the BIO generated an error (TBD should we check BIO_eof() too?)
-        // XXX: do we have to set errno?
-        ERR_print_errors_fp(stderr);
-        return -1;
+        else
+        {
+            count += r;
+            size -= r;
+            if(size == 0)
+            {
+                return count;
+            }
+            buf = reinterpret_cast<char *>(buf) + r;
+        }
+        r = static_cast<int>(BIO_read(f_bio.get(), buf, size));
     }
-    return r;
+
+    // the BIO generated an error (TBD should we check BIO_eof() too?)
+    // or the BIO is not implemented
+    // XXX: do we have to set errno?
+    ERR_print_errors_fp(stderr);
+    return -1;
 }
 
 
 int QCassandraProxy::bio_write(void const * buf, size_t size)
 {
+    if(size == 0)
+    {
+        return 0;
+    }
+
     if(!f_bio)
     {
         bio_get();
     }
 
-    int const r(static_cast<int>(BIO_write(f_bio.get(), buf, size)));
-    if(r <= -2)
+    // even though we open the BIO as blocking, somehow, we can get
+    // the BIO_read() to return too soon... so here we loop until
+    // all of the expected data got transferred
+    //
+    int count(0);
+    int r(static_cast<int>(BIO_write(f_bio.get(), buf, size)));
+    while(r >= -1)
     {
-        // the BIO is not implemented
-        // XXX: do we have to set errno?
-        return -1;
-    }
-    if(r == -1 || r == 0)
-    {
-        if(BIO_should_retry(f_bio.get()))
+        if(r == -1 || r == 0)
         {
-            return 0;
+            if(!BIO_should_retry(f_bio.get()))
+            {
+                break;
+            }
         }
-        // the BIO generated an error (TBD should we check BIO_eof() too?)
-        // XXX: do we have to set errno?
-        return -1;
+        else
+        {
+            count += r;
+            size -= r;
+            if(size == 0)
+            {
+                BIO_flush(f_bio.get());
+                return count;
+            }
+            buf = reinterpret_cast<char const *>(buf) + r;
+            r = static_cast<int>(BIO_write(f_bio.get(), buf, size));
+        }
     }
-    BIO_flush(f_bio.get());
-    return r;
+
+    // the BIO generated an error (TBD should we check BIO_eof() too?)
+    // or the BIO is not implemented
+    // XXX: do we have to set errno?
+    ERR_print_errors_fp(stderr);
+    return -1;
 }
 
 

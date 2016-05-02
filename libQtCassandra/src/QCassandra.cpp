@@ -1145,6 +1145,7 @@ const QCassandraContexts& QCassandra::contexts() const
     {
         // note: the "DESCRIBE CLUSTER" is ignored
         //
+//int64_t n(timeofday());
         QCassandraOrder describe_cluster;
         describe_cluster.setCql( "DESCRIBE CLUSTER", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_DESCRIBE );
         QCassandraOrderResult const describe_cluster_result(f_proxy->sendOrder(describe_cluster));
@@ -1175,7 +1176,7 @@ const QCassandraContexts& QCassandra::contexts() const
         {
             const_cast<QCassandra *>(this)->context(keyspace.second);
         }
-
+//std::cerr << "[" << getpid() << "] DESCRIBE CLUSTER: completed in " << (timeofday() - n) << " us.\n";
     }
 
     return f_contexts;

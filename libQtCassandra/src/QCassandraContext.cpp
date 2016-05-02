@@ -1003,7 +1003,7 @@ void QCassandraContext::create()
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    QString q_str( QString("CREATE KEYSPACE IF NOT EXISTS %1\n").arg(contextName()) );
+    QString q_str( QString("CREATE KEYSPACE IF NOT EXISTS %1").arg(contextName()) );
     q_str += getKeyspaceOptions();
 
     QCassandraOrder create_keyspace;
@@ -1033,7 +1033,7 @@ void QCassandraContext::update()
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    QString q_str( QString("ALTER KEYSPACE %1\n").arg(contextName()) );
+    QString q_str( QString("ALTER KEYSPACE %1").arg(contextName()) );
     q_str += getKeyspaceOptions();
 
     QCassandraOrder alter_keyspace;
