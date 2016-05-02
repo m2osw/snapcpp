@@ -7,7 +7,7 @@ Build-Depends: debhelper, cmake, zip, libqt4-dev (>= 4.8.3), libprocps3-dev | li
     libadvgetopt-dev (>= 1.0.15.43~trusty), libtld-dev (>= 1.4.21.92~trusty),
     libqtserialization-dev (>= 0.1.16.43~trusty),
     libqtcassandra-dev (>= 0.5.20.43~trusty),
-    libsnapwebsites-dev (>= 0.1.72.99~trusty), liblog4cplus-dev (>= 1.2.0)
+    libsnapwebsites-dev (>= 0.1.72.100~trusty), liblog4cplus-dev (>= 1.2.0)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
