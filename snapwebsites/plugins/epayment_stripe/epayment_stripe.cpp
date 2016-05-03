@@ -28,8 +28,6 @@
 #include "qdomhelpers.h"
 #include "tcp_client_server.h"
 
-#include <QtCassandra/QCassandraLock.h>
-
 #include <as2js/json.h>
 
 #include <iostream>
@@ -1419,7 +1417,7 @@ int8_t epayment_stripe::get_maximum_repeat_failures()
 //    // be done while locked; it should rarely be a problem unless you have
 //    // a really heavy load; although it will have all the data in memory
 //    // in that case!
-//    QtCassandra::QCassandraLock lock(f_snap->get_context(), settings_ipath.get_key());
+//    snap_lock lock(f_snap->get_context(), settings_ipath.get_key());
 //
 //    // If there is a saved OAuth2 which is not out of date, use that
 //    QtCassandra::QCassandraValue secret_debug_value(secret_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_STRIPE_DEBUG))->value());
@@ -1633,7 +1631,7 @@ int8_t epayment_stripe::get_maximum_repeat_failures()
 //    // This entire job may be used by any user of the system so it has to
 //    // be done while locked; it should not add much downtime to the end
 //    // user since users subscribe just once for a while in general
-//    QtCassandra::QCassandraLock lock(f_snap->get_context(), product_ipath.get_key());
+//    snap_lock lock(f_snap->get_context(), product_ipath.get_key());
 //
 //    plan_id = secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_STRIPE_PLAN_ID))->value().stringValue();
 //    if(!plan_id.isEmpty())

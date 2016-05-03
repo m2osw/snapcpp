@@ -26,8 +26,7 @@
 
 #include "dbutils.h"
 #include "log.h"
-
-#include <QtCassandra/QCassandraLock.h>
+#include "snap_lock.h"
 
 #include "poison.h"
 
@@ -266,7 +265,7 @@ snap_version::version_number_t content::get_new_branch(QString const & key, QStr
     // increase revision if one exists, otherwise we keep the user default (1)
     snap_version::version_number_t branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
 
-    QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
+    snap_lock lock(key);
 
     QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
     if(!branch_value.nullValue())
@@ -554,7 +553,7 @@ snap_version::version_number_t content::get_new_revision(
     // increase revision if one exists, otherwise we keep the default (0)
     snap_version::version_number_t revision(snap_version::SPECIAL_VERSION_FIRST_REVISION);
 
-    QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
+    snap_lock lock(key);
 
 #ifdef DEBUG
     {

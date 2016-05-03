@@ -27,9 +27,9 @@
 #include "snap_image.h"
 #include "snap_utf8.h"
 #include "snapwebsites.h"
+#include "snap_lock.h"
 #include "snap_magic.h"
 
-#include <QtCassandra/QCassandraLock.h>
 #include <QtSerialization/QSerialization.h>
 #include <libtld/tld.h>
 
@@ -6975,7 +6975,7 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
         //
         // if is_debug() returns false, it should be useless unless the
         // process takes over 10 minutes
-        QtCassandra::QCassandraLock lock(f_context, QString("%1#snap-child-updating").arg(get_site_key_with_slash()));
+        snap_lock lock(QString("%1#snap-child-updating").arg(get_site_key_with_slash()), 60 * 60); // lock for up to 1h
 
         // save that last time we checked for an update
         last_updated.setInt64Value(f_start_date);

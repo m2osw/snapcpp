@@ -66,8 +66,7 @@
 #include "not_reached.h"
 #include "not_used.h"
 #include "log.h"
-
-#include <QtCassandra/QCassandraLock.h>
+#include "snap_lock.h"
 
 #include "poison.h"
 
@@ -591,7 +590,7 @@ void shorturl::on_create_content(content::path_info_t & ipath, QString const& ow
 
     {
         // the lock only needs to be unique on a per website basis
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), QString("%1/shorturl").arg(f_snap->get_website_key()));
+        snap_lock lock(QString("%1/shorturl").arg(f_snap->get_website_key()));
 
         // In order to register a unique URI contents we want a
         // unique identifier for each URI, for that purpose we use

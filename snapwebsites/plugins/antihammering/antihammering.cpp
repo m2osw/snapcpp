@@ -31,14 +31,9 @@
 
 #include "antihammering.h"
 
-//#include "../output/output.h"
-//#include "../messages/messages.h"
-
 #include "not_reached.h"
 #include "not_used.h"
 #include "log.h"
-
-#include <QtCassandra/QCassandraLock.h>
 
 #include "poison.h"
 

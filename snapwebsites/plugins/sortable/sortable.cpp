@@ -25,8 +25,6 @@
 #include "not_reached.h"
 #include "not_used.h"
 
-#include <QtCassandra/QCassandraLock.h>
-
 #include <algorithm>
 #include <iostream>
 

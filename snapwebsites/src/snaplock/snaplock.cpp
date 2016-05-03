@@ -314,6 +314,14 @@ snaplock::~snaplock()
 }
 
 
+/** \brief Print out usage and exit with 1.
+ *
+ * This function prints out the usage of the snaplock daemon and
+ * then it exits.
+ *
+ * \param[in] status  The reason why the usage is bring printed: error
+ *                    and no_error are currently supported.
+ */
 void snaplock::usage(advgetopt::getopt::status_t status)
 {
     f_opt.usage( status, "snaplock" );
@@ -321,6 +329,12 @@ void snaplock::usage(advgetopt::getopt::status_t status)
 }
 
 
+/** \brief Run the snaplock daemon.
+ *
+ * This function is the core function of the daemon. It runs the loop
+ * used to lock processes from any number of computers that have access
+ * to the snaplock daemon network.
+ */
 void snaplock::run()
 {
     // Stop on these signals, log them, then terminate.
@@ -834,8 +848,8 @@ void snaplock::get_parameters(snap::snap_communicator_message const & message, Q
  * This function locks the specified resource \p object_name. It returns
  * when the resource is locked or when the lock timeout is reached.
  *
- * See the QCassandraLock constructor for more details about the locking
- * mechanisms.
+ * See the snaplock_ticket class for more details about the locking
+ * mechanisms (algorithm and MSC implementation).
  *
  * Note that if lock() is called with an empty string then the function
  * unlocks the lock and returns immediately with false. This is equivalent

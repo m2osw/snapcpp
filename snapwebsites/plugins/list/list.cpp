@@ -28,9 +28,9 @@
 #include "qdomhelpers.h"
 #include "snap_backend.h"
 #include "snap_expr.h"
+#include "snap_lock.h"
 
 #include <csspp/csspp.h>
-#include <QtCassandra/QCassandraLock.h>
 
 #include <iostream>
 
@@ -1538,7 +1538,7 @@ void list::on_modified_content(content::path_info_t & ipath)
     {
         // we need to have this run by a single process at a time
         // otherwise we'll miss some dropCell() calls
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), QString("%1#list-reference").arg(ipath.get_key()));
+        snap_lock lock(QString("%1#list-reference").arg(ipath.get_key()));
 
         // handle a reference so it is possible to delete the old key for that
         // very page later (i.e. if the page changes multiple times before the

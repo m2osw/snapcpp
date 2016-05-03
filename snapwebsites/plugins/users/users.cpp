@@ -82,10 +82,10 @@
 #include "not_used.h"
 #include "qdomhelpers.h"
 #include "qstring_stream.h"
+#include "snap_lock.h"
 
 #include <iostream>
 
-#include <QtCassandra/QCassandraLock.h>
 #include <QFile>
 
 #include <openssl/evp.h>
@@ -3006,7 +3006,7 @@ users::status_t users::register_user(QString const & email, QString const & pass
     // we got as much as we could ready before locking
     {
         // first make sure this email is unique
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), user_key);
+        snap_lock lock(user_key);
 
         // TODO: we have to look at all the possible email addresses
         QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
