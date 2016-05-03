@@ -446,7 +446,7 @@ void snapdbproxy_connection::kill()
     // other than zero and INT64_MAX
     //
     uint64_t one(1);
-    ::write(f_signal, &one, 8);
+    snap::NOTUSED(::write(f_signal, &one, 8));
 }
 
 
