@@ -25,8 +25,7 @@
 #include "not_reached.h"
 #include "not_used.h"
 #include "qdomhelpers.h"
-
-#include <QtCassandra/QCassandraLock.h>
+#include "snap_lock.h"
 
 #include "poison.h"
 
@@ -315,7 +314,7 @@ bool bookkeeping::create_new_client(content::path_info_t & ipath)
     {
         // lock this page while we increase the counter
         //
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), add_client_ipath.get_key());
+        snap_lock lock(add_client_ipath.get_key());
 
         counter = add_client_row->cell(QString(get_name(name_t::SNAP_NAME_BOOKKEEPING_COUNTER)))->value().safeInt64Value(0, 0) + 1;
         add_client_row->cell(QString(get_name(name_t::SNAP_NAME_BOOKKEEPING_COUNTER)))->setValue(counter);

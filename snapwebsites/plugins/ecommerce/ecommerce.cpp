@@ -28,8 +28,7 @@
 #include "not_reached.h"
 #include "not_used.h"
 #include "qdomxpath.h"
-
-#include <QtCassandra/QCassandraLock.h>
+#include "snap_lock.h"
 
 #include <iostream>
 
@@ -1373,7 +1372,7 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(invoices_ipath.get_key()));
     {
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), invoices_ipath.get_key());
+        snap_lock lock(invoices_ipath.get_key());
 
         // retrieve the current invoice number and increment by one
         QtCassandra::QCassandraValue invoice_number_value(content_row->cell(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->value());

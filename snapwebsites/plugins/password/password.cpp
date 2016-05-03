@@ -25,8 +25,7 @@
 #include "not_reached.h"
 #include "not_used.h"
 #include "fuzzy_string_compare.h"
-
-#include <QtCassandra/QCassandraLock.h>
+#include "snap_lock.h"
 
 #include <algorithm>
 #include <iostream>
@@ -1258,7 +1257,7 @@ void password::on_invalid_password(QtCassandra::QCassandraRow::pointer_t row, QS
 
     // increase failure counter
     {
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), row->rowKey());
+        snap_lock lock(row->rowKey());
 
         QtCassandra::QCassandraValue count_failures(row->cell(get_name(name_t::SNAP_NAME_PASSWORD_COUNT_FAILURES))->value());
         count = count_failures.safeInt64Value(0, 0) + 1LL;

@@ -22,6 +22,7 @@
 #include "signal.h"
 #include "snap_backend.h"
 #include "snap_cassandra.h"
+#include "snap_lock.h"
 #include "tcp_client_server.h"
 
 #include <sstream>
@@ -2035,6 +2036,15 @@ void server::listen()
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);
     tcp_client_server::get_addr_port(get_parameter("snapcommunicator_listen"), communicator_addr, communicator_port, "tcp");
+
+    // TBD: Would we need a lock sooner? if so, we are in trouble...
+    //      Initialize the snap communicator information in snap_lock
+    //      so locks work as expected.
+    //
+    // We keep the default timeout but various processes may change that to
+    // a different value as required.
+    //
+    snap::snap_lock::initialize_snapcommunicator(communicator_addr.toUtf8().data(), communicator_port);
 
     // create a communicator
     //

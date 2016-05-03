@@ -20,8 +20,7 @@
 #include "snapwebsites.h"
 #include "log.h"
 #include "not_used.h"
-
-#include <QtCassandra/QCassandraLock.h>
+#include "snap_lock.h"
 
 #include <wait.h>
 #include <fcntl.h>
@@ -489,7 +488,7 @@ public:
 private:
     snap_backend *                              f_snap_backend;
     QtCassandra::QCassandraContext::pointer_t   f_context;
-    QtCassandra::QCassandraLock                 f_lock;
+    snap_lock::pointer_t                        f_lock;
 };
 
 
@@ -516,7 +515,7 @@ child_connection::pointer_t g_child_connection;
 child_connection::child_connection(snap_backend * sb, QtCassandra::QCassandraContext::pointer_t context)
     : f_snap_backend(sb)
     , f_context(context)
-    , f_lock(f_context)
+    //, f_lock(nullptr)
 {
     set_name("child Unix connection");
 }
@@ -534,39 +533,11 @@ child_connection::child_connection(snap_backend * sb, QtCassandra::QCassandraCon
  */
 bool child_connection::lock(QString const & uri)
 {
-    class safe_timeout
-    {
-    public:
-        safe_timeout(QtCassandra::QCassandraContext::pointer_t context)
-            : f_context(context)
-            , f_old_timeout(context->lockTimeout())
-            , f_old_ttl(context->lockTtl())
-        {
-            // as short as possible
-            f_context->setLockTimeout(1);
-            f_context->setLockTtl(4 * 60 * 60); // 4 hours! (the snapbackend can really be very long!)
-        }
-
-        ~safe_timeout()
-        {
-            f_context->setLockTimeout(f_old_timeout);
-            f_context->setLockTtl(f_old_ttl);
-        }
-
-    private:
-        QtCassandra::QCassandraContext::pointer_t   f_context;
-        int                                         f_old_timeout;
-        int                                         f_old_ttl;
-    };
-    safe_timeout st(f_context);
-
-    // we use a special name for the backend to avoid clashes with
-    // standard plugin locks; also the URI includes the name of
-    // the action locking the database (i.e. different actions
-    // can work in parallel; but one specific action can only
-    // run once against one website)
+    // the new lock mechanism either succeeds and returns or it
+    // throws...
     //
-    return f_lock.lock(QString("*backend* %1").arg(uri));
+    f_lock.reset(new snap_lock(QString("*backend* %1").arg(uri), 4 * 60 * 60));
+    return true;
 }
 
 
@@ -1217,7 +1188,10 @@ void snap_backend::stop(bool quitting)
 {
     f_stop_received = true;
 
-    g_messager->mark_done();
+    if(g_messager)
+    {
+        g_messager->mark_done();
+    }
 
     // stop the timers immediately, although that will not prevent
     // one more call to their callbacks which thus still have to
@@ -1323,7 +1297,7 @@ void snap_backend::process_child_message(snap::snap_communicator_message const &
             snap::snap_communicator_message reply;
             reply.set_command("COMMANDS");
             reply.add_parameter("list", "HELP,STOP,UNKNOWN");
-            // we are the in the child so g_child_connection exists
+            // we are in the child so g_child_connection exists
             g_child_connection->send_message(reply);
             return;
         }
@@ -1333,7 +1307,7 @@ void snap_backend::process_child_message(snap::snap_communicator_message const &
             // when we send an unknown command we get pinged back with
             // the UNKNOWN message
             // 
-            SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+            SNAP_LOG_ERROR("we sent an unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
             return;
         }
 

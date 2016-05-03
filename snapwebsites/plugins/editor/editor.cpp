@@ -34,9 +34,9 @@
 #include "qdomxpath.h"
 #include "qxmlmessagehandler.h"
 #include "snap_image.h"
+#include "snap_lock.h"
 #include "xslt.h"
 
-#include <QtCassandra/QCassandraLock.h>
 #include <libtld/tld.h>
 
 #include <iostream>
@@ -747,7 +747,7 @@ void editor::process_new_draft()
     {
         // make sure this draft key is unique
         // lock the parent briefly
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), QByteArray(drafts_path));
+        snap_lock lock(QByteArray(drafts_path));
         for(int extra(1); content_table->exists(new_draft_key); ++extra)
         {
             // TBD: Could it really ever happen that a website would have over

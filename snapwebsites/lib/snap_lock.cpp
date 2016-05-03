@@ -54,7 +54,8 @@ namespace
 /** \brief The default time to live of a lock.
  *
  * By default the inter-process locks are kept for only five seconds.
- * You may change the default using the snaplock::initialize() function.
+ * You may change the default using the snaplock::initialize_timeout()
+ * function.
  *
  * You can specify how long a lock should be kept around by setting its
  * duration at the time you create it (see the snap_lock constructor.)
@@ -457,6 +458,23 @@ snap_lock::snap_lock(QString const & object_name, int timeout)
 void snap_lock::initialize_timeout(int timeout)
 {
     g_timeout = timeout;
+}
+
+
+/** \brief Retrieve the current timeout.
+ *
+ * This function returns the current lock timeout. It can be useful if
+ * you want to use a lock with a different timeout and then restore
+ * the previous value afterward.
+ *
+ * Although if you have access/control of the lock itself, you may instead
+ * want to specify the timeout in the lock directly.
+ *
+ * \return Current timeout TTL in seconds.
+ */
+int snap_lock::current_timeout()
+{
+    return g_timeout;
 }
 
 

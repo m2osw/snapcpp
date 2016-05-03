@@ -45,11 +45,14 @@ class lock_connection;
 class snap_lock
 {
 public:
+    typedef std::shared_ptr<snap_lock>      pointer_t;
+
     static int const    SNAP_LOCK_DEFAULT_TIMEOUT = 5; // in seconds
 
                         snap_lock(QString const & object_name, int timeout = -1);
 
     static void         initialize_timeout(int timeout);
+    static int          current_timeout();
     static void         initialize_snapcommunicator(
                               std::string const & addr
                             , int port

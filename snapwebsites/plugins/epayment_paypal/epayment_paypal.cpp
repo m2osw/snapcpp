@@ -25,9 +25,8 @@
 #include "not_reached.h"
 #include "not_used.h"
 #include "qdomhelpers.h"
+#include "snap_lock.h"
 #include "tcp_client_server.h"
-
-#include <QtCassandra/QCassandraLock.h>
 
 #include <as2js/json.h>
 
@@ -1410,7 +1409,7 @@ bool epayment_paypal::get_oauth2_token(http_client_server::http_client & http, s
     // be done while locked; it should rarely be a problem unless you have
     // a really heavy load; although it will have all the data in memory
     // in that case!
-    QtCassandra::QCassandraLock lock(f_snap->get_context(), settings_ipath.get_key());
+    snap_lock lock(settings_ipath.get_key());
 
     // If there is a saved OAuth2 which is not out of date, use that
     QtCassandra::QCassandraValue secret_debug_value(secret_row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_DEBUG))->value());
@@ -1624,7 +1623,7 @@ QString epayment_paypal::get_product_plan(http_client_server::http_client & http
     // This entire job may be used by any user of the system so it has to
     // be done while locked; it should not add much downtime to the end
     // user since users subscribe just once for a while in general
-    QtCassandra::QCassandraLock lock(f_snap->get_context(), product_ipath.get_key());
+    snap_lock lock(product_ipath.get_key());
 
     plan_id = secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_PLAN_ID))->value().stringValue();
     if(!plan_id.isEmpty())

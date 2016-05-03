@@ -63,10 +63,11 @@
  *
  * The algorithm requires:
  *
- * \li A unique name on each computer (server_name)
- * \li A unique number for the process attempting the lock (see gettid())
+ * \li A unique name for each computer (server_name)
+ * \li A unique number for the process attempting the lock
+ *     (see gettid(2) manual)
  * \li A user supplied object name (the name of the lock)
- * \li A ticket number (use the largest ticket number + 1)
+ * \li A ticket number (use the largest existing ticket number + 1)
  *
  * We also include a timeout on any one lock so we can forfeit the
  * lock from happening if it cannot be obtained in a minimal amount
