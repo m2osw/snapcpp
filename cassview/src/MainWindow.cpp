@@ -42,7 +42,8 @@ MainWindow::MainWindow(QWidget *p)
     f_tables->setCurrentIndex( 0 );
 
     f_mainSplitter->setStretchFactor( 0, 0 );
-    f_mainSplitter->setStretchFactor( 1, 1 );
+    f_mainSplitter->setStretchFactor( 1, 0 );
+    f_mainSplitter->setStretchFactor( 2, 1 );
 
     f_cellsView->setContextMenuPolicy( Qt::CustomContextMenu );
     f_cellsView->setWordWrap( true ); // this is true by default anyway, and it does not help when we have a column with a super long string...
@@ -126,6 +127,9 @@ void MainWindow::fillTableList()
     f_tableModel.clear();
     f_rowModel.clear();
 
+    auto doc( f_valueEdit->document() );
+    doc->clear();
+
     f_contextModel.setCassandra( f_session, f_context );
 
     const int idx = f_contextCombo->findText( f_context );
@@ -188,6 +192,9 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 
     f_tableModel.clear();
     f_rowModel.clear();
+
+    auto doc( f_valueEdit->document() );
+    doc->clear();
 
     if( table_name.isEmpty() )
     {
@@ -274,6 +281,9 @@ void MainWindow::changeRow(const QModelIndex &index)
 {
     saveValue();
 
+    auto doc( f_valueEdit->document() );
+    doc->clear();
+
     const QByteArray row_key( f_tableModel.data(index).toByteArray() );
 
     f_rowModel.init
@@ -293,18 +303,19 @@ void MainWindow::changeCell(const QModelIndex &index)
 {
     saveValue();
 
-    const QByteArray row_key( f_tableModel.data(index).toByteArray() );
+    const QString q_str(
+                QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
+                .arg(f_rowModel.keyspaceName())
+                .arg(f_rowModel.tableName())
+                );
+    QCassandraQuery query( f_session );
+    query.query( q_str, 2 );
+    query.bindByteArray( 0, f_rowModel.rowKey() );
+    query.bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
+    query.start();
 
-    f_rowModel.init
-        ( f_session
-        , f_tableModel.keyspaceName()
-        , f_tableModel.tableName()
-        );
-    f_rowModel.setRowKey( row_key );
-    f_rowModel.doQuery();
-
-    action_InsertColumn->setEnabled( true );
-    action_DeleteColumns->setEnabled( true );
+    auto doc( f_valueEdit->document() );
+    doc->setPlainText( query.getByteArrayColumn(0).data() );
 }
 
 
@@ -323,7 +334,7 @@ void MainWindow::saveValue()
                     .arg(f_rowModel.tableName())
                 );
             QCassandraQuery query( f_session );
-            query.query( q_str );
+            query.query( q_str, 3 );
             query.bindByteArray( 0, doc->toPlainText().toUtf8() );
             query.bindByteArray( 1, f_rowModel.rowKey() );
             query.bindByteArray( 2, f_rowModel.data( selected_rows[0], Qt::UserRole ).toByteArray() );
