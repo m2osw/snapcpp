@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
                         // got the lock!
                         //
 
-                        int32_t v;
+                        int32_t v = 0;
 
                         // read current value
                         {
