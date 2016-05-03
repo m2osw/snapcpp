@@ -42,7 +42,7 @@ void TableModel::doQuery()
 {
     auto query = std::make_shared<QCassandraQuery>(f_session);
     query->query(
-        QString("SELECT key FROM %1.%2")
+        QString("SELECT DISTINCT key FROM %1.%2")
             .arg(f_keyspaceName)
             .arg(f_tableName)
             );

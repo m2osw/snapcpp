@@ -34,6 +34,7 @@ public:
     QVariant            data( const QModelIndex & index, int role = Qt::DisplayRole ) const;
     Qt::ItemFlags		flags( const QModelIndex & idx ) const;
 
+#if 0
     // Write access
     //
     bool                setData( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole );
@@ -41,16 +42,12 @@ public:
     // Resizable methods
     //
     bool                insertRows( int row, int count, const QModelIndex & parent = QModelIndex() );
+#endif
     bool                removeRows( int row, int count, const QModelIndex & parent = QModelIndex() );
 
     void 				doQuery();
 
-signals:
-    void                exceptionCaught( const QString & what, const QString & message ) const;
-
 private:
-    void                displayError( const std::exception & except, const QString & message ) const;
-
     QByteArray          f_rowKey;
 };
 

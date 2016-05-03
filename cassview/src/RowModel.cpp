@@ -19,6 +19,7 @@
 #include "RowModel.h"
 
 #include <snapwebsites/dbutils.h>
+#include <snapwebsites/not_used.h>
 #include <snapwebsites/qstring_stream.h>
 
 #include <QtCore>
@@ -42,7 +43,7 @@ void RowModel::doQuery()
             .arg(f_tableName)
         , 1
         );
-    query->setPagingSize( 100 );
+    query->setPagingSize( 10 );
     query->bindByteArray( 0, f_rowKey );
 
     QueryModel::doQuery( query );
@@ -51,18 +52,17 @@ void RowModel::doQuery()
 
 Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
 {
+#if 0
+    // Editing is disabled for now.
     Qt::ItemFlags f = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     if( idx.column() == 0 )
     {
         f |= Qt::ItemIsEditable;
     }
     return f;
-}
-
-
-void RowModel::displayError( std::exception const& except, QString const& message ) const
-{
-    emit exceptionCaught( except.what(), message );
+#endif
+    snap::NOTUSED(idx);
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
 
@@ -98,6 +98,7 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
 }
 
 
+#if 0
 bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int role )
 {
     if( role != Qt::EditRole )
@@ -107,6 +108,19 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
     try
     {
+        const QString q_str(
+                    QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
+                    .arg(f_rowModel.keyspaceName())
+                    .arg(f_rowModel.tableName())
+                    );
+        QCassandraQuery query( f_session );
+        query.query( q_str, 2 );
+        query.bindByteArray( 0, f_rowModel.rowKey() );
+        query.bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
+        query.start();
+        QByteArray value( query.getByteArrayColumn(0) );
+        query.end():
+
         QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
         QByteArray save_value;
 
@@ -124,13 +138,14 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
         QCassandraQuery q( f_session );
         q.query(
-                    QString("UPDATE %1.%2 SET column1 = ? WHERE key = ?")
+                    //QString("UPDATE %1.%2 SET key = ?, column1 = ? WHERE key = ?")
+                    QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
                         .arg(f_keyspaceName)
                         .arg(f_tableName)
-                    , 2
+                    , 3
                     );
-        q.bindByteArray( 0, save_value );
-        q.bindByteArray( 1, f_rowKey   );
+        q.bindByteArray( 0, f_rowKey   );
+        q.bindByteArray( 1, save_value );
         q.start();
         q.end();
 
@@ -141,6 +156,7 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
     catch( const std::exception& except )
     {
         displayError( except, tr("Cannot write data to database.") );
+        return false;
     }
 
     return false;
@@ -149,31 +165,40 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
 bool RowModel::insertRows ( int row, int count, const QModelIndex & parent_index )
 {
-    beginInsertRows( parent_index, row, row+count );
-    for( int i = 0; i < count; ++i )
+    try
     {
-        const QByteArray newcol( QString("New column %1").arg(i).toUtf8() );
-        f_rows.push_back(newcol);
+        beginInsertRows( parent_index, row, row+count );
+        for( int i = 0; i < count; ++i )
+        {
+            const QByteArray newcol( QString("New column %1").arg(i).toUtf8() );
+            f_rows.insert( f_rows.begin() + (row+i), newcol);
 
-        // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
-        //
-        QCassandraQuery q( f_session );
-        q.query(
-                    QString("INSERT INTO %1.%2 VALUES (key,column1) = (?,?)")
-                    .arg(f_keyspaceName)
-                    .arg(f_tableName)
-                    , 2
-                    );
-        q.bindByteArray( 0, f_rowKey );
-        q.bindByteArray( 1, newcol   );
-        q.start();
-        q.end();
+            // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
+            //
+            QCassandraQuery q( f_session );
+            q.query(
+                        QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
+                        .arg(f_keyspaceName)
+                        .arg(f_tableName)
+                        , 3
+                        );
+            q.bindByteArray( 0, f_rowKey    );
+            q.bindByteArray( 1, newcol      );
+            q.bindByteArray( 2, "New Value" );
+            q.start();
+            q.end();
+        }
+        endInsertRows();
     }
-    endInsertRows();
+    catch( const std::exception& except )
+    {
+        displayError( except, tr("Cannot insert new rows!") );
+        return false;
+    }
 
     return true;
 }
-
+#endif
 
 bool RowModel::removeRows( int row, int count, const QModelIndex & )
 {
@@ -186,30 +211,38 @@ bool RowModel::removeRows( int row, int count, const QModelIndex & )
         key_list << key;
     }
 
-    // Drop each key
-    //
-    for( auto key : key_list )
+    try
     {
-        // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
+        // Drop each key
         //
-        QCassandraQuery q( f_session );
-        q.query(
-                    QString("DELETE FROM %1.%2 WHERE key = ? AND column1 = ?")
-                    .arg(f_keyspaceName)
-                    .arg(f_tableName)
-                    , 2
-                    );
-        q.bindByteArray( 0, f_rowKey );
-        q.bindByteArray( 1, key 	 );
-        q.start();
-        q.end();
-    }
+        for( auto key : key_list )
+        {
+            // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
+            //
+            QCassandraQuery q( f_session );
+            q.query(
+                        QString("DELETE FROM %1.%2 WHERE key = ? AND column1 = ?")
+                        .arg(f_keyspaceName)
+                        .arg(f_tableName)
+                        , 2
+                        );
+            q.bindByteArray( 0, f_rowKey );
+            q.bindByteArray( 1, key 	 );
+            q.start();
+            q.end();
+        }
 
-    // Remove the columns from the model
-    //
-    beginRemoveRows( QModelIndex(), row, row+count );
-    f_rows.erase( f_rows.begin()+row, f_rows.begin()+row+count );
-    endRemoveRows();
+        // Remove the columns from the model
+        //
+        beginRemoveRows( QModelIndex(), row, row+count );
+        f_rows.erase( f_rows.begin()+row, f_rows.begin()+row+count );
+        endRemoveRows();
+    }
+    catch( const std::exception& except )
+    {
+        displayError( except, tr("Cannot write data to database.") );
+        return false;
+    }
 
     return true;
 }

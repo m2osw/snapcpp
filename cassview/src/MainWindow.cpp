@@ -5,6 +5,8 @@
 #include "InputDialog.h"
 #include "SettingsDialog.h"
 
+#include <snapwebsites/not_used.h>
+
 #include <QMessageBox>
 
 #include <iostream>
@@ -31,6 +33,15 @@ MainWindow::MainWindow(QWidget *p)
     f_tables->setModel( &f_contextModel );
     f_rowsView->setModel( &f_tableModel );
     f_cellsView->setModel( &f_rowModel );
+
+#if 0
+    // TODO: this doesn't work for some reason, and qt4 is very unhelpfull since the signals are connected
+    // at runtime. When I port to qt5, I'll get this working right.
+    //
+    connect( &f_rowModel, SIGNAL(exceptionCaught(const QString & what, const QString & message) const),
+             this, SLOT(onExceptionCaught(const QString & what, const QString & message) const)
+             );
+#endif
 
     f_cassandraModel.setCassandra( f_session );
     int const idx = f_contextCombo->findText( f_context );
@@ -76,6 +87,12 @@ namespace
     void displayError( const std::exception& except, const QString& caption, const QString& message )
     {
         DisplayException de( except.what(), caption, message );
+        de.displayError();
+    }
+
+    void displayError( const QString& what, const QString& caption, const QString& message )
+    {
+        DisplayException de( what.toUtf8().data(), caption, message );
         de.displayError();
     }
 }
@@ -253,6 +270,15 @@ void MainWindow::on_f_refreshView_clicked()
 }
 
 
+void MainWindow::onExceptionCaught( const QString & what, const QString & message ) const
+{
+    displayError( what
+                  , tr("Exception Caught!")
+                  , message
+                  );
+}
+
+
 void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
 {
     saveValue();
@@ -303,47 +329,67 @@ void MainWindow::changeCell(const QModelIndex &index)
 {
     saveValue();
 
-    const QString q_str(
-                QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
-                .arg(f_rowModel.keyspaceName())
-                .arg(f_rowModel.tableName())
-                );
-    QCassandraQuery query( f_session );
-    query.query( q_str, 2 );
-    query.bindByteArray( 0, f_rowModel.rowKey() );
-    query.bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
-    query.start();
+    try
+    {
+        const QString q_str(
+                    QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
+                    .arg(f_rowModel.keyspaceName())
+                    .arg(f_rowModel.tableName())
+                    );
+        QCassandraQuery query( f_session );
+        query.query( q_str, 2 );
+        query.bindByteArray( 0, f_rowModel.rowKey() );
+        query.bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
+        query.start();
 
-    auto doc( f_valueEdit->document() );
-    doc->setPlainText( query.getByteArrayColumn(0).data() );
+        auto doc( f_valueEdit->document() );
+        doc->setPlainText( query.getByteArrayColumn(0).data() );
+    }
+    catch( const std::exception& except )
+    {
+        displayError( except
+                    , tr("Database Error")
+                    , tr("Cannot read value data from server!")
+                    );
+    }
 }
 
 
 void MainWindow::saveValue()
 {
-    auto doc( f_valueEdit->document() );
-    if( doc->isModified() )
+    try
     {
-        auto selected_rows( f_cellsView->selectionModel()->selectedRows() );
-        if( selected_rows.size() == 1 )
+        auto doc( f_valueEdit->document() );
+        if( doc->isModified() )
         {
-            const QByteArray key( f_rowModel.data( *(selected_rows.begin()) ).toByteArray() );
-            const QString q_str(
-                QString("UPDATE %1.%2 SET value = ? WHERE key = ? AND column1 = ?")
-                    .arg(f_rowModel.keyspaceName())
-                    .arg(f_rowModel.tableName())
-                );
-            QCassandraQuery query( f_session );
-            query.query( q_str, 3 );
-            query.bindByteArray( 0, doc->toPlainText().toUtf8() );
-            query.bindByteArray( 1, f_rowModel.rowKey() );
-            query.bindByteArray( 2, f_rowModel.data( selected_rows[0], Qt::UserRole ).toByteArray() );
-            query.start();
-            query.end();
+            auto selected_rows( f_cellsView->selectionModel()->selectedRows() );
+            if( selected_rows.size() == 1 )
+            {
+                const QByteArray key( f_rowModel.data( *(selected_rows.begin()) ).toByteArray() );
+                const QString q_str(
+                            QString("UPDATE %1.%2 SET value = ? WHERE key = ? AND column1 = ?")
+                            .arg(f_rowModel.keyspaceName())
+                            .arg(f_rowModel.tableName())
+                            );
+                QCassandraQuery query( f_session );
+                query.query( q_str, 3 );
+                query.bindByteArray( 0, doc->toPlainText().toUtf8() );
+                query.bindByteArray( 1, f_rowModel.rowKey() );
+                query.bindByteArray( 2, f_rowModel.data( selected_rows[0], Qt::UserRole ).toByteArray() );
+                query.start();
+                query.end();
 
-            // TODO: handle error... This probably should be run asynchronously;
-            // i.e. query.start( false /*block*/ );
+                // TODO: handle error... This probably should be run asynchronously;
+                // i.e. query.start( false /*block*/ );
+            }
         }
+    }
+    catch( const std::exception& except )
+    {
+        displayError( except
+                    , tr("Database Error")
+                    , tr("Cannot write value data to server!")
+                    );
     }
 }
 
@@ -352,7 +398,10 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
 {
     try
     {
-        changeRow( current );
+        if( current.isValid() )
+        {
+            changeRow( current );
+        }
     }
     catch( const std::exception& except )
     {
@@ -368,7 +417,10 @@ void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QMode
 {
     try
     {
-        changeCell( current );
+        if( current.isValid() )
+        {
+            changeCell( current );
+        }
     }
     catch( const std::exception& except )
     {
@@ -400,7 +452,8 @@ void MainWindow::onSectionClicked( int /*section*/ )
 
 void MainWindow::on_action_InsertColumn_triggered()
 {
-    f_rowModel.insertRows( 0, 0 );
+    QMessageBox::critical( this, tr("Notice"), tr("Column insertion has been disabled for now.") );
+    //f_rowModel.insertRows( 0, 1 );
 }
 
 

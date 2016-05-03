@@ -36,6 +36,7 @@ private slots:
     void on_f_connectionBtn_clicked();
     void on_f_applyFilter_clicked();
     void on_f_refreshView_clicked();
+    void onExceptionCaught( const QString & what, const QString & message ) const;
 
 private:
     typedef QtCassandra::QCassandraSession::pointer_t cassandra_t;
