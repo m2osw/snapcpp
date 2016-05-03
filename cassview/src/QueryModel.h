@@ -50,11 +50,11 @@ public:
 
     // Read only access
     //
-    virtual bool			canFetchMore ( const QModelIndex & parent ) const;
-    virtual void			fetchMore    ( const QModelIndex & parent );
+    virtual bool			canFetchMore ( const QModelIndex & prnt ) const;
+    virtual void			fetchMore    ( const QModelIndex & prnt );
     virtual Qt::ItemFlags   flags        ( QModelIndex const & index ) const;
     virtual QVariant        data         ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
-    virtual int             rowCount     ( QModelIndex const & parent = QModelIndex() ) const;
+    virtual int             rowCount     ( QModelIndex const & prnt = QModelIndex() ) const;
 
     virtual bool fetchFilter( const QByteArray& key );
 

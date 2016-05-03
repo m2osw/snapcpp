@@ -113,16 +113,16 @@ bool QueryModel::fetchFilter( const QByteArray& key )
 }
 
 
-bool QueryModel::canFetchMore ( const QModelIndex & parent ) const
+bool QueryModel::canFetchMore ( const QModelIndex & prnt ) const
 {
-    snap::NOTUSED(parent);
+    snap::NOTUSED(prnt);
     return f_isMore;
 }
 
 
-void QueryModel::fetchMore ( const QModelIndex & parent )
+void QueryModel::fetchMore ( const QModelIndex & prnt )
 {
-    snap::NOTUSED(parent);
+    snap::NOTUSED(prnt);
 
     try
     {
