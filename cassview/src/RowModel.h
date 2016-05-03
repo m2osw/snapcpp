@@ -18,81 +18,40 @@
 
 #pragma once
 
-#include <QtCassandra/QCassandraQuery.h>
-#include <QtCassandra/QCassandraSession.h>
-
-#include <QAbstractTableModel>
-#include <QModelIndex>
-#include <QMutex>
-#include <QRegExp>
-#include <QString>
-#include <QVariant>
-#include <QTimer>
-
-#include <memory>
-#include <stack>
-#include <vector>
+#include "QueryModel.h"
 
 class RowModel
-    : public QAbstractListModel
+    : public QueryModel
 {
     Q_OBJECT
 
 public:
     RowModel();
 
-    void setSession
-        ( QtCassandra::QCassandraSession::pointer_t session
-        , const QString& keyspace_name
-        , const QString& table_name
-        , const QByteArray& row_key
-        , const QRegExp& filter = QRegExp()
-        );
+    const QByteArray&	rowKey() const		               { return f_rowKey; }
+    void                setRowKey( const QByteArray& key ) { f_rowKey = key;  }
 
-    const QString&		keyspaceName() const { return f_keyspaceName; }
-    const QString&		tableName() const	 { return f_tableName; }
-    const QByteArray&	rowKey() const		 { return f_rowKey; }
-
-    void clear();
-
-    Qt::ItemFlags   flags         ( const QModelIndex & index ) const;
-    QVariant        data          ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
-    QVariant        headerData    ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
-    int             rowCount      ( const QModelIndex & parent = QModelIndex() ) const;
-    int             columnCount   ( const QModelIndex & parent = QModelIndex() ) const;
+    QVariant            data( const QModelIndex & index, int role = Qt::DisplayRole ) const;
+    Qt::ItemFlags		flags( const QModelIndex & idx ) const;
 
     // Write access
     //
-    bool            setData       ( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole );
-    bool            setHeaderData ( int section, Qt::Orientation orientation, const QVariant & value, int role = Qt::EditRole );
+    bool                setData( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole );
 
     // Resizable methods
     //
-    bool            insertRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
-    bool            removeRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
+    bool                insertRows( int row, int count, const QModelIndex & parent = QModelIndex() );
+    bool                removeRows( int row, int count, const QModelIndex & parent = QModelIndex() );
+
+    void 				doQuery();
 
 signals:
-    void            exceptionCaught( const QString & what, const QString & message ) const;
-
-private slots:
-    void			onFetchQueryFinished();
-    void			onQueryTimer();
+    void                exceptionCaught( const QString & what, const QString & message ) const;
 
 private:
-    void            displayError( const std::exception & except, const QString & message ) const;
+    void                displayError( const std::exception & except, const QString & message ) const;
 
-    QtCassandra::QCassandraSession::pointer_t f_session;
-    QtCassandra::QCassandraQuery::pointer_t   f_query;
-    //
-    QString                                   f_keyspaceName;
-    QString                                   f_tableName;
-    QByteArray                                f_rowKey;
-    QRegExp                                   f_filter;
-    std::vector<QByteArray>                   f_columns;
-    std::stack<QByteArray>                    f_pendingColumns;
-    QMutex                                    f_mutex;
-    QTimer                                    f_queryTimer;
-    bool                                      f_stopTimer;
+    QByteArray          f_rowKey;
 };
 
 

@@ -429,10 +429,12 @@ void QCassandraQuery::queryCallbackFunc( CassFuture* future, void *data )
     QCassandraQuery* this_query( reinterpret_cast<QCassandraQuery*>(data) );
     if( this_query->f_sessionFuture.get() != future )
     {
-        throw std::runtime_error( "Unexpected future!" );
+        //throw std::runtime_error( "Unexpected future!" );
+        // Do nothing with this future, because this belongs to a different query
+        return;
     }
 
-    this_query->queryFinished();
+    emit this_query->queryFinished();
 }
 
 

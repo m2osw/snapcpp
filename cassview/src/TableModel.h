@@ -16,66 +16,23 @@
 //
 #pragma once
 
-#include <controlled_vars/controlled_vars_need_init.h>
-
-#include <QtCassandra/QCassandraQuery.h>
-#include <QtCassandra/QCassandraSession.h>
-
-#include <QAbstractListModel>
 #include <QModelIndex>
-#include <QMutex>
-#include <QRegExp>
-#include <QTimer>
 
-#include <memory>
-#include <stack>
-#include <vector>
+#include "QueryModel.h"
 
 class TableModel
-    : public QAbstractListModel
+    : public QueryModel
 {
     Q_OBJECT
 
 public:
     TableModel();
 
-    void setSession
-        ( QtCassandra::QCassandraSession::pointer_t session
-        , const QString& keyspace_name
-        , const QString& table_name
-        , const QRegExp& filter = QRegExp()
-        , const int32_t page_row_count = 1000
-        );
     void doQuery();
-    void clear();
-
-    const QString& keyspaceName() const { return f_keyspaceName; }
-    const QString& tableName()    const { return f_tableName;    }
 
     // Read only access
     //
-    virtual Qt::ItemFlags   flags       ( QModelIndex const & index ) const;
-    virtual QVariant        data        ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
-    virtual QVariant        headerData  ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
-    virtual int             rowCount    ( QModelIndex const & parent = QModelIndex() ) const;
-
-private slots:
-    void onFetchQueryFinished();
-    //void onQueryTimer();
-
-private:
-    QtCassandra::QCassandraSession::pointer_t f_session;
-    QtCassandra::QCassandraQuery::pointer_t   f_query;
-
-    QString                                   f_keyspaceName;
-    QString                                   f_tableName;
-    QRegExp									  f_filter;
-    controlled_vars::zint32_t                 f_pageRowCount;
-    std::vector<QByteArray>                   f_rows;
-    std::stack<QByteArray>					  f_pendingRows;
-    QMutex									  f_mutex;
-    //QTimer									  f_queryTimer;
-    //bool                                      f_stopTimer;
+    virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const;
 };
 
 

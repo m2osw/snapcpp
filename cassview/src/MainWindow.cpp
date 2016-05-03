@@ -186,6 +186,7 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 {
     saveValue();
 
+    f_tableModel.clear();
     f_rowModel.clear();
 
     if( table_name.isEmpty() )
@@ -209,7 +210,7 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 
     try
     {
-        f_tableModel.setSession
+        f_tableModel.init
                 ( f_session
                 , f_context
                 , table_name
@@ -275,12 +276,13 @@ void MainWindow::changeRow(const QModelIndex &index)
 
     const QByteArray row_key( f_tableModel.data(index).toByteArray() );
 
-    f_rowModel.setSession
+    f_rowModel.init
         ( f_session
         , f_tableModel.keyspaceName()
         , f_tableModel.tableName()
-        , row_key
         );
+    f_rowModel.setRowKey( row_key );
+    f_rowModel.doQuery();
 
     action_InsertColumn->setEnabled( true );
     action_DeleteColumns->setEnabled( true );
@@ -293,12 +295,13 @@ void MainWindow::changeCell(const QModelIndex &index)
 
     const QByteArray row_key( f_tableModel.data(index).toByteArray() );
 
-    f_rowModel.setSession
+    f_rowModel.init
         ( f_session
         , f_tableModel.keyspaceName()
         , f_tableModel.tableName()
-        , row_key
         );
+    f_rowModel.setRowKey( row_key );
+    f_rowModel.doQuery();
 
     action_InsertColumn->setEnabled( true );
     action_DeleteColumns->setEnabled( true );
@@ -315,13 +318,15 @@ void MainWindow::saveValue()
         {
             const QByteArray key( f_rowModel.data( *(selected_rows.begin()) ).toByteArray() );
             const QString q_str(
-                QString("UPDATE %1.%2 SET value = ?")
+                QString("UPDATE %1.%2 SET value = ? WHERE key = ? AND column1 = ?")
                     .arg(f_rowModel.keyspaceName())
                     .arg(f_rowModel.tableName())
                 );
             QCassandraQuery query( f_session );
             query.query( q_str );
             query.bindByteArray( 0, doc->toPlainText().toUtf8() );
+            query.bindByteArray( 1, f_rowModel.rowKey() );
+            query.bindByteArray( 2, f_rowModel.data( selected_rows[0], Qt::UserRole ).toByteArray() );
             query.start();
             query.end();
 
