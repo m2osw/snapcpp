@@ -1343,7 +1343,7 @@ void sessions::clean_session_table(int64_t variables_timestamp)
                 else
                 {
                     // this is the last field, delete it
-                    (*o)->dropCell(used_up, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    (*o)->dropCell(used_up);
                 }
             }
         }
@@ -1970,7 +1970,7 @@ QString sessions::detach_from_session(session_info const & info, QString const &
     QtCassandra::QCassandraValue value(row->cell(name)->value());
 
     // used once, so delete
-    row->dropCell(name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+    row->dropCell(name);
 
     return value.stringValue();
 }

@@ -37,6 +37,7 @@
 #pragma once
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
+#include "QtCassandra/QCassandraOrder.h"
 #include "QtCassandra/QCassandraQuery.h"
 
 #include <controlled_vars/controlled_vars_auto_enum_init.h>
@@ -73,6 +74,7 @@ protected:
 
     virtual void appendQuery( QString& query, int& bind_count ) = 0;
     virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num ) = 0;
+    virtual void bindOrder( QCassandraOrder& order ) = 0;
 };
 
 
@@ -99,8 +101,9 @@ protected:
     friend class QCassandraRowKeyPredicate;
     friend class QCassandraRowRangePredicate;
 
-    virtual void appendQuery( QString& /*query*/, int& /*bind_count*/             ) {}
+    virtual void appendQuery( QString& /*query*/, int& /*bind_count*/               ) {}
     virtual void bindQuery( QCassandraQuery::pointer_t /*query*/, int& /*bind_num*/ ) {}
+    virtual void bindOrder( QCassandraOrder& /*order*/                              ) {}
 };
 
 
@@ -119,6 +122,7 @@ protected:
 
     virtual void appendQuery( QString& query, int& bind_count );
     virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
+    virtual void bindOrder( QCassandraOrder& order );
 };
 
 
@@ -153,6 +157,7 @@ protected:
 
     virtual void appendQuery( QString& query, int& bind_count );
     virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
+    virtual void bindOrder( QCassandraOrder& order );
 };
 
 
@@ -170,8 +175,9 @@ public:
     QCassandraCellPredicate::pointer_t  cellPredicate() const { return f_cellPred; }
     void                                setCellPredicate( QCassandraCellPredicate::pointer_t pred ) { f_cellPred = pred; }
 
-    virtual void appendQuery( QString& /*query*/, int& /*bind_count*/             ) {}
+    virtual void appendQuery( QString& /*query*/, int& /*bind_count*/               ) {}
     virtual void bindQuery( QCassandraQuery::pointer_t /*query*/, int& /*bind_num*/ ) {}
+    virtual void bindOrder( QCassandraOrder& /*order*/                              ) {}
 
 protected:
     QCassandraCellPredicate::pointer_t      f_cellPred;
@@ -191,6 +197,7 @@ public:
 
     virtual void appendQuery( QString& query, int& bind_count );
     virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
+    virtual void bindOrder( QCassandraOrder& order );
 
 protected:
     QByteArray  f_rowKey;
@@ -212,6 +219,7 @@ public:
 
     virtual void appendQuery( QString& query, int& bind_count );
     virtual void bindQuery( QCassandraQuery::pointer_t query, int& bind_num );
+    virtual void bindOrder( QCassandraOrder& order );
 
 protected:
     QByteArray  f_startRowKey;

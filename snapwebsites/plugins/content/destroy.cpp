@@ -306,7 +306,7 @@ bool content::destroy_revision_impl(QString const & revision_key)
                                     .arg(files_reference)
                                     .arg(key));
             QtCassandra::QCassandraRow::pointer_t files_row(files_table->row(attachment_md5.binaryValue()));
-            files_row->dropCell(reference_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            files_row->dropCell(reference_name);
 
             // remove the reference from the "branch" table
             QByteArray attachment_ref;
@@ -328,7 +328,7 @@ bool content::destroy_revision_impl(QString const & revision_key)
             if(cells.isEmpty())
             {
                 // no more references, get rid of the file itself
-                files_table->dropRow(attachment_md5.binaryValue(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                files_table->dropRow(attachment_md5.binaryValue());
             }
 
             // "calculate" the branch key from the revision key
@@ -347,7 +347,7 @@ bool content::destroy_revision_impl(QString const & revision_key)
                 pos_dot = revision_key.length();
             }
             QString const branch_key(QString("%1#%2").arg(key).arg(revision_key.mid(pos_slash, pos_dot - pos_slash)));
-            branch_table->row(branch_key)->dropCell(attachment_ref, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            branch_table->row(branch_key)->dropCell(attachment_ref);
         }
     }
 

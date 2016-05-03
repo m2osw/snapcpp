@@ -1003,15 +1003,18 @@ void QCassandraContext::create()
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    QString q_str( QString("CREATE KEYSPACE IF NOT EXISTS %1\n").arg(contextName()) );
+    QString q_str( QString("CREATE KEYSPACE IF NOT EXISTS %1").arg(contextName()) );
     q_str += getKeyspaceOptions();
 
-    QCassandraQuery q( f_cassandra->session() );
-    q.query( q_str );
-    q.start();
-    q.end();
+    QCassandraOrder create_keyspace;
+    create_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    QCassandraOrderResult const create_keyspace_result(f_cassandra->proxy()->sendOrder(create_keyspace));
+    if(!create_keyspace_result.succeeded())
+    {
+        throw std::runtime_error("keyspace creation failed");
+    }
 
-    for( auto t: f_tables )
+    for( auto t : f_tables )
     {
         t->create();
     }
@@ -1030,13 +1033,16 @@ void QCassandraContext::update()
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    QString q_str( QString("ALTER KEYSPACE %1\n").arg(contextName()) );
+    QString q_str( QString("ALTER KEYSPACE %1").arg(contextName()) );
     q_str += getKeyspaceOptions();
 
-    QCassandraQuery q( f_cassandra->session() );
-    q.query( q_str );
-    q.start();
-    q.end();
+    QCassandraOrder alter_keyspace;
+    alter_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    QCassandraOrderResult const alter_keyspace_result(f_cassandra->proxy()->sendOrder(alter_keyspace));
+    if(alter_keyspace_result.succeeded())
+    {
+        throw std::runtime_error("keyspace creation failed");
+    }
 }
 
 
@@ -1071,10 +1077,15 @@ void QCassandraContext::drop()
         throw std::runtime_error("this context was dropped and is not attached to a cassandra cluster anymore");
     }
 
-    QCassandraQuery q( f_cassandra->session() );
-    q.query( QString("DROP KEYSPACE IF EXISTS %1").arg(f_contextName) );
-    q.start();
-    q.end();
+    QString q_str(QString("DROP KEYSPACE IF EXISTS %1").arg(f_contextName));
+
+    QCassandraOrder alter_keyspace;
+    alter_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    QCassandraOrderResult const alter_keyspace_result(f_cassandra->proxy()->sendOrder(alter_keyspace));
+    if(alter_keyspace_result.succeeded())
+    {
+        throw std::runtime_error("drop keyspace failed");
+    }
 
     resetSchema();
     f_tables.clear();
@@ -1108,13 +1119,16 @@ void QCassandraContext::dropTable(const QString& table_name)
 
     // remove from the Cassandra database
     makeCurrent();
-    QCassandraQuery q( f_cassandra->session() );
-    q.query(  QString("DROP TABLE IF EXISTS %1.%2;")
-            .arg(f_contextName)
-            .arg(table_name)
-            );
-    q.start();
-    q.end();
+
+    QString q_str(QString("DROP TABLE IF EXISTS %1.%2").arg(f_contextName).arg(table_name));
+
+    QCassandraOrder alter_keyspace;
+    alter_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    QCassandraOrderResult const alter_keyspace_result(f_cassandra->proxy()->sendOrder(alter_keyspace));
+    if(alter_keyspace_result.succeeded())
+    {
+        throw std::runtime_error("drop table failed");
+    }
 
     // disconnect all the cached data from this table
     f_tables.remove(table_name);
@@ -1131,7 +1145,7 @@ void QCassandraContext::dropTable(const QString& table_name)
 void QCassandraContext::clearCache()
 {
     f_tables.clear();
-    f_cassandra->retrieveContext( f_contextName );
+    f_cassandra->retrieveContextMeta( shared_from_this(), f_contextName );
 }
 
 /** \brief The hosts are listed in the locks table under this name.
@@ -1188,7 +1202,7 @@ QCassandraTable::pointer_t QCassandraContext::lockTable()
 
     auto& fields_map( lock_table->fields() );
     fields_map["gc_grace_seconds"]            = QCassandraSchema::Value(3600);
-    fields_map["memtable_flush_period_in_ms"] = QCassandraSchema::Value(60);
+    fields_map["memtable_flush_period_in_ms"] = QCassandraSchema::Value(3600000); // 1 hour
     fields_map["compaction"]                  = compaction_value;
     fields_map["caching"]                     = caching_value;
 
@@ -1291,7 +1305,7 @@ void QCassandraContext::removeLockHost(const QString& host_name)
     QCassandraTable::pointer_t locks_table(table(f_lock_table_name));
     QCassandraRow::pointer_t row(locks_table->row(lockHostsKey()));
     QCassandraCell::pointer_t c(row->cell(host_name));
-    row->dropCell(host_name, QCassandraValue::TIMESTAMP_MODE_DEFINED, QCassandra::timeofday());
+    row->dropCell(host_name);
 }
 
 

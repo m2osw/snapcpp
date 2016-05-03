@@ -86,6 +86,174 @@ void Value::readValue( value_pointer_t val )
 }
 
 
+void Value::encodeValue(QCassandraEncoder& encoder) const
+{
+    encoder.appendUnsignedCharValue(static_cast<unsigned char>(f_type));
+
+    switch(f_type)
+    {
+    case TypeUnknown:
+        // no data for this one
+        break;
+
+    case TypeVariant:
+        // the type of a QVariant seems to be a byte however it is
+        // not documented as such so we save it as a uint32_t
+        encoder.appendUInt32Value(static_cast<uint32_t>(f_variant.type()));
+        switch(f_variant.type())
+        {
+        case QVariant::Bool:
+            encoder.appendSignedCharValue(f_variant.toBool() ? 1 : 0);
+            break;
+
+        case QVariant::ByteArray:
+            encoder.appendBinaryValue(f_variant.toByteArray());
+            break;
+
+        case QVariant::String:
+            encoder.appendP16StringValue(f_variant.toString());
+            break;
+
+        case QVariant::Double:
+            encoder.appendDoubleValue(f_variant.toDouble());
+            break;
+
+        case QVariant::Int:
+            encoder.appendInt32Value(f_variant.toInt());
+            break;
+
+        case QVariant::LongLong:
+            encoder.appendInt64Value(f_variant.toLongLong());
+            break;
+
+        case QVariant::ULongLong:
+            encoder.appendUInt64Value(f_variant.toULongLong());
+            break;
+
+        default:
+            // other types are not supported, no data for those
+            // (at this time we throw to make sure we capture
+            // invalid data; otherwise the whole thing breaks
+            // anyway...)
+            throw std::runtime_error("unsupported QVariant type");
+
+        }
+        break;
+
+    case TypeMap:
+        // a map is a array of named values, first we save the size,
+        // the the name / value pairs
+        encoder.appendUInt16Value(f_map.size());
+        for( auto m : f_map )
+        {
+            encoder.appendP16StringValue(m.first);
+            m.second.encodeValue(encoder);
+        }
+        break;
+
+    case TypeList:
+        // a list is an array of values, first save the size, then
+        // save each value
+        encoder.appendUInt16Value(f_list.size());
+        for(size_t idx(0); idx < f_list.size(); ++idx)
+        {
+            f_list[idx].encodeValue(encoder);
+        }
+        break;
+
+    }
+}
+
+
+void Value::decodeValue(const QCassandraDecoder& decoder)
+{
+    f_type = static_cast<type_t>(decoder.unsignedCharValue());
+
+    switch(f_type)
+    {
+    case TypeUnknown:
+        // no data for this one
+        break;
+
+    case TypeVariant:
+        // the type of a QVariant seems to be a byte however it is
+        // not documented as such so we save it as a uint32_t
+        {
+            QVariant::Type const variant_type(static_cast<QVariant::Type>(decoder.uint32Value()));
+            switch(variant_type)
+            {
+            case QVariant::Bool:
+                f_variant = static_cast<bool>(decoder.signedCharValue());
+                break;
+
+            case QVariant::ByteArray:
+                f_variant = decoder.binaryValue();
+                break;
+
+            case QVariant::String:
+                f_variant = decoder.p16StringValue();
+                break;
+
+            case QVariant::Double:
+                f_variant = decoder.doubleValue();
+                break;
+
+            case QVariant::Int:
+                f_variant = decoder.int32Value();
+                break;
+
+            case QVariant::LongLong:
+                f_variant = static_cast<qlonglong>(decoder.int64Value());
+                break;
+
+            case QVariant::ULongLong:
+                f_variant = static_cast<qulonglong>(decoder.uint64Value());
+                break;
+
+            default:
+                // other types are not supported, no data for those
+                // (at this time we throw to make sure we capture
+                // invalid data; otherwise the whole thing breaks
+                // anyway...)
+                throw std::runtime_error("unsupported QVariant type");
+
+            }
+        }
+        break;
+
+    case TypeMap:
+        // a map is a array of named values, first we save the size,
+        // the the name / value pairs
+        {
+            int const max_items(decoder.uint16Value());
+            for(int idx(0); idx < max_items; ++idx)
+            {
+                QString const name(decoder.p16StringValue());
+                Value value;
+                value.decodeValue(decoder);
+                f_map[name] = value;
+            }
+        }
+        break;
+
+    case TypeList:
+        // a list is an array of values, first save the size, then
+        // save each value
+        {
+            int const max_items(decoder.uint16Value());
+            for(int idx(0); idx < max_items; ++idx)
+            {
+                Value value;
+                value.decodeValue(decoder);
+                f_list.push_back(value);
+            }
+        }
+        break;
+
+    }
+}
+
+
 void Value::parseValue()
 {
     f_map.clear();
@@ -99,22 +267,22 @@ void Value::parseValue()
         case CASS_VALUE_TYPE_CUSTOM     :
         case CASS_VALUE_TYPE_DECIMAL    :
         case CASS_VALUE_TYPE_LAST_ENTRY :
-        case CASS_VALUE_TYPE_UDT       :
+        case CASS_VALUE_TYPE_UDT        :
             f_type = TypeUnknown;
             break;
 
-        case CASS_VALUE_TYPE_LIST      :
-        case CASS_VALUE_TYPE_SET       :
+        case CASS_VALUE_TYPE_LIST       :
+        case CASS_VALUE_TYPE_SET        :
             f_type = TypeList;
             parseList();
             break;
 
-        case CASS_VALUE_TYPE_TUPLE     :
+        case CASS_VALUE_TYPE_TUPLE      :
             f_type = TypeList;
             parseTuple();
             break;
 
-        case CASS_VALUE_TYPE_MAP       :
+        case CASS_VALUE_TYPE_MAP        :
             f_type = TypeMap;
             parseMap();
             break;
@@ -123,21 +291,21 @@ void Value::parseValue()
         case CASS_VALUE_TYPE_BOOLEAN    :
         case CASS_VALUE_TYPE_FLOAT      :
         case CASS_VALUE_TYPE_DOUBLE     :
-        case CASS_VALUE_TYPE_TINY_INT  :
-        case CASS_VALUE_TYPE_SMALL_INT :
-        case CASS_VALUE_TYPE_INT       :
-        case CASS_VALUE_TYPE_VARINT    :
+        case CASS_VALUE_TYPE_TINY_INT   :
+        case CASS_VALUE_TYPE_SMALL_INT  :
+        case CASS_VALUE_TYPE_INT        :
+        case CASS_VALUE_TYPE_VARINT     :
         case CASS_VALUE_TYPE_BIGINT     :
         case CASS_VALUE_TYPE_COUNTER    :
-        case CASS_VALUE_TYPE_ASCII     :
-        case CASS_VALUE_TYPE_DATE      :
-        case CASS_VALUE_TYPE_TEXT      :
-        case CASS_VALUE_TYPE_TIME      :
-        case CASS_VALUE_TYPE_TIMESTAMP :
-        case CASS_VALUE_TYPE_VARCHAR   :
-        case CASS_VALUE_TYPE_UUID      :
-        case CASS_VALUE_TYPE_TIMEUUID  :
-        case CASS_VALUE_TYPE_INET      :
+        case CASS_VALUE_TYPE_ASCII      :
+        case CASS_VALUE_TYPE_DATE       :
+        case CASS_VALUE_TYPE_TEXT       :
+        case CASS_VALUE_TYPE_TIME       :
+        case CASS_VALUE_TYPE_TIMESTAMP  :
+        case CASS_VALUE_TYPE_VARCHAR    :
+        case CASS_VALUE_TYPE_UUID       :
+        case CASS_VALUE_TYPE_TIMEUUID   :
+        case CASS_VALUE_TYPE_INET       :
             f_type = TypeVariant;
             parseVariant();
             break;
@@ -410,10 +578,7 @@ const QString& Value::output() const
 }
 
 
-}
-// namespace QCassandraSchema
 
-}
-//namespace QtCassandra
-
+} // namespace QCassandraSchema
+} //namespace QtCassandra
 // vim: ts=4 sw=4 et

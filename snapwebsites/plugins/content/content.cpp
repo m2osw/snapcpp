@@ -545,7 +545,8 @@ int64_t content::do_update(int64_t last_updated)
  * only, do_update() is not generally called anyway, unless you are a
  * developer with the debug mode turned on.)
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \param[in] variables_timestamp  The timestamp for all the variables
+ *            added to the database by this update (in micro-seconds).
  */
 void content::initial_update(int64_t variables_timestamp)
 {
@@ -1722,7 +1723,7 @@ bool content::create_attachment_impl(attachment_file & file, snap_version::versi
                             ("\" which is not equal to the expected string \"")
                             (ref_cell_name)
                             ("\"...");
-                    files_table->row(md5)->dropCell(ref_cell->columnName(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    files_table->row(md5)->dropCell(ref_cell->columnName());
                 }
             }
         }

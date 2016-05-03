@@ -32,7 +32,7 @@ namespace snap
 class snap_communicator_parameter_error : public snap_logic_exception
 {
 public:
-    snap_communicator_parameter_error(std::string const & whatmsg) : snap_logic_exception(whatmsg) {}
+    snap_communicator_parameter_error(std::string const & what_msg) : snap_logic_exception(what_msg) {}
 };
 
 class snap_communicator_exception : public snap_exception
@@ -44,19 +44,19 @@ public:
 class snap_communicator_initialization_error : public snap_communicator_exception
 {
 public:
-    snap_communicator_initialization_error(std::string const & whatmsg) : snap_communicator_exception(whatmsg) {}
+    snap_communicator_initialization_error(std::string const & what_msg) : snap_communicator_exception(what_msg) {}
 };
 
 class snap_communicator_runtime_error : public snap_communicator_exception
 {
 public:
-    snap_communicator_runtime_error(std::string const & whatmsg) : snap_communicator_exception(whatmsg) {}
+    snap_communicator_runtime_error(std::string const & what_msg) : snap_communicator_exception(what_msg) {}
 };
 
 class snap_communicator_invalid_message : public snap_communicator_exception
 {
 public:
-    snap_communicator_invalid_message(std::string const & whatmsg) : snap_communicator_exception(whatmsg) {}
+    snap_communicator_invalid_message(std::string const & what_msg) : snap_communicator_exception(what_msg) {}
 };
 
 
@@ -70,8 +70,15 @@ public:
     bool                    from_message(QString const & message);
     QString                 to_message() const;
 
+    QString const &         get_sent_from_server() const;
+    void                    set_sent_from_server(QString const & server);
+    QString const &         get_sent_from_service() const;
+    void                    set_sent_from_service(QString const & service);
+    QString const &         get_server() const;
+    void                    set_server(QString const & server);
     QString const &         get_service() const;
     void                    set_service(QString const & service);
+    void                    reply_to(snap_communicator_message const & message);
     QString const &         get_command() const;
     void                    set_command(QString const & command);
     void                    add_parameter(QString const & name, QString const & value);
@@ -84,6 +91,9 @@ public:
 private:
     void                    verify_name(QString const & name, bool can_be_empty = false, bool can_be_lowercase = true) const;
 
+    QString                 f_sent_from_server;
+    QString                 f_sent_from_service;
+    QString                 f_server;
     QString                 f_service;
     QString                 f_command;
     parameters_t            f_parameters;
@@ -178,7 +188,7 @@ public:
         QString                     f_name;
         bool                        f_enabled = true;
         bool                        f_done = false;
-        int                         f_priority = 100;
+        priority_t                  f_priority = 100;
         int64_t                     f_timeout_delay = -1;       // in microseconds
         int64_t                     f_timeout_next_date = -1;   // in microseconds, when we use the f_timeout_delay
         int64_t                     f_timeout_date = -1;        // in microseconds
@@ -315,12 +325,17 @@ public:
 
                                     snap_tcp_client_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
 
+        QString const &             get_remote_address() const;
+
         virtual ssize_t             read(void * buf, size_t count);
         virtual ssize_t             write(void const * buf, size_t count);
 
         // snap_connection implementation
         virtual bool                is_reader() const;
         virtual int                 get_socket() const;
+
+    private:
+        QString const               f_remote_address;
     };
 
     // TODO: switch the tcp_server to a bio_server once available
@@ -401,6 +416,7 @@ public:
                                     snap_tcp_server_client_message_connection(int socket);
 
         void                        send_message(snap_communicator_message const & message);
+        QString const &             get_remote_address() const;
 
         // snap_tcp_server_client_buffer_connection implementation
         virtual void                process_line(QString const & line);
@@ -409,6 +425,7 @@ public:
         virtual void                process_message(snap_communicator_message const & message) = 0;
 
     private:
+        QString                     f_remote_address;
     };
 
     class snap_tcp_client_buffer_connection
@@ -417,7 +434,7 @@ public:
     public:
         typedef std::shared_ptr<snap_tcp_client_buffer_connection>    pointer_t;
 
-                                    snap_tcp_client_buffer_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+                                    snap_tcp_client_buffer_connection(std::string const & addr, int port, mode_t const mode = mode_t::MODE_PLAIN, bool const blocking = false);
 
         // snap::snap_communicator::snap_tcp_client_connection implementation
         virtual ssize_t             write(void const * data, size_t length);
@@ -440,7 +457,7 @@ public:
     public:
         typedef std::shared_ptr<snap_tcp_client_message_connection>    pointer_t;
 
-                                    snap_tcp_client_message_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+                                    snap_tcp_client_message_connection(std::string const & addr, int port, mode_t const mode = mode_t::MODE_PLAIN, bool const blocking = false);
 
         void                        send_message(snap_communicator_message const & message);
 
@@ -519,6 +536,27 @@ public:
         virtual void                process_message(snap_communicator_message const & message) = 0;
 
     private:
+    };
+
+    class snap_tcp_blocking_client_message_connection
+        : public snap_tcp_client_message_connection
+    {
+    public:
+                                    snap_tcp_blocking_client_message_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+
+        void                        run();
+        void                        done();
+
+        bool                        send_message(snap_communicator_message const & message);
+
+        // snap_connection callback
+        virtual void                process_error();
+
+        // new callback
+        virtual void                process_message(snap_communicator_message const & message) = 0;
+
+    private:
+        bool                        f_done = false;
     };
 
     static pointer_t                    instance();

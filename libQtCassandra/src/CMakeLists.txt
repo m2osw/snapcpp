@@ -53,7 +53,10 @@ set( HEADER_FILES
     QtCassandra/QCassandraConsistencyLevel.h
     QtCassandra/QCassandraContext.h
     QtCassandra/QCassandraLock.h
+    QtCassandra/QCassandraOrder.h
+    QtCassandra/QCassandraOrderResult.h
     QtCassandra/QCassandraPredicate.h
+    QtCassandra/QCassandraProxy.h
     QtCassandra/QCassandraQuery.h
     QtCassandra/QCassandraRow.h
     QtCassandra/QCassandraSchema.h
@@ -73,7 +76,10 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraConsistencyLevel.cpp
     QCassandraContext.cpp
     QCassandraLock.cpp
+    QCassandraOrder.cpp
+    QCassandraOrderResult.cpp
     QCassandraPredicate.cpp
+    QCassandraProxy.cpp
     QCassandraQuery.cpp
     QCassandraRow.cpp
     QCassandraSchema.cpp

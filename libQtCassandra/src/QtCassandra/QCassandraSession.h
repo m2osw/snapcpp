@@ -74,7 +74,10 @@ namespace CassTools
     typedef std::shared_ptr<CassSession>            session_pointer_t;
     typedef std::shared_ptr<CassStatement>          statement_pointer_t;
     typedef std::shared_ptr<const CassValue>        value_pointer_t;
+    typedef int64_t                                 timeout_t;
 }
+
+
 
 
 class QCassandraSession
@@ -82,6 +85,8 @@ class QCassandraSession
 {
 public:
     typedef std::shared_ptr<QCassandraSession> pointer_t;
+
+    static CassTools::timeout_t const       DEFAULT_TIMEOUT = 12 * 1000; // 12s
 
     static pointer_t create();
     ~QCassandraSession();
@@ -95,17 +100,39 @@ public:
     CassTools::session_pointer_t session()    const;
     CassTools::future_pointer_t  connection() const;
 
+    CassTools::timeout_t timeout() const;
+    CassTools::timeout_t setTimeout(CassTools::timeout_t timeout_ms);
+
 private:
     QCassandraSession();
 
-    CassTools::cluster_pointer_t       f_cluster;
-    CassTools::session_pointer_t       f_session;
-    CassTools::future_pointer_t        f_connection;
+    CassTools::cluster_pointer_t        f_cluster;
+    CassTools::session_pointer_t        f_session;
+    CassTools::future_pointer_t         f_connection;
+    CassTools::timeout_t                f_timeout = DEFAULT_TIMEOUT; // 12s
+};
+
+
+class QCassandraRequestTimeout
+{
+public:
+    QCassandraRequestTimeout(QCassandraSession::pointer_t session, CassTools::timeout_t timeout_ms)
+        : f_session(session)
+        , f_old_timeout(f_session->setTimeout(timeout_ms))
+    {
+    }
+
+    ~QCassandraRequestTimeout()
+    {
+        f_session->setTimeout(f_old_timeout);
+    }
+
+private:
+    QCassandraSession::pointer_t    f_session;
+    int64_t                         f_old_timeout;
 };
 
 
 }
 // namespace QtCassandra
-
-    
 // vim: ts=4 sw=4 et

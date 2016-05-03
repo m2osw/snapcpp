@@ -426,7 +426,6 @@ void watchdog_server::watchdog()
 {
     SNAP_LOG_INFO("------------------------------------ starting watchdog daemon.");
 
-    define_server_name();
     check_cassandra();
     init_parameters();
 
@@ -561,27 +560,6 @@ void watchdog_server::process_sigchld()
 }
 
 
-void watchdog_server::define_server_name()
-{
-    // TODO: Should we first check and if a servername is defined in the
-    //       snapwatchdog.conf file use that one? (it is a huge problem
-    //       of bad data duplication!)
-    //
-    snap::snap_config wc;
-    // TODO: hard coded path is totally WRONG!
-    wc.read_config_file("/etc/snapwebsites/snapserver.conf");
-    if(!wc.contains("server_name"))
-    {
-        SNAP_LOG_FATAL("watchdog_server::define_server_name(): snapwatchdog was not able to determine the name of this server.");
-        exit(1);
-    }
-
-    // save it in our list of parameters
-    // (we could directly access f_parameters[] but that way is cleaner)
-    set_parameter(get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVER_NAME), wc[get_name(watchdog::name_t::SNAP_NAME_WATCHDOG_SERVER_NAME)]);
-}
-
-
 /** \brief Initialize the Cassandra connection.
  *
  * This function initializes the Cassandra connection and creates
@@ -603,8 +581,8 @@ void watchdog_server::check_cassandra()
     // this is sucky, the host/port info should not be taken that way!
     // also we should allow servers without access to cassandra...
     //
-    f_cassandra_host = cassandra.get_cassandra_host();
-    f_cassandra_port = cassandra.get_cassandra_port();
+    f_snapdbproxy_addr = cassandra.get_snapdbproxy_addr();
+    f_snapdbproxy_port = cassandra.get_snapdbproxy_port();
 
     // create possibly missing tables
     //

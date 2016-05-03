@@ -19,6 +19,8 @@
 
 #include "log.h"
 
+#include <signal.h>
+
 #include "poison.h"
 
 
@@ -941,7 +943,7 @@ void snap_thread::internal_run()
             f_mutex.signal();
         }
     }
-    catch(const std::exception&)
+    catch(std::exception const &)
     {
         // keep a copy of the exception
         f_exception = std::current_exception();
@@ -1050,7 +1052,7 @@ void snap_thread::stop()
 
         // We cannot join since our threads are detached (change?)
         //void *ignore;
-        //pthread_join(f_thread_id, &ignore);
+        //pthread_join(f_thread_id.ptr(), &ignore);
     }
 
     // if the child died because of a standard exception, rethrow it now
@@ -1067,6 +1069,39 @@ void snap_thread::stop()
 }
 
 
-} // namespace snap
+/** \brief Send a signal to this thread.
+ *
+ * This function sends a signal to a specific thread.
+ *
+ * You have to be particularly careful with Unix signal and threads as they
+ * do not always work as expected. This is yet particularly useful if you
+ * want to send a signal such as SIGUSR1 and SIGUSR2 to a thread so it
+ * reacts one way or another (i.e. you are using poll() over a socket and
+ * need to be stopped without using a possibly long time out, you can use
+ * the signalfd() function to transform SIGUSR1 into a pollable signal.)
+ *
+ * \note
+ * Obviously, if the thread is not running, nothing happens.
+ *
+ * \param[in] sig  The signal to send to this thread.
+ *
+ * \return true if the signal was sent, false if the signal could not
+ *         be sent (i.e. the thread was already terminated...)
+ */
+bool snap_thread::kill(int sig)
+{
+    snap_lock lock(f_mutex);
+    if(f_running)
+    {
+        // pthread_kill() returns zero on success, otherwise it returns
+        // an error code which at this point we lose
+        //
+        return pthread_kill(f_thread_id, sig) == 0;
+    }
 
+    return false;
+}
+
+
+} // namespace snap
 // vim: ts=4 sw=4 et

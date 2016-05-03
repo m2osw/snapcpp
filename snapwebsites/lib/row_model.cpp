@@ -229,7 +229,6 @@ bool row_model::insertRows ( int /*row*/, int /*count*/, const QModelIndex & par
         beginInsertRows( parent_index, rowCount(), 1 );
         auto key( (*f_row)[f_newName].columnKey() );
         auto cell( f_row->findCell( key ) );
-        cell->setTimestamp( QCassandraValue::TIMESTAMP_MODE_AUTO );
 
         QCassandraContext::pointer_t context( f_row->parentTable()->parentContext() );
         Q_ASSERT(context);

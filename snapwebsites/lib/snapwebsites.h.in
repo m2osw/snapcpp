@@ -242,8 +242,8 @@ public:
     void                detach();
     void                listen();
     void                backend();
-    int                 cassandra_port() const { return f_cassandra_port; }
-    QString const &     cassandra_host() const { return f_cassandra_host; }
+    int                 snapdbproxy_port() const { return f_snapdbproxy_port; }
+    QString const &     snapdbproxy_addr() const { return f_snapdbproxy_addr; }
     void                capture_zombies(pid_t child_pid);
     void                process_message(snap_communicator_message const & message);
 
@@ -286,8 +286,8 @@ protected:
     static server::pointer_t    set_instance(pointer_t server);
 
     // See TODO in server::prepare_cassandra()
-    QString                                 f_cassandra_host;
-    controlled_vars::zint32_t               f_cassandra_port;
+    QString                                 f_snapdbproxy_addr;
+    controlled_vars::zint32_t               f_snapdbproxy_port;
     snap_config                             f_parameters;
 
 private:

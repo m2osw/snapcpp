@@ -31,6 +31,7 @@
 
 #include <fcntl.h>
 #include <proc/sysinfo.h>
+#include <syslog.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
@@ -451,6 +452,21 @@ advgetopt::getopt::option const g_snapinit_options[] =
 
 
 
+void fatal_error(QString msg) __attribute__ ((noreturn));
+void fatal_error(QString msg)
+{
+    SNAP_LOG_FATAL(msg);
+    QByteArray utf8(msg.toUtf8());
+    syslog( LOG_CRIT, "%s", utf8.data() );
+    if(g_isatty)
+    {
+        std::cerr << "snapinit: fatal error: " << utf8.data() << std::endl;
+    }
+    exit(1);
+    snap::NOTREACHED();
+}
+
+
 
 }
 //namespace
@@ -480,7 +496,7 @@ public:
 
                                 service( std::shared_ptr<snap_init> si );
 
-    void                        configure(QDomElement e, QString const & binary_path, bool const debug);
+    void                        configure(QDomElement e, QString const & binary_path, bool const debug, bool const ignore_path_check);
 
     // snap::snap_communicator::snap_timer implementation
     virtual void                process_timeout();
@@ -493,15 +509,19 @@ public:
     bool                        is_stopping() const;
     bool                        has_stopped() const;
     bool                        is_connection_required() const;
+    bool                        is_snapdbproxy() const;
+    std::string                 get_connect_string() const;
+    std::string                 get_snapdbproxy_string() const;
     bool                        is_safe_required() const;
     QString const &             get_safe_message() const;
     bool                        cron_task() const;
     QString const &             get_config_filename() const;
     QString const &             get_service_name() const;
+    pid_t                       get_old_pid() const;
     bool                        failed() const;
     int                         get_wait_interval() const;
     int                         get_recovery() const;
-    void                        service_may_have_died();
+    bool                        service_may_have_died();
 
     bool                        operator < (service const & rhs) const;
 
@@ -519,6 +539,7 @@ private:
     QString                     f_command;
     QString                     f_options;
     pid_t                       f_pid = 0;
+    pid_t                       f_old_pid = 0;
     int                         f_short_run_count = 0;
     int64_t                     f_start_date = 0;       // in microseconds, to calculate an interval
     int                         f_wait_interval = 0;    // in seconds
@@ -530,8 +551,10 @@ private:
     bool                        f_debug = false;
     bool                        f_required = false;
     int                         f_stopping = 0;
-    QString                     f_tcp_addr;             // to connect with snapcommunicator
-    int                         f_tcp_port = 0;         // to connect with snapcommunicator
+    QString                     f_snapcommunicator_addr;         // to connect with snapcommunicator
+    int                         f_snapcommunicator_port = 0;     // to connect with snapcommunicator
+    QString                     f_snapdbproxy_addr;     // to connect with snapdbproxy
+    int                         f_snapdbproxy_port = 0; // to connect with snapdbproxy
     int                         f_priority = DEFAULT_PRIORITY;
     int                         f_cron = 0;             // if 0, then off (i.e. not a cron task)
 };
@@ -798,6 +821,9 @@ public:
     void                        user_signal_caught(int sig);
     bool                        is_running();
     QString const &             get_spool_path() const;
+    QString const &             get_server_name() const;
+    service::pointer_t          get_connection_service() const;
+    service::pointer_t          get_snapdbproxy_service() const;
 
     static void                 sighandler( int sig );
 
@@ -826,12 +852,14 @@ private:
     snap::snap_config           f_config;
     QString                     f_log_conf;
     command_t                   f_command = command_t::COMMAND_UNKNOWN;
+    QString                     f_server_name;
     QString                     f_lock_filename;
     QFile                       f_lock_file;
     QString                     f_spool_path;
     mutable bool                f_spool_directory_created = false;
     service::vector_t           f_service_list;
     service::pointer_t          f_connection_service;
+    service::pointer_t          f_snapdbproxy_service;
     snap::snap_communicator::pointer_t  f_communicator;
     listener_impl::pointer_t    f_listener_connection;
     ping_impl::pointer_t        f_ping_server;
@@ -910,8 +938,10 @@ service::pointer_t service::shared_from_this() const
  * \param[in] e  The element with configuration information for this service.
  * \param[in] binary_path  The path to your binaries (practical for developers).
  * \param[in] debug  Whether to start the services in debug mode.
+ * \param[in] ignore_path_check  Whether the path check generate a fatal
+ *            error (false) or just a warning (true)
  */
-void service::configure(QDomElement e, QString const & binary_path, bool const debug)
+void service::configure(QDomElement e, QString const & binary_path, bool const debug, bool const ignore_path_check)
 {
     // the XML does not overwrite this flag, but it can force debug
     // by using --debug in the list of <options>
@@ -923,8 +953,7 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
     f_service_name = e.attribute("name");
     if(f_service_name.isEmpty())
     {
-        SNAP_LOG_FATAL("the \"name\" parameter of a service must be defined and not empty.");
-        exit(1);
+        fatal_error("the \"name\" parameter of a service must be defined and not empty.");
         snap::NOTREACHED();
     }
 
@@ -943,8 +972,8 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
             f_command = sub_element.text();
             if(f_command.isEmpty())
             {
-                SNAP_LOG_FATAL("the command tag of service \"")(f_service_name)("\" returned an empty string which does not represent a valid command.");
-                exit(1);
+                fatal_error(QString("the command tag of service \"%1\" returned an empty string which does not represent a valid command.")
+                                .arg(f_service_name));
                 snap::NOTREACHED();
             }
         }
@@ -969,14 +998,12 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                 f_wait_interval = sub_element.text().toInt(&ok, 10);
                 if(!ok)
                 {
-                    SNAP_LOG_FATAL("the wait tag of service \"")(f_service_name)("\" returned an invalid decimal number.");
-                    exit(1);
+                    fatal_error(QString("the wait tag of service \"%1\" returned an invalid decimal number.").arg(f_service_name));
                     snap::NOTREACHED();
                 }
                 if(f_wait_interval < 0 || f_wait_interval > 3600)
                 {
-                    SNAP_LOG_FATAL("the wait tag of service \"")(f_service_name)("\" cannot be a negative number or more than 3600.");
-                    exit(1);
+                    fatal_error(QString("the wait tag of service \"%1\" cannot be a negative number or more than 3600.").arg(f_service_name));
                     snap::NOTREACHED();
                 }
             }
@@ -1006,14 +1033,12 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                 f_recovery = sub_element.text().toInt(&ok, 10);
                 if(!ok)
                 {
-                    SNAP_LOG_FATAL("the wait tag of service \"")(f_service_name)("\" returned an invalid decimal number.");
-                    exit(1);
+                    fatal_error(QString("the wait tag of service \"%1\" returned an invalid decimal number.").arg(f_service_name));
                     snap::NOTREACHED();
                 }
                 if(f_recovery < 60 || f_recovery > 86400 * 7)
                 {
-                    SNAP_LOG_FATAL("the wait tag of service \"")(f_service_name)("\" cannot be less than 60 or more than 604800 (about 1 week.) Used 'none' to turn off the recovery feature.");
-                    exit(1);
+                    fatal_error(QString("the wait tag of service \"%1\" cannot be less than 60 or more than 604800 (about 1 week.) Used 'none' to turn off the recovery feature.").arg(f_service_name));
                     snap::NOTREACHED();
                 }
             }
@@ -1081,8 +1106,7 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                 f_coredump_limit = size.toLongLong(&ok, 10) * multiplicator;
                 if(!ok)
                 {
-                    SNAP_LOG_FATAL("the coredump tag of service \"")(f_service_name)("\" is not a valid decimal number, optionally followed by \"kb\", \"mb\", or \"gb\".");
-                    exit(1);
+                    fatal_error(QString("the coredump tag of service \"%1\" is not a valid decimal number, optionally followed by \"kb\", \"mb\", or \"gb\".").arg(f_service_name));
                     snap::NOTREACHED();
                 }
                 if(f_coredump_limit < 1024)
@@ -1107,8 +1131,8 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                     //
                     // See: https://lists.gnu.org/archive/html/bug-bash/2007-10/msg00010.html
                     //
-                    SNAP_LOG_FATAL("the coredump tag of service \"")(f_service_name)("\" cannot be less than one memory block (1024 bytes.) Right now it is set to: ")(f_coredump_limit)(" bytes");
-                    exit(1);
+                    fatal_error(QString("the coredump tag of service \"%1\" cannot be less than one memory block (1024 bytes.) Right now it is set to: %2 bytes")
+                                            .arg(f_service_name).arg(f_coredump_limit));
                     snap::NOTREACHED();
                 }
                 // keep the value in blocks, rounded up
@@ -1138,14 +1162,14 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
             f_priority = sub_element.text().toInt(&ok, 10);
             if(!ok)
             {
-                SNAP_LOG_FATAL("priority \"")(sub_element.text())("\" of service \"")(f_service_name)("\" returned a string that does not represent a valid decimal number.");
-                exit(1);
+                fatal_error(QString("priority \"%1\" of service \"%2\" returned a string that does not represent a valid decimal number.")
+                                .arg(sub_element.text()).arg(f_service_name));
                 snap::NOTREACHED();
             }
             if(f_priority < -100 || f_priority > 100)
             {
-                SNAP_LOG_FATAL("priority \"")(sub_element.text())("\" of service \"")(f_service_name)("\" is out of bounds, we accept a priority between -100 and +100.");
-                exit(1);
+                fatal_error(QString("priority \"%1\" of service \"%2\" is out of bounds, we accept a priority between -100 and +100.")
+                                .arg(sub_element.text()).arg(f_service_name));
                 snap::NOTREACHED();
             }
         }
@@ -1162,8 +1186,8 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
             f_config_filename = sub_element.text();
             if(f_config_filename.isEmpty())
             {
-                SNAP_LOG_FATAL("the config tag of service \"")(f_service_name)("\" returned an empty string which does not represent a valid configuration filename.");
-                exit(1);
+                fatal_error(QString("the config tag of service \"%1\" returned an empty string which does not represent a valid configuration filename.")
+                                    .arg(f_service_name));
                 snap::NOTREACHED();
             }
         }
@@ -1175,16 +1199,35 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
         QDomElement const sub_element(e.firstChildElement("connect"));
         if(!sub_element.isNull())
         {
-            QString const connect_addr_port(sub_element.text());
-            if(connect_addr_port.isEmpty())
+            QString const addr_port(sub_element.text());
+            if(addr_port.isEmpty())
             {
-                SNAP_LOG_FATAL("the connect tag of service \"")(f_service_name)("\" returned an empty string which does not represent a valid IP and port specification.");
-                exit(1);
+                fatal_error(QString("the <connect> tag of service \"%1\" returned an empty string which does not represent a valid IP and port specification.")
+                                .arg(f_service_name));
                 snap::NOTREACHED();
             }
-            f_tcp_addr = "127.0.0.1";
-            f_tcp_port = 4040;
-            tcp_client_server::get_addr_port(connect_addr_port, f_tcp_addr, f_tcp_port, "tcp");
+            f_snapcommunicator_addr = "127.0.0.1";
+            f_snapcommunicator_port = 4040;
+            tcp_client_server::get_addr_port(addr_port, f_snapcommunicator_addr, f_snapcommunicator_port, "tcp");
+        }
+    }
+
+    // whether we are running a snapdbproxy
+    //
+    {
+        QDomElement const sub_element(e.firstChildElement("snapdbproxy"));
+        if(!sub_element.isNull())
+        {
+            QString const addr_port(sub_element.text());
+            if(addr_port.isEmpty())
+            {
+                fatal_error(QString("the <snapdbproxy> tag of service \"%1\" returned an empty string which does not represent a valid IP and port specification.")
+                                .arg(f_service_name));
+                snap::NOTREACHED();
+            }
+            f_snapdbproxy_addr = "127.0.0.1";
+            f_snapdbproxy_port = 4042;
+            tcp_client_server::get_addr_port(addr_port, f_snapdbproxy_addr, f_snapdbproxy_port, "tcp");
         }
     }
 
@@ -1204,10 +1247,8 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                 f_cron = sub_element.text().toInt(&ok, 10);
                 if(!ok)
                 {
-                    SNAP_LOG_FATAL("the cron tag of service \"")
-                                  (f_service_name)
-                                  ("\" must be a valid decimal number representing a number of seconds to wait between each execution.");
-                    exit(1);
+                    fatal_error(QString("the cron tag of service \"%1\" must be a valid decimal number representing a number of seconds to wait between each execution.")
+                                          .arg(f_service_name));
                     snap::NOTREACHED();
                 }
                 // we function like anacron and know when we have to run
@@ -1221,10 +1262,8 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                 if(f_cron < 60
                 || f_cron > 86400 * 367)
                 {
-                    SNAP_LOG_FATAL("the cron tag of service \"")
-                                  (f_service_name)
-                                  ("\" must be a number between 60 (1 minute) and 31708800 (a little over 1 year in seconds).");
-                    exit(1);
+                    fatal_error(QString("the cron tag of service \"%1\" must be a number between 60 (1 minute) and 31708800 (a little over 1 year in seconds).")
+                                  .arg(f_service_name));
                     snap::NOTREACHED();
                 }
             }
@@ -1240,21 +1279,42 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
         snap::snap_string_list paths(binary_path.split(':'));
         for(auto p : paths)
         {
-            f_full_path = QString("%1/%2").arg(p).arg(f_command);
-            QFile file(f_full_path);
-            if(file.exists())
+            // sub-folder (for snapdbproxy and snaplock while doing development, maybe others later)
             {
-                goto done;
+                f_full_path = QString("%1/%2/%3").arg(p).arg(f_command).arg(f_command);
+                QFile file(f_full_path);
+                if(file.exists())
+                {
+                    goto done;
+                }
+            }
+            // direct
+            {
+                f_full_path = QString("%1/%2").arg(p).arg(f_command);
+                QFile file(f_full_path);
+                if(file.exists())
+                {
+                    goto done;
+                }
             }
         }
 
-        SNAP_LOG_FATAL("could not find \"")
+        if(!ignore_path_check)
+        {
+            fatal_error(QString("could not find \"%1\" in any of the paths \"%2\".")
+                          .arg(f_service_name)
+                          .arg(binary_path));
+            snap::NOTREACHED();
+        }
+
+        // okay, we do not completely ignore the fact that we could
+        // not find the service, but we do not generate a fatal error
+        //
+        SNAP_LOG_WARNING("could not find \"")
                       (f_service_name)
                       ("\" in any of the paths \"")
                       (binary_path)
                       ("\".");
-        exit(1);
-        snap::NOTREACHED();
 done:;
     }
     else
@@ -1322,8 +1382,19 @@ void service::process_timeout()
             int const retval(::kill( f_pid, f_stopping ));
             if( retval == -1 )
             {
+                // This is marked as FATAL because we are about to kill
+                // that service for good (i.e. we are going to disable
+                // it and never try to start it again); however snapinit
+                // itself will continue to run...
+                //
                 int const e(errno);
-                SNAP_LOG_FATAL("Unable to kill service ")(f_service_name)(", pid=")(f_pid)("! errno=")(e)(" -- ")(strerror(e));
+                QString msg(QString("Unable to kill service \"%1\", pid=%2! errno=%3 -- %4")
+                                .arg(f_service_name)
+                                .arg(f_pid)
+                                .arg(e)
+                                .arg(strerror(e)));
+                SNAP_LOG_FATAL(msg);
+                syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
 
                 // I do not foresee retrying as a solution to this error...
                 // (it should not happen anyway...)
@@ -1376,12 +1447,11 @@ void service::process_timeout()
             std::shared_ptr<snap_init> si(f_snap_init.lock());
             if(!si)
             {
-                SNAP_LOG_FATAL("somehow we could not get a lock on f_snap_init from a service object.");
-                exit(1);
+                fatal_error("somehow we could not get a lock on f_snap_init from a service object.");
                 snap::NOTREACHED();
             }
 
-            if(si->connect_listener(f_service_name, f_tcp_addr, f_tcp_port))
+            if(si->connect_listener(f_service_name, f_snapcommunicator_addr, f_snapcommunicator_port))
             {
                 // TODO: later we may want to try the CONNECT event
                 //       more than once; although over TCP on the
@@ -1453,13 +1523,13 @@ void service::process_timeout()
 }
 
 
-void service::service_may_have_died()
+bool service::service_may_have_died()
 {
     // if this process was not even started, it could not have died
     //
     if( !f_started )
     {
-        return;
+        return false;
     }
 
     // no matter what, if we are still running, there is nothing
@@ -1467,7 +1537,7 @@ void service::service_may_have_died()
     //
     if( is_running() )
     {
-        return;
+        return false;
     }
 
     f_started = false;
@@ -1481,12 +1551,15 @@ void service::service_may_have_died()
         if(!si)
         {
             SNAP_LOG_ERROR("cron service \"")(f_service_name)("\" lost its parent snapinit object.");
-            return;
+            return true;
         }
+
         si->service_down(shared_from_this());
     }
 
     mark_process_as_dead();
+
+    return true;
 }
 
 
@@ -1789,8 +1862,7 @@ bool service::run()
         //
         if(parent_pid != getppid())
         {
-            SNAP_LOG_FATAL("service::run() lost parent too soon and did not receive SIGHUP; quit immediately.");
-            exit(1);
+            fatal_error("service::run():child: lost parent too soon and did not receive SIGHUP; quit immediately.");
             snap::NOTREACHED();
         }
 
@@ -1806,7 +1878,8 @@ bool service::run()
             // -Wpedantic prevent the named fields g++ extension when
             // initializing a structure
             //
-            struct rlimit core_limits = {
+            struct rlimit core_limits =
+            {
                 rlim_cur: f_coredump_limit,
                 rlim_max: f_coredump_limit
             };
@@ -1814,8 +1887,28 @@ bool service::run()
             setrlimit(RLIMIT_CORE, &core_limits);
         }
 
+        std::shared_ptr<snap_init> si(f_snap_init.lock());
+        if(!si)
+        {
+            fatal_error("service::run():child: somehow we could not get a lock on f_snap_init from a service object.");
+            snap::NOTREACHED();
+        }
+
         std::vector<std::string> args;
         args.push_back(f_full_path.toUtf8().data());
+        args.push_back("--server-name");
+        args.push_back(si->get_server_name().toUtf8().data());
+        args.push_back("--connect");
+        args.push_back(si->get_connection_service()->get_connect_string());
+
+        // this server may not have a snapdbproxy, so we have to verify first
+        service::pointer_t snapdbproxy_service(si->get_snapdbproxy_service());
+        if(snapdbproxy_service)
+        {
+            args.push_back("--snapdbproxy");
+            args.push_back(si->get_snapdbproxy_service()->get_snapdbproxy_string());
+        }
+
         if( f_debug )
         {
             args.push_back("--debug");
@@ -1852,7 +1945,7 @@ bool service::run()
                     args.push_back(std::string(start, s - start));
                     if(*s != quote)
                     {
-                        SNAP_LOG_ERROR("arguments to child process have a quoted string which is not closed properly");
+                        SNAP_LOG_ERROR("service_run():child: arguments to child process have a quoted string which is not closed properly");
                     }
                     else
                     {
@@ -1887,6 +1980,7 @@ bool service::run()
             }
         }
 
+        // execv() needs plain string pointers
         std::vector<char const *> args_p;
         //
         for( auto arg : args )
@@ -1932,8 +2026,7 @@ bool service::run()
             }
             command_line += a;
         }
-        SNAP_LOG_FATAL("Child process \"")(command_line)("\" failed to start!");
-        exit(1);
+        fatal_error(QString("service::run() child: process \"%1\" failed to start!").arg(command_line.c_str()));
         snap::NOTREACHED();
     }
 
@@ -1965,6 +2058,54 @@ bool service::run()
         f_started = true;
         return true;
     }
+}
+
+
+/** \brief Generate the addr:port information of the connection service.
+ *
+ * This function gives us the address and port used to connect to the
+ * connection service.
+ *
+ * This is generally the snapcommunicator service. The default IP and
+ * port are 127.0.0.1:4040.
+ *
+ * The function returns a string based on those two parameters. The
+ * string is passed to all the services when they are started by the
+ * snapinit daemon.
+ *
+ * \return The address and port of the connection service.
+ */
+std::string service::get_connect_string() const
+{
+    std::stringstream ss;
+    ss << f_snapcommunicator_addr
+       << ":"
+       << f_snapcommunicator_port;
+    return ss.str();
+}
+
+
+/** \brief Generate the addr:port information of the connection service.
+ *
+ * This function gives us the address and port used to connect to the
+ * connection service.
+ *
+ * This is generally the snapcommunicator service. The default IP and
+ * port are 127.0.0.1:4040.
+ *
+ * The function returns a string based on those two parameters. The
+ * string is passed to all the services when they are started by the
+ * snapinit daemon.
+ *
+ * \return The address and port of the connection service.
+ */
+std::string service::get_snapdbproxy_string() const
+{
+    std::stringstream ss;
+    ss << f_snapdbproxy_addr
+       << ":"
+       << f_snapdbproxy_port;
+    return ss.str();
 }
 
 
@@ -2002,6 +2143,7 @@ bool service::is_running() const
     // IMPORTANT NOTE: however, we keep f_started as true because the
     //                 service_may_have_died() requires it that way
     //
+    const_cast<service *>(this)->f_old_pid = f_pid;
     const_cast<service *>(this)->f_pid = 0;
 
     if( the_pid == -1 )
@@ -2162,8 +2304,8 @@ bool service::has_stopped() const
 
 /** \brief Determine whether this service requires us to connect to it.
  *
- * snapinit starts the snapcommunicator and is they expected to
- * connect to is (connect with a client and send a CONNECT message.)
+ * snapinit starts the snapcommunicator and it is expected to
+ * connect to it (connect with a client and send a CONNECT message.)
  *
  * This function returns true if the necessary information was defined
  * so we can actually connect. Note that the \<connect> tag is required
@@ -2174,7 +2316,25 @@ bool service::has_stopped() const
  */
 bool service::is_connection_required() const
 {
-    return !f_tcp_addr.isEmpty();
+    return !f_snapcommunicator_addr.isEmpty();
+}
+
+
+/** \brief Determine whether this service is the snapdbproxy.
+ *
+ * snapinit starts the snapdbproxy and it is expected to let other
+ * services connect to the database used by Snap! The snapdbproxy
+ * may not run on all computers in a cluster, but it has to run on
+ * any computer that has services requiring access to the database.
+ *
+ * This function returns true if this service represents the snapdbproxy
+ * service (i.e. is has a \<snapdbproxy> tag.)
+ *
+ * \return true if there are snapdbproxy address and port defined here.
+ */
+bool service::is_snapdbproxy() const
+{
+    return !f_snapdbproxy_addr.isEmpty();
 }
 
 
@@ -2252,6 +2412,20 @@ QString const & service::get_config_filename() const
 QString const & service::get_service_name() const
 {
     return f_service_name;
+}
+
+
+/** \brief Return the PID of service before it died.
+ *
+ * This function returns 0 if the process never ran and died.
+ * After a first death, this returns the PID of the previous
+ * process.
+ *
+ * \return The old PID of this service.
+ */
+pid_t service::get_old_pid() const
+{
+    return f_old_pid;
 }
 
 
@@ -2416,6 +2590,29 @@ snap_init::snap_init( int argc, char * argv[] )
     //
     f_config.read_config_file( f_opt.get_string("config").c_str() );
 
+    // get the server name
+    // (we do it early so the logs can make use of it)
+    //
+    if(f_config.contains("server_name"))
+    {
+        f_server_name = f_config["server_name"];
+    }
+    if(f_server_name.isEmpty())
+    {
+        // use hostname by default if undefined in configuration file
+        //
+        char host[HOST_NAME_MAX + 1];
+        host[HOST_NAME_MAX] = '\0';
+        if(gethostname(host, sizeof(host)) != 0
+        || strlen(host) == 0)
+        {
+            fatal_error("server_name is not defined in your configuration file and hostname is not available as the server name,"
+                            " snapinit not started. (in snapinit.cpp/snap_init::snap_init())");
+            snap::NOTREACHED();
+        }
+        f_server_name = host;
+    }
+
     // setup the logger
     //
     if( f_opt.is_defined( "nolog" ) )
@@ -2467,7 +2664,7 @@ void snap_init::init()
     }
     else
     {
-        SNAP_LOG_INFO("---------------- snapinit manager started");
+        SNAP_LOG_INFO("---------------- snapinit manager started on ")(f_server_name);
 
         if( f_opt.is_defined( "--" ) )
         {
@@ -2525,8 +2722,7 @@ void snap_init::init()
         if(xml_services_filename.isEmpty())
         {
             // the XML services is mandatory (it cannot be set to an empty string)
-            SNAP_LOG_FATAL("the xml_services parameter cannot be empty, it has to be a path to the snapinit.xml file.");
-            exit(1);
+            fatal_error("the xml_services parameter cannot be empty, it has to be a path to the snapinit.xml file.");
             snap::NOTREACHED();
         }
         QFile xml_services_file(xml_services_filename);
@@ -2534,8 +2730,9 @@ void snap_init::init()
         {
             // the XML services is a mandatory file we need to be able to read
             int const e(errno);
-            SNAP_LOG_FATAL("the XML file \"")(xml_services_filename)("\" could not be opened (")(strerror(e))(").");
-            exit(1);
+            fatal_error(QString("the XML file \"%1\" could not be opened (%2).")
+                            .arg(xml_services_filename)
+                            .arg(strerror(e)));
             snap::NOTREACHED();
         }
         {
@@ -2549,9 +2746,12 @@ void snap_init::init()
                 // (it could also be that the file could not be read and we
                 // got some I/O error.)
                 //
-                SNAP_LOG_FATAL("the XML file \"")(xml_services_filename)("\" could not be parse as valid XML (")
-                    (xml_services_filename)(":")(error_line)(": ")(error_message)("; on column: ")(error_column)(").");
-                exit(1);
+                fatal_error(QString("the XML file \"%1\" could not be parse as valid XML (%2:%3: %4; on column: %5).")
+                            .arg(xml_services_filename)
+                            .arg(xml_services_filename)
+                            .arg(error_line)
+                            .arg(error_message)
+                            .arg(error_column));
                 snap::NOTREACHED();
             }
             xml_to_services(doc, xml_services_filename);
@@ -2580,14 +2780,14 @@ void snap_init::init()
         f_stop_max_wait = f_config["stop_max_wait"].toInt(&ok, 10);
         if(!ok)
         {
-            SNAP_LOG_FATAL("the stop_max_wait parameter must be a number of seconds, \"")(f_config["stop_max_wait"])("\" is not valid.");
-            exit(1);
+            fatal_error(QString("the stop_max_wait parameter must be a number of seconds, \"%1\" is not valid.")
+                                .arg(f_config["stop_max_wait"]));
             snap::NOTREACHED();
         }
         if(f_stop_max_wait < 10)
         {
-            SNAP_LOG_FATAL("the stop_max_wait parameter must be at least 10 seconds, \"")(f_config["stop_max_wait"])("\" is too small. The default value is 60.");
-            exit(1);
+            fatal_error(QString("the stop_max_wait parameter must be at least 10 seconds, \"%1\" is too small. The default value is 60.")
+                                .arg(f_config["stop_max_wait"]));
             snap::NOTREACHED();
         }
     }
@@ -2694,19 +2894,17 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
         if(!e.isNull()      // it should always be an element
         && !e.attributes().contains("disabled"))
         {
-            service::pointer_t s( new service(shared_from_this()) );
-            s->configure( e, binary_path, f_debug );
+            service::pointer_t s(std::make_shared<service>(shared_from_this()));
+            s->configure( e, binary_path, f_debug, f_command == command_t::COMMAND_LIST );
 
             // avoid two services with the same name
             //
             if( service_list_by_name.find( s->get_service_name() ) != service_list_by_name.end() )
             {
-                SNAP_LOG_FATAL("snapinit cannot start the same service more than once. It found \"")
-                              (s->get_service_name())
-                              ("\" twice in \"")
-                              (xml_services_filename)
-                              ("\".");
-                exit(1);
+                fatal_error(QString("snapinit cannot start the same service more than once on \"%1\". It found \"%2\" twice in \"%3\".")
+                              .arg(f_server_name)
+                              .arg(s->get_service_name())
+                              .arg(xml_services_filename));
                 snap::NOTREACHED();
             }
             service_list_by_name[s->get_service_name()] = s;
@@ -2720,17 +2918,33 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
             {
                 if(f_connection_service)
                 {
-                    SNAP_LOG_FATAL("snapinit only supports one connection service at this time. It found two: \"")
-                                  (s->get_service_name())
-                                  ("\" and \"")
-                                  (f_connection_service->get_service_name())
-                                  ("\" in \"")
-                                  (xml_services_filename)
-                                  ("\".");
-                    exit(1);
+                    fatal_error(QString("snapinit only supports one connection service at this time on \"%1\". It found two: \"%2\" and \"%3\" in \"%4\".")
+                                  .arg(f_server_name)
+                                  .arg(s->get_service_name())
+                                  .arg(f_connection_service->get_service_name())
+                                  .arg(xml_services_filename));
                     snap::NOTREACHED();
                 }
                 f_connection_service = s;
+            }
+
+            // we are starting the snapdbproxy system which offers an
+            // address and port to connect to (itself, it listens to
+            // those) and we have to send that information to all the
+            // children we start so we need to save that pointer
+            //
+            if(s->is_snapdbproxy())
+            {
+                if(f_snapdbproxy_service)
+                {
+                    fatal_error(QString("snapinit only supports one snapdbproxy service at this time on \"%1\". It found two: \"%2\" and \"%3\" in \"%4\".")
+                                  .arg(f_server_name)
+                                  .arg(s->get_service_name())
+                                  .arg(f_snapdbproxy_service->get_service_name())
+                                  .arg(xml_services_filename));
+                    snap::NOTREACHED();
+                }
+                f_snapdbproxy_service = s;
             }
 
             // make sure to add all services as a timer connection
@@ -2750,10 +2964,8 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
     //
     if(f_service_list.empty())
     {
-        SNAP_LOG_FATAL("no services were specified in \"")
-                      (xml_services_filename)
-                      ("\" for snapinit to manage.");
-        exit(1);
+        fatal_error(QString("no services were specified in \"%1\" for snapinit to manage.")
+                      .arg(xml_services_filename));
         snap::NOTREACHED();
     }
 
@@ -2983,89 +3195,119 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
 
 // ******************* TCP only messages
 
-    if(command == "QUITTING")
+    switch(command[0].unicode())
     {
-        // it looks like we sent a message after a STOP was received
-        // by snapcommunicator; this means we should receive a STOP
-        // shortly too, but we just react the same way to QUITTING
-        // than to STOP.
+    case 'H':
+        // all have to implement the HELP command
         //
-        terminate_services();
-        return;
-    }
-
-    if(command == "READY")
-    {
-        // now we can start all the other services (except CRON tasks)
-        //
-        wakeup_services();
-
-        // send the list of local services to the snapcommunicator
-        //
-        snap::snap_communicator_message reply;
-        reply.set_command("SERVICES");
-
-        // generate the list of services as a string of comma names
-        //
-        snap::snap_string_list services;
-        services << "snapinit";
-        for(auto s : f_service_list)
+        if(command == "HELP")
         {
-            services << s->get_service_name();
+            snap::snap_communicator_message reply;
+            reply.set_command("COMMANDS");
+
+            // list of commands understood by snapinit
+            //
+            reply.add_parameter("list", "HELP,LOG,QUITTING,READY,SAFE,STOP,UNKNOWN");
+
+            f_listener_connection->send_message(reply);
+            return;
         }
-        reply.add_parameter("list", services.join(","));
+        break;
 
-        f_listener_connection->send_message(reply);
-        return;
-    }
-
-    if(command == "SAFE")
-    {
-        // we received a "we are safe" message so we can move on and
-        // start the next service
-        //
-        if(f_expected_safe_message != message.get_parameter("name"))
+    case 'L':
+        if(command == "LOG")
         {
-            SNAP_LOG_FATAL("received wrong SAFE message. We expected \"")(f_expected_safe_message)("\" but we received \"")(message.get_parameter("name"))("\".");
+            SNAP_LOG_INFO("Logging reconfiguration.");
+            snap::logging::reconfigure();
+            return;
+        }
+        break;
 
-            // Simulate a STOP, we cannot continue safely
+    //case 'N':
+    //    if(command == "NEWSERVICE")
+    //    {
+    //    ... TODO: check whether we are waiting on the service to be started ...
+    //    }
+    //    break;
+
+    case 'Q':
+        if(command == "QUITTING")
+        {
+            // it looks like we sent a message after a STOP was received
+            // by snapcommunicator; this means we should receive a STOP
+            // shortly too, but we just react the same way to QUITTING
+            // than to STOP.
             //
             terminate_services();
             return;
         }
+        break;
 
-        // wakeup other services
-        //
-        wakeup_services();
-        return;
-    }
+    case 'R':
+        if(command == "READY")
+        {
+            // now we can start all the other services (except CRON tasks)
+            //
+            wakeup_services();
 
-    if(command == "LOG")
-    {
-        SNAP_LOG_INFO("Logging reconfiguration.");
-        snap::logging::reconfigure();
-        return;
-    }
+            // send the list of local services to the snapcommunicator
+            //
+            snap::snap_communicator_message reply;
+            reply.set_command("SERVICES");
 
-    // all have to implement the HELP command
-    //
-    if(command == "HELP")
-    {
-        snap::snap_communicator_message reply;
-        reply.set_command("COMMANDS");
+            // generate the list of services as a string of comma names
+            //
+            snap::snap_string_list services;
+            services << "snapinit";
+            for(auto s : f_service_list)
+            {
+                services << s->get_service_name();
+            }
+            reply.add_parameter("list", services.join(","));
 
-        // list of commands understood by snapinit
-        //
-        reply.add_parameter("list", "HELP,LOG,QUITTING,READY,SAFE,STOP,UNKNOWN");
+            f_listener_connection->send_message(reply);
+            return;
+        }
+        break;
 
-        f_listener_connection->send_message(reply);
-        return;
-    }
+    case 'S':
+        if(command == "SAFE")
+        {
+            // we received a "we are safe" message so we can move on and
+            // start the next service
+            //
+            if(f_expected_safe_message != message.get_parameter("name"))
+            {
+                // we need to terminate the existing services cleanly
+                // so we do not use fatal_error() here
+                //
+                QString msg(QString("received wrong SAFE message. We expected \"%1\" but we received \"%2\".")
+                                    .arg(f_expected_safe_message)
+                                    .arg(message.get_parameter("name")));
+                SNAP_LOG_FATAL(msg);
+                syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
 
-    if(command == "UNKNOWN")
-    {
-        SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
-        return;
+                // Simulate a STOP, we cannot continue safely
+                //
+                terminate_services();
+                return;
+            }
+
+            // wakeup other services
+            //
+            wakeup_services();
+            return;
+        }
+        break;
+
+    case 'U':
+        if(command == "UNKNOWN")
+        {
+            SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+            return;
+        }
+        break;
+
     }
 
     // unknown command is reported and process goes on
@@ -3094,6 +3336,10 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
  * service was restarted many times in a very short period of time
  * it may actually be removed from the list instead or put to sleep
  * for a while ("put to sleep" means not restarted at all...)
+ *
+ * \warning
+ * This function will call itself if it detects that a process dies
+ * and it has to terminate snapinit itself.
  */
 void snap_init::service_died()
 {
@@ -3103,7 +3349,22 @@ void snap_init::service_died()
     //
     for(auto s : f_service_list)
     {
-        s->service_may_have_died();
+        if(s->service_may_have_died())
+        {
+            if(!f_listener_connection)
+            {
+                // snapcommunicator already died, we cannot forward
+                // the DIED or any other message
+                break;
+            }
+
+            snap::snap_communicator_message register_snapinit;
+            register_snapinit.set_command("DIED");
+            register_snapinit.set_service("*");
+            register_snapinit.add_parameter("service", s->get_service_name());
+            register_snapinit.add_parameter("pid", s->get_old_pid());
+            f_listener_connection->send_message(register_snapinit);
+        }
     }
 
     // check whether a service failed and is marked as required
@@ -3120,7 +3381,13 @@ void snap_init::service_died()
         service::vector_t::const_iterator required_failed(std::find_if(f_service_list.begin(), f_service_list.end(), required_and_failed));
         if(required_failed != f_service_list.end())
         {
-            SNAP_LOG_FATAL("service \"")((*required_failed)->get_service_name())("\" failed and since it is required, we are stopping snapinit now.");
+            // we need to terminate the existing services cleanly
+            // so we do not use fatal_error() here
+            //
+            QString msg(QString("service \"%1\" failed and since it is required, we are stopping snapinit now.")
+                        .arg((*required_failed)->get_service_name()));
+            SNAP_LOG_FATAL(msg);
+            syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
 
             // terminate snapinit
             //
@@ -3280,12 +3547,9 @@ QString const & snap_init::get_spool_path() const
         //
         if(snap::mkdir_p(f_spool_path, false) != 0)
         {
-            SNAP_LOG_FATAL("snapinit could not create directory \"")(f_spool_path)("\" to save spool data.");
-            if(g_isatty)
-            {
-                std::cerr << "snapinit could not create directory \"" << f_spool_path << "\" to save spool data." << std::endl;
-            }
-            exit(1);
+            fatal_error(QString("snapinit could not create directory \"%1\" to save spool data.")
+                                .arg(f_spool_path));
+            snap::NOTREACHED();
         }
     }
 
@@ -3293,8 +3557,78 @@ QString const & snap_init::get_spool_path() const
 }
 
 
+/** \brief Retrieve the name of the server.
+ *
+ * This parameter returns the value of the server_name=... parameter
+ * defined in the snapinit configuration file or the hostname if
+ * the server_name=... parameter was not defined.
+ *
+ * \return The name of the server this snapinit instance is running on.
+ */
+QString const & snap_init::get_server_name() const
+{
+    return f_server_name;
+}
 
 
+/** \brief Retrieve the service used to inter-connect services.
+ *
+ * This function returns the information about the server that is
+ * used to inter-connect services together. This should be the
+ * snapcommunicator service.
+ *
+ * \exception std::logic_error
+ * The function raises that exception if it gets called too soon
+ * (i.e. before a connection service is found in the XML file.)
+ *
+ * \return A smart pointer to the connection service.
+ */
+service::pointer_t snap_init::get_connection_service() const
+{
+    if(!f_connection_service)
+    {
+        throw std::logic_error("connection service requested before it was defined.");
+    }
+
+    return f_connection_service;
+}
+
+
+/** \brief Retrieve the service used to inter-connect services.
+ *
+ * This function returns the information about the server that is
+ * used to inter-connect services together. This should be the
+ * snapcommunicator service.
+ *
+ * \exception std::logic_error
+ * The function raises that exception if it gets called too soon
+ * (i.e. before a connection service is found in the XML file.)
+ *
+ * \return A smart pointer to the connection service.
+ */
+service::pointer_t snap_init::get_snapdbproxy_service() const
+{
+    if(!f_snapdbproxy_service)
+    {
+        throw std::logic_error("connection service requested before it was defined.");
+    }
+
+    return f_snapdbproxy_service;
+}
+
+
+/** \brief List the servers we are starting to the log.
+ *
+ * This function prints out the list of services that this instance
+ * of snapinit is managing.
+ *
+ * The list may be shorten as time goes if some services die too
+ * many times. This gives you an exact list on startup.
+ *
+ * Note that services marked as disabled in the snapinit.xml file
+ * are not loaded at all so they will not make it to the log from
+ * this function.
+ */
 void snap_init::log_selected_servers() const
 {
     std::stringstream ss;
@@ -3448,81 +3782,36 @@ void snap_init::start()
                     //       have a race condition!
                     //       (see SNAP-133 which is closed)
                     //
-                    SNAP_LOG_FATAL("Lock file \"")
-                                  (f_lock_filename)
-                                  ("\" exists! However, process with PID ")
-                                  (lock_file_pid)
-                                  (" is not running. To delete the lock, use `snapinit --remove-lock`.");
-                    if(g_isatty)
-                    {
-                        std::cerr << "snapinit: fatal: Lock file \""
-                                  << f_lock_filename
-                                  << "\" exists! However, process with PID "
-                                  << lock_file_pid
-                                  << " is not running. To delete the lock, use `snapinit --remove-lock`."
-                                  << std::endl;
-                    }
+                    fatal_error(QString("Lock file \"%1\" exists! However, process with PID %2 is not running. To delete the lock, use `snapinit --remove-lock`.")
+                                  .arg(f_lock_filename)
+                                  .arg(lock_file_pid));
                 }
                 else
                 {
                     // snapinit is running
                     //
-                    SNAP_LOG_FATAL("Lock file \"")
-                                  (f_lock_filename)
-                                  ("\" exists! snapinit is already running as PID ")
-                                  (lock_file_pid)
-                                  (".");
-                    if(g_isatty)
-                    {
-                        std::cerr << "snapinit: fatal: Lock file \""
-                                  << f_lock_filename
-                                  << "\" exists! snapinit is already running as PID "
-                                  << lock_file_pid
-                                  << "."
-                                  << std::endl;
-                    }
+                    fatal_error(QString("Lock file \"%1\" exists! snapinit is already running as PID %2.")
+                                  .arg(f_lock_filename)
+                                  .arg(lock_file_pid));
                 }
             }
             else
             {
                 // snapinit is running
                 //
-                SNAP_LOG_FATAL("Lock file \"")
-                              (f_lock_filename)
-                              ("\" exists! Is this a race condition? (errno: ")
-                              (e)
-                              (" -- ")
-                              (strerror(e))
-                              (")");
-                if(g_isatty)
-                {
-                    std::cerr << "snapinit: fatal: Lock file \""
-                              << f_lock_filename
-                              << "\" exists! Is this a race condition? (errno: "
-                              << e
-                              << " -- "
-                              << strerror(e)
-                              << ")"
-                              << std::endl;
-                }
+                fatal_error(QString("Lock file \"%1\" exists! Is this a race condition? (errno: %2 -- %3)")
+                              .arg(f_lock_filename)
+                              .arg(e)
+                              .arg(strerror(e)));
             }
         }
         else
         {
-            SNAP_LOG_FATAL("Lock file \"")(f_lock_filename)("\" could not be created. (errno: ")(e)(" -- ")(strerror(e))(")");
-            if(g_isatty)
-            {
-                std::cerr << "snapinit: fatal: Lock file \""
-                          << f_lock_filename
-                          << "\" could not be created. (errno: "
-                          << e
-                          << " -- "
-                          << strerror(e)
-                          << ")"
-                          << std::endl;
-            }
+            fatal_error(QString("Lock file \"%1\" could not be created. (errno: %2 -- %3)")
+                            .arg(f_lock_filename)
+                            .arg(e)
+                            .arg(strerror(e)));
         }
-        exit(1);
         snap::NOTREACHED();
     }
 
@@ -3534,15 +3823,8 @@ void snap_init::start()
     //
     if(!f_lock_file.open( fd, QFile::ReadWrite ))
     {
-        SNAP_LOG_FATAL("Lock file \"")(f_lock_filename)("\" could not be registered with Qt.");
-        if(g_isatty)
-        {
-            std::cerr << "snapinit: fatal: Lock file \""
-                      << f_lock_filename
-                      << "\" could not be registered with Qt."
-                      << std::endl;
-        }
-        exit(1);
+        fatal_error(QString("Lock file \"%1\" could not be registered with Qt.")
+                            .arg(f_lock_filename));
         snap::NOTREACHED();
     }
 
@@ -3561,12 +3843,8 @@ void snap_init::start()
                 // the child did not actually start
                 //
                 int const e(errno);
-                SNAP_LOG_FATAL("fork() failed, snapinit could not detach itself. (errno: ")(strerror(e))(").");
-                if(g_isatty)
-                {
-                    std::cerr << "snapinit: fatal: fork() failed, snapinit could not detach itself. (errno: " << strerror(e) << ")." << std::endl;
-                }
-                exit(1);
+                fatal_error(QString("fork() failed, snapinit could not detach itself. (errno: %1).")
+                                .arg(strerror(e)));
                 snap::NOTREACHED();
             }
 
@@ -3602,17 +3880,21 @@ void snap_init::start()
         if(!s->exists())
         {
             failed = true;
-            SNAP_LOG_FATAL("binary for service \"")(s->get_service_name())("\" was not found or is not executable. snapinit will exit without starting anything.");
+
+            // This is a fatal error, but we want to give the user information
+            // about all the missing binary (this is not really true anymore
+            // because this check is done at the end of the service confiration
+            // function and generate a fatal error there already)
+            //
+            QString msg(QString("binary for service \"%1\" was not found or is not executable. snapinit will exit without starting anything.")
+                        .arg(s->get_service_name()));
+            SNAP_LOG_FATAL(msg);
+            syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
         }
     }
     if(failed)
     {
-        SNAP_LOG_FATAL("Premature exit because one or more services cannot be started (their executable are not available.) This may be because you changed the binary path to an invalid location.");
-        if(g_isatty)
-        {
-            std::cerr << "snapinit: fatal: Premature exit because one or more services cannot be started (their executable are not available.) This may be because you changed the binary path to an invalid location. More information can be found in the snapinit.log file." << std::endl;
-        }
-        exit(1);
+        fatal_error(QString("Premature exit because one or more services cannot be started (their executable are not available.) This may be because you changed the binary path to an invalid location."));
         snap::NOTREACHED();
     }
 
@@ -3775,8 +4057,7 @@ void snap_init::stop()
     stop_message.set_command("STOP");
     if(!snap::snap_communicator::snap_udp_server_message_connection::send_message(udp_addr.toUtf8().data(), udp_port, stop_message))
     {
-        SNAP_LOG_FATAL("'snapinit stop' failed to send the STOP message to the running instance.");
-        exit(1);
+        fatal_error("'snapinit stop' failed to send the STOP message to the running instance.");
         snap::NOTREACHED();
     }
 
@@ -3810,8 +4091,8 @@ void snap_init::stop()
     }
 
     // it failed...
-    SNAP_LOG_FATAL("snapinit waited for ")(f_stop_max_wait)(" seconds and the running version did not return.");
-    exit(1);
+    fatal_error(QString("snapinit waited for %1 seconds and the running version did not return.")
+                    .arg(f_stop_max_wait));
     snap::NOTREACHED();
 }
 
@@ -3951,10 +4232,12 @@ void snap_init::sighandler( int sig )
 
     {
         snap::snap_exception_base::output_stack_trace();
-        SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
+        QString msg(QString("Fatal signal caught: %1").arg(signame));
+        SNAP_LOG_FATAL(msg);
+        syslog( LOG_CRIT, "%s", msg.toUtf8().data() );
         if(g_isatty)
         {
-            std::cerr << "snapinit: fatal: fatal signal caught: " << signame << std::endl;
+            std::cerr << "snapinit: fatal: " << msg.toUtf8().data() << std::endl;
         }
     }
 
@@ -3997,39 +4280,23 @@ int main(int argc, char *argv[])
     }
     catch( snap::snap_exception const & e )
     {
-        SNAP_LOG_FATAL("snapinit: snap_exception caught! ")(e.what());
-        if(g_isatty)
-        {
-            std::cerr << "snapinit: fatal: snap_exception caught " << e.what() << std::endl;
-        }
-        retval = 1;
+        fatal_error(QString("snapinit: snap_exception caught! %1").arg(e.what()));
+        snap::NOTREACHED();
     }
     catch( std::invalid_argument const & e )
     {
-        SNAP_LOG_FATAL("snapinit: invalid argument: ")(e.what());
-        if(g_isatty)
-        {
-            std::cerr << "snapinit: fatal: invalid argument " << e.what() << std::endl;
-        }
-        retval = 1;
+        fatal_error(QString("snapinit: invalid argument: %1").arg(e.what()));
+        snap::NOTREACHED();
     }
     catch( std::exception const & e )
     {
-        SNAP_LOG_FATAL("snapinit: std::exception caught! ")(e.what());
-        if(g_isatty)
-        {
-            std::cerr << "snapinit: fatal: std::exception caught! " << e.what() << std::endl;
-        }
-        retval = 1;
+        fatal_error(QString("snapinit: std::exception caught! %1").arg(e.what()));
+        snap::NOTREACHED();
     }
     catch( ... )
     {
-        SNAP_LOG_FATAL("snapinit: unknown exception caught!");
-        if(g_isatty)
-        {
-            std::cerr << "snapinit: fatal: unknown exception caught!" << std::endl;
-        }
-        retval = 1;
+        fatal_error("snapinit: unknown exception caught!");
+        snap::NOTREACHED();
     }
 
     return retval;

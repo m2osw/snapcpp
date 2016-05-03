@@ -37,6 +37,7 @@
 #pragma once
 
 #include "QtCassandra/QCassandraQuery.h"
+#include "QtCassandra/QCassandraValue.h"
 
 #include <map>
 #include <memory>
@@ -57,51 +58,54 @@ namespace QCassandraSchema
 class Value
 {
 public:
-    typedef enum { TypeUnknown, TypeVariant, TypeMap, TypeList } type_t;
-    //typedef std::shared_ptr<Value>            pointer_t;
+    enum type_t {
+        TypeUnknown,
+        TypeVariant,
+        TypeMap,
+        TypeList
+    };
+    //typedef std::shared_ptr<Value>        pointer_t;
     typedef std::vector<Value>            list_t;
-    typedef std::map<QString,Value>       map_t;
+    typedef std::map<QString, Value>      map_t;
 
-    Value();
-    Value( const QVariant& var );
+                        Value();
+                        Value( const QVariant& var );
 
-    //static pointer_t create();
+    void                readValue( CassTools::iterator_pointer_t iter );
+    void                readValue( CassTools::value_pointer_t iter );
+    type_t              type() const { return f_type; }
 
-    void    readValue( CassTools::iterator_pointer_t iter );
-    void    readValue( CassTools::value_pointer_t iter );
-    type_t  type() const { return f_type; }
+    const QVariant&     variant()    const { return f_variant;                          }
+    QVariant&           variant()          { f_type = TypeVariant; return f_variant;    }
+    const list_t&       list()       const { return f_list;                             }
+    list_t&             list()             { f_type = TypeList; return f_list;          }
+    const map_t&        map()        const { return f_map;                              }
+    map_t&              map()              { f_type = TypeMap; return f_map;            }
 
-    const QVariant&     variant()    const { return f_variant;   }
-    QVariant&     		variant()          { f_type = TypeVariant; return f_variant;   }
-    const list_t&       list()       const { return f_list;      }
-    list_t&       		list()             { f_type = TypeList; return f_list;      }
-    const map_t&        map()        const { return f_map;       }
-    map_t&              map()              { f_type = TypeMap; return f_map;       }
+    const QString&      output() const;
 
-    const QString& output() const;
+    void                encodeValue(QCassandraEncoder& encoder) const;
+    void                decodeValue(const QCassandraDecoder& decoder);
 
 private:
-    CassTools::value_pointer_t f_value;
-    type_t                     f_type;
-    QVariant                   f_variant;
-    list_t                     f_list;
-    map_t                      f_map;
+    void                parseValue();
+    void                parseMap();
+    void                parseList();
+    void                parseTuple();
+    void                parseVariant();
 
-    mutable QString f_stringOutput;
+    CassTools::value_pointer_t  f_value;
+    type_t                      f_type;
+    QVariant                    f_variant;
+    list_t                      f_list;
+    map_t                       f_map;
 
-    void    parseValue();
-    void    parseMap();
-    void    parseList();
-    void    parseTuple();
-    void    parseVariant();
+    mutable QString             f_stringOutput;
 };
 
 
-}
-// namespace QCassandraSchema
 
 
-}
-//namespace QtCassandra
-
+} // namespace QCassandraSchema
+} //namespace QtCassandra
 // vim: ts=4 sw=4 et

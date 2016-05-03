@@ -4092,15 +4092,17 @@ void snap_child::connect_cassandra()
     bool connected(false);
     try
     {
-        connected = f_cassandra->connect(server->cassandra_host(), server->cassandra_port());
+        connected = f_cassandra->connect(server->snapdbproxy_addr(), server->snapdbproxy_port());
     }
     catch(std::exception const & e)
     {
-        SNAP_LOG_FATAL("Could not connect to Cassandra server (")(server->cassandra_host())(":")(server->cassandra_port())("). Reason: ")(e.what());
         connected = false; // make double sure this is still false
+        SNAP_LOG_FATAL("Could not connect to the snapdbproxy server (")(server->snapdbproxy_addr())(":")(server->snapdbproxy_port())("). Reason: ")(e.what());
     }
     if(!connected)
     {
+        // cassandra is not valid, get rid of it
+        f_cassandra.reset();
         die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database system is temporarilly unavailable.",
                 "Could not connect to Cassandra");
@@ -6116,12 +6118,15 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const & err
                        HEADER_MODE_ERROR);
 
             // Make sure that the session is re-attached
-            server::pointer_t server( f_server.lock() );
-            if(!server)
+            if(f_cassandra)
             {
-                throw snap_logic_exception("server pointer is nullptr");
+                server::pointer_t server( f_server.lock() );
+                if(!server)
+                {
+                    throw snap_logic_exception("server pointer is nullptr");
+                }
+                server->attach_to_session();
             }
-            server->attach_to_session();
 
             // content type is HTML, we reset this header because it could have
             // been changed to something else and prevent the error from showing

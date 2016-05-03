@@ -82,21 +82,9 @@ public:
 
     void clearCache();
 
-    void dropCell
-        ( const char*       column_name
-        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
-        , int64_t timestamp = 0
-        );
-    void dropCell
-        ( const QString&    column_name
-        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
-        , int64_t timestamp = 0
-        );
-    void dropCell
-        ( const QByteArray& column_key
-        , QCassandraValue::timestamp_mode_t mode = QCassandraValue::TIMESTAMP_MODE_AUTO
-        , int64_t timestamp = 0
-        );
+    void dropCell(const char *      column_name);
+    void dropCell(const QString&    column_name);
+    void dropCell(const QByteArray& column_key);
 
     std::shared_ptr<QCassandraTable> parentTable() const;
 
@@ -106,6 +94,7 @@ private:
     void insertValue(const QByteArray& column_key, const QCassandraValue& value);
     bool getValue(const QByteArray& column_key, QCassandraValue& value);
     void addValue(const QByteArray& column_key, int64_t value);
+    void closeCursor();
 
     friend class QCassandraTable;
     friend class QCassandraCell;
@@ -113,10 +102,10 @@ private:
     // f_table is a parent that has a strong shared pointer over us so it
     // cannot disappear before we do, thus only a bare pointer is enough here
     // (there isn't a need to use a QWeakPointer or QPointer either)
-    std::shared_ptr<QCassandraTable>  f_table;
-    QByteArray                  	  f_key;
-    QCassandraCells                   f_cells;
-    QCassandraQuery::pointer_t        f_query;
+    std::shared_ptr<QCassandraTable>    f_table;
+    QByteArray                  	    f_key;
+    QCassandraCells                     f_cells;
+    int32_t                             f_cursor_index = -1;
 };
 
 // array of rows

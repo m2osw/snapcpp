@@ -69,11 +69,11 @@ int main(int argc, char *argv[])
     }
     catch( snap::snap_exception const& except )
     {
-        SNAP_LOG_FATAL("snapserver: exception caught: ")(except.what());
+        SNAP_LOG_FATAL("snapserver: snap_exception caught: ")(except.what());
     }
     catch( std::exception const& std_except )
     {
-        SNAP_LOG_FATAL("snapserver: exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("snapserver: std::exception caught: ")(std_except.what());
     }
     catch( ... )
     {

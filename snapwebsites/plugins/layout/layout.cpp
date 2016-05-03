@@ -1557,7 +1557,6 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     int64_t const start_date(f_snap->get_start_date());
     QtCassandra::QCassandraValue value;
     value.setInt64Value(start_date);
-    value.setTimestamp(start_date);
     layout_table->row(layout_name)->cell(reference)->setValue(value);
 
     // the last updated value should never be empty, but that happens when

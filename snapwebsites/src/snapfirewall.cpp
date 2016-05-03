@@ -24,6 +24,57 @@
 namespace
 {
 
+class snap_firewall;
+
+
+/** \brief Handle messages from the Snap Communicator server.
+ *
+ * This class is an implementation of the TCP client message connection
+ * so we can handle incoming messages.
+ */
+class messager
+        : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
+{
+public:
+    typedef std::shared_ptr<messager>    pointer_t;
+
+                        messager(snap_firewall * sfw, std::string const & addr, int port);
+
+    // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
+    virtual void        process_message(snap::snap_communicator_message const & message);
+    virtual void        process_connection_failed(std::string const & error_message);
+    virtual void        process_connected();
+
+private:
+    // this is owned by a server function so no need for a smart pointer
+    snap_firewall *     f_snap_firewall;
+};
+
+
+/** \brief The timer to produce wake up calls once in a while.
+ *
+ * This timer is used to wake us once in a while as determined by when
+ * an IP address has to be removed from the firewall.
+ *
+ * The date feature is always used on this timer (i.e. wake up
+ * the process at a specific date and time in microseconds.)
+ */
+class wakeup_timer
+        : public snap::snap_communicator::snap_timer
+{
+public:
+    typedef std::shared_ptr<wakeup_timer>        pointer_t;
+
+                                wakeup_timer(snap_firewall * sfw);
+
+    // snap::snap_communicator::snap_timer implementation
+    virtual void                process_timeout();
+
+private:
+    snap_firewall *             f_snap_firewall;
+};
+
+
 /** \brief Firewall process class.
  *
  * This class handles firewall requests.
@@ -86,10 +137,10 @@ class snap_firewall
 public:
     typedef std::shared_ptr<snap_firewall>      pointer_t;
 
+                                snap_firewall( int argc, char * argv[] );
                                 ~snap_firewall();
 
-    static pointer_t            create_instance( int argc, char * argv[] );
-    static pointer_t            instance();
+    static pointer_t            instance( int argc, char * argv[] );
 
     void                        run();
     void                        process_timeout();
@@ -98,7 +149,6 @@ public:
     static void                 sighandler( int sig );
 
 private:
-                                snap_firewall( int argc, char * argv[] );
                                 snap_firewall( snap_firewall const & ) = delete;
     snap_firewall &             operator = ( snap_firewall const & ) = delete;
 
@@ -107,66 +157,29 @@ private:
     void                        next_wakeup();
     void                        stop(bool quitting);
 
-    static pointer_t                            f_instance;
     advgetopt::getopt                           f_opt;
     snap::snap_config                           f_config;
     snap::snap_config                           f_server_config;
     QString                                     f_log_conf = "/etc/snapwebsites/snapfirewall.properties";
     QString                                     f_server_name;
+    QString                                     f_communicator_addr = "127.0.0.1";
+    int                                         f_communicator_port = 4040;
+    snap::snap_communicator::pointer_t          f_communicator;
     snap::snap_cassandra                        f_cassandra;
     QtCassandra::QCassandraTable::pointer_t     f_firewall_table;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
+    messager::pointer_t                         f_messager;
+    wakeup_timer::pointer_t                     f_wakeup_timer;
 };
 
 
-/** \brief The instance of the snap_firewall.
- *
- * This is the instance of the snap_firewall. The variable where the pointer
- * is kept.
- */
-snap_firewall::pointer_t                    snap_firewall::f_instance;
-
-
-/** \brief The communicator.
- *
- * This is the pointer to the communicator. Since the communicator is
- * a singleton, we have only one and thus can keep a copy here.
- */
-snap::snap_communicator::pointer_t          g_communicator;
 
 
 
 
-/** \brief The timer to produce wake up calls once in a while.
- *
- * This timer is used to wake us once in a while as determined by when
- * an IP address has to be removed from the firewall.
- *
- * The date feature is always used on this timer (i.e. wake up
- * the process at a specific date and time in microseconds.)
- */
-class wakeup_timer
-        : public snap::snap_communicator::snap_timer
-{
-public:
-    typedef std::shared_ptr<wakeup_timer>        pointer_t;
-
-                                wakeup_timer( snap_firewall * sfw );
-
-    // snap::snap_communicator::snap_timer implementation
-    virtual void                process_timeout();
-
-private:
-    snap_firewall *             f_snap_firewall;
-};
 
 
-/** \brief The wakeup timer.
- *
- * We create one wakeup timer. It is saved in this variable.
- */
-wakeup_timer::pointer_t             g_wakeup_timer;
 
 
 /** \brief Initializes the timer with a pointer to the snap firewall.
@@ -215,37 +228,6 @@ void wakeup_timer::process_timeout()
 
 
 
-
-
-/** \brief Handle messages from the Snap Communicator server.
- *
- * This class is an implementation of the TCP client message connection
- * so we can handle incoming messages.
- */
-class messager
-        : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
-{
-public:
-    typedef std::shared_ptr<messager>    pointer_t;
-
-                        messager(snap_firewall * sfw, std::string const & addr, int port);
-
-    // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
-    virtual void        process_message(snap::snap_communicator_message const & message);
-    virtual void        process_connection_failed(std::string const & error_message);
-    virtual void        process_connected();
-
-private:
-    // this is owned by a server function so no need for a smart pointer
-    snap_firewall *     f_snap_firewall;
-};
-
-
-/** \brief The messager.
- *
- * We create only one messager. It is saved in this variable.
- */
-messager::pointer_t             g_messager;
 
 
 /** \brief The messager initialization.
@@ -315,7 +297,7 @@ void messager::process_connection_failed(std::string const & error_message)
 
 /** \brief The connection was established with Snap! Communicator.
  *
- * Whenever the connection is establied with the Snap! Communicator,
+ * Whenever the connection is established with the Snap! Communicator,
  * this callback function is called.
  *
  * The messager reacts by REGISTERing the snap_firewall with the Snap!
@@ -380,6 +362,14 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+        "connect",
+        nullptr,
+        "The address and port information to connect to snapcommunicator (defined in /etc/snapwebsites/snapinit.xml).",
+        advgetopt::getopt::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
         "debug",
         nullptr,
         "Start the snapfirewall in debug mode.",
@@ -408,6 +398,22 @@ advgetopt::getopt::option const g_snapfirewall_options[] =
         nullptr,
         "Only output to the console, not a log file.",
         advgetopt::getopt::no_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+        "server-name",
+        nullptr,
+        "The name of the server that is going to run this instance of snapfirewall (defined in /etc/snapwebsites/snapinit.conf), this parameter is required.",
+        advgetopt::getopt::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+        "snapdbproxy",
+        nullptr,
+        "The address and port information to connect to snapdbproxy (defined in /etc/snapwebsites/snapinit.xml).",
+        advgetopt::getopt::required_argument
     },
     {
         '\0',
@@ -465,6 +471,11 @@ snap_firewall::snap_firewall( int argc, char * argv[] )
     //
     f_config.read_config_file( f_opt.get_string("config").c_str() );
 
+    // the "server" configuration file is used in f_cassandra and it
+    // needs to have the cassandra connection information
+    //
+    f_server_config["snapdbproxy_listen"] = f_opt.get_string("snapdbproxy").c_str();
+
     // setup the logger
     //
     if( f_opt.is_defined( "nolog" ) )
@@ -506,7 +517,7 @@ snap_firewall::snap_firewall( int argc, char * argv[] )
  */
 snap_firewall::~snap_firewall()
 {
-    g_communicator.reset();
+    f_communicator.reset();
 }
 
 
@@ -525,49 +536,6 @@ void snap_firewall::usage()
 }
 
 
-/** \brief Create the firewall singleton.
- *
- * This function makes sure that the firewall singleton is created.
- *
- * It passes the \p argc and \p argv parameters to the constructor
- * which parses them as expected. If an error occurs while checking
- * out the command line options defined here, then the process gets
- * terminated immediately.
- *
- * \param[in] argc  The number of arguments in \p argv.
- * \param[in] argv  The arguments represented by C-strings.
- *
- * \return A copy of the snap_firewall instance.
- */
-snap_firewall::pointer_t snap_firewall::create_instance( int argc, char * argv[] )
-{
-    f_instance.reset( new snap_firewall( argc, argv ) );
-    if(!f_instance)
-    {
-        // new should throw std::bad_alloc or some other error anyway
-        throw std::runtime_error("snapfirewall failed to create an instance of a snap_firewall object");
-    }
-
-    return f_instance;
-}
-
-
-/** \brief This function allows you to retrieve the firewall object pointer.
- *
- * Assuming you called create_instance() once before, you can now retrieve
- * a pointer to the snap firewall object using this function. The pointer
- * stays in place for the remainder of time the snapfirewall process runs.
- *
- * \return A pointer to the snap_firewall singleton.
- */
-snap_firewall::pointer_t snap_firewall::instance()
-{
-    if( !f_instance )
-    {
-        throw std::invalid_argument( "snapfirewall instance must be first created with create_instance()!" );
-    }
-    return f_instance;
-}
 
 
 /** \brief Execute the firewall run() loop.
@@ -582,44 +550,14 @@ void snap_firewall::run()
 {
     // Stop on these signals, log them, then terminate.
     //
-    // Note: the handler uses the logger which the create_instance()
-    //       initializes
-    //
     signal( SIGSEGV, snap_firewall::sighandler );
     signal( SIGBUS,  snap_firewall::sighandler );
     signal( SIGFPE,  snap_firewall::sighandler );
     signal( SIGILL,  snap_firewall::sighandler );
 
-    // read the server configuration file
+    // get the server name
     //
-    {
-        if(!f_config.contains("server_config"))
-        {
-            SNAP_LOG_FATAL("the snap firewall configuration file (")
-                          (f_opt.get_string("config"))
-                          (") must include a \"server_config\" parameter.");
-            throw snap::snapwebsites_exception_invalid_parameters(  
-                        "the snapfirewall configuration file ("
-                      + f_opt.get_string("config")
-                      + ") must include a \"server_config\" parameter.");
-        }
-
-        f_server_config.read_config_file( f_config["server_config"] );
-
-        // get our server name, we use it for indexing our blocked IP addresses
-        //
-        if(!f_server_config.contains("server_name"))
-        {
-            SNAP_LOG_FATAL("the server configuration file (")
-                          (f_config["server_config"])
-                          (") must include a \"server_name\" parameter.");
-            throw snap::snapwebsites_exception_invalid_parameters(
-                        "the server configuration file ("
-                      + f_config["server_config"]
-                      + ") must include a \"server_name\" parameter.");
-        }
-        f_server_name = f_server_config["server_name"];
-    }
+    f_server_name = f_opt.get_string("server-name").c_str();
 
     // connect to Cassandra and get a pointer to our firewall table
     //
@@ -631,30 +569,19 @@ void snap_firewall::run()
 
     // retrieve the snap communicator information
     //
-    QString communicator_addr("127.0.0.1");
-    int communicator_port(4040);
-    if(f_config.contains("snapcommunicator_listen"))
-    {
-        tcp_client_server::get_addr_port(f_config["snapcommunicator_listen"], communicator_addr, communicator_port, "tcp");
-    }
-    else if(!f_server_config.contains("snapcommunicator_listen"))
-    {
-        tcp_client_server::get_addr_port(f_server_config["snapcommunicator_listen"], communicator_addr, communicator_port, "tcp");
-    }
+    tcp_client_server::get_addr_port(f_opt.get_string("connect").c_str(), f_communicator_addr, f_communicator_port, "tcp");
 
     // initialize the communicator and its connections
     //
-    g_communicator = snap::snap_communicator::instance();
+    f_communicator = snap::snap_communicator::instance();
 
-    g_wakeup_timer.reset(new wakeup_timer(this));
-    g_communicator->add_connection(g_wakeup_timer);
+    f_wakeup_timer.reset(new wakeup_timer(this));
+    f_communicator->add_connection(f_wakeup_timer);
 
-    g_messager.reset(new messager(this, communicator_addr.toUtf8().data(), communicator_port));
-    g_communicator->add_connection(g_messager);
+    f_messager.reset(new messager(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
+    f_communicator->add_connection(f_messager);
 
-    setup_firewall();
-
-    g_communicator->run();
+    f_communicator->run();
 }
 
 
@@ -713,7 +640,7 @@ void snap_firewall::setup_firewall()
             //
             QString const ip(cell->value().stringValue());
             QString iplock_remove(QString("iplock --remove %1").arg(ip));
-            int rr(system(iplock_remove.toUtf8().data()));
+            int const rr(system(iplock_remove.toUtf8().data()));
             if(rr != 0)
             {
                 int const e(errno);
@@ -726,7 +653,7 @@ void snap_firewall::setup_firewall()
             {
                 // drop that row, it is too old
                 //
-                row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, now);
+                row->dropCell(key);
             }
             else
             {
@@ -738,8 +665,11 @@ void snap_firewall::setup_firewall()
                     // on the first one, we want to mark that as the
                     // time when the block has to be dropped
                     //
+                    // Note: only the first one is necessary since these
+                    //       are sorted by date in the database
+                    //
                     first = false;
-                    g_wakeup_timer->set_timeout_date(drop_date);
+                    f_wakeup_timer->set_timeout_date(drop_date);
                 }
 
                 QString const iplock_block(QString("iplock --block %1").arg(ip));
@@ -829,7 +759,7 @@ void snap_firewall::process_timeout()
             // now drop that row
             //
             QByteArray const key(cell->columnKey());
-            row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, now);
+            row->dropCell(key);
         }
     }
 
@@ -870,7 +800,7 @@ void snap_firewall::next_wakeup()
             // we have a valid date to wait on,
             // save it in our wakeup timer
             //
-            g_wakeup_timer->set_timeout_date(limit);
+            f_wakeup_timer->set_timeout_date(limit);
         }
     }
 }
@@ -1000,20 +930,6 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         // Snap! Communicator received our REGISTER command
         //
 
-        // send a message to the snapinit service letting it know
-        // that it can now safely start the snapserver (i.e. we
-        // blocked all the unwanted IP addresses)
-        //
-        // We can do this here because we blocked the initialization
-        // to setup the firewall. So the snapfirewall has been safe
-        // for a little while now.
-        //
-        snap::snap_communicator_message safe_message;
-        safe_message.set_command("SAFE");
-        safe_message.set_service("snapinit");
-        safe_message.add_parameter("name", "firewall");
-        g_messager->send_message(safe_message);
-
         return;
     }
 
@@ -1028,7 +944,26 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         //
         reply.add_parameter("list", "BLOCK,HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
 
-        g_messager->send_message(reply);
+        f_messager->send_message(reply);
+
+        // now that we are fully registered, setup the firewall
+        //
+        setup_firewall();
+
+        // send a message to the snapinit service letting it know
+        // that it can now safely start the snapserver (i.e. we
+        // blocked all the unwanted IP addresses)
+        //
+        // We can do this here because we blocked the initialization
+        // to setup the firewall. So the snapfirewall has been safe
+        // for a little while now.
+        //
+        snap::snap_communicator_message safe_message;
+        safe_message.set_command("SAFE");
+        safe_message.set_service("snapinit");
+        safe_message.add_parameter("name", "firewall");
+        f_messager->send_message(safe_message);
+
         return;
     }
 
@@ -1047,7 +982,7 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
-        g_messager->send_message(reply);
+        f_messager->send_message(reply);
     }
 
     return;
@@ -1056,19 +991,18 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
 
 /** \brief Called whenever we receive the STOP command or equivalent.
  *
- * This function makes sure the snapbackend exits as quickly as
+ * This function makes sure the snapfirewall exits as quickly as
  * possible.
  *
  * \li Marks the messager as done.
- * \li Disabled wake up and tick timers.
+ * \li Disabled wakeup timer.
  * \li UNREGISTER from snapcommunicator.
- * \li STOP child if one is currently running.
- * \li Remove timers and child death connections if no child is running.
+ * \li Remove wakeup timer from snapcommunicator.
  *
  * \note
- * If the g_messager is still in place, then just sending the
+ * If the f_messager is still in place, then just sending the
  * UNREGISTER is enough to quit normally. The socket of the
- * g_messager will be closed by the snapcommunicator server
+ * f_messager will be closed by the snapcommunicator server
  * and we will get a HUP signal. However, we get the HUP only
  * because we first mark the messager as done.
  *
@@ -1078,31 +1012,37 @@ void snap_firewall::stop(bool quitting)
 {
     f_stop_received = true;
 
-    g_messager->mark_done();
+    if(f_messager)
+    {
+        f_messager->mark_done();
+    }
 
-    // stop the timers immediately, although that will not prevent
+    // stop the timer immediately, although that will not prevent
     // one more call to their callbacks which thus still have to
     // check the f_stop_received flag
     //
-    if(g_wakeup_timer)
+    if(f_wakeup_timer)
     {
-        g_wakeup_timer->set_enable(false);
-        g_wakeup_timer->set_timeout_date(-1);
+        f_wakeup_timer->set_enable(false);
+        f_wakeup_timer->set_timeout_date(-1);
     }
 
     // unregister if we are still connected to the messager
     // and Snap! Communicator is not already quitting
     //
-    if(g_messager && !quitting)
+    if(f_messager && !quitting)
     {
         snap::snap_communicator_message cmd;
         cmd.set_command("UNREGISTER");
         cmd.add_parameter("service", "snapfirewall");
-        g_messager->send_message(cmd);
+        f_messager->send_message(cmd);
     }
 
-    //g_communicator->remove_connection(g_messager); -- this one will get an expected HUP shortly
-    g_communicator->remove_connection(g_wakeup_timer);
+    if(f_communicator)
+    {
+        //f_communicator->remove_connection(f_messager); -- this one will get an expected HUP shortly
+        f_communicator->remove_connection(f_wakeup_timer);
+    }
 }
 
 
@@ -1172,11 +1112,13 @@ int main(int argc, char * argv[])
     {
         // create an instance of the snap_firewall object
         //
-        snap_firewall::pointer_t firewall(snap_firewall::create_instance( argc, argv ));
+        snap_firewall firewall( argc, argv );
+
+        SNAP_LOG_INFO("--------------------------------- snapfirewall started.");
 
         // Now run!
         //
-        firewall->run();
+        firewall.run();
 
         // exit normally (i.e. we received a STOP message on our
         // connection with the Snap! Communicator service.)

@@ -72,12 +72,12 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_unique_unique_create_delete)
     // second, check whether the already link exists, if so delete it
     if(branch_table->row(source.get_branch_key())->exists(source_field_name))
     {
-        branch_table->row(source.get_branch_key())->dropCell(source_field_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        branch_table->row(source.get_branch_key())->dropCell(source_field_name);
         SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(source.get_branch_key())->exists(source_field_name))
     }
     if(branch_table->row(destination.get_branch_key())->exists(destination_field_name))
     {
-        branch_table->row(destination.get_branch_key())->dropCell(destination_field_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        branch_table->row(destination.get_branch_key())->dropCell(destination_field_name);
         SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(destination.get_branch_key())->exists(destination_field_name))
     }
 
@@ -154,12 +154,12 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // 2.1 check with "unique" field names, although these should really not exist!
     if(branch_table->row(source.get_branch_key())->exists(source_field_name))
     {
-        branch_table->row(source.get_branch_key())->dropCell(source_field_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        branch_table->row(source.get_branch_key())->dropCell(source_field_name);
         SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(source.get_branch_key())->exists(source_field_name))
     }
     if(branch_table->row(destination.get_branch_key())->exists(destination_field_name))
     {
-        branch_table->row(destination.get_branch_key())->dropCell(destination_field_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        branch_table->row(destination.get_branch_key())->dropCell(destination_field_name);
         SNAP_TEST_PLUGIN_SUITE_ASSERT(!branch_table->row(destination.get_branch_key())->exists(destination_field_name))
     }
 
@@ -186,7 +186,7 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
             for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 QString const key(QString::fromUtf8(cell_iterator.key()));
-                row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                row->dropCell(key);
                 SNAP_TEST_PLUGIN_SUITE_ASSERT(!row->exists(key))
             }
         }
@@ -214,7 +214,7 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
             for(QtCassandra::QCassandraCells::const_iterator cell_iterator(cells.begin()); cell_iterator != cells.end(); ++cell_iterator)
             {
                 QString const key(QString::fromUtf8(cell_iterator.key()));
-                row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                row->dropCell(key);
                 SNAP_TEST_PLUGIN_SUITE_ASSERT(!row->exists(key))
             }
         }
@@ -223,11 +223,11 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
     // 2.3 check links table with multiple field names
     if(links_table->exists(source_multilink_name))
     {
-        links_table->dropRow(source_multilink_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        links_table->dropRow(source_multilink_name);
     }
     if(links_table->exists(destination_multilink_name))
     {
-        links_table->dropRow(destination_multilink_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        links_table->dropRow(destination_multilink_name);
     }
 
     // now get ready to create the link

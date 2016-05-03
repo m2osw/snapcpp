@@ -683,7 +683,7 @@ void snap_backend::add_uri_for_processing(QString const & action, int64_t date, 
         //
         QByteArray column_key;
         QtCassandra::appendInt64Value(column_key, previous_entry);
-        f_backend_table->row(action)->dropCell(column_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        f_backend_table->row(action)->dropCell(column_key);
     }
 
     QByteArray date_key;
@@ -718,18 +718,18 @@ void snap_backend::remove_processed_uri(QString const & action, QByteArray const
         // drop the actual entry and the reference
         QByteArray column_key;
         QtCassandra::appendInt64Value(column_key, previous_entry);
-        f_backend_table->row(action)->dropCell(column_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        f_backend_table->row(action)->dropCell(column_key);
     }
 
     // just in case, alway sforce a drop on this cell (it should not
     // exist if previous_entry was -1)
     //
-    f_backend_table->row(action_reference)->dropCell(website_uri, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+    f_backend_table->row(action_reference)->dropCell(website_uri);
 
     // also remove the processed entry (which is the one we really use
     // to find what has to be worked on)
     //
-    f_backend_table->row(action)->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+    f_backend_table->row(action)->dropCell(key);
 }
 
 
@@ -753,11 +753,11 @@ void snap_backend::run_backend()
     }
     catch( snap_exception const & e )
     {
-        SNAP_LOG_FATAL("snap_backend::run_backend(): snap exception caught: ")(e.what());
+        SNAP_LOG_FATAL("snap_backend::run_backend(): snap_exception caught: ")(e.what());
     }
     catch( std::exception const & e )
     {
-        SNAP_LOG_FATAL("snap_backend::run_backend(): standard exception caught: ")(e.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("snap_backend::run_backend(): std::exception caught: ")(e.what());
     }
     catch( ... )
     {
@@ -1471,9 +1471,6 @@ bool snap_backend::is_ready(QString const & uri)
         }
 
         // create backend table
-        create_table(get_name(name_t::SNAP_NAME_BACKEND), "List of sites to run backends against.");
-
-        // get the pointer after synchronization
         f_backend_table = create_table(get_name(name_t::SNAP_NAME_BACKEND), "List of sites to run backends against.");
     }
 

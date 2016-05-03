@@ -767,7 +767,7 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
         auto& table_fields( table->fields() );
         table_fields.clear();
         table_fields["comment"]                     = QVariant(comment);
-        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // 1 hour
         table_fields["gc_grace_seconds"]            = QVariant(864000);
         //
         auto& compaction_value_map(table_fields["compaction"].map());
@@ -1549,7 +1549,7 @@ void snap_manager::on_domainDelete_clicked()
         QtCassandra::QCassandraRow::pointer_t row(table->findRow(row_index_name));
         if(row)
         {
-            row->dropCell(f_domain_name->text(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            row->dropCell(f_domain_name->text());
         }
     }
 

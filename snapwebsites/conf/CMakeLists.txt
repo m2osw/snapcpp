@@ -40,6 +40,7 @@ install(
         logserver.properties
         snapcgi.properties
         snapcommunicator.properties
+        snapdbproxy.properties
         snapfirewall.properties
         snapinit.properties
 
@@ -47,6 +48,7 @@ install(
         snap-apache2.conf
         snapcgi.conf
         snapcommunicator.conf
+        snapdbproxy.conf
         snapfirewall.conf
         snapinit.conf
         snapserver.conf

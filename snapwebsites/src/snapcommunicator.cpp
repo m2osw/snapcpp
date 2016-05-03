@@ -323,9 +323,11 @@ public:
 private:
     void                        refresh_heard_of();
     void                        shutdown(bool full);
+    void                        broadcast_message(snap::snap_communicator_message const & message);
 
     snap::server::pointer_t                             f_server;
 
+    QString                                             f_server_name;
     snap::snap_communicator::pointer_t                  f_communicator;
     snap::snap_communicator::snap_connection::pointer_t f_local_listener;   // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_listener;         // TCP/IP
@@ -812,9 +814,10 @@ class service_connection
 public:
     typedef std::shared_ptr<service_connection>    pointer_t;
 
-    service_connection(snap_communicator_server::pointer_t cs, int socket)
+    service_connection(snap_communicator_server::pointer_t cs, int socket, QString const & server_name)
         : snap_tcp_server_client_message_connection(socket)
         , base_connection(cs)
+        , f_server_name(server_name)
     {
     }
 
@@ -856,7 +859,21 @@ public:
     // snap::snap_communicator::snap_tcp_server_client_message_connection implementation
     virtual void process_message(snap::snap_communicator_message const & message)
     {
-        f_communicator_server->process_message(shared_from_this(), message, false);
+        // make sure the destination knows who sent that message so it
+        // is possible to directly reply to that specific instance of
+        // a service
+        //
+        if(f_named)
+        {
+            snap::snap_communicator_message forward_message(message);
+            forward_message.set_sent_from_server(f_server_name);
+            forward_message.set_sent_from_service(get_name());
+            f_communicator_server->process_message(shared_from_this(), forward_message, false);
+        }
+        else
+        {
+            f_communicator_server->process_message(shared_from_this(), message, false);
+        }
     }
 
     /** \brief Remove ourselves when we receive a timeout.
@@ -871,6 +888,32 @@ public:
         remove_from_communicator();
     }
 
+    /** \brief Tell that the connection was given a real name.
+     *
+     * Whenever we receive an event through this connection,
+     * we want to mark the message as received from the service.
+     *
+     * However, by default the name of the service is on purpose
+     * set to an "invalid value" (i.e. a name with a space.) That
+     * value is not expected to be used when forwarding the message
+     * to another service.
+     *
+     * Once a system properly registers with the REGISTER message,
+     * we receive a valid name then. That name is saved in the
+     * connection and the connection is marked as having a valid
+     * name.
+     *
+     * This very function must be called once the proper name was
+     * set in this connection.
+     */
+    void properly_named()
+    {
+        f_named = true;
+    }
+
+private:
+    QString const               f_server_name;
+    bool                        f_named = false;
 };
 
 
@@ -899,11 +942,13 @@ public:
      *            waiting; if more arrive, refuse them until we are done with
      *            some existing connections.
      * \param[in] local  Whether this connection expects local services only.
+     * \param[in] server_name  The name of the server running this instance.
      */
-    listener(snap_communicator_server::pointer_t cs, std::string const & addr, int port, int max_connections, bool local)
+    listener(snap_communicator_server::pointer_t cs, std::string const & addr, int port, int max_connections, bool local, QString const & server_name)
         : snap_tcp_server_connection(addr, port, max_connections, true, false)
         , f_communicator_server(cs)
         , f_local(local)
+        , f_server_name(server_name)
     {
     }
 
@@ -922,7 +967,7 @@ public:
             return;
         }
 
-        service_connection::pointer_t connection(new service_connection(f_communicator_server, new_socket));
+        service_connection::pointer_t connection(new service_connection(f_communicator_server, new_socket, f_server_name));
 
         // TBD: is that a really weak test?
         //
@@ -971,7 +1016,8 @@ public:
 
 private:
     snap_communicator_server::pointer_t     f_communicator_server;
-    bool                                    f_local = false;
+    bool const                              f_local = false;
+    QString const                           f_server_name;
 };
 
 
@@ -1053,6 +1099,9 @@ snap_communicator_server::snap_communicator_server(snap::server::pointer_t s)
  */
 void snap_communicator_server::init()
 {
+    // keep a copy of the server name handy
+    f_server_name = f_server->get_parameter("server_name");
+
     // change nice value of the Snap! Communicator process
     {
         QString const nice_str(f_server->get_parameter("nice"));
@@ -1133,7 +1182,7 @@ void snap_communicator_server::init()
 
         // make this listener the local listener
         //
-        f_local_listener.reset(new listener(shared_from_this(), addr.toUtf8().data(), port, max_pending_connections, true));
+        f_local_listener.reset(new listener(shared_from_this(), addr.toUtf8().data(), port, max_pending_connections, true, f_server_name));
         f_local_listener->set_name("snap communicator local listener");
         f_communicator->add_connection(f_local_listener);
     }
@@ -1149,7 +1198,7 @@ void snap_communicator_server::init()
         //
         if(addr != "127.0.0.1")
         {
-            f_listener.reset(new listener(shared_from_this(), addr.toUtf8().data(), port, max_pending_connections, false));
+            f_listener.reset(new listener(shared_from_this(), addr.toUtf8().data(), port, max_pending_connections, false, f_server_name));
             f_listener->set_name("snap communicator listener");
             f_communicator->add_connection(f_listener);
         }
@@ -1751,6 +1800,10 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     //
                     QString const service_name(message.get_parameter("service"));
                     connection->set_name(service_name);
+                    if(service_conn)
+                    {
+                        service_conn->properly_named();
+                    }
 
                     base->set_connection_types("client");
 
@@ -1771,6 +1824,15 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     else if(service_conn)
                     {
                         service_conn->send_message(reply);
+
+                        // tell about the new service to those listening
+                        //
+                        snap::snap_communicator_message new_service;
+                        new_service.set_service("*");
+                        new_service.set_command("NEWSERVICE");
+                        new_service.add_parameter("server", f_server_name);
+                        new_service.add_parameter("service", service_name);
+                        broadcast_message(new_service);
                     }
                     else
                     {
@@ -2050,9 +2112,18 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
     //    to a remote snapcommunicator and not to a service on this system)
     //
 
-    bool const broadcast(service == "*");
-    if(f_local_services_list.contains(service)
-    || broadcast)
+    // broadcasting?
+    if(service == "*")
+    {
+        broadcast_message(message);
+        return;
+    }
+
+    QString const server_name(message.get_server());
+
+    if(server_name.isEmpty()
+    || server_name == "*"
+    || server_name == f_server_name)
     {
         // service is local, check whether the service is registered,
         // if registered, forward the message immediately
@@ -2061,21 +2132,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
         for(auto nc : connections)
         {
             service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
-            if(!conn)
-            {
-                // not a connection of a type we care around here
-                continue;
-            }
-
-            if(broadcast)
-            {
-                if(conn->understand_command(command))
-                {
-                    //verify_command(conn, message); -- we reach this line only if the command is understood
-                    conn->send_message(message);
-                }
-            }
-            else if(conn->get_name() == service)
+            if(conn && conn->get_name() == service)
             {
                 // we have such a service, just forward to it now
                 //
@@ -2086,17 +2143,22 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     verify_command(conn, message);
                     conn->send_message(message);
                 }
-                catch(std::runtime_error const &)
+                catch(std::runtime_error const & e)
                 {
                     // ignore the error because this can come from an
                     // external source (i.e. snapsignal) where an end
                     // user may try to break the whole system!
+                    SNAP_LOG_DEBUG("snapcommunicator failed to send a message to connection \"")
+                                  (conn->get_name())
+                                  ("\" (error: ")
+                                  (e.what())
+                                  (")");
                 }
                 return;
             }
         }
 
-        if(!broadcast)
+        if(f_local_services_list.contains(service))
         {
             // its a service that is expected on this computer, but it is not
             // running right now... so cache the message
@@ -2109,12 +2171,36 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
             //       the cache only for a limited time (i.e. 5h)
             //
             f_local_message_cache.push_back(message);
+            return;
         }
-        return;
+
+        if(server_name == f_server_name)
+        {
+            SNAP_LOG_DEBUG("received event \"")(command)("\" for local service \"")(service)("\", which is not currently registered. Dropping message.");
+            return;
+        }
     }
 
 SNAP_LOG_TRACE("received event for remote service \"")(service)("\" *** not yet implemented! ***");
 
+}
+
+
+void snap_communicator_server::broadcast_message(snap::snap_communicator_message const & message)
+{
+    snap::snap_communicator::snap_connection::vector_t const & connections(f_communicator->get_connections());
+    for(auto nc : connections)
+    {
+        service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
+        if(conn)
+        {
+            if(conn->understand_command(message.get_command()))
+            {
+                //verify_command(conn, message); -- we reach this line only if the command is understood, it is therefore good
+                conn->send_message(message);
+            }
+        }
+    }
 }
 
 

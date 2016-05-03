@@ -18,13 +18,31 @@
 #pragma once
 
 #include "snap_config.h"
+#include "snap_exception.h"
 
-#include <controlled_vars/controlled_vars.h>
 #include <QtCassandra/QCassandra.h>
 
 
 namespace snap
 {
+
+class snap_cassandra_exception : public snap_exception
+{
+public:
+    snap_cassandra_exception(char const *        what_msg) : snap_exception("snap_cassandra", what_msg) {}
+    snap_cassandra_exception(std::string const & what_msg) : snap_exception("snap_cassandra", what_msg) {}
+    snap_cassandra_exception(QString const &     what_msg) : snap_exception("snap_cassandra", what_msg) {}
+};
+
+class snap_cassandra_not_available_exception : public snap_cassandra_exception
+{
+public:
+    snap_cassandra_not_available_exception(char const *        what_msg) : snap_cassandra_exception(what_msg) {}
+    snap_cassandra_not_available_exception(std::string const & what_msg) : snap_cassandra_exception(what_msg) {}
+    snap_cassandra_not_available_exception(QString const &     what_msg) : snap_cassandra_exception(what_msg) {}
+};
+
+
 
 
 class snap_cassandra
@@ -37,14 +55,14 @@ public:
     QtCassandra::QCassandraContext::pointer_t   get_snap_context();
     QtCassandra::QCassandraTable::pointer_t     create_table(QString const & table_name, QString const & comment);
 
-    QString                                     get_cassandra_host() const;
-    int32_t                                     get_cassandra_port() const;
+    QString                                     get_snapdbproxy_addr() const;
+    int32_t                                     get_snapdbproxy_port() const;
     bool                                        is_connected() const;
 
 private:
     QtCassandra::QCassandra::pointer_t          f_cassandra;
-    QString                                     f_cassandra_host;
-    controlled_vars::zint32_t                   f_cassandra_port;
+    QString                                     f_snapdbproxy_addr = "localhost";
+    int                                         f_snapdbproxy_port = 9042;
     snap_config const &                         f_parameters;
     QMap<QString, bool>                         f_created_table;
 };

@@ -122,8 +122,9 @@ private:
     CassTools::future_pointer_t    f_sessionFuture;
     CassTools::result_pointer_t    f_queryResult;
     CassTools::iterator_pointer_t  f_rowsIterator;
-    consistency_level_t			   f_consistencyLevel;
-    int64_t						   f_timestamp;
+    consistency_level_t			   f_consistencyLevel = CONSISTENCY_LEVEL_DEFAULT;
+    int64_t						   f_timestamp = 0;
+    int64_t						   f_timeout = 0;
 
     void 		    setStatementConsistency();
     void 		    setStatementTimestamp();

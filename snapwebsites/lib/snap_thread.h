@@ -344,6 +344,7 @@ public:
     bool                        is_stopping() const;
     bool                        start();
     void                        stop();
+    bool                        kill(int sig);
 
 private:
     typedef controlled_vars::auto_init<pthread_t, -1> m1pthread_t;

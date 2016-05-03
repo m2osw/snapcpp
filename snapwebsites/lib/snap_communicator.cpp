@@ -115,39 +115,117 @@ sigset_t                            g_signal_handlers = sigset_t();
  * The message format supported is:
  *
  * \code
- *      ( service '/' )? command ' ' ( parameter_name '=' value ';' )*
+ *      ( '<' server / service ' ')? ( service '/' )? command ' ' ( parameter_name '=' value ';' )*
+ * \endcode
+ *
+ * The sender "<server/service" names are added by snapcommunicator
+ * when it receives a message which is destined for another service (i.e.
+ * not itself). This can be used by the receiver to reply back to the exact
+ * same process if it is a requirement for that message (i.e a process that
+ * sends a LOCK message, for example, expects to receive the LOCKED message
+ * back as an answer.) Note that it is assumed that there cannot be more
+ * than one service named 'service' per server. This is enforced by the
+ * snapcommunicator REGISTER function.
+ *
+ * \code
+ *      // why replying to the exact message sender, one can use the
+ *      // following two lines of code:
+ *      //
+ *      reply.set_server(message.get_sent_from_server());
+ *      reply.set_service(message.get_sent_from_service());
+ *
+ *      // or use the reply_to() helper function
+ *      //
+ *      reply.reply_to(message);
  * \endcode
  *
  * The space after the command cannot be there unless parameters follow.
- * Parameters must be separated by semi-colons. No space is allowed anywhere
- * except between the command and first parameter. The value of a parameter
- * can be quoted if it includes a ';'. Quotes can be escaped inside the
- * value by adding a backslash in front of it. Newline characters (as well
- * as return carriage) are also escaped. Only values support any character.
+ * Parameters must be separated by semi-colons.
+ *
+ * The value of a parameter gets quoted when it includes a ';'. Within
+ * the quotes, a Double Quote can be escaped inside by adding a backslash
+ * in front of it (\"). Newline characters (as well as return carriage)
+ * are also escaped using \n and \r respectively.
+ *
+ * Note that only parameter values support absolutely any character.
  * All the other parameters are limited to the latin alphabet, digits,
- * and underscores ([A-Za-z0-9_]+). At the point, all commands are
- * always written in uppercase.
+ * and underscores ([A-Za-z0-9_]+). Also all commands are limited
+ * to uppercase letters only.
  *
  * \note
  * The input message is not saved as a cached version of the message
  * because we assume it may not be 100% optimized (canonicalized.)
  *
- * \param[in] message
+ * \param[in] message  The string to convert into fields in this
+ *                     message object.
  *
  * \return true if the message was succesfully parsed; false when an
- *         error occurs and in that case no parameters get modified.
+ *         error occurs and in that case no fields get modified.
+ *
+ * \sa to_message()
+ * \sa get_sent_from_server()
+ * \sa get_sent_from_service()
+ * \sa reply_to()
  */
 bool snap_communicator_message::from_message(QString const & message)
 {
+    QString sent_from_server;
+    QString sent_from_service;
+    QString server;
     QString service;
     QString command;
     parameters_t parameters;
 
     QChar const * m(message.constData());
+
+    // sent-from indicated?
+    if(!m->isNull() && m->unicode() == '<')
+    {
+        // the name of the server and server sending this message
+        //
+        // First ++m to skip the '<'
+        for(++m; !m->isNull() && m->unicode() != ':'; ++m)
+        {
+            sent_from_server += m->unicode();
+        }
+        if(!m->isNull())
+        {
+            // First ++m to skip the ':'
+            for(++m; !m->isNull() && m->unicode() != ' '; ++m)
+            {
+                sent_from_service += m->unicode();
+            }
+        }
+        if(m->isNull())
+        {
+            // invalid syntax from input message
+            //
+            return false;
+        }
+        // Skip the ' '
+        ++m;
+    }
+
+    bool has_server(false);
     bool has_service(false);
     for(; !m->isNull() && m->unicode() != ' '; ++m)
     {
-        if(m->unicode() == '/')
+        if(m->unicode() == ':')
+        {
+            if(has_server
+            || has_service
+            || command.isEmpty())
+            {
+                // we cannot have more than one ':'
+                // and the name cannot be empty if ':' is used
+                // we also cannot have a ':' after the '/'
+                return false;
+            }
+            has_server = true;
+            server = command;
+            command.clear();
+        }
+        else if(m->unicode() == '/')
         {
             if(has_service
             || command.isEmpty())
@@ -269,6 +347,9 @@ bool snap_communicator_message::from_message(QString const & message)
         }
     }
 
+    f_sent_from_server = sent_from_server;
+    f_sent_from_service = sent_from_service;
+    f_server = server;
     f_service = service;
     f_command = command;
     f_parameters.swap(parameters);
@@ -288,14 +369,23 @@ bool snap_communicator_message::from_message(QString const & message)
  * \note
  * The function caches the result so calling the function many times
  * will return the same string and thus the function is very fast
- * after the first time (assuming you do not modify the message on
+ * after the first call (assuming you do not modify the message on
  * each call to to_message().)
  *
+ * \note
+ * The sent-from information gets saved in the message only if both,
+ * the server name and service name it was sent from are defined.
+ *
  * \exception snap_communicator_invalid_message
- * This function raises an exception if the command was not defined
- * since a command is always mandatory.
+ * This function raises an exception if the message command was not
+ * defined since a command is always mandatory.
  *
  * \return The converted message as a string.
+ *
+ * \sa get_sent_from_server()
+ * \sa get_sent_from_service()
+ * \sa set_reply_to_server()
+ * \sa set_reply_to_service()
  */
 QString snap_communicator_message::to_message() const
 {
@@ -306,17 +396,39 @@ QString snap_communicator_message::to_message() const
             throw snap_communicator_invalid_message("snap_communicator_message::to_message(): cannot build a valid message without at least a command.");
         }
 
-        // <name>/
-        f_cached_message = f_service;
-        if(!f_cached_message.isEmpty())
+        // add info about the sender
+        // ['<' <sent-from-server> '/' <sent-from-service> ' ']
+        //
+        if(!f_sent_from_server.isEmpty()
+        || !f_sent_from_service.isEmpty())
         {
+            f_cached_message += "<";
+            f_cached_message += f_sent_from_server;
+            f_cached_message += ":";
+            f_cached_message += f_sent_from_service;
+            f_cached_message += " ";
+        }
+
+        // add server and optionally the destination server name if both are defined
+        // ['<' <sent-from-server> '/' <sent-from-service> ' '] [[<server> ':'] <name> '/']
+        //
+        if(!f_service.isEmpty())
+        {
+            if(!f_server.isEmpty())
+            {
+                f_cached_message += f_server;
+                f_cached_message += ':';
+            }
+            f_cached_message += f_service;
             f_cached_message += "/";
         }
 
-        // [<name>/]command
+        // ['<' <sent-from-server> '/' <sent-from-service> ' '] [[<server> ':'] <name> '/'] <command>
         f_cached_message += f_command;
 
-        // then add parameters
+        // add parameters if any
+        // ['<' <sent-from-server> '/' <sent-from-service> ' '] [[<server> ':'] <name> '/'] <command> [' ' <param1> '=' <value1>][';' <param2> '=' <value2>]...
+        //
         bool first(true);
         for(auto p(f_parameters.begin());
                  p != f_parameters.end();
@@ -346,12 +458,207 @@ QString snap_communicator_message::to_message() const
 }
 
 
+/** \brief Where this message came from.
+ *
+ * Some services send a message expecting an answer directly sent back
+ * to them. Yet, those services may have multiple instances in your cluster
+ * (i.e. snapinit and snapcommunicator run on all computers, snapwatchdog,
+ * snapfirewall, snaplock, snapdbproxy are likely to run on most computers,
+ * etc.) This parameter defines which computer, specifically, the message
+ * came from. Thus, you can use that information to send the message back
+ * to that specific computer. The snapcommunicator on that computer will
+ * then forward the message to the specified service.
+ *
+ * If empty (the default,) then the normal snapcommunicator behavior is
+ * used (i.e. send to any instance of the service that is available.)
+ *
+ * \return The address and port of the specific service this message has to
+ *         be sent to.
+ *
+ * \sa set_sent_from_server()
+ * \sa set_sent_from_service()
+ * \sa get_sent_from_service()
+ */
+QString const & snap_communicator_message::get_sent_from_server() const
+{
+    return f_sent_from_server;
+}
+
+
+/** \brief Set the name of the server that sent this message.
+ *
+ * This function saves the name of the server that was used to
+ * generate the message. This can be used later to send a reply
+ * to the service that sent this message.
+ *
+ * The snapcommunicator tool is actually in charge of setting this
+ * parameter and you should never have to do so from your tool.
+ * The set happens whenever the snapcommunicator receives a
+ * message from a client. If you are not using the snapcommunicator
+ * then you are welcome to use this function for your own needs.
+ *
+ * \param[in] sent_from_server  The name of the source server.
+ *
+ * \sa get_sent_from_server()
+ * \sa get_sent_from_service()
+ * \sa set_sent_from_service()
+ */
+void snap_communicator_message::set_sent_from_server(QString const & sent_from_server)
+{
+    if(f_sent_from_server != sent_from_server)
+    {
+        // this name can be empty and it supports lowercase
+        //
+        verify_name(sent_from_server, true);
+
+        f_sent_from_server = sent_from_server;
+        f_cached_message.clear();
+    }
+}
+
+
+/** \brief Who sent this message.
+ *
+ * Some services send messages expecting an answer sent right back to
+ * them. For example, the snaplock tool sends the message LOCKENTERING
+ * and expects the LOCKENTERED as a reply. The reply has to be sent
+ * to the exact same instance t hat sent the LOCKENTERING message.
+ *
+ * In order to do so, the system makes use of the server and service
+ * name the data was sent from. Since the name of each service
+ * registering with snapcommunicator must be unique, it 100% defines
+ * the sender of the that message.
+ *
+ * If empty (the default,) then the normal snapcommunicator behavior is
+ * used (i.e. send to any instance of the service that is available locally,
+ * if not available locally, try to send it to another snapcommunicator
+ * that knows about it.)
+ *
+ * \return The address and port of the specific service this message has to
+ *         be sent to.
+ *
+ * \sa get_sent_from_server()
+ * \sa set_sent_from_server()
+ * \sa set_sent_from_service()
+ */
+QString const & snap_communicator_message::get_sent_from_service() const
+{
+    return f_sent_from_service;
+}
+
+
+/** \brief Set the name of the server that sent this message.
+ *
+ * This function saves the name of the service that sent this message
+ * to snapcommuncator. It is set by snapcommunicator whenever it receives
+ * a message from a service it manages so you do not have to specify this
+ * parameter yourselves.
+ *
+ * This can be used to provide the name of the service to reply to. This
+ * is useful when the receiver does not already know exactly who sends it
+ * certain messages.
+ *
+ * \param[in] sent_from_service  The name of the service that sent this message.
+ *
+ * \sa get_sent_from_server()
+ * \sa set_sent_from_server()
+ * \sa get_sent_from_service()
+ */
+void snap_communicator_message::set_sent_from_service(QString const & sent_from_service)
+{
+    if(f_sent_from_service != sent_from_service)
+    {
+        // this name can be empty and it supports lowercase
+        //
+        verify_name(sent_from_service, true);
+
+        f_sent_from_service = sent_from_service;
+        f_cached_message.clear();
+    }
+}
+
+
+/** \brief The server where this message has to be delivered.
+ *
+ * Some services need their messages to be delivered to a service
+ * running on a specific computer. This function returns the name
+ * of that server.
+ *
+ * If the function returns an empty string, then snapcommunicator is
+ * free to send the message to any server.
+ *
+ * \return The name of the server to send this message to or an empty string.
+ *
+ * \sa set_server()
+ * \sa get_service()
+ * \sa set_service()
+ */
+QString const & snap_communicator_message::get_server() const
+{
+    return f_server;
+}
+
+
+/** \brief Set the name of a specific server where to send this message.
+ *
+ * In some cases you may want to send a message to a service running
+ * on a specific server. This function can be used to specify the exact
+ * server where the message has to be delivered.
+ *
+ * This is particularly useful when you need to send a reply to a
+ * specific daemon that sent you a message.
+ *
+ * \param[in] server  The name of the server to send this message to.
+ *
+ * \sa get_server()
+ * \sa get_service()
+ * \sa set_service()
+ */
+void snap_communicator_message::set_server(QString const & server)
+{
+    if(f_server != server)
+    {
+        // this name can be empty and it supports lowercase
+        //
+        verify_name(server, true);
+
+        f_server = server;
+        f_cached_message.clear();
+    }
+}
+
+
+/** \brief Retrieve the name of the service the message is for.
+ *
+ * This function returns the name of the service this message is being
+ * sent to.
+ *
+ * \return Destination service.
+ *
+ * \sa get_server()
+ * \sa set_server()
+ * \sa set_service()
+ */
 QString const & snap_communicator_message::get_service() const
 {
     return f_service;
 }
 
 
+/** \brief Set the name of the service this message is being sent to.
+ *
+ * This function specifies the name of the server this message is expected
+ * to be sent to.
+ *
+ * When a service wants to send a message to snapcommunicator, no service
+ * name is required.
+ *
+ * \param[in] service  The name of the destination service.
+ *
+ * \sa get_server()
+ * \sa set_server()
+ * \sa get_service()
+ */
 void snap_communicator_message::set_service(QString const & service)
 {
     if(f_service != service)
@@ -372,12 +679,57 @@ void snap_communicator_message::set_service(QString const & service)
 }
 
 
+/** \brief Copy sent information to this message.
+ *
+ * This function copies the sent information found in message
+ * to this message server and service names.
+ *
+ * This is an equivalent to the following two lines of code:
+ *
+ * \code
+ *      reply.set_server(message.get_sent_from_server());
+ *      reply.set_service(message.get_sent_from_service());
+ * \endcode
+ *
+ * \param[in] message  The source message you want to reply to.
+ */
+void snap_communicator_message::reply_to(snap_communicator_message const & message)
+{
+    set_server(message.get_sent_from_server());
+    set_service(message.get_sent_from_service());
+}
+
+
+/** \brief Get the command being sent.
+ *
+ * Each message is an equivalent to an RPC command being send between
+ * services.
+ *
+ * The command is a string of text, generally one or more words
+ * concatenated (no space allowed) such as STOP and LOCKENTERING.
+ *
+ * \note
+ * The command string may still be empty if it was not yet assigned.
+ *
+ * \return The command of this message.
+ */
 QString const & snap_communicator_message::get_command() const
 {
     return f_command;
 }
 
 
+/** \brief Set the message command.
+ *
+ * This function is used to define the RPC-like command of this message.
+ *
+ * The name of the command gets verified using the verify_name() function.
+ * It cannot be empty and all letters have to be uppercase.
+ *
+ * \param[in] command  The command to send to a connection.
+ *
+ * \sa verify_name()
+ */
 void snap_communicator_message::set_command(QString const & command)
 {
     // this name cannot be empty and it does not support lowercase
@@ -393,6 +745,20 @@ void snap_communicator_message::set_command(QString const & command)
 }
 
 
+/** \brief Add a string parameter to the message.
+ *
+ * Messages can include parameters (variables) such as a URI or a word.
+ *
+ * The value is not limited, although it probably should be limited to
+ * standard text as these messages are sent as text.
+ *
+ * The name is verified by the verify_name() function.
+ *
+ * \param[in] name  The name of the parameter.
+ * \param[in] value  The value of this parameter.
+ *
+ * \sa verify_name()
+ */
 void snap_communicator_message::add_parameter(QString const & name, QString const & value)
 {
     verify_name(name);
@@ -402,6 +768,20 @@ void snap_communicator_message::add_parameter(QString const & name, QString cons
 }
 
 
+/** \brief Add an integer parameter to the message.
+ *
+ * Messages can include parameters (variables) such as a URI or a word.
+ *
+ * The value is not limited, although it probably should be limited to
+ * standard text as these messages are sent as text.
+ *
+ * The name is verified by the verify_name() function.
+ *
+ * \param[in] name  The name of the parameter.
+ * \param[in] value  The value of this parameter.
+ *
+ * \sa verify_name()
+ */
 void snap_communicator_message::add_parameter(QString const & name, int64_t value)
 {
     verify_name(name);
@@ -411,6 +791,19 @@ void snap_communicator_message::add_parameter(QString const & name, int64_t valu
 }
 
 
+/** \brief Check whether a parameter is defined in this message.
+ *
+ * This function checks whether a parameter is defined in a message. If
+ * so it returns true. This is important because the get_parameter()
+ * functions throw if the parameter is not available (i.e. which is
+ * what is used for mandatory parameters.)
+ *
+ * \param[in] name  The name of the parameter.
+ *
+ * \return true if that parameter exists.
+ *
+ * \sa verify_name()
+ */
 bool snap_communicator_message::has_parameter(QString const & name) const
 {
     verify_name(name);
@@ -419,6 +812,28 @@ bool snap_communicator_message::has_parameter(QString const & name) const
 }
 
 
+/** \brief Retrieve a parameter as a string from this message.
+ *
+ * This function retrieves the named parameter from this message as a string,
+ * which is the default.
+ *
+ * The name must be valid as defined by the verify_name() function.
+ *
+ * \note
+ * This function returns a copy of the parameter so if you later change
+ * the value of that parameter, what has been returned does not change
+ * under your feet.
+ *
+ * \exception snap_communicator_invalid_message
+ * This exception is raised whenever the parameter is not defined or
+ * if the parameter \p name is not considered valid.
+ *
+ * \param[in] name  The name of the parameter.
+ *
+ * \return A copy of the parameter value.
+ *
+ * \sa verify_name()
+ */
 QString const snap_communicator_message::get_parameter(QString const & name) const
 {
     verify_name(name);
@@ -432,6 +847,23 @@ QString const snap_communicator_message::get_parameter(QString const & name) con
 }
 
 
+/** \brief Retrieve a parameter as an integer from this message.
+ *
+ * This function retrieves the named parameter from this message as a string,
+ * which is the default.
+ *
+ * The name must be valid as defined by the verify_name() function.
+ *
+ * \exception snap_communicator_invalid_message
+ * This exception is raised whenever the parameter is not a valid integer,
+ * it is not set, or the parameter name is not considered valid.
+ *
+ * \param[in] name  The name of the parameter.
+ *
+ * \return The parameter converted to an integer.
+ *
+ * \sa verify_name()
+ */
 int64_t snap_communicator_message::get_integer_parameter(QString const & name) const
 {
     verify_name(name);
@@ -451,18 +883,78 @@ int64_t snap_communicator_message::get_integer_parameter(QString const & name) c
 }
 
 
+/** \brief Retrieve the list of parameters from this message.
+ *
+ * This function returns a constant reference to the list of parameters
+ * defined in this message.
+ *
+ * This can be useful if you allow for variable lists of parameters, but
+ * generally the get_parameter() and get_integer_parameter() are prefered.
+ *
+ * \warning
+ * This is a direct reference to the list of parameter. If you call the
+ * add_parameter() function, the new parameter will be visible in that
+ * new list and an iterator is likely not going to be valid on return
+ * from that call.
+ *
+ * \return A constant reference to the list of message parameters.
+ *
+ * \sa get_parameter()
+ * \sa get_integer_parameter()
+ */
 snap_communicator_message::parameters_t const & snap_communicator_message::get_all_parameters() const
 {
     return f_parameters;
 }
 
 
+/** \brief Verify various names used with messages.
+ *
+ * The messages use names for:
+ *
+ * \li commands
+ * \li services
+ * \li parameters
+ *
+ * All those names must be valid as per this function. They are checked
+ * on read and on write (i.e. add_parameter() and get_paramter() both
+ * check the parameter name to make sure you did not mistype it.)
+ *
+ * A valid name must start with a letter or an underscore (although
+ * we suggest you do not start names with underscores; we want to
+ * have those reserved for low level system like messages,) and
+ * it can only include letters, digits, and underscores.
+ *
+ * The letters are limited to uppercase for commands. Also certain
+ * names may be empty (See concerned functions for details on that one.)
+ *
+ * \note
+ * The allowed letters are 'a' to 'z' and 'A' to 'Z' only. The allowed
+ * digits are '0' to '9' only. The underscore is '_' only.
+ *
+ * A few valid names:
+ *
+ * \li commands: PING, STOP, LOCK, LOCKED, QUITTING, UNKNOWN, LOCKEXITING
+ * \li services: snapinit, snapcommunicator, snapserver, MyOwnService
+ * \li parameters: URI, name, IP, TimeOut
+ *
+ * At this point all our services use lowercase, but this is not enforced.
+ * Actually, mixed case or uppercase service names are allowed.
+ *
+ * \exception snap_communicator_invalid_message
+ * This exception is raised if the name includes characters considered
+ * invalid.
+ *
+ * \param[in] name  The name of the parameter.
+ * \param[in] can_be_empty  Whether the name can be empty.
+ * \param[in] can_be_lowercase  Whether the name can include lowercase letters.
+ */
 void snap_communicator_message::verify_name(QString const & name, bool can_be_empty, bool can_be_lowercase) const
 {
     if(!can_be_empty
     && name.isEmpty())
     {
-        throw snap_communicator_invalid_message("a name cannot be empty.");
+        throw snap_communicator_invalid_message("snap_communicator: a message name cannot be empty.");
     }
 
     for(auto c : name)
@@ -472,7 +964,7 @@ void snap_communicator_message::verify_name(QString const & name, bool can_be_em
         && (c < '0' || c > '9')
         && c != '_')
         {
-            throw snap_communicator_invalid_message("parameter name must be composed of ASCII 'a'..'z', 'A'..'Z', '0'..'9', or '_' only.");
+            throw snap_communicator_invalid_message(QString("snap_communicator: a message name must be composed of ASCII 'a'..'z', 'A'..'Z', '0'..'9', or '_' only (also a command must be uppercase only,) \"%1\" is not valid.").arg(name).toUtf8().data());
         }
     }
 
@@ -495,12 +987,9 @@ void snap_communicator_message::verify_name(QString const & name, bool can_be_em
 /////////////////////
 
 
-/** \brief Initializes the client connection.
+/** \brief Initializes the connection.
  *
- * This function initializes a client connection with the given
- * snap_communicator pointer.
- *
- * \param[in] communicator  The snap communicator controlling this connection.
+ * This function initializes a base connection object.
  */
 snap_communicator::snap_connection::snap_connection()
     //: f_name("")
@@ -513,10 +1002,6 @@ snap_communicator::snap_connection::snap_connection()
 /** \brief Proceed with the cleanup of the snap_connection.
  *
  * This function cleans up a snap_connection object.
- *
- * The main work on the function is to make sure that it can indeed
- * be cleaned (i.e. if the connection is still attached to an event_base
- * object, then it generates an error and terminates the software.)
  */
 snap_communicator::snap_connection::~snap_connection()
 {
@@ -681,13 +1166,14 @@ void snap_communicator::snap_connection::set_enable(bool enabled)
 
 /** \brief Define the priority of this connection object.
  *
- * By default snap_connection objets have a priority of 0. Since most
- * of the time a snap_communicator is setup to only support one priority
- * (i.e. priority of zero) then it makes sense to return 0 as the default.
+ * By default snap_connection objets have a priority of 100.
  *
- * You may also use the set_priority() to change the priority of an
- * event. You have to do so before you call add_connection(). After
- * that the priority has no effect.
+ * You may also use the set_priority() to change the priority of a
+ * connection at any time.
+ *
+ * \return The current priority of this connection.
+ *
+ * \sa set_priority()
  */
 int snap_communicator::snap_connection::get_priority() const
 {
@@ -698,13 +1184,12 @@ int snap_communicator::snap_connection::get_priority() const
 /** \brief Change this event priority.
  *
  * This function can be used to change the default priority (which is
- * zero) to a larger number. A larger number makes the event less
- * important.
+ * 100) to a larger or smaller number. A larger number makes the connection
+ * less important and callbacks get called later. A smaller number makes
+ * the connection more important and callbacks get called sooner.
  *
- * Note that the priority of an event can only be setup before
- * the event gets added (with the add_connection() function.)
- * The priority parameter must be valid for the snap_communicator
- * where it will be added.
+ * Note that the priority of a connection can modified at any time.
+ * It is not guaranteed to be taken in account immediately, though.
  *
  * \exception snap_communicator_parameter_error
  * The priority of the event is out of range when this exception is raised.
@@ -736,18 +1221,18 @@ void snap_communicator::snap_connection::set_priority(priority_t priority)
 /** \brief Less than operator to sort connections by priority.
  *
  * This function is used to know whether a connection has a higher or lower
- * priority. This is used when one adds, removes, or change the priority
+ * priority. This is used when one adds, removes, or changes the priority
  * of a connection. The sorting itself happens in the
  * snap_communicator::run() which knows that something changed whenever
  * it checks the data.
  *
  * The result of the priority mechanism is that callbacks of items with
- * a smaller priorirty will be executed first.
+ * a smaller priorirty will be called first.
  *
+ * \param[in] lhs  The left hand side snap_connection.
  * \param[in] rhs  The right hand side snap_connection.
  *
- * \return true if this snap_connection has a smaller priority than the
- *         right hand side snap_connection.
+ * \return true if lhs has a smaller priority than rhs.
  */
 bool snap_communicator::snap_connection::compare(pointer_t const & lhs, pointer_t const & rhs)
 {
@@ -882,7 +1367,7 @@ int64_t snap_communicator::snap_connection::get_timeout_date() const
  * at which this connection should timeout. This specific date
  * is used internally to calculate the amount of time the poll()
  * will have to wait, not including the time it will take
- * to execute other callbacks if any need to be run (i.e. the
+ * to execute other callbacks if any needs to be run (i.e. the
  * timeout is executed last, after all other events, and also
  * priority is used to know which other connections are parsed
  * first.)
@@ -997,10 +1482,14 @@ int64_t snap_communicator::snap_connection::get_saved_timeout_timestamp() const
  * block on you. It is important to not setup a socket you
  * listen on as non-blocking if you do not want to risk having the
  * accepted sockets non-blocking.
+ *
+ * \param[in] non_blocking_socket  Make socket non-block if true,
+ *            blocking if false.
  */
 void snap_communicator::snap_connection::non_blocking() const
 {
-    if(get_socket() >= 0)
+    if(valid_socket()
+    && get_socket() >= 0)
     {
         int optval(1);
         ioctl(get_socket(), FIONBIO, &optval);
@@ -1025,7 +1514,7 @@ void snap_communicator::snap_connection::keep_alive() const
         socklen_t const optlen(sizeof(optval));
         if(setsockopt(get_socket(), SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) != 0)
         {
-            SNAP_LOG_WARNING("snap_communicator::snap_tcp_server_client_connection::keep_alive(): an error occurred trying to mark socket with SO_KEEPALIVE.");
+            SNAP_LOG_WARNING("snap_communicator::snap_connection::keep_alive(): an error occurred trying to mark socket with SO_KEEPALIVE.");
         }
     }
 }
@@ -2077,6 +2566,16 @@ void snap_communicator::snap_pipe_message_connection::process_line(QString const
  * create a connection, only the resulting connection can be used with
  * the snap_communicator object.
  *
+ * \note
+ * The function also saves the remote address and port used to open
+ * the connection which can later be retrieved using the
+ * get_remote_address() function. That address will remain valid
+ * even after the socket is closed.
+ *
+ * \todo
+ * If the remote address is an IPv6, we need to put it between [...]
+ * (i.e. [::1]:4040) so we can extract the port safely.
+ *
  * \param[in] communicator  The snap communicator controlling this connection.
  * \param[in] addr  The address of the server to connect to.
  * \param[in] port  The port to connect to.
@@ -2084,7 +2583,35 @@ void snap_communicator::snap_pipe_message_connection::process_line(QString const
  */
 snap_communicator::snap_tcp_client_connection::snap_tcp_client_connection(std::string const & addr, int port, mode_t mode)
     : bio_client(addr, port, mode)
+    , f_remote_address(QString("%1:%2").arg(get_client_addr().c_str()).arg(get_client_port()))
 {
+}
+
+
+/** \brief Retrieve the remote address information.
+ *
+ * This function can be used to retrieve the remove address and port
+ * information as was specified on the constructor. These can be used
+ * to find this specific connection at a later time or create another
+ * connection.
+ *
+ * For example, you may get 192.168.2.17:4040.
+ *
+ * The function works even after the socket gets closed as we save
+ * the remote address and port in a string just after the connection
+ * was established.
+ *
+ * \note
+ * These parameters are the same as what was passed to the constructor,
+ * only both will have been converted to numbers. So for example when
+ * you used "localhost", here you get "::1" or "127.0.0.1" for the
+ * address.
+ *
+ * \return The remote host address and connection port.
+ */
+QString const & snap_communicator::snap_tcp_client_connection::get_remote_address() const
+{
+    return f_remote_address;
 }
 
 
@@ -2188,13 +2715,18 @@ int snap_communicator::snap_tcp_client_connection::get_socket() const
  *      my_reader.writer().write(buf, buf_size);
  * \endcode
  *
- * \param[in] communicator  The snap communicator controlling this connection.
- * \param[in] socket  The socket to be used for writing.
+ * \param[in] addr  The address to connect to.
+ * \param[in] port  The port to connect to.
+ * \param[in] mode  The mode to connect as (PLAIN or SECURE).
+ * \param[in] blocking  If true, keep a blocking socket, other non-blocking.
  */
-snap_communicator::snap_tcp_client_buffer_connection::snap_tcp_client_buffer_connection(std::string const & addr, int port, mode_t mode)
+snap_communicator::snap_tcp_client_buffer_connection::snap_tcp_client_buffer_connection(std::string const & addr, int const port, mode_t const mode, bool const blocking)
     : snap_tcp_client_connection(addr, port, mode)
 {
-    non_blocking();
+    if(!blocking)
+    {
+        non_blocking();
+    }
 }
 
 
@@ -2424,11 +2956,14 @@ void snap_communicator::snap_tcp_client_buffer_connection::process_hup()
  * This is the most useful client in our Snap! Communicator
  * as it directly sends and receives messages.
  *
- * \param[in] communicator  The communicator connected with this client.
- * \param[in] socket  The in/out socket.
+ * \param[in] addr  The address to connect to.
+ * \param[in] port  The port to connect to.
+ * \param[in] mode  Use this mode to connect as (PLAIN or SECURE).
+ * \param[in] blocking  Whether to keep the socket blocking or make it
+ *                      non-blocking.
  */
-snap_communicator::snap_tcp_client_message_connection::snap_tcp_client_message_connection(std::string const & addr, int port, mode_t mode)
-    : snap_tcp_client_buffer_connection(addr, port, mode)
+snap_communicator::snap_tcp_client_message_connection::snap_tcp_client_message_connection(std::string const & addr, int const port, mode_t const mode, bool const blocking)
+    : snap_tcp_client_buffer_connection(addr, port, mode, blocking)
 {
 }
 
@@ -2779,7 +3314,7 @@ bool snap_communicator::snap_tcp_server_client_connection::define_address()
 
     if(f_length == 0)
     {
-        // address no defined yet, retrieve with with getsockname()
+        // address not defined yet, retrieve with with getsockname()
         //
         f_length = sizeof(f_address);
         if(getsockname(s, reinterpret_cast<struct sockaddr *>(&f_address), &f_length) != 0)
@@ -3042,6 +3577,63 @@ void snap_communicator::snap_tcp_server_client_buffer_connection::process_hup()
 snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_client_message_connection(int socket)
     : snap_tcp_server_client_buffer_connection(socket)
 {
+    // TODO: somehow the port seems wrong (i.e. all connections return the same port)
+
+    struct sockaddr_storage address = (sockaddr_storage());
+    socklen_t length(sizeof(address));
+    if(getpeername(socket, reinterpret_cast<struct sockaddr *>(&address), &length) != 0)
+    {
+        int const e(errno);
+        SNAP_LOG_ERROR("getpeername() failed retrieving IP address (errno: ")(e)(" -- ")(strerror(e))(").");
+        throw std::runtime_error("getpeername() failed to retrieve IP address in snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_client_message_connection()");
+    }
+    if(address.ss_family != AF_INET
+    && address.ss_family != AF_INET6)
+    {
+        SNAP_LOG_ERROR("address family (")(address.ss_family)(") returned by getpeername() is not understood, it is neither an IPv4 nor IPv6.");
+        throw std::runtime_error("getpeername() returned an address which is not understood in snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_client_message_connection()");
+    }
+    if(length < sizeof(address))
+    {
+        // reset the rest of the structure, just in case
+        memset(reinterpret_cast<char *>(&address) + length, 0, sizeof(address) - length);
+    }
+
+    size_t const max_length(std::max(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1);
+
+// in release mode this should not be dynamic (although the syntax is so
+// the warning would happen), but in debug it is likely an alloca()
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvla"
+    char buf[max_length];
+#pragma GCC diagnostic pop
+
+    char const * r(nullptr);
+
+    if(address.ss_family == AF_INET)
+    {
+        r = inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in const &>(address).sin_addr, buf, max_length);
+    }
+    else
+    {
+        r = inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 const &>(address).sin6_addr, buf, max_length);
+    }
+
+    if(r == nullptr)
+    {
+        int const e(errno);
+        SNAP_LOG_FATAL("inet_ntop() could not convert IP address (errno: ")(e)(" -- ")(strerror(e))(").");
+        throw snap_communicator_runtime_error("snap_tcp_server_client_message_connection::snap_tcp_server_client_message_connection(): inet_ntop() could not convert IP address properly.");
+    }
+
+    if(address.ss_family == AF_INET)
+    {
+        f_remote_address = QString("%1:%2").arg(buf).arg(reinterpret_cast<struct sockaddr_in const &>(address).sin_port);
+    }
+    else
+    {
+        f_remote_address = QString("%1:%2").arg(buf).arg(reinterpret_cast<struct sockaddr_in6 const &>(address).sin6_port);
+    }
 }
 
 
@@ -3093,6 +3685,33 @@ void snap_communicator::snap_tcp_server_client_message_connection::send_message(
     std::string buf(utf8.data(), utf8.size());
     buf += "\n";
     write(buf.c_str(), buf.length());
+}
+
+
+/** \brief Retrieve the remote address information.
+ *
+ * This function can be used to retrieve the remove address and port
+ * information as was specified on the constructor. These can be used
+ * to find this specific connection at a later time or create another
+ * connection.
+ *
+ * For example, you may get 192.168.2.17:4040.
+ *
+ * The function works even after the socket gets closed as we save
+ * the remote address and port in a string just after the connection
+ * was established.
+ *
+ * \note
+ * These parameters are the same as what was passed to the constructor,
+ * only both will have been converted to numbers. So for example when
+ * you used "localhost", here you get "::1" or "127.0.0.1" for the
+ * address.
+ *
+ * \return The remote host address and connection port.
+ */
+QString const & snap_communicator::snap_tcp_server_client_message_connection::get_remote_address() const
+{
+    return f_remote_address;
 }
 
 
@@ -4050,7 +4669,8 @@ bool snap_communicator::snap_udp_server_message_connection::send_message(std::st
 {
     // Note: contrary to the TCP version, a UDP message does not
     //       need to include the '\n' character since it is sent
-    //       in one UDP packet.
+    //       in one UDP packet. However, it has a maximum size
+    //       limit which we enforce here.
     //
     udp_client_server::udp_client client(addr, port);
     QString const msg(message.to_message());
@@ -4105,6 +4725,301 @@ void snap_communicator::snap_udp_server_message_connection::process_read()
         }
     }
 }
+
+
+
+
+/////////////////////////////////////////////////
+// Snap TCP Blocking Client Message Connection //
+/////////////////////////////////////////////////
+
+/** \brief Blocking client message connection.
+ *
+ * This object allows you to create a blocking, generally temporary
+ * one message connection client. This is specifically used with
+ * the snaplock daemon, but it can be used for other things too as
+ * required.
+ *
+ * The connection is expected to be used as shown in the following
+ * example which is how it is used to implement the LOCK through
+ * our snaplock daemons.
+ *
+ * \code
+ *      class my_blocking_connection
+ *          : public snap_tcp_blocking_client_message_connection
+ *      {
+ *      public:
+ *          my_blocking_connection(std::string const & addr, int port, mode_t mode)
+ *              : snap_tcp_blocking_client_message_connection(addr, port, mode)
+ *          {
+ *              // need to register with snap communicator
+ *              snap_communicator_message register_message;
+ *              register_message.set_command("REGISTER");
+ *              ...
+ *              blocking_connection.send_message(register_message);
+ *
+ *              run();
+ *          }
+ *
+ *          ~my_blocking_connection()
+ *          {
+ *              // done, send UNLOCK and then make sure to unregister
+ *              snap_communicator_message unlock_message;
+ *              unlock_message.set_command("UNLOCK");
+ *              ...
+ *              blocking_connection.send_message(unlock_message);
+ *
+ *              snap_communicator_message unregister_message;
+ *              unregister_message.set_command("UNREGISTER");
+ *              ...
+ *              blocking_connection.send_message(unregister_message);
+ *          }
+ *
+ *          virtual void process_message(snap_communicator_message const & message)
+ *          {
+ *              QString const command(message.get_command());
+ *              if(command == "LOCKED")
+ *              {
+ *                  // the lock worked, release hand back to the user
+ *                  done();
+ *              }
+ *              else if(command == "READY")
+ *              {
+ *                  // the REGISTER worked, wait for the HELP message
+ *              }
+ *              else if(command == "HELP")
+ *              {
+ *                  // snapcommunicator wants us to tell it what commands
+ *                  // we accept
+ *                  snap_communicator_message commands_message;
+ *                  commands_message.set_command("COMMANDS");
+ *                  ...
+ *                  blocking_connection.send_message(commands_message);
+ *
+ *                  // no reply expected from the COMMANDS message,
+ *                  // so send the LOCK now
+ *                  snap_communicator_message lock_message;
+ *                  lock_message.set_command("LOCK");
+ *                  ...
+ *                  blocking_connection.send_message(lock_message);
+ *              }
+ *          }
+ *      };
+ *      my_blocking_connection blocking_connection("127.0.0.1", 4040);
+ *
+ *
+ *      // then we can send a message to the service we are interested in
+ *      blocking_connection.send_message(my_message);
+ *
+ *      // now we call run() waiting for a reply
+ *      blocking_connection.run();
+ * \endcode
+ */
+snap_communicator::snap_tcp_blocking_client_message_connection::snap_tcp_blocking_client_message_connection(std::string const & addr, int const port, mode_t const mode)
+    : snap_tcp_client_message_connection(addr, port, mode, true)
+    //, f_done(false)
+{
+}
+
+
+/** \brief Blocking run on the connection.
+ *
+ * This function reads the incoming messages and calls process_message()
+ * on each one of them, in a blocking manner.
+ *
+ * If you called done() before, the done flag is reset back to false.
+ * You will have to call done() again if you receive a message that
+ * is expected to process and that message marks the end of the process.
+ */
+void snap_communicator::snap_tcp_blocking_client_message_connection::run()
+{
+    f_done = false;
+
+    do
+    {
+        std::string line;
+        for(;;)
+        {
+            // TBD: can the socket become -1 within the read() loop?
+            //      (i.e. should not that be just ourside of the for(;;)?)
+            struct pollfd fd;
+            fd.events = POLLIN | POLLPRI | POLLRDHUP;
+            fd.fd = get_socket();
+            if(fd.fd < 0)
+            {
+                // invalid socket
+                process_error();
+                return;
+            }
+
+            // at this time, this class is used with the lock and
+            // the lock has a timeout so we need to block at most
+            // for that amount of time and not forever (presumably
+            // the snaplock would send us a LOCKFAILED marked with
+            // a "timeout" parameter, but we cannot rely on the
+            // snaplock being there and responding as expected.)
+            //
+            // calculate the number of microseconds and then convert
+            // them to milliseconds for poll()
+            //
+            int64_t const next_timeout_timestamp(save_timeout_timestamp());
+            int64_t const now(get_current_date());
+            int64_t timeout((next_timeout_timestamp - now) / 1000);
+            if(timeout <= 0)
+            {
+                // timed out
+                //
+                throw snap_communicator_runtime_error("connection timed out");
+            }
+            errno = 0;
+            fd.revents = 0; // probably useless... (kernel should clear those)
+            int const r(poll(&fd, 1, timeout));
+            if(r < 0)
+            {
+                // r < 0 means an error occurred
+                //
+                if(errno == EINTR)
+                {
+                    // Note: if the user wants to prevent this error, he should
+                    //       use the snap_signal with the Unix signals that may
+                    //       happen while calling poll().
+                    //
+                    throw snap_communicator_runtime_error("EINTR occurred while in poll() -- interrupts are not supported yet though");
+                }
+                if(errno == EFAULT)
+                {
+                    throw snap_communicator_parameter_error("buffer was moved out of our address space?");
+                }
+                if(errno == EINVAL)
+                {
+                    // if this is really because nfds is too large then it may be
+                    // a "soft" error that can be fixed; that being said, my
+                    // current version is 16K files which frankly when we reach
+                    // that level we have a problem...
+                    //
+                    struct rlimit rl;
+                    getrlimit(RLIMIT_NOFILE, &rl);
+                    throw snap_communicator_parameter_error(QString("too many file fds for poll, limit is currently %1, your kernel top limit is %2")
+                                .arg(rl.rlim_cur)
+                                .arg(rl.rlim_max).toStdString());
+                }
+                if(errno == ENOMEM)
+                {
+                    throw snap_communicator_runtime_error("poll() failed because of memory");
+                }
+                int const e(errno);
+                throw snap_communicator_runtime_error(QString("poll() failed with error %1").arg(e).toStdString());
+            }
+
+            if((fd.revents & (POLLIN | POLLPRI)) != 0)
+            {
+                // read one character at a time otherwise we would be
+                // blocked forever
+                //
+                char buf[2];
+                int const size(::read(fd.fd, buf, 1));
+                if(size != 1)
+                {
+                    // invalid read
+                    process_error();
+                    throw snap_communicator_runtime_error(QString("read() failed reading data from socket (return value = %1)").arg(size).toStdString());
+                }
+                if(buf[0] == '\n')
+                {
+                    // end of a line, we got a whole message in our buffer
+                    // notice that we do not add the '\n' to line
+                    break;
+                }
+                buf[1] = '\0';
+                line += buf;
+            }
+            if((fd.revents & POLLERR) != 0)
+            {
+                process_error();
+                throw snap_communicator_runtime_error(QString("poll() failed with an error").toStdString());
+            }
+            if((fd.revents & (POLLHUP | POLLRDHUP)) != 0)
+            {
+                process_hup();
+                throw snap_communicator_runtime_error(QString("poll() failed with hang up").toStdString());
+            }
+            if((fd.revents & POLLNVAL) != 0)
+            {
+                process_invalid();
+                throw snap_communicator_runtime_error(QString("poll() says the socket is invalid").toStdString());
+            }
+        }
+        process_line(QString::fromUtf8(line.c_str()));
+    }
+    while(!f_done);
+}
+
+
+/** \brief Mark the run() loop as done.
+ *
+ * This function can be used to ask the run() loop to exit after
+ * you return from your process_message() callback. This will
+ * break the run loop.
+ */
+void snap_communicator::snap_tcp_blocking_client_message_connection::done()
+{
+    f_done = true;
+}
+
+
+/** \brief Send the specified message to the connection on the other end.
+ *
+ * This function sends the specified message to the other side of the
+ * socket connection. If the write somehow fails, then the function
+ * returns false.
+ *
+ * The function blocks until the entire message was written to the
+ * socket.
+ *
+ * \param[in] message  The message to send to the connection.
+ *
+ * \return true if the message was sent succesfully, false otherwise.
+ */
+bool snap_communicator::snap_tcp_blocking_client_message_connection::send_message(snap_communicator_message const & message)
+{
+    int s(get_socket());
+    if(s >= 0)
+    {
+        // transform the message to a string and write to the socket
+        // the writing is blocking and thus fully synchronous so the
+        // function blocks until the message gets fully sent
+        //
+        // WARNING: we cannot use f_connection.write() because that one
+        //          is asynchronous (at least, it writes to a buffer
+        //          and not directly to the socket!)
+        //
+        QString const msg(message.to_message());
+        QByteArray const utf8(msg.toUtf8());
+        std::string buf(utf8.data(), utf8.size());
+        buf += "\n";
+        return ::write(s, buf.c_str(), buf.length()) == static_cast<ssize_t>(buf.length());
+    }
+
+    return false;
+}
+
+
+/** \brief Overridden callback.
+ *
+ * This function is overriding the lower level process_error() to make
+ * (mostly) sure that the remove_from_communicator() function does not
+ * get called because that would generate the creation of a
+ * snap_communicator object which we do not want with blocking
+ * clients.
+ */
+void snap_communicator::snap_tcp_blocking_client_message_connection::process_error()
+{
+}
+
+
+
+
+
 
 
 
@@ -4371,7 +5286,7 @@ bool snap_communicator::run()
                 timeout /= 1000;
                 if(timeout == 0)
                 {
-                    // less than one is a waste of time (CPU intessive
+                    // less than one is a waste of time (CPU intenssive
                     // until the time is reached, we can be 1 ms off
                     // instead...)
                     timeout = 1;

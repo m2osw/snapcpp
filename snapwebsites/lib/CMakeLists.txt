@@ -112,6 +112,7 @@ add_library( ${PROJECT_NAME} SHARED
     snap_expr.cpp                               # snap C-like expression compiler and execution environment
     snap_image.cpp                              # image handling
     snap_initialize_website.cpp                 # initialize website by sending an Apache-like query to the server
+    snap_lock.cpp                               # support for inter-process / inter-computer locks using network and memory only
     snap_magic.cpp                              # support for MIME type
     snap_parser.cpp                             # lexer/parser for all our script like entries
     snap_pipe.cpp                               # RAII popen()/pclose() class

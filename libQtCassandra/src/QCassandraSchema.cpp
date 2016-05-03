@@ -66,6 +66,11 @@ SessionMeta::SessionMeta( QCassandraSession::pointer_t s )
 }
 
 
+SessionMeta::~SessionMeta()
+{
+}
+
+
 SessionMeta::pointer_t SessionMeta::create( QCassandraSession::pointer_t s )
 {
     return std::make_shared<SessionMeta>(s);
@@ -198,27 +203,55 @@ void SessionMeta::loadSchema()
 }
 
 
-SessionMeta::~SessionMeta()
-{
-}
-
-
 QCassandraSession::pointer_t SessionMeta::session() const
 {
     return f_session;
 }
 
 
-uint32_t SessionMeta::snapshotVersion() const
-{
-    return f_version;
-}
-
-
-
 const SessionMeta::KeyspaceMeta::map_t& SessionMeta::getKeyspaces()
 {
     return f_keyspaces;
+}
+
+
+/** \brief Transform a SessionMeta in a blob.
+ *
+ * This function transforms a SessionMeta object into a blob that can be
+ * transfered from snapdbproxy to a client.
+ *
+ * \return The meta data in a blob.
+ */
+QByteArray SessionMeta::encodeSessionMeta() const
+{
+    // at this time ours is nearly 120Kb... so reserve one block
+    // 200Kb from the get go
+    //
+    QCassandraEncoder encoder(200 * 1024);
+
+    // save the number of keyspaces
+    //
+    encoder.appendUInt16Value(f_keyspaces.size());
+    for(auto keyspace : f_keyspaces)
+    {
+        keyspace.second->encodeKeyspaceMeta(encoder);
+    }
+
+    return encoder.result();
+}
+
+
+void SessionMeta::decodeSessionMeta(const QByteArray& encoded)
+{
+    QCassandraDecoder const decoder(encoded);
+
+    size_t const keyspace_max(decoder.uint16Value());
+    for(size_t idx(0); idx < keyspace_max; ++idx)
+    {
+        KeyspaceMeta::pointer_t keyspace(std::make_shared<KeyspaceMeta>(shared_from_this()));
+        keyspace->decodeKeyspaceMeta(decoder);
+        f_keyspaces[keyspace->getName()] = keyspace;
+    }
 }
 
 
@@ -265,6 +298,79 @@ const SessionMeta::KeyspaceMeta::TableMeta::map_t&
 }
 
 
+/** \brief Transform a KeyspaceMeta in a blob.
+ *
+ * This function transforms a KeyspaceMeta object into a blob that can be
+ * transferred from snapdbproxy to a client.
+ *
+ * \return The meta data in a blob.
+ */
+void SessionMeta::KeyspaceMeta::encodeKeyspaceMeta(QCassandraEncoder& encoder) const
+{
+    // save the name as a PSTR with a size on 2 bytes
+    //
+    encoder.appendP16StringValue(f_name);
+
+    // save the keyspace fields
+    // first the size on 2 bytes then each field
+    encoder.appendUInt16Value(f_fields.size());
+    for( auto f : f_fields )
+    {
+        // field name
+        encoder.appendP16StringValue(f.first);
+
+        // field value
+        f.second.encodeValue(encoder);
+    }
+
+    // save the tables
+    // first the size on 2 bytes then each table
+    encoder.appendUInt16Value(f_tables.size());
+    for( auto t : f_tables )
+    {
+        t.second->encodeTableMeta(encoder);
+    }
+}
+
+
+/** \brief Decode a KeyspaceMeta object from a blob.
+ *
+ */
+void SessionMeta::KeyspaceMeta::decodeKeyspaceMeta(const QCassandraDecoder& decoder)
+{
+    // retrieve the keyspace name
+    //
+    f_name = decoder.p16StringValue();
+
+    // read field values
+    //
+    size_t const field_max(decoder.uint16Value());
+    for(size_t idx(0); idx < field_max; ++idx)
+    {
+        // field name
+        QString const name(decoder.p16StringValue());
+
+        // field value
+        Value field;
+        field.decodeValue(decoder);
+
+        // save field in our map
+        f_fields[name] = field;
+    }
+
+    // retrieve the tables
+    //
+    size_t const table_max(decoder.uint16Value());
+    for(size_t idx(0); idx < table_max; ++idx)
+    {
+        SessionMeta::KeyspaceMeta::TableMeta::pointer_t table(std::make_shared<SessionMeta::KeyspaceMeta::TableMeta>(shared_from_this()));
+        table->decodeTableMeta(decoder);
+        f_tables[table->getName()] = table;
+    }
+}
+
+
+
 //================================================================/
 // TableMeta
 //
@@ -304,6 +410,79 @@ const SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::map_t&
     SessionMeta::KeyspaceMeta::TableMeta::getColumns() const
 {
     return f_columns;
+}
+
+
+/** \brief Transform a TableMeta in a blob.
+ *
+ * This function transforms a TableMeta object into a blob that can be
+ * transferred from snapdbproxy to a client.
+ *
+ * \return The meta data in a blob.
+ */
+void SessionMeta::KeyspaceMeta::TableMeta::encodeTableMeta(QCassandraEncoder& encoder) const
+{
+    // save the name as a PSTR with a size on 2 bytes
+    //
+    encoder.appendP16StringValue(f_name);
+
+    // save the table fields
+    // first the size on 2 bytes then each field
+    encoder.appendUInt16Value(f_fields.size());
+    //for( auto f(f_fields.begin()); f != f_fields.end(); ++f )
+    for( auto f : f_fields )
+    {
+        // field name
+        encoder.appendP16StringValue(f.first);
+
+        // field value
+        f.second.encodeValue(encoder);
+    }
+
+    // save the columns
+    // first the size on 2 bytes then each table
+    encoder.appendUInt16Value(f_columns.size());
+    for( auto c : f_columns )
+    {
+        c.second->encodeColumnMeta(encoder);
+    }
+}
+
+
+/** \brief Decode a TableMeta object from a blob.
+ *
+ */
+void SessionMeta::KeyspaceMeta::TableMeta::decodeTableMeta(const QCassandraDecoder& decoder)
+{
+    // retrieve the table name
+    //
+    f_name = decoder.p16StringValue();
+
+    // read field values
+    //
+    size_t const field_max(decoder.uint16Value());
+    for(size_t idx(0); idx < field_max; ++idx)
+    {
+        // field name
+        QString const name(decoder.p16StringValue());
+
+        // field value
+        Value field;
+        field.decodeValue(decoder);
+
+        // save field in our map
+        f_fields[name] = field;
+    }
+
+    // retrieve the columns
+    //
+    size_t const column_max(decoder.uint16Value());
+    for(size_t idx(0); idx < column_max; ++idx)
+    {
+        SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::pointer_t column(std::make_shared<SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta>(shared_from_this()));
+        column->decodeColumnMeta(decoder);
+        f_columns[column->getName()] = column;
+    }
 }
 
 
@@ -350,11 +529,70 @@ Value& SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::operator[]( const QStri
 }
 
 
+/** \brief Transform a ColumnMeta in a blob.
+ *
+ * This function transforms a ColumnMeta object into a blob that can be
+ * transferred from snapdbproxy to a client.
+ *
+ * \return The meta data in a blob.
+ */
+void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::encodeColumnMeta(QCassandraEncoder& encoder) const
+{
+    // save the name as a PSTR with a size on 2 bytes
+    //
+    encoder.appendP16StringValue(f_name);
+
+    // save the table fields
+    // first the size on 2 bytes then each field
+    encoder.appendUInt16Value(f_fields.size());
+    for( auto f : f_fields )
+    {
+        // field name
+        encoder.appendP16StringValue(f.first);
+
+        // field value
+        f.second.encodeValue(encoder);
+    }
+
+    // save the column type
+    // there are only a very few types so one char is enough
+    encoder.appendUnsignedCharValue(static_cast<unsigned char>(f_type));
 }
-//namespace QCassandraSchema
 
 
+/** \brief Decode a ColumnMeta object from a blob.
+ *
+ */
+void SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::decodeColumnMeta(const QCassandraDecoder& decoder)
+{
+    // retrieve the column name
+    //
+    f_name = decoder.p16StringValue();
+
+    // read field values
+    //
+    size_t const field_max(decoder.uint16Value());
+    for(size_t idx(0); idx < field_max; ++idx)
+    {
+        // field name
+        QString const name(decoder.p16StringValue());
+
+        // field value
+        Value field;
+        field.decodeValue(decoder);
+
+        // save field in our map
+        f_fields[name] = field;
+    }
+
+    // retrieve the column type
+    //
+    f_type = static_cast<type_t>(decoder.unsignedCharValue());
 }
-// namespace QtCassandra
 
+
+
+
+} //namespace QCassandraSchema
+} // namespace QtCassandra
 // vim: ts=4 sw=4 et

@@ -31,6 +31,7 @@
 #include    <controlled_vars/controlled_vars_auto_enum_init.h>
 
 #include    <map>
+#include    <memory>
 #include    <stdexcept>
 #include    <string>
 #include    <vector>
@@ -81,6 +82,8 @@ public:
 class getopt
 {
 public:
+    typedef std::shared_ptr<getopt>     pointer_t;
+
     enum status_t
     {
         no_error,

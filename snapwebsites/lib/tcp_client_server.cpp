@@ -1383,6 +1383,7 @@ int bio_client::write(char const * buf, size_t size)
     {
         // the BIO is not implemented
         // XXX: do we have to set errno?
+        ERR_print_errors_fp(stderr);
         return -1;
     }
     if(r == -1 || r == 0)
@@ -1393,6 +1394,7 @@ int bio_client::write(char const * buf, size_t size)
         }
         // the BIO generated an error (TBD should we check BIO_eof() too?)
         // XXX: do we have to set errno?
+        ERR_print_errors_fp(stderr);
         return -1;
     }
     BIO_flush(f_bio.get());

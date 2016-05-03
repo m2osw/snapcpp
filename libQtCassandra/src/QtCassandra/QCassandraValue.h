@@ -40,16 +40,18 @@
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+
 #include <QString>
 #include <QByteArray>
-#include <memory>
+
+#include <execinfo.h>
 #include <stdint.h>
 
+#include <iostream>
+#include <memory>
 
 namespace QtCassandra
 {
-
-class QCassandraPrivate;
 
 namespace {
     /** \brief Maximum buffer size.
@@ -786,6 +788,202 @@ inline QByteArray binaryValue(const QByteArray& array, const int index = 0, int 
 
 
 
+class QCassandraEncoder
+{
+public:
+    QCassandraEncoder(int reserve_size)
+    {
+        f_array.reserve(reserve_size);
+    }
+
+    void appendSignedCharValue(signed char value)
+    {
+        QtCassandra::appendSignedCharValue(f_array, value);
+    }
+
+    void appendUnsignedCharValue(unsigned char value)
+    {
+        QtCassandra::appendUnsignedCharValue(f_array, value);
+    }
+
+    void appendInt16Value(int16_t value)
+    {
+        QtCassandra::appendInt16Value(f_array, value);
+    }
+
+    void appendUInt16Value(uint16_t value)
+    {
+        QtCassandra::appendUInt16Value(f_array, value);
+    }
+
+    void appendInt32Value(int32_t value)
+    {
+        QtCassandra::appendInt32Value(f_array, value);
+    }
+
+    void appendUInt32Value(uint32_t value)
+    {
+        QtCassandra::appendUInt32Value(f_array, value);
+    }
+
+    void appendInt64Value(int64_t value)
+    {
+        QtCassandra::appendInt64Value(f_array, value);
+    }
+
+    void appendUInt64Value(uint64_t value)
+    {
+        QtCassandra::appendUInt64Value(f_array, value);
+    }
+
+    void appendDoubleValue(double value)
+    {
+        QtCassandra::appendDoubleValue(f_array, value);
+    }
+
+    void appendP16StringValue(const QString& value)
+    {
+        QByteArray const utf8(value.toUtf8());
+        if(utf8.length() >= 64 * 1024)
+        {
+            // we should look whether there is a smaller limit in Cassandra
+            // although we only send very small CQL commands at this point
+            // anyway...
+            //
+            throw std::runtime_error("strings are limited to 64Kb");
+        }
+
+        QtCassandra::appendUInt16Value(f_array, utf8.length());
+        QtCassandra::appendBinaryValue(f_array, utf8);
+    }
+
+    void appendBinaryValue(const QByteArray& value)
+    {
+        QtCassandra::appendUInt32Value(f_array, value.length());
+        QtCassandra::appendBinaryValue(f_array, value);
+    }
+
+    void replaceUInt32Value(uint32_t value, int index)
+    {
+        QtCassandra::replaceUInt32Value(f_array, value, index);
+    }
+
+    size_t size() const
+    {
+        return f_array.size();
+    }
+
+    const QByteArray& result() const
+    {
+        return f_array;
+    }
+
+private:
+    QByteArray      f_array;
+};
+
+
+class QCassandraDecoder
+{
+public:
+    QCassandraDecoder(QByteArray const & encoded)
+        : f_array(encoded)
+        //, f_index(0)
+    {
+    }
+
+    signed char signedCharValue() const
+    {
+        signed char const result(QtCassandra::signedCharValue(f_array, f_index));
+        f_index += 1;
+        return result;
+    }
+
+    unsigned char unsignedCharValue() const
+    {
+        unsigned char const result(QtCassandra::unsignedCharValue(f_array, f_index));
+        f_index += 1;
+        return result;
+    }
+
+    int16_t int16Value() const
+    {
+        int16_t const result(QtCassandra::int16Value(f_array, f_index));
+        f_index += 2;
+        return result;
+    }
+
+    uint16_t uint16Value() const
+    {
+        uint16_t const result(QtCassandra::uint16Value(f_array, f_index));
+        f_index += 2;
+        return result;
+    }
+
+    int32_t int32Value() const
+    {
+        int32_t result(QtCassandra::int32Value(f_array, f_index));
+        f_index += 4;
+        return result;
+    }
+
+    uint32_t uint32Value() const
+    {
+        uint32_t const result(QtCassandra::uint32Value(f_array, f_index));
+        f_index += 4;
+        return result;
+    }
+
+    int64_t int64Value() const
+    {
+        int64_t const result(QtCassandra::int64Value(f_array, f_index));
+        f_index += 8;
+        return result;
+    }
+
+    uint64_t uint64Value() const
+    {
+        uint64_t const result(QtCassandra::uint64Value(f_array, f_index));
+        f_index += 8;
+        return result;
+    }
+
+    double doubleValue() const
+    {
+        double const result(QtCassandra::doubleValue(f_array, f_index));
+        f_index += 8;
+        return result;
+    }
+
+    QString p16StringValue() const
+    {
+        uint16_t const length(uint16Value());
+        QString const result(QString::fromUtf8(QtCassandra::binaryValue(f_array, f_index, length)));
+        f_index += length;
+        return result;
+    }
+
+    QString stringValue(int length) const
+    {
+        QString const result(QString::fromUtf8(QtCassandra::binaryValue(f_array, f_index, length)));
+        f_index += length;
+        return result;
+    }
+
+    QByteArray binaryValue() const
+    {
+        uint32_t const length(uint32Value());
+        QByteArray const result(QtCassandra::binaryValue(f_array, f_index, length));
+        f_index += length;
+        return result;
+    }
+
+private:
+    QByteArray      f_array;
+    mutable int     f_index = 0;
+};
+
+
 
 
 
@@ -939,19 +1137,10 @@ public:
     consistency_level_t consistencyLevel() const;
     void setConsistencyLevel(consistency_level_t level);
 
-    timestamp_mode_t timestampMode() const;
-    void setTimestampMode(timestamp_mode_t mode);
-    int64_t timestamp() const;
-    void setTimestamp(int64_t timestamp);
-
 private:
-    void assignTimestamp(int64_t timestamp);
-
     // prevent share pointer assignments (i.e. output of
     // row->cell() instead of row->cell()->value())
     template<class T> QCassandraValue& operator = (std::shared_ptr<T>);
-
-    friend class QCassandraPrivate;
 
     QByteArray                  f_value;
     cassandra_ttl_t             f_ttl;
@@ -963,5 +1152,4 @@ private:
 
 
 } // namespace QtCassandra
-
 // vim: ts=4 sw=4 et

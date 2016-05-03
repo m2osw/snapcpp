@@ -35,6 +35,7 @@
  */
 
 #include "QtCassandra/QCassandraQuery.h"
+#include "QtCassandra/QCassandra.h"
 #include "CassTools.h"
 
 #include "cassandra.h"
@@ -133,8 +134,9 @@ namespace
  */
 QCassandraQuery::QCassandraQuery( QCassandraSession::pointer_t session )
     : f_session( session )
-    , f_consistencyLevel(CONSISTENCY_LEVEL_DEFAULT)
-    , f_timestamp(0)
+    //, f_consistencyLevel(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
+    //, f_timestamp(0) -- auto-init
+    //, f_timeout(0) -- auto-init
 {
 }
 
@@ -246,10 +248,11 @@ void QCassandraQuery::setStatementTimestamp()
         return;
     }
 
-    cass_int64_t cass_time( static_cast<cass_int64_t>(f_timestamp) );
+    cass_int64_t const cass_time( static_cast<cass_int64_t>(f_timestamp) );
 
     cass_statement_set_timestamp( f_queryStmt.get(), cass_time );
 }
+
 
 
 /** \brief Create a query statement.
@@ -289,8 +292,9 @@ void QCassandraQuery::query( const QString &query_string, const int bind_count )
  * will not be paged properly (it will default to a LIMIT of 10000 records.
  * See the cassandra-cpp docs).
  *
- * \sa query()
+ * \param[in] size  The number of rows or cells to read per page.
  *
+ * \sa query()
  */
 void QCassandraQuery::setPagingSize( const int size )
 {
@@ -544,7 +548,8 @@ std::cerr << "*** ...pause is over... ***\n";
     while(throwIfError( QString("Error in query string [%1]!").arg(f_queryString) ));
 #endif
 
-//std::cerr << "Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
+//int64_t const now(QCassandra::timeofday());
+//std::cerr << now << " -- Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
     f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
     if( block )
     {
@@ -866,7 +871,7 @@ QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue * value ) con
  */
 QString QCassandraQuery::getStringColumn( const QString& name ) const
 {
-    return getByteArrayColumn( name ).data();
+    return QString::fromUtf8(getByteArrayColumn( name ).data());
 }
 
 
@@ -876,7 +881,7 @@ QString QCassandraQuery::getStringColumn( const QString& name ) const
  */
 QString QCassandraQuery::getStringColumn( const int num ) const
 {
-    return getByteArrayColumn( num ).data();
+    return QString::fromUtf8(getByteArrayColumn( num ).data());
 }
 
 
