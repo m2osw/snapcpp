@@ -1,3 +1,9 @@
+cassview (0.1.1.1~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Wed, 04 May 2016 15:43:51 -0700
+
 cassview (0.1.1.0~trusty) trusty; urgency=high
 
   * Ported to qt5.
