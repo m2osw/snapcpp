@@ -25,6 +25,8 @@ class CassandraModel
 
 	private:
         QtCassandra::QCassandraSchema::SessionMeta::pointer_t f_sessionMeta;
+
+        void reset();
 };
 
 

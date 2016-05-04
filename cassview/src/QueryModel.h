@@ -75,6 +75,8 @@ protected:
 private:
     QtCassandra::QCassandraQuery::pointer_t   f_query;
     QRegExp									  f_filter;
+
+    void reset();
 };
 
 

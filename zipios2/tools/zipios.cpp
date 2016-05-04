@@ -239,10 +239,10 @@ int main(int argc, char *argv[])
 
         }
     }
-    catch(zipios::Exception const & e)
+    catch(zipios::Exception const & ex)
     {
         std::cerr << g_progname << ":error: an exception occurred: "
-                  << e.what() << std::endl;
+                  << ex.what() << std::endl;
     }
 
     return 0;

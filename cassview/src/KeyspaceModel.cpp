@@ -6,6 +6,12 @@ using namespace QtCassandra;
 using namespace QCassandraSchema;
 
 
+void KeyspaceModel::reset()
+{
+    beginResetModel();
+    endResetModel();
+}
+
 void KeyspaceModel::setCassandra( QCassandraSession::pointer_t c, const QString& keyspace_name )
 {
     auto sessionMeta = SessionMeta::create( c );

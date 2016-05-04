@@ -50,14 +50,14 @@ include_directories(
 	"${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-QT4_WRAP_UI(UI_FILES
+qt5_wrap_ui(UI_FILES
 	AboutDialog.ui
 	InputDialog.ui
 	MainWindow.ui
 	SettingsDialog.ui
 )
 
-QT4_ADD_RESOURCES(RES_FILES
+qt5_add_resources(RES_FILES
 	resources.qrc
 )
 
@@ -84,7 +84,9 @@ target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
     ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
+    Qt5::Core
+    Qt5::Network
+    Qt5::Widgets
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}

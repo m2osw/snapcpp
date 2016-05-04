@@ -1,3 +1,11 @@
+cassview (0.1.1.0~trusty) trusty; urgency=high
+
+  * Ported to qt5.
+  * Lots of bug fixes.
+  * Now works with CQL and QCassandraQuery.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 03 May 2016 20:44:43 -0700
+
 cassview (0.1.0.400~trusty) trusty; urgency=high
 
   * Nightly build.

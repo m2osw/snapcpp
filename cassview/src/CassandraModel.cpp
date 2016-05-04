@@ -5,6 +5,14 @@
 using namespace QtCassandra;
 using namespace QCassandraSchema;
 
+
+void CassandraModel::reset()
+{
+    beginResetModel();
+    endResetModel();
+}
+
+
 void CassandraModel::setCassandra( QCassandraSession::pointer_t c )
 {
     f_sessionMeta = SessionMeta::create( c );

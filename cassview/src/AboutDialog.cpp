@@ -1,4 +1,5 @@
 #include "AboutDialog.h"
+#include <QCoreApplication>
 #include <QMessageBox>
 
 AboutDialog::AboutDialog(QWidget *p)
@@ -7,7 +8,7 @@ AboutDialog::AboutDialog(QWidget *p)
     setupUi(this);
 
     textBrowser->setHtml(
-        QApplication::translate
+        QCoreApplication::translate
         (
             "AboutDialog"
             , "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -25,7 +26,7 @@ AboutDialog::AboutDialog(QWidget *p)
              "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Optimized for</p>\n"
              "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Snap! Server<br /><br />Made to Order Software Corporation</span></p></body></html>"
             , 0
-            , QApplication::UnicodeUTF8
+            //, QApplication::UnicodeUTF8
         )
 );
 }

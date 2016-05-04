@@ -25,6 +25,8 @@ class KeyspaceModel
 
 	private:
         string_list_t	f_tableNames;
+
+        void reset();
 };
 
 

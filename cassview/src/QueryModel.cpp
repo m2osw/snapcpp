@@ -48,6 +48,13 @@ QueryModel::QueryModel()
 }
 
 
+void QueryModel::reset()
+{
+    beginResetModel();
+    endResetModel();
+}
+
+
 void QueryModel::displayError( std::exception const& except, QString const& message ) const
 {
     std::cerr << "Exception caught! what=[" << except.what() << "], message=[" << message.toUtf8().data() << "]" << std::endl;

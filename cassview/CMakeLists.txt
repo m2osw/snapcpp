@@ -35,7 +35,7 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set(CASSVIEW_VERSION_MAJOR 0)
+set(CASSVIEW_VERSION_MAJOR 1)
 set(CASSVIEW_VERSION_MINOR 1)
 set(CASSVIEW_VERSION_PATCH 0)
 
@@ -43,6 +43,10 @@ cmake_minimum_required(VERSION 2.8)
 
 project(cassview-project)
 
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Automatically run the moc compiler on qt files
 set( CMAKE_AUTOMOC TRUE )
 
 add_definitions( -DCASSVIEW_VERSION=\"${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSION_MINOR}.${CASSVIEW_VERSION_PATCH}\" )
@@ -62,21 +66,20 @@ find_package( SnapCMakeModules REQUIRED )
 find_package( AdvGetOpt        REQUIRED )
 find_package( log4cplus        REQUIRED )
 find_package( LibTLD           REQUIRED )
-find_package( Qt4 4.8.1        REQUIRED QtCore QtNetwork QtGui )
+find_package( Qt5Core   	   REQUIRED )
+find_package( Qt5Network 	   REQUIRED )
+find_package( Qt5Widgets 	   REQUIRED )
 find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+#include( ${QT_USE_FILE} )
+#add_definitions( ${QT_DEFINITIONS} )
 
 include_directories( 
-    "${PROJECT_SOURCE_DIR}"
-    "${PROJECT_BINARY_DIR}"
     "${QTCASSANDRA_INCLUDE_DIRS}"
     "${CMAKE_BINARY_DIR}"
-    "${QT_INCLUDES}"
     "${SNAPWEBSITES_INCLUDE_DIRS}"
 )
 

@@ -36,6 +36,8 @@
 #include <algorithm>
 #include "qt4.h"
 
+#include <QtWidgets>
+
 #include "SettingsDialog.h"
 
 using namespace QtCassandra;
