@@ -74,7 +74,6 @@ add_executable(${PROJECT_NAME}
     RowModel.cpp
     SettingsDialog.cpp
     TableModel.cpp
-	qt4.h
 	${UI_FILES}
 	${RES_FILES}
 )

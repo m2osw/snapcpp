@@ -35,8 +35,6 @@
 #include <QtCassandra/QCassandra.h>
 #include <algorithm>
 
-#include "qt4.h"
-
 #include "MainWindow.h"
 #include "SettingsDialog.h"
 

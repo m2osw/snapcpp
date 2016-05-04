@@ -34,7 +34,6 @@
  */
 #include <QtCassandra/QCassandra.h>
 #include <algorithm>
-#include "qt4.h"
 
 #include <QtWidgets>
 

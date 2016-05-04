@@ -80,10 +80,16 @@ set( QT_LIBRARIES
     Qt5::Widgets
 )
 
-include_directories( 
-    "${QTCASSANDRA_INCLUDE_DIRS}"
-    "${CMAKE_BINARY_DIR}"
-    "${SNAPWEBSITES_INCLUDE_DIRS}"
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Widgets_INCLUDE_DIRS}
+    ${QTCASSANDRA_INCLUDE_DIRS}
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+)
+
+include_directories(
+    ${CMAKE_BINARY_DIR}
 )
 
 add_subdirectory(src)
