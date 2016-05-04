@@ -32,13 +32,10 @@
 project(plugin_permissions)
 
 find_package( OpenSSL )
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+find_package( Qt5Core REQUIRED )
 
 include_directories(
     SYSTEM
-        ${QT_INCLUDES}
         ${OPENSSL_INCLUDE_DIRS}
 )
 
@@ -47,7 +44,7 @@ include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
-QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     permissions.qrc
 )
 
@@ -64,7 +61,7 @@ add_library(permissions SHARED
     content.xml
 )
 
-target_link_libraries( permissions ${QT_LIBRARIES} )
+target_link_libraries( permissions Qt5::Core )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )

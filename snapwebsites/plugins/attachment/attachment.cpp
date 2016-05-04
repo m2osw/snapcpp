@@ -699,7 +699,7 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
                 QString("Could not find field \"%2\" of file \"%3\" (maybe renamed \"%4\").")
                         .arg(ipath.get_key())
                         .arg(field_name)
-                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
+                        .arg(QString::fromLatin1(attachment_key.binaryValue().toHex()))
                         .arg(renamed));
         NOTREACHED();
     }
@@ -714,7 +714,7 @@ bool attachment::on_path_execute(content::path_info_t & ipath)
                 QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
                 QString("Could not find field \"%1\" of file \"%2\" (maybe renamed \"%3\").")
                         .arg(field_name)
-                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
+                        .arg(QString::fromLatin1(attachment_key.binaryValue().toHex()))
                         .arg(renamed));
         NOTREACHED();
     }
@@ -1013,7 +1013,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         default_err.emit_error(
                     QString("Could not find field \"%1\" of file \"%2\" in revision table.")
                             .arg(field_name)
-                            .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+                            .arg(QString::fromLatin1(attachment_key.binaryValue().toHex())));
         return;
     }
 
@@ -1025,7 +1025,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         default_err.emit_error(
                 QString("Could not find field \"%1\" of file \"%2\" in files table.")
                         .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA))
-                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+                        .arg(QString::fromLatin1(attachment_key.binaryValue().toHex())));
         return;
     }
 

@@ -32,13 +32,10 @@
 project(plugin_cpu)
 
 find_package( ProcPS )
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+find_package( Qt5Core REQUIRED )
 
 include_directories(
     SYSTEM
-        ${QT_INCLUDES}
         ${PROCPS_INCLUDES}
 )
 
@@ -47,7 +44,7 @@ include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
-QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     cpu.qrc
 )
 
@@ -60,7 +57,7 @@ add_library(cpu SHARED
 )
 
 target_link_libraries(cpu
-    ${QT_LIBRARIES}
+    Qt5::Core
     ${PROCPS_LIBRARIES}
 )
 

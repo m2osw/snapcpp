@@ -257,7 +257,7 @@ locale::locale_list_t const & locale::get_locale_list()
 
             // Language
             {
-                info.f_abbreviations.f_language = QString::fromAscii(l[i].getLanguage());
+                info.f_abbreviations.f_language = QString::fromLatin1(l[i].getLanguage());
                 QUnicodeString lang;
                 l[i].getDisplayLanguage(lang);
                 info.f_display_names.f_language = lang;
@@ -265,7 +265,7 @@ locale::locale_list_t const & locale::get_locale_list()
 
             // Variant
             {
-                info.f_abbreviations.f_variant = QString::fromAscii(l[i].getVariant());
+                info.f_abbreviations.f_variant = QString::fromLatin1(l[i].getVariant());
                 QUnicodeString variant;
                 l[i].getDisplayVariant(variant);
                 info.f_display_names.f_variant = variant;
@@ -273,7 +273,7 @@ locale::locale_list_t const & locale::get_locale_list()
 
             // Country
             {
-                info.f_abbreviations.f_country = QString::fromAscii(l[i].getCountry());
+                info.f_abbreviations.f_country = QString::fromLatin1(l[i].getCountry());
                 QUnicodeString country;
                 l[i].getDisplayVariant(country);
                 info.f_display_names.f_country = country;
@@ -281,13 +281,13 @@ locale::locale_list_t const & locale::get_locale_list()
 
             // Script
             {
-                info.f_abbreviations.f_script = QString::fromAscii(l[i].getScript());
+                info.f_abbreviations.f_script = QString::fromLatin1(l[i].getScript());
                 QUnicodeString script;
                 l[i].getDisplayVariant(script);
                 info.f_display_names.f_script = script;
             }
 
-            info.f_locale = QString::fromAscii(l[i].getName());
+            info.f_locale = QString::fromLatin1(l[i].getName());
 
             f_locale_list.push_back(info);
         }

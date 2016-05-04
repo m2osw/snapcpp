@@ -31,6 +31,12 @@ cmake_minimum_required(VERSION 2.8)
 
 project( googlerank )
 
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Automatically run the moc compiler on qt files
+set( CMAKE_AUTOMOC TRUE )
+
 ##
 ## Include support modules
 ##
@@ -45,12 +51,10 @@ include_directories(
 )
 
 ##
-## Find Qt4
+## Find Qt5
 ##
-find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
-include_directories( ${QT_INCLUDES} )
+find_package( Qt5Core    REQUIRED )
+find_package( Qt5Network REQUIRED )
 
 ##
 ## Google Rank Version
@@ -64,20 +68,14 @@ set(GOOGLERANK_VERSION_PATCH 2)
 ##
 project(libgooglerank)
 
-QT4_WRAP_CPP(
-    GOOGLEPAGERANK_MOC_OUTFILES
-    googlepagerank.h
-    googlepagerank_http.h
-)
-
 add_library( googlepagerank SHARED
     googlepagerank.cpp
     googlepagerank_http.cpp
-    ${GOOGLEPAGERANK_MOC_OUTFILES}
 )
 
 target_link_libraries(googlepagerank
-    ${QT_LIBRARIES}
+    Qt5::Core
+    Qt5::Network
 )
 
 set_target_properties(
@@ -111,7 +109,8 @@ include_directories(
 )
 
 target_link_libraries(${PROJECT_NAME}
-    ${QT_LIBRARIES}
+    Qt5::Core
+    Qt5::Network
     googlepagerank
 )
 

@@ -41,14 +41,7 @@ project(javascript_unicode)
 
 enable_language( CXX )
 
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
-
-include_directories(
-    SYSTEM
-        ${QT_INCLUDES}
-)
+find_package( Qt5Core REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -63,7 +56,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    ${QT_LIBRARIES}
+    Qt5::Core
 )
 
 #get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )

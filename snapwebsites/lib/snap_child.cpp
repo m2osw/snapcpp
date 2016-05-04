@@ -3386,7 +3386,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 die("multipart POST does not include a valid boundary.");
                 NOTREACHED();
             }
-            f_boundary = ("--" + boundary).toAscii();
+            f_boundary = ("--" + boundary).toLatin1();
             f_end_boundary = f_boundary;
             f_end_boundary.append("--\r", 3);
             f_boundary += '\r';
@@ -7931,7 +7931,7 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
             // do it manually so the date is ALWAYS in English
             return QString("%1 %2 %3 %4:%5:%6 +0000")
                 .arg(time_info.tm_mday, 2, 10, QChar('0'))
-                .arg(QString::fromAscii(g_month_name[time_info.tm_mon], 3))
+                .arg(QString::fromLatin1(g_month_name[time_info.tm_mon], 3))
                 .arg(time_info.tm_year + 1900, 4, 10, QChar('0'))
                 .arg(time_info.tm_hour, 2, 10, QChar('0'))
                 .arg(time_info.tm_min, 2, 10, QChar('0'))
@@ -7943,9 +7943,9 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
         { // ddd, dd MMM yyyy hh:mm:ss GMT
             // do it manually so the date is ALWAYS in English
             return QString("%1, %2 %3 %4 %5:%6:%7 +0000")
-                .arg(QString::fromAscii(g_week_day_name[time_info.tm_wday], 3))
+                .arg(QString::fromLatin1(g_week_day_name[time_info.tm_wday], 3))
                 .arg(time_info.tm_mday, 2, 10, QChar('0'))
-                .arg(QString::fromAscii(g_month_name[time_info.tm_mon], 3))
+                .arg(QString::fromLatin1(g_month_name[time_info.tm_mon], 3))
                 .arg(time_info.tm_year + 1900, 4, 10, QChar('0'))
                 .arg(time_info.tm_hour, 2, 10, QChar('0'))
                 .arg(time_info.tm_min, 2, 10, QChar('0'))

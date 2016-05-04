@@ -46,9 +46,7 @@ add_library(${PROJECT_NAME} SHARED
     QSerializationWriter.cpp
 )
 
-target_link_libraries( ${PROJECT_NAME}
-    ${QT_LIBRARIES}
-)
+target_link_libraries( ${PROJECT_NAME} Qt5::Core )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
     VERSION ${LIBQTSERIALIZATION_VERSION_MAJOR}.${LIBQTSERIALIZATION_VERSION_MINOR}

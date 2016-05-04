@@ -31,15 +31,6 @@
 
 project(plugin_firewall)
 
-#find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
-#include( ${QT_USE_FILE} )
-#add_definitions( ${QT_DEFINITIONS} )
-#
-#include_directories(
-#    SYSTEM
-#        ${QT_INCLUDES}
-#)
-
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     #${CONTROLLEDVARS_INCLUDE_DIRS}
@@ -49,8 +40,6 @@ include_directories(
 add_library(firewall SHARED
     firewall.cpp
 )
-
-#target_link_libraries( firewall ${QT_LIBRARIES} )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )

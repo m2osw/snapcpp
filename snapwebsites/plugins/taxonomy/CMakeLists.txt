@@ -32,21 +32,15 @@
 
 project(plugin_taxonomy)
 
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtXml )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
-
-include_directories(
-    SYSTEM
-        ${QT_INCLUDES}
-)
+find_package( Qt5Core REQUIRED )
+find_package( Qt5Xml  REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
-QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     taxonomy.qrc
 )
 
@@ -60,7 +54,7 @@ add_library(taxonomy SHARED
     taxonomy-logo-64x64.png
 )
 
-target_link_libraries( taxonomy ${QT_LIBRARIES} )
+target_link_libraries( taxonomy Qt5::Core Qt5::Xml )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )

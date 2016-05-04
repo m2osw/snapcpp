@@ -32,21 +32,12 @@
 #
 
 #################################################################################
-## Dependencies
-##
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtNetwork QtXml QtXmlPatterns QtSql )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
-
-
-#################################################################################
 ## The Snap! Server
 ##
 project(snapserver)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${QT_INCLUDES}
 )
 
 add_executable(${PROJECT_NAME}

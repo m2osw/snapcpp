@@ -32,6 +32,12 @@
 
 project( snapwatchdog_plugins )
 
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Automatically run the moc compiler on qt files
+set( CMAKE_AUTOMOC TRUE )
+
 ################################################################################
 # We need a common place to install the plugins
 #

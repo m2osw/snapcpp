@@ -92,7 +92,8 @@ add_library(${PROJECT_NAME} SHARED
 target_link_libraries(QtCassandra
     ${AS2JS_LIBRARIES}
     ${CASSANDRACPPDRIVER_LIBRARIES}
-    ${QT_LIBRARIES}
+    Qt5::Core
+    Qt5::Xml
 )
 
 set_target_properties( QtCassandra PROPERTIES

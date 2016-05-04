@@ -983,8 +983,11 @@ void recurring_t::set(QString const & field)
         new_interval = number;
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
     if(*s == '/' || number == 0)
     {
+#pragma GCC diagnostic pop
         if(*s == '/')
         {
             ++s;

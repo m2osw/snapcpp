@@ -1,7 +1,7 @@
 Source: googlerank
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, libqt4-dev (>= 4.8.1),
+Build-Depends: debhelper, cmake, qt5-default
     doxygen, graphviz,
     snapcmakemodules, libcontrolledvars-dev (>= 1.4.16.348~trusty)
 Standards-Version: 3.9.4

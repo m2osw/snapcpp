@@ -122,7 +122,7 @@ QByteArray dbutils::get_row_key() const
     {
         if(f_rowName == "new" || f_rowName == "javascripts" || f_rowName == "css" || f_rowName == "images")
         {
-            row_key = f_rowName.toAscii();
+            row_key = f_rowName.toLatin1();
         }
         else
         {
@@ -139,7 +139,7 @@ QByteArray dbutils::get_row_key() const
     }
     else
     {
-        row_key = f_rowName.toAscii();
+        row_key = f_rowName.toLatin1();
     }
 
     return row_key;
@@ -361,7 +361,7 @@ QString dbutils::get_column_name( const QByteArray& key ) const
         QString const time(microseconds_to_string(QtCassandra::safeInt64Value(key, 0), true));
         name = QString("%1 %4").arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
     }
-    else if(f_tableName == "branch" && (key.startsWith(content_attachment_reference.toAscii())) )
+    else if(f_tableName == "branch" && (key.startsWith(content_attachment_reference.toLatin1())) )
     {
         name = content_attachment_reference;
         name += key_to_string( key.mid( content_attachment_reference.length() ) );

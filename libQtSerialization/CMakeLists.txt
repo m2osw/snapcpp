@@ -42,6 +42,12 @@ set(LIBQTSERIALIZATION_VERSION_PATCH 3)
 
 project(libQtSerialization)
 
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Automatically run the moc compiler on qt files
+set( CMAKE_AUTOMOC TRUE )
+
 ## Include support modules
 ##
 #if( NOT CMAKE_MODULE_PATH )
@@ -50,9 +56,12 @@ project(libQtSerialization)
 
 find_package( SnapCMakeModules )
 find_package( SnapDoxygen      )
-find_package( Qt4 4.8.1 REQUIRED QtCore )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+find_package( Qt5Core REQUIRED )
+
+include_directories(
+    SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+)
 
 include_directories(
     ${PROJECT_SOURCE_DIR}
@@ -60,7 +69,6 @@ include_directories(
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/include
     ${CMAKE_BINARY_DIR}
-    ${QT_INCLUDES}
 )
 
 # Create a configure script

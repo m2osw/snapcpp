@@ -42,13 +42,10 @@ if( NOT ImageMagick_FOUND )
     message( FATAL_ERROR "ImageMagic is required to build the image plugin" )
 endif()
 
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+find_package( Qt5Core REQUIRED )
 
 include_directories(
     SYSTEM
-        ${QT_INCLUDES}
         ${ImageMagick_INCLUDE_DIRS}
 )
 
@@ -57,7 +54,7 @@ include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
-QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     images.qrc
 )
 
@@ -73,7 +70,7 @@ add_library(images SHARED
 )
 
 target_link_libraries( images
-    ${QT_LIBRARIES}
+    Qt5::Core
     ${ImageMagick_LIBRARIES}
 )
 

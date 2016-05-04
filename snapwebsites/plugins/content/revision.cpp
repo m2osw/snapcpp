@@ -373,7 +373,7 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells & source_cells
     // content.h header file...
     links::links * link_plugin(links::links::instance());
     QString const links_namespace(QString("%1::").arg(links::get_name(links::name_t::SNAP_NAME_LINKS_NAMESPACE)));
-    QByteArray const links_bytearray(links_namespace.toAscii());
+    QByteArray const links_bytearray(links_namespace.toLatin1());
 
     QtCassandra::QCassandraCells left_cells;
 
@@ -432,7 +432,7 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells & source_cells
 void content::copy_branch_cells_as_is(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, QString const& plugin_namespace)
 {
     QString const cell_namespace(QString("%1::").arg(plugin_namespace));
-    QByteArray const cell_bytearray(cell_namespace.toAscii());
+    QByteArray const cell_bytearray(cell_namespace.toLatin1());
 
     QtCassandra::QCassandraCells left_cells;
 

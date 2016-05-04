@@ -90,7 +90,8 @@ add_executable(cassandra_value
 
 target_link_libraries(cassandra_value
     QtCassandra
-    ${QT_LIBRARIES}
+    Qt5::Core
+	Qt5::Xml
 )
 
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
@@ -104,7 +105,8 @@ add_executable(context_management
 
 target_link_libraries(context_management
     QtCassandra
-    ${QT_LIBRARIES}
+    Qt5::Core
+	Qt5::Xml
 )
 
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
@@ -118,7 +120,8 @@ add_executable(read_write_data
 
 target_link_libraries(read_write_data
     QtCassandra
-    ${QT_LIBRARIES}
+    Qt5::Core
+	Qt5::Xml
 )
 
 add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
@@ -132,7 +135,8 @@ add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
 #
 #target_link_libraries(read_uuid
 #    QtCassandra
-#    ${QT_LIBRARIES}
+#    Qt5::Core
+#	 Qt5::Xml
 #)
 
 ################################################################################
@@ -144,7 +148,8 @@ add_executable(million_rows
 
 target_link_libraries(million_rows
     QtCassandra
-    ${QT_LIBRARIES}
+    Qt5::Core
+	Qt5::Xml
 )
 
 option( RUN_MILLION_ROW_TEST "In addition to the normal tests, include the (very slow) 'million row' test." OFF )
@@ -163,7 +168,8 @@ add_executable(simple_counter
 
 target_link_libraries(simple_counter
     QtCassandra
-    ${QT_LIBRARIES}
+    Qt5::Core
+	Qt5::Xml
 )
 
 #add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
@@ -177,7 +183,8 @@ target_link_libraries(simple_counter
 #
 #target_link_libraries(composite_type
 #    QtCassandra
-#    ${QT_LIBRARIES}
+#    Qt5::Core
+#    Qt5::Xml
 #)
 #
 #add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} )
@@ -191,7 +198,8 @@ add_executable(cassandra_lock
 
 target_link_libraries(cassandra_lock
     QtCassandra
-    ${QT_LIBRARIES}
+    Qt5::Core
+	Qt5::Xml
 )
 
 add_test( NAME ${PROJECT_NAME}-create COMMAND ${PROJECT_NAME} -h ${CASSANDRA_IP} -c 1 )

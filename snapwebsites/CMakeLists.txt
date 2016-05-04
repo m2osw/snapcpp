@@ -53,6 +53,12 @@ cmake_minimum_required(VERSION 2.8)
 
 project( snapwebsites_project )
 
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Automatically run the moc compiler on qt files
+set( CMAKE_AUTOMOC TRUE )
+
 enable_language( CXX )
 enable_language( C )
 
@@ -74,7 +80,33 @@ find_package( LibXml2            REQUIRED )
 find_package( log4cplus          REQUIRED )
 find_package( OpenSSL            REQUIRED )
 find_package( ProcPS             REQUIRED )
-find_package( Qt4                4.8.1    REQUIRED QtCore QtXml QtXmlPatterns )
+
+find_package( Qt5Core            REQUIRED )
+find_package( Qt5Network         REQUIRED )
+find_package( Qt5Script          REQUIRED )
+find_package( Qt5Sql             REQUIRED )
+find_package( Qt5Widgets         REQUIRED )
+find_package( Qt5Xml             REQUIRED )
+find_package( Qt5XmlPatterns     REQUIRED )
+
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Script_INCLUDE_DIRS}
+    ${Qt5Sql_INCLUDE_DIRS}
+    ${Qt5Widgets_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS}
+    ${Qt5XmlPatterns_INCLUDE_DIRS}
+)
+set( QT_LIBRARIES
+    Qt5::Core
+    Qt5::Network
+    Qt5::Script
+    Qt5::Sql
+    Qt5::Xml
+    Qt5::XmlPatterns
+)
+
 find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )

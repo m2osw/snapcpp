@@ -685,7 +685,7 @@ bool images::on_path_execute(content::path_info_t & ipath)
                 QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
                 QString("Could not find field \"%1\" of file \"%2\" (maybe renamed \"%3\").")
                         .arg(field_name)
-                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
+                        .arg(QString::fromLatin1(attachment_key.binaryValue().toHex()))
                         .arg(renamed));
         NOTREACHED();
     }
@@ -699,7 +699,7 @@ bool images::on_path_execute(content::path_info_t & ipath)
                 QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
                 QString("Could not find field \"%1\" of file \"%2\".")
                         .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA))
-                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+                        .arg(QString::fromLatin1(attachment_key.binaryValue().toHex())));
         NOTREACHED();
     }
 

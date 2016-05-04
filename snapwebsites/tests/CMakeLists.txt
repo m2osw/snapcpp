@@ -34,15 +34,6 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
-
-include_directories(
-    SYSTEM
-        ${QT_INCLUDES}
-)
-
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

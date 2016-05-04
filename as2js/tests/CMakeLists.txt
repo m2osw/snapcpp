@@ -27,14 +27,12 @@
 # THE SOFTWARE.
 #
 
-find_package( CppUnit )
-find_package( QxCppUnit )
-find_package( QxRunner )
-find_package( Qt4 4.8.0 COMPONENTS QtCore QtGui ) # TODO: we really want to find qxcppunitd and qxrunnerd, should probably be part of CppUnit
-if(QT_FOUND)
-    include( ${QT_USE_FILE} )
-endif(QT_FOUND)
-find_package( ICU )
+find_package( CppUnit    )
+find_package( QxCppUnit  )
+find_package( QxRunner   )
+find_package( Qt5Core    REQUIRED )
+find_package( Qt5Widgets REQUIRED )
+find_package( ICU        )
 
 # All the tests require cppunit all the packages we just checked
 #
@@ -57,7 +55,8 @@ include_directories(
         ${ICU_INCLUDE_DIRS}
 )
 target_link_libraries( ${PROJECT_NAME}
-    ${QT_LIBRARIES}
+    Qt5::Core
+    Qt5::Widgets
     ${ICU_LIBRARIES}
     ${ICU_I18N_LIBRARIES}
 )
@@ -176,8 +175,8 @@ project(test_as2js)
 
 # TODO: add proper Qt stuff
 if(QT_FOUND AND LIBQXCPPUNIT_FOUND AND LIBQXRUNNER_FOUND)
-    set(HAVE_QT4 1)
-    add_definitions(-DHAVE_QT4)
+    set(HAVE_QT5 1)
+    add_definitions(-DHAVE_QT5)
 else(QT_FOUND AND LIBQXCPPUNIT_FOUND AND LIBQXRUNNER_FOUND)
     message("No GUI tests will be created because you do not seem to have libqt4-dev, libqxcppunit-dev, libqxrunner-dev available")
 endif(QT_FOUND AND LIBQXCPPUNIT_FOUND AND LIBQXRUNNER_FOUND)
@@ -252,17 +251,18 @@ add_executable(${PROJECT_NAME}
     # Stick a copy of the tools license in the tests
     ../src/license.cpp
 )
-if(HAVE_QT4)
-    set(CPPUNIT_QT4 ${LIBQXCPPUNIT_LIBRARIES} )
-endif(HAVE_QT4)
+if(HAVE_QT5)
+    set(CPPUNIT_QT5 ${LIBQXCPPUNIT_LIBRARIES} )
+endif(HAVE_QT5)
 target_link_libraries( ${PROJECT_NAME}
     as2js
     ${ADVGETOPT_LIBRARIES}
-    ${QT_LIBRARIES}
+    Qt5::Core
+    Qt5::Widgets
     ${ICU_LIBRARIES}
     ${ICU_I18N_LIBRARIES}
     ${CPPUNIT_LIBRARIES}
-    ${CPPUNIT_QT4}
+    ${CPPUNIT_QT5}
 )
 
 

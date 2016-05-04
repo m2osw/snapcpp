@@ -33,21 +33,14 @@
 
 project(plugin_sitemapxml)
 
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
-
-include_directories(
-    SYSTEM
-        ${QT_INCLUDES}
-)
+find_package( Qt5Core REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 
-QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     sitemapxml.qrc
 )
 
@@ -63,7 +56,7 @@ add_library(sitemapxml SHARED
     content.xml
 )
 
-target_link_libraries( sitemapxml ${QT_LIBRARIES} )
+target_link_libraries( sitemapxml Qt5::Core )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )

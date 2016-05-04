@@ -1,11 +1,12 @@
 Source: libqtcassandra
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, doxygen, graphviz, libqt4-dev (>= 4.8.3),
+Build-Depends: debhelper, cmake, doxygen, graphviz
     libboost1.49-dev | libboost-dev, libssl-dev,
     snapcmakemodules (>= 1.0.25.104~trusty), libcontrolledvars-dev (>= 1.4.16.348~trusty),
     libadvgetopt-dev (>= 1.0.2), libqtserialization-dev, libtld-dev,
-    libas2js-dev (>=0.1.14), cassandra-cpp-driver-dev (>= 2.2.2-1)
+    libas2js-dev (>=0.1.14), cassandra-cpp-driver-dev (>= 2.2.2-1),
+    qt5-default
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/libqtcassandra
@@ -15,7 +16,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/libQtCassandra
 Package: libqtcassandra-dev
 Section: libdevel
 Architecture: any
-Depends: libqtcassandra (= ${binary:Version}), ${misc:Depends}, libqt4-dev, libcontrolledvars-dev
+Depends: libqtcassandra (= ${binary:Version}), ${misc:Depends}, qt5-default, libcontrolledvars-dev
 Description: C++ bindings to the Cassandra database server.
  The libQtCassandra library is an advanced C++ library used to access Cassandra
  servers in C++.

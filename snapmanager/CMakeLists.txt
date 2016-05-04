@@ -36,6 +36,12 @@ cmake_minimum_required(VERSION 2.8)
 ##
 project( snapmanager )
 
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Automatically run the moc compiler on qt files
+set( CMAKE_AUTOMOC TRUE )
+
 ##
 ## Version
 ##
@@ -62,20 +68,19 @@ set( CMAKE_MODULE_PATH
 find_package( AdvGetOpt        REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( log4cplus        REQUIRED )
-find_package( Qt4 4.8.4 QUIET  REQUIRED QtCore QtNetwork QtGui QtWebKit)
+find_package( Qt5Core          REQUIRED )
+find_package( Qt5Network       REQUIRED )
+find_package( Qt5Widgets       REQUIRED )
+find_package( Qt5WebKit        REQUIRED )
 find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
-#
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
-
 # We remove the -Wswitch-default because qt has some problematic headers in that regard
 #set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
 
-QT4_WRAP_UI(SNAP_MANAGER_UIS_H
+qt5_wrap_ui(SNAP_MANAGER_UIS_H
     snap-manager-mainwindow.ui
     snap-manager-aboutbox.ui
     snap-manager-createcontextbox.ui
@@ -85,15 +90,15 @@ QT4_WRAP_UI(SNAP_MANAGER_UIS_H
     snap-manager-connectform.ui
     snap-manager-domainform.ui
 )
-QT4_WRAP_CPP(SNAP_MANAGER_MOC_CXX
-    snap-manager.h
-    snap-manager-about.h
-    snap-manager-createcontext.h
-    snap-manager-help.h
-    snap-manager-initialize-website.h
-    snap-manager-decode-utf8.h
-)
-QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+#qt5_wrap_cpp(SNAP_MANAGER_MOC_CXX
+#    snap-manager.h
+#    snap-manager-about.h
+#    snap-manager-createcontext.h
+#    snap-manager-help.h
+#    snap-manager-initialize-website.h
+#    snap-manager-decode-utf8.h
+#)
+qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     snap-manager-resources.qrc
 )
 
@@ -123,7 +128,10 @@ add_executable( ${PROJECT_NAME}
 target_link_libraries( ${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
-    ${QT_LIBRARIES}
+    Qt5::Core
+    Qt5::Network
+    Qt5::Widgets
+    Qt5::WebKit
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${LIBTLD_LIBRARIES}

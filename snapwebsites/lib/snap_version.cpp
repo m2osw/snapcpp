@@ -578,8 +578,11 @@ bool version::set_version_string(QString const& version_string)
  *
  * \param[in] version_vector  The value of the new version.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 void version::set_version(version_numbers_vector_t const& version_vector)
 {
+#pragma GCC diagnostic pop
     f_error.clear();    // no error possible in this case
 
     // copy and then canonicalize the array

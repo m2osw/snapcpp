@@ -41,6 +41,12 @@ cmake_minimum_required(VERSION 2.8)
 
 project( snapwatchdog_project )
 
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Automatically run the moc compiler on qt files
+set( CMAKE_AUTOMOC TRUE )
+
 ## Include support modules
 ##
 if( NOT CMAKE_PREFIX_PATH )
@@ -53,22 +59,22 @@ set( CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
 )
 
-find_package( AdvGetOpt        REQUIRED )
+find_package(  AdvGetOpt        REQUIRED )
 #find_package( ControlledVars   REQUIRED )
-find_package( LibTLD           REQUIRED )
-find_package( log4cplus        REQUIRED )
-find_package( Qt4 4.8.1 QUIET  REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
-find_package( QtCassandra      REQUIRED )
-find_package( QtSerialization  REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
+find_package(  LibTLD           REQUIRED )
+find_package(  log4cplus        REQUIRED )
+find_package(  Qt5Core          REQUIRED )
+find_package(  Qt5Network       REQUIRED )
+find_package(  Qt5Xml           REQUIRED )
+find_package(  Qt5XmlPatterns   REQUIRED )
+find_package(  QtCassandra      REQUIRED )
+find_package(  QtSerialization  REQUIRED )
+find_package(  SnapCMakeModules REQUIRED )
 #find_package( SnapDoxygen      REQUIRED )
-find_package( SnapWebsites     REQUIRED )
+find_package(  SnapWebsites     REQUIRED )
 #find_package( ZLIB             REQUIRED )
-#find_package( ZipIos++         REQUIRED 0.1.5.9 )
-#find_program( ZIP zip REQUIRED )
-
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+#find_package( ZipIos++         REQUIRED 0.1.5.9  )
+#find_program( ZIP              zip      REQUIRED )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for snapwatchdog!")

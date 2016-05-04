@@ -890,7 +890,7 @@ QCassandraRow::pointer_t QCassandraTable::findRow(const QString& row_name) const
  */
 QCassandraRow::pointer_t QCassandraTable::findRow(const QByteArray& row_key) const
 {
-    QCassandraRows::iterator ri(f_rows.find(row_key));
+    auto ri(f_rows.find(row_key));
     if(ri == f_rows.end())
     {
         QCassandraRow::pointer_t null;
@@ -968,7 +968,7 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
         return false;
     }
 
-    QCassandraRows::iterator ri(f_rows.find(row_key));
+    auto ri(f_rows.find(row_key));
     if(ri != f_rows.end())
     {
         // row exists in memory

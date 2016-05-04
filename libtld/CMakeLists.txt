@@ -41,11 +41,12 @@ project(tld_library)
 # specific to that project)
 #
 find_package( SnapCMakeModules )
-find_package( SnapDoxygen )
-find_package( Boost REQUIRED )
-find_package( Qt4 4.8.1 REQUIRED QtCore QtXml )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+find_package( SnapDoxygen      )
+find_package( Boost            REQUIRED )
+find_package( Qt5Core          REQUIRED )
+find_package( Qt5Xml           REQUIRED )
+
+set( QT_LIBRARIES Qt5::Core Qt5::Xml )
 
 add_subdirectory( cmake   )
 add_subdirectory( include )

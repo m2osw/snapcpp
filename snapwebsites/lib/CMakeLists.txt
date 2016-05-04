@@ -32,14 +32,9 @@
 
 project(snapwebsites)
 
-set( CMAKE_AUTOMOC TRUE )
-
 # Put the version in the header file
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h )
 
-
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
 
 option( SNAP_NO_FORK OFF "Set to suppress snapserver's inate forking [for debugging purposes only--not for release!]" )
 if( ${SNAP_NO_FORK} )
@@ -62,7 +57,6 @@ include_directories(
     SYSTEM
         ${MAGIC_INCLUDE_PATH}
         ${LOG4CPLUS_INCLUDE_DIRS}
-        ${QT_INCLUDES}
         ${LIBPROCPS_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
 )
@@ -71,7 +65,7 @@ include_directories(
     ${LIBTLD_INCLUDE_DIRS}
 )
 
-QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
+qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
     snap.qrc
 )
 
@@ -101,7 +95,7 @@ add_library( ${PROJECT_NAME} SHARED
     qstring_stream.h                            # Stream QString objects property to ostream objects.
     quoted_printable.cpp                        # to encode / decode data using the quoted printable format
     qxmlmessagehandler.cpp                      # Qt extension for us to capture the QXmlQuery messages
-    row_model.cpp                               # libQtCassandra row model for use with a QTableView object.
+    #row_model.cpp                               # libQtCassandra row model for use with a QTableView object.
     snap_backend.cpp                            # A type of snap_child, but for backends only
     snap_cassandra.cpp                          # Encapuslate initiating a connection to the database.
     snap_communicator.cpp                       # handle any number of sockets with a single process.
@@ -125,7 +119,7 @@ add_library( ${PROJECT_NAME} SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h  # binary output of header file (generated)
     snapwebsites.cpp                            # server
     tcp_client_server.cpp                       # low level TCP/IP that works
-    table_model.cpp                             # libQtCassandra table model for use with a QListView object.
+    #table_model.cpp                             # libQtCassandra table model for use with a QListView object.
     udp_client_server.cpp                       # low level UDP/IP that works
     xslt.cpp                                    # code to do XSLT transformations
 )
@@ -134,7 +128,8 @@ target_link_libraries( ${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
+    Qt5::Core
+    Qt5::Xml
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${MAGIC_LIBRARY}

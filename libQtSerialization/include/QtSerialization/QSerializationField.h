@@ -34,8 +34,7 @@
  *      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef QT_SERIALIZATION_FIELD_H
-#define QT_SERIALIZATION_FIELD_H
+#pragma once
 
 #include <QString>
 
@@ -55,6 +54,5 @@ public:
 
 
 } // namespace QtSerialization
-#endif
-// #ifndef QT_SERIALIZATION_FIELD_H
+
 // vim: ts=4 sw=4 et

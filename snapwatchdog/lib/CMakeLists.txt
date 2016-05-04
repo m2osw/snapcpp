@@ -37,9 +37,9 @@ set( CMAKE_AUTOMOC TRUE )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwatchdog.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwatchdog.h )
 
 #find_package( log4cplus REQUIRED )
-find_package( Qt4 4.8.1 REQUIRED QtCore QtXml QtXmlPatterns )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+find_package( Qt5Core        REQUIRED )
+find_package( Qt5Xml         REQUIRED )
+find_package( Qt5XmlPatterns REQUIRED )
 
 option( SNAP_NO_FORK OFF "Set to suppress watchdog server's inate forking [for debugging purposes only--not for release!]" )
 if( ${SNAP_NO_FORK} )
@@ -61,7 +61,9 @@ target_link_libraries( ${PROJECT_NAME}
     #${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
     #${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
+    Qt5::Core
+    Qt5::Xml
+    Qt5::XmlPatterns
     #${QTCASSANDRA_LIBRARIES}
     #${QTSERIALIZATION_LIBRARIES}
     #${MAGIC_LIBRARY}

@@ -2,7 +2,7 @@ Source: cassview
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, libadvgetopt-dev (>= 1.0.15.231~trusty),
-    libqt4-dev (>= 4.8.3), libqtwebkit-dev, doxygen, graphviz, zip,
+    qt5-default, libqtwebkit-dev, doxygen, graphviz, zip,
     libxml2-utils, snapcmakemodules (>= 1.0.23.230~trusty),
     libqtcassandra-dev (>= 0.5.7), libcontrolledvars-dev (>= 1.4.15.230~trusty),
     libsnapwebsites-dev (>= 0.1.72.101~xenial), liblog4cplus-dev (>= 1.2.0),

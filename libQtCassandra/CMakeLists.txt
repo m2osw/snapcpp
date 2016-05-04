@@ -42,7 +42,8 @@ set(LIBQTCASSANDRA_VERSION_PATCH 0)
 cmake_minimum_required(VERSION 2.8)
 project(libQtCassandra)
 
-set( CMAKE_AUTOMOC TRUE )
+set( CMAKE_INCLUDE_CURRENT_DIR ON   )
+set( CMAKE_AUTOMOC             TRUE )
 
 ## Include support modules
 ##
@@ -51,18 +52,14 @@ find_package( CassandraCppDriver REQUIRED )
 find_package( ControlledVars     REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapDoxygen        REQUIRED )
-find_package( Qt4 4.8.1          REQUIRED QtCore QtXml )
-
-## Qt4
-##
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
+find_package( Qt5Core   	     REQUIRED )
+find_package( Qt5Xml    	     REQUIRED )
 
 ## This will cause us to look in the 3rdParty area for thrift and other 3rdparty libs
 ##
 link_directories( ${CMAKE_BINARY_DIR}/dist/lib/ )
 
-include_directories( SYSTEM ${QT_INCLUDES} )
+include_directories( SYSTEM ${Qt5Core_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS} )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src

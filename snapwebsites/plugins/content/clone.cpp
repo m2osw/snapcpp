@@ -315,7 +315,7 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
                     && strcmp(cell_key.data(), get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED)) != 0
                     && strcmp(cell_key.data(), get_name(name_t::SNAP_NAME_CONTENT_CLONED)) != 0)
                     {
-                        QString key(QString::fromAscii(cell_key.data()));
+                        QString key(QString::fromLatin1(cell_key.data()));
                         if(key.startsWith(revision_control)
                         && (key.endsWith(current_branch_key)
                          || key.endsWith(current_working_branch_key)
@@ -373,7 +373,7 @@ bool content::clone_page(clone_info_t & source, clone_info_t & destination)
             }
 
             QString const links_namespace(QString("%1::").arg(links::get_name(links::name_t::SNAP_NAME_LINKS_NAMESPACE)));
-            QByteArray const links_bytearray(links_namespace.toAscii());
+            QByteArray const links_bytearray(links_namespace.toLatin1());
 
             // all the names end with '#' and the <branch> number
             // some branches may not exist (partial copy, branch zero)

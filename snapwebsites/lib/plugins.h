@@ -26,6 +26,7 @@
 #include <memory>
 
 #include <QVector>
+#include <QMap>
 
 
 namespace snap

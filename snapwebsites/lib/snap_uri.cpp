@@ -1436,7 +1436,7 @@ QString snap_uri::option(int part, QString& name) const
     {
         throw snap_uri_exception_out_of_bounds(QString("no option %1 available (range 0 to %2)").arg(part).arg(f_options.size()));
     }
-    snap_uri_options_t::iterator it(f_options.begin() + part);
+    auto it(f_options.begin() + part);
     name = it.key();
     return it.value();
 }
@@ -1675,7 +1675,7 @@ QString snap_uri::query_option(int part, QString& name) const
     {
         throw snap_uri_exception_out_of_bounds(QString("query-option %1 does not exist (range 0 to %2)").arg(part).arg(f_query_strings.size()));
     }
-    snap_uri_options_t::iterator it(f_query_strings.begin() + part);
+    auto it(f_query_strings.begin() + part);
     name = it.key();
     return it.value();
 }

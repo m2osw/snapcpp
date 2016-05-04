@@ -581,7 +581,7 @@ bool snap_image::info_gif(unsigned char const *s, size_t l, unsigned char const 
     smart_snap_image_buffer_t buffer(new snap_image_buffer_t(this));
 
     buffer->set_mime_type("image/gif");
-    buffer->set_format_version(QString::fromAscii(reinterpret_cast<char const *>(s) + 3, 3));
+    buffer->set_format_version(QString::fromLatin1(reinterpret_cast<char const *>(s) + 3, 3));
 
     buffer->set_width(s[6] + s[7] * 256);
     buffer->set_height(s[8] + s[9] * 256);
