@@ -46,7 +46,15 @@ find_package( Boost            REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
 
-set( QT_LIBRARIES Qt5::Core Qt5::Xml )
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS}
+)
+set( QT_LIBRARIES
+    Qt5::Core
+    Qt5::Xml
+)
+
 
 add_subdirectory( cmake   )
 add_subdirectory( include )
@@ -56,3 +64,4 @@ add_subdirectory( tests   )
 add_subdirectory( package )
 
 # vim: ts=4 sw=4 et
+
