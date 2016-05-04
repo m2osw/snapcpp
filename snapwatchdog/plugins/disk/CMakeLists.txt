@@ -32,6 +32,7 @@
 project(plugin_disk)
 
 find_package( Qt5Core REQUIRED )
+find_package( Qt5Xml  REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -52,6 +53,7 @@ add_library(disk SHARED
 
 target_link_libraries(disk
     Qt5::Core
+    Qt5::Xml
 )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )

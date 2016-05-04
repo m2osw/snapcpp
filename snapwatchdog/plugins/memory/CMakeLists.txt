@@ -33,6 +33,7 @@ project(plugin_memory)
 
 find_package( ProcPS )
 find_package( Qt5Core REQUIRED )
+find_package( Qt5Xml  REQUIRED )
 
 include_directories(
     SYSTEM
@@ -58,6 +59,7 @@ add_library(memory SHARED
 
 target_link_libraries(memory
     Qt5::Core
+    Qt5::Xml
     ${LIBPROCPS_LIBRARIES}
 )
 

@@ -33,6 +33,7 @@ project(plugin_cpu)
 
 find_package( ProcPS )
 find_package( Qt5Core REQUIRED )
+find_package( Qt5Xml  REQUIRED )
 
 include_directories(
     SYSTEM
@@ -58,6 +59,7 @@ add_library(cpu SHARED
 
 target_link_libraries(cpu
     Qt5::Core
+    Qt5::Xml
     ${PROCPS_LIBRARIES}
 )
 

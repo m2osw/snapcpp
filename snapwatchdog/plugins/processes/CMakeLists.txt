@@ -32,6 +32,7 @@
 project(plugin_processes)
 
 find_package( Qt5Core REQUIRED )
+find_package( Qt5Xml  REQUIRED )
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -39,7 +40,7 @@ include_directories(
 )
 
 
-QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
+qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     processes.qrc
 )
 
@@ -50,7 +51,10 @@ add_library(processes SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
 )
 
-target_link_libraries( processes Qt5::Core )
+target_link_libraries( processes
+    Qt5::Core
+    Qt5::Xml
+)
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
