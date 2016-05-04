@@ -78,6 +78,12 @@ function( ConfigureMakeProjectInternal )
 		file( MAKE_DIRECTORY ${BUILD_DIR} )
 	endif()
 
+	set( THE_CMAKE_COMMAND ${CMAKE_COMMAND} )
+	option( USE_DISTCC "Use distcc to distribute the build." OFF )
+	if( ${USE_DISTCC} )
+		set( THE_CMAKE_COMMAND ${CMAKE_COMMAND} -E env CC=\"distcc gcc\" CXX=\"distcc g++\" ${CMAKE_COMMAND} )
+	endif()
+
 	#set_property( GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST ${ARG_DEPENDS} )
 	add_custom_target( ${ARG_TARGET_NAME}-depends DEPENDS ${ARG_DEPENDS} )
 
@@ -98,7 +104,7 @@ function( ConfigureMakeProjectInternal )
 			set( BUILD_TYPE Release )
 		endif()
 		set( COMMAND_LIST
-			${CMAKE_COMMAND}
+			${THE_CMAKE_COMMAND}
 				-DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 				-DCMAKE_INSTALL_PREFIX:PATH="${SNAP_DIST_DIR}"
 				-DCMAKE_PREFIX_PATH:PATH=${SNAP_DIST_DIR}
