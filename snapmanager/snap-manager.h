@@ -20,9 +20,10 @@
 #include "snap-manager-initialize-website.h"
 #include "snap-manager-createcontext.h"
 
+#include "row_model.h"
+#include "table_model.h"
+
 #include <snapwebsites/snapwebsites.h>
-#include <snapwebsites/row_model.h>
-#include <snapwebsites/table_model.h>
 #include <snapwebsites/snap_string_list.h>
 
 #include <QtCassandra/QCassandra.h>

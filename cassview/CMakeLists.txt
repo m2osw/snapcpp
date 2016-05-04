@@ -74,8 +74,11 @@ find_package( QtSerialization  REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
-#include( ${QT_USE_FILE} )
-#add_definitions( ${QT_DEFINITIONS} )
+set( QT_LIBRARIES
+    Qt5::Core
+    Qt5::Network
+    Qt5::Widgets
+)
 
 include_directories( 
     "${QTCASSANDRA_INCLUDE_DIRS}"

@@ -84,9 +84,7 @@ target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARY}
     ${LIBTLD_LIBRARIES}
-    Qt5::Core
-    Qt5::Network
-    Qt5::Widgets
+    ${QT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}
