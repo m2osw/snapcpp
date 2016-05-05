@@ -37,13 +37,6 @@
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 
-//#include <controlled_vars/controlled_vars_auto_init.h>
-//#include <controlled_vars/controlled_vars_limited_auto_init.h>
-//#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
-//#include <QString>
-//#include <QByteArray>
-//#include <memory>
-//#include <stdint.h>
 
 
 namespace QtCassandra
@@ -87,6 +80,9 @@ public:
     int32_t             cursorIndex() const;
     void                setCursorIndex(int32_t const cursor_index);
 
+    bool                clearClusterDescription() const;
+    void                setClearClusterDescription(bool const clear = true);
+
     bool                blocking() const;
     void                setBlocking(bool const block = true);
 
@@ -101,6 +97,7 @@ private:
     QString                         f_cql;
     bool                            f_valid = true;
     bool                            f_blocking = true;
+    bool                            f_clear_cluster_description = false;
     type_of_result_t                f_type_of_result = type_of_result_t::TYPE_OF_RESULT_SUCCESS;
     cassandra_consistency_level_t   f_consistency_level = CONSISTENCY_LEVEL_ONE; // TBD: can we get the QCassandra default automatically?
     int64_t                         f_timestamp = 0;

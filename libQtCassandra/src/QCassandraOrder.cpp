@@ -195,6 +195,18 @@ void QCassandraOrder::setCursorIndex(int32_t const cursor_index)
 }
 
 
+bool QCassandraOrder::clearClusterDescription() const
+{
+    return f_clear_cluster_description;
+}
+
+
+void QCassandraOrder::setClearClusterDescription(bool const clear)
+{
+    f_clear_cluster_description = clear;
+}
+
+
 bool QCassandraOrder::blocking() const
 {
     return f_blocking;
@@ -308,15 +320,17 @@ QByteArray QCassandraOrder::encodeOrder() const
     //   f_column_count included (bit 7)
     //   f_paging_size included (bit 8)
     //   f_cursor_index included (bit 9)
+    //   f_clear_cluster_description (bit 10)
     //
     uint16_t const flags(
                   (static_cast<uint16_t>(f_type_of_result) & 15)
-                | (f_blocking            ? 0x0010 : 0)
-                | (f_timestamp    != 0   ? 0x0020 : 0)
-                | (f_timeout_ms   != 0   ? 0x0040 : 0)
-                | (f_column_count != 1   ? 0x0080 : 0)
-                | (f_paging_size  != 0   ? 0x0100 : 0)
-                | (f_cursor_index != -1  ? 0x0200 : 0)
+                | (f_blocking                  ? 0x0010 : 0)
+                | (f_timestamp != 0            ? 0x0020 : 0)
+                | (f_timeout_ms != 0           ? 0x0040 : 0)
+                | (f_column_count != 1         ? 0x0080 : 0)
+                | (f_paging_size != 0          ? 0x0100 : 0)
+                | (f_cursor_index != -1        ? 0x0200 : 0)
+                | (f_clear_cluster_description ? 0x0400 : 0)
             );
     encoder.appendUInt16Value(flags);
 
@@ -421,6 +435,7 @@ bool QCassandraOrder::decodeOrder(unsigned char const * encoded_order, size_t si
 
     f_type_of_result = static_cast<type_of_result_t>(flags & 15);
     f_blocking = (flags & 0x10) != 0;
+    f_clear_cluster_description = (flags & 0x400) != 0;
 
     // get the consistency level
     //
