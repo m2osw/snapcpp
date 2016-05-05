@@ -132,6 +132,7 @@ private:
     void                        send_order(QtCassandra::QCassandraQuery * q, QtCassandra::QCassandraOrder const & order);
     void                        declare_cursor(QtCassandra::QCassandraOrder const & order);
     void                        describe_cluster(QtCassandra::QCassandraOrder const & order);
+    void                        clear_cluster_description();
     void                        fetch_cursor(QtCassandra::QCassandraOrder const & order);
     void                        close_cursor(QtCassandra::QCassandraOrder const & order);
     void                        read_data(QtCassandra::QCassandraOrder const & order);

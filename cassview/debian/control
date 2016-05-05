@@ -18,7 +18,11 @@ Package: cassview
 Section: admin
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+<<<<<<< HEAD
 Suggests: cassandra (>= 2.0.3), snapserver (>= 0.1.72.103~trusty)
+=======
+Suggests: cassandra (>= 2.0.3), snapserver (>= 0.1.72.102~trusty)
+>>>>>>> 77bd056229ced99babcca5868de12146c1740102
 Description: GUI tool to maintain your cassandra database. Optimized for snapwebsites.
  This graphical tool allows the user to view and edit a cassandra database. It is optimized
  for a snapwebsites database, and understands the business rules for transforming the

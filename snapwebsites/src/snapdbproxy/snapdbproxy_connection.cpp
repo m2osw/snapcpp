@@ -83,6 +83,7 @@ void signalfd_deleted(int s)
     close(s);
 }
 
+
 int64_t timeofday()
 {
     struct timeval tv;
@@ -113,35 +114,8 @@ snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::p
     //, f_cursors() -- auto-init
     , f_socket(s)
 {
-    // mark socket as non-blocking
-    int optval(1);
-    ioctl(f_socket, FIONBIO, &optval);
-
-    // the parent thread makes use a signal in order wake up a child
-    // thread in case the parent wants to leave before all children
-    // are done; here we setup a signal as a file descriptor signal
-    // so that way we can poll on it
-    //
-    // the code here blocks the signal and create a file descriptor
-    // that we will use in our poll() calls along the socket we were
-    // just given
-    //
-
-    f_signal = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-    if(f_signal == -1)
-    {
-        close(s);
-        throw snap::snap_communicator_runtime_error("eventfd() failed to create an event.");
-    }
-
-    // initializes the poll() environment
-    f_poll_fds[0].fd = f_socket;
-    //f_poll_fds[0].events = POLLIN | POLLPRI | POLLRDHUP;
-    //   or
-    //f_poll_fds[0].events = POLLOUT;
-
-    f_poll_fds[1].fd = f_signal;
-    f_poll_fds[1].events = POLLIN;
+    // the parent (main) thread will shutdown the socket if it receives
+    // the STOP message from snapcommunicator
 }
 
 
@@ -156,6 +130,9 @@ snapdbproxy_connection::~snapdbproxy_connection()
 
 void snapdbproxy_connection::run()
 {
+    // let the other process push the whole order before moving forward
+    //sched_yield();
+
     try
     {
         do
@@ -198,6 +175,15 @@ void snapdbproxy_connection::run()
                     execute_command(order);
                     break;
 
+                }
+
+                // the order may include the flag telling us that the
+                // cluster schema may have changed and if so we have
+                // to clear our memory cache
+                //
+                if(order.clearClusterDescription())
+                {
+                    clear_cluster_description();
                 }
             }
             else
@@ -267,72 +253,11 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
     {
         return 0;
     }
+//int64_t n(timeofday());
+    ssize_t const r(::read(f_socket, buf, count));
+//std::cerr << "[" << getpid() << "/" << gettid() << "]: snapdbproxy_connection(): read() in " << (timeofday() - n) << " us.\n";
 
-    // TODO: support some kind of timeout so we can close the connect
-    //       after too long a pause?
-    //
-    f_poll_fds[0].events = POLLIN | POLLPRI | POLLRDHUP;
-    f_poll_fds[0].revents = POLLIN; // always immediately attempt one read on entry
-    ssize_t size(-1);
-    for(;;)
-    {
-        if(f_poll_fds[0].revents != 0)
-        {
-            // did the client hang up?
-            //
-            if((f_poll_fds[0].revents & POLLRDHUP) != 0)
-            {
-                return size;
-            }
-
-            ssize_t const sz(::read(f_socket, buf, count));
-            if(sz < 0)
-            {
-                // the write failed, it could be a hangup
-                //
-                if(errno != EAGAIN && errno != EWOULDBLOCK)
-                {
-                    return size;
-                }
-            }
-            else if(sz > 0)
-            {
-                if(static_cast<size_t>(sz) > count)
-                {
-                    throw std::logic_error("there is a size mismatch while writing to a socket in snapdbproxy");
-                }
-                if(size == -1L)
-                {
-                    size = 0;
-                }
-                size += sz;
-                count -= sz;
-                if(count == 0)
-                {
-                    return size;
-                }
-                buf = reinterpret_cast<char *>(buf) + sz;
-            }
-        }
-	    int const r(poll(f_poll_fds, sizeof(f_poll_fds) / sizeof(f_poll_fds[0]), -1));
-
-        if(r < 0)
-        {
-            // poll() returned an error (r < 0)
-            //
-            return size;
-        }
-        if(f_poll_fds[1].revents != 0)
-        {
-            // we received the SIGUSR1 signal
-            //
-            // Note: we should be reading from f_signal, but since we
-            //       are leaving, the descriptor will get closed shortly
-            //
-            errno = ECANCELED;
-            return size;
-        }
-    }
+    return r;
 }
 
 
@@ -379,74 +304,16 @@ ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
         return 0;
     }
 
-    // TODO: support some kind of timeout so we can close the connect
-    //       after too long a pause?
-    //
-    f_poll_fds[0].events = POLLOUT;
-    ssize_t size(-1L);
-    for(;;)
-    {
-        int const r(poll(f_poll_fds, sizeof(f_poll_fds) / sizeof(f_poll_fds[0]), -1));
-
-        if(r < 0)
-        {
-            // poll() returned an error (r < 0)
-            //
-            return size;
-        }
-        if(f_poll_fds[1].revents != 0)
-        {
-            // we received the SIGUSR1 signal
-            //
-            // Note: we should be reading from f_signal, but since we
-            //       are leaving, the descriptor will get closed shortly
-            //
-            errno = ECANCELED;
-            return size;
-        }
-
-        if(f_poll_fds[0].revents != 0)
-        {
-            ssize_t const sz(::write(f_socket, buf, count));
-            if(sz < 0)
-            {
-                // the write failed, it could be a hangup
-                //
-                if(errno != EAGAIN && errno != EWOULDBLOCK)
-                {
-                    return size;
-                }
-            }
-            else if(sz > 0)
-            {
-                if(static_cast<size_t>(sz) > count)
-                {
-                    throw std::logic_error("there is a size mismatch while writing to a socket in snapdbproxy");
-                }
-                if(size == -1L)
-                {
-                    size = 0;
-                }
-                size += sz;
-                count -= sz;
-                if(count == 0)
-                {
-                    return size;
-                }
-                buf = reinterpret_cast<char const *>(buf) + sz;
-            }
-        }
-    }
+    return ::write(f_socket, buf, count);
 }
 
 
 void snapdbproxy_connection::kill()
 {
-    // what we send does not matter, it is ignored; it needs to be a number
-    // other than zero and INT64_MAX
+    // parent thread wants to quit, tell the child to exit ASAP
+    // by shutting down the socket
     //
-    uint64_t one(1);
-    snap::NOTUSED(::write(f_signal, &one, 8));
+    snap::NOTUSED(::shutdown(f_socket, SHUT_RD));
 }
 
 
@@ -555,6 +422,14 @@ void snapdbproxy_connection::describe_cluster(QtCassandra::QCassandraOrder const
     {
         f_socket = -1;
     }
+}
+
+
+void snapdbproxy_connection::clear_cluster_description()
+{
+    snap::snap_thread::snap_lock lock(g_connections_mutex);
+
+    g_cluster_description.clear();
 }
 
 

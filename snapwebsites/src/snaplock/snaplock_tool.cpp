@@ -1,15 +1,14 @@
 /*
  * Text:
- *      snaplock_messager.cpp
+ *      snaplock_tool.cpp
  *
  * Description:
  *      A daemon to synchronize processes between any number of computers
  *      by blocking all of them but one.
  *
- *      The messager implementation listens for messages from other
- *      services. It understands the basic messages as well as the
- *      LOCK and other messages implemented by the snaplock implementation
- *      (since snaplock daemons communicate between each others.)
+ *      The tool implementation is used to send messages to the running
+ *      daemon to get information such as the list of tickets and
+ *      statistics.
  *
  * License:
  *      Copyright (c) 2016 Made to Order Software Corp.
@@ -48,8 +47,8 @@
 
 
 
-/** \class snaplock_messager
- * \brief Handle messages from the Snap Communicator server.
+/** \class snaplock_tool
+ * \brief Handle snaplock command line commands.
  *
  * This class is an implementation of the TCP client message connection
  * so we can handle incoming messages.
@@ -61,10 +60,10 @@
  *
  * The messager is a connection to the snapcommunicator server.
  *
- * From the outside, we receive LOCK, UNLOCK, STOP, and LOG messages.
+ * From the outside, we receive STOP and QUITTING messages.
  * We implement a few other generic messages too (HELP, READY...) Then
- * we support "internal" messages that each snaplock send to each other
- * such as LOCKENTERING, ADDTICKET, etc.
+ * we support "internal" messages used to gather statistics from a
+ * running snaplock daemon.
  *
  * We use a permanent connection so if the snapcommunicator restarts
  * for whatever reason, we reconnect automatically.
@@ -73,11 +72,10 @@
  * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
  * \param[in] port  The port to listen on (4040).
  */
-snaplock_messager::snaplock_messager(snaplock * sl, std::string const & addr, int port)
-    : snap_tcp_client_permanent_message_connection(addr, port)
-    , f_snaplock(sl)
+snaplock_tool::snaplock_tool(snaplock * sl, std::string const & addr, int port)
+    : snaplock_messager(sl, addr, port)
 {
-    set_name("snaplock messager");
+    set_name("snaplock tool");
 }
 
 
@@ -90,31 +88,9 @@ snaplock_messager::snaplock_messager(snaplock * sl, std::string const & addr, in
  *
  * \param[in] message  The message we just received.
  */
-void snaplock_messager::process_message(snap::snap_communicator_message const & message)
+void snaplock_tool::process_message(snap::snap_communicator_message const & message)
 {
-    f_snaplock->process_message(message);
-}
-
-
-/** \brief The messager could not connect to snapcommunicator.
- *
- * This function is called whenever the messagers fails to
- * connect to the snapcommunicator server. This could be
- * because snapcommunicator is not running or because the
- * configuration information for the snaplock is wrong...
- *
- * With snapinit the snapcommunicator should always already
- * be running so this error should not happen once everything
- * is properly setup.
- *
- * \param[in] error_message  An error message.
- */
-void snaplock_messager::process_connection_failed(std::string const & error_message)
-{
-    SNAP_LOG_ERROR("connection to snapcommunicator failed (")(error_message)(")");
-
-    // also call the default function, just in case
-    snap_tcp_client_permanent_message_connection::process_connection_failed(error_message);
+    f_snaplock->tool_message(message);
 }
 
 
@@ -123,16 +99,16 @@ void snaplock_messager::process_connection_failed(std::string const & error_mess
  * Whenever the connection is established with the Snap! Communicator,
  * this callback function is called.
  *
- * The messager reacts by REGISTERing the snaplock with the Snap!
+ * The tool reacts by REGISTERing as snaplocktool with the Snap!
  * Communicator.
  */
-void snaplock_messager::process_connected()
+void snaplock_tool::process_connected()
 {
     snap_tcp_client_permanent_message_connection::process_connected();
 
     snap::snap_communicator_message register_snapdbproxy;
     register_snapdbproxy.set_command("REGISTER");
-    register_snapdbproxy.add_parameter("service", "snaplock");
+    register_snapdbproxy.add_parameter("service", "snaplocktool");
     register_snapdbproxy.add_parameter("version", snap::snap_communicator::VERSION);
     send_message(register_snapdbproxy);
 }

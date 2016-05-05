@@ -290,9 +290,11 @@ time_t lock_connection::get_timeout_date() const
  */
 void lock_connection::process_message(snap_communicator_message const & message)
 {
+    // This adds way too many messages! Use only to debug if required.
+    //SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+
     QString const command(message.get_command());
 
-std::cerr << "lock connection received: [" << message.to_message() << "]\n";
     switch(command[0].unicode())
     {
     case 'H':

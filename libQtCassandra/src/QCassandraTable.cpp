@@ -478,6 +478,7 @@ void QCassandraTable::create()
     QCassandraOrder create_table;
     create_table.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS);
     create_table.setTimeout(5 * 60 * 1000);
+    create_table.setClearClusterDescription(true);
     QCassandraOrderResult const create_table_result(f_proxy->sendOrder(create_table));
     if(!create_table_result.succeeded())
     {
@@ -517,6 +518,7 @@ void QCassandraTable::truncate()
 
     QCassandraOrder truncate_table;
     truncate_table.setCql(query_string, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS);
+    truncate_table.setClearClusterDescription(true);
     QCassandraOrderResult const truncate_table_result(f_proxy->sendOrder(truncate_table));
     if(!truncate_table_result.succeeded())
     {
@@ -1349,7 +1351,7 @@ int32_t QCassandraTable::getCellCount
 {
     if( f_rows.find( row_key ) == f_rows.end() )
     {
-        const QString query_string ( QString("SELECT COUNT(*) AS count FROM %1.%2")
+        const QString query_string ( QString("SELECT COUNT(*)AS count FROM %1.%2")
             .arg(f_context->contextName())
             .arg(f_tableName)
             );

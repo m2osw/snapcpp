@@ -1008,6 +1008,7 @@ void QCassandraContext::create()
 
     QCassandraOrder create_keyspace;
     create_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    create_keyspace.setClearClusterDescription(true);
     QCassandraOrderResult const create_keyspace_result(f_cassandra->proxy()->sendOrder(create_keyspace));
     if(!create_keyspace_result.succeeded())
     {
@@ -1038,6 +1039,7 @@ void QCassandraContext::update()
 
     QCassandraOrder alter_keyspace;
     alter_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    alter_keyspace.setClearClusterDescription(true);
     QCassandraOrderResult const alter_keyspace_result(f_cassandra->proxy()->sendOrder(alter_keyspace));
     if(alter_keyspace_result.succeeded())
     {
@@ -1079,10 +1081,11 @@ void QCassandraContext::drop()
 
     QString q_str(QString("DROP KEYSPACE IF EXISTS %1").arg(f_contextName));
 
-    QCassandraOrder alter_keyspace;
-    alter_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
-    QCassandraOrderResult const alter_keyspace_result(f_cassandra->proxy()->sendOrder(alter_keyspace));
-    if(alter_keyspace_result.succeeded())
+    QCassandraOrder drop_keyspace;
+    drop_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    drop_keyspace.setClearClusterDescription(true);
+    QCassandraOrderResult const drop_keyspace_result(f_cassandra->proxy()->sendOrder(drop_keyspace));
+    if(drop_keyspace_result.succeeded())
     {
         throw std::runtime_error("drop keyspace failed");
     }
@@ -1122,10 +1125,11 @@ void QCassandraContext::dropTable(const QString& table_name)
 
     QString q_str(QString("DROP TABLE IF EXISTS %1.%2").arg(f_contextName).arg(table_name));
 
-    QCassandraOrder alter_keyspace;
-    alter_keyspace.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
-    QCassandraOrderResult const alter_keyspace_result(f_cassandra->proxy()->sendOrder(alter_keyspace));
-    if(alter_keyspace_result.succeeded())
+    QCassandraOrder drop_table;
+    drop_table.setCql( q_str, QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_SUCCESS );
+    drop_table.setClearClusterDescription(true);
+    QCassandraOrderResult const drop_table_result(f_cassandra->proxy()->sendOrder(drop_table));
+    if(drop_table_result.succeeded())
     {
         throw std::runtime_error("drop table failed");
     }
