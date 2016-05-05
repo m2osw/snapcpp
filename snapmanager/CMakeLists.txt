@@ -79,6 +79,15 @@ find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Widgets_INCLUDE_DIRS}
+    ${Qt5WebKit_INCLUDE_DIRS}
+    ${Qt5WebKitWidgets_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS}
+)
+
 set( QT_LIBRARIES
     Qt5::Core
     Qt5::Network

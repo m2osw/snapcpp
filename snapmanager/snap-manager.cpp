@@ -53,27 +53,27 @@ snap_manager::snap_manager(QWidget *snap_parent)
 
     // Help
     QAction *a = getChild<QAction>(this, "actionSnap_Manager_Help");
-    connect(a, SIGNAL(activated()), this, SLOT(help()));
+    connect(a, &QAction::triggered, this, &snap_manager::help);
 
     // About
     a = getChild<QAction>(this, "actionAbout_Snap_Manager");
-    connect(a, SIGNAL(activated()), this, SLOT(about()));
+    connect(a, &QAction::triggered, this, &snap_manager::about);
 
     // Tools: Reset Domains Index
     f_reset_domains_index = getChild<QAction>(this, "actionResetDomainsIndex");
-    connect(f_reset_domains_index, SIGNAL(activated()), this, SLOT(reset_domains_index()));
+    connect(f_reset_domains_index, &QAction::triggered, this, &snap_manager::reset_domains_index);
 
     // Tools: Reset Websites Index
     f_reset_websites_index = getChild<QAction>(this, "actionResetWebsitesIndex");
-    connect(f_reset_websites_index, SIGNAL(activated()), this, SLOT(reset_websites_index()));
+    connect(f_reset_websites_index, &QAction::triggered, this, &snap_manager::reset_websites_index);
 
     // Tools: Initialize a Website
     f_initialize_website = getChild<QAction>(this, "actionInitializeWebsite");
-    connect(f_initialize_website, SIGNAL(activated()), this, SLOT(initialize_website()));
+    connect(f_initialize_website, &QAction::triggered, this, &snap_manager::initialize_website);
 
     // Tools: Decode UTF-8
     a = getChild<QAction>(this, "actionDecodeUTF8");
-    connect(a, SIGNAL(activated()), this, SLOT(decode_utf8()));
+    connect(a, &QAction::triggered, this, &snap_manager::decode_utf8);
 
     f_tabs = getChild<QTabWidget>(this, "tabWidget");
     f_tabs->setTabEnabled(TAB_HOSTS, false);
@@ -83,9 +83,9 @@ snap_manager::snap_manager(QWidget *snap_parent)
 
     // Snap! Server Test and Statistics
     QPushButton *b = getChild<QPushButton>(this, "snapTest");
-    connect(b, SIGNAL(clicked()), this, SLOT(snapTest()));
+    connect(b, &QPushButton::clicked, this, &snap_manager::snapTest);
     b = getChild<QPushButton>(this, "snapStats");
-    connect(b, SIGNAL(clicked()), this, SLOT(snapStats()));
+    connect(b, &QPushButton::clicked, this, &snap_manager::snapStats);
 
     // Snap! Server Info
     QListWidget *console = getChild<QListWidget>(this, "snapServerConsole");
@@ -151,8 +151,8 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_sites_filter_string = getChild<QLineEdit>(this, "sitesFilterString");
     f_sites_list = getChild<QListView>(this, "sitesList");
     f_sites_list->setModel( &f_table_model );
-    connect( f_sites_list->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
-             this, SLOT(onSitesListCurrentChanged(QModelIndex,QModelIndex)) );
+    connect( f_sites_list->selectionModel(), &QItemSelectionModel::currentChanged,
+             this, &snap_manager::onSitesListCurrentChanged );
     f_sites_name = getChild<QLineEdit>(this, "sitesDomainName");
     f_sites_parameters = getChild<QTableView>(this, "sitesParameters");
     f_sites_parameters->setModel( &f_row_model );
@@ -177,7 +177,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_sites_parameter_type->addItem("Floating Point (64 bit)");
     f_sites_parameter_type->setCurrentIndex(1);
 
-    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(OnAboutToQuit()) );
+    connect( qApp, &QApplication::aboutToQuit, this, &snap_manager::OnAboutToQuit );
 }
 
 snap_manager::~snap_manager()
