@@ -61,15 +61,15 @@ snap_manager::snap_manager(QWidget *snap_parent)
 
     // Tools: Reset Domains Index
     f_reset_domains_index = getChild<QAction>(this, "actionResetDomainsIndex");
-    connect(f_reset_domains_index, &QAction::triggered, this, &snap_manager::reset_domains_index);
+    connect(f_reset_domains_index.data(), &QAction::triggered, this, &snap_manager::reset_domains_index);
 
     // Tools: Reset Websites Index
     f_reset_websites_index = getChild<QAction>(this, "actionResetWebsitesIndex");
-    connect(f_reset_websites_index, &QAction::triggered, this, &snap_manager::reset_websites_index);
+    connect(f_reset_websites_index.data(), &QAction::triggered, this, &snap_manager::reset_websites_index);
 
     // Tools: Initialize a Website
     f_initialize_website = getChild<QAction>(this, "actionInitializeWebsite");
-    connect(f_initialize_website, &QAction::triggered, this, &snap_manager::initialize_website);
+    connect(f_initialize_website.data(), &QAction::triggered, this, &snap_manager::initialize_website);
 
     // Tools: Decode UTF-8
     a = getChild<QAction>(this, "actionDecodeUTF8");
