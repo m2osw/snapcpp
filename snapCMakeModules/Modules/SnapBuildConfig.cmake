@@ -79,9 +79,11 @@ function( ConfigureMakeProjectInternal )
 	endif()
 
 	set( THE_CMAKE_COMMAND ${CMAKE_COMMAND} )
-	option( USE_DISTCC "Use distcc to distribute the build." OFF )
-	if( ${USE_DISTCC} )
-		set( THE_CMAKE_COMMAND ${CMAKE_COMMAND} -E env CC=\"distcc gcc\" CXX=\"distcc g++\" ${CMAKE_COMMAND} )
+	if( ${CMAKE_VERSION} VERSION_GREATER 3.0.0 )
+		option( USE_DISTCC "Use distcc to distribute the build. CMake vers 3+ only!" OFF )
+		if( ${USE_DISTCC} )
+			set( THE_CMAKE_COMMAND ${CMAKE_COMMAND} -E env CC=\"distcc gcc\" CXX=\"distcc g++\" ${CMAKE_COMMAND} )
+		endif()
 	endif()
 
 	#set_property( GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST ${ARG_DEPENDS} )
@@ -131,10 +133,16 @@ function( ConfigureMakeProjectInternal )
 			)
 	endif()
 
-	set( MAKEFLAGS "-j1" CACHE STRING "Number of jobs make should run." )
+	set( THE_CMAKE_BUILD_TOOL ${CMAKE_BUILD_TOOL} )
+	if( ${CMAKE_VERSION} VERSION_GREATER 3.0.0 )
+		set( MAKEFLAGS "-j1" CACHE STRING "Number of jobs make should run. CMake vers 3+ only!" )
+		if( "${MAKEFLAGS}" STREQUAL "-j1" OR "${MAKEFLAGS}" STREQUAL "" )
+			set( THE_CMAKE_BUILD_TOOL ${CMAKE_COMMAND} -E env MAKEFLAGS=\"${MAKEFLAGS}\" ${CMAKE_BUILD_TOOL} )
+		endif()
+	endif()
 	add_custom_target(
 		${ARG_TARGET_NAME}-make
-		COMMAND ${CMAKE_COMMAND} -E env MAKEFLAGS=\"${MAKEFLAGS}\" ${CMAKE_BUILD_TOOL}
+		COMMAND ${THE_CMAKE_BUILD_TOOL}
 			1> ${BUILD_DIR}/make.log
 			2> ${BUILD_DIR}/make.err
 		DEPENDS ${CONFIGURE_TARGETS}
