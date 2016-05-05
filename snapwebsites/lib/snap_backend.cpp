@@ -1564,6 +1564,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
         // parent process
         if(p == -1)
         {
+            // fork() failed
             g_child_connection.reset();
 
             // TODO: now that we have a snap communicator with a timer

@@ -639,7 +639,6 @@ void snaplock_ticket::remove_entering(QString const & key)
  */
 void snaplock_ticket::activate_lock()
 {
-SNAP_LOG_WARNING("activate_lock() in ticket called, ready? ")(f_ticket_ready ? "YES" : "No?")("...");
     if(f_ticket_ready
     && !f_locked
     && !f_lock_failed)

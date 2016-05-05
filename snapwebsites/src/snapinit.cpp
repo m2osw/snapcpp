@@ -1430,8 +1430,11 @@ void service::process_timeout()
             set_enable(false);
 
             // use SIGCHLD to show that we are done with signals
+            // and also make sure we get removed from the main
+            // object otherwise the snap_communicator::run()
+            // function would block forever
             //
-            f_stopping = SIGCHLD;
+            mark_process_as_dead();
         }
         return;
     }
@@ -1578,6 +1581,19 @@ void service::mark_process_as_dead()
         // remove self (timer) from snapcommunicator
         //
         remove_from_communicator();
+
+        // we also must call the snapinit::()
+        // since we are stopping and that is the one function that
+        // detects whether all services died so far or not
+        //
+        std::shared_ptr<snap_init> si(f_snap_init.lock());
+        if(!si)
+        {
+            fatal_error("somehow we could not get a lock on f_snap_init from a service object.");
+            snap::NOTREACHED();
+        }
+        si->remove_terminated_services();
+
         return;
     }
 
@@ -3347,25 +3363,37 @@ void snap_init::service_died()
     // not died and should not have to be restarted (i.e. all
     // services except CRON services for now)
     //
-    for(auto s : f_service_list)
+    bool repeat(false);
+    do
     {
-        if(s->service_may_have_died())
+        repeat = false;
+        for(auto s : f_service_list)
         {
-            if(!f_listener_connection)
+            if(s->service_may_have_died())
             {
-                // snapcommunicator already died, we cannot forward
+                repeat = true;
+
+                // if snapcommunicator already died, we cannot forward
                 // the DIED or any other message
+                //
+                if(f_listener_connection)
+                {
+                    snap::snap_communicator_message register_snapinit;
+                    register_snapinit.set_command("DIED");
+                    register_snapinit.set_service("*");
+                    register_snapinit.add_parameter("service", s->get_service_name());
+                    register_snapinit.add_parameter("pid", s->get_old_pid());
+                    f_listener_connection->send_message(register_snapinit);
+                }
+
+                // the service_may_have_died() can change the f_service_list
+                // map so we need to restart the loop otherwise we may crash
+                //
                 break;
             }
-
-            snap::snap_communicator_message register_snapinit;
-            register_snapinit.set_command("DIED");
-            register_snapinit.set_service("*");
-            register_snapinit.add_parameter("service", s->get_service_name());
-            register_snapinit.add_parameter("pid", s->get_old_pid());
-            f_listener_connection->send_message(register_snapinit);
         }
     }
+    while(repeat);
 
     // check whether a service failed and is marked as required
     // although if recovery is not zero we ignore the situation...
@@ -3705,7 +3733,7 @@ void snap_init::terminate_services()
         {
             // by sending UNREGISTER to snapcommunicator, it will also
             // assume that a STOP message was sent and thus it will
-            // propagate STOP all services, and a DISCONNECT is sent
+            // propagate STOP to all services, and a DISCONNECT is sent
             // to all neighbors.
             //
             // The reason we do not send an UNREGISTER and a STOP from

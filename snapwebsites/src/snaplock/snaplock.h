@@ -75,10 +75,24 @@ public:
     virtual void                process_connection_failed(std::string const & error_message);
     virtual void                process_connected();
 
-private:
+protected:
     // this is owned by a snaplock function so no need for a smart pointer
     // (and it would create a loop)
     snaplock *                  f_snaplock = nullptr;
+};
+
+
+class snaplock_tool
+        : public snaplock_messager
+{
+public:
+    typedef std::shared_ptr<snaplock_tool>    pointer_t;
+
+                                snaplock_tool(snaplock * sl, std::string const & addr, int port);
+
+    // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
+    virtual void                process_message(snap::snap_communicator_message const & message);
+    virtual void                process_connected();
 };
 
 
@@ -181,6 +195,7 @@ public:
 
     void                        run();
     void                        process_message(snap::snap_communicator_message const & message);
+    void                        tool_message(snap::snap_communicator_message const & message);
     void                        process_connection(int const s);
 
     virtual int                 get_computer_count() const;
@@ -213,6 +228,7 @@ private:
     void                        lockgone(snap::snap_communicator_message const & message);
     void                        drop_ticket(snap::snap_communicator_message const & message);
     void                        activate_first_lock(QString const & object_name);
+    void                        ticket_list(snap::snap_communicator_message const & message);
     void                        cleanup();
     void                        ready();
 
@@ -222,6 +238,7 @@ private:
     snap::snap_config                           f_server_config;
     QString                                     f_log_conf = "/etc/snapwebsites/snaplock.properties";
     QString                                     f_server_name;
+    QString                                     f_service_name = "snaplock";
     QString                                     f_communicator_addr = "localhost";
     int                                         f_communicator_port = 4040;
     snap::snap_communicator::pointer_t          f_communicator;

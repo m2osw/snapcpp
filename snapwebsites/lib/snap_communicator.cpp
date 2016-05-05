@@ -1638,7 +1638,7 @@ void snap_communicator::snap_connection::process_hup()
     //      case? because the get_socket() function will not return
     //      -1 after such errors...
 
-    SNAP_LOG_INFO("socket of connection \"")(f_name)("\" hang up.");
+    SNAP_LOG_DEBUG("socket of connection \"")(f_name)("\" hang up.");
 
     remove_from_communicator();
 }
@@ -5261,6 +5261,7 @@ bool snap_communicator::run()
             //
             c->f_fds_position = fds.size();
 
+//std::cerr << "[" << getpid() << "]: *** still waiting on \"" << c->get_name() << "\".\n";
             struct pollfd fd;
             fd.fd = c->get_socket();
             fd.events = e;

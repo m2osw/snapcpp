@@ -112,6 +112,14 @@ namespace
             advgetopt::getopt::no_argument
         },
         {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "list",
+            nullptr,
+            "List existing tickets and exits.",
+            advgetopt::getopt::no_argument
+        },
+        {
             'l',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "logfile",
@@ -354,7 +362,19 @@ void snaplock::run()
     // create a messager to communicate with the Snap Communicator process
     // and snapinit as required
     //
-    f_messager.reset(new snaplock_messager(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
+    if(f_opt.is_defined("list"))
+    {
+        // in this case create a snaplock_tool() which means most messages
+        // are not going to function; and once ready, it will execute the
+        // function specified on the command line such as --list
+        //
+        f_service_name = "snaplocktool";
+        f_messager.reset(new snaplock_tool(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
+    }
+    else
+    {
+        f_messager.reset(new snaplock_messager(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
+    }
     f_communicator->add_connection(f_messager);
 
     // now run our listening loop
@@ -471,7 +491,8 @@ int snaplock::quorum() const
  */
 void snaplock::process_message(snap::snap_communicator_message const & message)
 {
-    SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+    // This adds way too many messages! Use only to debug if required.
+    //SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
 
     QString const command(message.get_command());
 
@@ -521,7 +542,7 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "ADDTICKET,DIED,DROPTICKET,GETMAXTICKET,HELP,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STOP,TICKETADDED,UNKNOWN,UNLOCK");
+            reply.add_parameter("list", "ADDTICKET,DIED,DROPTICKET,GETMAXTICKET,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STOP,TICKETADDED,UNKNOWN,UNLOCK");
 
             f_messager->send_message(reply);
             return;
@@ -597,6 +618,30 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
                 snap::logging::reconfigure();
                 return;
             }
+        }
+        else if(command == "LISTTICKETS")
+        {
+            // generate output for "snaplock --list"
+            //
+            QString ticketlist;
+            for(auto obj_ticket : f_tickets)
+            {
+                for(auto key_ticket : obj_ticket.second)
+                {
+                    QString const & obj_name(key_ticket.second->get_object_name());
+                    QString const & key(key_ticket.second->get_entering_key());
+                    snaplock_ticket::ticket_id_t const ticket_id(key_ticket.second->get_ticket_number());
+
+                    QString const msg(QString("%1/%2/%3\n").arg(ticket_id).arg(obj_name).arg(key));
+                    ticketlist += msg;
+                }
+            }
+            snap::snap_communicator_message list_message;
+            list_message.set_command("TICKETLIST");
+            list_message.reply_to(message);
+            list_message.add_parameter("list", ticketlist);
+            f_messager->send_message(list_message);
+            return;
         }
         break;
 
@@ -705,7 +750,7 @@ void snaplock::ready()
     snap::snap_communicator_message dbready_message;
     dbready_message.set_command("SAFE");
     dbready_message.set_service("snapinit");
-    dbready_message.add_parameter("name", "snaplock");
+    dbready_message.add_parameter("name", f_service_name);
     f_messager->send_message(dbready_message);
 
     // tell other snaplock instances that are already listening that
@@ -751,7 +796,7 @@ void snaplock::stop(bool quitting)
         {
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
-            cmd.add_parameter("service", "snaplock");
+            cmd.add_parameter("service", f_service_name);
             f_messager->send_message(cmd);
         }
     }
@@ -1554,6 +1599,131 @@ void snaplock::ticket_added(snap::snap_communicator_message const & message)
         }
     }
 }
+
+
+/** \brief Process a message received from Snap! Communicator.
+ *
+ * This function gets called whenever the Snap! Communicator sends
+ * us a message while we act as a tool (opposed to being a daemon.)
+ *
+ * \param[in] message  The message we just received.
+ */
+void snaplock::tool_message(snap::snap_communicator_message const & message)
+{
+    SNAP_LOG_TRACE("tool received message [")(message.to_message())("] for ")(f_server_name);
+
+    QString const command(message.get_command());
+
+    switch(command[0].unicode())
+    {
+    case 'H':
+        if(command == "HELP")
+        {
+            // Snap! Communicator is asking us about the commands that we support
+            //
+            snap::snap_communicator_message reply;
+            reply.set_command("COMMANDS");
+
+            // list of commands understood by service
+            // (many are considered to be internal commands... users
+            // should look at the LOCK and UNLOCK messages only)
+            //
+            reply.add_parameter("list", "HELP,QUITTING,READY,STOP,TICKETLIST,UNKNOWN");
+
+            f_messager->send_message(reply);
+            return;
+        }
+        break;
+
+    case 'Q':
+        if(command == "QUITTING")
+        {
+            // If we received the QUITTING command, then somehow we sent
+            // a message to Snap! Communicator, which is already in the
+            // process of quitting... we should get a STOP too, but we
+            // can just quit ASAP too
+            //
+            stop(true);
+            return;
+        }
+        break;
+
+    case 'R':
+        if(command == "READY")
+        {
+            if(f_opt.is_defined("list"))
+            {
+                snap::snap_communicator_message list_message;
+                list_message.set_command("LISTTICKETS");
+                list_message.set_service("snaplock");
+                list_message.set_server(f_server_name);
+                f_messager->send_message(list_message);
+            }
+            return;
+        }
+        break;
+
+    case 'S':
+        if(command == "STOP")
+        {
+            // Someone is asking us to leave (probably snapinit)
+            //
+            stop(false);
+            return;
+        }
+        break;
+
+    case 'T':
+        if(command == "TICKETLIST")
+        {
+            // received the answer to our LISTTICKETS request
+            //
+            ticket_list(message);
+            stop(false);
+            return;
+        }
+        break;
+
+    case 'U':
+        if(command == "UNKNOWN")
+        {
+            // we sent a command that Snap! Communicator did not understand
+            //
+            SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+            return;
+        }
+        break;
+
+    }
+
+    // unknown commands get reported and process goes on
+    //
+    SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received on the connection with Snap! Communicator.");
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("UNKNOWN");
+        reply.add_parameter("command", command);
+        f_messager->send_message(reply);
+    }
+
+    return;
+}
+
+
+/** \brief Print out the resulting list of tickets
+ *
+ * \param[in] message  The TICKETLIST message.
+ */
+void snaplock::ticket_list(snap::snap_communicator_message const & message)
+{
+    QString const list(message.get_parameter("list"));
+
+    // add newlines for people who have TRACE mode would otherwise have
+    // a hard time to find the actual list
+    //
+    std::cout << std::endl << list << std::endl;
+}
+
 
 
 

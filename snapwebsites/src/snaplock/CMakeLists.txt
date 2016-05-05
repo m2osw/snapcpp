@@ -41,6 +41,7 @@ add_executable(${PROJECT_NAME}
     main.cpp
     snaplock_messager.cpp
     snaplock_ticket.cpp
+    snaplock_tool.cpp
 )
     #snaplock_entering.cpp -- there is a one to one relationship between tickets and entering so we have a single object
 
