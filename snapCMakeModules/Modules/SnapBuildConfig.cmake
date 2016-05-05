@@ -131,9 +131,10 @@ function( ConfigureMakeProjectInternal )
 			)
 	endif()
 
+	set( MAKEFLAGS "-j1" CACHE STRING "Number of jobs make should run." )
 	add_custom_target(
 		${ARG_TARGET_NAME}-make
-		COMMAND ${CMAKE_BUILD_TOOL}
+		COMMAND ${CMAKE_COMMAND} -E env MAKEFLAGS=\"${MAKEFLAGS}\" ${CMAKE_BUILD_TOOL}
 			1> ${BUILD_DIR}/make.log
 			2> ${BUILD_DIR}/make.err
 		DEPENDS ${CONFIGURE_TARGETS}
