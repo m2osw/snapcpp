@@ -29,13 +29,13 @@
 namespace snap
 {
 
-class row_model
+class RowModel
     : public QAbstractTableModel
 {
     Q_OBJECT
 
 public:
-                    row_model() {}
+                    RowModel() {}
 
     QtCassandra::QCassandraRow::pointer_t   getRow() const;
     void                                    setRow( QtCassandra::QCassandraRow::pointer_t c );

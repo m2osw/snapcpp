@@ -20,8 +20,8 @@
 #include "snap-manager-initialize-website.h"
 #include "snap-manager-createcontext.h"
 
-#include "row_model.h"
-#include "table_model.h"
+#include "RowModel.h"
+#include "TableModel.h"
 
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/snap_string_list.h>
@@ -182,8 +182,8 @@ private:
     QPointer<QPushButton>           f_website_delete;
 
     // snap site parameters
-    snap::table_model               f_table_model;
-    snap::row_model                 f_row_model;
+    snap::TableModel                f_table_model;
+    snap::RowModel                  f_row_model;
     QString                         f_sites_org_name;
     QPointer<QPushButton>           f_sites_filter;
     QPointer<QLineEdit>             f_sites_filter_string;

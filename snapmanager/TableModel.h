@@ -28,13 +28,13 @@
 namespace snap
 {
 
-class table_model
+class TableModel
     : public QAbstractListModel
 {
     Q_OBJECT
 
 public:
-    table_model( const int32_t row_count = 1000 );
+    TableModel( const int32_t row_count = 1000 );
 
     QtCassandra::QCassandraTable::pointer_t getTable() const;
     void                    setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp const & re );

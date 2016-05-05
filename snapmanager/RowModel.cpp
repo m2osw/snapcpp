@@ -16,7 +16,7 @@
 // COMPLETENESS OR PERFORMANCE.
 //===============================================================================
 
-#include "row_model.h"
+#include "RowModel.h"
 
 #include <snapwebsites/dbutils.h>
 #include <snapwebsites/qstring_stream.h>
@@ -31,26 +31,26 @@ using namespace QtCassandra;
 namespace snap
 {
 
-void row_model::reset()
+void RowModel::reset()
 {
     beginResetModel();
     endResetModel();
 }
 
-void row_model::setRow( QCassandraRow::pointer_t c )
+void RowModel::setRow( QCassandraRow::pointer_t c )
 {
     f_row = c;
     reset();
 }
 
 
-QCassandraRow::pointer_t row_model::getRow() const
+QCassandraRow::pointer_t RowModel::getRow() const
 {
     return f_row;
 }
 
 
-Qt::ItemFlags row_model::flags( const QModelIndex & idx ) const
+Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
 {
     Qt::ItemFlags f = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     if( idx.column() == 1 )
@@ -61,13 +61,13 @@ Qt::ItemFlags row_model::flags( const QModelIndex & idx ) const
 }
 
 
-void row_model::displayError( std::exception const& except, QString const& message ) const
+void RowModel::displayError( std::exception const& except, QString const& message ) const
 {
     emit exceptionCaught( except.what(), message );
 }
 
 
-QVariant row_model::data( QModelIndex const & idx, int role ) const
+QVariant RowModel::data( QModelIndex const & idx, int role ) const
 {
     if( !f_row )
     {
@@ -126,7 +126,7 @@ QVariant row_model::data( QModelIndex const & idx, int role ) const
 }
 
 
-QVariant row_model::headerData( int section, Qt::Orientation orientation, int role ) const
+QVariant RowModel::headerData( int section, Qt::Orientation orientation, int role ) const
 {
     if( role != Qt::DisplayRole || orientation != Qt::Horizontal )
     {
@@ -143,7 +143,7 @@ QVariant row_model::headerData( int section, Qt::Orientation orientation, int ro
 }
 
 
-int row_model::rowCount( QModelIndex const & /*parent*/ ) const
+int RowModel::rowCount( QModelIndex const & /*parent*/ ) const
 {
     if( !f_row )
     {
@@ -164,13 +164,13 @@ int row_model::rowCount( QModelIndex const & /*parent*/ ) const
 }
 
 
-int row_model::columnCount( const QModelIndex & /*parent*/ ) const
+int RowModel::columnCount( const QModelIndex & /*parent*/ ) const
 {
     return 2;
 }
 
 
-bool row_model::setData( const QModelIndex & idx, const QVariant & value, int role )
+bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int role )
 {
     if( !f_row )
     {
@@ -213,13 +213,13 @@ bool row_model::setData( const QModelIndex & idx, const QVariant & value, int ro
 }
 
 
-bool row_model::setHeaderData( int /*section*/, Qt::Orientation /*orientation*/, const QVariant & /*value*/, int /*role*/ )
+bool RowModel::setHeaderData( int /*section*/, Qt::Orientation /*orientation*/, const QVariant & /*value*/, int /*role*/ )
 {
     return false;
 }
 
 
-bool row_model::insertNewRow( const QString& new_name, const QString& new_value )
+bool RowModel::insertNewRow( const QString& new_name, const QString& new_value )
 {
     f_newName  = new_name;
     f_newValue = new_value;
@@ -228,7 +228,7 @@ bool row_model::insertNewRow( const QString& new_name, const QString& new_value 
 }
 
 
-bool row_model::insertRows ( int /*row*/, int /*count*/, const QModelIndex & parent_index )
+bool RowModel::insertRows ( int /*row*/, int /*count*/, const QModelIndex & parent_index )
 {
     bool retval( true );
     try
@@ -264,7 +264,7 @@ bool row_model::insertRows ( int /*row*/, int /*count*/, const QModelIndex & par
 }
 
 
-bool row_model::removeRows ( int row, int count, const QModelIndex & )
+bool RowModel::removeRows ( int row, int count, const QModelIndex & )
 {
     try
     {

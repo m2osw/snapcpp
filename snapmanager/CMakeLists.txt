@@ -125,8 +125,8 @@ include_directories(
 )
 
 add_executable( ${PROJECT_NAME}
-    row_model.cpp
-    table_model.cpp
+    RowModel.cpp
+    TableModel.cpp
     snap-manager.cpp
     snap-manager-about.cpp
     snap-manager-createcontext.cpp

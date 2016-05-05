@@ -16,7 +16,7 @@
 // COMPLETENESS OR PERFORMANCE.
 //===============================================================================
 
-#include "table_model.h"
+#include "TableModel.h"
 #include "dbutils.h"
 #include "log.h"
 #include "not_used.h"
@@ -35,7 +35,7 @@ namespace snap
 {
 
 
-table_model::table_model( const int row_count )
+TableModel::TableModel( const int row_count )
     // f_table             -- auto-init
     : f_rowp(std::make_shared<QtCassandra::QCassandraRowRangePredicate>())
     , f_rowCount(row_count)
@@ -44,20 +44,20 @@ table_model::table_model( const int row_count )
 {
 }
 
-void table_model::reset()
+void TableModel::reset()
 {
     beginResetModel();
     endResetModel();
 }
 
 
-QtCassandra::QCassandraTable::pointer_t table_model::getTable() const
+QtCassandra::QCassandraTable::pointer_t TableModel::getTable() const
 {
     return f_table;
 }
 
 
-void table_model::setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp const & re )
+void TableModel::setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp const & re )
 {
     f_table = t;
 
@@ -85,7 +85,7 @@ void table_model::setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp c
 }
 
 
-bool table_model::canFetchMore(QModelIndex const & model_index) const
+bool TableModel::canFetchMore(QModelIndex const & model_index) const
 {
     NOTUSED(model_index);
 
@@ -93,7 +93,7 @@ bool table_model::canFetchMore(QModelIndex const & model_index) const
 }
 
 
-void table_model::fetchMore(QModelIndex const & model_index)
+void TableModel::fetchMore(QModelIndex const & model_index)
 {
     NOTUSED(model_index);
 
@@ -121,14 +121,14 @@ void table_model::fetchMore(QModelIndex const & model_index)
 }
 
 
-Qt::ItemFlags table_model::flags( QModelIndex const & idx ) const
+Qt::ItemFlags TableModel::flags( QModelIndex const & idx ) const
 {
     NOTUSED(idx);
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
 
-QVariant table_model::headerData( int section, Qt::Orientation orientation, int role ) const
+QVariant TableModel::headerData( int section, Qt::Orientation orientation, int role ) const
 {
     if( role != Qt::DisplayRole )
     {
@@ -168,7 +168,7 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
 }
 
 
-QVariant table_model::data( QModelIndex const & idx, int role ) const
+QVariant TableModel::data( QModelIndex const & idx, int role ) const
 {
     if( !f_table )
     {
@@ -220,7 +220,7 @@ QVariant table_model::data( QModelIndex const & idx, int role ) const
 }
 
 
-int table_model::rowCount( QModelIndex const & prnt ) const
+int TableModel::rowCount( QModelIndex const & prnt ) const
 {
     if( !f_table )
     {
