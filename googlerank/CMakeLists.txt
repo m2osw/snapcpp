@@ -56,6 +56,11 @@ include_directories(
 find_package( Qt5Core    REQUIRED )
 find_package( Qt5Network REQUIRED )
 
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Network_INCLUDE_DIRS}
+)
+
 ##
 ## Google Rank Version
 ##
