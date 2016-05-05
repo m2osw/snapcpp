@@ -42,6 +42,8 @@ set(LIBQTCASSANDRA_VERSION_PATCH 0)
 cmake_minimum_required(VERSION 2.8)
 project(libQtCassandra)
 
+set( CMAKE_AUTOMOC TRUE )
+
 ## Include support modules
 ##
 find_package( As2Js              REQUIRED )

@@ -70,17 +70,29 @@ public:
 
     QByteArray          get_row_key() const;
     QString             get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
+    QString             get_row_name( const QByteArray& key ) const;
+
+    QByteArray			set_row_name( const QString& name, const QByteArray& orig_key ) const;
 
     QString             get_column_name ( QtCassandra::QCassandraCell::pointer_t c ) const;
+    QString				get_column_name ( const QByteArray& key ) const;
+
     QString             get_column_value( QtCassandra::QCassandraCell::pointer_t c, bool const display_only = false ) const;
-    void                set_column_value( QtCassandra::QCassandraCell::pointer_t c, QString const & v );
+    QString             get_column_value( const QByteArray& key, const QByteArray& value, bool const display_only = false ) const;
+
+    void                set_column_value( QtCassandra::QCassandraCell::pointer_t c, QString const & v ) const;
+    void				set_column_value( const QByteArray& key, QByteArray& value, QString const & v ) const;
 
     column_type_t       get_column_type( QtCassandra::QCassandraCell::pointer_t c ) const;
+    column_type_t       get_column_type( const QByteArray& key ) const;
 
 private:
     QString             f_tableName;
     QString             f_rowName;
     int                 f_displayLen;
+
+    QString 			get_column_value( const QByteArray& key, const QtCassandra::QCassandraValue& value, bool const display_only ) const;
+    void				set_column_value( const QByteArray& key, QtCassandra::QCassandraValue& cvalue, QString const & v ) const;
 };
 
 }

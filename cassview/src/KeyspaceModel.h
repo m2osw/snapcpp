@@ -1,19 +1,22 @@
 #pragma once
 
-#include <QtCassandra/QCassandraContext.h>
+#include <QtCassandra/QCassandraSchema.h>
 #include <QtGui>
 
 #include <memory>
+#include <vector>
 
-class ContextModel
+class KeyspaceModel
 	: public QAbstractListModel
 {
 	Q_OBJECT
 
 	public:
-		ContextModel() {}
+		typedef std::vector<QString> string_list_t;
 
-        void setContext( QtCassandra::QCassandraContext::pointer_t c );
+        KeyspaceModel() {}
+
+        void setCassandra( QtCassandra::QCassandraSession::pointer_t c, const QString& keyspace_name );
 
 		Qt::ItemFlags	flags 		( const QModelIndex & index ) const;
 		QVariant		data 		( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -21,7 +24,7 @@ class ContextModel
 		int 			rowCount   	( const QModelIndex & parent = QModelIndex() ) const;
 
 	private:
-        QtCassandra::QCassandraContext::pointer_t	f_context;
+        string_list_t	f_tableNames;
 };
 
 

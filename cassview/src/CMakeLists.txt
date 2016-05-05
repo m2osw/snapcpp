@@ -64,13 +64,16 @@ QT4_ADD_RESOURCES(RES_FILES
 add_executable(${PROJECT_NAME}
 	AboutDialog.cpp
     CassandraModel.cpp
-	ContextModel.cpp
+    KeyspaceModel.cpp
 	DisplayException.h
 	DisplayException.cpp
 	InputDialog.cpp
 	MainWindow.cpp
 	main.cpp
+    QueryModel.cpp
+    RowModel.cpp
     SettingsDialog.cpp
+    TableModel.cpp
 	qt4.h
 	${UI_FILES}
 	${RES_FILES}

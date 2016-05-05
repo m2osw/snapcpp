@@ -2,12 +2,11 @@
 
 #include "ui_MainWindow.h"
 #include "CassandraModel.h"
-#include "ContextModel.h"
+#include "KeyspaceModel.h"
+#include "TableModel.h"
+#include "RowModel.h"
 
-#include <snapwebsites/table_model.h>
-#include <snapwebsites/row_model.h>
-
-#include <QtCassandra/QCassandra.h>
+#include <QtCassandra/QCassandraSession.h>
 #include <QtGui>
 
 class MainWindow
@@ -21,13 +20,14 @@ public:
     ~MainWindow();
 
 private slots:
-    void onShowContextMenu( const QPoint& pos );
+    void onShowCellsContextMenu( const QPoint& pos );
     void onCellsModelReset();
     void on_action_Settings_triggered();
     void onAboutToQuit();
     void on_f_tables_currentIndexChanged(const QString &table_name);
     void on_f_contextCombo_currentIndexChanged(const QString &arg1);
     void onRowsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
+    void onCellsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
     void on_action_About_triggered();
     void on_action_AboutQt_triggered();
     void onSectionClicked( int section );
@@ -36,19 +36,22 @@ private slots:
     void on_f_connectionBtn_clicked();
     void on_f_applyFilter_clicked();
     void on_f_refreshView_clicked();
+    void onExceptionCaught( const QString & what, const QString & message ) const;
 
 private:
-    typedef QtCassandra::QCassandra::pointer_t cassandra_t;
-    cassandra_t       f_cassandra;
+    typedef QtCassandra::QCassandraSession::pointer_t cassandra_t;
+    cassandra_t       f_session;
     CassandraModel    f_cassandraModel;
-    ContextModel      f_contextModel;
-    snap::table_model f_tableModel;
-    snap::row_model   f_rowModel;
+    KeyspaceModel     f_contextModel;
+    TableModel		  f_tableModel;
+    RowModel		  f_rowModel;
     QString           f_context;
 
     void        connectCassandra();
     void        fillTableList();
     void        changeRow(const QModelIndex &index);
+    void        changeCell(const QModelIndex &index);
+    void	 	saveValue();
 };
 
 

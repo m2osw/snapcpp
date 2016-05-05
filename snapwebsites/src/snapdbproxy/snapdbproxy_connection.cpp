@@ -313,7 +313,7 @@ void snapdbproxy_connection::kill()
     // parent thread wants to quit, tell the child to exit ASAP
     // by shutting down the socket
     //
-    ::shutdown(f_socket, SHUT_RD);
+    snap::NOTUSED(::shutdown(f_socket, SHUT_RD));
 }
 
 

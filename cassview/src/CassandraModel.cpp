@@ -3,11 +3,12 @@
 #include <iostream>
 
 using namespace QtCassandra;
+using namespace QCassandraSchema;
 
-
-void CassandraModel::setCassandra( QCassandra::pointer_t c )
+void CassandraModel::setCassandra( QCassandraSession::pointer_t c )
 {
-	f_cassandra = c;
+    f_sessionMeta = SessionMeta::create( c );
+    f_sessionMeta->loadSchema();
     reset();
 }
 
@@ -20,7 +21,7 @@ Qt::ItemFlags CassandraModel::flags( const QModelIndex & /*idx*/ ) const
 
 QVariant CassandraModel::data( const QModelIndex & idx, int role ) const
 {
-    if( !f_cassandra )
+    if( !f_sessionMeta )
     {
         return QVariant();
     }
@@ -32,9 +33,11 @@ QVariant CassandraModel::data( const QModelIndex & idx, int role ) const
 
     try
     {
-        const QCassandraContexts& context_list = f_cassandra->contexts();
-        const QString context_name( (context_list.begin()+idx.row()).value()->contextName() );
-        return context_name;
+        const auto& keyspace_list( f_sessionMeta->getKeyspaces() );
+        auto iter = keyspace_list.begin();
+        for( int r = 0; r < idx.row(); ++r ) iter++;
+        const QString& keyspace_name( iter->first );
+        return keyspace_name;
     }
     catch( const std::exception& x )
     {
@@ -54,15 +57,15 @@ QVariant CassandraModel::headerData( int /*section*/, Qt::Orientation /*orientat
 
 int CassandraModel::rowCount( const QModelIndex & /*parent*/ ) const
 {
-    if( !f_cassandra )
+    if( !f_sessionMeta )
     {
         return 0;
     }
 
     try
     {
-        const QCassandraContexts& context_list = f_cassandra->contexts();
-        return context_list.size();
+        const auto& keyspace_list( f_sessionMeta->getKeyspaces() );
+        return keyspace_list.size();
     }
     catch( const std::exception& x )
     {
