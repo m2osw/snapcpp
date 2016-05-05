@@ -29,6 +29,10 @@
 #include <stack>
 #include <vector>
 
+namespace QtCassandra
+{
+
+
 class QueryModel
     : public QAbstractListModel
 {
@@ -79,5 +83,8 @@ private:
     void reset();
 };
 
+
+}
+// namespace QtCassandra
 
 // vim: ts=4 sw=4 et

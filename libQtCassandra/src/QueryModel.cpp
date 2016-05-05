@@ -16,13 +16,11 @@
 // COMPLETENESS OR PERFORMANCE.
 //===============================================================================
 
-#include "QueryModel.h"
-#include <snapwebsites/dbutils.h>
-#include <snapwebsites/log.h>
-#include <snapwebsites/not_used.h>
+#include "QtCassandra/QueryModel.h"
+#include "QtCassandra/QCassandraQuery.h"
+#include "QtCassandra/QCassandraSession.h"
 
-#include <QtCassandra/QCassandraQuery.h>
-#include <QtCassandra/QCassandraSession.h>
+#include "NotUsed.h"
 
 #include <QSettings>
 #include <QVariant>
@@ -30,11 +28,12 @@
 #include <iostream>
 #include <exception>
 
-#include "poison.h"
+//#include "poison.h"
 
 
-using namespace QtCassandra;
-using namespace QCassandraSchema;
+namespace QtCassandra
+{
+
 
 namespace
 {
@@ -122,14 +121,14 @@ bool QueryModel::fetchFilter( const QByteArray& key )
 
 bool QueryModel::canFetchMore ( const QModelIndex & prnt ) const
 {
-    snap::NOTUSED(prnt);
+    NOTUSED(prnt);
     return f_isMore;
 }
 
 
 void QueryModel::fetchMore ( const QModelIndex & prnt )
 {
-    snap::NOTUSED(prnt);
+    NOTUSED(prnt);
 
     try
     {
@@ -161,7 +160,7 @@ void QueryModel::fetchMore ( const QModelIndex & prnt )
 
 Qt::ItemFlags QueryModel::flags( QModelIndex const & idx ) const
 {
-    snap::NOTUSED(idx);
+    NOTUSED(idx);
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
@@ -199,11 +198,14 @@ int QueryModel::rowCount( QModelIndex const & prnt ) const
     }
     catch( std::exception const & x )
     {
-        SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
+        displayError( x, tr("Invalid row size!") );
     }
 
     return 0;
 }
 
+
+}
+// namespace QtCassandra
 
 // vim: ts=4 sw=4 et

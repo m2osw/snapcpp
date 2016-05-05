@@ -70,7 +70,6 @@ add_executable(${PROJECT_NAME}
 	InputDialog.cpp
 	MainWindow.cpp
 	main.cpp
-    QueryModel.cpp
     RowModel.cpp
     SettingsDialog.cpp
     TableModel.cpp

@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include "QueryModel.h"
+#include <QtCassandra/QueryModel.h>
 
 class RowModel
-    : public QueryModel
+    : public QtCassandra::QueryModel
 {
     Q_OBJECT
 

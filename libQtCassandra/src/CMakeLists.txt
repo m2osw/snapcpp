@@ -47,7 +47,6 @@ configure_file(
 		)
 
 set( HEADER_FILES
-    CassTools.h
     QtCassandra/QCassandra.h
     QtCassandra/QCassandraCell.h
     QtCassandra/QCassandraConsistencyLevel.h
@@ -65,11 +64,14 @@ set( HEADER_FILES
     QtCassandra/QCassandraTable.h
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
+    QtCassandra/QueryModel.h
     ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
 )
 
 add_library(${PROJECT_NAME} SHARED
     ${HEADER_FILES}
+    NotUsed.h
+    CassTools.h
     CassTools.cpp
     QCassandra.cpp
     QCassandraCell.cpp
@@ -87,6 +89,7 @@ add_library(${PROJECT_NAME} SHARED
     QCassandraSession.cpp
     QCassandraTable.cpp
     QCassandraValue.cpp
+    QueryModel.cpp
 )
 
 target_link_libraries(QtCassandra
