@@ -52,10 +52,10 @@ snap_manager_initialize_website::snap_manager_initialize_website(QWidget *snap_p
     f_port = getChild<QLineEdit>(parentWidget(), "port");
 
     // Close
-    connect(f_close_button, SIGNAL(clicked()), this, SLOT(close()));
+    connect( f_cancel_button, &QPushButton::clicked, this, &snap_manager_initialize_website::cancel );
 
     // Send Request
-    connect(f_send_request_button, SIGNAL(clicked()), this, SLOT(send_request()));
+    connect( f_send_request_button, &QPushButton::clicked, this, &snap_manager_initialize_website::send_request );
 }
 
 snap_manager_initialize_website::~snap_manager_initialize_website()

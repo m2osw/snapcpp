@@ -20,6 +20,9 @@
 #include "snap-manager-help.h"
 #include "snap-manager-decode-utf8.h"
 
+#include <QtCassandra/QCassandraSchema.h>
+#include <QtCassandra/QCassandraVersion.h>
+
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/snap_uri.h>
 #include <snapwebsites/tcp_client_server.h>
@@ -33,9 +36,12 @@
 #include <QCloseEvent>
 #include <QDebug>
 #include <QSettings>
+#include <QTimer>
 
 #include <stdio.h>
 
+using namespace QtCassandra;
+using namespace QCassandraSchema;
 
 snap_manager::snap_manager(QWidget *snap_parent)
     : QMainWindow(snap_parent)
@@ -94,7 +100,7 @@ snap_manager::snap_manager(QWidget *snap_parent)
 
     // Cassandra Info
     console = getChild<QListWidget>(this, "cassandraConsole");
-    console->addItem("libQtCassandra version: " + QString(f_cassandra->version()));
+    console->addItem("libQtCassandra version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
     console->addItem("Not connected.");
 
     // get host friends that are going to be used here and there
@@ -485,9 +491,9 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     f_cassandraConnectButton->setEnabled( false );
     f_cassandraDisconnectButton->setEnabled( false );
 
-    if(!f_cassandra)
+    if(!f_session)
     {
-        f_cassandra = QtCassandra::QCassandra::create();
+        f_session = QCassandraQuery::create();
     }
 
     // save the old values
@@ -512,7 +518,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     }
 
     // if old != new then connect to new
-    if(f_cassandra_host == old_host && f_cassandra_port == old_port && f_cassandra->isConnected())
+    if(f_cassandra_host == old_host && f_cassandra_port == old_port && f_session->isConnected())
     {
         // nothing changed, stay put
         on_f_cassandraDisconnectButton_clicked();
@@ -521,7 +527,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
 
     QListWidget *console = getChild<QListWidget>(this, "cassandraConsole");
     console->clear();
-    console->addItem("libQtCassandra version: " + QString(f_cassandra->version()));
+    console->addItem("libQtCassandra version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
     console->addItem("Host: " + f_cassandra_host);
     console->addItem("Port: " + QString::number(f_cassandra_port));
 
@@ -547,14 +553,22 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     }
 
     // read and display the Cassandra information
-    console->addItem("Cluster Name: " + f_cassandra->clusterName());
-    console->addItem("Protocol Version: " + f_cassandra->protocolVersion());
+    QCassandraQuery q( f_session );
+    q.query( "SELECT cluster_name,native_protocol_version FROM system.local" );
+    q.start();
+    console->addItem("Cluster Name: " + q.getStringColumn("cluster_name"));
+    console->addItem("Protocol Version: " + q.getStringColumn("protocol_version"));
+    q.end();
 
     // read all the contexts so the findContext() works
-    f_cassandra->contexts();
+    SessionMeta::pointer_t meta( SessionMeta::create(f_session) );
+    meta->loadSchema();
+    //
+    const auto& keyspace_list( meta->getKeyspaces() );
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-    f_context = f_cassandra->findContext(context_name);
-    if(!f_context)
+    //
+    const auto& snap_keyspace_iter( keyspace_list.find(context_name) );
+    if( snap_keyspace_iter == keyspace_list.end() )
     {
         // we connected to the database, but it is not initialized yet
         // offer the user to do the initialization now
@@ -569,13 +583,14 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
         return;
     }
 
+    //
     // also check for the 2 main tables
     snap::name_t names[2] = { snap::name_t::SNAP_NAME_DOMAINS, snap::name_t::SNAP_NAME_WEBSITES /*, snap::name_t::SNAP_NAME_SITES*/ };
     for(int i = 0; i < 2; ++i)
     {
         QString const table_name(snap::get_name(names[i]));
-        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-        if(!table)
+        const auto& table_list( snap_keyspace_iter->second.getTables() );
+        if( table_list.find(table_name) == table_name.end() )
         {
             // we connected to the database, but it is not properly initialized
             console->addItem("The \"" + table_name + "\" table is not defined.");
@@ -623,11 +638,12 @@ void snap_manager::cassandraDisconnectButton_clicked()
     f_cassandraDisconnectButton->setEnabled( false );
 
     // disconnect by deleting the object altogether
-    f_cassandra.reset();
+    f_session->disconnect();
+    f_session.reset();
 
     QListWidget *console = getChild<QListWidget>(this, "cassandraConsole");
     console->clear();
-    console->addItem("libQtCassandra version: " + QString(f_cassandra->version()));
+    console->addItem("libQtCassandra version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
     console->addItem("Not connected.");
 
     f_reset_domains_index->setEnabled(false);
@@ -698,20 +714,25 @@ void snap_manager::cassandraDisconnectButton_clicked()
  */
 void snap_manager::create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name)
 {
-    // when called here we have f_cassandra defined but no context yet
+    // when called here we have f_session defined but no context yet
 
     QListWidget * console = getChild<QListWidget>(this, "cassandraConsole");
 
     // create a new context
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     console->addItem("Create \"" + context_name + "\" context.");
-    f_context = f_cassandra->context(context_name);
+
+    f_query = std::make_shared<QCassandraQuery>( f_session );
+
+    QString query_str( QString("CREATE KEYSPACE %1\n")
+        .arg(context_name)
+        );
+
 
     // this is the default for contexts, but just in case we were
     // to change that default at a later time...
     //
-    auto& fields(f_context->fields());
-    fields["durable_writes"] = QVariant(true);
+    query_str += QString("WITH durable_writes = true\n");
 
     auto& replication_map(fields["replication"].map());
     replication_map.clear();
@@ -719,27 +740,52 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     // for developers testing with a few nodes in a single data center,
     // SimpleStrategy is good enough; for anything larger ("a real
     // cluster",) it won't work right
+    query_str += QString("AND replication =\n");
     if(strategy == 0 /*"simple"*/)
     {
-        replication_map["class"]              = QVariant("SimpleStrategy");
-        replication_map["replication_factor"] = QVariant(1);
+        query_str += QString( "\t{ 'class': 'SimpleStrategy', 'replication_factor': '1' }\n" );
     }
     else
     {
+        query_str += QString( "\t{ 'class': 'NetworkTopologyStrategy',\n" );
+
         // else strategy == 1 /*"network"*/
         //
-        replication_map["class"] = QVariant("NetworkTopologyStrategy");
-
-        // here each data center gets a replication factor
+        QString s;
         QString const replication(QString("%1").arg(replication_factor));
         int const max_names(data_centers.size());
         for(int idx(0); idx < max_names; ++idx)
         {
-            replication_map[data_centers[idx]] = QVariant(replication);
+            if( !s.isEmpty() )
+            {
+                s += ",\n";
+            }
+            s += QString("\t\t'%1': '%2'").arg(data_centers[idx]).arg(replication);
         }
+        query_str += s + "}\n";
     }
 
-    f_context->create();
+    f_query->query( query_str );
+    f_query->start( false /*don't block*/ );
+
+    QTimer::singleShot( 500, this, &snap_manager::onCreateContextTimer );
+}
+
+
+void snap_manager::onCreateContextTimer()
+{
+    if( !f_query->isReady() )
+    {
+        // Set the timer again and check the status of the query when it expires
+        //
+        QTimer::singleShot( 500, this, &snap_manager::onCreateContextTimer );
+        return;
+    }
+
+    // Keyspace has been created, so we can continue now
+    //
+    f_query->end();
+    f_query.reset();
 
     // add the snap server host name to the list of hosts that may
     // create a lock
@@ -753,7 +799,6 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
     create_table(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
 }
-
 
 void snap_manager::create_table(QString const & table_name, QString const & comment)
 {

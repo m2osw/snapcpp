@@ -126,6 +126,14 @@ bool QueryModel::canFetchMore ( const QModelIndex & prnt ) const
 }
 
 
+void QueryModel::fetchCustomData( QCassandraQuery::pointer_t q )
+{
+    // Default does nothing
+    //
+    NOTUSED(q);
+}
+
+
 void QueryModel::fetchMore ( const QModelIndex & prnt )
 {
     NOTUSED(prnt);
@@ -145,6 +153,7 @@ void QueryModel::fetchMore ( const QModelIndex & prnt )
                           , f_rows.size()+1
                           );
                 f_rows.push_back( key );
+                fetchCustomData( f_query );
                 endInsertRows();
             }
         }
@@ -202,6 +211,12 @@ int QueryModel::rowCount( QModelIndex const & prnt ) const
     }
 
     return 0;
+}
+
+int QueryModel::columnCount( QModelIndex const & prnt ) const
+{
+    NOTUSED(prnt);
+    return 1;
 }
 
 

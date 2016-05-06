@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#ifndef SNAP_MANAGER_H
-#define SNAP_MANAGER_H
+#pragma once
 
 #include "snap-manager-initialize-website.h"
 #include "snap-manager-createcontext.h"
@@ -26,9 +25,9 @@
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/snap_string_list.h>
 
-#include <QtCassandra/QCassandra.h>
-#include <QtCassandra/QCassandraContext.h>
+#include <QtCassandra/QCassandraSession.h>
 
+#include <QString>
 #include <QMap>
 #include <QPointer>
 #include <QTcpSocket>
@@ -76,6 +75,7 @@ private slots:
     void decode_utf8();
     void snapTest();
     void snapStats();
+    void onCreateContextTimer();
     void on_f_cassandraConnectButton_clicked();
     void on_f_cassandraDisconnectButton_clicked();
     void reset_domains_index();
@@ -182,8 +182,6 @@ private:
     QPointer<QPushButton>           f_website_delete;
 
     // snap site parameters
-    snap::TableModel                f_table_model;
-    snap::RowModel                  f_row_model;
     QString                         f_sites_org_name;
     QPointer<QPushButton>           f_sites_filter;
     QPointer<QLineEdit>             f_sites_filter_string;
@@ -207,12 +205,10 @@ private:
     // cassandra data
     QString                                     f_cassandra_host;
     controlled_vars::zint32_t                   f_cassandra_port;
-    QtCassandra::QCassandra::pointer_t          f_cassandra;
-    QtCassandra::QCassandraContext::pointer_t   f_context;
+    QtCassandra::QCassandraSesssion::pointer_t  f_session;
+    QtCassandra::QCassandraQuery::pointer_t     f_query;
 };
 
 
 
-#endif
-// SNAP_MANAGER_H
 // vim: ts=4 sw=4 et
