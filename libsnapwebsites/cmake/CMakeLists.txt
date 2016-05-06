@@ -32,11 +32,11 @@
 project(snap_cmake)
 
 set( INSTALL_FILES
-    SnapWebsitesConfig.cmake
     SnapCssLint.cmake
     SnapJsLint.cmake
     SnapXmlLint.cmake
     SnapZipLayout.cmake
+    SnapWebsitesConfig.cmake
 )
 
 install( FILES ${INSTALL_FILES} DESTINATION share/cmake/SnapWebsites )

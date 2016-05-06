@@ -67,7 +67,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -95,7 +95,7 @@ add_executable(${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -132,7 +132,7 @@ add_executable(${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -157,7 +157,7 @@ add_executable(${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -173,7 +173,7 @@ add_executable(${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -202,7 +202,7 @@ add_executable(${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -218,7 +218,7 @@ add_executable(${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -234,7 +234,7 @@ add_executable( ${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
@@ -255,7 +255,7 @@ add_executable( ${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-	snapwebsites
+	${SNAPWEBSITES_LIBRARIES}
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
 	${QT_LIBRARIES}
@@ -275,7 +275,7 @@ add_executable( ${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-	snapwebsites
+	${SNAPWEBSITES_LIBRARIES}
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
 	${QT_LIBRARIES}
@@ -290,7 +290,7 @@ add_executable( ${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-	snapwebsites
+	${SNAPWEBSITES_LIBRARIES}
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
 	${QT_LIBRARIES}
@@ -308,7 +308,7 @@ add_executable( ${PROJECT_NAME}
 )
 add_dependencies( ${PROJECT_NAME} test_prereqs )
 target_link_libraries(${PROJECT_NAME}
-	snapwebsites
+	${SNAPWEBSITES_LIBRARIES}
 	${QTCASSANDRA_LIBRARIES}
 	${LIBTLD_LIBRARIES}
 	${QT_LIBRARIES}

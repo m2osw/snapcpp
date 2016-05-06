@@ -46,11 +46,11 @@ add_executable(${PROJECT_NAME}
     #snaplock_entering.cpp -- there is a one to one relationship between tickets and entering so we have a single object
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
     ${ADVGETOPT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(

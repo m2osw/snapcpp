@@ -32,9 +32,9 @@
 ##
 ## Initialization
 ##
-set(SNAPWEBSITES_VERSION_MAJOR  0)
-set(SNAPWEBSITES_VERSION_MINOR  1)
-set(SNAPWEBSITES_VERSION_PATCH 72)
+set(LIBSNAPWEBSITES_VERSION_MAJOR  1)
+set(LIBSNAPWEBSITES_VERSION_MINOR  0)
+set(LIBSNAPWEBSITES_VERSION_PATCH  0)
 
 cmake_minimum_required(VERSION 2.8)
 
@@ -51,7 +51,7 @@ cmake_minimum_required(VERSION 2.8)
 #   -Wsign-conversion  -- unsigned int a; int b; a = b; or b = a;
 #   -Wmissing-declarations  -- we often create local functions without first declaring them
 
-project( snapwebsites_project )
+project( libsnapwebsites_project )
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -59,16 +59,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Automatically run the moc compiler on qt files
 set( CMAKE_AUTOMOC TRUE )
 
-# Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
-set( DTD_SOURCE_PATH "${snapwebsites_plugins_SOURCE_DIR}" CACHE PATH "Location of the default DTD files" )
-
 enable_language( CXX )
 enable_language( C )
-
-option( RUN_TESTS "Enable tests to run via CTest" OFF )
-if( ${RUN_TESTS} )
-    enable_testing()
-endif()
 
 ## Include support modules
 ##
@@ -114,28 +106,16 @@ find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapDoxygen        REQUIRED )
-find_package( SnapWebsites       REQUIRED )
 find_package( ZLIB               REQUIRED )
 find_package( ZipIos             REQUIRED 2.1      )
-
-include_directories(
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-)
 
 find_library( UUID uuid )
 if( ${UUID} STREQUAL "UUID-NOTFOUND" )
     message( FATAL_ERROR "Cannot find uuid library!" )
 endif()
 
-find_program( ZIP zip               REQUIRED )
-find_program( CLOSURELINTER gjslint REQUIRED DOC "verify that Google JavaScript linter is installed: sudo apt-get install closure-linter" )
-
-if( "${XMLLINT_EXECUTABLE}" STREQUAL "XMLLINT_EXECUTABLE-NOTFOUND" )
-    message( FATAL_ERROR "xmllint was not found, you need to install libxml2-utils" )
-endif()
-
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
-    message("Debug is in effect for snapwebsites!")
+    message("Debug is in effect for libsnapwebsites!")
     add_definitions( -DDEBUG -D_DEBUG -DCONTROLLED_VARS_DEBUG )
 else()
     message("Debug is turned OFF")
@@ -152,6 +132,8 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FR
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 include_directories(
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}/src
     ${ADVGETOPT_INCLUDE_DIRS}
     ${QTCASSANDRA_INCLUDE_DIRS}
     ${QTSERIALIZATION_INCLUDE_DIRS}
@@ -163,23 +145,9 @@ include_directories(
 ##
 ## Compiling
 ##
-add_subdirectory(plugins)       # Plug-ins (i.e. modular functionality)
-add_subdirectory(src)           # Actual Snap! Websites server
-add_subdirectory(layouts)       # Layouts offered along Core
-add_subdirectory(tests)         # Tests to run against the server
-add_subdirectory(conf)          # Configuration files and samples
-
-##
-## Analyse xml and javascript
-##
-snap_build_css_targets()
-snap_build_js_targets()
-snap_build_xml_targets()
-
-##
-## Install run script
-##
-install( PROGRAMS reset-db.sh run-server.sh DESTINATION ./ )
+add_subdirectory(cmake)         # SnapWebsites CMake Modules
+add_subdirectory(src)           # The snapwebsites library
+add_subdirectory(doc)           # API Documentation
 
 ##
 ## Code Analysis
@@ -192,31 +160,13 @@ add_custom_target(snap_code_analysis
     COMMAND mkdir -p ${PROJECT_BINARY_DIR}/analysis
     # Count things and report potential problems with different classes
     COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"
-    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
+    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc src/*.cpp src/*.h src/*.h.in >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
     # Boost inspect tool that reports various problems
     COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/analysis/inspect.html"
     COMMAND inspect -tab -crlf -end -path_name -ascii -minmax -assert_macro -deprecated_macro -unnamed -link -copyright >"${PROJECT_BINARY_DIR}/analysis/inspect.html"
     # Static analysis of the code
     COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/analysis/cppcheck.out"
-    COMMAND cppcheck plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
-    # Count # of TODO, XXX, TBD, FIXME, and \todo: (documented in doxygen)
-    COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}/analysis"
-
-    # All of these are expected to work on source code so make sure we're
-    # in the source code top directory
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-)
-
-add_custom_target(snap_javascript_analysis
-    # Compiler need to be scripts that get called on each compile
-    # because otherwise errors will pile up! This will require us
-    # to move to 14.10 so we get the latest working version of
-    # javascript closure compiler.
-
-    # Lint the JavaScript code to find additional "errors"
-    COMMAND sh tests/js-lint.sh "${PROJECT_BINARY_DIR}/analysis"
-    # Compile the JavaScript code to verify most everything (strong typing, etc.)
-    COMMAND sh tests/js-compile.sh "${PROJECT_BINARY_DIR}/analysis"
+    COMMAND cppcheck src >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
 
     # All of these are expected to work on source code so make sure we're
     # in the source code top directory

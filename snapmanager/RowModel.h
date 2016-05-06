@@ -34,7 +34,7 @@ public:
     virtual QVariant        data            ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
     virtual int             columnCount     ( const QModelIndex & parent = QModelIndex() ) const;
 
-    virtual bool            fetchCustomData ( QtCassandra::QCassandraQuery::pointer_t q );
+    virtual void            fetchCustomData ( QtCassandra::QCassandraQuery::pointer_t q );
 
     // Write access
     //

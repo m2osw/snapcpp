@@ -50,7 +50,7 @@ void RowModel::doQuery()
 }
 
 
-bool RowModel::fetchCustomData( QCassandraQuery::pointer_t q )
+void RowModel::fetchCustomData( QCassandraQuery::pointer_t q )
 {
     f_columns.push_back( q->getByteArrayColumn(1) );
 }
