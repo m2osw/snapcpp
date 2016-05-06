@@ -42,6 +42,9 @@
 #include <QString>
 #include <QByteArray>
 
+#include <unistd.h>
+#include <sys/syscall.h>
+
 typedef struct CassCluster_      CassCluster;
 typedef struct CassCollection_   CassCollection;
 typedef struct CassColumnMeta_   CassColumnMeta;
@@ -75,6 +78,11 @@ namespace CassTools
     typedef std::shared_ptr<CassStatement>          statement_pointer_t;
     typedef std::shared_ptr<const CassValue>        value_pointer_t;
     typedef int64_t                                 timeout_t;
+
+    inline pid_t gettid()
+    {
+        return syscall(SYS_gettid);
+    }
 }
 
 
@@ -116,6 +124,8 @@ private:
 class QCassandraRequestTimeout
 {
 public:
+    typedef std::shared_ptr<QCassandraRequestTimeout> pointer_t;
+
     QCassandraRequestTimeout(QCassandraSession::pointer_t session, CassTools::timeout_t timeout_ms)
         : f_session(session)
         , f_old_timeout(f_session->setTimeout(timeout_ms))
@@ -129,7 +139,7 @@ public:
 
 private:
     QCassandraSession::pointer_t    f_session;
-    int64_t                         f_old_timeout;
+    CassTools::timeout_t            f_old_timeout;
 };
 
 
