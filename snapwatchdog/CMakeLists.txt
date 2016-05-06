@@ -90,6 +90,13 @@ endif()
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS}
+    ${Qt5XmlPatterns_INCLUDE_DIRS}
+)
+
 include_directories(
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/lib
