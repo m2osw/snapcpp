@@ -21,7 +21,6 @@
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_used.h>
 
-#include <QMutexLocker>
 #include <QSettings>
 #include <QVariant>
 

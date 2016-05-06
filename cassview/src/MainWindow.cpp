@@ -34,15 +34,6 @@ MainWindow::MainWindow(QWidget *p)
     f_rowsView->setModel( &f_tableModel );
     f_cellsView->setModel( &f_rowModel );
 
-#if 0
-    // TODO: this doesn't work for some reason, and qt4 is very unhelpfull since the signals are connected
-    // at runtime. When I port to qt5, I'll get this working right.
-    //
-    connect( &f_rowModel, SIGNAL(exceptionCaught(const QString & what, const QString & message) const),
-             this, SLOT(onExceptionCaught(const QString & what, const QString & message) const)
-             );
-#endif
-
     f_cassandraModel.setCassandra( f_session );
     int const idx = f_contextCombo->findText( f_context );
     if( idx != -1 )
@@ -56,24 +47,24 @@ MainWindow::MainWindow(QWidget *p)
     f_mainSplitter->setStretchFactor( 1, 0 );
     f_mainSplitter->setStretchFactor( 2, 1 );
 
+    f_rowsView->setContextMenuPolicy( Qt::CustomContextMenu );
     f_cellsView->setContextMenuPolicy( Qt::CustomContextMenu );
     f_cellsView->setWordWrap( true ); // this is true by default anyway, and it does not help when we have a column with a super long string...
 
+    action_InsertRow->setEnabled( false );
+    action_DeleteRows->setEnabled( false );
     action_InsertColumn->setEnabled( false );
     action_DeleteColumns->setEnabled( false );
 
-    connect( f_cellsView, SIGNAL(customContextMenuRequested(const QPoint&)),
-             this, SLOT(onShowCellsContextMenu(const QPoint&)) );
-    connect( f_cellsView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
-             this, SLOT(onCellsCurrentChanged(QModelIndex,QModelIndex)) );
-    connect( f_rowsView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
-             this, SLOT(onRowsCurrentChanged(QModelIndex,QModelIndex)) );
-    connect( &f_rowModel, SIGNAL(modelReset()),
-             this, SLOT(onCellsModelReset()) );
-    connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(onAboutToQuit()) );
-    //connect( f_cellsView->horizontalHeader(), SIGNAL(sectionClicked(int)),
-             //this, SLOT(onSectionClicked(int)) );
-    connect( f_filterEdit, SIGNAL(returnPressed()), this, SLOT(on_f_applyFilter_clicked()) );
+    connect( &f_tableModel,                 &TableModel::exceptionCaught,           this, &MainWindow::onExceptionCaught        );
+    connect( &f_rowModel,                   &RowModel::exceptionCaught,             this, &MainWindow::onExceptionCaught        );
+    connect( &f_rowModel,                   &RowModel::modelReset,                  this, &MainWindow::onCellsModelReset        );
+    connect( f_rowsView,                    &QListView::customContextMenuRequested, this, &MainWindow::onShowRowsContextMenu   );
+    connect( f_rowsView->selectionModel(),  &QItemSelectionModel::currentChanged,   this, &MainWindow::onRowsCurrentChanged     );
+    connect( f_cellsView,                   &QListView::customContextMenuRequested, this, &MainWindow::onShowCellsContextMenu   );
+    connect( f_cellsView->selectionModel(), &QItemSelectionModel::currentChanged,   this, &MainWindow::onCellsCurrentChanged    );
+    connect( f_filterEdit,                  &QLineEdit::returnPressed,              this, &MainWindow::on_f_applyFilter_clicked );
+    connect( qApp,                          &QApplication::aboutToQuit,             this, &MainWindow::onAboutToQuit            );
 }
 
 
@@ -157,6 +148,17 @@ void MainWindow::fillTableList()
 }
 
 
+void MainWindow::onShowRowsContextMenu( const QPoint& mouse_pos )
+{
+    QPoint global_pos( f_rowsView->mapToGlobal(mouse_pos) );
+
+    QMenu menu( this );
+    menu.addAction( action_InsertRow  );
+    menu.addAction( action_DeleteRows );
+    menu.exec(global_pos);
+}
+
+
 void MainWindow::onShowCellsContextMenu( const QPoint& mouse_pos )
 {
     if( !f_rowsView->selectionModel()->hasSelection() )
@@ -168,7 +170,7 @@ void MainWindow::onShowCellsContextMenu( const QPoint& mouse_pos )
     QPoint global_pos( f_cellsView->mapToGlobal(mouse_pos) );
 
     QMenu menu( this );
-    menu.addAction( action_InsertColumn );
+    menu.addAction( action_InsertColumn  );
     menu.addAction( action_DeleteColumns );
     menu.exec(global_pos);
 }
@@ -199,6 +201,30 @@ void MainWindow::on_action_Settings_triggered()
                       , tr("Connection Error")
                       , tr("Error connecting to the server!")
                       );
+    }
+}
+
+
+void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
+{
+    saveValue();
+
+    if( arg1.isEmpty() )
+    {
+        return;
+    }
+
+    try
+    {
+        f_context = arg1;
+        fillTableList();
+    }
+    catch( const std::exception& except )
+    {
+        displayError( except
+                    , tr("Connection Error")
+                    , tr("Error connecting to the server!")
+                    );
     }
 }
 
@@ -249,6 +275,9 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
                     , tr("Error connecting to the server!")
                     );
     }
+
+    action_InsertRow->setEnabled( true );
+    action_DeleteRows->setEnabled( true );
 }
 
 
@@ -276,30 +305,6 @@ void MainWindow::onExceptionCaught( const QString & what, const QString & messag
                   , tr("Exception Caught!")
                   , message
                   );
-}
-
-
-void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
-{
-    saveValue();
-
-    if( arg1.isEmpty() )
-    {
-        return;
-    }
-
-    try
-    {
-        f_context = arg1;
-        fillTableList();
-    }
-    catch( const std::exception& except )
-    {
-        displayError( except
-                    , tr("Connection Error")
-                    , tr("Error connecting to the server!")
-                    );
-    }
 }
 
 
@@ -447,6 +452,18 @@ void MainWindow::on_action_AboutQt_triggered()
 void MainWindow::onSectionClicked( int /*section*/ )
 {
     //f_cellsView->resizeColumnToContents( section );
+}
+
+
+void MainWindow::on_action_InsertRow_triggered()
+{
+    QMessageBox::critical( this, tr("Notice"), tr("Row insertion has been disabled for now.") );
+}
+
+
+void MainWindow::on_action_DeleteRows_triggered()
+{
+    QMessageBox::critical( this, tr("Notice"), tr("Row deletion has been disabled for now.") );
 }
 
 
