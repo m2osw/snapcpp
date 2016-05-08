@@ -108,7 +108,8 @@ int main(int argc, char *argv[])
 
     int process_count(3);
     int repeat(3);
-    int timeout(snap::snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT);
+    int obtention_timeout(snap::snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT);
+    int duration_timeout(snap::snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT);
     const char * cassandra_host("127.0.0.1:9042"); // address and port to a Cassandra node
     const char * communicator_host("127.0.0.1:4040"); // address and port to the snapcommunicator TCP connection
     for(int i(1); i < argc; ++i)
@@ -123,7 +124,8 @@ int main(int argc, char *argv[])
             std::cout << "    --communicator indicates the snapcommunicator IP address, you may also include the port (127.0.0.1:4040 by default)" << std::endl;
             std::cout << "    -i             indicates the number of process to spawn total (parallel execution on a single computer)" << std::endl;
             std::cout << "    -n             indicates the number of time each process will increment the counter" << std::endl;
-            std::cout << "    -t             change the timeout from the default (" << snap::snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT << ") to this value" << std::endl;
+            std::cout << "    -o             change the obtention timeout from the default (" << snap::snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT << ") to this value" << std::endl;
+            std::cout << "    -t             change the duration timeout from the default (" << snap::snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT << ") to this value" << std::endl;
             std::cout << "To run the test you need to run snapinit and make sure snapcommunicator" << std::endl;
             std::cout << "and snaplock are both running. Then you can run this test:" << std::endl;
             std::cout << "  tests/test_snap_lock -i 4 -n 60" << std::endl;
@@ -169,6 +171,16 @@ int main(int argc, char *argv[])
             }
             repeat = atol(argv[i]);
         }
+        else if(strcmp(argv[i], "-o") == 0)
+        {
+            ++i;
+            if(i >= argc)
+            {
+                std::cerr << "error: -o must be followed by the number of seconds before the obtention of a lock times out." << std::endl;
+                exit(1);
+            }
+            obtention_timeout = atol(argv[i]);
+        }
         else if(strcmp(argv[i], "-t") == 0)
         {
             ++i;
@@ -177,7 +189,7 @@ int main(int argc, char *argv[])
                 std::cerr << "error: -t must be followed by the number of seconds before a lock times out." << std::endl;
                 exit(1);
             }
-            timeout = atol(argv[i]);
+            duration_timeout = atol(argv[i]);
         }
     }
 
@@ -203,7 +215,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    snap::snap_lock::initialize_timeout(timeout);
+    snap::snap_lock::initialize_lock_duration_timeout(duration_timeout);
+    snap::snap_lock::initialize_lock_obtention_timeout(obtention_timeout);
 
     QString communicator_addr("127.0.0.1");
     int communicator_port(4040);

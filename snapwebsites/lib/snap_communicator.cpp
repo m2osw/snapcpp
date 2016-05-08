@@ -4081,7 +4081,7 @@ public:
 
         if(!f_thread.start())
         {
-            SNAP_LOG_ERROR("A background connection attempt is already in progress. Further requests are ignored.");
+            SNAP_LOG_ERROR("The thread used to run the background connection process did not start.");
             return false;
         }
 
@@ -4419,6 +4419,13 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_ti
     {
         // in this case we create a thread, run it and know whether the
         // connection succeeded only when the thread tells us it did
+        //
+        // TODO: the background_connect() may return false in two situations:
+        //       1) when the thread is already running and then the behavior
+        //          we have below is INCORRECT
+        //       2) when the thread cannot be started (i.e. could not
+        //          allocate the stack?) in which case the if() below
+        //          is the correct behavior
         //
         if(f_impl->background_connect())
         {
@@ -4864,11 +4871,17 @@ void snap_communicator::snap_tcp_blocking_client_message_connection::run()
             //
             int64_t const next_timeout_timestamp(save_timeout_timestamp());
             int64_t const now(get_current_date());
-            int64_t timeout((next_timeout_timestamp - now) / 1000);
+            int64_t const timeout((next_timeout_timestamp - now) / 1000);
             if(timeout <= 0)
             {
                 // timed out
                 //
+                process_timeout();
+                if(f_done)
+                {
+                    return;
+                }
+                SNAP_LOG_FATAL("snap_communicator::snap_tcp_blocking_client_message_connection::run(): connection timed out before we could get the lock.");
                 throw snap_communicator_runtime_error("connection timed out");
             }
             errno = 0;
@@ -4982,7 +4995,7 @@ void snap_communicator::snap_tcp_blocking_client_message_connection::done()
  */
 bool snap_communicator::snap_tcp_blocking_client_message_connection::send_message(snap_communicator_message const & message)
 {
-    int s(get_socket());
+    int const s(get_socket());
     if(s >= 0)
     {
         // transform the message to a string and write to the socket

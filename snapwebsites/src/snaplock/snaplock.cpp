@@ -41,6 +41,7 @@
 #include "log.h"
 #include "qstring_stream.h"
 #include "dbutils.h"
+#include "snap_lock.h"
 #include "snap_string_list.h"
 
 // 3rd party libs
@@ -631,8 +632,14 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
                     QString const & obj_name(key_ticket.second->get_object_name());
                     QString const & key(key_ticket.second->get_entering_key());
                     snaplock_ticket::ticket_id_t const ticket_id(key_ticket.second->get_ticket_number());
+                    time_t const lock_timeout(key_ticket.second->get_lock_timeout());
 
-                    QString const msg(QString("%1/%2/%3\n").arg(ticket_id).arg(obj_name).arg(key));
+                    QString const msg(QString("ticket id: %1  object name: \"%2\"  key: %3  timeout %4 %5\n")
+                                    .arg(ticket_id)
+                                    .arg(obj_name)
+                                    .arg(key)
+                                    .arg(snap::snap_child::date_to_string(lock_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_SHORT))
+                                    .arg(snap::snap_child::date_to_string(lock_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_TIME)));
                     ticketlist += msg;
                 }
             }
@@ -934,6 +941,14 @@ void snaplock::lock(snap::snap_communicator_message const & message)
         return;
     }
 
+    int32_t const duration(message.get_integer_parameter("duration"));
+    if(duration < snap::snap_lock::SNAP_LOCK_MINIMUM_TIMEOUT)
+    {
+        // invalid duration, minimum is 3
+        //
+        throw snap::snap_communicator_invalid_message("snaplock::lock(): Invalid duration, the minimum accepted is 3.");
+    }
+
     // create an entering key
     //
     QString const entering_key(QString("%1/%2").arg(f_server_name).arg(client_pid));
@@ -944,6 +959,7 @@ void snaplock::lock(snap::snap_communicator_message const & message)
                                         object_name,
                                         entering_key,
                                         timeout,
+                                        duration,
                                         message.get_sent_from_server(),
                                         message.get_sent_from_service()));
 
@@ -1051,12 +1067,21 @@ void snaplock::lockentering(snap::snap_communicator_message const & message)
             // ticket does not exist, so create it now
             // (note: ticket should only exist on originator)
             //
+            int32_t const duration(message.get_integer_parameter("duration"));
+            if(duration < snap::snap_lock::SNAP_LOCK_MINIMUM_TIMEOUT)
+            {
+                // invalid duration, minimum is 3
+                //
+                throw snap::snap_communicator_invalid_message("snaplock::lockentering(): Invalid duration, the minimum accepted is 3.");
+            }
+
             f_entering_tickets[object_name][key] = std::make_shared<snaplock_ticket>(
                                       this
                                     , f_messager
                                     , object_name
                                     , key
                                     , timeout
+                                    , duration
                                     , ""
                                     , "");
         }
@@ -1237,13 +1262,39 @@ void snaplock::lockgone(snap::snap_communicator_message const & message)
 void snaplock::activate_first_lock(QString const & object_name)
 {
     auto const obj_ticket(f_tickets.find(object_name));
-    if(obj_ticket != f_tickets.end()
-    && !obj_ticket->second.empty())
+
+    if(obj_ticket != f_tickets.end())
     {
-        // there is a ticket that should be active
+        // loop through making sure that we activate a ticket only
+        // if the obtention date was not already reached; if that
+        // date was reached before we had the time to activate the
+        // lock, then the client should have abandonned the lock
+        // request anyway...
         //
-SNAP_LOG_WARNING("activate first lock called and we found a first ticket...");
-        obj_ticket->second.begin()->second->activate_lock();
+        // (this is already done in the cleanup(), but a couple of
+        // other functions may call the activate_first_lock()
+        // function!)
+        //
+        while(!obj_ticket->second.empty())
+        {
+            auto key_ticket(obj_ticket->second.begin());
+            if(!key_ticket->second->timed_out())
+            {
+                // there is still a ticket that should be active
+                //
+                key_ticket->second->activate_lock();
+                break;
+            }
+            key_ticket->second->lock_failed();
+            key_ticket = obj_ticket->second.erase(key_ticket);
+        }
+
+        if(obj_ticket->second.empty())
+        {
+            // it is empty now, get rid of that set of tickets
+            //
+            f_tickets.erase(obj_ticket);
+        }
     }
 }
 

@@ -1310,7 +1310,14 @@ void snap_communicator_server::verify_command(base_connection::pointer_t connect
  */
 void snap_communicator_server::process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message, bool udp)
 {
-    SNAP_LOG_TRACE("received a message [")(message.to_message())("]");
+    {
+        QString const received_message(message.to_message());
+        if(received_message.indexOf("snaplock") == -1
+        && received_message.indexOf(":lock_") == -1)
+        {
+            SNAP_LOG_TRACE("received a message [")(received_message)("]");
+        }
+    }
 
     QString const command(message.get_command());
 

@@ -116,40 +116,43 @@ public:
 
     static ticket_id_t const                    NO_TICKET = 0;
 
-    snaplock_ticket(
-              snaplock_running_t * running_computers
-            , snaplock_messager::pointer_t messager
-            , QString const & object_name
-            , QString const & entering_key
-            , int64_t timeout
-            , QString const & server_name
-            , QString const & service_name
-            );
+                        snaplock_ticket(
+                                  snaplock_running_t * running_computers
+                                , snaplock_messager::pointer_t messager
+                                , QString const & object_name
+                                , QString const & entering_key
+                                , time_t obtention_timeout
+                                , int32_t lock_duration
+                                , QString const & server_name
+                                , QString const & service_name
+                                );
 
-    void entering();
-    void entered();
-    ticket_id_t get_ticket_number() const;
-    void max_ticket(int64_t new_max_ticket);
-    void add_ticket();
-    void ticket_added(snaplock_ticket::key_map_t const & entering);
-    void exiting();
-    void remove_entering(QString const & key);
-    void activate_lock();
+    void                entering();
+    void                entered();
+    ticket_id_t         get_ticket_number() const;
+    time_t              get_lock_timeout() const;
+    void                max_ticket(int64_t new_max_ticket);
+    void                add_ticket();
+    void                ticket_added(snaplock_ticket::key_map_t const & entering);
+    void                exiting();
+    void                remove_entering(QString const & key);
+    void                activate_lock();
 
-    bool timed_out() const;
-    void lock_failed();
-    QString const & get_object_name() const;
-    QString const & get_entering_key() const;
+    bool                timed_out() const;
+    void                lock_failed();
+    QString const &     get_object_name() const;
+    QString const &     get_entering_key() const;
 
     // this is called when we receive the UNLOCK event
-    void drop_ticket();
+    void                drop_ticket();
 
 private:
     // initialization
     snaplock_running_t *            f_running_computers = nullptr;
     snaplock_messager::pointer_t    f_messager;
     QString                         f_object_name;
-    time_t                          f_timeout = 0;
+    time_t                          f_obtention_timeout = 0;
+    int32_t                         f_lock_duration = 0;
     QString                         f_server_name;
     QString                         f_service_name;
 
@@ -174,6 +177,7 @@ private:
 
     // locked
     bool                            f_locked = false;
+    time_t                          f_lock_timeout = 0;
 
     // the lock did not take (in most cases, this is because of a timeout)
     bool                            f_lock_failed = false;
