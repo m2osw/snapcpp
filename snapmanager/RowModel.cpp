@@ -98,7 +98,7 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
 
             case 1:
                 du.set_display_len( 64 );
-                return du.get_column_value( column_value, role == Qt::DisplayRole /*display_only*/ );
+                return du.get_column_value( column_name, column_value, role == Qt::DisplayRole /*display_only*/ );
 
             default:
                 throw std::runtime_error( "We should never get here!" );
@@ -128,8 +128,8 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
     try
     {
-        QByteArray& result;
-        snap::dbutils du( f_tableName(), f_rowKey );
+        QByteArray result;
+        snap::dbutils du( f_tableName, f_rowKey );
         const QByteArray& key( f_rows[idx.row()] );
         du.set_column_value( key, result, value.toString() );
 
@@ -180,7 +180,7 @@ bool RowModel::insertRows ( int row, int count, const QModelIndex & parent_index
             f_columns.insert ( f_columns.begin() + (row+i), newval );
 
             QByteArray result;
-            snap::dbutils du( f_tableName(), f_rowKey );
+            snap::dbutils du( f_tableName, f_rowKey );
             du.set_column_value( newcol, result, newval );
 
             QCassandraQuery q( f_session );

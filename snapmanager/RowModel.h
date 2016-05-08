@@ -49,6 +49,8 @@ public:
 private:
     std::vector<QByteArray> f_columns;
     QByteArray              f_rowKey;
+
+    void					doQuery();
 };
 
 

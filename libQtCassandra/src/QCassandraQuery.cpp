@@ -134,9 +134,6 @@ namespace
  */
 QCassandraQuery::QCassandraQuery( QCassandraSession::pointer_t session )
     : f_session( session )
-    //, f_consistencyLevel(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
-    //, f_timestamp(0) -- auto-init
-    //, f_timeout(0) -- auto-init
 {
 }
 
@@ -438,22 +435,37 @@ void QCassandraQuery::queryCallbackFunc( CassFuture* future, void *data )
         return;
     }
 
-    emit this_query->queryFinished();
+    // This comes from the background thread created by the Cassandra driver
+    emit this_query->threadQueryFinished(this_query->shared_from_this());
 }
 
 
-/** \brief Start the query
- *
- * This method assumes that you have called the query() method already, and
- * optionally specified the paging size and any binding values to the query.
- *
- * \param block[in]	if true, then the method blocks while waiting for completion. It does not block if false.
- *
- * \sa query(), setPagingSize(), bindInt32(), bindInt64(), bindString(), bindByteArray()
- */
-void QCassandraQuery::start( const bool block )
+void QCassandraQuery::fireQueryTimer()
 {
+    // Fire the timer signal so we get the query finished signal on the foreground thread.
+    QTimer::singleShot( 500, this, &QCassandraQuery::onQueryFinishedTimer );
+}
+
+
+void QCassandraQuery::onQueryFinishedTimer()
+{
+    if( isReady() )
+    {
+        // Done, so emit finished signal
+        emit queryFinished(shared_from_this());
+    }
+    else
+    {
+        // Check in again later
+        //
+        fireQueryTimer();
+    }
+}
+
+
 #if 0
+void QCassandraQuery::testMetrics()
+{
 // The following loops are a couple of attempts to get things to work when we
 // send loads of data to Cassandra all at once. All failed though. The cluster
 // still crashes if too much data gets there all at once.
@@ -546,10 +558,25 @@ std::cerr << "*** ...pause is over... ***\n";
         f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
     }
     while(throwIfError( QString("Error in query string [%1]!").arg(f_queryString) ));
+}
 #endif
 
-//int64_t const now(QCassandra::timeofday());
-//std::cerr << now << " -- Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
+
+/** \brief Start the query
+ *
+ * This method assumes that you have called the query() method already, and
+ * optionally specified the paging size and any binding values to the query.
+ *
+ * \param block[in]	if true, then the method blocks while waiting for completion. It does not block if false.
+ *
+ * \sa query(), setPagingSize(), bindInt32(), bindInt64(), bindString(), bindByteArray()
+ */
+void QCassandraQuery::start( const bool block )
+{
+    //testMetrics();
+    //int64_t const now(QCassandra::timeofday());
+    //std::cerr << now << " -- Executing query=[" << f_queryString.toUtf8().data() << "]" << std::endl;
+
     f_sessionFuture.reset( cass_session_execute( f_session->session().get(), f_queryStmt.get() ) , futureDeleter() );
     if( block )
     {
@@ -557,7 +584,15 @@ std::cerr << "*** ...pause is over... ***\n";
     }
     else
     {
-        cass_future_set_callback( f_sessionFuture.get(), &QCassandraQuery::queryCallbackFunc, reinterpret_cast<void*>(this) );
+        // This will call back on a background thread
+        //
+        cass_future_set_callback
+            ( f_sessionFuture.get()
+            , &QCassandraQuery::queryCallbackFunc
+            , reinterpret_cast<void*>(this)
+            );
+
+        fireQueryTimer();
     }
 }
 
@@ -582,13 +617,15 @@ bool QCassandraQuery::isReady() const
 
 /** \brief Get the query result. This method blocks if the result is not ready yet.
  *
+ * \note Throws std::runtime_error if query failed.
+ *
  * /sa isReady(), query()
  */
 void QCassandraQuery::getQueryResult()
 {
     throwIfError( QString("Error in query string [%1]!").arg(f_queryString) );
 
-    f_queryResult.reset( cass_future_get_result(f_sessionFuture.get()), resultDeleter() );
+    f_queryResult.reset ( cass_future_get_result   (f_sessionFuture.get()), resultDeleter() );
     f_rowsIterator.reset( cass_iterator_from_result(f_queryResult.get()), iteratorDeleter() );
 }
 
@@ -654,7 +691,7 @@ bool QCassandraQuery::nextPage( const bool block )
  *
  * \sa start()
  */
-bool QCassandraQuery::throwIfError( const QString& msg )
+void QCassandraQuery::throwIfError( const QString& msg )
 {
     const CassError code( cass_future_error_code( f_sessionFuture.get() ) );
     if( code != CASS_OK )
@@ -670,8 +707,6 @@ bool QCassandraQuery::throwIfError( const QString& msg )
            << "} aborting operation!";
         throw std::runtime_error( ss.str().c_str() );
     }
-
-    return false;
 }
 
 

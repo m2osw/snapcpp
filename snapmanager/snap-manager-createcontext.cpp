@@ -25,10 +25,8 @@ using namespace QtCassandra;
 
 snap_manager_createcontext::snap_manager_createcontext
         ( QWidget *                     snap_parent
-        , QCassandraSession::pointer_t	session
         )
     : QDialog(snap_parent)
-    , f_session(session)
     //, f_query()               -- initialized below
     //, f_close_button()        -- initialized below
     //, f_send_request_button() -- initialized below
@@ -185,128 +183,13 @@ void snap_manager_createcontext::createcontext()
         // allow user to try again
         sm->context_is_valid();
     }
+#else
+    emit createContext( replicationFactor->text().toInt(), s, data_centers, host_name );
+    close();
 #endif
-    // Display wait dialog here modelessly
-    //
-    create_context( replicationFactor->text().toInt(), s, data_centers, host_name );
 }
 #pragma GCC diagnostic pop
 
-
-/** \brief Create the snap_websites context and first few tables.
- *
- * This function creates the snap_websites context.
- *
- * The strategy is defined as a number which represents the selection
- * in the QComboBox of the dialog we just shown to the user. The
- * values are:
- *
- * \li 0 -- Simple
- * \li 1 -- Local
- * \li 2 -- Network
- *
- * \warning
- * It is assumed that you checked all the input parameters validity:
- *
- * \li the replication_factor is under or equal to the number of Cassandra nodes
- * \li the strategy can only be 0, 1, or 2
- * \li the data_centers list cannot be empty
- * \li the host_name must match [a-zA-Z_][a-zA-Z_0-9]*
- *
- * \param[in] replication_factor  Number of times the data will be duplicated.
- * \param[in] strategy  The strategy used to manage the cluster.
- * \param[in] data_centers  List of data centers, one per line, used if
- *                          strategy is not Simple (0).
- * \param[in] host_name  The name of a host to runn a snap server instance.
- */
-void snap_manager::create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name)
-{
-    // when called here we have f_session defined but no context yet
-
-    QListWidget * console = getChild<QListWidget>(this, "cassandraConsole");
-
-    // create a new context
-    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-    console->addItem("Create \"" + context_name + "\" context.");
-
-    f_query = std::make_shared<QCassandraQuery>( f_session );
-
-    QString query_str( QString("CREATE KEYSPACE %1\n")
-        .arg(context_name)
-        );
-
-
-    // this is the default for contexts, but just in case we were
-    // to change that default at a later time...
-    //
-    query_str += QString("WITH durable_writes = true\n");
-
-    auto& replication_map(fields["replication"].map());
-    replication_map.clear();
-
-    // for developers testing with a few nodes in a single data center,
-    // SimpleStrategy is good enough; for anything larger ("a real
-    // cluster",) it won't work right
-    query_str += QString("AND replication =\n");
-    if(strategy == 0 /*"simple"*/)
-    {
-        query_str += QString( "\t{ 'class': 'SimpleStrategy', 'replication_factor': '1' }\n" );
-    }
-    else
-    {
-        query_str += QString( "\t{ 'class': 'NetworkTopologyStrategy',\n" );
-
-        // else strategy == 1 /*"network"*/
-        //
-        QString s;
-        QString const replication(QString("%1").arg(replication_factor));
-        int const max_names(data_centers.size());
-        for(int idx(0); idx < max_names; ++idx)
-        {
-            if( !s.isEmpty() )
-            {
-                s += ",\n";
-            }
-            s += QString("\t\t'%1': '%2'").arg(data_centers[idx]).arg(replication);
-        }
-        query_str += s + "}\n";
-    }
-
-    f_query->query( query_str );
-    f_query->start( false /*don't block*/ );
-
-    QTimer::singleShot( 500, this, &snap_manager_createcontext::onCreateContextTimer );
-}
-
-
-void snap_manager_createcontext::onCreateContextTimer()
-{
-    if( !f_query->isReady() )
-    {
-        // Set the timer again and check the status of the query when it expires
-        //
-        QTimer::singleShot( 500, this, &snap_manager::onCreateContextTimer );
-        return;
-    }
-
-    // Keyspace has been created, so we can continue now
-    //
-    f_query->end();
-    f_query.reset();
-
-    // add the snap server host name to the list of hosts that may
-    // create a lock
-    //
-    create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
-    f_context->addLockHost(host_name);
-    f_host_list->addItem(host_name);
-
-    // now we want to add the "domains" and "websites" tables to be
-    // complete
-    //
-    create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
-    create_table(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
-}
 
 
 // vim: ts=4 sw=4 et

@@ -53,6 +53,7 @@ namespace QtCassandra
 
 class QCassandraQuery
     : public QObject
+    , std::enable_shared_from_this<QCassandraQuery>
 {
     Q_OBJECT
 
@@ -110,8 +111,12 @@ public:
     string_map_t getMapColumn     ( const QString& name ) const;
     string_map_t getMapColumn     ( const int num ) const;
 
+private slots:
+    void onQueryFinishedTimer();
+
 signals:
-    void queryFinished();
+    void queryFinished( QCassandraQuery::pointer_t q );
+    void threadQueryFinished( QCassandraQuery::pointer_t q );
 
 private:
     // Current query
@@ -131,8 +136,9 @@ private:
     bool 		    getBoolFromValue      ( const CassValue* value ) const;
     QByteArray      getByteArrayFromValue ( const CassValue* value ) const;
     string_map_t    getMapFromValue       ( const CassValue* value ) const;
-    bool            throwIfError          ( const QString& msg     );
+    void            throwIfError          ( const QString& msg     );
 
+    void			fireQueryTimer();
     static void		queryCallbackFunc( CassFuture* future, void *data );
 };
 

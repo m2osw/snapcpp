@@ -18,6 +18,8 @@
 
 #include "ui_snap-manager-createcontextbox.h"
 
+#include <snapwebsites/snap_string_list.h>
+
 #include <QtCassandra/QCassandraSession.h>
 #include <QtCassandra/QCassandraQuery.h>
 
@@ -28,29 +30,23 @@ class snap_manager_createcontext : public QDialog, public Ui_createContextBox
     Q_OBJECT
 
 public:
-                    snap_manager_createcontext
-                        ( QWidget *prnt
-                        , QtCassandra::QCassandraSession::pointer_t	session
-                        );
+                    snap_manager_createcontext( QWidget *prnt );
     virtual         ~snap_manager_createcontext();
 
     void            add_status(QString const& msg, bool const clear = false);
 
 signals:
     void			disconnectRequested();
+    void		    createContext( int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name );
 
 private slots:
     void            cancel();
     void            createcontext();
-    void			onCreateContextTimer();
-    void			onCreateTableTimer();
 
 private:
     void            close();
     //void            enableAll(bool enable);
 
-    QtCassandra::QCassandraSession::pointer_t	f_session;
-    QtCassandra::QCassandraQuery::pointer_t		f_query;
     QPointer<QPushButton>                       f_createcontext_button;
     QPointer<QPushButton>                       f_cancel_button;
     QPointer<QLineEdit>                         f_replication_factor;

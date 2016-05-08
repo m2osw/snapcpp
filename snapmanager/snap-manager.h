@@ -25,6 +25,7 @@
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/snap_string_list.h>
 
+#include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 
 #include <QString>
@@ -65,9 +66,6 @@ public:
     virtual ~snap_manager();
 
     void cassandraDisconnectButton_clicked();
-    void create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name);
-    void create_table(QString const & table_name, QString const & comment);
-    void context_is_valid();
 
 private slots:
     void about();
@@ -103,6 +101,9 @@ private slots:
     //void on_sitesList_itemClicked(QListWidgetItem *item);
     void onSitesListCurrentChanged( QModelIndex current, QModelIndex previous);
     void quit();
+
+    void create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name);
+    void onQueryFinished( QtCassandra::QCassandraQuery::pointer_t q );
 
 private:
     enum tabs
@@ -198,6 +199,9 @@ private:
     QPointer<QPushButton>           f_sites_save;
     QPointer<QPushButton>           f_sites_delete;
 
+    TableModel						f_table_model;
+    RowModel						f_row_model;
+
     // snap server
     QString                         f_snap_host;
     controlled_vars::zint32_t       f_snap_port;
@@ -205,8 +209,13 @@ private:
     // cassandra data
     QString                                     f_cassandra_host;
     controlled_vars::zint32_t                   f_cassandra_port;
-    QtCassandra::QCassandraSesssion::pointer_t  f_session;
-    QtCassandra::QCassandraQuery::pointer_t     f_query;
+    QtCassandra::QCassandraSession::pointer_t   f_session;
+
+    std::stack<QtCassandra::QCassandraQuery::pointer_t>	f_queryStack;
+
+    void do_top_query();
+    void create_table(QString const & table_name, QString const & comment);
+    void context_is_valid();
 };
 
 

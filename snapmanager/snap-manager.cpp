@@ -493,7 +493,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
 
     if(!f_session)
     {
-        f_session = QCassandraQuery::create();
+        f_session = QCassandraSession::create();
     }
 
     // save the old values
@@ -538,12 +538,23 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
 
     // reconnect with the new info
     // note: the disconnect does nothing if not already connected
-    f_cassandra->disconnect();
-    if(!f_cassandra->connect(f_cassandra_host, f_cassandra_port))
+    f_session->disconnect();
+    try
+    {
+        f_session->connect( f_cassandra_host, f_cassandra_port );
+    }
+    catch( const std::exception& ex )
     {
         // did not work...
-        console->addItem("Not connected.");
-        QMessageBox msg(QMessageBox::Critical, "Connection to Cassandra", "Snap! Manager was not able to connect to your Cassandra Cluster. Please verify that it is up and running and accessible (no firewall) from this computer.", QMessageBox::Ok, this);
+        console->addItem( QString("Not connected! Error=[%1]").arg(QString(ex.what())) );
+        QMessageBox msg
+            ( QMessageBox::Critical
+            , "Connection to Cassandra"
+            , "Snap! Manager was not able to connect to your Cassandra Cluster.\n"
+              "Please verify that it is up and running and accessible (no firewall) from this computer."
+            , QMessageBox::Ok
+            , this
+            );
         msg.exec();
 
         // give user a chance to try again with another IP or
@@ -578,6 +589,10 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
         if(f_createcontext_window == nullptr)
         {
             f_createcontext_window = new snap_manager_createcontext(this);
+            connect( f_createcontext_window, &snap_manager_createcontext::createContext,
+                     this, &snap_manager::create_context );
+            connect( f_createcontext_window, &snap_manager_createcontext::disconnectRequested,
+                     this, &snap_manager::cassandraDisconnectButton_clicked );
         }
         f_createcontext_window->show();
         return;
@@ -589,8 +604,8 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     for(int i = 0; i < 2; ++i)
     {
         QString const table_name(snap::get_name(names[i]));
-        const auto& table_list( snap_keyspace_iter->second.getTables() );
-        if( table_list.find(table_name) == table_name.end() )
+        const auto& table_list( snap_keyspace_iter->second->getTables() );
+        if( table_list.find(table_name) == table_list.end() )
         {
             // we connected to the database, but it is not properly initialized
             console->addItem("The \"" + table_name + "\" table is not defined.");
@@ -685,6 +700,43 @@ void snap_manager::cassandraDisconnectButton_clicked()
     f_cassandraConnectButton->setEnabled( true );
 }
 
+void snap_manager::do_top_query()
+{
+    auto& top(f_queryStack.top());
+    connect( top.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onQueryFinished );
+    top->start( false );
+}
+
+
+void snap_manager::onQueryFinished( QCassandraQuery::pointer_t q )
+{
+    QListWidget * console = getChild<QListWidget>(this, "cassandraConsole");
+    try
+    {
+        console->addItem("Query finished!");
+        q->getQueryResult();
+    }
+    catch( const std::exception& ex )
+    {
+        console->addItem("Query Error:" + ex.what() );
+        QMessageBox::critical( this, tr("Query Error!"), ex.what() );
+    }
+
+    q->end();
+
+    f_queryStack.pop();
+    if( f_queryStack.empty() )
+    {
+        console->addItem("Query set done!");
+        context_is_valid();
+        return;
+    }
+
+    // Else, run the top query, and we'll be notified when it's done
+    //
+    do_top_query();
+}
+
 
 /** \brief Create the snap_websites context and first few tables.
  *
@@ -722,7 +774,7 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     console->addItem("Create \"" + context_name + "\" context.");
 
-    f_query = std::make_shared<QCassandraQuery>( f_session );
+    auto query( std::make_shared<QCassandraQuery>( f_session ) );
 
     QString query_str( QString("CREATE KEYSPACE %1\n")
         .arg(context_name)
@@ -733,9 +785,6 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     // to change that default at a later time...
     //
     query_str += QString("WITH durable_writes = true\n");
-
-    auto& replication_map(fields["replication"].map());
-    replication_map.clear();
 
     // for developers testing with a few nodes in a single data center,
     // SimpleStrategy is good enough; for anything larger ("a real
@@ -765,32 +814,9 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
         query_str += s + "}\n";
     }
 
-    f_query->query( query_str );
-    f_query->start( false /*don't block*/ );
+    query->query( query_str );
+    f_queryStack.push( query );
 
-    QTimer::singleShot( 500, this, &snap_manager::onCreateContextTimer );
-}
-
-
-void snap_manager::onCreateContextTimer()
-{
-    if( !f_query->isReady() )
-    {
-        // Set the timer again and check the status of the query when it expires
-        //
-        QTimer::singleShot( 500, this, &snap_manager::onCreateContextTimer );
-        return;
-    }
-
-    // Keyspace has been created, so we can continue now
-    //
-    f_query->end();
-    f_query.reset();
-
-    // add the snap server host name to the list of hosts that may
-    // create a lock
-    //
-    f_context->addLockHost(host_name);
     f_host_list->addItem(host_name);
 
     // now we want to add the "domains" and "websites" tables to be
@@ -798,31 +824,37 @@ void snap_manager::onCreateContextTimer()
     //
     create_table(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
     create_table(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
+
+    do_top_query();
 }
 
 void snap_manager::create_table(QString const & table_name, QString const & comment)
 {
-    // does table exist?
-    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-    if(!table)
-    {
-        // table is not there yet, create it
-        table = f_context->table(table_name);
+    QListWidget * console = getChild<QListWidget>(this, "cassandraConsole");
 
-        auto& table_fields( table->fields() );
-        table_fields.clear();
-        table_fields["comment"]                     = QVariant(comment);
-        table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // 1 hour
-        table_fields["gc_grace_seconds"]            = QVariant(864000);
-        //
-        auto& compaction_value_map(table_fields["compaction"].map());
-        compaction_value_map.clear();
-        compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
-        compaction_value_map["min_threshold"] = QVariant(4);
-        compaction_value_map["max_threshold"] = QVariant(22);
+    // create a new context
+    console->addItem("Create \"" + table_name + "\" table.");
 
-        table->create();
-    }
+    auto query( std::make_shared<QCassandraQuery>( f_session ) );
+
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+    QString query_str( QString("CREATE TABLE %1.%2\n")
+        .arg(context_name)
+        .arg(table_name)
+    );
+
+    // this is the default for contexts, but just in case we were
+    // to change that default at a later time...
+    //
+    query_str += QString("WITH comment = '%1'\n\n").arg(comment);
+    query_str += QString("AND memtable_flush_period_in_ms = 3600000\n");
+    query_str += QString("AND gc_grace_seconds = 864000\n");
+    query_str += QString("AND compaction =\n");
+    query_str += QString( "\t{ 'class': 'SizeTieredCompactionStrategy', "
+                          "'min_threshold': '4', "
+                          "'max_threshold': '22'}\n" );
+    query->query( query_str );
+    f_queryStack.push( query );
 }
 
 
