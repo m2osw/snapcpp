@@ -53,7 +53,7 @@ namespace QtCassandra
 
 class QCassandraQuery
     : public QObject
-    , std::enable_shared_from_this<QCassandraQuery>
+    , public std::enable_shared_from_this<QCassandraQuery>
 {
     Q_OBJECT
 
@@ -61,67 +61,71 @@ public:
     typedef std::shared_ptr<QCassandraQuery>  pointer_t;
     typedef std::map<std::string,std::string> string_map_t;
 
-    QCassandraQuery( QCassandraSession::pointer_t session );
-    ~QCassandraQuery();
+    QCassandraQuery                         ( QCassandraSession::pointer_t session );
+    ~QCassandraQuery                        ();
 
-    consistency_level_t	consistencyLevel() const;
-    void                setConsistencyLevel( consistency_level_t level );
+    const QString&      description         () const;
+    void                setDescription      ( const QString& val );
 
-    int64_t				timestamp() const;
-    void				setTimestamp( int64_t val );
+    consistency_level_t	consistencyLevel    () const;
+    void                setConsistencyLevel ( consistency_level_t level );
 
-    void       query         ( const QString& query_string, const int bind_count = 0 );
-    void       setPagingSize ( const int size );
+    int64_t				timestamp           () const;
+    void				setTimestamp        ( int64_t val );
 
-    void       bindBool      ( const size_t num, const bool          value );
-    void       bindInt32     ( const size_t num, const int32_t       value );
-    void       bindInt64     ( const size_t num, const int64_t       value );
-    void       bindFloat     ( const size_t num, const float         value );
-    void       bindDouble    ( const size_t num, const double        value );
-    void       bindString    ( const size_t num, const QString&      value );
-    void       bindByteArray ( const size_t num, const QByteArray&   value );
-    void       bindJsonMap   ( const size_t num, const string_map_t& value );
-    void       bindMap       ( const size_t num, const string_map_t& value );
+    void                query               ( const QString& query_string, const int bind_count = 0 );
+    void                setPagingSize       ( const int size );
 
-    void       start( const bool block = true );
-    bool	   isReady() const;
-    void       getQueryResult();
-    bool       nextRow();
-    bool       nextPage( const bool block = true );
-    void       end();
+    void                bindBool            ( const size_t num, const bool          value );
+    void                bindInt32           ( const size_t num, const int32_t       value );
+    void                bindInt64           ( const size_t num, const int64_t       value );
+    void                bindFloat           ( const size_t num, const float         value );
+    void                bindDouble          ( const size_t num, const double        value );
+    void                bindString          ( const size_t num, const QString&      value );
+    void                bindByteArray       ( const size_t num, const QByteArray&   value );
+    void                bindJsonMap         ( const size_t num, const string_map_t& value );
+    void                bindMap             ( const size_t num, const string_map_t& value );
 
-    bool       getBoolColumn      ( const QString& name  ) const;
-    bool       getBoolColumn      ( const int      num   ) const;
-    int32_t    getInt32Column     ( const QString& name  ) const;
-    int32_t    getInt32Column     ( const int      num   ) const;
-    int64_t    getInt64Column     ( const QString& name  ) const;
-    int64_t    getInt64Column     ( const int      num   ) const;
-    float      getFloatColumn     ( const QString& name  ) const;
-    float      getFloatColumn     ( const int      num   ) const;
-    double     getDoubleColumn    ( const QString& name  ) const;
-    double     getDoubleColumn    ( const int      num   ) const;
-    QString    getStringColumn    ( const QString& name  ) const;
-    QString    getStringColumn    ( const int      num   ) const;
-    QByteArray getByteArrayColumn ( const char *   name  ) const;
-    QByteArray getByteArrayColumn ( const QString& name  ) const;
-    QByteArray getByteArrayColumn ( const int      num   ) const;
+    void                start               ( const bool block = true );
+    bool	            isReady             () const;
+    void                getQueryResult      ();
+    bool                nextRow             ();
+    bool                nextPage            ( const bool block = true );
+    void                end                 ();
 
-    string_map_t getJsonMapColumn ( const QString& name ) const;
-    string_map_t getJsonMapColumn ( const int num ) const;
-    string_map_t getMapColumn     ( const QString& name ) const;
-    string_map_t getMapColumn     ( const int num ) const;
+    bool                getBoolColumn       ( const QString& name  ) const;
+    bool                getBoolColumn       ( const int      num   ) const;
+    int32_t             getInt32Column      ( const QString& name  ) const;
+    int32_t             getInt32Column      ( const int      num   ) const;
+    int64_t             getInt64Column      ( const QString& name  ) const;
+    int64_t             getInt64Column      ( const int      num   ) const;
+    float               getFloatColumn      ( const QString& name  ) const;
+    float               getFloatColumn      ( const int      num   ) const;
+    double              getDoubleColumn     ( const QString& name  ) const;
+    double              getDoubleColumn     ( const int      num   ) const;
+    QString             getStringColumn     ( const QString& name  ) const;
+    QString             getStringColumn     ( const int      num   ) const;
+    QByteArray          getByteArrayColumn  ( const char *   name  ) const;
+    QByteArray          getByteArrayColumn  ( const QString& name  ) const;
+    QByteArray          getByteArrayColumn  ( const int      num   ) const;
+
+    string_map_t        getJsonMapColumn    ( const QString& name ) const;
+    string_map_t        getJsonMapColumn    ( const int num ) const;
+    string_map_t        getMapColumn        ( const QString& name ) const;
+    string_map_t        getMapColumn        ( const int num ) const;
 
 private slots:
-    void onQueryFinishedTimer();
+    void                onQueryFinishedTimer();
 
 signals:
-    void queryFinished( QCassandraQuery::pointer_t q );
-    void threadQueryFinished( QCassandraQuery::pointer_t q );
+    void                queryFinished( QCassandraQuery::pointer_t q );
+    void                threadQueryFinished( QCassandraQuery::pointer_t q );
 
 private:
     // Current query
     //
     QCassandraSession::pointer_t   f_session;
+    QString                        f_description;
     QString                        f_queryString;
     CassTools::statement_pointer_t f_queryStmt;
     CassTools::future_pointer_t    f_sessionFuture;
@@ -131,15 +135,15 @@ private:
     int64_t						   f_timestamp = 0;
     int64_t						   f_timeout = 0;
 
-    void 		    setStatementConsistency();
-    void 		    setStatementTimestamp();
-    bool 		    getBoolFromValue      ( const CassValue* value ) const;
-    QByteArray      getByteArrayFromValue ( const CassValue* value ) const;
-    string_map_t    getMapFromValue       ( const CassValue* value ) const;
-    void            throwIfError          ( const QString& msg     );
+    void 		        setStatementConsistency();
+    void 		        setStatementTimestamp();
+    bool 		        getBoolFromValue      ( const CassValue* value ) const;
+    QByteArray          getByteArrayFromValue ( const CassValue* value ) const;
+    string_map_t        getMapFromValue       ( const CassValue* value ) const;
+    void                throwIfError          ( const QString& msg     );
 
-    void			fireQueryTimer();
-    static void		queryCallbackFunc( CassFuture* future, void *data );
+    void			    fireQueryTimer();
+    static void		    queryCallbackFunc( CassFuture* future, void *data );
 };
 
 

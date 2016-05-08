@@ -148,6 +148,25 @@ QCassandraQuery::~QCassandraQuery()
 }
 
 
+/** \brief Description of query instance.
+ *
+ * This property allows the user to set and read a string
+ * description pertaining to a particular instance of a query.
+ * This can be useful if you have a list of queries you are
+ * referencing and want to output details to the user as to
+ * which one is returning status.
+ */
+const QString& QCassandraQuery::description() const
+{
+    return f_description;
+}
+
+void QCassandraQuery::setDescription( const QString& val )
+{
+    f_description = val;
+}
+
+
 /** \brief Current consistency level
  *
  * The default is CONSISTENCY_LEVEL_DEFAULT, which leaves the level to whatever
