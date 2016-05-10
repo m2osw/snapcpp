@@ -559,6 +559,8 @@ void snap_firewall::run()
     //
     f_server_name = f_opt.get_string("server-name").c_str();
 
+    SNAP_LOG_INFO("--------------------------------- snapfirewall started on ")(f_server_name);
+
     // connect to Cassandra and get a pointer to our firewall table
     //
     {
@@ -1113,8 +1115,6 @@ int main(int argc, char * argv[])
         // create an instance of the snap_firewall object
         //
         snap_firewall firewall( argc, argv );
-
-        SNAP_LOG_INFO("--------------------------------- snapfirewall started.");
 
         // Now run!
         //

@@ -521,6 +521,7 @@ public:
     bool                        failed() const;
     int                         get_wait_interval() const;
     int                         get_recovery() const;
+    int                         get_priority() const;
     bool                        service_may_have_died();
 
     bool                        operator < (service const & rhs) const;
@@ -551,10 +552,10 @@ private:
     bool                        f_debug = false;
     bool                        f_required = false;
     int                         f_stopping = 0;
-    QString                     f_snapcommunicator_addr;         // to connect with snapcommunicator
-    int                         f_snapcommunicator_port = 0;     // to connect with snapcommunicator
-    QString                     f_snapdbproxy_addr;     // to connect with snapdbproxy
-    int                         f_snapdbproxy_port = 0; // to connect with snapdbproxy
+    QString                     f_snapcommunicator_addr;            // to connect with snapcommunicator
+    int                         f_snapcommunicator_port = 4040;     // to connect with snapcommunicator
+    QString                     f_snapdbproxy_addr;                 // to connect with snapdbproxy
+    int                         f_snapdbproxy_port = 4042;          // to connect with snapdbproxy
     int                         f_priority = DEFAULT_PRIORITY;
     int                         f_cron = 0;             // if 0, then off (i.e. not a cron task)
 };
@@ -1922,7 +1923,7 @@ bool service::run()
         if(snapdbproxy_service)
         {
             args.push_back("--snapdbproxy");
-            args.push_back(si->get_snapdbproxy_service()->get_snapdbproxy_string());
+            args.push_back(snapdbproxy_service->get_snapdbproxy_string());
         }
 
         if( f_debug )
@@ -1950,7 +1951,7 @@ bool service::run()
             {
                 if(*s == '"' || *s == '\'')
                 {
-                    if(start != s)
+                    if(s > start)
                     {
                         args.push_back(std::string(start, s - start));
                     }
@@ -1972,7 +1973,10 @@ bool service::run()
                 }
                 else if(isspace(*s))
                 {
-                    args.push_back(std::string(start, s - start));
+                    if(s > start)
+                    {
+                        args.push_back(std::string(start, s - start));
+                    }
                     // skip all the spaces at once (and avoid empty
                     // arguments too!)
                     //
@@ -1999,15 +2003,17 @@ bool service::run()
         // execv() needs plain string pointers
         std::vector<char const *> args_p;
         //
-        for( auto arg : args )
+        for( auto const & a : args )
         {
-            args_p.push_back(arg.c_str());
+            args_p.push_back(a.c_str());
         }
         //
         args_p.push_back(nullptr);
 
         // Quiet up the console by redirecting these from/to /dev/null
         // except in debug mode
+        //
+        // TODO: handle returned results...
         //
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
@@ -2021,7 +2027,7 @@ bool service::run()
         // Execute the child processes
         //
         execv(
-            args[0].c_str(),
+            args_p[0],
             const_cast<char * const *>(&args_p[0])
         );
 #pragma GCC diagnostic pop
@@ -2030,7 +2036,7 @@ bool service::run()
         //
         std::string command_line;
         bool first(true);
-        for(auto a : args)
+        for(auto const & a : args)
         {
             if(first)
             {
@@ -2101,19 +2107,19 @@ std::string service::get_connect_string() const
 }
 
 
-/** \brief Generate the addr:port information of the connection service.
+/** \brief Generate the addr:port information of the snapdbproxy service.
  *
  * This function gives us the address and port used to connect to the
- * connection service.
+ * snapdbproxy service.
  *
- * This is generally the snapcommunicator service. The default IP and
- * port are 127.0.0.1:4040.
+ * The default IP and port are 127.0.0.1:4042. It is defined in your
+ * snapinit.xml file.
  *
  * The function returns a string based on those two parameters. The
  * string is passed to all the services when they are started by the
  * snapinit daemon.
  *
- * \return The address and port of the connection service.
+ * \return The address and port of the snapdbproxy service.
  */
 std::string service::get_snapdbproxy_string() const
 {
@@ -2532,6 +2538,21 @@ int service::get_recovery() const
 }
 
 
+/** \brief Retrieve the priority of this service.
+ *
+ * Before we attempt to wake up each service, we sort them
+ * by priority. This is the value being used.
+ *
+ * The smaller a priority is, the sooner a service gets started.
+ *
+ * \return The priority, a number between -100 and +100.
+ */
+int service::get_priority() const
+{
+    return f_priority;
+}
+
+
 /** \brief Services are expected to be sorted by priority.
  *
  * This function compares 'this' priority against the 'rhs'
@@ -2680,7 +2701,7 @@ void snap_init::init()
     }
     else
     {
-        SNAP_LOG_INFO("---------------- snapinit manager started on ")(f_server_name);
+        SNAP_LOG_INFO("--------------------------------- snapinit manager started on ")(f_server_name);
 
         if( f_opt.is_defined( "--" ) )
         {
@@ -2987,7 +3008,10 @@ void snap_init::xml_to_services(QDomDocument doc, QString const & xml_services_f
 
     // sort those services by priority
     //
-    std::sort(f_service_list.begin(), f_service_list.end());
+    // unfortunately, the following will sort items by pointer if
+    // we were not specifying our own sort function
+    //
+    std::sort(f_service_list.begin(), f_service_list.end(), [](service::pointer_t const a, service::pointer_t const b){ return *a < *b; });
 }
 
 
@@ -3622,25 +3646,21 @@ service::pointer_t snap_init::get_connection_service() const
 }
 
 
-/** \brief Retrieve the service used to inter-connect services.
+/** \brief Retrieve the service used to connect to the Cassandra cluster.
  *
  * This function returns the information about the server that is
- * used to inter-connect services together. This should be the
- * snapcommunicator service.
+ * used to connect to the Cassandra cluster.
  *
- * \exception std::logic_error
- * The function raises that exception if it gets called too soon
- * (i.e. before a connection service is found in the XML file.)
+ * This should be the snapdbproxy service.
  *
- * \return A smart pointer to the connection service.
+ * Because a computer may not run snapdbproxy, this function may
+ * return a null pointer. (i.e. although snapdbproxy is marked
+ * as required, it can still be disabled.)
+ *
+ * \return A smart pointer to the snapdbproxy service.
  */
 service::pointer_t snap_init::get_snapdbproxy_service() const
 {
-    if(!f_snapdbproxy_service)
-    {
-        throw std::logic_error("connection service requested before it was defined.");
-    }
-
     return f_snapdbproxy_service;
 }
 

@@ -139,7 +139,7 @@ namespace
         }
     };
 }
-//namespace
+// no name namespace
 
 
 class snap_cgi

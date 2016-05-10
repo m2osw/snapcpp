@@ -266,9 +266,14 @@ class remote_snap_communicator;
 typedef std::shared_ptr<remote_snap_communicator>           remote_snap_communicator_pointer_t;
 typedef QMap<QString, remote_snap_communicator_pointer_t>   remote_snap_communicator_list_t;
 
+class gossip_to_remote_snap_communicator;
+typedef std::shared_ptr<gossip_to_remote_snap_communicator> gossip_snap_communicator_pointer_t;
+typedef QMap<QString, gossip_snap_communicator_pointer_t>   gossip_snap_communicator_list_t;
+
 
 
 class remote_communicator_connections
+        : public std::enable_shared_from_this<remote_communicator_connections>
 {
 public:
     typedef std::shared_ptr<remote_communicator_connections>    pointer_t;
@@ -278,6 +283,7 @@ public:
     void                add_remote_communicator(QString const & addr);
     void                too_busy(QString const & addr);
     void                start();
+    void                gossip_received(QString const & addr);
 
 private:
     snap_communicator_server_pointer_t  f_communicator_server;
@@ -285,6 +291,7 @@ private:
     bool                                f_started = false;
     QMap<QString, int>                  f_all_ips;
     remote_snap_communicator_list_t     f_smaller_ips;      // we connect to smaller IPs
+    gossip_snap_communicator_list_t     f_gossip_ips;
     service_connection_list_t           f_larger_ips;       // larger IPs connect to us
 };
 
@@ -627,10 +634,170 @@ public:
     virtual void                process_message(snap::snap_communicator_message const & message);
     virtual void                process_connection_failed(std::string const & error_message);
     virtual void                process_connected();
+};
+
+
+
+/** \brief To send a GOSSIP to a remote snapcommunicator.
+ *
+ * This class defines a connection used to send a GOSSIP message
+ * to a remote communicator. Once the GOSSIP worked at least once,
+ * this connection gets deleted.
+ *
+ * This connection is a timer, it manages an actual TCP/IP connection
+ * which it attempts to create every now and then. This is because
+ * we do not want to use too many resources to attempt to connect
+ * to a computer which is down. (i.e. we use a thread to attempt
+ * the connection since it can take forever if it does not work; i.e.
+ * inter-computer socket connections may timeout after a minute or
+ * two!)
+ *
+ * For the feat we use our 'permanent message connection.' This is
+ * very well adapted. We just need to make sure to remove the
+ * connection once we received confirmation the the GOSSIP message
+ * was received by the remote host.
+ */
+class gossip_to_remote_snap_communicator
+    : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
+{
+public:
+    std::shared_ptr<gossip_to_remote_snap_communicator> pointer_t;
+
+    static int64_t const        FIRST_TIMEOUT = 5LL * 1000000L;  // 5 seconds before first attempt
+
+                                gossip_to_remote_snap_communicator(remote_communicator_connections::pointer_t rcs, QString const & addr, int port);
+
+    // snap_connection implementation
+    virtual void                process_timeout();
+
+    // snap_tcp_client_permanent_message_connection implementation
+    virtual void                process_message(snap::snap_communicator_message const & message);
+    virtual void                process_connected();
+
+    void                        kill();
 
 private:
-    snap_communicator_server::pointer_t         f_communicator_server;
+    QString const               f_addr;
+    int const                   f_port = 0;
+    int64_t                     f_wait = FIRST_TIMEOUT;
+    remote_communicator_connections::pointer_t f_remote_communicators;
 };
+
+
+/** \brief Initialize the gossip remote communicator connection.
+ *
+ * This object is actually a timer. Each time we get a tick
+ * (i.e. process_timeout() callback gets called), a connection
+ * is attempted against the remote snapcommunicator daemon
+ * specified by the addr and port parameters.
+ *
+ * The addr and port are both mandatory to this constructor.
+ *
+ * \param[in] cs  The snap communicator server object which we contact
+ *                whenever the GOSSIP message was confirmed by the
+ *                remote connection.
+ * \param[in] addr  The IP address of the remote snap communicator.
+ * \param[in] port  The port to connect to that snap communicator.
+ */
+gossip_to_remote_snap_communicator::gossip_to_remote_snap_communicator(remote_communicator_connections::pointer_t rcs, QString const & addr, int port)
+    : snap_tcp_client_permanent_message_connection(
+                addr.toUtf8().data(),
+                port,
+                tcp_client_server::bio_client::mode_t::MODE_PLAIN,
+                -FIRST_TIMEOUT,  // must be negative so first timeout is active (otherwise we get an immediately attempt, which we do not want in this case)
+                true)
+    , f_addr(addr)
+    , f_port(port)
+    //, f_wait(FIRST_TIMEOUT) -- auto-init
+    , f_remote_communicators(rcs)
+{
+}
+
+
+/** \brief Process one timeout.
+ *
+ * We do not really have anything to do when a timeout happens. The
+ * connection attempts are automatically done by the permanent
+ * connection in the snap_communicator library.
+ *
+ * However, we want to increase the delay between attempts. For that,
+ * we use this function and double the delay on each timeout until
+ * it reaches about 1h. Then we stop doubling that delay. If the
+ * remote snapcommunicator never makes it, we won't swamp the network
+ * by false attempts to connect to a dead computer.
+ *
+ * \todo
+ * We need to let the snapwatchdog know that such remote connections
+ * fail for X amount of time. This is important to track what's
+ * missing in the cluster (Even if we likely will have other means
+ * to know of the problem.)
+ */
+void gossip_to_remote_snap_communicator::process_timeout()
+{
+    snap_tcp_client_permanent_message_connection::process_timeout();
+
+    // increase the delay on each timeout until we reach 1h and then
+    // repeat every 1h or so (i.e. if you change the FIRST_TIMEOUT
+    // you may not reach exactly 1h here, also the time it takes
+    // to try to connect is added to the delay each time.)
+    //
+    if(f_wait < 3600LL * 1000000LL)
+    {
+        f_wait *= 2;
+        set_timeout_delay(f_wait);
+    }
+}
+
+
+/** \brief Process the reply from our GOSSIP message.
+ *
+ * This function processes any messages received from the remote
+ * system.
+ *
+ * We currently really only expect RECEIVED as a reply.
+ *
+ * \param[in] message  The message received from the remote snapcommunicator.
+ */
+void gossip_to_remote_snap_communicator::process_message(snap::snap_communicator_message const & message)
+{
+    SNAP_LOG_TRACE("gossip connection received a message [")(message.to_message())("]");
+
+    QString const & command(message.get_command());
+    if(command == "RECEIVED")
+    {
+        // we got confirmation that the GOSSIP went across
+        //
+        f_remote_communicators->gossip_received(f_addr);
+    }
+}
+
+
+/** \brief Once connected send the GOSSIP message.
+ *
+ * This function gets called whenever the connection is finally up.
+ * This gives us the opportunity to send the GOSSIP message to the
+ * remote host.
+ *
+ * Note that at this time this happens in the main thread. The
+ * secondary thread was used to call the connect() function, but
+ * it is not used to send or receive any messages.
+ */
+void gossip_to_remote_snap_communicator::process_connected()
+{
+    snap_tcp_client_permanent_message_connection::process_connected();
+
+    // we are connected so we can send the GOSSIP message
+    // (each time we reconnect!)
+    //
+    snap::snap_communicator_message gossip;
+    gossip.set_command("GOSSIP");
+    send_message(gossip); // do not cache, if we lose the connection, we lose the message and that's fine in this case
+}
+
+
+
+
+
 
 
 
@@ -700,7 +867,7 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
         // TBD: this may be normal (i.e. neighbors should send us our IP
         //      right back to us!)
         //
-        SNAP_LOG_ERROR("address of remote snapcommunicator, \"")(addr_port)("\", is the same as my address, which is not valid.");
+        SNAP_LOG_ERROR("address of remote snapcommunicator, \"")(addr_port)("\", is the same as my address, which means it is not remote.");
         return;
     }
 
@@ -739,11 +906,28 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
             SNAP_LOG_ERROR("new remote connection could not be added to the snap_communicator list of connections");
         }
     }
-    // else -- larger IPs start connections with us
-    //
-    //         TODO: we probably need to hit them once, to make sure they
-    //               know we exist... with a message such as GOSSIP
-    //
+    else //if(remote_addr != f_my_address) -- already tested at the beginning of the function
+    {
+        // in case the remote snapcommunicator has a larger address
+        // it is expected to CONNECT to us; however, it may not yet
+        // know about us so we want to send a GOSSIP message; this
+        // means creating a special connection which attempts to
+        // send the GOSSIP message up until it succeeds or the
+        // application quits
+        //
+        f_gossip_ips[addr].reset(new gossip_to_remote_snap_communicator(shared_from_this(), addr, port));
+
+        if(!snap::snap_communicator::instance()->add_connection(f_gossip_ips[addr]))
+        {
+            // this should never happens here since each new creates a
+            // new pointer
+            //
+            // TBD: should we lose that connection from the f_gossip_ips
+            //      map since it is not going to be used?
+            //
+            SNAP_LOG_ERROR("new gossip connection could not be added to the snap_communicator list of connections");
+        }
+    }
 }
 
 
@@ -796,6 +980,17 @@ void remote_communicator_connections::start()
         }
     }
 }
+
+
+void remote_communicator_connections::gossip_received(QString const & addr)
+{
+    f_gossip_ips[addr].reset();
+}
+
+
+
+
+
 
 
 /** \brief Listen for messages.
@@ -1188,7 +1383,7 @@ void snap_communicator_server::init()
     }
     // remote
     {
-        QString addr("0.0.0.0"); // the default is quite permissive here...
+        QString addr("0.0.0.0");
         int port(4040);
         tcp_client_server::get_addr_port(f_server->get_parameter("listen"), addr, port, "tcp");
 
@@ -1196,11 +1391,19 @@ void snap_communicator_server::init()
         // 127.0.0.1 we skip on this one, we do not need two listener
         // on the local IP address
         //
+        // \todo
+        // Test with a proper mask because 127.0.0.2 is also a local "home"
+        // address which is useless here
+        //
         if(addr != "127.0.0.1")
         {
             f_listener.reset(new listener(shared_from_this(), addr.toUtf8().data(), port, max_pending_connections, false, f_server_name));
             f_listener->set_name("snap communicator listener");
             f_communicator->add_connection(f_listener);
+        }
+        else
+        {
+            SNAP_LOG_WARNING("remote \"listen\" parameter is \"")(addr)("\" so it is ignored and no remote connections will be possible.");
         }
     }
 
@@ -1282,11 +1485,11 @@ void snap_communicator_server::verify_command(base_connection::pointer_t connect
     if(c)
     {
         SNAP_LOG_FATAL("connection \"")(c->get_name())("\" does not understand ")(message.get_command())(".");
-        throw snap::snap_exception(QString("Connection %1 does not implement the command %2.").arg(c->get_name()).arg(message.get_command()));
+        throw snap::snap_exception(QString("Connection \"%1\" does not implement command \"%2\".").arg(c->get_name()).arg(message.get_command()));
     }
 
     SNAP_LOG_FATAL("connection does not understand ")(message.get_command())(".");
-    throw snap::snap_exception(QString("Connection does not implement the command %1.").arg(message.get_command()));
+    throw snap::snap_exception(QString("Connection does not implement command \"%1\".").arg(message.get_command()));
 }
 
 
@@ -1312,7 +1515,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
 {
     {
         QString const received_message(message.to_message());
-        if(received_message.indexOf("snaplock") == -1
+        if(received_message.indexOf(":snaplock ") == -1
         && received_message.indexOf(":lock_") == -1)
         {
             SNAP_LOG_TRACE("received a message [")(received_message)("]");
@@ -1362,7 +1565,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     {
                         // we have to have a remote or service connection here
                         //
-                        throw snap::snap_exception("HELP sent on a \"weird\" connection.");
+                        throw snap::snap_exception(QString("message \"%1\" sent on a \"weird\" connection.").arg(command));
                     }
                 }
 
@@ -1393,7 +1596,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     //
                     if(!message.has_parameter("types"))
                     {
-                        SNAP_LOG_ERROR("ACCEPT was received without a \"type\" parameter, which is mandatory.");
+                        SNAP_LOG_ERROR("ACCEPT was received without a \"types\" parameter, which is mandatory.");
                         return;
                     }
                     base->set_connection_types(canonicalize_server_types(message.get_parameter("types")));
@@ -1421,6 +1624,26 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // refresh our cache
                     //
                     refresh_heard_of();
+
+                    // also request the COMMANDS of this connection
+                    //
+                    snap::snap_communicator_message help;
+                    help.set_command("HELP");
+                    //verify_command(base, help); -- precisely
+                    if(remote_communicator)
+                    {
+                        remote_communicator->send_message(help);
+                    }
+                    else if(service_conn)
+                    {
+                        service_conn->send_message(help);
+                    }
+                    else
+                    {
+                        // we have to have a remote or service connection here
+                        //
+                        throw snap::snap_exception(QString("message \"%1\" sent on a \"weird\" connection.").arg(command));
+                    }
                     return;
                 }
             }
@@ -1460,10 +1683,22 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                                 SNAP_LOG_FATAL("connection \"")(connection->get_name())("\" does not understand QUITTING.");
                                 ok = false;
                             }
-                            if(!base->understand_command("READY"))
+                            // on a remote we get ACCEPT instead of READY
+                            if(remote_communicator)
                             {
-                                SNAP_LOG_FATAL("connection \"")(connection->get_name())("\" does not understand READY.");
-                                ok = false;
+                                if(!base->understand_command("ACCEPT") && !remote_communicator)
+                                {
+                                    SNAP_LOG_FATAL("connection \"")(connection->get_name())("\" does not understand ACCEPT.");
+                                    ok = false;
+                                }
+                            }
+                            else
+                            {
+                                if(!base->understand_command("READY") && !remote_communicator)
+                                {
+                                    SNAP_LOG_FATAL("connection \"")(connection->get_name())("\" does not understand READY.");
+                                    ok = false;
+                                }
                             }
                             if(!base->understand_command("STOP"))
                             {
@@ -1472,7 +1707,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                             }
                             if(!base->understand_command("UNKNOWN"))
                             {
-                                SNAP_LOG_FATAL("connection \"")(connection->get_name())("\" does not understand STOP.");
+                                SNAP_LOG_FATAL("connection \"")(connection->get_name())("\" does not understand UNKNOWN.");
                                 ok = false;
                             }
                             if(!ok)
@@ -1481,7 +1716,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                                 // problems (this is only if --debug was
                                 // specified)
                                 //
-                                throw snap::snap_exception("Connection %1 does not implement some required commands.");
+                                throw snap::snap_exception(QString("Connection %1 does not implement some required commands.").arg(connection->get_name()));
                             }
                         }
                     }
@@ -1505,10 +1740,11 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // first we verify that we have a valid version to
                     // communicate between two snapcommunicators
                     //
-                    if(!message.has_parameter("type")
-                    && !message.has_parameter("version"))
+                    if(!message.has_parameter("types")
+                    || !message.has_parameter("version")
+                    || !message.has_parameter("my_address"))
                     {
-                        SNAP_LOG_ERROR("CONNECT was sent without a \"type\" and/or a \"version\" parameter, both are mandatory.");
+                        SNAP_LOG_ERROR("CONNECT was sent without a \"types\", \"version\", or \"my_address\" parameter, both are mandatory.");
                         return;
                     }
                     if(message.get_integer_parameter("version") != snap::snap_communicator::VERSION)
@@ -1528,7 +1764,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     //       behavior accordingly. Both IP addresses have
                     //       to be different and on the same network.
 
-                    // always retrieve the connection type
+                    // always retrieve the connection types
                     //
                     base->set_connection_types(canonicalize_server_types(message.get_parameter("types")));
 
@@ -1598,16 +1834,40 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         {
                             reply.add_parameter("heard_of", f_services_heard_of);
                         }
+
+                        // since we are accepting a CONNECT we have to make
+                        // sure we cancel the GOSSIP events to that remote
+                        // connection; it won't hurt, but it is a waste if
+                        // we do not need it
+                        //
+                        // Note: the name of the function is "GOSSIP"
+                        //       received because if the "RECEIVED"
+                        //       message was sent back from that remote
+                        //       snapcommunicator then it means that
+                        //       remote daemon received our GOSSIP message
+                        //       and receiving the "CONNECT" message is
+                        //       very similar to receiving the "RECEIVED"
+                        //       message after a "GOSSIP"
+                        //
+                        f_remote_snapcommunicators->gossip_received(message.get_parameter("my_address"));
                     }
 
-                    verify_command(base, reply);
+                    //verify_command(base, reply); -- we do not yet have a list of commands understood by the other snapcommunicator daemon
+
+                    // also request the COMMANDS of this connection
+                    //
+                    snap::snap_communicator_message help;
+                    help.set_command("HELP");
+                    //verify_command(base, help); -- precisely
                     if(remote_communicator)
                     {
                         remote_communicator->send_message(reply);
+                        remote_communicator->send_message(help);
                     }
                     else if(service_conn)
                     {
                         service_conn->send_message(reply);
+                        service_conn->send_message(help);
                     }
                     else
                     {
@@ -1615,6 +1875,10 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         //
                         throw snap::snap_exception("CONNECT sent on a \"weird\" connection.");
                     }
+
+                    // status changed for this connection
+                    //
+                    send_status(connection);
                     return;
                 }
             }
@@ -1705,9 +1969,9 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     reply.set_command("COMMANDS");
 
                     // list of commands understood by snapcommunicator
-                    reply.add_parameter("list", "ACCEPT,CONNECT,COMMANDS,DISCONNECT,HELP,LOG,QUITTING,REFUSE,REGISTER,SERVICES,SHUTDOWN,STOP,UNREGISTER");
+                    reply.add_parameter("list", "ACCEPT,COMMANDS,CONNECT,DISCONNECT,GOSSIP,HELP,LOG,QUITTING,REFUSE,REGISTER,SERVICES,SHUTDOWN,STOP,UNKNOWN,UNREGISTER");
 
-                    verify_command(base, reply);
+                    //verify_command(base, reply); -- this verification does not work with remote snap communicator connections
                     if(remote_communicator)
                     {
                         remote_communicator->send_message(reply);
@@ -2005,8 +2269,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     QString const save_name(connection->get_name());
                     connection->set_name("");
 
-                    // also remove the connection type, an empty type
-                    // represents an unconnected item
+                    // also remove all the connection types
+                    // an empty string represents an unconnected item
                     //
                     base->set_connection_types("");
 
@@ -2155,6 +2419,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // ignore the error because this can come from an
                     // external source (i.e. snapsignal) where an end
                     // user may try to break the whole system!
+                    //
                     SNAP_LOG_DEBUG("snapcommunicator failed to send a message to connection \"")
                                   (conn->get_name())
                                   ("\" (error: ")
@@ -2536,7 +2801,7 @@ void snap_communicator_server::shutdown(bool full)
                         }
                         else
                         {
-                            // STOP means we do not shutdown the entire cluster
+                            // DISCONNECT means only we are going down
                             reply.set_command("DISCONNECT");
                         }
                     }
@@ -2576,7 +2841,9 @@ void snap_communicator_server::process_connected(snap::snap_communicator::snap_c
 {
     snap::snap_communicator_message connect;
     connect.set_command("CONNECT");
+    connect.add_parameter("version", snap::snap_communicator::VERSION);
     connect.add_parameter("types", f_server_types);
+    connect.add_parameter("my_address", f_server->get_parameter("my_address"));
     if(!f_explicit_neighbors.isEmpty())
     {
         connect.add_parameter("neighbors", f_explicit_neighbors);
@@ -2680,7 +2947,7 @@ int main(int argc, char * argv[])
         s->prepare_qtapp( argc, argv );
 
         // show when we started in the log
-        SNAP_LOG_INFO("--------------------------------- snapcommunicator started.");
+        SNAP_LOG_INFO("--------------------------------- snapcommunicator started on ")(s->get_parameter("server_name"));
 
         // Run the snap communicator server; note that the snapcommunicator
         // server is snap_communicator and not snap::server

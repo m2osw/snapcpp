@@ -163,6 +163,10 @@ public:
     // TODO: remove once snapcommunicator is used
     typedef QSharedPointer<udp_client_server::udp_server>   udp_server_t;
 
+    typedef uint32_t                            config_flags_t;
+
+    static config_flags_t const                 SNAP_SERVER_CONFIG_OPTIONAL_SERVER_NAME = 0x01;
+
     class backend_action
     {
     public:
@@ -232,7 +236,7 @@ public:
     bool                is_logging_server() const { return f_using_logging_server; }
     static size_t       thread_count();
     void                set_default_config_filename(QString const & filename) { f_config_filename = filename; }
-    void                config( int argc, char * argv[] );
+    void                config( int argc, char * argv[], config_flags_t flags = 0 );
     void                set_translation(QString const xml_data);
     QString             get_parameter(QString const & param_name) const;
     void                set_parameter( QString const & param_name, QString const & value );

@@ -2038,7 +2038,9 @@ void snap_communicator::snap_signal::process()
  *              // this function gets called when the thread is about
  *              // to exit or has exited; since the write to the pipe
  *              // happens before the thread really exited, but should
- *              // near the very end, you should be fine.
+ *              // be near the very end, you should be fine calling the
+ *              // snap_thread::stop() function to join with it very
+ *              // quickly.
  *              ...
  *          }
  *          ...
@@ -2057,6 +2059,11 @@ void snap_communicator::snap_signal::process()
  *      // around here, in the timeline, the process_read() function
  *      // gets called
  * \endcode
+ *
+ * \todo
+ * Change the implementation to use eventfd() instead of pipe2().
+ * Pipes are using more resources and are slower to use than
+ * an eventfd.
  */
 snap_communicator::snap_thread_done_signal::snap_thread_done_signal()
 {
@@ -4152,7 +4159,7 @@ public:
             //
             snap_communicator::instance()->add_connection(f_messager);
 
-            // if some signals were cached, process them immediately
+            // if some messages were cached, process them immediately
             //
             while(!f_message_cache.empty())
             {
@@ -4278,9 +4285,14 @@ private:
  * timer is used again to attempt a new connection. It will be reused
  * as long as the connection fails (as a delay). It has to be at least
  * 10 microseconds, although really you should not use less than 1
- * second (1000000). You may set the pause parameter to -1 in which case
+ * second (1000000). You may set the pause parameter to 0 in which case
  * you are responsible to set the delay (by default there will be no
  * delay and thus the timer will never time out.)
+ *
+ * To start with a delay, instead of trying to connect immediately,
+ * you may pass a negative pause parameter. So for example to get the
+ * first attempt 5 seconds after you created this object, you use
+ * -5000000LL as the pause parameter.
  *
  * The \p use_thread parameter determines whether the connection should
  * be attempted in a thread (asynchroneously) or immediately (which means
@@ -4293,14 +4305,14 @@ private:
  * \param[in] port  The port to listen on.
  * \param[in] mode  The mode to use to open the connection.
  * \param[in] pause  The amount of time to wait before attempting a new
- *                   connection after a failure, in microseconds, or -1.
+ *                   connection after a failure, in microseconds, or 0.
  * \param[in] use_thread  Whether a thread is used to connect to the
  *                        server.
  */
 snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client_permanent_message_connection(std::string const & address, int port, tcp_client_server::bio_client::mode_t mode, int64_t const pause, bool const use_thread)
-    : snap_timer(0)
+    : snap_timer(pause < 0 ? -pause : 0)
     , f_impl(new snap_tcp_client_permanent_message_connection_impl(this, address, port, mode))
-    , f_pause(pause)
+    , f_pause(llabs(pause))
     , f_use_thread(use_thread)
 {
 }
@@ -4412,7 +4424,7 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_ti
     if(f_pause > 0)
     {
         set_timeout_delay(f_pause);
-        f_pause = -1;
+        f_pause = 0;
     }
 
     if(f_use_thread)

@@ -344,6 +344,19 @@ void snapdbproxy::usage(advgetopt::getopt::status_t status)
 }
 
 
+/** \brief Retrieve the server name.
+ *
+ * This function returns a copy of the server name. Since the constructor
+ * defines the server name, it is available at all time after that.
+ *
+ * \return The server name.
+ */
+QString snapdbproxy::server_name() const
+{
+    return f_server_name;
+}
+
+
 /** \brief Start the Snap! Communicator and wait for events.
  *
  * This function initializes the snapdbproxy object further and then

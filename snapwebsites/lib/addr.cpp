@@ -441,7 +441,7 @@ std::string addr::get_ipv4_string(bool include_port) const
                 std::stringstream result;
                 result << buf;
                 result << ":";
-                result << f_address.sin6_port;
+                result << ntohs(f_address.sin6_port);
                 return result.str();
             }
             return std::string(buf);
@@ -499,7 +499,7 @@ std::string addr::get_ipv6_string(bool include_port, bool include_brackets) cons
         if(include_port)
         {
             result << ":";
-            result << f_address.sin6_port;
+            result << ntohs(f_address.sin6_port);
         }
         return result.str();
     }
@@ -522,7 +522,7 @@ std::string addr::get_ipv6_string(bool include_port, bool include_brackets) cons
  * \param[in] include_port  Whether the port should be added at the end of
  *            the string.
  * \param[in] include_brackets  Whether the square bracket characters
- *            should be included at all.
+ *            should be included at all (ipv6 only).
  *
  * \return The addr object converted to an IPv4 or an IPv6 address.
  */
@@ -540,13 +540,13 @@ std::string addr::get_ipv4or6_string(bool include_port, bool include_brackets) c
 
 /** \brief Retrieve the port.
  *
- * This function retrieves the port of the IP address.
+ * This function retrieves the port of the IP address in host order.
  *
  * \return The port defined along this address.
  */
 int addr::get_port() const
 {
-    return f_address.sin6_port;
+    return ntohs(f_address.sin6_port);
 }
 
 

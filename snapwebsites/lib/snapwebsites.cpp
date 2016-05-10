@@ -391,7 +391,7 @@ namespace
             0,
             "prepare-cassandra",
             nullptr,
-            "Create the cassandra \"domans\" and \"websites\" tables and exit. This should not be used anymore since that feature was moved to the snapmanager instead.",
+            "Create the cassandra \"domains\" and \"websites\" tables and exit. This should not be used anymore since that feature was moved to the snapmanager instead.",
             advgetopt::getopt::optional_argument
         },
         {
@@ -721,8 +721,6 @@ server::server()
     f_parameters["qs_action"]      = "a";
     f_parameters["qs_hit"]         = "hit";
     f_parameters["server_name"]    = "";
-    f_parameters["wait_interval"]  = "5";  // default: 1 second
-    f_parameters["wait_max_tries"] = "-1"; // default: indefinite wait
 }
 
 
@@ -867,10 +865,16 @@ void server::show_version()
  * may want to record the configuration file errors and log them
  * if we can still properly initialize the logger.
  *
+ * Suported flags are:
+ *
+ * \li SNAP_SERVER_CONFIG_OPTIONAL_SERVER_NAME -- if set the name of the server
+ *     is optional for that run (i.e. snapsignal)
+ *
  * \param[in] argc  The number of arguments in argv.
  * \param[in] argv  The array of argument strings.
+ * \param[in] flags  A set of flags defining the behavior of the funciton.
  */
-void server::config(int argc, char * argv[])
+void server::config(int argc, char * argv[], uint32_t flags)
 {
     // Stop on these signals, log them, then terminate.
     //
@@ -952,7 +956,7 @@ void server::config(int argc, char * argv[])
             int const p(param.indexOf('='));
             if(p == -1)
             {
-                SNAP_LOG_FATAL() << "fatal error: unexpected parameter \"--param " << f_opt->get_string("param", idx) << "\". No '=' found in the parameter definition. (in server::config())";
+                SNAP_LOG_FATAL("unexpected parameter \"--param ")(f_opt->get_string("param", idx))("\". No '=' found in the parameter definition. (in server::config())");
                 syslog(LOG_CRIT, "unexpected parameter \"--param %s\". No '=' found in the parameter definition. (in server::config())", f_opt->get_string("param", idx).c_str());
                 help = true;
             }
@@ -977,7 +981,7 @@ void server::config(int argc, char * argv[])
         {
             // If not backend, "--filename" is not currently useful.
             //
-            SNAP_LOG_FATAL() << "fatal error: unexpected standalone parameter \"" << filename << "\", server not started. (in server::config())";
+            SNAP_LOG_FATAL("unexpected standalone parameter \"")(filename)("\", server not started. (in server::config())");
             syslog( LOG_CRIT, "unexpected standalone parameter \"%s\", server not started. (in server::config())", filename.c_str() );
             help = true;
         }
@@ -1019,7 +1023,7 @@ void server::config(int argc, char * argv[])
         {
             // If not backend, "--cron-action" does not make sense.
             //
-            SNAP_LOG_FATAL("fatal error: unexpected command line option \"--cron-action ")(cron_action)("\", server not started as backend. (in server::config())");
+            SNAP_LOG_FATAL("unexpected command line option \"--cron-action ")(cron_action)("\", server not started as backend. (in server::config())");
             syslog( LOG_CRIT, "unexpected command line option \"--cron-action %s\", server not started as backend. (in server::config())", cron_action.c_str() );
             help = true;
         }
@@ -1051,7 +1055,11 @@ void server::config(int argc, char * argv[])
         syslog( LOG_CRIT, "%s", msg );
         exit(1);
     }
-    f_parameters["server_name"] = f_opt->get_string( "server-name" ).c_str();
+    if((flags & SNAP_SERVER_CONFIG_OPTIONAL_SERVER_NAME) == 0
+    || f_opt->is_defined("server-name"))
+    {
+        f_parameters["server_name"] = f_opt->get_string( "server-name" ).c_str();
+    }
 
     // the name of the snapcommunicator is optional, but it cannot appear in the config file
     //
@@ -1079,7 +1087,15 @@ void server::config(int argc, char * argv[])
         syslog( LOG_CRIT, "%s", msg );
         exit(1);
     }
-    f_parameters["snapdbproxy_listen"] = f_opt->get_string("snapdbproxy").c_str();
+    if(f_opt->is_defined( "snapdbproxy" ))
+    {
+        // the information is optional for snapcommunicator (At least)
+        // which may be running on a system where we do not want to
+        // run snapdbproxy; you may also use the <option> tag to
+        // specified the --snapdbproxy ... info
+        //
+        f_parameters["snapdbproxy_listen"] = f_opt->get_string("snapdbproxy").c_str();
+    }
 
     // Finally we can initialize the log system
     //
@@ -1125,10 +1141,10 @@ void server::config(int argc, char * argv[])
     }
 
 #ifdef SNAP_NO_FORK
-    SNAP_LOG_WARNING() << "SNAP_NO_FORK is defined! This is NOT a production-ready build!";
+    SNAP_LOG_WARNING("SNAP_NO_FORK is defined! This is NOT a production-ready build!");
     if( f_opt->is_defined("nofork") )
     {
-        SNAP_LOG_INFO() << "--nofork specified: snap_child will not fork and server will terminate.";
+        SNAP_LOG_INFO("--nofork specified: snap_child will not fork and server will terminate.");
         f_nofork = true;
     }
 #endif
@@ -1982,6 +1998,8 @@ void listener_impl::process_accept()
  */
 void server::listen()
 {
+    SNAP_LOG_INFO("--------------------------------- snapserver started on ")(f_parameters["server_name"]);
+
     // offer the user to setup the maximum number of pending connections
     long max_pending_connections(-1);
     bool ok;
@@ -2107,7 +2125,7 @@ void server::listen()
     }
 
     // the server was successfully started
-    SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"" + f_parameters["server_name"] + "\" started.");
+    SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(f_parameters["server_name"])("\" started.");
 
     // run until we get killed
     g_connection->f_communicator->run();

@@ -498,7 +498,7 @@ public:
     private:
         std::shared_ptr<snap_tcp_client_permanent_message_connection_impl>
                                     f_impl;
-        int64_t                     f_pause = -1;
+        int64_t                     f_pause = 0;
         bool const                  f_use_thread = true;
         bool                        f_done = false;
     };

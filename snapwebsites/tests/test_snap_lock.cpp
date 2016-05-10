@@ -231,16 +231,16 @@ int main(int argc, char *argv[])
         pid_t const child(fork());
         if(child == 0)
         {
-            // the child connects to Cassandra
-            QString cassandra_addr("127.0.0.1");
-            int cassandra_port(9042);
-            tcp_client_server::get_addr_port(cassandra_host, cassandra_addr, cassandra_port, "tcp");
-            QtCassandra::QCassandraSession::pointer_t cassandra_session(QtCassandra::QCassandraSession::create());
-            cassandra_session->connect(cassandra_addr, cassandra_port);
-            std::cout << "+ Cassandra Cluster for child " << getpid() << " ready." << std::endl;
-
             try
             {
+                // the child connects to Cassandra
+                QString cassandra_addr("127.0.0.1");
+                int cassandra_port(9042);
+                tcp_client_server::get_addr_port(cassandra_host, cassandra_addr, cassandra_port, "tcp");
+                QtCassandra::QCassandraSession::pointer_t cassandra_session(QtCassandra::QCassandraSession::create());
+                cassandra_session->connect(cassandra_addr, cassandra_port);
+                std::cout << "+ Cassandra Cluster for child " << getpid() << " ready." << std::endl;
+
                 for(int r(0); r < repeat; ++r)
                 {
                     sleep(1);
@@ -291,6 +291,11 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            catch(tcp_client_server::tcp_client_server_parameter_error const & e)
+            {
+                std::cerr << "tcp_client_server::tcp_client_server_parameter_error exception occurred: " << e.what() << std::endl;
+                exit(1);
+            }
             catch(std::exception const & e)
             {
                 std::cerr << "!!! exception [" << getpid() << "]: " << e.what() << std::endl;
@@ -326,7 +331,6 @@ int main(int argc, char *argv[])
 
     // all good!
     exit(0);
-
 }
 
 // vim: ts=4 sw=4 et
