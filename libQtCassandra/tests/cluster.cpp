@@ -40,54 +40,64 @@
 
 int main(int argc, char *argv[])
 {
-    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
+    try
+    {
+        QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
 
-    qDebug() << "+ libQtCassandra version" << cassandra->version();
+        qDebug() << "+ libQtCassandra version" << cassandra->version();
 
-    const char *host("localhost");
-    for(int i(1); i < argc; ++i) {
-        if(strcmp(argv[i], "--help") == 0) {
-            qDebug() << "Usage:" << argv[0] << "[-h <hostname>]";
-            exit(1);
-        }
-        if(strcmp(argv[i], "-h") == 0) {
-            ++i;
-            if(i >= argc) {
-                qDebug() << "error: -h must be followed by a hostname.";
+        const char *host("localhost");
+        for(int i(1); i < argc; ++i) {
+            if(strcmp(argv[i], "--help") == 0) {
+                qDebug() << "Usage:" << argv[0] << "[-h <hostname>]";
                 exit(1);
             }
-            host = argv[i];
-        }
-    }
-
-    cassandra->connect(host);
-    QString name = cassandra->clusterName();
-    qDebug() << "+ Cassandra Cluster Name is" << name;
-
-    for( auto context : cassandra->contexts() )
-    {
-        QString context_name = context->contextName();
-        qDebug() << "  + Context Name" << context_name;
-        for( const auto& pair : context->fields() )
-        {
-            qDebug() << "    + " << pair.first << " = " << pair.second.output();
+            if(strcmp(argv[i], "-h") == 0) {
+                ++i;
+                if(i >= argc) {
+                    qDebug() << "error: -h must be followed by a hostname.";
+                    exit(1);
+                }
+                host = argv[i];
+            }
         }
 
-        // Test to make sure we get a NULL pointer when we try to retrieve an undefined table
-        //QSharedPointer<QtCassandra::QCassandraTable> tbl = context->table("random");
-        //qDebug() << " --- tbl" << tbl.isNull();
-        for( auto table : context->tables() )
-        {
-            qDebug() << "      + Table" << table->tableName()
-                     //<< "/" << table->identifier()
-                     << " (From Context" << table->contextName() << ")";
+        cassandra->connect(host);
+        QString name = cassandra->clusterName();
+        qDebug() << "+ Cassandra Cluster Name is" << name;
 
-            for( const auto& pair : table->fields() )
+        for( auto context : cassandra->contexts() )
+        {
+            QString context_name = context->contextName();
+            qDebug() << "  + Context Name" << context_name;
+            for( const auto& pair : context->fields() )
             {
-                qDebug() << "        + " << pair.first << " = " << pair.second.output();
+                qDebug() << "    + " << pair.first << " = " << pair.second.output();
+            }
+
+            // Test to make sure we get a NULL pointer when we try to retrieve an undefined table
+            //QSharedPointer<QtCassandra::QCassandraTable> tbl = context->table("random");
+            //qDebug() << " --- tbl" << tbl.isNull();
+            for( auto table : context->tables() )
+            {
+                qDebug() << "      + Table" << table->tableName()
+                         //<< "/" << table->identifier()
+                         << " (From Context" << table->contextName() << ")";
+
+                for( const auto& pair : table->fields() )
+                {
+                    qDebug() << "        + " << pair.first << " = " << pair.second.output();
+                }
             }
         }
     }
+    catch(std::overflow_error const & e)
+    {
+        qDebug() << "std::overflow_error caught -- " << e.what();
+        exit(1);
+    }
+
+    return 0;
 }
 
 // vim: ts=4 sw=4 et
