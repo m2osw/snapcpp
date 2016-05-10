@@ -43,6 +43,11 @@
 using namespace QtCassandra;
 using namespace QCassandraSchema;
 
+namespace
+{
+    const int g_paging_size = 10;
+}
+
 snap_manager::snap_manager(QWidget *snap_parent)
     : QMainWindow(snap_parent)
 {
@@ -630,7 +635,6 @@ void snap_manager::context_is_valid()
     f_reset_websites_index->setEnabled(true);
 
     // TODO: call these functions when their respective tab is clicked instead!
-    loadHosts();
     loadDomains();
     loadSites();
 
@@ -702,6 +706,11 @@ void snap_manager::cassandraDisconnectButton_clicked()
 
 void snap_manager::do_top_query()
 {
+    if( f_queryStack.empty() )
+    {
+        return;
+    }
+
     auto& top(f_queryStack.top());
     connect( top.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onQueryFinished );
     top->start( false );
@@ -713,12 +722,12 @@ void snap_manager::onQueryFinished( QCassandraQuery::pointer_t q )
     QListWidget * console = getChild<QListWidget>(this, "cassandraConsole");
     try
     {
-        console->addItem("Query finished!");
+        console->addItem( QString("%1 has finished!").arg(q->description()) );
         q->getQueryResult();
     }
     catch( const std::exception& ex )
     {
-        console->addItem("Query Error:" + ex.what() );
+        console->addItem( QString("Query Error: [%1]").arg(ex.what()) );
         QMessageBox::critical( this, tr("Query Error!"), ex.what() );
     }
 
@@ -727,7 +736,7 @@ void snap_manager::onQueryFinished( QCassandraQuery::pointer_t q )
     f_queryStack.pop();
     if( f_queryStack.empty() )
     {
-        console->addItem("Query set done!");
+        console->addItem("Context created!");
         context_is_valid();
         return;
     }
@@ -775,6 +784,7 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     console->addItem("Create \"" + context_name + "\" context.");
 
     auto query( std::make_shared<QCassandraQuery>( f_session ) );
+    query->setDescription( QString("Create %1 context").arg(context_name) );
 
     QString query_str( QString("CREATE KEYSPACE %1\n")
         .arg(context_name)
@@ -836,6 +846,7 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
     console->addItem("Create \"" + table_name + "\" table.");
 
     auto query( std::make_shared<QCassandraQuery>( f_session ) );
+    query->setDescription( QString("Create %1 table: [%2]").arg(table_name).arg(comment) );
 
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString query_str( QString("CREATE TABLE %1.%2\n")
@@ -860,117 +871,168 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
 
 void snap_manager::reset_domains_index()
 {
-    // get the table and delete the index row if it exists
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const domain_table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(domain_table_name));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
-    if(table->exists(row_index_name))
-    {
-        // if the index exists, drop it so we can restart from scratch
-        table->dropRow(row_index_name);
-    }
 
-    // go through all the domain rows
-    int count(0);
-    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
-    column_predicate->setCellKey("core::rules"); // get one column to avoid getting all!
-    auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
-    row_predicate->setCellPredicate(column_predicate);
-    for(;;)
-    {
-        uint32_t max(table->readRows(row_predicate));
-        if(max == 0)
-        {
-            break;
-        }
-        const QtCassandra::QCassandraRows& rows(table->rows());
-        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
-                o != rows.end(); ++o)
-        {
-            // we do not care about the cells, what's important is the name
-            // of the domain and of this row
-            (*table)[row_index_name][o.key()] = QtCassandra::QCassandraValue();
-            ++count;
-        }
-    }
+    auto query( std::make_shared<QCassandraQuery>(f_session) );
+    query->setDescription( "Drop index row in domain table." );
+    query->query( QString("DELETE FROM %1.%2 WHERE key = ? IF EXISTS")
+                  .arg(context_name)
+                  .arg(domain_table_name)
+                  ,1);
+    query->bindByteArray( 0, row_index_name.toUtf8() );
+    f_queryStack.push( query );
 
-    QMessageBox msg(QMessageBox::Information, "Reset Domains Index", QString("The domains index was reset with %1 entries.").arg(count), QMessageBox::Ok, this);
-    msg.exec();
+    query = std::make_shared<QCassandraQuery>(f_session);
+    query->setDescription("Reset all domain rules");
+    query->query( QString("UPDATE %1.%2 SET value = ? WHERE column1 = ?")
+                  .arg(context_name)
+                  .arg(domain_table_name)
+                  ,2);
+    size_t num = 0;
+    query->bindByteArray( num++, ""             );
+    query->bindByteArray( num++, "core::rules"  );
+    f_queryStack.push( query );
+
+    QMessageBox msg
+              ( QMessageBox::Question
+              , "About to Reset Domains Index"
+              , QString("About to reset domains index. Do you want to continue?")
+              , QMessageBox::Yes | QMessageBox::No
+              , this
+              );
+    if( msg.exec() == QMessageBox::Yes )
+    {
+        do_top_query();
+    }
+    else
+    {
+        // Abort the operation
+        //
+        f_queryStack.pop();
+        f_queryStack.pop();
+    }
 }
 
 void snap_manager::reset_websites_index()
 {
-    QString const domain_table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-    QtCassandra::QCassandraTable::pointer_t domain_table(f_context->findTable(domain_table_name));
-
-    // get the table and delete the index row if it exists
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
-    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
-    if(table->exists(row_index_name))
+
+    auto query( std::make_shared<QCassandraQuery>(f_session) );
+    query->setDescription( "Drop index row in websites table." );
+    query->query( QString("DELETE FROM %1.%2 WHERE key = ? IF EXISTS")
+                  .arg(context_name)
+                  .arg(table_name)
+                  ,1);
+    query->bindByteArray( 0, row_index_name.toUtf8() );
+    f_queryStack.push( query );
+
+    query = std::make_shared<QCassandraQuery>(f_session);
+    query->setDescription("Reset all domain rules");
+    query->query( QString("SELECT row,column1,value FROM %1.%2 WHERE column1 = ?")
+                  .arg(context_name)
+                  .arg(table_name)
+                  ,1);
+    query->setPagingSize(g_paging_size);
+    query->bindByteArray( 0, QString("core::rules").toUtf8() );
+    connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onResetWebsites );
+    f_queryStack.push( query );
+    query->start(false);
+
+    f_domains_to_check.clear();
+}
+
+
+void snap_manager::onResetWebsites( QCassandraQuery::pointer_t q )
+{
+    while( q->nextRow() )
     {
-        // if the index exists, drop it so we can restart from scratch
-        table->dropRow(row_index_name);
+        const QByteArray row_key( q->getByteArrayColumn("key") );
+        const QString    website_name( QString::fromUtf8(row_key.data()) );
+
+        tld_result r;
+        tld_info info;
+        const char *d = row_key.data();
+        r = tld(d, &info);
+        if(r != TLD_RESULT_SUCCESS)
+        {
+            QMessageBox msg(QMessageBox::Critical, "Invalid TLD in Domain Name", "The TLD of this domain: \"" + website_name + "\" is not valid. This entry will be skipped.", QMessageBox::Ok, this);
+            msg.exec();
+            continue; // ignore entry
+        }
+        const char *domain = d; // by default assume no sub-domain
+        for(; d < info.f_tld; ++d)
+        {
+            if(*d == '.')
+            {
+                domain = d + 1;
+            }
+        }
+
+        f_domains_to_check.push_back(domain);
     }
 
-    // go through all the website rows
-    int count(0);
-    auto column_predicate(std::make_shared<QtCassandra::QCassandraCellKeyPredicate>());
-    column_predicate->setCellKey("core::rules"); // get one column to avoid getting all!
-    auto row_predicate(std::make_shared<QtCassandra::QCassandraRowPredicate>());
-    row_predicate->setCellPredicate(column_predicate);
-    for(;;)
+    if( q->nextPage( false ) )
     {
-        uint32_t const max(table->readRows(row_predicate));
-        if(max == 0)
+        return;
+    }
+
+    f_queryStack.pop();
+
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
+
+    auto meta( SessionMeta::create(f_session) );
+    meta->loadSchema();
+    const auto& keyspaces( meta->getKeyspaces() );
+    auto iter( keyspaces.find(context_name) );
+    if( iter == keyspaces.end() )
+    {
+        QMessageBox::critical
+                ( this
+                  , "Context Not Found!"
+                  , "The Snap Websites context has not been created!"
+                  , QMessageBox::Ok
+                  );
+        return;
+    }
+
+    const auto& snap_keyspace_meta( iter->second );
+    const auto& tables( snap_keyspace_meta->getTables() );
+
+    for( auto domain : f_domains_to_check )
+    {
+        if( tables.find( domain ) == tables.end() )
         {
-            break;
-        }
-        const QtCassandra::QCassandraRows& rows(table->rows());
-        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
-                o != rows.end(); ++o)
-        {
-            // we do not care about the cells, what's important is the name
-            // of the domain and of this row
-            QByteArray row_key(o.key());
-            QString website_name(QString::fromUtf8(row_key.data()));
-            tld_result r;
-            tld_info info;
-            const char *d = row_key.data();
-            r = tld(d, &info);
-            if(r != TLD_RESULT_SUCCESS)
+            QMessageBox msg
+                    ( QMessageBox::Critical
+                      , "Unknown Domain Name"
+                      , "The domain \"" + domain + "\" is not defined, but there are website(s) that have it. You won't be able to access this entry unless you create that domain. Should I delete that entry?"
+                      , QMessageBox::Yes | QMessageBox::No
+                      , this
+                      );
+            const auto choice(msg.exec());
+            if( choice == QMessageBox::Yes )
             {
-                QMessageBox msg(QMessageBox::Critical, "Invalid TLD in Domain Name", "The TLD of this domain: \"" + website_name + "\" is not valid. This entry will be skipped.", QMessageBox::Ok, this);
-                msg.exec();
-                continue; // ignore entry
+                auto query( std::make_shared<QCassandraQuery>(f_session) );
+                query->setDescription( QString("Drop domain %1 from websites table.").arg(domain) );
+                query->query( QString("DELETE FROM %1.%2 WHERE key = ? IF EXISTS")
+                              .arg(context_name)
+                              .arg(table_name)
+                              ,1);
+                query->bindByteArray( 0, domain.toUtf8() );
+                f_queryStack.push( query );
             }
-            const char *domain = d; // by default assume no sub-domain
-            for(; d < info.f_tld; ++d)
-            {
-                if(*d == '.')
-                {
-                    domain = d + 1;
-                }
-            }
-            // check that the domain still exists, if not, offer the user
-            // to delete that entry, it won't be used (or even accessible)
-            if(!domain_table->exists(QString(domain)))
-            {
-                QMessageBox msg(QMessageBox::Critical, "Unknown Domain Name", "The domain for website: \"" + website_name + "\" is not defined. You won't be able to access this entry unless you create that domain. Should I delete that entry?", QMessageBox::Yes | QMessageBox::No, this);
-                int choice(msg.exec());
-                if(choice == QMessageBox::Yes)
-                {
-                    table->dropRow(row_key);
-                    continue;
-                }
-            }
-            (*table)[row_index_name][QString(domain) + "::" + website_name] = QtCassandra::QCassandraValue();
-            ++count;
         }
     }
 
-    QMessageBox msg(QMessageBox::Information, "Reset Websites Index", QString("The websites index was reset with %1 entries.").arg(count), QMessageBox::Ok, this);
-    msg.exec();
+    if( !f_domains_to_check.empty() )
+    {
+        do_top_query();
+    }
 }
 
 void snap_manager::initialize_website()
@@ -983,307 +1045,61 @@ void snap_manager::initialize_website()
     f_initialize_website_window->show();
 }
 
-void snap_manager::loadHosts()
-{
-    // we just checked to know whether the table existed so it cannot fail here
-    // however the index table could be missing...
-    f_host_list->clear();
-
-    QString const table_name(f_context->lockTableName());
-    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-    if( !table )
-    {
-        QString const msg( tr("Table '%1' was not found in the current context. At this time this warning normally happens on first initialization.").arg(table_name) );
-        QMessageBox::warning( this, tr("Warning: Lock Table Missing!"), msg );
-        return;
-    }
-
-    QtCassandra::QCassandraRow::pointer_t row(table->row(f_context->lockHostsKey()));
-
-    QtCassandra::QCassandraCellPredicate::pointer_t hosts_predicate;
-    QString filter(f_host_filter_string->text());
-    if(filter.length() != 0)
-    {
-        auto cell_range_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
-        // assign the filter only if not empty
-        cell_range_predicate->setStartCellKey(filter);
-        cell_range_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
-        hosts_predicate = std::static_pointer_cast<QtCassandra::QCassandraCellPredicate>(cell_range_predicate);
-    }
-    row->clearCache(); // remove any previous load results
-    row->readCells(hosts_predicate);
-
-    // now we have a list of rows to read as defined in row->Cells()
-    const QtCassandra::QCassandraCells& row_keys(row->cells());
-
-    for(QtCassandra::QCassandraCells::const_iterator it(row_keys.begin());
-        it != row_keys.end();
-        ++it)
-    {
-        // the cell key is actually the row name which is the host name
-        // which is exactly what we want to display in our list!
-        f_host_list->addItem(it.key());
-    }
-
-    // at first some of the entries are disabled
-    // until a select is made or New is clicked
-    f_host_name->setEnabled(false);
-    f_host_org_name = ""; // not editing, this is new
-    f_host_name->setText("");
-    f_host_save->setEnabled(false);
-    f_host_cancel->setEnabled(false);
-    f_host_delete->setEnabled(false);
-
-    // allow user to go to that tab
-    f_tabs->setTabEnabled(TAB_HOSTS, true);
-}
-
-void snap_manager::on_hostList_itemClicked(QListWidgetItem *item)
-{
-    // same host? if so, skip on it
-    if(f_host_org_name == item->text() && !f_host_org_name.isEmpty())
-    {
-        return;
-    }
-
-    // check whether the current info was modified
-    if(!hostChanged())
-    {
-        // user canceled his action
-        // TODO: we need to reset the item selection...
-        QList<QListWidgetItem *> items(f_host_list->findItems(f_host_org_name, Qt::MatchExactly));
-        if(items.count() > 0)
-        {
-            f_host_list->setCurrentItem(items[0]);
-        }
-        else
-        {
-            f_host_list->clearSelection();
-        }
-        return;
-    }
-
-    f_host_org_name = item->text();
-    f_host_name->setText(f_host_org_name);
-
-    hostWithSelection();
-}
-
-void snap_manager::on_hostNew_clicked()
-{
-    // check whether the current info was modified
-    if(!hostChanged())
-    {
-        // user canceled his action
-        return;
-    }
-
-    f_host_list->clearSelection();
-
-    f_host_org_name = ""; // not editing, this is new
-    f_host_name->setText("");
-
-    hostWithSelection();
-    f_host_delete->setEnabled(false);
-
-    f_host_name->setFocus(Qt::OtherFocusReason);
-}
-
-void snap_manager::on_hostSave_clicked()
-{
-    QString const name(f_host_name->text());
-    if(name.isEmpty())
-    {
-        QMessageBox msg(QMessageBox::Critical, "Name Missing", "You cannot create a new host entry without giving the host a valid name.", QMessageBox::Ok, this);
-        msg.exec();
-        return;
-    }
-    if(name != f_host_org_name)
-    {
-        // make sure the host name is correct (i.e. [a-zA-Z0-9_]+)
-        int const max(name.length());
-        for(int i(0); i < max; ++i)
-        {
-            int c(name[i].unicode());
-            if((c < 'a' || c > 'z')
-            && (c < 'A' || c > 'Z')
-            && (c < '0' || c > '9' || i == 0) // cannot start with a digit
-            && c != '_')
-            {
-                QMessageBox msg(QMessageBox::Critical, "Invalid Host Name", "The host name must only be composed of letters, digits, and underscores, also it cannot start with a digit ([0-9a-zA-Z_]+)", QMessageBox::Ok, this);
-                msg.exec();
-                return;
-            }
-        }
-
-        // host name is considered valid for now
-        try
-        {
-            f_context->addLockHost(name);
-
-            // the data is now in the database, add it to the table too
-            if(f_host_org_name == "")
-            {
-                f_host_list->addItem(name);
-
-                // make sure we select that item too
-                QList<QListWidgetItem *> items(f_host_list->findItems(name, Qt::MatchExactly));
-                if(items.count() > 0)
-                {
-                    f_host_list->setCurrentItem(items[0]);
-                }
-            }
-
-            f_host_org_name = name;
-
-            hostWithSelection();
-        }
-        catch( const std::exception& except )
-        {
-            QMessageBox::critical( this, tr("Thrift Error!"), except.what() );
-        }
-        catch( ... )
-        {
-            QMessageBox::critical( this, tr("Unknown Error!"), tr("The error was undefined!") );
-        }
-    }
-}
-
-void snap_manager::on_hostCancel_clicked()
-{
-    // check whether the current info was modified
-    if(!hostChanged())
-    {
-        // user canceled his action
-        return;
-    }
-
-    // restore the original values
-    f_host_name->setText(f_host_org_name);
-
-    if(f_host_org_name.length() == 0)
-    {
-        // if we had nothing selected, reset everything
-        f_host_name->setEnabled(false);
-        f_host_save->setEnabled(false);
-        f_host_cancel->setEnabled(false);
-        f_host_delete->setEnabled(false);
-    }
-}
-
-void snap_manager::on_hostDelete_clicked()
-{
-    QString name(f_host_name->text());
-
-    // verify that the user really wants to delete this host
-    QMessageBox msg(QMessageBox::Critical, "Delete Host", "<font color=\"red\"><b>WARNING:</b></font> You are about to delete host \"" + name + "\". Are you absolutely sure you want to do that?", QMessageBox::Ok | QMessageBox::Cancel, this);
-    int choice = msg.exec();
-    if(choice != QMessageBox::Ok)
-    {
-        return;
-    }
-
-    f_context->removeLockHost(name);
-
-    delete f_host_list->currentItem();
-
-    f_host_list->clearSelection();
-
-    // mark empty
-    f_host_org_name = "";
-    f_host_name->setText("");
-
-    // in effect we just lost our selection
-    f_host_name->setEnabled(false);
-    f_host_save->setEnabled(false);
-    f_host_cancel->setEnabled(false);
-    f_host_delete->setEnabled(false);
-}
-
-void snap_manager::hostWithSelection()
-{
-    // now there is a selection, everything is enabled
-    f_host_name->setEnabled(true);
-    f_host_save->setEnabled(true);
-    f_host_cancel->setEnabled(true);
-    f_host_delete->setEnabled(true);
-}
-
-bool snap_manager::hostChanged()
-{
-    // if something changed we want to warn the user before going further
-    if(f_host_org_name != f_host_name->text())
-    {
-        QMessageBox msg(QMessageBox::Critical, "Host Name Modified", "You made changes to this entry and did not Save it yet. Do you really want to continue? If you click Ok you will lose your changes.", QMessageBox::Ok | QMessageBox::Cancel, this);
-        int choice = msg.exec();
-        if(choice != QMessageBox::Ok)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void snap_manager::on_hostFilter_clicked()
-{
-    // make sure the user did not change something first
-    if(hostChanged())
-    {
-        // user is okay with losing changes or did not make any
-        // the following applies the filter (Apply button)
-        loadHosts();
-    }
-}
-
 void snap_manager::loadDomains()
 {
     // we just checked to know whether the table existed so it cannot fail here
     // however the index table could be missing...
     f_domain_list->clear();
 
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-    if( !table )
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+
+    auto query = std::make_shared<QCassandraQuery>(f_session);
+    query->setDescription( "Retrieving domains" );
+    query->query( QString("SELECT column1 FROM %1.%2 WHERE key = ?" )
+                  .arg(context_name)
+                  .arg(table_name)
+                  ,1);
+    query->setPagingSize(g_paging_size);
+    query->bindByteArray( 0, row_index_name.toUtf8() );
+    connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadDomains );
+    f_queryStack.push( query );
+    query->start(false);
+}
+
+void snap_manager::onLoadDomains( QCassandraQuery::pointer_t q )
+{
+    try
     {
-        QString msg( tr("The table '%1' was not found in the current context. Are you sure the context is set up correctly?").arg(table_name) );
-        QMessageBox::critical( this, tr("Error!"), msg );
+        q->getQueryResult();
+    }
+    catch( const std::exception& ex )
+    {
+        const QString errmsg( QString("Cannot execute query! Error=[%1]").arg(ex.what()) );
+        QMessageBox::critical
+                ( this
+                , "Database Error!"
+                , errmsg
+                , QMessageBox::Ok
+                );
+        QListWidget *console = getChild<QListWidget>(this, "snapServerConsole");
+        console->addItem(errmsg);
         return;
     }
 
-    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
-    if(!table->exists(row_index_name))
+    while( q->nextRow() )
     {
-        // if the index doesn't exist, no rows were ever saved anyway,
-        // so that's it!
-        //return; -- if we're connected we need to run the whole thing anyway
+        f_domain_list->addItem( q->getByteArrayColumn(0) );
     }
-    QtCassandra::QCassandraRow::pointer_t row(table->row(row_index_name));
 
-    QtCassandra::QCassandraCellPredicate::pointer_t domain_predicate;
-    QString const filter(f_domain_filter_string->text());
-    if(filter.length() != 0)
+    if( q->nextPage( false ) )
     {
-        // assign the filter only if not empty
-        auto cell_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
-        cell_predicate->setStartCellKey(filter);
-        cell_predicate->setEndCellKey(filter + QtCassandra::QCassandraCellPredicate::last_char);
-        domain_predicate = std::static_pointer_cast<QtCassandra::QCassandraCellPredicate>(cell_predicate);
+        // Return and we'll process the next waiting query
+        return;
     }
-    row->clearCache(); // remove any previous load results
-    row->readCells(domain_predicate);
 
-    // now we have a list of rows to read as defined in row->Cells()
-    const QtCassandra::QCassandraCells& row_keys(row->cells());
-
-    for(QtCassandra::QCassandraCells::const_iterator it(row_keys.begin());
-        it != row_keys.end();
-        ++it)
-    {
-        // the cell key is actually the row name which is the domain name
-        // which is exactly what we want to display in our list!
-        f_domain_list->addItem(it.key());
-    }
+    f_queryStack.pop();
 
     // at first some of the entries are disabled
     // until a select is made or New is clicked
@@ -1379,14 +1195,46 @@ void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)
     f_domain_org_name = item->text();
     f_domain_name->setText(f_domain_org_name);
 
-    // IMPORTANT: note that f_domain_org_name changed to the item->text() value
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-    QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-    QtCassandra::QCassandraRow::pointer_t row(table->row(f_domain_org_name));
-    if(row->exists(QString("core::original_rules")))
+
+    auto query = std::make_shared<QCassandraQuery>(f_session);
+    query->setDescription( QString("Retrieving rules for domain [%1]").arg(f_domain_org) );
+    query->query( QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?" )
+                  .arg(context_name)
+                  .arg(table_name)
+                  ,2);
+    size_t num = 0;
+    query->bindByteArray( num++, f_domain_org.toUtf8() );
+    query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
+    connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadDomain );
+    f_queryStack.push( query );
+    query->start(false);
+}
+
+void snap_manager::onLoadDomain( QCassandraQuery::pointer_t q )
+{
+    try
     {
-        QtCassandra::QCassandraValue rules((*table)[f_domain_org_name][QString("core::original_rules")]);
-        f_domain_org_rules = rules.stringValue();
+        q->getQueryResult();
+    }
+    catch( const std::exception& ex )
+    {
+        const QString errmsg( QString("Cannot execute query! Error=[%1]").arg(ex.what()) );
+        QMessageBox::critical
+                ( this
+                , "Database Error!"
+                , errmsg
+                , QMessageBox::Ok
+                );
+        QListWidget *console = getChild<QListWidget>(this, "snapServerConsole");
+        console->addItem(errmsg);
+        return;
+    }
+
+    if( q->nextRow() )
+    {
+        f_domain_org_rules = q->getStringColumn(0);
     }
     else
     {
@@ -1395,8 +1243,10 @@ void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)
     }
     f_domain_rules->setText(f_domain_org_rules);
 
+    f_queryStack.pop();
     domainWithSelection();
 }
+
 
 void snap_manager::on_domainNew_clicked()
 {
@@ -1477,61 +1327,154 @@ void snap_manager::on_domainSave_clicked()
             return;
         }
 
+        QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
         QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
 
-        if(name != f_domain_org_name)
-        {
-            // user is creating a new entry, so we want to prevent
-            // overwriting an existing entry
-            if(table->exists(name))
-            {
-                // got the row, check whether the "core::original_rules" exists
-                QtCassandra::QCassandraRow::pointer_t row(table->row(name));
-                if(row->exists(QString("core::original_rules")))
-                {
-                    if(f_domain_org_name.isEmpty())
-                    {
-                        QMessageBox msg(QMessageBox::Critical, "Domain Name already defined", "You asked to create a new Domain Name and yet you specified a Domain Name that is already defined in the database. Please change the Domain Name or Cancel and then edit the existing name.", QMessageBox::Ok, this);
-                        msg.exec();
-                    }
-                    else
-                    {
-                        QMessageBox msg(QMessageBox::Critical, "Domain Name already defined", "You asked to create a new Domain Name and yet you specified a Domain Name that is already defined in the database. Please change the Domain Name or Cancel and then edit the existing name.", QMessageBox::Ok, this);
-                        msg.exec();
-                    }
-                    return;
-                }
-            }
-        }
-
-        // save in the index
-        QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
-        (*table)[row_index_name][name] = QtCassandra::QCassandraValue();
-
-        // it worked
-        (*table)[name][QString("core::original_rules")] = QtCassandra::QCassandraValue(rules);
-        (*table)[name][QString("core::rules")] = QtCassandra::QCassandraValue(compiled_rules);
-
-        // the data is now in the database, add it to the table too
-        if(f_domain_org_name == "")
-        {
-            f_domain_list->addItem(name);
-
-            // make sure we select that item too
-            QList<QListWidgetItem *> items(f_domain_list->findItems(name, Qt::MatchExactly));
-            if(items.count() > 0)
-            {
-                f_domain_list->setCurrentItem(items[0]);
-            }
-        }
-
-        f_domain_org_name = name;
-        f_domain_org_rules = rules;
-
-        domainWithSelection();
+        auto query = std::make_shared<QCassandraQuery>(f_session);
+        query->setDescription( QString("Retrieving rules for domain [%1] to see if it already exists").arg(name) );
+        query->query( QString("SELECT * FROM %1.%2 WHERE key = ? AND column1 = ?" )
+                      .arg(context_name)
+                      .arg(table_name)
+                      ,2);
+        size_t num = 0;
+        query->bindByteArray( num++, name.toUtf8() );
+        query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
+        connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onSaveDomain );
+        f_queryStack.push( query );
+        query->start(false);
     }
 }
+
+
+void snap_manager::onSaveDomain( QCassandraQuery::pointer_t q )
+{
+    try
+    {
+        q->getQueryResult();
+    }
+    catch( const std::exception& ex )
+    {
+        const QString errmsg( QString("Cannot execute query! Error=[%1]").arg(ex.what()) );
+        QMessageBox::critical
+                ( this
+                , "Database Error!"
+                , errmsg
+                , QMessageBox::Ok
+                );
+        QListWidget *console = getChild<QListWidget>(this, "snapServerConsole");
+        console->addItem(errmsg);
+        return;
+    }
+
+    f_queryStack.pop();
+
+    if( q->rowCount() > 0 )
+    {
+        if(f_domain_org_name.isEmpty())
+        {
+            // TODO: looks like the same message in both cases!
+            QMessageBox msg( QMessageBox::Critical
+                            , "Domain Name already defined"
+                            , "You asked to create a new Domain Name and yet you specified a Domain Name that is already defined in the database. Please change the Domain Name or Cancel and then edit the existing name."
+                            , QMessageBox::Ok
+                            , this
+                            );
+            msg.exec();
+        }
+        else
+        {
+            QMessageBox msg( QMessageBox::Critical
+                            , "Domain Name already defined"
+                            , "You asked to create a new Domain Name and yet you specified a Domain Name that is already defined in the database. Please change the Domain Name or Cancel and then edit the existing name."
+                            , QMessageBox::Ok
+                            , this
+                            );
+            msg.exec();
+        }
+        return;
+    }
+
+    QString const name(f_domain_name->text());
+    QString const rules(f_domain_rules->toPlainText());
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+
+    // save in the index
+    //(*table)[row_index_name][name] = QtCassandra::QCassandraValue();
+    //
+    auto query = std::make_shared<QCassandraQuery>(f_session);
+    query->setDescription( QString("Saving %1 into the domains index").arg(name) );
+    query->query( QString("INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" )
+                  .arg(context_name)
+                  .arg(table_name)
+                  ,3);
+    size_t num = 0;
+    query->bindByteArray( num++, row_index_name.toUtf8() );
+    query->bindByteArray( num++, name.toUtf8() );
+    query->bindByteArray( num++, QByteArray() );
+    f_queryStack.push( query );
+
+    // domain name is considered valid for now
+    // check the rules
+    snap::snap_uri_rules domain_rules;
+    QByteArray compiled_rules;
+    domain_rules.parse_domain_rules(rules, compiled_rules);
+
+    // (*table)[name][QString("core::original_rules")] = QtCassandra::QCassandraValue(rules);
+    query = std::make_shared<QCassandraQuery>(f_session);
+    query->setDescription( QString("Update core rules for %1").arg(name) );
+    query->query( QString("INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" )
+                  .arg(context_name)
+                  .arg(table_name)
+                  ,3);
+    num = 0;
+    query->bindByteArray( num++, name.toUtf8() );
+    query->bindByteArray( num++, QString("core::original::rules").toUtf8() );
+    query->bindByteArray( num++, rules.toUtf8() );
+    f_queryStack.push( query );
+
+    // (*table)[name][QString("core::rules")] = QtCassandra::QCassandraValue(compiled_rules);
+    query = std::make_shared<QCassandraQuery>(f_session);
+    query->setDescription( QString("Update core rules for %1").arg(name) );
+    query->query( QString("INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" )
+                  .arg(context_name)
+                  .arg(table_name),
+                  3);
+    num = 0;
+    query->bindByteArray( num++, name.toUtf8() );
+    query->bindByteArray( num++, QString("core::rules").toUtf8() );
+    query->bindByteArray( num++, compiled_rules.toUtf8() );
+    connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onFinishedSaveDomain );
+    f_queryStack.push( query );
+
+    do_top_query();
+}
+
+void snap_manager::onFinishedSaveDomain( QCassandraQuery::pointer_t q )
+{
+    QString const name(f_domain_name->text());
+    QString const rules(f_domain_rules->toPlainText());
+
+    // the data is now in the database, add it to the table too
+    if(f_domain_org_name == "")
+    {
+        f_domain_list->addItem(name);
+
+        // make sure we select that item too
+        QList<QListWidgetItem *> items(f_domain_list->findItems(name, Qt::MatchExactly));
+        if(items.count() > 0)
+        {
+            f_domain_list->setCurrentItem(items[0]);
+        }
+    }
+
+    f_domain_org_name  = name;
+    f_domain_org_rules = rules;
+
+    domainWithSelection();
+}
+
 
 void snap_manager::on_domainCancel_clicked()
 {
@@ -1557,79 +1500,132 @@ void snap_manager::on_domainCancel_clicked()
     }
 }
 
+
 void snap_manager::on_domainDelete_clicked()
 {
-    QString name(f_domain_name->text());
+    const QString name(f_domain_name->text());
 
     // verify that the user really wants to delete this domain
-    QMessageBox msg(QMessageBox::Critical, "Delete Domain", "<font color=\"red\"><b>WARNING:</b></font> You are about to delete domain \"" + name + "\" and ALL of its websites definitions. Are you absolutely sure you want to do that?", QMessageBox::Ok | QMessageBox::Cancel, this);
-    int choice = msg.exec();
-    if(choice != QMessageBox::Ok)
+    QMessageBox msg
+        ( QMessageBox::Critical
+        , "Delete Domain"
+        , "<font color=\"red\"><b>WARNING:</b></font> You are about to delete domain \"" + name + "\" and ALL of its websites definitions. Are you absolutely sure you want to do that?"
+        , QMessageBox::Ok | QMessageBox::Cancel
+        , this
+        );
+    if( msg.exec() != QMessageBox::Ok )
     {
         return;
     }
 
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
-    // delete all the sub-domains
+    auto query = std::make_shared<QCassandraQuery>(f_session);
+    query->setDescription( QString("Delete all sub-domains in index") );
+    query->query( QString("SELECT column1 FROM %1.%2 WHERE key = ?" )
+                  .arg(context_name)
+                  .arg(table_name)
+                  ,1);
+    size_t num = 0;
+    query->bindByteArray( num++, row_index_name.toUtf8() );
+    query->setPagingSize(g_paging_size);
+    connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onDeleteDomain );
+    f_queryStack.push( query );
+    query->start(false);
+}
+
+
+void snap_manager::onDeleteDomain( QCassandraQuery::pointer_t q )
+{
+    try
     {
-        QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
-        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-        if(table->exists(row_index_name))
-        {
-            QtCassandra::QCassandraRow::pointer_t row(table->row(row_index_name));
-
-            // Use a predicate to limit the list to the websites defined for that
-            // domain the start is the domain followed by :: (m2osw.com::) and
-            // the end is defined such as it encompasses all the possible websites
-            // for that domain (m2osw.com:;).
-            // Note that we're using our index row to read those entries because we do
-            // not force a sort on row keys.
-            auto domain_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
-            domain_predicate->setStartCellKey(name + "::");
-            domain_predicate->setEndCellKey(name + ":;"); // ';' > ':'
-            row->clearCache(); // remove any previous load results
-            row->readCells(domain_predicate);
-
-            // now we have a list of rows to read as defined in row->Cells()
-
-            int mid_pos(name.length() + 2);
-            const QtCassandra::QCassandraCells& row_keys(row->cells());
-            for(;;)
-            {
-                // because we do a delete, we have to check the cells
-                // reference on each iteration (we cannot use an iterator)
-                if(row_keys.isEmpty())
-                {
-                    break;
-                }
-
-                // drop all of those (in case there were errors, those should
-                // all get erased)
-                QString website_name(row_keys.begin().key());
-                row->dropCell(website_name);
-                if(website_name.length() > mid_pos)
-                {
-                    table->dropRow(website_name.mid(mid_pos));
-                }
-            }
-        }
+        q->getQueryResult();
+    }
+    catch( const std::exception& ex )
+    {
+        const QString errmsg( QString("Cannot execute query! Error=[%1]").arg(ex.what()) );
+        QMessageBox::critical
+                ( this
+                , "Database Error!"
+                , errmsg
+                , QMessageBox::Ok
+                );
+        QListWidget *console = getChild<QListWidget>(this, "snapServerConsole");
+        console->addItem(errmsg);
+        return;
     }
 
-    // remove from the list of domains
-    {
-        QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-        QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-        table->dropRow(name);
+    f_queryStack.pop();
 
-        // remove from the index too
-        QtCassandra::QCassandraRow::pointer_t row(table->findRow(row_index_name));
-        if(row)
+    std::vector<QByteArray> index_columns_to_drop;
+    QStringList website_rows_to_drop;
+    const QString name(f_domain_name->text());
+    const int mid_pos(name.length() + 2); // add the "::" to the end
+    while( q->nextRow() )
+    {
+        const QByteArray entry( q->getByteArrayColumn(0) );
+        index_columns_to_drop.push_back( entry );
+        const QString website_name( entry.data() );
+        if(website_name.length() > mid_pos)
         {
-            row->dropCell(f_domain_name->text());
+            website_rows_to_drop << website_name.mid(mid_pos);
         }
     }
+    q->end();
 
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+    //
+    for( auto column : index_columns_to_drop )
+    {
+        auto query = std::make_shared<QCassandraQuery>(f_session);
+        query->setDescription( QString("Drop index column %1.").arg(column.data()) );
+        query->query( QString("DELETE FROM %1.%2 WHERE key = ? AND column1 = ?" )
+                      .arg(context_name)
+                      .arg(table_name)
+                      ,2);
+        size_t num = 0;
+        query->bindByteArray( num++, row_index_name.toUtf8() );
+        query->bindByteArray( num++, column );
+        f_queryStack.push( query );
+    }
+    //
+    for( auto website_name : website_rows_to_drop )
+    {
+        auto query = std::make_shared<QCassandraQuery>(f_session);
+        query->setDescription( QString("Drop website row %1.").arg(website_name) );
+        query->query( QString("DELETE FROM %1.%2 WHERE key = ?" )
+                      .arg(context_name)
+                      .arg(table_name)
+                      ,1);
+        size_t num = 0;
+        query->bindByteArray( num++, website_name.toUtf8() );
+        f_queryStack.push( query );
+    }
+
+    {
+        const QString& domain_name_to_drop( f_domain_name->text() );
+        auto query = std::make_shared<QCassandraQuery>(f_session);
+        query->setDescription( QString("Drop domain %1.").arg(domain_name_to_drop) );
+        query->query( QString("DELETE FROM %1.%2 WHERE key = ?" )
+                      .arg(context_name)
+                      .arg(table_name)
+                      ,1);
+        size_t num = 0;
+        query->bindByteArray( num++, domain_name_to_drop.toUtf8() );
+        connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onFinishedDeleteDomain );
+        f_queryStack.push( query );
+    }
+
+    do_top_query();
+}
+
+
+void snap_manager::onFinishedDeleteDomain( QCassandraQuery::pointer_t q )
+{
     delete f_domain_list->currentItem();
 
     f_domain_list->clearSelection();
@@ -1649,6 +1645,7 @@ void snap_manager::on_domainDelete_clicked()
 
     f_tabs->setTabEnabled(TAB_WEBSITES, false);
 }
+
 
 void snap_manager::loadWebsites()
 {

@@ -664,6 +664,13 @@ void QCassandraQuery::end()
     f_queryStmt.reset();
 }
 
+
+size_t QCassandraQuery::rowCount() const
+{
+    return cass_result_row_count( f_queryResult.get() );
+}
+
+
 /** \brief Get the next row in the result set
  *
  * After you start your query, call this method to get the first/next row

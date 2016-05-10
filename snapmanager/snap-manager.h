@@ -80,12 +80,6 @@ private slots:
     void reset_websites_index();
     void initialize_website();
     void OnAboutToQuit();
-    void on_hostList_itemClicked(QListWidgetItem *item);
-    void on_hostFilter_clicked();
-    void on_hostNew_clicked();
-    void on_hostSave_clicked();
-    void on_hostCancel_clicked();
-    void on_hostDelete_clicked();
     void on_domainFilter_clicked();
     void on_domainNew_clicked();
     void on_domainList_itemClicked(QListWidgetItem *item);
@@ -104,6 +98,11 @@ private slots:
 
     void create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name);
     void onQueryFinished( QtCassandra::QCassandraQuery::pointer_t q );
+    void onResetWebsites( QtCassandra::QCassandraQuery::pointer_t q );
+    void onLoadDomains  ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onLoadDomain   ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onSaveDomain   ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onFinishedSaveDomain( QtCassandra::QCassandraQuery::pointer_t q );
 
 private:
     enum tabs
@@ -114,10 +113,6 @@ private:
         TAB_WEBSITES = 3,
         TAB_SITES = 4
     };
-
-    void loadHosts();
-    void hostWithSelection();
-    bool hostChanged();
 
     void loadDomains();
     void domainWithSelection();
@@ -146,17 +141,6 @@ private:
     QPointer<QAction>               f_reset_domains_index;
     QPointer<QAction>               f_reset_websites_index;
     QPointer<QAction>               f_initialize_website;
-
-    // computer hosts
-    QString                         f_host_org_name;
-    QPointer<QPushButton>           f_host_filter;
-    QPointer<QLineEdit>             f_host_filter_string;
-    QPointer<QListWidget>           f_host_list;
-    QPointer<QLineEdit>             f_host_name;
-    QPointer<QPushButton>           f_host_new;
-    QPointer<QPushButton>           f_host_save;
-    QPointer<QPushButton>           f_host_cancel;
-    QPointer<QPushButton>           f_host_delete;
 
     // snap domains
     QString                         f_domain_org_name; // the original name (in case user changes it)
@@ -210,6 +194,7 @@ private:
     QString                                     f_cassandra_host;
     controlled_vars::zint32_t                   f_cassandra_port;
     QtCassandra::QCassandraSession::pointer_t   f_session;
+    QStringList                                 f_domains_to_check;
 
     std::stack<QtCassandra::QCassandraQuery::pointer_t>	f_queryStack;
 
