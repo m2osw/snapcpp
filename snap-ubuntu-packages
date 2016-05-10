@@ -25,12 +25,17 @@ apt-get install \
     libqt5webkit5-dev \
     libssl-dev \
     libxml2-utils \
+    libqrencode-dev \
     qt5-default \
     qtscript5-dev \
+    uuid-dev \
     zip \
     zlib1g-dev
 
 # TBD: get the cassandra-cpp-driver and cassandra-cpp-driver-dev packages
+echo "WARNING:"
+echo "  At this time this script does not offer the cassandra-cpp-driver packages."
+echo "  You have to get your own version compiled and packaged."
 
 # Optional:
 
