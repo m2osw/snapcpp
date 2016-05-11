@@ -17,6 +17,7 @@
 
 #include "snap-manager-initialize-website.h"
 #include "snap-manager.h"
+#include "get_child.h"
 
 #include <QSettings>
 
@@ -44,15 +45,15 @@ snap_manager_initialize_website::snap_manager_initialize_website(QWidget *snap_p
     port      ->setText( settings.value( "initialization_port", "80" ).toString() );
 
     // setup widgets
-    f_close_button = getChild<QPushButton>(this, "closeButton");
-    f_send_request_button = getChild<QPushButton>(this, "sendRequestButton");
-    f_snap_server_host = getChild<QLineEdit>(snap_parent, "snapServerHost");
-    f_snap_server_port = getChild<QLineEdit>(snap_parent, "snapServerPort");
-    f_website_url = getChild<QLineEdit>(parentWidget(), "websiteURL");
-    f_port = getChild<QLineEdit>(parentWidget(), "port");
+    f_close_button        = getChild<QPushButton> ( this,           "closeButton"       );
+    f_send_request_button = getChild<QPushButton> ( this,           "sendRequestButton" );
+    f_snap_server_host    = getChild<QLineEdit>   ( snap_parent,    "snapServerHost"    );
+    f_snap_server_port    = getChild<QLineEdit>   ( snap_parent,    "snapServerPort"    );
+    f_website_url         = getChild<QLineEdit>   ( parentWidget(), "websiteURL"        );
+    f_port                = getChild<QLineEdit>   ( parentWidget(), "port"              );
 
     // Close
-    connect( f_cancel_button, &QPushButton::clicked, this, &snap_manager_initialize_website::cancel );
+    connect( f_close_button, &QPushButton::clicked, this, &snap_manager_initialize_website::close );
 
     // Send Request
     connect( f_send_request_button, &QPushButton::clicked, this, &snap_manager_initialize_website::send_request );

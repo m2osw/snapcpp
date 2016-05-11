@@ -40,7 +40,7 @@ const QByteArray& RowModel::rowKey() const
 }
 
 
-void RowModel::setRowKey( const QByteArray& val );
+void RowModel::setRowKey( const QByteArray& val )
 {
     f_rowKey = val;
 }

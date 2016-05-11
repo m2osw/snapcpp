@@ -19,6 +19,7 @@
 #include "snap-manager-about.h"
 #include "snap-manager-help.h"
 #include "snap-manager-decode-utf8.h"
+#include "get_child.h"
 
 #include <QtCassandra/QCassandraSchema.h>
 #include <QtCassandra/QCassandraVersion.h>
@@ -107,22 +108,6 @@ snap_manager::snap_manager(QWidget *snap_parent)
     console = getChild<QListWidget>(this, "cassandraConsole");
     console->addItem("libQtCassandra version: " + QString(QT_CASSANDRA_LIBRARY_VERSION_STRING));
     console->addItem("Not connected.");
-
-    // get host friends that are going to be used here and there
-    f_host_filter = getChild<QPushButton>(this, "hostFilter");
-    //connect(f_host_filter, SIGNAL(itemClicked()), this, SLOT(on_domainFilter_clicked()));
-    f_host_filter_string = getChild<QLineEdit>(this, "hostFilterString");
-    f_host_list = getChild<QListWidget>(this, "hostList");
-    //connect(f_host_list, SIGNAL(itemClicked()), this, SLOT(on_hostList_itemClicked()));
-    f_host_name = getChild<QLineEdit>(this, "hostName");
-    f_host_new = getChild<QPushButton>(this, "hostNew");
-    //connect(f_host_new, SIGNAL(clicked()), this, SLOT(on_hostNew_clicked()));
-    f_host_save = getChild<QPushButton>(this, "hostSave");
-    //connect(f_host_save, SIGNAL(clicked()), this, SLOT(on_hostSave_clicked()));
-    f_host_cancel = getChild<QPushButton>(this, "hostCancel");
-    //connect(f_host_cancel, SIGNAL(clicked()), this, SLOT(on_hostCancel_clicked()));
-    f_host_delete = getChild<QPushButton>(this, "hostDelete");
-    //connect(f_host_delete, SIGNAL(clicked()), this, SLOT(on_hostDelete_clicked()));
 
     // get domain friends that are going to be used here and there
     f_domain_filter = getChild<QPushButton>(this, "domainFilter");
@@ -674,12 +659,6 @@ void snap_manager::cassandraDisconnectButton_clicked()
     f_tabs->setTabEnabled(TAB_SITES, false);
 
     // this doesn't get cleared otherwise
-    f_host_list->clearSelection();
-    f_host_filter_string->setText("");
-    f_host_org_name = "";
-    f_host_name->setText("");
-
-    // this doesn't get cleared otherwise
     f_domain_list->clearSelection();
     f_domain_filter_string->setText("");
     f_domain_org_name = "";
@@ -747,7 +726,7 @@ QCassandraQuery::pointer_t snap_manager::createQuery
             .arg(context_name)
             .arg(table_name)
             , q_str.count('?')
-            (;
+            );
     f_queryStack.push( query );
     return query;
 }
@@ -809,7 +788,6 @@ bool snap_manager::getQueryResult( QCassandraQuery::pointer_t q )
 void snap_manager::onQueryFinished( QCassandraQuery::pointer_t q )
 {
     getQueryResult( q );
-    q->end();
 
     f_queryStack.pop();
     if( f_queryStack.empty() )
@@ -852,7 +830,7 @@ void snap_manager::onQueryFinished( QCassandraQuery::pointer_t q )
  *                          strategy is not Simple (0).
  * \param[in] host_name  The name of a host to runn a snap server instance.
  */
-void snap_manager::create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name)
+void snap_manager::create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers )
 {
     // when called here we have f_session defined but no context yet
     //
@@ -895,8 +873,6 @@ void snap_manager::create_context(int replication_factor, int strategy, snap::sn
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     query->setDescription( QString("Create %1 context").arg(context_name) );
 
-    f_host_list->addItem(host_name);
-
     // now we want to add the "domains" and "websites" tables to be
     // complete
     //
@@ -929,15 +905,16 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
 
 void snap_manager::reset_domains_index()
 {
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
     QString q_str("DELETE FROM %1.%2 WHERE key = ? IF EXISTS");
-    auto query( createQuery(domain_table_name, q_str) );
+    auto query( createQuery(table_name, q_str) );
     query->setDescription( "Drop index row in domain table." );
     query->bindByteArray( 0, row_index_name.toUtf8() );
 
     q_str = "UPDATE %1.%2 SET value = ? WHERE column1 = ?";
-    query = createQuery(domain_table_name, query_str);
+    query = createQuery(table_name, q_str);
     query->setDescription("Reset all domain rules");
     size_t num = 0;
     query->bindByteArray( num++, ""             );
@@ -965,6 +942,7 @@ void snap_manager::reset_domains_index()
 
 void snap_manager::reset_websites_index()
 {
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
     QString q_str = "DELETE FROM %1.%2 WHERE key = ? IF EXISTS";
@@ -978,14 +956,17 @@ void snap_manager::reset_websites_index()
     query->setPagingSize(g_paging_size);
     query->bindByteArray( 0, QString("core::rules").toUtf8() );
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onResetWebsites );
-    query->start(false);
 
     f_domains_to_check.clear();
+
+    doTopQuery();
 }
 
 
 void snap_manager::onResetWebsites( QCassandraQuery::pointer_t q )
 {
+    getQueryResult(q);
+
     while( q->nextRow() )
     {
         const QByteArray row_key( q->getByteArrayColumn("key") );
@@ -1017,8 +998,6 @@ void snap_manager::onResetWebsites( QCassandraQuery::pointer_t q )
     {
         return;
     }
-
-    f_queryStack.pop();
 
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
@@ -1099,7 +1078,12 @@ void snap_manager::loadDomains()
 
 void snap_manager::onLoadDomains( QCassandraQuery::pointer_t q )
 {
-    getQueryResult( q );
+    f_queryStack.pop();
+
+    if( !getQueryResult(q) )
+    {
+        return;
+    }
 
     while( q->nextRow() )
     {
@@ -1111,8 +1095,6 @@ void snap_manager::onLoadDomains( QCassandraQuery::pointer_t q )
         // Return and we'll process the next waiting query
         return;
     }
-
-    f_queryStack.pop();
 
     // at first some of the entries are disabled
     // until a select is made or New is clicked
@@ -1208,13 +1190,12 @@ void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)
     f_domain_org_name = item->text();
     f_domain_name->setText(f_domain_org_name);
 
-    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
 
     auto query = createQuery( table_name, "SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?" );
-    query->setDescription( QString("Retrieving rules for domain [%1]").arg(f_domain_org) );
+    query->setDescription( QString("Retrieving rules for domain [%1]").arg(f_domain_org_name) );
     size_t num = 0;
-    query->bindByteArray( num++, f_domain_org.toUtf8() );
+    query->bindByteArray( num++, f_domain_org_name.toUtf8() );
     query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadDomain );
     query->start(false);
@@ -1222,7 +1203,12 @@ void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)
 
 void snap_manager::onLoadDomain( QCassandraQuery::pointer_t q )
 {
-    getQueryResult( q );
+    f_queryStack.pop();
+
+    if( !getQueryResult(q) )
+    {
+        return;
+    }
 
     if( q->nextRow() )
     {
@@ -1235,7 +1221,6 @@ void snap_manager::onLoadDomain( QCassandraQuery::pointer_t q )
     }
     f_domain_rules->setText(f_domain_org_rules);
 
-    f_queryStack.pop();
     domainWithSelection();
 }
 
@@ -1334,9 +1319,12 @@ void snap_manager::on_domainSave_clicked()
 
 void snap_manager::onSaveDomain( QCassandraQuery::pointer_t q )
 {
-    getQueryResult( q );
-
     f_queryStack.pop();
+
+    if( !getQueryResult(q) )
+    {
+        return;
+    }
 
     if( q->rowCount() > 0 )
     {
@@ -1399,13 +1387,13 @@ void snap_manager::onSaveDomain( QCassandraQuery::pointer_t q )
     num = 0;
     query->bindByteArray( num++, name.toUtf8() );
     query->bindByteArray( num++, QString("core::rules").toUtf8() );
-    query->bindByteArray( num++, compiled_rules.toUtf8() );
+    query->bindByteArray( num++, compiled_rules );
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onFinishedSaveDomain );
 
     doTopQuery();
 }
 
-void snap_manager::onFinishedSaveDomain( QCassandraQuery::pointer_t q )
+void snap_manager::onFinishedSaveDomain( QCassandraQuery::pointer_t /*q*/ )
 {
     QString const name(f_domain_name->text());
     QString const rules(f_domain_rules->toPlainText());
@@ -1487,9 +1475,12 @@ void snap_manager::on_domainDelete_clicked()
 
 void snap_manager::onDeleteDomain( QCassandraQuery::pointer_t q )
 {
-    getQueryResult( q );
-
     f_queryStack.pop();
+
+    if( !getQueryResult(q) )
+    {
+        return;
+    }
 
     std::vector<QByteArray> index_columns_to_drop;
     QStringList website_rows_to_drop;
@@ -1542,6 +1533,8 @@ void snap_manager::onDeleteDomain( QCassandraQuery::pointer_t q )
 
 void snap_manager::onFinishedDeleteDomain( QCassandraQuery::pointer_t q )
 {
+    getQueryResult(q);
+
     delete f_domain_list->currentItem();
 
     f_domain_list->clearSelection();
@@ -1582,6 +1575,8 @@ void snap_manager::loadWebsites()
 
 void snap_manager::onLoadWebsites( QCassandraQuery::pointer_t q )
 {
+    f_queryStack.pop();
+
     if( !getQueryResult(q) )
     {
         return;
@@ -1674,13 +1669,20 @@ void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)
     query->setDescription( QString("Get websites from domain [%1].").arg(f_website_org_name));
     size_t num = 0;
     query->bindByteArray( num++, f_website_org_name.toUtf8() );
-    query->bindByteArray( num++, QString("core::original_rules") );
+    query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadWebsite );
     query->start(false);
 }
 
 void snap_manager::onLoadWebsite( QCassandraQuery::pointer_t q )
 {
+    f_queryStack.pop();
+
+    if( !getQueryResult(q) )
+    {
+        return;
+    }
+
     if( q->nextRow() )
     {
         f_website_org_rules = q->getStringColumn(0);
@@ -1724,14 +1726,14 @@ void snap_manager::on_websiteNew_clicked()
 
 void snap_manager::on_websiteSave_clicked()
 {
-    QString name(f_website_name->text());
+    const QString name(f_website_name->text());
     if(name.isEmpty())
     {
         QMessageBox msg(QMessageBox::Critical, "Name Missing", "You cannot create a new website entry without giving the website a valid name.", QMessageBox::Ok, this);
         msg.exec();
         return;
     }
-    QString rules(f_website_rules->toPlainText());
+    const QString rules(f_website_rules->toPlainText());
     if(rules.isEmpty())
     {
         QMessageBox msg(QMessageBox::Critical, "Rules Missing", "Adding a website requires you to enter at least one rule.", QMessageBox::Ok, this);
@@ -1837,7 +1839,6 @@ void snap_manager::on_websiteSave_clicked()
         auto query = createQuery( table_name, "INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" );
         query->setDescription( QString("Saving %1 into the websites index").arg(name) );
         size_t num = 0;
-        connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onSaveWebsites );
         query->bindByteArray( num++, row_index_name.toUtf8() );
         query->bindByteArray( num++, (QString("%1::%2").arg(f_domain_org_name).arg(name)).toUtf8() );
         query->bindByteArray( num++, QByteArray() );
@@ -1858,7 +1859,7 @@ void snap_manager::on_websiteSave_clicked()
         num = 0;
         query->bindByteArray( num++, name.toUtf8() );
         query->bindByteArray( num++, QString("core::rules").toUtf8() );
-        query->bindByteArray( num++, compiled_rules.toUtf8() );
+        query->bindByteArray( num++, compiled_rules );
         connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onFinishedSaveWebsite );
 
         doTopQuery();
@@ -1868,7 +1869,8 @@ void snap_manager::on_websiteSave_clicked()
 
 void snap_manager::onFinishedSaveWebsite( QCassandraQuery::pointer_t /*q*/ )
 {
-    const QString name(f_website_name->text());
+    const QString name  ( f_website_name->text()         );
+    const QString rules ( f_website_rules->toPlainText() );
 
     // the data is now in the database, add it to the table too
     if(f_website_org_name == "")
@@ -1936,11 +1938,15 @@ void snap_manager::on_websiteDelete_clicked()
     query->bindByteArray( num++, row_index_name.toUtf8() );
     query->bindByteArray( num++, (QString("%1::%2").arg(f_domain_org_name).arg(name)).toUtf8() );
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onDeleteWebsite );
+
+    doTopQuery();
 }
 
 
 void snap_manager::onDeleteWebsite( QCassandraQuery::pointer_t /*q*/ )
 {
+    //getQueryResult(q);    // Done in doTopQuery()
+
     delete f_website_list->currentItem();
 
     // all those are not valid anymore
@@ -1990,8 +1996,9 @@ void snap_manager::loadSites()
     //      the list of sites; so at this point we ignore the filter info
     //QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_SITES));
-    f_table_model.init( f_session, table_name );
+    f_table_model.init( f_session, context_name, table_name );
     f_table_model.doQuery();
 
     // at first some of the entries are disabled
@@ -2058,9 +2065,10 @@ void snap_manager::onSitesListCurrentChanged( QModelIndex current, QModelIndex /
     f_sites_name->setText(f_sites_org_name);
 
     // IMPORTANT: note that f_sites_org_name changed to the item->text() value
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_SITES));
-    f_row_model.init( f_session, table_name );
-    f_row_model.setRowKey( f_sites_org_name );
+    f_row_model.init( f_session, context_name, table_name );
+    f_row_model.setRowKey( f_sites_org_name.toUtf8() );
     f_row_model.doQuery();
 
     f_sites_parameters->setEnabled(true);

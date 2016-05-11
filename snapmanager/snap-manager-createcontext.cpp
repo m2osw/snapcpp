@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap-manager-createcontext.h"
+#include "get_child.h"
 
 #include <QSettings>
 
@@ -50,12 +51,12 @@ snap_manager_createcontext::snap_manager_createcontext
     snapServerName   ->setText( settings.value( "createcontext_snapservername",    ""       ).toString() );
 
     // setup widgets
-    f_cancel_button = getChild<QPushButton>(this, "cancelButton");
-    f_createcontext_button = getChild<QPushButton>(this, "createContextButton");
-    f_replication_factor = getChild<QLineEdit>(this, "replicationFactor");
-    f_strategy = getChild<QComboBox>(this, "strategy");
-    f_data_centers = getChild<QTextEdit>(this, "dataCenters");
-    f_snap_server_name = getChild<QLineEdit>(this, "snapServerName");
+    f_cancel_button        = getChild<QPushButton> (this, "cancelButton");
+    f_createcontext_button = getChild<QPushButton> (this, "createContextButton");
+    f_replication_factor   = getChild<QLineEdit>   (this, "replicationFactor");
+    f_strategy             = getChild<QComboBox>   (this, "strategy");
+    f_data_centers         = getChild<QTextEdit>   (this, "dataCenters");
+    f_snap_server_name     = getChild<QLineEdit>   (this, "snapServerName");
 
     // Close
     connect( f_cancel_button, &QPushButton::clicked, this, &snap_manager_createcontext::cancel );

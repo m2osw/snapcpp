@@ -133,6 +133,7 @@ add_executable( ${PROJECT_NAME}
     snap-manager-help.cpp
     snap-manager-initialize-website.cpp
     snap-manager-decode-utf8.cpp
+    get_child.h
     ${SNAP_MANAGER_UIS_H}
     ${SNAP_MANAGER_RESOURCES_RCC}
 )

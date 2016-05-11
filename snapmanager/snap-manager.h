@@ -40,23 +40,6 @@
 // We do not use namespaces because that doesn't work too well with
 // Qt tools such as moc.
 
-// get a child that MUST exist
-template<class T>
-T *getChild(QWidget *parent, const char *name)
-{
-    T *w = parent->findChild<T *>(name);
-    if(w == nullptr)
-    {
-            QString const error(QString("Can't find the widget: %1.").arg(name));
-            QMessageBox msg(QMessageBox::Critical, "Internal Error", error, QMessageBox::Ok, parent);
-            msg.exec();
-            exit(1);
-            /*NOTREACHED*/
-    }
-
-    return w;
-}
-
 class snap_manager : public QMainWindow, public Ui_MainWindow
 {
     Q_OBJECT
@@ -73,7 +56,6 @@ private slots:
     void decode_utf8();
     void snapTest();
     void snapStats();
-    void onCreateContextTimer();
     void on_f_cassandraConnectButton_clicked();
     void on_f_cassandraDisconnectButton_clicked();
     void reset_domains_index();
@@ -96,7 +78,7 @@ private slots:
     void onSitesListCurrentChanged( QModelIndex current, QModelIndex previous);
     void quit();
 
-    void create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name);
+    void create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers);
     void onQueryFinished        ( QtCassandra::QCassandraQuery::pointer_t q );
     void onResetWebsites        ( QtCassandra::QCassandraQuery::pointer_t q );
     void onLoadDomains          ( QtCassandra::QCassandraQuery::pointer_t q );
@@ -204,11 +186,12 @@ private:
 
     virtual void closeEvent(QCloseEvent *event);
 
-    QtCassandra::QCassandraQuery::pointer_t snap_manager::createQuery
+    QtCassandra::QCassandraQuery::pointer_t createQuery( const QString& q_str );
+    QtCassandra::QCassandraQuery::pointer_t createQuery
         ( const QString& table_name
         , const QString& q_str
         );
-    void getQueryResult( QtCassandra::QCassandraQuery::pointer_t q );
+    bool getQueryResult( QtCassandra::QCassandraQuery::pointer_t q );
 
     void doTopQuery();
     void create_table(QString const & table_name, QString const & comment);

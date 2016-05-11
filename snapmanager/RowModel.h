@@ -49,11 +49,11 @@ public:
     virtual bool            insertRows      ( int row, int count, const QModelIndex & parent = QModelIndex() );
     virtual bool            removeRows      ( int row, int count, const QModelIndex & parent = QModelIndex() );
 
+    void					doQuery();
+
 private:
     std::vector<QByteArray> f_columns;
     QByteArray              f_rowKey;
-
-    void					doQuery();
 };
 
 
