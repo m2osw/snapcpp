@@ -34,6 +34,18 @@ RowModel::RowModel()
 }
 
 
+const QByteArray& RowModel::rowKey() const
+{
+    return f_rowKey;
+}
+
+
+void RowModel::setRowKey( const QByteArray& val );
+{
+    f_rowKey = val;
+}
+
+
 void RowModel::doQuery()
 {
     auto query = std::make_shared<QCassandraQuery>(f_session);

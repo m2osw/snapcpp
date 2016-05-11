@@ -97,12 +97,18 @@ private slots:
     void quit();
 
     void create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name);
-    void onQueryFinished( QtCassandra::QCassandraQuery::pointer_t q );
-    void onResetWebsites( QtCassandra::QCassandraQuery::pointer_t q );
-    void onLoadDomains  ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onLoadDomain   ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onSaveDomain   ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onFinishedSaveDomain( QtCassandra::QCassandraQuery::pointer_t q );
+    void onQueryFinished        ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onResetWebsites        ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onLoadDomains          ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onLoadDomain           ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onSaveDomain           ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onFinishedSaveDomain   ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onDeleteDomain         ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onFinishedDeleteDomain ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onLoadWebsites         ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onLoadWebsite          ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onFinishedSaveWebsite  ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onDeleteWebsite        ( QtCassandra::QCassandraQuery::pointer_t q );
 
 private:
     enum tabs
@@ -113,19 +119,6 @@ private:
         TAB_WEBSITES = 3,
         TAB_SITES = 4
     };
-
-    void loadDomains();
-    void domainWithSelection();
-    bool domainChanged();
-
-    void loadWebsites();
-    void websiteWithSelection();
-    bool websiteChanged();
-
-    void loadSites();
-    bool sitesChanged();
-
-    virtual void closeEvent(QCloseEvent *event);
 
     QPointer<QWidget>               f_about;
     QPointer<QWidget>               f_help;
@@ -198,7 +191,26 @@ private:
 
     std::stack<QtCassandra::QCassandraQuery::pointer_t>	f_queryStack;
 
-    void do_top_query();
+    void loadDomains();
+    void domainWithSelection();
+    bool domainChanged();
+
+    void loadWebsites();
+    void websiteWithSelection();
+    bool websiteChanged();
+
+    void loadSites();
+    bool sitesChanged();
+
+    virtual void closeEvent(QCloseEvent *event);
+
+    QtCassandra::QCassandraQuery::pointer_t snap_manager::createQuery
+        ( const QString& table_name
+        , const QString& q_str
+        );
+    void getQueryResult( QtCassandra::QCassandraQuery::pointer_t q );
+
+    void doTopQuery();
     void create_table(QString const & table_name, QString const & comment);
     void context_is_valid();
 };

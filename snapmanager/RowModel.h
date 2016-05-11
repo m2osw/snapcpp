@@ -28,6 +28,9 @@ class RowModel
 public:
     RowModel();
 
+    const QByteArray&       rowKey() const;
+    void                    setRowKey( const QByteArray& val );
+
     // Read access
     //
     virtual Qt::ItemFlags   flags           ( const QModelIndex & index ) const;
