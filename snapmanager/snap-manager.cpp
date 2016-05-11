@@ -1310,6 +1310,12 @@ void snap_manager::on_domainSave_clicked()
         query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
         connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onSaveDomain );
         query->start(false);
+
+        f_domain_name->setEnabled(false);
+        f_domain_rules->setEnabled(false);
+        f_domain_save->setEnabled(false);
+        f_domain_cancel->setEnabled(false);
+        f_domain_delete->setEnabled(false);
     }
 }
 
@@ -1357,7 +1363,7 @@ void snap_manager::onSaveDomain( QCassandraQuery::pointer_t q )
     // save in the index
     //(*table)[row_index_name][name] = QtCassandra::QCassandraValue();
     //
-    auto query = createQuery( table_name, "INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" );
+    auto query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
     query->setDescription( QString("Saving %1 into the domains index").arg(name) );
     size_t num = 0;
     query->bindByteArray( num++, row_index_name.toUtf8() );
@@ -1371,7 +1377,7 @@ void snap_manager::onSaveDomain( QCassandraQuery::pointer_t q )
     domain_rules.parse_domain_rules(rules, compiled_rules);
 
     // (*table)[name][QString("core::original_rules")] = QtCassandra::QCassandraValue(rules);
-    query = createQuery( table_name, "INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" );
+    query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
     query->setDescription( QString("Update core rules for %1").arg(name) );
     num = 0;
     query->bindByteArray( num++, name.toUtf8() );
@@ -1379,7 +1385,7 @@ void snap_manager::onSaveDomain( QCassandraQuery::pointer_t q )
     query->bindByteArray( num++, rules.toUtf8() );
 
     // (*table)[name][QString("core::rules")] = QtCassandra::QCassandraValue(compiled_rules);
-    query = createQuery( table_name, "INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" );
+    query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
     query->setDescription( QString("Update core rules for %1").arg(name) );
     num = 0;
     query->bindByteArray( num++, name.toUtf8() );
@@ -1456,6 +1462,12 @@ void snap_manager::on_domainDelete_clicked()
     {
         return;
     }
+
+    f_domain_name->setEnabled(false);
+    f_domain_rules->setEnabled(false);
+    f_domain_save->setEnabled(false);
+    f_domain_cancel->setEnabled(false);
+    f_domain_delete->setEnabled(false);
 
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
@@ -1833,7 +1845,7 @@ void snap_manager::on_websiteSave_clicked()
         // add that one in the index
         //(*table)[row_index_name][f_domain_org_name + "::" + name] = QtCassandra::QCassandraValue();
 
-        auto query = createQuery( table_name, "INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" );
+        auto query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
         query->setDescription( QString("Saving %1 into the websites index").arg(name) );
         size_t num = 0;
         query->bindByteArray( num++, row_index_name.toUtf8() );
@@ -1843,7 +1855,7 @@ void snap_manager::on_websiteSave_clicked()
         // it worked, save the results
         //(*table)[name][QString("core::original_rules")] = QtCassandra::QCassandraValue(rules);
 
-        query = createQuery( table_name, "INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" );
+        query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
         query->setDescription( QString("Update original core rules for %1").arg(name) );
         num = 0;
         query->bindByteArray( num++, name.toUtf8() );
@@ -1851,13 +1863,20 @@ void snap_manager::on_websiteSave_clicked()
         query->bindByteArray( num++, rules.toUtf8() );
 
         //(*table)[name][QString("core::rules")] = QtCassandra::QCassandraValue(compiled_rules);
-        query = createQuery( table_name, "INSERT %1.%2 (key,column1,value) VALUES (?,?,?)" );
+        query = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
         query->setDescription( QString("Update core rules for %1").arg(name) );
         num = 0;
         query->bindByteArray( num++, name.toUtf8() );
         query->bindByteArray( num++, QString("core::rules").toUtf8() );
         query->bindByteArray( num++, compiled_rules );
         connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onFinishedSaveWebsite );
+
+        // all those are not valid anymore
+        f_website_name->setEnabled(false);
+        f_website_rules->setEnabled(false);
+        f_website_save->setEnabled(false);
+        f_website_cancel->setEnabled(false);
+        f_website_delete->setEnabled(false);
 
         doTopQuery();
     }
@@ -1920,6 +1939,13 @@ void snap_manager::on_websiteDelete_clicked()
     {
         return;
     }
+
+    // all those are not valid anymore
+    f_website_name->setEnabled(false);
+    f_website_rules->setEnabled(false);
+    f_website_save->setEnabled(false);
+    f_website_cancel->setEnabled(false);
+    f_website_delete->setEnabled(false);
 
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
