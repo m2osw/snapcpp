@@ -88,7 +88,6 @@ snap_manager::snap_manager(QWidget *snap_parent)
     connect(a, &QAction::triggered, this, &snap_manager::decode_utf8);
 
     f_tabs = getChild<QTabWidget>(this, "tabWidget");
-    f_tabs->setTabEnabled(TAB_HOSTS, false);
     f_tabs->setTabEnabled(TAB_DOMAINS, false);
     f_tabs->setTabEnabled(TAB_WEBSITES, false);
     f_tabs->setTabEnabled(TAB_SITES, false);
@@ -521,7 +520,6 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     console->addItem("Host: " + f_cassandra_host);
     console->addItem("Port: " + QString::number(f_cassandra_port));
 
-    f_tabs->setTabEnabled(TAB_HOSTS, false);
     f_tabs->setTabEnabled(TAB_DOMAINS, false);
     f_tabs->setTabEnabled(TAB_WEBSITES, false);
     f_tabs->setTabEnabled(TAB_SITES, false);
@@ -558,7 +556,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     q.query( "SELECT cluster_name,native_protocol_version FROM system.local" );
     q.start();
     console->addItem("Cluster Name: " + q.getStringColumn("cluster_name"));
-    console->addItem("Protocol Version: " + q.getStringColumn("protocol_version"));
+    console->addItem("Protocol Version: " + q.getStringColumn("native_protocol_version"));
     q.end();
 
     // read all the contexts so the findContext() works
@@ -653,7 +651,6 @@ void snap_manager::cassandraDisconnectButton_clicked()
     f_reset_domains_index->setEnabled(false);
     f_reset_websites_index->setEnabled(false);
 
-    f_tabs->setTabEnabled(TAB_HOSTS, false);
     f_tabs->setTabEnabled(TAB_DOMAINS, false);
     f_tabs->setTabEnabled(TAB_WEBSITES, false);
     f_tabs->setTabEnabled(TAB_SITES, false);
@@ -1665,7 +1662,7 @@ void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)
 
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
 
-    auto query = createQuery( table_name, "SELECT value FROM %1.%2 WHERE key = ? AND column = ?" );
+    auto query = createQuery( table_name, "SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?" );
     query->setDescription( QString("Get websites from domain [%1].").arg(f_website_org_name));
     size_t num = 0;
     query->bindByteArray( num++, f_website_org_name.toUtf8() );

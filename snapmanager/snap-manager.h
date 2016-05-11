@@ -96,10 +96,9 @@ private:
     enum tabs
     {
         TAB_CONNECTIONS = 0,
-        TAB_HOSTS = 1,
-        TAB_DOMAINS = 2,
-        TAB_WEBSITES = 3,
-        TAB_SITES = 4
+        TAB_DOMAINS     = 1,
+        TAB_WEBSITES    = 2,
+        TAB_SITES       = 3
     };
 
     QPointer<QWidget>               f_about;
