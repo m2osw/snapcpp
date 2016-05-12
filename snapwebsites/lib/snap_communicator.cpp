@@ -666,7 +666,9 @@ void snap_communicator_message::set_service(QString const & service)
         // broadcast is a special case that the verify_name() does not
         // support
         //
-        if(service != "*")
+        if(service != "*"
+        && service != "?"
+        && service != ".")
         {
             // this name can be empty and it supports lowercase
             //
