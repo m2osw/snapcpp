@@ -368,6 +368,8 @@ public:
         void                        close();
         size_t                      get_client_address(struct sockaddr_storage & address) const;
         std::string                 get_client_addr() const;
+        int                         get_client_port() const;
+        std::string                 get_client_addr_port() const;
 
         // snap_connection implementation
         virtual bool                is_reader() const;

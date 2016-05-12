@@ -17,6 +17,7 @@
 
 #include "addr.h"
 
+#include "log.h"
 #include "tcp_client_server.h"
 
 #include <QString>
@@ -273,6 +274,8 @@ void addr::set_addr_port(std::string const & ap, std::string const & default_add
     // save the protocol so we can create a socket if requested
     //
     f_protocol = addrlist->ai_protocol;
+
+    address_changed();
 }
 
 
@@ -301,6 +304,8 @@ void addr::set_ipv4(struct sockaddr_in const & in)
     f_address.sin6_port = in.sin_port;
     f_address.sin6_addr.s6_addr16[5] = 0xFFFF;
     f_address.sin6_addr.s6_addr32[3] = in.sin_addr.s_addr;
+
+    address_changed();
 }
 
 
@@ -334,6 +339,8 @@ void addr::set_protocol(char const * protocol)
     {
         throw addr_invalid_argument_exception(QString("unknown protocol \"%1\", expected \"tcp\" or \"udp\".").arg(protocol));
     }
+
+    address_changed();
 }
 
 
@@ -395,6 +402,8 @@ void addr::get_ipv4(struct sockaddr_in & in) const
 void addr::set_ipv6(struct sockaddr_in6 const & in6)
 {
     memcpy(&f_address, &in6, sizeof(in6));
+
+    address_changed();
 }
 
 
@@ -538,6 +547,108 @@ std::string addr::get_ipv4or6_string(bool include_port, bool include_brackets) c
 }
 
 
+/** \brief Determine the type of network this IP represents.
+ *
+ * The IP address may represent various type of networks. This
+ * function returns that type.
+ *
+ * The function checks the address either as IPv4 when is_ipv4()
+ * returns true, otherwise as IPv6.
+ *
+ * \return One of the possible network types as defined in the
+ *         network_type_t enumeration.
+ */
+addr::network_type_t addr::get_network_type() const
+{
+    if(f_private_network_defined == network_type_t::NETWORK_TYPE_UNDEFINED)
+    {
+        f_private_network_defined = network_type_t::NETWORK_TYPE_UNKNOWN;
+
+        if(is_ipv4())
+        {
+            // get the address in host order
+            //
+            // we can use a simple mask + compare to know whether it is
+            // this or that once in host order
+            //
+            uint32_t const host_ip(ntohl(f_address.sin6_addr.s6_addr32[3]));
+
+            if((host_ip & 0xFF000000) == 0x0A000000         // 10.0.0.0/8
+            || (host_ip & 0xFFF00000) == 0xAC100000         // 172.16.0.0/12
+            || (host_ip & 0xFFFF0000) == 0xC0A80000)        // 192.168.0.0/16
+            {
+                f_private_network_defined = network_type_t::NETWORK_TYPE_PRIVATE;
+            }
+            else if((host_ip & 0xFFC00000) == 0x64400000)   // 100.64.0.0/10
+            {
+                f_private_network_defined = network_type_t::NETWORK_TYPE_CARRIER;
+            }
+            else if((host_ip & 0xFFFF0000) == 0xA9FE0000)   // 169.254.0.0/16
+            {
+                f_private_network_defined = network_type_t::NETWORK_TYPE_LINK_LOCAL; // i.e. DHCP
+            }
+            else if((host_ip & 0xF0000000) == 0xE0000000)   // 224.0.0.0/4
+            {
+                // there are many sub-groups on this one which are probably
+                // still in use...
+                f_private_network_defined = network_type_t::NETWORK_TYPE_MULTICAST;
+            }
+            else if((host_ip & 0xFF000000) == 0x7F000000)   // 127.0.0.0/8
+            {
+                f_private_network_defined = network_type_t::NETWORK_TYPE_LOOPBACK; // i.e. localhost
+            }
+            else if(host_ip == 0x00000000)
+            {
+                f_private_network_defined = network_type_t::NETWORK_TYPE_ANY; // i.e. 0.0.0.0
+            }
+        }
+        else //if(is_ipv6()) -- if not IPv4, we have an IPv6
+        {
+            // for IPv6 it was simplified by using a prefix for
+            // all types; really way easier than IPv4
+            //
+            if(f_address.sin6_addr.s6_addr16[0] == 0      // ::
+            && f_address.sin6_addr.s6_addr16[1] == 0
+            && f_address.sin6_addr.s6_addr16[2] == 0
+            && f_address.sin6_addr.s6_addr16[3] == 0)
+            {
+                // this is the "any" IP address
+                f_private_network_defined = network_type_t::NETWORK_TYPE_ANY;
+            }
+            else
+            {
+                uint16_t const prefix(ntohs(f_address.sin6_addr.s6_addr16[0]));
+
+                if((prefix & 0xFF00) == 0xFD00)                 // fd00::/8
+                {
+                    f_private_network_defined = network_type_t::NETWORK_TYPE_PRIVATE;
+                }
+                else if((prefix & 0xFFC0) == 0xFE80    // fe80::/10
+                     || (prefix & 0xFF0F) == 0xFF02)   // ffx2::/16
+                {
+                    f_private_network_defined = network_type_t::NETWORK_TYPE_LINK_LOCAL; // i.e. DHCP
+                }
+                else if((prefix & 0xFF0F) == 0xFF01    // ffx1::/16
+                     || (f_address.sin6_addr.s6_addr16[0] == 0      // ::1
+                      && f_address.sin6_addr.s6_addr16[1] == 0
+                      && f_address.sin6_addr.s6_addr16[2] == 0
+                      && f_address.sin6_addr.s6_addr16[3] == 1))
+                {
+                    f_private_network_defined = network_type_t::NETWORK_TYPE_LOOPBACK;
+                }
+                else if((prefix & 0xFF00) == 0xFF00)   // ff00::/8
+                {
+                    // this one must be after the link-local and loopback networks
+                    f_private_network_defined = network_type_t::NETWORK_TYPE_MULTICAST;
+                }
+            }
+        }
+    }
+
+    return f_private_network_defined;
+}
+
+
 /** \brief Retrieve the port.
  *
  * This function retrieves the port of the IP address in host order.
@@ -599,6 +710,20 @@ bool addr::operator == (addr const & rhs) const
 bool addr::operator < (addr const & rhs) const
 {
     return memcmp(&f_address.sin6_addr, &rhs.f_address.sin6_addr, sizeof(f_address.sin6_addr)) < 0;
+}
+
+
+/** \brief Mark that the address changed.
+ *
+ * This functions makes sure that some of the parameters being cached
+ * get reset in such a way that checking the cache will again return
+ * the correct answer.
+ *
+ * \sa get_network_type()
+ */
+void addr::address_changed()
+{
+    f_private_network_defined = network_type_t::NETWORK_TYPE_UNDEFINED;
 }
 
 

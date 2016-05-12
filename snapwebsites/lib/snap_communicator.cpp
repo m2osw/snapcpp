@@ -3232,7 +3232,7 @@ bool snap_communicator::snap_tcp_server_client_connection::is_reader() const
  *                      client's address gets copied.
  *
  * \return Return the length of the address which may be smaller than
- *         sizeof(struct sockaddr). If zero, then no address is defined.
+ *         sizeof(address). If zero, then no address is defined.
  *
  * \sa get_addr()
  */
@@ -3262,7 +3262,7 @@ std::string snap_communicator::snap_tcp_server_client_connection::get_client_add
 {
     // make sure the address is defined and the socket open
     //
-    if(const_cast<snap_communicator::snap_tcp_server_client_connection *>(this)->define_address() != 0)
+    if(!const_cast<snap_communicator::snap_tcp_server_client_connection *>(this)->define_address())
     {
         return std::string();
     }
@@ -3295,6 +3295,69 @@ std::string snap_communicator::snap_tcp_server_client_connection::get_client_add
     }
 
     return buf;
+}
+
+
+/** \brief Retrieve the port.
+ *
+ * This function returns the port of the socket on our side.
+ *
+ * If the port is not available (not connected?), then -1 is returned.
+ *
+ * \return The client's port in host order.
+ */
+int snap_communicator::snap_tcp_server_client_connection::get_client_port() const
+{
+    // make sure the address is defined and the socket open
+    //
+    if(!const_cast<snap_communicator::snap_tcp_server_client_connection *>(this)->define_address())
+    {
+        return -1;
+    }
+
+    if(f_address.ss_family == AF_INET)
+    {
+        return ntohs(reinterpret_cast<struct sockaddr_in const &>(f_address).sin_port);
+    }
+    else
+    {
+        return ntohs(reinterpret_cast<struct sockaddr_in6 const &>(f_address).sin6_port);
+    }
+}
+
+
+/** \brief Retrieve the address in the form of a string.
+ *
+ * Like the get_addr() of the tcp client and server classes, this
+ * function returns the address in the form of a string which can
+ * easily be used to log information and other similar tasks.
+ *
+ * \return The client's address in the form of a string.
+ */
+std::string snap_communicator::snap_tcp_server_client_connection::get_client_addr_port() const
+{
+    // get the current address and port
+    std::string const addr(get_client_addr());
+    int const port(get_client_port());
+
+    // make sure they are defined
+    if(addr.empty()
+    || port < 0)
+    {
+        return std::string();
+    }
+
+    // calculate the result
+    std::stringstream buf;
+    if(f_address.ss_family == AF_INET)
+    {
+        buf << addr << ":" << port;
+    }
+    else
+    {
+        buf << "[" << addr << "]:" << port;
+    }
+    return buf.str();
 }
 
 
@@ -3635,11 +3698,11 @@ snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_cl
 
     if(address.ss_family == AF_INET)
     {
-        f_remote_address = QString("%1:%2").arg(buf).arg(reinterpret_cast<struct sockaddr_in const &>(address).sin_port);
+        f_remote_address = QString("%1:%2").arg(buf).arg(ntohs(reinterpret_cast<struct sockaddr_in const &>(address).sin_port));
     }
     else
     {
-        f_remote_address = QString("%1:%2").arg(buf).arg(reinterpret_cast<struct sockaddr_in6 const &>(address).sin6_port);
+        f_remote_address = QString("[%1]:%2").arg(buf).arg(ntohs(reinterpret_cast<struct sockaddr_in6 const &>(address).sin6_port));
     }
 }
 
@@ -3708,6 +3771,9 @@ void snap_communicator::snap_tcp_server_client_message_connection::send_message(
  * the remote address and port in a string just after the connection
  * was established.
  *
+ * \warning
+ * This function returns BOTH: the address and the port.
+ *
  * \note
  * These parameters are the same as what was passed to the constructor,
  * only both will have been converted to numbers. So for example when
@@ -3752,7 +3818,7 @@ public:
             : snap_tcp_server_client_message_connection(socket)
             , f_client(client)
         {
-            set_name("snap_tcp_client_permanent_message_connection_impl messager");
+            set_name("snap_tcp_client_permanent_message_connection_impl::messager");
         }
 
         // snap_connection implementation
@@ -3795,6 +3861,7 @@ public:
         thread_done_signal(snap_tcp_client_permanent_message_connection_impl * client)
             : f_client(client)
         {
+            set_name("snap_tcp_client_permanent_message_connection_impl::thread_done_signal");
         }
 
         /** \brief This signal was emitted.

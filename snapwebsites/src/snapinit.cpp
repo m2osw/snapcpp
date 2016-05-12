@@ -3404,7 +3404,7 @@ void snap_init::service_died()
                 {
                     snap::snap_communicator_message register_snapinit;
                     register_snapinit.set_command("DIED");
-                    register_snapinit.set_service("*");
+                    register_snapinit.set_service(".");
                     register_snapinit.add_parameter("service", s->get_service_name());
                     register_snapinit.add_parameter("pid", s->get_old_pid());
                     f_listener_connection->send_message(register_snapinit);
