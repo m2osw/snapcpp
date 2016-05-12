@@ -1834,7 +1834,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                                 ok = false;
                             }
                             // on a remote we get ACCEPT instead of READY
-                            if(base->is_remote())
+                            if(remote_communicator
+                            || base->is_remote())
                             {
                                 if(!base->understand_command("ACCEPT"))
                                 {
