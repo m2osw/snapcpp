@@ -3,7 +3,7 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, qt5-default,
     doxygen, graphviz,
-    snapcmakemodules, libcontrolledvars-dev (>= 1.4.16.354~trusty)
+    snapcmakemodules, libcontrolledvars-dev (>= 1.4.16.357~trusty)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/google-page-rank
