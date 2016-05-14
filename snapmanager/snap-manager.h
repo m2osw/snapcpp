@@ -28,12 +28,14 @@
 #include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 
-#include <QString>
 #include <QMap>
-#include <QPointer>
-#include <QTcpSocket>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QPointer>
+#include <QTcpSocket>
+#include <QString>
+
+#include <queue>
 
 #include "ui_snap-manager-mainwindow.h"
 
@@ -78,8 +80,9 @@ private slots:
     void onSitesListCurrentChanged( QModelIndex current, QModelIndex previous);
     void quit();
 
-    void create_context(int replication_factor, int strategy, snap::snap_string_list const & data_centers);
+    void create_context         ( int replication_factor, int strategy, snap::snap_string_list const & data_centers );
     void onQueryFinished        ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onContextCreated       ( QtCassandra::QCassandraQuery::pointer_t q );
     void onResetWebsites        ( QtCassandra::QCassandraQuery::pointer_t q );
     void onLoadDomains          ( QtCassandra::QCassandraQuery::pointer_t q );
     void onLoadDomain           ( QtCassandra::QCassandraQuery::pointer_t q );
@@ -91,6 +94,7 @@ private slots:
     void onLoadWebsite          ( QtCassandra::QCassandraQuery::pointer_t q );
     void onFinishedSaveWebsite  ( QtCassandra::QCassandraQuery::pointer_t q );
     void onDeleteWebsite        ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onCurrentTabChanged    ( int index );
 
 private:
     enum tabs
@@ -170,7 +174,7 @@ private:
     QtCassandra::QCassandraSession::pointer_t   f_session;
     QStringList                                 f_domains_to_check;
 
-    std::stack<QtCassandra::QCassandraQuery::pointer_t>	f_queryStack;
+    std::queue<QtCassandra::QCassandraQuery::pointer_t>	f_queryQueue;
 
     void loadDomains();
     void domainWithSelection();
@@ -185,14 +189,17 @@ private:
 
     virtual void closeEvent(QCloseEvent *event);
 
-    QtCassandra::QCassandraQuery::pointer_t createQuery( const QString& q_str );
+    QtCassandra::QCassandraQuery::pointer_t createQuery
+        ( const QString& q_str
+        );
     QtCassandra::QCassandraQuery::pointer_t createQuery
         ( const QString& table_name
         , const QString& q_str
         );
+    void addQuery( QtCassandra::QCassandraQuery::pointer_t q );
     bool getQueryResult( QtCassandra::QCassandraQuery::pointer_t q );
+    void startQuery();
 
-    void doTopQuery();
     void create_table(QString const & table_name, QString const & comment);
     void context_is_valid();
 };

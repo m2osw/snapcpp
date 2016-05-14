@@ -719,6 +719,14 @@ bool QCassandraQuery::nextPage( const bool block )
  */
 void QCassandraQuery::throwIfError( const QString& msg )
 {
+    if( !f_sessionFuture.get() )
+    {
+        std::stringstream ss;
+        ss << "There is no active session for query [" << f_queryString.toUtf8().data() << "], msg=["
+           << msg.toUtf8().data() << "]";
+        throw std::runtime_error( ss.str().c_str() );
+    }
+
     const CassError code( cass_future_error_code( f_sessionFuture.get() ) );
     if( code != CASS_OK )
     {
@@ -932,7 +940,8 @@ QByteArray QCassandraQuery::getByteArrayFromValue( const CassValue * value ) con
  */
 QString QCassandraQuery::getStringColumn( const QString& name ) const
 {
-    return QString::fromUtf8(getByteArrayColumn( name ).data());
+    auto ba( getByteArrayColumn(name) );
+    return QString::fromUtf8( ba.constData(), ba.size() );
 }
 
 
@@ -942,7 +951,8 @@ QString QCassandraQuery::getStringColumn( const QString& name ) const
  */
 QString QCassandraQuery::getStringColumn( const int num ) const
 {
-    return QString::fromUtf8(getByteArrayColumn( num ).data());
+    auto ba( getByteArrayColumn(num) );
+    return QString::fromUtf8(ba.constData(),ba.size());
 }
 
 
