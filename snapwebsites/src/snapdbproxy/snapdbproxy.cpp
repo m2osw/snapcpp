@@ -371,7 +371,6 @@ QString snapdbproxy::server_name() const
  */
 void snapdbproxy::run()
 {
-std::cerr << "start running!?";
     // Stop on these signals, log them, then terminate.
     //
     signal( SIGCHLD, snapdbproxy::sighandler );

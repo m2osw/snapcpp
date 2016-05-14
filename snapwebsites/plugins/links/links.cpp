@@ -451,7 +451,7 @@ link_info_pair::link_info_pair(link_info const & src, link_info const & dst)
  *
  * \return A reference to the link_info representing the source.
  */
-link_info const & link_info_pair::source()
+link_info const & link_info_pair::source() const
 {
     return f_source;
 }
@@ -466,7 +466,7 @@ link_info const & link_info_pair::source()
  *
  * \return A reference to the link_info representing the destination.
  */
-link_info const & link_info_pair::destination()
+link_info const & link_info_pair::destination() const
 {
     return f_destination;
 }

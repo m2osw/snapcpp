@@ -959,7 +959,7 @@ void snap_communicator_message::verify_name(QString const & name, bool can_be_em
         throw snap_communicator_invalid_message("snap_communicator: a message name cannot be empty.");
     }
 
-    for(auto c : name)
+    for(auto const & c : name)
     {
         if((c < 'a' || c > 'z' || !can_be_lowercase)
         && (c < 'A' || c > 'Z')
@@ -4126,6 +4126,19 @@ public:
     }
 
 
+    /** \brief Check whether the permanent connection is currently connected.
+     *
+     * This function returns true if the messager exists, which means that
+     * the connection is up.
+     *
+     * \return true if the connection is up.
+     */
+    bool is_connected()
+    {
+        return !!f_messager;
+    }
+
+
     /** \brief Try to start the thread runner.
      *
      * This function tries to start the thread runner in order to initiate
@@ -4405,6 +4418,25 @@ snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client
 bool snap_communicator::snap_tcp_client_permanent_message_connection::send_message(snap_communicator_message const & message, bool cache)
 {
     return f_impl->send_message(message, cache);
+}
+
+
+/** \brief Check whether the connection is up.
+ *
+ * This function returns true if the connection is considered to be up.
+ * This means sending messages will work quickly instead of being
+ * cached up until an actual TCP/IP connection gets established.
+ *
+ * Note that the connection may have hanged up since, and the system
+ * may not have yet detected the fact (i.e. the connection is going
+ * to receive the process_hup() call after the event in which you are
+ * working.)
+ *
+ * \return true if connected
+ */
+bool snap_communicator::snap_tcp_client_permanent_message_connection::is_connected() const
+{
+    return f_impl->is_connected();
 }
 
 

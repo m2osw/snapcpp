@@ -102,6 +102,26 @@ namespace
 typedef QMap<QString, bool>                 sorted_list_of_strings_t;
 
 
+/** \brief The sequence number of a message being broadcast.
+ *
+ * Each instance of snapcommunicator may broadcast a message to other
+ * snapcommunicators. When that happens, we want to ignore that
+ * message in case it comes again to the same snapcommunicator. This
+ * can be accomplished by saving which messages we received.
+ *
+ * We also control a number of hops and a timeout.
+ *
+ * This counter is added to the name of the computer running this
+ * snapcommunicator (i.e. f_server_name) so for example it would
+ * look as following if the computer name is "snap":
+ *
+ * \code
+ *          snap-123
+ * \endcode
+ */
+int64_t             g_broadcast_sequence = 0;
+
+
 sorted_list_of_strings_t canonicalize_services(QString const & services)
 {
     snap::snap_string_list list(services.split(',', QString::SkipEmptyParts));
@@ -264,6 +284,7 @@ typedef QMap<QString, service_connection_pointer_t>         service_connection_l
 
 class remote_snap_communicator;
 typedef std::shared_ptr<remote_snap_communicator>           remote_snap_communicator_pointer_t;
+typedef std::vector<remote_snap_communicator_pointer_t>     remote_snap_communicator_vector_t;
 typedef QMap<QString, remote_snap_communicator_pointer_t>   remote_snap_communicator_list_t;
 
 class gossip_to_remote_snap_communicator;
@@ -282,6 +303,7 @@ public:
 
     QString             get_my_address() const;
     void                add_remote_communicator(QString const & addr);
+    void                stop_gossiping();
     void                too_busy(QString const & addr);
     void                start();
     void                gossip_received(QString const & addr);
@@ -351,6 +373,7 @@ private:
     size_t                                              f_max_connections = SNAP_COMMUNICATOR_MAX_CONNECTIONS;
     bool                                                f_shutdown = false;
     snap::snap_communicator_message::vector_t           f_local_message_cache;
+    std::map<QString, time_t>                           f_received_broadcast_messages;
 };
 
 
@@ -451,6 +474,28 @@ public:
     }
 
 
+    /** \brief Save the name of the server.
+     *
+     * \param[in] server_name  The name of the server that is on the other
+     *                         side of this connection.
+     */
+    void set_server_name(QString const & server_name)
+    {
+        f_server_name = server_name;
+    }
+
+
+    /** \brief Get the name of the server.
+     *
+     * \param[in] server_name  The name of the server that is on the other
+     *                         side of this connection.
+     */
+    QString get_server_name() const
+    {
+        return f_server_name;
+    }
+
+
     /** \brief Define the type of snapcommunicator server.
      *
      * This function is called whenever a CONNECT or an ACCEPT is received.
@@ -503,7 +548,7 @@ public:
     void set_services(QString const & services)
     {
         snap::snap_string_list list(services.split(','));
-        for(auto s : list)
+        for(auto const & s : list)
         {
             f_services[s] = true;
         }
@@ -523,6 +568,21 @@ public:
     }
 
 
+    /** \brief Check whether the service is known by that connection.
+     *
+     * This function returns true if the service was defined as one
+     * this connection supports.
+     *
+     * \param[in] name  The name of the service to check for.
+     *
+     * \return true if the service is known.
+     */
+    bool has_service(QString const & name)
+    {
+        return f_services.contains(name);
+    }
+
+
     /** \brief Define the list of services we heard of.
      *
      * This function saves the list of services that were heard of by
@@ -539,7 +599,7 @@ public:
     void set_services_heard_of(QString const & services)
     {
         snap::snap_string_list list(services.split(','));
-        for(auto s : list)
+        for(auto const & s : list)
         {
             f_services_heard_of[s] = true;
         }
@@ -574,7 +634,7 @@ public:
     void set_commands(QString const & commands)
     {
         snap::snap_string_list cmds(commands.split(','));
-        for(auto c : cmds)
+        for(auto const & c : cmds)
         {
             QString const name(c.trimmed());
             if(!name.isEmpty())
@@ -649,6 +709,7 @@ private:
     int64_t                                 f_started_on = -1;
     int64_t                                 f_ended_on = -1;
     QString                                 f_types;
+    QString                                 f_server_name;
     sorted_list_of_strings_t                f_services;
     sorted_list_of_strings_t                f_services_heard_of;
     bool                                    f_remote_connection = false;
@@ -687,7 +748,7 @@ public:
     virtual void                    process_connection_failed(std::string const & error_message);
     virtual void                    process_connected();
 
-    snap_addr::addr::network_type_t get_network_type() const;
+    snap_addr::addr const &         get_address() const;
 
 private:
     snap_addr::addr                 f_address;
@@ -959,6 +1020,24 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
     //
     if(f_all_ips.contains(addr))
     {
+        if(f_started)
+        {
+            if(remote_addr < f_my_address)
+            {
+                // make sure it is defined!
+                if(f_smaller_ips[addr])
+                {
+                    f_smaller_ips[addr]->set_timeout_date(snap::snap_communicator::get_current_date());
+                }
+                else
+                {
+                    SNAP_LOG_ERROR("smaller remote address is defined in f_all_ips but not in f_smaller_ips?");
+                }
+            }
+            // else -- do we have to GOSSIP about this one? (see below)
+            return;
+        }
+
         // TBD: this may be normal (i.e. each neighbor should send us the
         //      same list of IP addresses.)
         //
@@ -975,7 +1054,7 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
         // which are permanent message connections
         //
         f_smaller_ips[addr].reset(new remote_snap_communicator(f_communicator_server, addr, port));
-        f_smaller_ips[addr]->set_name("remote communicator connection");
+        f_smaller_ips[addr]->set_name("remote communicator connection"); // we connect to remote host
         if(f_started)
         {
             // we already started (i.e. we got the complete list of all our
@@ -1026,6 +1105,27 @@ void remote_communicator_connections::add_remote_communicator(QString const & ad
 }
 
 
+/** \brief Stop all gossiping at once.
+ *
+ * This function can be called to remove all the gossip connections
+ * at once.
+ *
+ * In most cases this function is called whenever the snapcommunicator
+ * daemon receives a STOP or a SHUTDOWN.
+ *
+ * Also these connections do not support any other messages than the
+ * GOSSIP and RECEIVED.
+ */
+void remote_communicator_connections::stop_gossiping()
+{
+    while(!f_gossip_ips.empty())
+    {
+        snap::snap_communicator::instance()->remove_connection(*f_gossip_ips.begin());
+        f_gossip_ips.erase(f_gossip_ips.begin());
+    }
+}
+
+
 /** \brief A remote communicator refused our connection.
  *
  * When a remote snap communicator server already manages too many
@@ -1062,7 +1162,7 @@ void remote_communicator_connections::start()
         f_started = true;
 
         int64_t start_time(snap::snap_child::get_current_date());
-        for(auto communicator : f_smaller_ips)
+        for(auto const & communicator : f_smaller_ips)
         {
             communicator->set_timeout_date(start_time);
             communicator->set_enable(true);
@@ -1248,10 +1348,12 @@ public:
     /** \brief Return the type of address this connection has.
      *
      * This function determines the type of address of the connection.
+     *
+     * \return A reference to the remote address of this connection.
      */
-    snap_addr::addr::network_type_t get_network_type() const
+    snap_addr::addr const & get_address() const
     {
-        return f_address.get_network_type();
+        return f_address;
     }
 
 
@@ -1332,6 +1434,8 @@ public:
             // whenever we receive a REGISTER message from that connection
             //
             connection->set_name("client connection");
+
+            connection->set_server_name(f_server_name);
         }
         else
         {
@@ -1347,7 +1451,7 @@ public:
             // whenever we receive the CONNECT message and use the name of
             // the server that connected
             //
-            connection->set_name("remote connection");
+            connection->set_name("remote connection"); // remote host connected to us
             connection->mark_as_remote();
         }
 
@@ -1665,8 +1769,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
 {
     {
         QString const received_message(message.to_message());
-        if(received_message.indexOf(":snaplock ") == -1
-        && received_message.indexOf(":lock_") == -1)
+        //if(received_message.indexOf(":snaplock ") == -1
+        //&& received_message.indexOf(":lock_") == -1)
         {
             SNAP_LOG_TRACE("received a message [")(received_message)("]");
         }
@@ -1744,12 +1848,14 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                 {
                     // the type is mandatory in an ACCEPT message
                     //
-                    if(!message.has_parameter("types"))
+                    if(!message.has_parameter("types")
+                    || !message.has_parameter("server_name"))
                     {
-                        SNAP_LOG_ERROR("ACCEPT was received without a \"types\" parameter, which is mandatory.");
+                        SNAP_LOG_ERROR("ACCEPT was received without a \"types\" or \"server_name\" parameter, which are mandatory.");
                         return;
                     }
                     base->set_connection_types(canonicalize_server_types(message.get_parameter("types")));
+                    base->set_server_name(message.get_parameter("server_name"));
 
                     // reply to a CONNECT, this was to connect to another
                     // snapcommunicator on another computer, retrieve the
@@ -1893,7 +1999,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     //
                     if(!message.has_parameter("types")
                     || !message.has_parameter("version")
-                    || !message.has_parameter("my_address"))
+                    || !message.has_parameter("my_address")
+                    || !message.has_parameter("server_name"))
                     {
                         SNAP_LOG_ERROR("CONNECT was sent without a \"types\", \"version\", or \"my_address\" parameter, both are mandatory.");
                         return;
@@ -1918,6 +2025,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // always retrieve the connection types
                     //
                     base->set_connection_types(canonicalize_server_types(message.get_parameter("types")));
+                    base->set_server_name(message.get_parameter("server_name"));
 
                     snap::snap_communicator_message reply;
 
@@ -1973,6 +2081,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         // the message expects the ACCEPT reply
                         //
                         reply.set_command("ACCEPT");
+                        reply.add_parameter("server_name", f_server_name);
 
                         // services
                         if(!f_local_services.isEmpty())
@@ -2061,13 +2170,19 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         //
                         base->set_connection_types("");
 
-                        // disconnecting means it is gone so we can remove
-                        // it from the communicator; note that won't remove
-                        // it from the list being processed in the run()
-                        // function so its functions may still be called
-                        // once after this removal
-                        //
-                        f_communicator->remove_connection(connection);
+                        if(!remote_communicator)
+                        {
+                            // disconnecting means it is gone so we can remove
+                            // it from the communicator
+                            //
+                            // Note: this one happens when the computer that
+                            //       sent us a CONNECT later sends us the
+                            //       DISCONNECT
+                            //
+                            f_communicator->remove_connection(connection);
+                        }
+                        //else -- in this case we are in charge of attempting
+                        //        to reconnect until it work...
 
                         // we just got some new services information,
                         // refresh our cache
@@ -2173,10 +2288,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         // confirm that we get the GOSSIP message
                         //
                         QString const reply_to(message.get_parameter("my_address"));
-                        if(add_neighbors(reply_to))
-                        {
-                            f_remote_snapcommunicators->add_remote_communicator(reply_to);
-                        }
+                        add_neighbors(reply_to);
+                        f_remote_snapcommunicators->add_remote_communicator(reply_to);
 
                         snap::snap_communicator_message reply;
                         reply.set_command("RECEIVED");
@@ -2517,11 +2630,6 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                         SNAP_LOG_ERROR("UNREGISTER was called without a \"service\" parameter, which is mandatory.");
                         return;
                     }
-                    // remove the service name immediately
-                    //
-                    QString const save_name(connection->get_name());
-                    connection->set_name("");
-
                     // also remove all the connection types
                     // an empty string represents an unconnected item
                     //
@@ -2534,6 +2642,12 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     // status changed for this connection
                     //
                     send_status(connection);
+
+                    // now remove the service name
+                    // (send_status() needs the name to still be in place!)
+                    //
+                    QString const save_name(connection->get_name());
+                    connection->set_name("");
 
                     // get rid of that connection now (it is faster than
                     // waiting for the HUP because it will not be in the
@@ -2647,45 +2761,86 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
 
     QString const server_name(message.get_server());
 
-    if(server_name.isEmpty()
-    || server_name == "*"
-    || server_name == f_server_name)
+    remote_snap_communicator_vector_t accepting_remote_connections;
+    bool const all_servers(server_name.isEmpty() || server_name == "*");
     {
         // service is local, check whether the service is registered,
         // if registered, forward the message immediately
         //
         snap::snap_communicator::snap_connection::vector_t const & connections(f_communicator->get_connections());
-        for(auto nc : connections)
+        for(auto const & nc : connections)
         {
-            service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
-            if(conn && conn->get_name() == service)
+            base_connection::pointer_t base_conn(std::dynamic_pointer_cast<base_connection>(nc));
+            if(base_conn)
             {
-                // we have such a service, just forward to it now
+                // verify that there is a server name in all connections
+                // (if not we have a bug somewhere else)
                 //
-                // TBD: should we remove the service name before forwarding?
-                //
-                try
+                if(base_conn->get_server_name().isEmpty())
                 {
-                    verify_command(conn, message);
-                    conn->send_message(message);
+                    service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
+                    if(conn)
+                    {
+                        throw std::runtime_error("server name missing in connection " + conn->get_name().toStdString() + "...");
+                    }
+                    throw std::runtime_error("server name missing in connection " + base_conn->get_connection_types().toStdString() + "...");
                 }
-                catch(std::runtime_error const & e)
+
+                if(all_servers
+                || server_name == base_conn->get_server_name())
                 {
-                    // ignore the error because this can come from an
-                    // external source (i.e. snapsignal) where an end
-                    // user may try to break the whole system!
-                    //
-                    SNAP_LOG_DEBUG("snapcommunicator failed to send a message to connection \"")
-                                  (conn->get_name())
-                                  ("\" (error: ")
-                                  (e.what())
-                                  (")");
+                    service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
+                    if(conn && conn->get_name() == service)
+                    {
+                        // we have such a service, just forward to it now
+                        //
+                        // TBD: should we remove the service name before forwarding?
+                        //
+                        try
+                        {
+                            verify_command(conn, message);
+                            conn->send_message(message);
+                        }
+                        catch(std::runtime_error const & e)
+                        {
+                            // ignore the error because this can come from an
+                            // external source (i.e. snapsignal) where an end
+                            // user may try to break the whole system!
+                            //
+                            SNAP_LOG_DEBUG("snapcommunicator failed to send a message to connection \"")
+                                          (conn->get_name())
+                                          ("\" (error: ")
+                                          (e.what())
+                                          (")");
+                        }
+                        // we found a specific service to which we could
+                        // forward the message so we can stop here
+                        //
+                        return;
+                    }
+                    else
+                    {
+                        remote_snap_communicator_pointer_t remote_connection(std::dynamic_pointer_cast<remote_snap_communicator>(nc));
+                        // TODO: limit sending to remote only if they have that service?
+                        //       (if we have the 'all_servers' set, otherwise it is not
+                        //       required, for sure... also, if we have multiple remote
+                        //       connections that support the same service we should
+                        //       randomize which one is to receive that message--or
+                        //       even better, check the current server load--but
+                        //       seriously, if none of our direct connections know
+                        //       of that service, we need to check for those that heard
+                        //       of that service, and if that is also empty, send to
+                        //       all... for now we send to all anyway)
+                        if(remote_connection /*&& remote_connection->has_service(service)*/)
+                        {
+                            accepting_remote_connections.push_back(remote_connection);
+                        }
+                    }
                 }
-                return;
             }
         }
 
-        if(f_local_services_list.contains(service))
+        if(all_servers && f_local_services_list.contains(service))
         {
             // its a service that is expected on this computer, but it is not
             // running right now... so cache the message
@@ -2701,6 +2856,8 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
             return;
         }
 
+        // if attempting to send to self, we cannot go on from here
+        //
         if(server_name == f_server_name)
         {
             SNAP_LOG_DEBUG("received event \"")(command)("\" for local service \"")(service)("\", which is not currently registered. Dropping message.");
@@ -2708,27 +2865,152 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
         }
     }
 
-SNAP_LOG_TRACE("received event for remote service \"")(service)("\" *** not yet implemented! ***");
+    if(!accepting_remote_connections.empty())
+    {
+        // TODO: we probably need to change the message in a broadcast
+        //       message in this case since we are in effect broadcasting
+        //       it to all those remote servers!
+        //
+        for(auto const & r : accepting_remote_connections)
+        {
+            // we have such a server, just forward to it now
+            //
+            try
+            {
+                // This is being sent to a service on the remove connection
+                // so we cannot verify that it is know (i.e. only the remote
+                // connection has the list of commands of that service)
+                //
+                //verify_command(remote_connection, message);
 
+                r->send_message(message);
+            }
+            catch(std::runtime_error const & e)
+            {
+                // ignore the error because this can come from an
+                // external source (i.e. snapsignal) where an end
+                // user may try to break the whole system!
+                //
+                SNAP_LOG_DEBUG("snapcommunicator failed to send a message to connection \"")
+                              (r->get_name())
+                              ("\" (error: ")
+                              (e.what())
+                              (")");
+            }
+            // send to all of them; if the server was named, the
+            // vector will have a single entry anyway
+            //return;
+        }
+    }
 }
 
 
 void snap_communicator_server::broadcast_message(snap::snap_communicator_message const & message)
 {
+    QString broadcast_msgid;
+    QString informed_neighbors;
+    int hops(0);
+    time_t timeout(0);
+
+    if(message.has_parameter("broadcast_msgid"))
+    {
+        // check whether the message already timed out
+        //
+        // this is a safety feature of our broadcasting capability
+        // which should rarely be activated unless you have multiple
+        // data center locations
+        //
+        timeout = message.get_integer_parameter("broadcast_timeout");
+        time_t const now(time(nullptr));
+        if(timeout < now)
+        {
+            return;
+        }
+
+        // check whether we already received that message, if so ignore
+        // the second instance (it should not happen with the list of
+        // neighbors included in the message, but just in case...)
+        //
+        broadcast_msgid = message.get_parameter("broadcast_msgid");
+        auto const received_it(f_received_broadcast_messages.find(broadcast_msgid));
+        if(received_it != f_received_broadcast_messages.cend())     // message arrived again?
+        {
+            // note that although we include neighbors it is normal that
+            // this happens in a cluster where some computers are not
+            // aware of certain nodes; for example, if A sends a
+            // message to B and C, both B and C know of a node D
+            // which is unknown to A, then both B and C will end
+            // up forward that same message to D, so D will discard
+            // the second instance it receives.
+            //
+            return;
+        }
+
+        // delete "received messages" that have now timed out (because
+        // such are not going to be forwarded since we check the timeout
+        // of a message early and prevent the broadcasting in that case)
+        //
+        for(auto it(f_received_broadcast_messages.cbegin()); it != f_received_broadcast_messages.cend(); )
+        {
+            if(it->second < now)
+            {
+                // this one timed out, we do not need to keep it in this
+                // list, so erase (notice the it++ opposed to the else
+                // that uses ++it)
+                //
+                f_received_broadcast_messages.erase(it++);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // add the new message after we check for timed out entries
+        // so that way we avoid going through this new entry within
+        // the previous loop
+        //
+        f_received_broadcast_messages[broadcast_msgid] = timeout;
+
+        // Note: we skip the canonicalization on this list of neighbors
+        //       because we assume only us (snapcommunicator) handles
+        //       that message and we know that it is already
+        //       canonicalized here
+        //
+        informed_neighbors = message.get_parameter("broadcast_informed_neighbors");
+
+        // get the number of hops this message already performed
+        //
+        hops = message.get_integer_parameter("broadcast_hops");
+    }
+
+    snap::snap_string_list informed_neighbors_list;
+    if(!informed_neighbors.isEmpty())
+    {
+        informed_neighbors_list = informed_neighbors.split(',', QString::SkipEmptyParts);
+    }
+
     QString const service(message.get_service());
-    bool const all(service == "*");
-    bool const remote(all || service == "?");
+    bool const all(hops < 5 && service == "*");
+    bool const remote(hops < 5 && (all || service == "?"));
 
     // we always broadcast to all local services
+    snap::snap_communicator::snap_connection::vector_t broadcast_connection;
     snap::snap_communicator::snap_connection::vector_t const & connections(f_communicator->get_connections());
     for(auto const & nc : connections)
     {
         // try for a service or snapcommunicator that connected to us
         //
         service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(nc));
+        remote_snap_communicator_pointer_t remote_communicator;
+        if(!conn)
+        {
+            remote_communicator = std::dynamic_pointer_cast<remote_snap_communicator>(nc);
+        }
+        bool broadcast(false);
         if(conn)
         {
-            switch(conn->get_network_type())
+            switch(conn->get_address().get_network_type())
             {
             case snap_addr::addr::network_type_t::NETWORK_TYPE_LOOPBACK:
                 // these are localhost services, avoid sending the
@@ -2746,20 +3028,14 @@ void snap_communicator_server::broadcast_message(snap::snap_communicator_message
                 // these are computers within the same local network (LAN)
                 // we forward messages if at least 'remote' is true
                 //
-                if(remote) // destination: "*" or "?"
-                {
-                    conn->send_message(message);
-                }
+                broadcast = remote; // destination: "*" or "?"
                 break;
 
             case snap_addr::addr::network_type_t::NETWORK_TYPE_PUBLIC:
                 // these are computers in another data center
                 // we forward messages only when 'all' is true
                 //
-                if(all) // destination: "*"
-                {
-                    conn->send_message(message);
-                }
+                broadcast = all; // destination: "*"
                 break;
 
             default:
@@ -2768,51 +3044,123 @@ void snap_communicator_server::broadcast_message(snap::snap_communicator_message
 
             }
         }
-        else
+        else if(remote_communicator)
         {
-            // try for a service or snapcommunicator that connected to us
+            // another snapcommunicator that connected to us
             //
-            remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(nc));
-            if(remote_communicator)
+            switch(remote_communicator->get_address().get_network_type())
             {
-                switch(remote_communicator->get_network_type())
+            case snap_addr::addr::network_type_t::NETWORK_TYPE_LOOPBACK:
                 {
-                case snap_addr::addr::network_type_t::NETWORK_TYPE_LOOPBACK:
+                    static bool warned(false);
+                    if(!warned)
                     {
-                        static bool warned(false);
-                        if(!warned)
-                        {
-                            warned = true;
-                            SNAP_LOG_WARNING("remote snap communicator was connected on a LOOPBACK IP address...");
-                        }
+                        warned = true;
+                        SNAP_LOG_WARNING("remote snap communicator was connected on a LOOPBACK IP address...");
                     }
-                    break;
-
-                case snap_addr::addr::network_type_t::NETWORK_TYPE_PRIVATE:
-                    // these are computers within the same local network (LAN)
-                    // we forward messages if at least 'remote' is true
-                    //
-                    if(remote) // destination: "*" or "?"
-                    {
-                        remote_communicator->send_message(message);
-                    }
-                    break;
-
-                case snap_addr::addr::network_type_t::NETWORK_TYPE_PUBLIC:
-                    // these are computers in another data center
-                    // we forward messages only when 'all' is true
-                    //
-                    if(all) // destination: "*"
-                    {
-                        remote_communicator->send_message(message);
-                    }
-                    break;
-
-                default:
-                    // unknown/unexpected type of IP address, totally ignore
-                    break;
-
                 }
+                break;
+
+            case snap_addr::addr::network_type_t::NETWORK_TYPE_PRIVATE:
+                // these are computers within the same local network (LAN)
+                // we forward messages if at least 'remote' is true
+                //
+                broadcast = remote; // destination: "*" or "?"
+                break;
+
+            case snap_addr::addr::network_type_t::NETWORK_TYPE_PUBLIC:
+                // these are computers in another data center
+                // we forward messages only when 'all' is true
+                //
+                broadcast = all; // destination: "*"
+                break;
+
+            default:
+                // unknown/unexpected type of IP address, totally ignore
+                break;
+
+            }
+        }
+        if(broadcast)
+        {
+            // get the IP address of the remote snapcommunicator
+            //
+            QString const address(QString::fromUtf8((conn ? conn->get_address() : remote_communicator->get_address()).get_ipv4or6_string(false, false).c_str()));
+            if(!informed_neighbors_list.contains(address))
+            {
+                // not in the list of informed neighbors, add it and
+                // keep nc in a list that we can use to actually send
+                // the broadcast message
+                //
+                informed_neighbors_list << address;
+                broadcast_connection.push_back(nc);
+            }
+        }
+    }
+
+    if(!broadcast_connection.empty())
+    {
+        // we are broadcasting now (Gossiping a regular message);
+        // for the gossiping to work, we include additional
+        // information in the message
+        //
+        QString const originator(f_server->get_parameter("my_address"));
+        if(!informed_neighbors_list.contains(originator))
+        {
+            // include self since we already know of the message too!
+            // (no need for others to send it back to us)
+            //
+            informed_neighbors_list << originator;
+        }
+
+        // message is 'const', so we need to create a copy
+        snap::snap_communicator_message broadcast_msg(message);
+
+        // generate a new unique broadcast message identifier
+        //
+        ++g_broadcast_sequence;
+        broadcast_msgid = QString("%1-%2").arg(f_server_name).arg(g_broadcast_sequence);
+        broadcast_msg.add_parameter("broadcast_msgid", broadcast_msgid);
+
+        // increase the number of hops; if we reach the limit, we still
+        // want to forward the message, the destination will not forward
+        // (broadcast) more, but it will possibly send that to its own
+        // services
+        //
+        broadcast_msg.add_parameter("broadcast_hops", hops + 1);
+
+        // mainly noise at this point, but I include the originator so
+        // we can track that back if needed for debug purposes
+        //
+        broadcast_msg.add_parameter("broadcast_originator", originator);
+
+        // define a timeout if this is the originator
+        //
+        if(timeout == 0)
+        {
+            // give message 10 seconds to arrive to any and all destinations
+            timeout = time(nullptr) + 10;
+        }
+        broadcast_msg.add_parameter("broadcast_timeout", timeout);
+
+        // note that we currently define the list of neighbors BEFORE
+        // sending the message (anyway the send_message() just adds the
+        // message to a memory cache at this point, so whether it will
+        // be sent is not known until later.)
+        //
+        broadcast_msg.add_parameter("broadcast_informed_neighbors", informed_neighbors_list.join(","));
+
+        for(auto const & bc : broadcast_connection)
+        {
+            service_connection::pointer_t conn(std::dynamic_pointer_cast<service_connection>(bc));
+            if(conn)
+            {
+                conn->send_message(broadcast_msg);
+            }
+            else //if(remote_communicator) -- if 'broadcast' is true, we have either conn or remote_communicator defined
+            {
+                remote_snap_communicator_pointer_t remote_communicator(std::dynamic_pointer_cast<remote_snap_communicator>(bc));
+                remote_communicator->send_message(broadcast_msg);
             }
         }
     }
@@ -2836,31 +3184,35 @@ void snap_communicator_server::send_status(snap::snap_communicator::snap_connect
     // the name of the service is the name of the connection
     reply.add_parameter("service", connection->get_name());
 
-    // check whether the connection is now up or down
-    service_connection::pointer_t c(std::dynamic_pointer_cast<service_connection>(connection));
-    QString const types(c->get_connection_types());
-    reply.add_parameter("status", types.isEmpty() ? "down" : "up");
-
-    // get the time when it was considered up
-    int64_t const up_since(c->get_connection_started());
-    if(up_since != -1)
+    base_connection::pointer_t base_connection(std::dynamic_pointer_cast<base_connection>(connection));
+    if(base_connection)
     {
-        reply.add_parameter("up_since", up_since / 1000000); // send up time in seconds
-    }
+        // check whether the connection is now up or down
+        QString const types(base_connection->get_connection_types());
+        reply.add_parameter("status", types.isEmpty() ? "down" : "up");
 
-    // get the time when it was considered down (if not up yet, this will be skipped)
-    int64_t const down_since(c->get_connection_ended());
-    if(down_since != -1)
-    {
-        reply.add_parameter("down_since", down_since / 1000000); // send up time in seconds
+        // get the time when it was considered up
+        int64_t const up_since(base_connection->get_connection_started());
+        if(up_since != -1)
+        {
+            reply.add_parameter("up_since", up_since / 1000000); // send up time in seconds
+        }
+
+        // get the time when it was considered down (if not up yet, this will be skipped)
+        int64_t const down_since(base_connection->get_connection_ended());
+        if(down_since != -1)
+        {
+            reply.add_parameter("down_since", down_since / 1000000); // send up time in seconds
+        }
     }
 
     // we have the message, now we need to find the list of connections
     // interested by the STATUS event
     // TODO: cache that list?
+    // TODO: use the broadcast_message() function instead? (with service set to ".")
     //
     snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
-    for(auto conn : all_connections)
+    for(auto const & conn : all_connections)
     {
         service_connection::pointer_t sc(std::dynamic_pointer_cast<service_connection>(conn));
         if(!sc)
@@ -2953,7 +3305,7 @@ bool snap_communicator_server::add_neighbors(QString const & new_neighbors)
         }
 
         snap::snap_string_list list(new_neighbors.split(',', QString::SkipEmptyParts));
-        for(auto s : list)
+        for(auto const & s : list)
         {
             if(!f_all_neighbors.contains(s))
             {
@@ -3007,7 +3359,7 @@ void snap_communicator_server::refresh_heard_of()
 
     // first gather all the services we have access to
     snap::snap_communicator::snap_connection::vector_t const & all_connections(f_communicator->get_connections());
-    for(auto connection : all_connections)
+    for(auto const & connection : all_connections)
     {
         service_connection::pointer_t c(std::dynamic_pointer_cast<service_connection>(connection));
         if(!c)
@@ -3063,12 +3415,21 @@ void snap_communicator_server::shutdown(bool full)
     //
     f_shutdown = true;
 
+    // all gossiping can stop at once, since we cannot recognize those
+    // connections in the list returned by f_communicator, we better
+    // do that cleanly ahead of time
+    //
+    if(f_remote_snapcommunicators)
+    {
+        f_remote_snapcommunicators->stop_gossiping();
+    }
+
     // DO NOT USE THE REFERENCE -- we need a copy of the vector
     // because the loop below uses remove_connection() on the
     // original vector!
     //
     snap::snap_communicator::snap_connection::vector_t const all_connections(f_communicator->get_connections());
-    for(auto connection : all_connections)
+    for(auto const & connection : all_connections)
     {
         // a remote communicator for which we initiated a new connection?
         //
@@ -3192,6 +3553,7 @@ void snap_communicator_server::process_connected(snap::snap_communicator::snap_c
     connect.add_parameter("version", snap::snap_communicator::VERSION);
     connect.add_parameter("types", f_server_types);
     connect.add_parameter("my_address", f_server->get_parameter("my_address"));
+    connect.add_parameter("server_name", f_server_name);
     if(!f_explicit_neighbors.isEmpty())
     {
         connect.add_parameter("neighbors", f_explicit_neighbors);
@@ -3217,6 +3579,10 @@ void snap_communicator_server::process_connected(snap::snap_communicator::snap_c
             remote_communicator->send_message(connect);
         }
     }
+
+    // status changed for this connection
+    //
+    send_status(connection);
 }
 
 
@@ -3267,9 +3633,9 @@ void remote_snap_communicator::process_connected()
 }
 
 
-snap_addr::addr::network_type_t remote_snap_communicator::get_network_type() const
+snap_addr::addr const & remote_snap_communicator::get_address() const
 {
-    return f_address.get_network_type();
+    return f_address;
 }
 
 
@@ -3315,11 +3681,11 @@ int main(int argc, char * argv[])
     }
     catch( snap::snap_exception const & except )
     {
-        SNAP_LOG_FATAL("snapcommunicator: exception caught: ")(except.what());
+        SNAP_LOG_FATAL("snapcommunicator: snap exception caught: ")(except.what());
     }
     catch( std::exception const & std_except )
     {
-        SNAP_LOG_FATAL("snapcommunicator: exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("snapcommunicator: standard exception caught: ")(std_except.what());
     }
     catch( ... )
     {

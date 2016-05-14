@@ -647,7 +647,7 @@ void permissions::sets_t::save_to_user_cache()
     QByteArray value;
     uint64_t const start_date(f_snap->get_start_date());
     QtCassandra::setInt64Value(value, start_date);
-    for(auto right : f_user_rights)
+    for(auto const & right : f_user_rights)
     {
         QtCassandra::appendStringValue(value, QString("%1\n").arg(right));
     }

@@ -1278,7 +1278,7 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
     if(f_command[0] != '/')
     {
         snap::snap_string_list paths(binary_path.split(':'));
-        for(auto p : paths)
+        for(auto const & p : paths)
         {
             // sub-folder (for snapdbproxy and snaplock while doing development, maybe others later)
             {
@@ -2262,15 +2262,15 @@ void service::set_stopping()
         //
         f_stopping = SIGTERM;
 
-        // give the STOP signal 2 seconds, note that all services are sent
-        // the STOP signal at the same time so 2 seconds should be more
+        // give the STOP signal 10 seconds, note that all services are sent
+        // the STOP signal at the same time so 10 seconds should be more
         // than enough for all to quit (only those running a really heavy
         // job and do not check their signals often enough...)
         //
         // the test before the set_enable() and set_timeout_delay()
         // is there because set_stopping() could be called multiple times.
         //
-        int64_t const SNAPINIT_STOP_DELAY = 2LL * 1000000LL;
+        int64_t const SNAPINIT_STOP_DELAY = 10LL * 1000000LL;
         set_enable(true);
         set_timeout_delay(SNAPINIT_STOP_DELAY);
         set_timeout_date(-1); // ignore any date timeout
@@ -2835,7 +2835,7 @@ void snap_init::init()
         //       the service name
         //
         std::cout << "List of services to start on this server:" << std::endl;
-        for(auto s : f_service_list)
+        for(auto const & s : f_service_list)
         {
             std::cout << s->get_service_name() << std::endl;
         }
@@ -3037,7 +3037,7 @@ void snap_init::wakeup_services()
     SNAP_LOG_TRACE("Wake Up Services called. (Total number of services: ")(f_service_list.size())(")");
 
     int64_t timeout_date(snap::snap_child::get_current_date());
-    for(auto s : f_service_list)
+    for(auto const & s : f_service_list)
     {
         // ignore the connection service, it already got started when
         // this function is called
@@ -3299,7 +3299,7 @@ void snap_init::process_message(snap::snap_communicator_message const & message,
             //
             snap::snap_string_list services;
             services << "snapinit";
-            for(auto s : f_service_list)
+            for(auto const & s : f_service_list)
             {
                 services << s->get_service_name();
             }
@@ -3391,7 +3391,7 @@ void snap_init::service_died()
     do
     {
         repeat = false;
-        for(auto s : f_service_list)
+        for(auto const & s : f_service_list)
         {
             if(s->service_may_have_died())
             {

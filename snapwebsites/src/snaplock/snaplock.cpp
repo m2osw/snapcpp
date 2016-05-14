@@ -493,7 +493,7 @@ int snaplock::quorum() const
 void snaplock::process_message(snap::snap_communicator_message const & message)
 {
     // This adds way too many messages! Use only to debug if required.
-    //SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+    SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
 
     QString const command(message.get_command());
 
@@ -543,9 +543,16 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "ADDTICKET,DIED,DROPTICKET,GETMAXTICKET,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STOP,TICKETADDED,UNKNOWN,UNLOCK");
+            reply.add_parameter("list", "ADDTICKET,DIED,DROPTICKET,GETMAXTICKET,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STATUS,STOP,TICKETADDED,UNKNOWN,UNLOCK");
 
             f_messager->send_message(reply);
+
+            // Although it says "ready" and thus one would think that would
+            // work in the ready() function, this is done here because the
+            // COMMANDS message is required to first tell snapcommunicator
+            // that we understand "LOCKREADY"
+            //
+            send_lockready();
             return;
         }
         break;
@@ -625,9 +632,9 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
             // generate output for "snaplock --list"
             //
             QString ticketlist;
-            for(auto obj_ticket : f_tickets)
+            for(auto const & obj_ticket : f_tickets)
             {
-                for(auto key_ticket : obj_ticket.second)
+                for(auto const & key_ticket : obj_ticket.second)
                 {
                     QString const & obj_name(key_ticket.second->get_object_name());
                     QString const & key(key_ticket.second->get_entering_key());
@@ -683,7 +690,14 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
         break;
 
     case 'S':
-        if(command == "STOP")
+        if(command == "STATUS")
+        {
+            // a connection managed by snapcommunicator is up
+            //
+            interpret_status(message);
+            return;
+        }
+        else if(command == "STOP")
         {
             // Someone is asking us to leave (probably snapinit)
             //
@@ -759,7 +773,11 @@ void snaplock::ready()
     dbready_message.set_service("snapinit");
     dbready_message.add_parameter("name", f_service_name);
     f_messager->send_message(dbready_message);
+}
 
+
+void snaplock::send_lockready()
+{
     // tell other snaplock instances that are already listening that
     // we are ready; this way we can calculate the number of computers
     // available in our ring and use that to calculate the QUORUM
@@ -988,7 +1006,7 @@ void snaplock::unlock(snap::snap_communicator_message const & message)
     if(obj_ticket != f_tickets.end())
     {
         QString const entering_key(QString("%1/%2").arg(f_server_name).arg(client_pid));
-        for(auto key_ticket : obj_ticket->second)
+        for(auto const & key_ticket : obj_ticket->second)
         {
             if(key_ticket.second->get_entering_key() == entering_key)
             {
@@ -1155,7 +1173,7 @@ void snaplock::lockexiting(snap::snap_communicator_message const & message)
             auto const obj_ticket(f_tickets.find(object_name));
             if(obj_ticket != f_tickets.end())
             {
-                for(auto key_ticket : obj_ticket->second)
+                for(auto const & key_ticket : obj_ticket->second)
                 {
                     key_ticket.second->remove_entering(key);
                     run_activation = true;
@@ -1207,7 +1225,41 @@ void snaplock::lockready(snap::snap_communicator_message const & message)
     }
 
     QString const snaplock_key(QString("%1/%2").arg(server_name).arg(snaplock_pid));
-    f_computers[snaplock_key] = true;
+    if(f_computers.find(snaplock_key) == f_computers.end())
+    {
+        f_computers[snaplock_key] = true;
+
+        // avoid sending that message to ourselves, that's not useful because
+        // we know we already done that
+        //
+        if(server_name != f_server_name
+        && snaplock_pid != getpid())
+        {
+            send_lockready();
+        }
+    }
+}
+
+
+/** \brief With the STATUS message we know of new snapcommunicators.
+ *
+ * This function captures the STATUS message and if it sees that the
+ * name of the service is "remote communicator connection" then it
+ * sends a new LOCKREADY message to make sure that all snaplock's
+ * are aware of us.
+ *
+ * \param[in] message  The LOCKREADY message.
+ */
+void snaplock::interpret_status(snap::snap_communicator_message const & message)
+{
+    QString const service(message.get_parameter("service"));
+    if(service == "remote connection"                   // remote host connected to us
+    || service == "remote communicator connection")     // we connected to remote host
+    {
+        // TODO: we may want to not send the data across on a 'down'?
+        //
+        send_lockready();
+    }
 }
 
 

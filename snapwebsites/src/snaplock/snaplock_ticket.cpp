@@ -672,6 +672,7 @@ void snaplock_ticket::activate_lock()
         locked_message.set_service(f_service_name);
         locked_message.add_parameter("object_name", f_object_name);
         locked_message.add_parameter("timeout_date", f_lock_timeout);
+        locked_message.add_parameter("quorum", f_running_computers->quorum()); // mainly for debug/info so one can know how many computers replied before we said LOCKED
         f_messager->send_message(locked_message);
     }
 }

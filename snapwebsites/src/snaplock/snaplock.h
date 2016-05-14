@@ -225,6 +225,7 @@ private:
     void                        lockentered(snap::snap_communicator_message const & message);
     void                        lockexiting(snap::snap_communicator_message const & message);
     void                        lockready(snap::snap_communicator_message const & message);
+    void                        interpret_status(snap::snap_communicator_message const & message);
     void                        add_ticket(snap::snap_communicator_message const & message);
     void                        ticket_added(snap::snap_communicator_message const & message);
     void                        get_max_ticket(snap::snap_communicator_message const & message);
@@ -235,6 +236,7 @@ private:
     void                        ticket_list(snap::snap_communicator_message const & message);
     void                        cleanup();
     void                        ready();
+    void                        send_lockready();
 
     static pointer_t                            f_instance;
     advgetopt::getopt                           f_opt;

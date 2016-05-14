@@ -228,7 +228,7 @@ void taxonomy::owner_update(int64_t variables_timestamp)
     paths << "types/permissions/rights/edit/taxonomy/vocabulary/tag";
     paths << "types/taxonomy";
     paths << "types/taxonomy/system";
-    for(auto const p : paths)
+    for(auto const & p : paths)
     {
         content::path_info_t taxonomy_ipath;
         taxonomy_ipath.set_path(p);

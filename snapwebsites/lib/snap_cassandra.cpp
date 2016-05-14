@@ -134,7 +134,7 @@ SNAP_LOG_WARNING("snap_cassandra::init_context() should not be used anymore...")
             bool found(false);
             QString const data_centers(f_parameters["cassandra_data_centers"]);
             snap_string_list const names(data_centers.split(','));
-            for( const auto& dc : names )
+            for( const auto & dc : names )
             {
                 if( !dc.isEmpty() )
                 {
@@ -263,7 +263,7 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString con
         //       so we can properly synchronize with the tables
         //       here (although that requires a thread or something
         //       like that... so we'll have to be careful!)
-        //for(auto tbl : created_table)
+        //for(auto const & tbl : created_table)
         //{
         //    tbl->wait_until_done();
         //}

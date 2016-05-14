@@ -732,13 +732,13 @@ server::server()
  */
 server::~server()
 {
-    for( auto child : f_children_waiting )
+    for( auto const & child : f_children_waiting )
     {
         delete child;
     }
     f_children_waiting.clear();
     //
-    for( auto child : f_children_running )
+    for( auto const & child : f_children_running )
     {
         if( child )
         {
