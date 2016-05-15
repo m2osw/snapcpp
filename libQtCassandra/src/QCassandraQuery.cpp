@@ -642,6 +642,12 @@ bool QCassandraQuery::isReady() const
  */
 void QCassandraQuery::getQueryResult()
 {
+    if( f_queryResult && f_rowsIterator )
+    {
+        // Already processed...
+        return;
+    }
+
     throwIfError( QString("Error in query string [%1]!").arg(f_queryString) );
 
     f_queryResult.reset ( cass_future_get_result   (f_sessionFuture.get()), resultDeleter() );

@@ -42,15 +42,16 @@ public:
     QueryModel();
 
     void init
-        ( QtCassandra::QCassandraSession::pointer_t session
+        ( QCassandraSession::pointer_t session
         , const QString& keyspace_name
         , const QString& table_name
         , const QRegExp& filter = QRegExp()
         );
     void clear();
 
-    const QString& keyspaceName() const { return f_keyspaceName; }
-    const QString& tableName()    const { return f_tableName;    }
+    const QString&              keyspaceName() const { return f_keyspaceName; }
+    const QString&              tableName()    const { return f_tableName;    }
+    QCassandraQuery::pointer_t  query()        const { return f_query;        }
 
     // Read only access
     //
@@ -66,21 +67,21 @@ public:
 
 signals:
     void exceptionCaught( const QString & what, const QString & message ) const;
+    void queryFinished() const;
 
 protected:
-    void doQuery      ( QtCassandra::QCassandraQuery::pointer_t query );
+    QCassandraSession::pointer_t f_session;
+    QString                      f_keyspaceName;
+    QString                      f_tableName;
+    std::vector<QByteArray>      f_rows;
+    bool                         f_isMore;
+
+    void doQuery      ( QCassandraQuery::pointer_t query );
     void displayError ( const std::exception & except, const QString & message ) const;
 
-protected:
-    QtCassandra::QCassandraSession::pointer_t f_session;
-    QString                                   f_keyspaceName;
-    QString                                   f_tableName;
-    std::vector<QByteArray>                   f_rows;
-    bool								      f_isMore;
-
 private:
-    QtCassandra::QCassandraQuery::pointer_t   f_query;
-    QRegExp									  f_filter;
+    QCassandraQuery::pointer_t   f_query;
+    QRegExp                      f_filter;
 
     void reset();
 };

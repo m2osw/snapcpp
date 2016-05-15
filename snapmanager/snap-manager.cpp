@@ -51,6 +51,8 @@ namespace
 
 snap_manager::snap_manager(QWidget *snap_parent)
     : QMainWindow(snap_parent)
+    , f_current_domain_index(-1)
+    , f_current_website_index(-1)
 {
     setupUi(this);
 
@@ -121,6 +123,12 @@ snap_manager::snap_manager(QWidget *snap_parent)
         , &QItemSelectionModel::currentChanged
         , this
         , &snap_manager::on_domainSelectionChanged
+        );
+    connect
+        ( &f_domain_model
+        , &TableModel::queryFinished
+        , this
+        , &snap_manager::onDomainsLoaded
         );
     f_domain_name = getChild<QLineEdit>(this, "domainName");
     f_domain_rules = getChild<QTextEdit>(this, "domainRules");
@@ -1085,23 +1093,24 @@ void snap_manager::initialize_website()
 
 void snap_manager::loadDomains()
 {
+    if( f_domain_list->currentIndex().isValid() )
+    {
+        f_current_domain_index = f_domain_list->currentIndex().row();
+    }
+    else
+    {
+        f_current_domain_index = -1;
+    }
+
     // we just checked to know whether the table existed so it cannot fail here
     // however the index table could be missing...
-#if 0
-    f_domain_list->clear();
-    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
-
-    auto query = createQuery( table_name, "SELECT key,column1 FROM %1.%2 WHERE key = ?" );
-    query->setDescription( "Retrieving domains" );
-    //query->setPagingSize(g_paging_size);
-    query->bindByteArray( 0, row_index_name.toUtf8() );
-    connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadDomains );
-    addQuery(query);
-#endif
     f_domain_model.init( f_session, "", "" );
     f_domain_model.doQuery();
+}
 
+
+void snap_manager::onDomainsLoaded()
+{
     // at first some of the entries are disabled
     // until a select is made or New is clicked
     f_domain_name->setEnabled(false);
@@ -1117,6 +1126,15 @@ void snap_manager::loadDomains()
     // allow user to go to that tab
     f_tabs->setTabEnabled(TAB_DOMAINS, true);
     f_tabs->setTabEnabled(TAB_WEBSITES, false); // we lose focus so we want to reset that one
+
+    if( f_current_domain_index != -1 )
+    {
+        const QModelIndex idx( f_domain_model.index( f_current_domain_index, 0 ) );
+        if( idx.isValid() )
+        {
+            f_domain_list->setCurrentIndex( idx );
+        }
+    }
 }
 
 #if 0
@@ -1254,22 +1272,12 @@ void snap_manager::on_domainSelectionChanged( const QModelIndex & /*selected*/, 
     query->setDescription( QString("Retrieving rules for domain [%1]").arg(f_domain_org_name) );
     size_t num = 0;
     query->bindByteArray( num++, f_domain_org_name.toUtf8() );
-    query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
-    connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadDomain );
-    addQuery(query);
-    startQuery();
-}
+    query->bindByteArray( num++, QString("core::original::rules").toUtf8() );
+    query->start();
 
-void snap_manager::onLoadDomain( QCassandraQuery::pointer_t q )
-{
-    if( !getQueryResult(q) )
+    if( query->nextRow() )
     {
-        return;
-    }
-
-    if( q->nextRow() )
-    {
-        f_domain_org_rules = q->getStringColumn(0);
+        f_domain_org_rules = query->getStringColumn(0);
     }
     else
     {
@@ -1277,6 +1285,8 @@ void snap_manager::onLoadDomain( QCassandraQuery::pointer_t q )
         f_domain_org_rules = "";
     }
     f_domain_rules->setText(f_domain_org_rules);
+
+    query->end();
 
     domainWithSelection();
 }
@@ -1368,52 +1378,39 @@ void snap_manager::on_domainSave_clicked()
         size_t num = 0;
         query->bindByteArray( num++, name.toUtf8() );
         query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
-        connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onSaveDomain );
-        addQuery(query);
-        startQuery();
-
-        f_domain_name->setEnabled(false);
-        f_domain_rules->setEnabled(false);
-        f_domain_save->setEnabled(false);
-        f_domain_cancel->setEnabled(false);
-        f_domain_delete->setEnabled(false);
+        query->start();
+        if( query->rowCount() > 0 )
+        {
+            if(f_domain_org_name.isEmpty())
+            {
+                // TODO: looks like the same message in both cases!
+                QMessageBox msg( QMessageBox::Critical
+                                , "Domain Name already defined"
+                                , "You asked to create a new Domain Name and yet you specified a Domain Name that is already defined in the database. Please change the Domain Name or Cancel and then edit the existing name."
+                                , QMessageBox::Ok
+                                , this
+                                );
+                msg.exec();
+            }
+            else
+            {
+                QMessageBox msg( QMessageBox::Critical
+                                , "Domain Name already defined"
+                                , "You asked to create a new Domain Name and yet you specified a Domain Name that is already defined in the database. Please change the Domain Name or Cancel and then edit the existing name."
+                                , QMessageBox::Ok
+                                , this
+                                );
+                msg.exec();
+            }
+            return;
+        }
+        saveDomain();
     }
 }
 
 
-void snap_manager::onSaveDomain( QCassandraQuery::pointer_t q )
+void snap_manager::saveDomain()
 {
-    if( !getQueryResult(q) )
-    {
-        return;
-    }
-
-    if( q->rowCount() > 0 )
-    {
-        if(f_domain_org_name.isEmpty())
-        {
-            // TODO: looks like the same message in both cases!
-            QMessageBox msg( QMessageBox::Critical
-                            , "Domain Name already defined"
-                            , "You asked to create a new Domain Name and yet you specified a Domain Name that is already defined in the database. Please change the Domain Name or Cancel and then edit the existing name."
-                            , QMessageBox::Ok
-                            , this
-                            );
-            msg.exec();
-        }
-        else
-        {
-            QMessageBox msg( QMessageBox::Critical
-                            , "Domain Name already defined"
-                            , "You asked to create a new Domain Name and yet you specified a Domain Name that is already defined in the database. Please change the Domain Name or Cancel and then edit the existing name."
-                            , QMessageBox::Ok
-                            , this
-                            );
-            msg.exec();
-        }
-        return;
-    }
-
     QString const name(f_domain_name->text());
     QString const rules(f_domain_rules->toPlainText());
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
@@ -1456,6 +1453,12 @@ void snap_manager::onSaveDomain( QCassandraQuery::pointer_t q )
     addQuery(query);
 
     startQuery();
+
+    f_domain_name->setEnabled(false);
+    f_domain_rules->setEnabled(false);
+    f_domain_save->setEnabled(false);
+    f_domain_cancel->setEnabled(false);
+    f_domain_delete->setEnabled(false);
 }
 
 void snap_manager::onFinishedSaveDomain( QCassandraQuery::pointer_t /*q*/ )
@@ -1480,6 +1483,8 @@ void snap_manager::onFinishedSaveDomain( QCassandraQuery::pointer_t /*q*/ )
 
     f_domain_org_name  = name;
     f_domain_org_rules = rules;
+
+    f_domain_model.doQuery();
 
     domainWithSelection();
 }
@@ -1533,71 +1538,84 @@ void snap_manager::on_domainDelete_clicked()
     f_domain_cancel->setEnabled(false);
     f_domain_delete->setEnabled(false);
 
-    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
+    QString const domains_table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
+    QString const websites_table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
-    auto query = createQuery( table_name, "SELECT column1 FROM %1.%2 WHERE key = ?" );
-    query->setDescription( QString("Delete all sub-domains in index") );
-    size_t num = 0;
-    query->bindByteArray( num++, row_index_name.toUtf8() );
-    query->setPagingSize(g_paging_size);
-    connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onDeleteDomain );
-    addQuery(query);
-
-    startQuery();
-}
-
-
-void snap_manager::onDeleteDomain( QCassandraQuery::pointer_t q )
-{
-    if( !getQueryResult(q) )
-    {
-        return;
-    }
-
+    // Since the column1 entry in the index for the domain looks like this:
+    //
+    // 		domain_name::website_name_1
+    // 		domain_name::website_name_2
+    //  	...
+    // 		domain_name::website_name_N
+    //
+    // we need to find the matching entries of all websites.
+    //
     std::vector<QByteArray> index_columns_to_drop;
     QStringList website_rows_to_drop;
-    const QString name(f_domain_name->text());
-    const int mid_pos(name.length() + 2); // add the "::" to the end
-    while( q->nextRow() )
-    {
-        const QByteArray entry( q->getByteArrayColumn(0) );
-        index_columns_to_drop.push_back( entry );
-        const QString website_name( QString::fromUtf8(entry.constData(),entry.size()) );
-        if(website_name.length() > mid_pos)
-        {
-            website_rows_to_drop << website_name.mid(mid_pos);
-        }
-    }
-    q->end();
-
-    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
-    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
     //
-    for( auto column : index_columns_to_drop )
     {
-        auto query = createQuery( table_name, "DELETE FROM %1.%2 WHERE key = ? AND column1 = ?" );
-        query->setDescription( QString("Drop index column %1.").arg(column.data()) );
+        auto query = createQuery( websites_table_name, "SELECT column1 FROM %1.%2 WHERE key = ?" );
+        query->setDescription( QString("Delete all sub-domains in index") );
         size_t num = 0;
         query->bindByteArray( num++, row_index_name.toUtf8() );
-        query->bindByteArray( num++, column );
-        addQuery(query);
+        query->setPagingSize(g_paging_size);
+        query->start();
+        //
+        const int mid_pos(name.length() + 2); // add the "::" to the end
+        while( query->nextRow() )
+        {
+            const QByteArray entry( query->getByteArrayColumn(0) );
+            const QString website_name( QString::fromUtf8(entry.constData(),entry.size()) );
+            if(website_name.length() > mid_pos)
+            {
+                // This is the row in the websites table to drop:
+                website_rows_to_drop << website_name.mid(mid_pos);
+
+                // This is the index itself to drop:
+                index_columns_to_drop.push_back( entry );
+            }
+        }
+        query->end();
     }
-    //
+
     for( auto website_name : website_rows_to_drop )
     {
-        auto query = createQuery( table_name, "DELETE FROM %1.%2 WHERE key = ?" );
+        auto query = createQuery( websites_table_name, "DELETE FROM %1.%2 WHERE key = ?" );
         query->setDescription( QString("Drop website row %1.").arg(website_name) );
         size_t num = 0;
         query->bindByteArray( num++, website_name.toUtf8() );
         addQuery(query);
     }
 
+    for( auto column : index_columns_to_drop )
     {
-        auto query = createQuery( table_name, "DELETE FROM %1.%2 WHERE key = ?" );
-        const QString& domain_name_to_drop( f_domain_name->text() );
-        query->setDescription( QString("Drop domain %1.").arg(domain_name_to_drop) );
+        auto query = createQuery( websites_table_name, "DELETE FROM %1.%2 WHERE key = ? AND column1 = ?" );
+        query->setDescription( QString("Drop index column %1.").arg(column.data()) );
         size_t num = 0;
+        query->bindByteArray( num++, row_index_name.toUtf8() );
+        query->bindByteArray( num++, column );
+        addQuery(query);
+    }
+
+    // Finally, drop the domain in the domains table:
+    //
+    const QString& domain_name_to_drop( f_domain_name->text() );
+    {
+        auto query = createQuery( domains_table_name, "DELETE FROM %1.%2 WHERE key = ?" );
+        query->setDescription( QString("Drop domain entry for domain %1.").arg(domain_name_to_drop) );
+        size_t num = 0;
+        query->bindByteArray( num++, domain_name_to_drop.toUtf8() );
+        addQuery(query);
+    }
+    //
+    // ...and the corresponding index
+    //
+    {
+        auto query = createQuery( domains_table_name, "DELETE FROM %1.%2 WHERE key = ? AND column1 = ?" );
+        query->setDescription( QString("Drop domain index entry for %1.").arg(domain_name_to_drop) );
+        size_t num = 0;
+        query->bindByteArray( num++, row_index_name.toUtf8() );
         query->bindByteArray( num++, domain_name_to_drop.toUtf8() );
         connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onFinishedDeleteDomain );
         addQuery(query);
@@ -1607,13 +1625,9 @@ void snap_manager::onDeleteDomain( QCassandraQuery::pointer_t q )
 }
 
 
-void snap_manager::onFinishedDeleteDomain( QCassandraQuery::pointer_t q )
+void snap_manager::onFinishedDeleteDomain( QCassandraQuery::pointer_t /*q*/ )
 {
-    getQueryResult(q);
-
-    //delete f_domain_list->currentItem();
-
-    //f_domain_list->clearSelection();
+    f_domain_list->clearSelection();
     f_domain_model.init( f_session, "", "" );
     f_domain_model.doQuery();
 

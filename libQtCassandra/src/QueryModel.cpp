@@ -169,6 +169,15 @@ void QueryModel::fetchMore ( const QModelIndex & prnt )
     {
         displayError( except, tr("Cannot read from database!") );
     }
+
+    if( !f_isMore && f_query )
+    {
+        f_query.reset();
+
+        // Signal that we are completely done
+        //
+        emit queryFinished();
+    }
 }
 
 

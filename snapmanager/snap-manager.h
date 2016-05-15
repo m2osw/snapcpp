@@ -88,17 +88,16 @@ private slots:
     void onQueryFinished        ( QtCassandra::QCassandraQuery::pointer_t q );
     void onContextCreated       ( QtCassandra::QCassandraQuery::pointer_t q );
     void onResetWebsites        ( QtCassandra::QCassandraQuery::pointer_t q );
-    //void onLoadDomains          ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onLoadDomain           ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onSaveDomain           ( QtCassandra::QCassandraQuery::pointer_t q );
     void onFinishedSaveDomain   ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onDeleteDomain         ( QtCassandra::QCassandraQuery::pointer_t q );
+    //void onDeleteDomain         ( QtCassandra::QCassandraQuery::pointer_t q );
     void onFinishedDeleteDomain ( QtCassandra::QCassandraQuery::pointer_t q );
     //void onLoadWebsites         ( QtCassandra::QCassandraQuery::pointer_t q );
     void onLoadWebsite          ( QtCassandra::QCassandraQuery::pointer_t q );
     void onFinishedSaveWebsite  ( QtCassandra::QCassandraQuery::pointer_t q );
     void onDeleteWebsite        ( QtCassandra::QCassandraQuery::pointer_t q );
     void onCurrentTabChanged    ( int index );
+
+    void onDomainsLoaded();
 
 private:
     enum tabs
@@ -169,6 +168,8 @@ private:
     RowModel						f_row_model;
     TableModel						f_table_model;
     WebsiteModel                    f_website_model;
+    int                             f_current_domain_index;
+    int                             f_current_website_index;
 
     // snap server
     QString                         f_snap_host;
@@ -185,6 +186,8 @@ private:
     void loadDomains();
     void domainWithSelection();
     bool domainChanged();
+
+    void saveDomain();
 
     void loadWebsites();
     void websiteWithSelection();
