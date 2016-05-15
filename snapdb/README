@@ -390,3 +390,22 @@ Somethings not offered by Cassandra:
    either; actually, we may have totally flat data in one place and
    indexes in another!)
 
+ * Testing whether the harddrives in use properly support fsync().
+   (see http://brad.livejournal.com/2116715.html for the concept/details
+   https://gist.github.com/bradfitz/3172656 for the .pl file)
+   So... if writing to a file representing a database and we have to write
+   many blocks to make sure that we are all good, we are not unlikely to
+   overwrite data which could break table validity. We need to know how
+   this is done in existing database systems so our implementation supports
+   power outtages without data losses. (i.e. possibly read blocks A, B, C...
+   save them in a temporary file of some sort with complete information
+   of where to restore if required, do an fsync(). Then overwrite blocks
+   A, B, C. Do fsync() on the new data and mark the saved data as not
+   required anymore.)
+
+   Note: we may be able to palliate the loss of power with the use of
+         QUORUM writes for important data (which we never did with
+	 Cassandra and have had no concerns so far) assuming that
+	 all the computers will not all lose power all at once...
+	 (which in one physical rack is definitely not a guarantee!)
+
