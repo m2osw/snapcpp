@@ -138,6 +138,11 @@ void QueryModel::fetchMore ( const QModelIndex & prnt )
 {
     NOTUSED(prnt);
 
+    if( !f_query )
+    {
+        return;
+    }
+
     try
     {
         f_query->getQueryResult();

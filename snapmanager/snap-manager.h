@@ -19,8 +19,10 @@
 #include "snap-manager-initialize-website.h"
 #include "snap-manager-createcontext.h"
 
+#include "DomainModel.h"
 #include "RowModel.h"
 #include "TableModel.h"
+#include "WebsiteModel.h"
 
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/snap_string_list.h>
@@ -66,12 +68,14 @@ private slots:
     void OnAboutToQuit();
     void on_domainFilter_clicked();
     void on_domainNew_clicked();
-    void on_domainList_itemClicked(QListWidgetItem *item);
+    //void on_domainList_itemClicked(QListWidgetItem *item);
+    void on_domainSelectionChanged( const QModelIndex & selected, const QModelIndex & deselected );
     void on_domainSave_clicked();
     void on_domainCancel_clicked();
     void on_domainDelete_clicked();
     void on_websiteNew_clicked();
-    void on_websiteList_itemClicked(QListWidgetItem *item);
+    //void on_websiteList_itemClicked(QListWidgetItem *item);
+    void on_websiteSelectionChanged( const QModelIndex& selected, const QModelIndex& deselected );
     void on_websiteSave_clicked();
     void on_websiteCancel_clicked();
     void on_websiteDelete_clicked();
@@ -84,13 +88,13 @@ private slots:
     void onQueryFinished        ( QtCassandra::QCassandraQuery::pointer_t q );
     void onContextCreated       ( QtCassandra::QCassandraQuery::pointer_t q );
     void onResetWebsites        ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onLoadDomains          ( QtCassandra::QCassandraQuery::pointer_t q );
+    //void onLoadDomains          ( QtCassandra::QCassandraQuery::pointer_t q );
     void onLoadDomain           ( QtCassandra::QCassandraQuery::pointer_t q );
     void onSaveDomain           ( QtCassandra::QCassandraQuery::pointer_t q );
     void onFinishedSaveDomain   ( QtCassandra::QCassandraQuery::pointer_t q );
     void onDeleteDomain         ( QtCassandra::QCassandraQuery::pointer_t q );
     void onFinishedDeleteDomain ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onLoadWebsites         ( QtCassandra::QCassandraQuery::pointer_t q );
+    //void onLoadWebsites         ( QtCassandra::QCassandraQuery::pointer_t q );
     void onLoadWebsite          ( QtCassandra::QCassandraQuery::pointer_t q );
     void onFinishedSaveWebsite  ( QtCassandra::QCassandraQuery::pointer_t q );
     void onDeleteWebsite        ( QtCassandra::QCassandraQuery::pointer_t q );
@@ -125,7 +129,7 @@ private:
     QString                         f_domain_org_rules; // the original rules (to check Cancel properly)
     QPointer<QPushButton>           f_domain_filter;
     QPointer<QLineEdit>             f_domain_filter_string;
-    QPointer<QListWidget>           f_domain_list;
+    QPointer<QListView>             f_domain_list;
     QPointer<QLineEdit>             f_domain_name;
     QPointer<QTextEdit>             f_domain_rules;
     QPointer<QPushButton>           f_domain_new;
@@ -136,7 +140,7 @@ private:
     // snap websites
     QString                         f_website_org_name; // the original name (in case user changes it)
     QString                         f_website_org_rules; // the original rules (to check Cancel properly)
-    QPointer<QListWidget>           f_website_list;
+    QPointer<QListView>             f_website_list;
     QPointer<QLineEdit>             f_website_name;
     QPointer<QTextEdit>             f_website_rules;
     QPointer<QPushButton>           f_website_new;
@@ -161,8 +165,10 @@ private:
     QPointer<QPushButton>           f_sites_save;
     QPointer<QPushButton>           f_sites_delete;
 
-    TableModel						f_table_model;
+    DomainModel                     f_domain_model;
     RowModel						f_row_model;
+    TableModel						f_table_model;
+    WebsiteModel                    f_website_model;
 
     // snap server
     QString                         f_snap_host;

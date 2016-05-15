@@ -26,7 +26,6 @@
 
 #include <snapwebsites/dbutils.h>
 #include <snapwebsites/not_used.h>
-//#include <snapwebsites/plugins/content/content.h>
 #include <snapwebsites/snap_uri.h>
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/tcp_client_server.h>
@@ -47,8 +46,7 @@ using namespace QCassandraSchema;
 
 namespace
 {
-    const int g_paging_size   = 10;
-    const int q_query_timeout = 500;
+    const int g_paging_size = 10;
 }
 
 snap_manager::snap_manager(QWidget *snap_parent)
@@ -116,8 +114,14 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_domain_filter = getChild<QPushButton>(this, "domainFilter");
     //connect(f_domain_filter, SIGNAL(itemClicked()), this, SLOT(on_domainFilter_clicked()));
     f_domain_filter_string = getChild<QLineEdit>(this, "domainFilterString");
-    f_domain_list = getChild<QListWidget>(this, "domainList");
-    //connect(f_domain_list, SIGNAL(itemClicked()), this, SLOT(on_domainList_itemClicked()));
+    f_domain_list = getChild<QListView>(this, "domainList");
+    f_domain_list->setModel( &f_domain_model );
+    connect
+        ( f_domain_list->selectionModel()
+        , &QItemSelectionModel::currentChanged
+        , this
+        , &snap_manager::on_domainSelectionChanged
+        );
     f_domain_name = getChild<QLineEdit>(this, "domainName");
     f_domain_rules = getChild<QTextEdit>(this, "domainRules");
     f_domain_new = getChild<QPushButton>(this, "domainNew");
@@ -130,8 +134,16 @@ snap_manager::snap_manager(QWidget *snap_parent)
     //connect(f_domain_delete, SIGNAL(clicked()), this, SLOT(on_domainDelete_clicked()));
 
     // get website friends that are going to be used here and there
-    f_website_list = getChild<QListWidget>(this, "websiteList");
+    f_website_list = getChild<QListView>(this, "websiteList");
+    f_website_list->setModel( &f_website_model );
+    f_website_model.init( f_session, "", "" );
     //connect(f_website_list, SIGNAL(itemClicked()), this, SLOT(on_websiteList_itemClicked()));
+    connect
+        ( f_website_list->selectionModel()
+        , &QItemSelectionModel::currentChanged
+        , this
+        , &snap_manager::on_websiteSelectionChanged
+        );
     f_website_name = getChild<QLineEdit>(this, "fullDomainName");
     f_website_rules = getChild<QTextEdit>(this, "websiteRules");
     f_website_new = getChild<QPushButton>(this, "websiteNew");
@@ -1075,8 +1087,8 @@ void snap_manager::loadDomains()
 {
     // we just checked to know whether the table existed so it cannot fail here
     // however the index table could be missing...
+#if 0
     f_domain_list->clear();
-
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
@@ -1086,8 +1098,28 @@ void snap_manager::loadDomains()
     query->bindByteArray( 0, row_index_name.toUtf8() );
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadDomains );
     addQuery(query);
+#endif
+    f_domain_model.init( f_session, "", "" );
+    f_domain_model.doQuery();
+
+    // at first some of the entries are disabled
+    // until a select is made or New is clicked
+    f_domain_name->setEnabled(false);
+    f_domain_org_name = ""; // not editing, this is new
+    f_domain_name->setText("");
+    f_domain_rules->setEnabled(false);
+    f_domain_org_rules = "";
+    f_domain_rules->setText("");
+    f_domain_save->setEnabled(false);
+    f_domain_cancel->setEnabled(false);
+    f_domain_delete->setEnabled(false);
+
+    // allow user to go to that tab
+    f_tabs->setTabEnabled(TAB_DOMAINS, true);
+    f_tabs->setTabEnabled(TAB_WEBSITES, false); // we lose focus so we want to reset that one
 }
 
+#if 0
 void snap_manager::onLoadDomains( QCassandraQuery::pointer_t q )
 {
     if( !getQueryResult(q) )
@@ -1132,6 +1164,7 @@ void snap_manager::onLoadDomains( QCassandraQuery::pointer_t q )
     f_tabs->setTabEnabled(TAB_DOMAINS, true);
     f_tabs->setTabEnabled(TAB_WEBSITES, false); // we lose focus so we want to reset that one
 }
+#endif
 
 void snap_manager::domainWithSelection()
 {
@@ -1183,14 +1216,17 @@ void snap_manager::on_domainFilter_clicked()
     }
 }
 
-void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)
+void snap_manager::on_domainSelectionChanged( const QModelIndex & /*selected*/, const QModelIndex & /*deselected*/ )
 {
+    const QString text( f_domain_model.data( f_domain_list->currentIndex() ).toString());
+
     // same domain? if so, skip on it
-    if(f_domain_org_name == item->text() && !f_domain_org_name.isEmpty())
+    if(f_domain_org_name == text && !f_domain_org_name.isEmpty())
     {
         return;
     }
 
+#if 0
     // check whether the current info was modified
     if(!domainChanged())
     {
@@ -1207,8 +1243,9 @@ void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)
         }
         return;
     }
+#endif
 
-    f_domain_org_name = item->text();
+    f_domain_org_name = text;
     f_domain_name->setText(f_domain_org_name);
 
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
@@ -1426,6 +1463,7 @@ void snap_manager::onFinishedSaveDomain( QCassandraQuery::pointer_t /*q*/ )
     QString const name(f_domain_name->text());
     QString const rules(f_domain_rules->toPlainText());
 
+#if 0
     // the data is now in the database, add it to the table too
     if(f_domain_org_name == "")
     {
@@ -1438,6 +1476,7 @@ void snap_manager::onFinishedSaveDomain( QCassandraQuery::pointer_t /*q*/ )
             f_domain_list->setCurrentItem(items[0]);
         }
     }
+#endif
 
     f_domain_org_name  = name;
     f_domain_org_rules = rules;
@@ -1572,9 +1611,11 @@ void snap_manager::onFinishedDeleteDomain( QCassandraQuery::pointer_t q )
 {
     getQueryResult(q);
 
-    delete f_domain_list->currentItem();
+    //delete f_domain_list->currentItem();
 
-    f_domain_list->clearSelection();
+    //f_domain_list->clearSelection();
+    f_domain_model.init( f_session, "", "" );
+    f_domain_model.doQuery();
 
     // mark empty
     f_domain_org_name = "";
@@ -1596,6 +1637,7 @@ void snap_manager::onFinishedDeleteDomain( QCassandraQuery::pointer_t q )
 void snap_manager::loadWebsites()
 {
     // we just checked to know whether the table existed so it cannot fail here
+#if 0
     f_website_list->clear();
 
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
@@ -1608,8 +1650,26 @@ void snap_manager::loadWebsites()
     query->setPagingSize(g_paging_size);
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadWebsites );
     addQuery(query);
+#endif
+    f_website_model.init( f_session, "", "" );
+    f_website_model.setDomainOrgName( f_domain_org_name );
+    f_website_model.doQuery();
+
+    // at first some of the entries are disabled
+    // until a select is made or New is clicked
+    f_website_name->setEnabled(false);
+    f_website_rules->setEnabled(false);
+    f_website_save->setEnabled(false);
+    f_website_cancel->setEnabled(false);
+    f_website_delete->setEnabled(false);
+
+    f_website_org_name = "";
+    f_website_org_rules = "";
+    f_website_name->setText("");
+    f_website_rules->setText("");
 }
 
+#if 0
 void snap_manager::onLoadWebsites( QCassandraQuery::pointer_t q )
 {
     if( !getQueryResult(q) )
@@ -1657,6 +1717,7 @@ void snap_manager::onLoadWebsites( QCassandraQuery::pointer_t q )
     f_website_name->setText("");
     f_website_rules->setText("");
 }
+#endif
 
 void snap_manager::websiteWithSelection()
 {
@@ -1685,7 +1746,7 @@ bool snap_manager::websiteChanged()
     return true;
 }
 
-void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)
+void snap_manager::on_websiteSelectionChanged( const QModelIndex & /*selected*/, const QModelIndex & /*deselected*/ )
 {
     // check whether the current info was modified
     if(!websiteChanged())
@@ -1695,7 +1756,10 @@ void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)
         return;
     }
 
-    f_website_org_name = item->text();
+    //const auto& selection( f_website_list->selectionModel() );
+    const QString text( f_website_model.data( f_website_list->currentIndex() ).toString());
+
+    f_website_org_name = text;
     f_website_name->setText(f_website_org_name);
 
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
@@ -1916,6 +1980,7 @@ void snap_manager::onFinishedSaveWebsite( QCassandraQuery::pointer_t /*q*/ )
     const QString name  ( f_website_name->text()         );
     const QString rules ( f_website_rules->toPlainText() );
 
+#if 0
     // the data is now in the database, add it to the table too
     if(f_website_org_name == "")
     {
@@ -1928,6 +1993,10 @@ void snap_manager::onFinishedSaveWebsite( QCassandraQuery::pointer_t /*q*/ )
             f_website_list->setCurrentItem(items[0]);
         }
     }
+#endif
+    f_website_model.init( f_session, "", "" );
+    f_website_model.setDomainOrgName( f_domain_org_name );
+    f_website_model.doQuery();
 
     f_website_org_name  = name;
     f_website_org_rules = rules;
@@ -1998,7 +2067,10 @@ void snap_manager::on_websiteDelete_clicked()
 
 void snap_manager::onDeleteWebsite( QCassandraQuery::pointer_t /*q*/ )
 {
-    delete f_website_list->currentItem();
+    //delete f_website_list->currentItem();
+    f_website_model.init( f_session, "", "" );
+    f_website_model.setDomainOrgName( f_domain_org_name );
+    f_website_model.doQuery();
 
     // all those are not valid anymore
     f_website_name->setEnabled(false);

@@ -232,7 +232,7 @@ p, li { white-space: pre-wrap; }
            </layout>
           </item>
           <item>
-           <widget class="QListWidget" name="domainList"/>
+           <widget class="QListView" name="domainList"/>
           </item>
          </layout>
         </item>
@@ -314,7 +314,7 @@ p, li { white-space: pre-wrap; }
        </attribute>
        <layout class="QHBoxLayout" name="horizontalLayout_15">
         <item>
-         <widget class="QListWidget" name="websiteList"/>
+         <widget class="QListView" name="websiteList"/>
         </item>
         <item>
          <widget class="QFrame" name="verticalFrame_4">
