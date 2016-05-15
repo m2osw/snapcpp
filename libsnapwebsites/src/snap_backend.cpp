@@ -481,6 +481,7 @@ public:
                                 child_connection(snap_backend * sb, QtCassandra::QCassandraContext::pointer_t context);
 
     bool                        lock(QString const & uri);
+    void                        unlock();
 
     // snap::snap_communicator::snap_pipe_message_connection implementation
     virtual void                process_message(snap_communicator_message const & message);
@@ -529,15 +530,39 @@ child_connection::child_connection(snap_backend * sb, QtCassandra::QCassandraCon
  *
  * The URI of the website was specified on the constructor.
  *
+ * \todo
+ * At this time, because many of the snapcommunicator variables
+ * are global variables, the child is affected (i.e. when it
+ * calls exit() it wants to clean those global variables and
+ * we may get some "weird" side effects--one of which is the
+ * f_lock, since it sends the UNLOCK command to the snaplock
+ * tool twice as a result.) We may want to look into completely
+ * removing the use of global variables. I have done so in a
+ * couple of tools (under src/) and it worked nicely.
+ *
  * \return true if the lock succeeded.
  */
 bool child_connection::lock(QString const & uri)
 {
-    // the new lock mechanism either succeeds and returns or it
-    // throws...
+    // if the lock fails, it returns false; note that we want to get a 4h
+    // lock, but we wait at most the default (5 sec.) to obtain the lock
     //
-    f_lock.reset(new snap_lock(QString("*backend* %1").arg(uri), 4 * 60 * 60));
-    return true;
+    f_lock.reset(new snap_lock(QString()));
+    return f_lock->lock(QString("*backend* %1").arg(uri), 4 * 60 * 60);
+}
+
+
+/** \brief This function unlocks the child connection.
+ *
+ * This function is called whenever the child becomes a zombie.
+ * Although the destructor would have a similar effect, we cannot
+ * hope to get the destructor in time (i.e. a copy of the connection
+ * shared pointer is held by the snapcommunicator and it will be
+ * until we return from all the message processing functions.)
+ */
+void child_connection::unlock()
+{
+    f_lock.reset();
 }
 
 
@@ -1381,6 +1406,14 @@ void snap_backend::capture_zombies(pid_t pid)
     //      running or not (maybe keep its PID?) and it does not
     //      look like the creation is slow at all...
     //
+    // WARNING: the g_communicator makes a copy of the connections when
+    //          it is processing a set of events; it will be removed on
+    //          the next loop, but here we are NOT getting a delete of
+    //          the connection so anything we want to do here to make
+    //          sure it is gone, we have to call a function for the
+    //          purpose! (i.e. we want the UNLOCK to be sent now)
+    //
+    g_child_connection->unlock();
     g_communicator->remove_connection(g_child_connection);
     g_child_connection.reset();
 
@@ -1519,7 +1552,8 @@ bool snap_backend::process_backend_uri(QString const & uri)
     // first we verify that this very website is indeed ready to accept
     // backend processes, if not return immediately
     //
-    if(!is_ready(uri))
+    if(g_child_connection
+    || !is_ready(uri))
     {
         return false;
     }
@@ -1565,6 +1599,7 @@ bool snap_backend::process_backend_uri(QString const & uri)
         if(p == -1)
         {
             // fork() failed
+            g_communicator->remove_connection(g_child_connection);
             g_child_connection.reset();
 
             // TODO: now that we have a snap communicator with a timer

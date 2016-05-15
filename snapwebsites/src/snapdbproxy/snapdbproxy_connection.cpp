@@ -62,7 +62,6 @@
 
 // OS libs
 //
-#include <sys/eventfd.h>
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
 
@@ -108,11 +107,14 @@ pid_t gettid()
 
 
 
-snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, int s)
+snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, int s, QString const & cassandra_host_list, int cassandra_port)
     : snap_runner("snapdbproxy_connection")
+    //, f_proxy()
     , f_session(session)
     //, f_cursors() -- auto-init
     , f_socket(s)
+    , f_cassandra_host_list(cassandra_host_list)
+    , f_cassandra_port(cassandra_port)
 {
     // the parent (main) thread will shutdown the socket if it receives
     // the STOP message from snapcommunicator
@@ -121,8 +123,6 @@ snapdbproxy_connection::snapdbproxy_connection(QtCassandra::QCassandraSession::p
 
 snapdbproxy_connection::~snapdbproxy_connection()
 {
-    close(f_signal);
-
     // WARNING: do not close f_socket here, our parent (snapdbproxy_thread)
     //          takes care of that
 }
@@ -257,6 +257,16 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
     ssize_t const r(::read(f_socket, buf, count));
 //std::cerr << "[" << getpid() << "/" << gettid() << "]: snapdbproxy_connection(): read() in " << (timeofday() - n) << " us.\n";
 
+    if(static_cast<size_t>(r) != count)
+    {
+        if(r > 0)
+        {
+            // should not happen with a blocking socket!?
+            SNAP_LOG_ERROR("snapdbproxy_connection::read() read ")(r)(" bytes instead of ")(count);
+        }
+        return -1L;
+    }
+
     return r;
 }
 
@@ -344,21 +354,7 @@ void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery * q, QtCass
     }
 
     // run the CQL order
-    //
-    // TBD: will the timeout be effective even if set just before start()
-    //      instead of before the allocation of this query? (if so create
-    //      another sub-function to run the query and call it with or
-    //      without the QCassandraRequestTimeout setup.)
-    //
-    if(order.timeout() != 0)
-    {
-        QtCassandra::QCassandraRequestTimeout request_timeout(f_session, order.timeout());
-        q->start();
-    }
-    else
-    {
-        q->start();
-    }
+    q->start();
 }
 
 
@@ -536,7 +532,32 @@ void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & orde
 
 void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const & order)
 {
-    QtCassandra::QCassandraQuery q( f_session );
+    QtCassandra::QCassandraSession::pointer_t order_session;
+
+    if(order.timeout() > 0)
+    {
+        // unfortunately, the request timeout cannot be changed in an
+        // existing session (a connected session, to be precise); the
+        // only way to get that to work is to change the timeout (in
+        // the cluster config_) and then create a new session connection...
+        //
+        // see: https://datastax-oss.atlassian.net/browse/CPP-362
+        //      https://datastax-oss.atlassian.net/browse/CPP-300
+        //
+        order_session = QtCassandra::QCassandraSession::create();
+        {
+            snap::snap_thread::snap_lock lock(g_connections_mutex);
+
+            QtCassandra::QCassandraRequestTimeout request_timeout(order_session, order.timeout());
+            order_session->connect( f_cassandra_host_list, f_cassandra_port ); // throws on failure!
+        }
+    }
+    else
+    {
+        order_session = f_session;
+    }
+
+    QtCassandra::QCassandraQuery q( order_session );
     send_order(&q, order);
 
     // success

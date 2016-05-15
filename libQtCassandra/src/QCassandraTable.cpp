@@ -563,12 +563,12 @@ void QCassandraTable::closeCursor()
         QCassandraOrder close_cursor;
         close_cursor.setCql("CLOSE", QCassandraOrder::type_of_result_t::TYPE_OF_RESULT_CLOSE);
         close_cursor.setCursorIndex(f_cursor_index);
+        f_cursor_index = -1;
         QCassandraOrderResult close_cursor_result(f_proxy->sendOrder(close_cursor));
         if(!close_cursor_result.succeeded())
         {
-            throw std::runtime_error("QCassandraTable::clearCache(): closing cursor failed.");
+            throw std::runtime_error("QCassandraTable::closeCursor(): closing cursor failed.");
         }
-        f_cursor_index = -1;
     }
 }
 
@@ -989,6 +989,8 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
             , f_cursor_index_ref(cursor_index)
             , f_saved_cursor_index(cursor_index)
         {
+            // simulate the closure of the current cursor index if open
+            //
             f_cursor_index_ref = -1;
         }
 
@@ -1005,6 +1007,12 @@ bool QCassandraTable::exists(const QByteArray& row_key) const
     };
     save_current_cursor_index_t save_cursor_index(const_cast<QCassandraTable *>(this), const_cast<QCassandraTable *>(this)->f_cursor_index);
 
+    // TODO: we should be able to do that without using the full fledge
+    //       readRows() with a cursor + fetch etc. since we just one to
+    //       know whether at least one entry exists we could just do one
+    //       SELECT and save its result; then we would avoid the
+    //       "save_current_cursor_index_t" problem
+    //
     return const_cast<QCassandraTable *>(this)
             ->readRows( std::static_pointer_cast<QCassandraRowPredicate>(row_predicate) ) != 0;
 }

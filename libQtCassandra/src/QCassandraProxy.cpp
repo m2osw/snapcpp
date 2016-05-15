@@ -136,10 +136,6 @@ private:
     char *  f_ptr = nullptr;
 };
 
-void bufferDeleter(char * ptr)
-{
-    delete [] ptr;
-}
 
 }
 

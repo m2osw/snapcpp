@@ -269,8 +269,8 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
     // from config file only
     if(f_config.contains("cassandra_host_list"))
     {
-        f_host_list = f_config[ "cassandra_host_list" ];
-        if(f_host_list.isEmpty())
+        f_cassandra_host_list = f_config[ "cassandra_host_list" ];
+        if(f_cassandra_host_list.isEmpty())
         {
             throw snap::snapwebsites_exception_invalid_parameters("cassandra_host_list cannot be empty.");
         }
@@ -278,10 +278,10 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
     if(f_config.contains("cassandra_port"))
     {
         bool ok(false);
-        f_port = f_config["cassandra_port"].toInt(&ok);
+        f_cassandra_port = f_config["cassandra_port"].toInt(&ok);
         if(!ok
-        || f_port < 0
-        || f_port > 65535)
+        || f_cassandra_port < 0
+        || f_cassandra_port > 65535)
         {
             throw snap::snapwebsites_exception_invalid_parameters("cassandra_port to connect to Cassandra must be defined between 0 and 65535.");
         }
@@ -344,6 +344,19 @@ void snapdbproxy::usage(advgetopt::getopt::status_t status)
 }
 
 
+/** \brief Retrieve the server name.
+ *
+ * This function returns a copy of the server name. Since the constructor
+ * defines the server name, it is available at all time after that.
+ *
+ * \return The server name.
+ */
+QString snapdbproxy::server_name() const
+{
+    return f_server_name;
+}
+
+
 /** \brief Start the Snap! Communicator and wait for events.
  *
  * This function initializes the snapdbproxy object further and then
@@ -358,7 +371,6 @@ void snapdbproxy::usage(advgetopt::getopt::status_t status)
  */
 void snapdbproxy::run()
 {
-std::cerr << "start running!?";
     // Stop on these signals, log them, then terminate.
     //
     signal( SIGCHLD, snapdbproxy::sighandler );
@@ -373,7 +385,7 @@ std::cerr << "start running!?";
     // "physical" connections to any number of nodes so we do not
     // need to monitor those connections.
     //
-    f_session->connect( f_host_list, f_port ); // throws on failure!
+    f_session->connect( f_cassandra_host_list, f_cassandra_port ); // throws on failure!
 
     // initialize the communicator and its connections
     //
@@ -586,7 +598,7 @@ void snapdbproxy::process_connection(int const s)
     // (the only case where the socket does not get closed is and
     // std::bad_alloc exception which we do not capture here.)
     //
-    snapdbproxy_thread::pointer_t thread(std::make_shared<snapdbproxy_thread>(f_session, s));
+    snapdbproxy_thread::pointer_t thread(std::make_shared<snapdbproxy_thread>(f_session, s, f_cassandra_host_list, f_cassandra_port));
     if(thread && thread->is_running())
     {
         f_connections.push_back(thread);

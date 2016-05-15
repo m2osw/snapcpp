@@ -315,7 +315,7 @@ int tcp_client::get_port() const
  * and not the address where the client is running (although it may be the
  * same.)
  *
- * Use the get_socket_name() function to retrieve the client's TCP address.
+ * Use the get_client_addr() function to retrieve the client's TCP address.
  *
  * \return The TCP client address.
  */
@@ -1116,7 +1116,7 @@ int bio_client::get_port() const
  * and not the address where the client is running (although it may be the
  * same.)
  *
- * Use the get_socket_name() function to retrieve the client's TCP address.
+ * Use the get_client_addr() function to retrieve the client's TCP address.
  *
  * \note
  * If the connection was closed, this function returns "".

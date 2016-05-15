@@ -67,7 +67,6 @@
 namespace QtCassandra
 {
 
-using namespace CassTools;
 
 
 /** \brief Initialize a QCassandraSession object
@@ -163,16 +162,16 @@ void QCassandraSession::connect( const QStringList& host_list, const int port )
     // disconnect any existing connection
     disconnect();
 
-    f_cluster.reset( cass_cluster_new(), clusterDeleter() );
+    f_cluster.reset( cass_cluster_new(), CassTools::clusterDeleter() );
     cass_cluster_set_contact_points( f_cluster.get(),
                                      host_list.join(",").toUtf8().data() );
 
     cass_cluster_set_port( f_cluster.get(), port );
     //
-    f_session.reset( cass_session_new(), sessionDeleter() );
+    f_session.reset( cass_session_new(), CassTools::sessionDeleter() );
     f_connection.reset(
         cass_session_connect( f_session.get(), f_cluster.get() ),
-        futureDeleter() );
+        CassTools::futureDeleter() );
 
     /* This operation will block until the result is ready */
     CassError rc = cass_future_error_code( f_connection.get() );
@@ -211,8 +210,8 @@ void QCassandraSession::disconnect()
     //
     if ( f_session )
     {
-        future_pointer_t result( cass_session_close( f_session.get() ),
-                                 futureDeleter() );
+        CassTools::future_pointer_t result( cass_session_close( f_session.get() ),
+                                 CassTools::futureDeleter() );
         cass_future_wait( result.get() );
     }
     //
@@ -238,31 +237,107 @@ bool QCassandraSession::isConnected() const
 
 /** \brief Return a smart pointer to the cassandra-cpp cluster object.
  */
-cluster_pointer_t QCassandraSession::cluster() const
+CassTools::cluster_pointer_t QCassandraSession::cluster() const
 {
     return f_cluster;
 }
 
 /** \brief Return a smart pointer to the cassandra-cpp session object.
  */
-session_pointer_t QCassandraSession::session() const
+CassTools::session_pointer_t QCassandraSession::session() const
 {
     return f_session;
 }
 
 /** \brief Return a smart pointer to the cassandra-cpp connection future object.
  */
-future_pointer_t QCassandraSession::connection() const
+CassTools::future_pointer_t QCassandraSession::connection() const
 {
     return f_connection;
 }
 
+
+/** \brief Return the current request timeout.
+ *
+ * This function returns the timeout for the next CQL requests.
+ *
+ * The setTimeout() function manages the timeout in such a way that
+ * only the largest one is kept while running. Others are kept around,
+ * but they do not apply until the largest one is removed and they
+ * eventually themselves become the largest one.
+ *
+ * It is very much possible that some setTimeout() call never have
+ * any effect since a larger setTimeout() is in effect while they
+ * themselves run.
+ *
+ * \note
+ * At this time we only use this mechanism when we create a table
+ * so there should be no clash, except that multiple threads could
+ * all attempt to create a table and RAII would not be enough to
+ * know whether to keep the largest timeout or put the default
+ * back in.
+ *
+ * \return The timeout amount.
+ */
 CassTools::timeout_t QCassandraSession::timeout() const
 {
     return f_timeout;
 }
 
 
+/** \brief Change the current timeout of CQL requests.
+ *
+ * WARNING: In the snapdbproxy the request timeout is only implemented
+ *          for QtCassandra::QCassandraOrder::TYPE_OF_RESULT_SUCCESS.
+ *          If you are using sessions directly, make sure to create
+ *          a new session after this change!
+ *
+ * This function changes the timeout for the next CQL requests.
+ *
+ * Because the timeout is shared between all requests and all threads
+ * that currently run against the Cassandra C++ driver, the function
+ * makes sure to use the largest value that has been specified so far.
+ *
+ * You may "remove" your timeout amount by calling the function again
+ * with timeout_ms set to -1. For example:
+ *
+ * \code
+ *      CassTools::timeout_t const old_timeout(session->setTimeout(5 * 60 * 1000)); // 5 minutes
+ *      ... do some work ...
+ *      session->setTimeout(old_timeout); // restore
+ * \endcode
+ *
+ * It is strongly adviced that you make use of the QCassandraRequestTimeout
+ * class in order to do such changes to make sure that your timeout is
+ * always removed once you are done with your work (i.e. RAII, exception
+ * safe code):
+ *
+ * \code
+ *      {
+ *          QtCassandra::QCassandraRequestTimeout safe_timeout(session, 5 * 60 * 1000); // 5 minutes
+ *          ... do some work ...
+ *      }
+ * \endcode
+ *
+ * \warning
+ * This value is not multi-thread protected. Since you need to change it
+ * just for the time you connect a session, you can protect that part
+ * if you are using threads:
+ *
+ * \code
+ *      session = QtCassandra::QCassandraSession::create();
+ *      {
+ *          guard lock(some_mutex);
+ *
+ *          QtCassandra::QCassandraRequestTimeout safe_timeout(session, 5 * 60 * 1000);
+ *          session->connect(...);
+ *      }
+ * \endcode
+ *
+ * \param[in] timeout_ms  The new timeout in milliseconds.
+ *
+ * \return The old timeout.
+ */
 int64_t QCassandraSession::setTimeout(CassTools::timeout_t timeout_ms)
 {
     CassTools::timeout_t const old_timeout(f_timeout);

@@ -92,12 +92,12 @@ void snapTableList::initList()
 
 void snapTableList::overrideTablesToDump( const QStringList& tables_to_dump )
 {
-    for( auto& entry : f_list )
+    for( auto & entry : f_list )
     {
         entry.f_canDump = false;
     }
 
-    for( const auto& table_name : tables_to_dump )
+    for( auto const & table_name : tables_to_dump )
     {
         f_list[table_name].f_canDump = true;
     }
@@ -106,7 +106,7 @@ void snapTableList::overrideTablesToDump( const QStringList& tables_to_dump )
 QStringList snapTableList::tablesToDrop()
 {
     QStringList the_list;
-    for( const auto& entry : f_list )
+    for( auto const & entry : f_list )
     {
         if( !entry.f_canDrop ) continue;
         the_list << entry.f_tableName;
@@ -117,7 +117,7 @@ QStringList snapTableList::tablesToDrop()
 QStringList snapTableList::snapTableList::tablesToDump()
 {
     QStringList the_list;
-    for( const auto& entry : f_list )
+    for( auto const & entry : f_list )
     {
         if( !entry.f_canDump ) continue;
         the_list << entry.f_tableName;

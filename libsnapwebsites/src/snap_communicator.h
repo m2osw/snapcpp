@@ -368,6 +368,8 @@ public:
         void                        close();
         size_t                      get_client_address(struct sockaddr_storage & address) const;
         std::string                 get_client_addr() const;
+        int                         get_client_port() const;
+        std::string                 get_client_addr_port() const;
 
         // snap_connection implementation
         virtual bool                is_reader() const;
@@ -479,6 +481,7 @@ public:
                                     snap_tcp_client_permanent_message_connection(std::string const & address, int port, tcp_client_server::bio_client::mode_t mode = tcp_client_server::bio_client::mode_t::MODE_PLAIN, int64_t const pause = DEFAULT_PAUSE_BEFORE_RECONNECTING, bool const use_thread = true);
 
         bool                        send_message(snap_communicator_message const & message, bool cache = false);
+        bool                        is_connected() const;
         void                        mark_done();
         size_t                      get_client_address(struct sockaddr_storage & address) const;
         std::string                 get_client_addr() const;
@@ -498,7 +501,7 @@ public:
     private:
         std::shared_ptr<snap_tcp_client_permanent_message_connection_impl>
                                     f_impl;
-        int64_t                     f_pause = -1;
+        int64_t                     f_pause = 0;
         bool const                  f_use_thread = true;
         bool                        f_done = false;
     };

@@ -69,7 +69,7 @@ int main(int argc, char * argv[])
         //
         snapdbproxy dbproxy( argc, argv );
 
-        SNAP_LOG_INFO("--------------------------------- snapdbproxy started.");
+        SNAP_LOG_INFO("--------------------------------- snapdbproxy started on ")(dbproxy.server_name());
 
         // Now run!
         //

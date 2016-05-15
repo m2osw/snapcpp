@@ -102,7 +102,7 @@ public:
                 TableMeta::pointer_t            f_table;
                 QString                         f_name;
                 Value::map_t                    f_fields;
-                type_t                          f_type;
+                type_t                          f_type = TypeRegular;
             };
 
                                             TableMeta( KeyspaceMeta::pointer_t kysp = KeyspaceMeta::pointer_t() );

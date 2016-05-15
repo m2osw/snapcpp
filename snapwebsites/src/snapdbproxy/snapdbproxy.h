@@ -47,12 +47,10 @@
 
 // 3rd party libs
 //
-//#include <QtCore>
 #include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 #include <QtCassandra/QCassandraOrder.h>
 #include <QtCassandra/QCassandraProxy.h>
-//#include <QtCassandra/QCassandraOrderResult.h>
 #include <advgetopt/advgetopt.h>
 
 // C++ libs
@@ -110,7 +108,7 @@ class snapdbproxy_connection
         , public QtCassandra::QCassandraProxyIO
 {
 public:
-                                snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, int s);
+                                snapdbproxy_connection(QtCassandra::QCassandraSession::pointer_t session, int s, QString const & cassandra_host_list, int cassandra_port);
     virtual                     ~snapdbproxy_connection();
 
     // implement snap_runner
@@ -142,8 +140,8 @@ private:
     QtCassandra::QCassandraSession::pointer_t   f_session;
     std::vector<cursor_t>                       f_cursors;
     int                                         f_socket;
-    int                                         f_signal;
-    struct pollfd                               f_poll_fds[2];
+    QString                                     f_cassandra_host_list;
+    int                                         f_cassandra_port;
 };
 
 
@@ -152,7 +150,7 @@ class snapdbproxy_thread
 public:
     typedef std::shared_ptr<snapdbproxy_thread> pointer_t;
 
-                            snapdbproxy_thread(QtCassandra::QCassandraSession::pointer_t session, int const s);
+                            snapdbproxy_thread(QtCassandra::QCassandraSession::pointer_t session, int const s, QString const & cassandra_host_list, int cassandra_port);
                             ~snapdbproxy_thread();
 
     bool                    is_running() const;
@@ -174,7 +172,7 @@ public:
                                 snapdbproxy( int argc, char * argv[] );
                                 ~snapdbproxy();
 
-    static pointer_t            instance( int argc, char * argv[] );
+    QString                     server_name() const;
 
     void                        run();
     void                        process_message(snap::snap_communicator_message const & message);
@@ -197,13 +195,13 @@ private:
     snap::snap_config                           f_config;
     QString                                     f_log_conf = "/etc/snapwebsites/snapdbproxy.properties";
     QString                                     f_server_name;
-    QString                                     f_communicator_addr;
-    int                                         f_communicator_port;
-    QString                                     f_snapdbproxy_addr;
-    int                                         f_snapdbproxy_port;
+    QString                                     f_communicator_addr = "127.0.0.1";
+    int                                         f_communicator_port = 4040;
+    QString                                     f_snapdbproxy_addr = "127.0.0.1";
+    int                                         f_snapdbproxy_port = 4042;
     snap::snap_communicator::pointer_t          f_communicator;
-    QString                                     f_host_list = "localhost";
-    int                                         f_port = 9042;
+    QString                                     f_cassandra_host_list = "localhost";
+    int                                         f_cassandra_port = 9042;
     snapdbproxy_messager::pointer_t             f_messager;
     snapdbproxy_listener::pointer_t             f_listener;
     long                                        f_max_pending_connections = -1;

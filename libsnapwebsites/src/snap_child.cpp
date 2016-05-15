@@ -3547,7 +3547,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
         {
             std::stringstream ss;
             ss << "post:" << std::endl;
-            for( auto &pair : f_post.toStdMap() )
+            for( auto const & pair : f_post.toStdMap() )
             {
                 ss << pair.first << ": " << pair.second << std::endl;
             }

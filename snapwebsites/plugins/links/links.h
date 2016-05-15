@@ -220,8 +220,8 @@ public:
 
                                 link_info_pair(link_info const & src, link_info const & dst);
 
-    link_info const &           source();
-    link_info const &           destination();
+    link_info const &           source() const;
+    link_info const &           destination() const;
 
 private:
     link_info                   f_source;

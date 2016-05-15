@@ -335,7 +335,7 @@ snap_layout::snap_layout(int argc, char * argv[])
                 // zipios2 throws if it cannot open the input file
                 zipios::ZipFile zf( filename.toUtf8().data() );
                 //
-                for( auto ent : zf.entries() )
+                for( auto const & ent : zf.entries() )
                 {
                     if( ent && ent->isValid() && !ent->isDirectory() )
                     {
@@ -715,7 +715,7 @@ void snap_layout::add_files()
 
     typedef QMap<QString, time_t> mtimes_t;
     mtimes_t mtimes;
-    for( auto info : f_fileinfo_list )
+    for( auto const & info : f_fileinfo_list )
     {
         QString const filename(info.f_filename);
         if(f_verbose)

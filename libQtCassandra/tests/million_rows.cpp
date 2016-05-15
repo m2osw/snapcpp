@@ -51,240 +51,249 @@
 
 int main(int argc, char *argv[])
 {
-    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
-
-    bool drop(false);
-    int replication_factor(1);
-    const char *host("localhost");
-    for(int i(1); i < argc; ++i)
-    {
-        if(strcmp(argv[i], "--help") == 0)
-        {
-            qDebug() << "Usage:" << argv[0] << "[-h <hostname>] [-r <replication-factor>]";
-            exit(1);
-        }
-        if(strcmp(argv[i], "-h") == 0)
-        {
-            ++i;
-            if(i >= argc)
-            {
-                qDebug() << "error: -h must be followed by a hostname.";
-                exit(1);
-            }
-            host = argv[i];
-        }
-        else if(strcmp(argv[i], "-d") == 0)
-        {
-            drop = 1;
-        }
-        else if(strcmp(argv[i], "-r") == 0)
-        {
-            ++i;
-            if(i >= argc) {
-                qDebug() << "error: -r must be followed by the number of replication to create in your context.";
-                exit(1);
-            }
-            replication_factor = atol(argv[i]);
-        }
-    }
-
-    cassandra->connect(host);
-    qDebug() << "Working on Cassandra Cluster Named" << cassandra->clusterName();
-    qDebug() << "Working on Cassandra Protocol Version" << cassandra->protocolVersion();
-
-    qDebug() << "+ Initialization";
-    qDebug() << "++ Got an old context?";
-    QtCassandra::QCassandraContext::pointer_t oldctxt(cassandra->findContext("qt_cassandra_test_large_rw"));
-    if(oldctxt)
-    {
-        qDebug() << "++ Drop the old context";
-        cassandra->dropContext("qt_cassandra_test_large_rw");
-        qDebug() << "++ Synchronize after the drop";
-        if(drop)
-        {
-            // just do the drop and it succeeded
-            exit(0);
-        }
-    }
-    else if(drop)
-    {
-        qDebug() << "warning: no old table to drop";
-        exit(0);
-    }
-    qDebug() << "++ Setup new context...";
-    QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_large_rw"));
-    //
-    QtCassandra::QCassandraSchema::Value replication;
-    auto& replication_map(replication.map());
-    replication_map["class"]              = QVariant("SimpleStrategy");
-    replication_map["replication_factor"] = QVariant(replication_factor);
-
-    auto& fields(context->fields());
-    fields["replication"]    = replication;
-    fields["durable_writes"] = QVariant(true);
-
-    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-    //
-    QtCassandra::QCassandraSchema::Value compaction;
-    auto& compaction_map(compaction.map());
-    compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
-    compaction_map["min_threshold"] = QVariant(4);
-    compaction_map["max_threshold"] = QVariant(22);
-
-    auto& table_fields(table->fields());
-    table_fields["comment"]                     = QVariant("Our test table.");
-    table_fields["memtable_flush_period_in_ms"] = QVariant(60);
-    table_fields["gc_grace_seconds"]            = QVariant(3600);
-    table_fields["compaction"]                  = compaction;
+    int err(0);
 
     try
     {
-        context->create();
-        qDebug() << "++ Context and its table were created!";
-    }
-    catch(const std::exception& e)
-    {
-        qDebug() << "Exception is [" << e.what() << "]";
-        exit(1);
-    }
+        QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
 
-    qDebug() << "Now we want to test a large number of rows. This test is slow.";
-
-    //try/catch -- by default the rest should not generate an exception
-
-    // create 'count' rows in the database
-    static const int count(1200000);
-    std::vector<int32_t> data;
-    data.reserve(count);
-    for(int i(0); i < count; ++i)
-    {
-        int32_t r(rand());
-        data.push_back(r);
-        QtCassandra::QCassandraValue value(r);
-        value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-        QString row(QString("row%1").arg(i));
-//qDebug() << "Save row" << row << "with" << r;
-        for(int retry(5); retry > 0; --retry)
+        bool drop(false);
+        int replication_factor(1);
+        const char *host("localhost");
+        for(int i(1); i < argc; ++i)
         {
-            try
+            if(strcmp(argv[i], "--help") == 0)
             {
-                (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"][row]["value"] = value;
-                retry = 0;
+                qDebug() << "Usage:" << argv[0] << "[-h <hostname>] [-r <replication-factor>]";
+                exit(1);
             }
-            catch(const std::exception& e)
+            if(strcmp(argv[i], "-h") == 0)
             {
-                printf(" [pause because we got exception: %s]", e.what());
-                fflush(stdout);
-                if(retry == 1)
+                ++i;
+                if(i >= argc)
                 {
-                    // well... after 5 sec. still timing out, maybe the
-                    // server is under super heavy load or completely
-                    // disconnected from other nodes
-                    printf(" timed out after %d rows inserted\n", i);
-                    throw;
+                    qDebug() << "error: -h must be followed by a hostname.";
+                    exit(1);
                 }
-                // if you do not have enough nodes or have a slow network
-                // (i.e. 100Mbit/sec.) then you are likely to get timed out
-                // exceptions; we need to let Cassandra do some work and
-                // try again; we do so here
-                sleep(1);
+                host = argv[i];
+            }
+            else if(strcmp(argv[i], "-d") == 0)
+            {
+                drop = 1;
+            }
+            else if(strcmp(argv[i], "-r") == 0)
+            {
+                ++i;
+                if(i >= argc) {
+                    qDebug() << "error: -r must be followed by the number of replication to create in your context.";
+                    exit(1);
+                }
+                replication_factor = atol(argv[i]);
             }
         }
 
-        // clear the cache once in a while so the 'count' rows don't stay in memory
-        if(i % 100 == 0)
-        {
-            (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"].clearCache();
-        }
-        if((i % 5000) == 0)
-        {
-            printf(".");
-            fflush(stdout);
-            // some faster computers will really flood Cassandra which will then
-            // throw a Timeout exception (because it does not have the time to
-            // process all the data fast enough.)
-            //struct timespec pause;
-            //pause.tv_sec = 0;
-            //pause.tv_nsec = 250000000; // 250ms
-            //nanosleep(&pause, NULL);
-            //sleep(1);
-        }
-    }
-    printf(" done!\n");
-    fflush(stdout);
+        cassandra->connect(host);
+        qDebug() << "Working on Cassandra Cluster Named" << cassandra->clusterName();
+        qDebug() << "Working on Cassandra Protocol Version" << cassandra->protocolVersion();
 
-    // now read the data
-    auto column_predicate( std::make_shared<QtCassandra::QCassandraCellKeyPredicate>() );
-    column_predicate->setCellKey("value");
-    auto row_predicate( std::make_shared<QtCassandra::QCassandraRowPredicate>() );
-    row_predicate->setCellPredicate(column_predicate);
-    //row_predicate.setWrap();
-    //row_predicate.setStartRowName("");
-    //row_predicate.setEndRowName("");
-    int err(0);
-    std::map<int32_t, bool> unique;
-    //unique.reserve(count);
-    for(int i(0); i < count * 2;)
-    {
-        table->clearCache();
-        uint32_t max(table->readRows(row_predicate));
-        if(max == 0)
+        qDebug() << "+ Initialization";
+        qDebug() << "++ Got an old context?";
+        QtCassandra::QCassandraContext::pointer_t oldctxt(cassandra->findContext("qt_cassandra_test_large_rw"));
+        if(oldctxt)
         {
-            // we expect to exit here on success
-            break;
+            qDebug() << "++ Drop the old context";
+            cassandra->dropContext("qt_cassandra_test_large_rw");
+            qDebug() << "++ Synchronize after the drop";
+            if(drop)
+            {
+                // just do the drop and it succeeded
+                exit(0);
+            }
         }
-        QString row_name;
-        const QtCassandra::QCassandraRows& r(table->rows());
-        for(QtCassandra::QCassandraRows::const_iterator o(r.begin()); o != r.end(); ++o, ++i)
+        else if(drop)
         {
-            const QtCassandra::QCassandraCells& c(o.value()->cells());
-            if(c.size() != 1)
+            qDebug() << "warning: no old table to drop";
+            exit(0);
+        }
+        qDebug() << "++ Setup new context...";
+        QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_large_rw"));
+        //
+        QtCassandra::QCassandraSchema::Value replication;
+        auto& replication_map(replication.map());
+        replication_map["class"]              = QVariant("SimpleStrategy");
+        replication_map["replication_factor"] = QVariant(replication_factor);
+
+        auto& fields(context->fields());
+        fields["replication"]    = replication;
+        fields["durable_writes"] = QVariant(true);
+
+        QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
+        //
+        QtCassandra::QCassandraSchema::Value compaction;
+        auto& compaction_map(compaction.map());
+        compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+        compaction_map["min_threshold"] = QVariant(4);
+        compaction_map["max_threshold"] = QVariant(22);
+
+        auto& table_fields(table->fields());
+        table_fields["comment"]                     = QVariant("Our test table.");
+        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["gc_grace_seconds"]            = QVariant(3600);
+        table_fields["compaction"]                  = compaction;
+
+        try
+        {
+            context->create();
+            qDebug() << "++ Context and its table were created!";
+        }
+        catch(const std::exception& e)
+        {
+            qDebug() << "Exception is [" << e.what() << "]";
+            exit(1);
+        }
+
+        qDebug() << "Now we want to test a large number of rows. This test is slow.";
+
+        //try/catch -- by default the rest should not generate an exception
+
+        // create 'count' rows in the database
+        static const int count(1200000);
+        std::vector<int32_t> data;
+        data.reserve(count);
+        for(int i(0); i < count; ++i)
+        {
+            int32_t r(rand());
+            data.push_back(r);
+            QtCassandra::QCassandraValue value(r);
+            value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+            QString row(QString("row%1").arg(i));
+    //qDebug() << "Save row" << row << "with" << r;
+            for(int retry(5); retry > 0; --retry)
             {
-                fprintf(stderr, "error: invalid number of cells, excepted exactly 1.\n");
-                ++err;
+                try
+                {
+                    (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"][row]["value"] = value;
+                    retry = 0;
+                }
+                catch(const std::exception& e)
+                {
+                    printf(" [pause because we got exception: %s]", e.what());
+                    fflush(stdout);
+                    if(retry == 1)
+                    {
+                        // well... after 5 sec. still timing out, maybe the
+                        // server is under super heavy load or completely
+                        // disconnected from other nodes
+                        printf(" timed out after %d rows inserted\n", i);
+                        throw;
+                    }
+                    // if you do not have enough nodes or have a slow network
+                    // (i.e. 100Mbit/sec.) then you are likely to get timed out
+                    // exceptions; we need to let Cassandra do some work and
+                    // try again; we do so here
+                    sleep(1);
+                }
             }
-            QtCassandra::QCassandraCells::const_iterator v(c.begin());
-            const QtCassandra::QCassandraValue& n(v.value()->value());
-            int32_t l(n.int32Value());
-            row_name = o.value()->rowName();
-            int32_t rn(row_name.mid(3).toInt());
-            if(data[rn] != l)
+
+            // clear the cache once in a while so the 'count' rows don't stay in memory
+            if(i % 100 == 0)
             {
-                fprintf(stderr, "error: expected value %d, got %d instead\n", data[rn], l);
-                ++err;
-            }
-            if(unique.find(rn) != unique.end())
-            {
-                fprintf(stderr, "error: row \"%s\" found twice.\n", row_name.toUtf8().data());
-                ++err;
-            }
-            else
-            {
-                unique[rn] = true;
+                (*cassandra)["qt_cassandra_test_large_rw"]["qt_cassandra_test_table"].clearCache();
             }
             if((i % 5000) == 0)
             {
                 printf(".");
                 fflush(stdout);
+                // some faster computers will really flood Cassandra which will then
+                // throw a Timeout exception (because it does not have the time to
+                // process all the data fast enough.)
+                //struct timespec pause;
+                //pause.tv_sec = 0;
+                //pause.tv_nsec = 250000000; // 250ms
+                //nanosleep(&pause, NULL);
+                //sleep(1);
             }
         }
-        //row_predicate.setStartRowName(row_name);
-    }
-    printf(" finished\n");
-    fflush(stdout);
+        printf(" done!\n");
+        fflush(stdout);
 
-    // verify that we got it all by checking out the map
-    for(int i(0); i < count; ++i)
-    {
-        if(unique.find(i) == unique.end())
+        // now read the data
+        auto column_predicate( std::make_shared<QtCassandra::QCassandraCellKeyPredicate>() );
+        column_predicate->setCellKey("value");
+        auto row_predicate( std::make_shared<QtCassandra::QCassandraRowPredicate>() );
+        row_predicate->setCellPredicate(column_predicate);
+        //row_predicate.setWrap();
+        //row_predicate.setStartRowName("");
+        //row_predicate.setEndRowName("");
+        std::map<int32_t, bool> unique;
+        //unique.reserve(count);
+        for(int i(0); i < count * 2;)
         {
-            fprintf(stderr, "error: row \"%d\" never found.\n", i);
-            ++err;
+            table->clearCache();
+            uint32_t max(table->readRows(row_predicate));
+            if(max == 0)
+            {
+                // we expect to exit here on success
+                break;
+            }
+            QString row_name;
+            const QtCassandra::QCassandraRows& r(table->rows());
+            for(QtCassandra::QCassandraRows::const_iterator o(r.begin()); o != r.end(); ++o, ++i)
+            {
+                const QtCassandra::QCassandraCells& c(o.value()->cells());
+                if(c.size() != 1)
+                {
+                    fprintf(stderr, "error: invalid number of cells, excepted exactly 1.\n");
+                    ++err;
+                }
+                QtCassandra::QCassandraCells::const_iterator v(c.begin());
+                const QtCassandra::QCassandraValue& n(v.value()->value());
+                int32_t l(n.int32Value());
+                row_name = o.value()->rowName();
+                int32_t rn(row_name.mid(3).toInt());
+                if(data[rn] != l)
+                {
+                    fprintf(stderr, "error: expected value %d, got %d instead\n", data[rn], l);
+                    ++err;
+                }
+                if(unique.find(rn) != unique.end())
+                {
+                    fprintf(stderr, "error: row \"%s\" found twice.\n", row_name.toUtf8().data());
+                    ++err;
+                }
+                else
+                {
+                    unique[rn] = true;
+                }
+                if((i % 5000) == 0)
+                {
+                    printf(".");
+                    fflush(stdout);
+                }
+            }
+            //row_predicate.setStartRowName(row_name);
         }
-    }
+        printf(" finished\n");
+        fflush(stdout);
 
-    // we're done with this test, drop the context
-    //context->drop();
+        // verify that we got it all by checking out the map
+        for(int i(0); i < count; ++i)
+        {
+            if(unique.find(i) == unique.end())
+            {
+                std::cerr << "error: row \"" << i << "\" never found." << std::endl;
+                ++err;
+            }
+        }
+
+        // we're done with this test, drop the context
+        //context->drop();
+    }
+    catch(std::overflow_error const & e)
+    {
+        qDebug() << "std::overflow_error caught -- " << e.what();
+        ++err;
+    }
 
     exit(err == 0 ? 0 : 1);
 }

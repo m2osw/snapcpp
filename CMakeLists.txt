@@ -66,7 +66,8 @@ ConfigureMakeProject( PROJECT_NAME log4cplus
         -DCMAKE_CXX_FLAGS=-std=c++11
         -DLOG4CPLUS_BUILD_TESTING=OFF
         -DLOG4CPLUS_SINGLE_THREADED=OFF
-        -DLOG4CPLUS_QT5=ON
+        -DLOG4CPLUS_QT4=OFF
+        -DLOG4CPLUS_QT5=OFF
 )
 
 ConfigureMakeProject( PROJECT_NAME iplock

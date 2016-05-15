@@ -119,7 +119,7 @@ bool content::destroy_page_impl(path_info_t & ipath)
     // on this page here
     {
         links::link_info_pair::vector_t all_links(links_plugin->list_of_links(ipath.get_key()));
-        for(auto l : all_links)
+        for(auto const & l : all_links)
         {
             links_plugin->delete_this_link(l.source(), l.destination());
         }

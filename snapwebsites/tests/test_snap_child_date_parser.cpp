@@ -49,10 +49,18 @@ int main(int, char *[])
     for(size_t i(0); i < max_dates; ++i)
     {
         std::cout << "--- Test date " << dates[i].f_string << std::endl;
-        time_t unix_time(snap::snap_child::string_to_date(dates[i].f_string));
-        if(unix_time != dates[i].f_time)
+        try
         {
-            std::cerr << "error: date \"" << dates[i].f_string << "\" returned " << unix_time << " expected " << dates[i].f_time << std::endl;
+            time_t const unix_time(snap::snap_child::string_to_date(dates[i].f_string));
+            if(unix_time != dates[i].f_time)
+            {
+                std::cerr << "error: date \"" << dates[i].f_string << "\" returned " << unix_time << " expected " << dates[i].f_time << std::endl;
+                return 1;
+            }
+        }
+        catch(snap::snap_logic_exception const & e)
+        {
+            std::cerr << "error: date \"" << dates[i].f_string << "\" generated an exception: " << e.what() << std::endl;
             return 1;
         }
     }
@@ -65,9 +73,9 @@ int main(int, char *[])
     //buf[sizeof(buf) - 1] = '\0';
     //printf("%s\n", buf);
 
-      //Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
-      //Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
-      //Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+    //Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
+    //Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
+    //Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
 
     return 0;
 }
