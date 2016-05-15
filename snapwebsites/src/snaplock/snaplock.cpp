@@ -509,7 +509,7 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
         break;
 
     case 'D':
-        if(command == "DIED")
+        if(command == "DISCONNECTED")
         {
             lockgone(message);
             return;
@@ -543,7 +543,7 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "ADDTICKET,DIED,DROPTICKET,GETMAXTICKET,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STATUS,STOP,TICKETADDED,UNKNOWN,UNLOCK");
+            reply.add_parameter("list", "ADDTICKET,DISCONNECTED,DROPTICKET,GETMAXTICKET,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STATUS,STOP,TICKETADDED,UNKNOWN,UNLOCK");
 
             f_messager->send_message(reply);
 
@@ -786,7 +786,6 @@ void snaplock::send_lockready()
     lockready_message.set_command("LOCKREADY");
     lockready_message.set_service("*");
     lockready_message.add_parameter("server_name", f_server_name);
-    lockready_message.add_parameter("pid", getpid());
     f_messager->send_message(lockready_message);
 }
 
@@ -1202,17 +1201,13 @@ void snaplock::lockexiting(snap::snap_communicator_message const & message)
  * This function gets called on a LOCKREADY event which is sent whenever
  * a snaplock process is initialized on a computer.
  *
- * The message is expected to include the computer name and the process
- * PID (we also use a PID in case someone was to start two instances
- * on the same computer, otherwise it could cause problems.)
+ * The message is expected to include the computer name. At this time
+ * we cannot handle having more than one instance one the same computer.
  *
  * \param[in] message  The LOCKREADY message.
  */
 void snaplock::lockready(snap::snap_communicator_message const & message)
 {
-    pid_t snaplock_pid;
-    get_parameters(message, nullptr, &snaplock_pid, nullptr, nullptr);
-
     // get the "object name" (what we are locking)
     // in Snap, the object name is often a URI plus the action we are performing
     //
@@ -1224,16 +1219,14 @@ void snaplock::lockready(snap::snap_communicator_message const & message)
         throw snap::snap_communicator_invalid_message("snaplock::lockready(): Invalid server name (empty).");
     }
 
-    QString const snaplock_key(QString("%1/%2").arg(server_name).arg(snaplock_pid));
-    if(f_computers.find(snaplock_key) == f_computers.end())
+    if(f_computers.find(server_name) == f_computers.end())
     {
-        f_computers[snaplock_key] = true;
+        f_computers[server_name] = true;
 
         // avoid sending that message to ourselves, that's not useful because
         // we know we already done that
         //
-        if(server_name != f_server_name
-        && snaplock_pid != getpid())
+        if(server_name != f_server_name)
         {
             send_lockready();
         }
@@ -1263,11 +1256,13 @@ void snaplock::interpret_status(snap::snap_communicator_message const & message)
 }
 
 
-/** \brief Called whenever a service managed by snapinit dies.
+/** \brief Called whenever a remote connection is disconnected.
  *
- * This function is used to know that a service died as per
- * snapinit. (i.e. a crash or a normal STOP was sent to the
- * service.)
+ * This function is used to know that a remote connection was
+ * disconnected.
+ *
+ * We receive the DISCONNECTED whenever a remote connection hangs
+ * up or snapcommunicator received a DISCONNECT message.
  *
  * This allows us to manage the f_computers list of computers running
  * snaplock.
@@ -1276,20 +1271,15 @@ void snaplock::interpret_status(snap::snap_communicator_message const & message)
  */
 void snaplock::lockgone(snap::snap_communicator_message const & message)
 {
-    // was is a snaplock service at least?
-    QString const service_name(message.get_parameter("service"));
-    if(service_name != "snaplock")
+    // was it a snaplock service at least?
+    QString const server_name(message.get_parameter("server_name"));
+    if(server_name == f_server_name)
     {
+        // we never want to remove ourselves?!
         return;
     }
 
-    // get the pid
-    pid_t snaplock_pid;
-    get_parameters(message, nullptr, &snaplock_pid, nullptr, nullptr);
-
-    // TODO: replace the service/server name with the message remote IP
-    QString const snaplock_key(QString("%1/%2").arg(service_name).arg(snaplock_pid));
-    auto it(f_computers.find(snaplock_key));
+    auto it(f_computers.find(server_name));
     if(it != f_computers.end())
     {
         f_computers.erase(it);
@@ -1693,10 +1683,11 @@ void snaplock::ticket_added(snap::snap_communicator_message const & message)
             auto const obj_entering_ticket(f_entering_tickets.find(object_name));
             if(obj_entering_ticket == f_entering_tickets.end())
             {
-                // this should never happen because we should still have
-                // our own f_entering in that map!
+                // this can happen whenever someone enters the ring midway
+                // and never received the LOCKENTERING and other such messages
                 //
-                throw std::logic_error("snaplock_ticket::ticket_added() called with an object not present in f_entering_ticket.");
+                SNAP_LOG_DEBUG("snaplock_ticket::ticket_added() called with an object not present in f_entering_ticket.");
+                return;
             }
             key_ticket->second->ticket_added(obj_entering_ticket->second);
         }
