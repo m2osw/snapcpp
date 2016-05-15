@@ -131,6 +131,21 @@ int RowModel::columnCount( const QModelIndex & /*parent*/ ) const
 }
 
 
+QVariant RowModel::headerData( int section, Qt::Orientation /*orientation*/, int role ) const
+{
+    if( role == Qt::DisplayRole )
+    {
+        switch( section )
+        {
+            case 0  : return QString("Name");
+            case 1  : return QString("Value");
+        }
+    }
+
+    return QVariant();
+}
+
+
 bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int role )
 {
     if( role != Qt::EditRole )

@@ -129,7 +129,7 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
         -DCSSPP_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS libsnapwebsites
+    DEPENDS advgetopt libsnapwebsites
 )
 
 ConfigureMakeProject( PROJECT_NAME snapwatchdog
@@ -142,11 +142,12 @@ ConfigureMakeProject( PROJECT_NAME snapwatchdog
 
 ConfigureMakeProject( PROJECT_NAME snapmanager
     CONFIG_ARGS
+        -DADVGETOPT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTCASSANDRA_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtCassandra
-    DEPENDS libsnapwebsites
+    DEPENDS advgetopt libsnapwebsites
 )
 
 ConfigureMakeProject( PROJECT_NAME cassview
