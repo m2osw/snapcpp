@@ -131,9 +131,9 @@ int RowModel::columnCount( const QModelIndex & /*parent*/ ) const
 }
 
 
-QVariant RowModel::headerData( int section, Qt::Orientation /*orientation*/, int role ) const
+QVariant RowModel::headerData( int section, Qt::Orientation orientation, int role ) const
 {
-    if( role == Qt::DisplayRole )
+    if( role == Qt::DisplayRole && orientation == Qt::Horizontal )
     {
         switch( section )
         {

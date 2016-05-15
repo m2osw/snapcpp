@@ -99,6 +99,7 @@ private slots:
 
     void onDomainsLoaded();
     void onWebsitesLoaded();
+    void onSitesListLoaded();
 
 private:
     enum tabs
