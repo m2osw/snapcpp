@@ -2399,6 +2399,8 @@ int main(int argc, char *argv[])
         ++err;
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
     if(err > 0) {
         if(err == 1) {
             qDebug() << "1 error found.";
@@ -2407,6 +2409,7 @@ int main(int argc, char *argv[])
             qDebug() << err << "errors found.";
         }
     }
+#pragma GCC diagnostic pop
 
     exit(err == 0 ? 0 : 1);
 }
