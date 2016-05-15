@@ -56,6 +56,17 @@ void WebsiteModel::doQuery()
 }
 
 
+bool WebsiteModel::fetchFilter( const QByteArray& key )
+{
+    if( QueryModel::fetchFilter( key ) )
+    {
+        return key.left(f_domain_org_name.length()) == f_domain_org_name;
+    }
+
+    return false;
+}
+
+
 QVariant WebsiteModel::data( QModelIndex const & idx, int role ) const
 {
     if( role == Qt::UserRole )
@@ -73,20 +84,20 @@ QVariant WebsiteModel::data( QModelIndex const & idx, int role ) const
         return QVariant();
     }
 
-    const int mid_pos(f_domain_org_name.length() + 2);
     const QByteArray& row( f_rows[idx.row()] );
     const QString key( QString::fromUtf8( row.constData(), row.size() ) );
+    const int mid_pos(f_domain_org_name.length() + 2);
     if( key.length() <= mid_pos)
     {
         // note that the length of the key is at least 4 additional
         // characters but at this point we don't make sure that the
         // key itself is fully correct (it should be)
         QMessageBox::warning
-            ( 0
-            , tr("Invalid Website Index")
-            , tr("Somehow we have found an invalid entry in the list of websites. It is suggested that you regenerate the index. Note that this index is not used by the Snap server itself.")
-            , QMessageBox::Ok
-            );
+                ( 0
+                  , tr("Invalid Website Index")
+                  , tr("Somehow we have found an invalid entry in the list of websites. It is suggested that you regenerate the index. Note that this index is not used by the Snap server itself.")
+                  , QMessageBox::Ok
+                  );
         return QueryModel::data( idx, role );
     }
 

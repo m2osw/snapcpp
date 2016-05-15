@@ -98,6 +98,7 @@ private slots:
     void onCurrentTabChanged    ( int index );
 
     void onDomainsLoaded();
+    void onWebsitesLoaded();
 
 private:
     enum tabs

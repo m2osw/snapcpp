@@ -145,12 +145,17 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_website_list = getChild<QListView>(this, "websiteList");
     f_website_list->setModel( &f_website_model );
     f_website_model.init( f_session, "", "" );
-    //connect(f_website_list, SIGNAL(itemClicked()), this, SLOT(on_websiteList_itemClicked()));
     connect
         ( f_website_list->selectionModel()
         , &QItemSelectionModel::currentChanged
         , this
         , &snap_manager::on_websiteSelectionChanged
+        );
+    connect
+        ( &f_website_model
+        , &TableModel::queryFinished
+        , this
+        , &snap_manager::onWebsitesLoaded
         );
     f_website_name = getChild<QLineEdit>(this, "fullDomainName");
     f_website_rules = getChild<QTextEdit>(this, "websiteRules");
@@ -1567,7 +1572,9 @@ void snap_manager::on_domainDelete_clicked()
         {
             const QByteArray entry( query->getByteArrayColumn(0) );
             const QString website_name( QString::fromUtf8(entry.constData(),entry.size()) );
-            if(website_name.length() > mid_pos)
+            if(    (website_name.left(name.length()) == name)
+                && (website_name.length() > mid_pos)
+                )
             {
                 // This is the row in the websites table to drop:
                 website_rows_to_drop << website_name.mid(mid_pos);
@@ -1650,25 +1657,24 @@ void snap_manager::onFinishedDeleteDomain( QCassandraQuery::pointer_t /*q*/ )
 
 void snap_manager::loadWebsites()
 {
+    if( f_website_list->currentIndex().isValid() )
+    {
+        f_current_website_index = f_website_list->currentIndex().row();
+    }
+    else
+    {
+        f_current_website_index = -1;
+    }
+
     // we just checked to know whether the table existed so it cannot fail here
-#if 0
-    f_website_list->clear();
-
-    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
-    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
-
-    auto query = createQuery( table_name, "SELECT column1 FROM %1.%2 WHERE key = ?" );
-    query->setDescription("Get websites from index.");
-    size_t num = 0;
-    query->bindByteArray( num++, row_index_name.toUtf8() );
-    query->setPagingSize(g_paging_size);
-    connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadWebsites );
-    addQuery(query);
-#endif
     f_website_model.init( f_session, "", "" );
     f_website_model.setDomainOrgName( f_domain_org_name );
     f_website_model.doQuery();
+}
 
+
+void snap_manager::onWebsitesLoaded()
+{
     // at first some of the entries are disabled
     // until a select is made or New is clicked
     f_website_name->setEnabled(false);
@@ -1681,7 +1687,17 @@ void snap_manager::loadWebsites()
     f_website_org_rules = "";
     f_website_name->setText("");
     f_website_rules->setText("");
+
+    if( f_current_website_index != -1 )
+    {
+        const QModelIndex idx( f_website_model.index( f_current_website_index, 0 ) );
+        if( idx.isValid() )
+        {
+            f_website_list->setCurrentIndex( idx );
+        }
+    }
 }
+
 
 #if 0
 void snap_manager::onLoadWebsites( QCassandraQuery::pointer_t q )
