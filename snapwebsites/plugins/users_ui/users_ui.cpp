@@ -270,7 +270,7 @@ void users_ui::fix_owner_update(int64_t variables_timestamp)
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QString const plugin_name(get_plugin_name());
 
-    for(auto s : paths)
+    for(auto const & s : paths)
     {
         content::path_info_t ipath;
         ipath.set_path(s);

@@ -60,7 +60,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set( CMAKE_AUTOMOC TRUE )
 
 # Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
-set( DTD_SOURCE_PATH "${snapwebsites_plugins_SOURCE_DIR}" CACHE PATH "Location of the default DTD files" )
+set( DTD_SOURCE_PATH "${snapwebsites_project_SOURCE_DIR}/plugins" CACHE PATH "Location of the default DTD files" )
 
 enable_language( CXX )
 enable_language( C )

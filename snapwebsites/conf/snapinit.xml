@@ -95,7 +95,9 @@
                   option (without the . but we are in an XML comment!)
                   to get debug information while running that process.
                   Please make sure to first check what options that
-                  service supports.
+                  service supports. Note that the debug flag is
+                  automatically passed down when the snapinit daemon
+                  is started in debug mode.
 
       <service>
       <cron>      Define an interval defining ticks when this service
@@ -173,21 +175,23 @@
     <config>/etc/snapwebsites/snapdbproxy.conf</config>
     <snapdbproxy>127.0.0.1:4042</snapdbproxy>
     <safe>snapdbproxy</safe> <!-- TODO: some day, use something else than "safe" for snapdbproxy -->
+    <recovery>60</recovery>
   </service>
   <service name="snaplock" required="required">
     <priority>-10</priority>
     <config>/etc/snapwebsites/snaplock.conf</config>
     <safe>snaplock</safe> <!-- TODO: some day, use something else than "safe" for snaplock -->
+    <recovery>60</recovery>
   </service>
   <service name="snapfirewall" required="required">
     <priority>-5</priority>
     <config>/etc/snapwebsites/snapfirewall.conf</config>
     <safe>firewall</safe>
+    <recovery>60</recovery>
   </service>
   <service name="snapserver" required="required">
     <priority>0</priority>
     <config>/etc/snapwebsites/snapserver.conf</config>
-    <options>--debug</options>
   </service>
   <service name="sendmail">
     <command>/usr/bin/snapbackend</command>
@@ -216,7 +220,7 @@
   <service name="snapbackend">
     <priority>75</priority>
     <config>/etc/snapwebsites/snapserver.conf</config>
-    <cron>3600</cron>
+    <cron>300</cron>
   </service>
 </snapservices>
 <!--

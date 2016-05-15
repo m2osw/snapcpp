@@ -745,7 +745,7 @@ bool is_loggingserver_available ( QString const & logserver )
     // check properties that make use of the log4cplus::SocketAppender
     // these may have any name even if we use "server" by default
     std::vector<log4cplus::tstring> names(logserver_properties.propertyNames());
-    for(auto & n : names)
+    for(auto const & n : names)
     {
         // the string must start with "log4cplus.appender."
         log4cplus::tstring prefix(n.substr(0, 19));

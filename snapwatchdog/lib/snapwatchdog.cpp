@@ -424,7 +424,7 @@ void watchdog_server::show_version()
  */
 void watchdog_server::watchdog()
 {
-    SNAP_LOG_INFO("------------------------------------ starting watchdog daemon.");
+    SNAP_LOG_INFO("------------------------------------ snapwatchdog started on ")(get_parameter("server_name"));
 
     check_cassandra();
     init_parameters();

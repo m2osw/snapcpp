@@ -383,13 +383,15 @@ snaplock_ticket::snaplock_ticket(
             , snaplock_messager::pointer_t messager
             , QString const & object_name
             , QString const & entering_key
-            , int64_t timeout
+            , time_t obtention_timeout
+            , int32_t lock_duration
             , QString const & server_name
             , QString const & service_name)
     : f_running_computers(running_computers)
     , f_messager(messager)
     , f_object_name(object_name)
-    , f_timeout(timeout)
+    , f_obtention_timeout(obtention_timeout)
+    , f_lock_duration(lock_duration)
     , f_server_name(server_name)
     , f_service_name(service_name)
     , f_entering_key(entering_key)
@@ -403,7 +405,7 @@ snaplock_ticket::snaplock_ticket(
                  ("/")
                  (f_service_name)
                  ("\" (timeout: ")
-                 (f_timeout)
+                 (f_obtention_timeout)
                  (").");
 }
 
@@ -422,7 +424,8 @@ void snaplock_ticket::entering()
     entering_message.set_service("*");
     entering_message.add_parameter("object_name", f_object_name);
     entering_message.add_parameter("key", f_entering_key);
-    entering_message.add_parameter("timeout", f_timeout);
+    entering_message.add_parameter("timeout", f_obtention_timeout);
+    entering_message.add_parameter("duration", f_lock_duration);
     f_messager->send_message(entering_message);
 }
 
@@ -477,6 +480,23 @@ void snaplock_ticket::entered()
 snaplock_ticket::ticket_id_t snaplock_ticket::get_ticket_number() const
 {
     return f_our_ticket;
+}
+
+
+/** \brief Get the lock timeout date.
+ *
+ * This function returns the lock timeout. If not yet defined, the
+ * function will return zero.
+ *
+ * \note
+ * The ticket will immediately be assigned a timeout date when it
+ * gets activated.
+ *
+ * \return The date when the ticket will timeout or zero.
+ */
+time_t snaplock_ticket::get_lock_timeout() const
+{
+    return f_lock_timeout;
 }
 
 
@@ -544,7 +564,7 @@ void snaplock_ticket::add_ticket()
     add_ticket_message.set_service("*");
     add_ticket_message.add_parameter("object_name", f_object_name);
     add_ticket_message.add_parameter("key", f_ticket_key);
-    add_ticket_message.add_parameter("timeout", f_timeout);
+    add_ticket_message.add_parameter("timeout", f_obtention_timeout);
     //add_ticket_message.add_parameter("source_service", f_service_name); -- that can be tricky, who should send the LOCKFAILED message now?
     //add_ticket_message.add_parameter("source_sent_from", f_sent_from);
     f_messager->send_message(add_ticket_message);
@@ -644,12 +664,15 @@ void snaplock_ticket::activate_lock()
     && !f_lock_failed)
     {
         f_locked = true;
+        f_lock_timeout = f_lock_duration + time(nullptr);
 
         snap::snap_communicator_message locked_message;
         locked_message.set_command("LOCKED");
         locked_message.set_server(f_server_name);
         locked_message.set_service(f_service_name);
         locked_message.add_parameter("object_name", f_object_name);
+        locked_message.add_parameter("timeout_date", f_lock_timeout);
+        locked_message.add_parameter("quorum", f_running_computers->quorum()); // mainly for debug/info so one can know how many computers replied before we said LOCKED
         f_messager->send_message(locked_message);
     }
 }
@@ -700,11 +723,18 @@ void snaplock_ticket::drop_ticket()
  * This function returns true if the ticket timed out and should be
  * removed from the various lists where it is kept.
  *
+ * The function select the date to check the timeout depending on
+ * the current status of the lock. If the lock was successfully
+ * activated, the lock timeout date is used. If the lock was not
+ * yet activate, the obtention timeout date is used.
+ *
  * \return true if the ticket timed out.
  */
 bool snaplock_ticket::timed_out() const
 {
-    return f_timeout < time(nullptr);
+    // Note: as long as f_locked is false, the f_lock_timeout value is zero
+    //
+    return (f_locked ? f_lock_timeout : f_obtention_timeout) < time(nullptr);
 }
 
 
@@ -727,6 +757,7 @@ void snaplock_ticket::lock_failed()
     if(!f_lock_failed
     && !f_service_name.isEmpty())
     {
+        // send that message at most once
         f_lock_failed = true;
 
         if(f_locked)

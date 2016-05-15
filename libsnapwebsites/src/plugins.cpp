@@ -66,7 +66,7 @@ snap_string_list list_all(QString const & plugin_paths)
     snap_string_list filters;
     filters << "*.so";
     snap_string_list result;
-    for(auto p : paths)
+    for(auto const & p : paths)
     {
         QDir dir(p);
 
@@ -78,7 +78,7 @@ snap_string_list list_all(QString const & plugin_paths)
         //      sub-directories once building a package?
         //
         snap_string_list const sub_dirs(dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot));
-        for(auto s : sub_dirs)
+        for(auto const & s : sub_dirs)
         {
             QDir sdir(QString("%1/%2").arg(p).arg(s));
 
@@ -231,7 +231,7 @@ bool load(QString const & plugin_paths, snap_child * snap, plugin_ptr_t server, 
     // although we check dependencies to properly reorder as expected
     // by what each plugin tells us what its dependencies are
     //
-    for(auto p : g_plugins)
+    for(auto const & p : g_plugins)
     {
         QString const column_name(QString("|%1|").arg(p->get_plugin_name()));
         for(plugin_vector_t::iterator sp(g_ordered_plugins.begin());
@@ -254,7 +254,7 @@ inserted:;
     // all the signals work as expected by making sure they are in a
     // very specific order)
     //
-    for(auto p : g_ordered_plugins)
+    for(auto const & p : g_ordered_plugins)
     {
         p->bootstrap(snap);
     }

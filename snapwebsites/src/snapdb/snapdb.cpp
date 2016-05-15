@@ -407,7 +407,7 @@ void snapdb::drop_tables()
     // a live system!
     //
     snapTableList   list;
-    for( auto table_name : list.tablesToDrop() )
+    for( auto const & table_name : list.tablesToDrop() )
     {
         try
         {
@@ -509,7 +509,7 @@ void snapdb::display_rows() const
     row_predicate->setCount(f_count);
     table->readRows(row_predicate);
     const QCassandraRows& rows(table->rows());
-    for( auto p_r : rows )
+    for( auto const & p_r : rows )
     {
         std::cout << du.get_row_name( p_r ) << std::endl;
     }
@@ -544,7 +544,7 @@ void snapdb::display_rows_wildcard() const
         {
             break;
         }
-        for( auto p_r : rows )
+        for( auto const & p_r : rows )
         {
             const QString name(p_r->rowName());
             if(name.length() >= row_start.length()
@@ -593,7 +593,7 @@ void snapdb::display_columns() const
             {
                 break;
             }
-            for( auto c : cells )
+            for( auto const & c : cells )
             {
                 std::cout
                     << du.get_column_name(c)

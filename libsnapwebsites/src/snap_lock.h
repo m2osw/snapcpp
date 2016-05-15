@@ -46,19 +46,27 @@ class snap_lock
 {
 public:
     typedef std::shared_ptr<snap_lock>      pointer_t;
+    typedef int                             timeout_t;
 
     static int const    SNAP_LOCK_DEFAULT_TIMEOUT = 5; // in seconds
+    static int const    SNAP_LOCK_MINIMUM_TIMEOUT = 3; // in seconds
 
-                        snap_lock(QString const & object_name, int timeout = -1);
+                        snap_lock(QString const & object_name, timeout_t lock_duration = -1, timeout_t lock_obtention_timeout = -1);
 
-    static void         initialize_timeout(int timeout);
-    static int          current_timeout();
+    static void         initialize_lock_duration_timeout(timeout_t timeout);
+    static timeout_t    current_lock_duration_timeout();
+
+    static void         initialize_lock_obtention_timeout(timeout_t timeout);
+    static timeout_t    current_lock_obtention_timeout();
+
     static void         initialize_snapcommunicator(
                               std::string const & addr
                             , int port
                             , tcp_client_server::bio_client::mode_t mode = tcp_client_server::bio_client::mode_t::MODE_PLAIN);
 
+    bool                lock(QString const & object_name, timeout_t lock_duration = -1, timeout_t lock_obtention_timeout = -1);
     void                unlock();
+
     time_t              get_timeout_date() const;
 
 private:

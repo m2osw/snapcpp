@@ -6,6 +6,9 @@
 # by the various projects cmake scripts.
 #
 
+# Qt changed from 4 to 5 when moving to 16.04
+# libprocps3-dev changed to libprocps4-dev when moving to 16.04
+
 apt-get install \
     closure-linter \
     cmake \
@@ -13,16 +16,26 @@ apt-get install \
     gcc \
     g++ \
     libboost-dev \
-    liblog4cplus-dev \
     libmagic-dev \
     libmagick++-dev \
-    libprocps3-dev \
-    libqt4-dev \
+    libprocps4-dev \
+    libqt5script5 \
+    libqt5scripttools5 \
+    libqt5xmlpatterns5-dev \
+    libqt5webkit5-dev \
     libssl-dev \
     libxml2-utils \
+    libqrencode-dev \
+    qt5-default \
+    qtscript5-dev \
+    uuid-dev \
     zip \
     zlib1g-dev
 
+# TBD: get the cassandra-cpp-driver and cassandra-cpp-driver-dev packages
+echo "WARNING:"
+echo "  At this time this script does not offer the cassandra-cpp-driver packages."
+echo "  You have to get your own version compiled and packaged."
 
 # Optional:
 

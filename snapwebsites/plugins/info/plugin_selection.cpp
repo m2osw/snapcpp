@@ -70,7 +70,7 @@ void info::init_plugin_selection_editor_widgets(content::path_info_t & ipath, QS
         //
         int count(0);
         snap_string_list const plugin_names(plugins::list_all(plugins_paths));
-        for(auto name : plugin_names)
+        for(auto const & name : plugin_names)
         {
             try
             {
@@ -451,7 +451,7 @@ bool info::install_plugin(snap_string_list & plugin_list, QString const & plugin
     {
         plugins::plugin_info const information(plugins_paths, plugin_name);
         snap_string_list deps(information.get_dependencies().split('|', QString::SkipEmptyParts));
-        for(auto d : deps)
+        for(auto const & d : deps)
         {
             if(!plugin_list.contains(d))
             {

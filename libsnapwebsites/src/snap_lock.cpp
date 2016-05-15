@@ -54,13 +54,33 @@ namespace
 /** \brief The default time to live of a lock.
  *
  * By default the inter-process locks are kept for only five seconds.
- * You may change the default using the snaplock::initialize_timeout()
- * function.
+ * You may change the default using the
+ * snaplock::initialize_lock_duration_timeout() function.
  *
  * You can specify how long a lock should be kept around by setting its
  * duration at the time you create it (see the snap_lock constructor.)
  */
-int g_timeout = snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT;
+snap_lock::timeout_t g_lock_duration_timeout = snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT;
+
+
+/** \brief The default time to wait in order to obtain a lock.
+ *
+ * By default the snaplock waits five seconds to realize an
+ * inter-process lock. If the locak cannot be obtained within
+ * that short period of time, the locking fails.
+ *
+ * You may change the default using the
+ * snaplock::initialize_lock_obtention_timeout() function.
+ *
+ * You can specify how long to wait for a lock to take by setting
+ * its obtention duration at the time you create it (see the snap_lock
+ * constructor.)
+ *
+ * \note
+ * By default we use the same amount of the g_lock_duration_timeout
+ * variable, which at this point is fortuitious.
+ */
+snap_lock::timeout_t g_lock_obtention_timeout = snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT;
 
 
 /** \brief The default snapcommunicator address.
@@ -68,7 +88,8 @@ int g_timeout = snap_lock::SNAP_LOCK_DEFAULT_TIMEOUT;
  * This variable holds the snapcommunicator IP address used to create
  * locks by connecting (Sending messages) to snaplock processes.
  *
- * It can be changed using the snaplock::initialize() function.
+ * It can be changed using the snaplock::initialize_snapcommunicator()
+ * function.
  */
 std::string g_snapcommunicator_address = "127.0.0.1";
 
@@ -78,7 +99,8 @@ std::string g_snapcommunicator_address = "127.0.0.1";
  * This variable holds the snapcommunicator port used to create
  * locks by connecting (Sending messages) to snaplock processes.
  *
- * It can be changed using the snaplock::initialize() function.
+ * It can be changed using the snaplock::initialize_snapcommunicator()
+ * function.
  */
 int g_snapcommunicator_port = 4040;
 
@@ -88,7 +110,8 @@ int g_snapcommunicator_port = 4040;
  * This variable holds the snapcommunicator mode used to create
  * locks by connecting (Sending messages) to snaplock processes.
  *
- * It can be changed using the snaplock::initialize() function.
+ * It can be changed using the snaplock::initialize_snapcommunicator()
+ * function.
  */
 tcp_client_server::bio_client::mode_t g_snapcommunicator_mode = tcp_client_server::bio_client::mode_t::MODE_PLAIN;
 
@@ -130,26 +153,32 @@ class lock_connection
         : public snap_communicator::snap_tcp_blocking_client_message_connection
 {
 public:
-                        lock_connection(QString const & object_name, int timeout);
-                        ~lock_connection();
+                            lock_connection(QString const & object_name, snap_lock::timeout_t lock_duration, snap_lock::timeout_t lock_obtention_timeout);
+                            ~lock_connection();
 
-    void                unlock();
-    time_t              get_timeout_date() const;
+    void                    unlock();
 
-    void                process_message(snap_communicator_message const & message);
+    bool                    is_locked() const;
+    time_t                  get_lock_timeout_date() const;
+    time_t                  get_obtention_timeout_date() const;
+
+    void                    process_timeout();
+    void                    process_message(snap_communicator_message const & message);
 
 private:
-    QString const       f_service_name;
-    QString const       f_object_name;
-    int const           f_timeout_date;
-    bool                f_locked = false;
+    pid_t                       f_owner;
+    QString const               f_service_name;
+    QString const               f_object_name;
+    snap_lock::timeout_t const  f_lock_duration = 0;
+    time_t                      f_lock_timeout_date = 0;
+    time_t const                f_obtention_timeout_date = 0;
 };
 
 
 
 
 
-/** \brief Initiate a LOCK.
+/** \brief Initiate an inter-process lock.
  *
  * This constructor is used to obtain an inter-process lock.
  *
@@ -162,24 +191,37 @@ private:
  * Note that the constructor creates a "lock service" which is given a
  * name which is "lock" and the current thread identifier and a unique
  * number. We use an additional unique number to make sure messages
- * sent to our old instance do not make it to a newer instance, which
+ * sent to our old instance(s) do not make it to a newer instance, which
  * could be confusing and break the lock mechanism in case the user
  * was trying to get a lock multiple times on the same object.
  *
+ * \warning
+ * The g_unique_number and the other global variables are not handle
+ * safely if you attempt locks in a multithread application. The
+ * unicity of the lock name will still be correct because the name
+ * includes the thread identifier (see gettid() function.) In a
+ * multithread application, the initialize_...() function should be
+ * called once by the main thread before the other threads get created.
+ *
  * \param[in] object_name  The name of the object being locked.
- * \param[in] timeout  The total number of seconds this specific lock will
- *                     last for or -1 to use the default.
+ * \param[in] lock_duration  The amount of time the lock will last if obtained.
+ * \param[in] lock_obtention_timeout  The amount of time to wait for the lock.
  */
-lock_connection::lock_connection(QString const & object_name, int timeout)
+lock_connection::lock_connection(QString const & object_name, snap_lock::timeout_t lock_duration, snap_lock::timeout_t lock_obtention_timeout)
     : snap_tcp_blocking_client_message_connection(g_snapcommunicator_address, g_snapcommunicator_port, g_snapcommunicator_mode)
+    , f_owner(gettid())
     , f_service_name(QString("lock_%1_%2").arg(gettid()).arg(++g_unique_number))
     , f_object_name(object_name)
-    , f_timeout_date((timeout == -1 ? g_timeout : timeout) + time(nullptr))
+    , f_lock_duration(lock_duration == -1 ? g_lock_duration_timeout : lock_duration)
+    //, f_lock_timeout_date(0) -- only determined if we obtain the lock
+    , f_obtention_timeout_date((lock_obtention_timeout == -1 ? g_lock_obtention_timeout : lock_obtention_timeout) + time(nullptr))
 {
-    // tell the lower level when the lock will time out
-    // that one is in microseconds
+    // tell the lower level when the lock obtention times out;
+    // that one is in microseconds; if we do obtain the lock,
+    // the timeout is then changed to the lock timeout date
+    // (which is computed from the time at which we get the lock)
     //
-    set_timeout_date(f_timeout_date * 1000000L);
+    set_timeout_date(f_obtention_timeout_date * 1000000L);
 
     // need to register with snap communicator
     //
@@ -189,7 +231,8 @@ lock_connection::lock_connection(QString const & object_name, int timeout)
     register_message.add_parameter("version", snap::snap_communicator::VERSION);
     send_message(register_message);
 
-    // now wait for the READY and HELP replies
+    // now wait for the READY and HELP replies, send LOCK, and
+    // either timeout or get the LOCKED message
     //
     run();
 }
@@ -213,13 +256,22 @@ lock_connection::~lock_connection()
  * UNLOCK only the first time.
  *
  * Note that it is not possible to re-obtain the lock once unlocked.
- * You will have to create a new snap_lock object to do so.
+ * You will have to create a new lock_conenction object to do so.
+ *
+ * \note
+ * If you fork or attempt to unlock from another thread, the unlock()
+ * function will do nothing. Only the exact thread that created the
+ * lock can call unlock(). This does happen in snap_backend children
+ * which attempt to remove the lock their parent setup because the
+ * f_lock variable is part of the connection which is defined in a
+ * global variable.
  */
 void lock_connection::unlock()
 {
-    if(f_locked)
+    if(f_lock_timeout_date != 0
+    && f_owner == gettid())
     {
-        f_locked = false;
+        f_lock_timeout_date = 0;
 
         // done
         //
@@ -243,13 +295,79 @@ void lock_connection::unlock()
 }
 
 
+/** \brief Check whether the lock worked (true) or not (false).
+ *
+ * This function returns true if the lock succeeded and is still
+ * active. This function detects whether the lock timed out and
+ * returns false if so.
+ *
+ * You may check how long the lock has left using the
+ * get_lock_timeout_date() which is the date when the lock
+ * times out.
+ *
+ * Note that the get_lock_timeout_date() function will return zero
+ * if the lock was not obtained and a threshold date in case the
+ * lock was obtained, then zero again after a call to the unlock()
+ * function.
+ *
+ * \return true if the lock is currently active.
+ *
+ * \sa get_lock_timeout_date()
+ * \sa unlock()
+ */
+bool lock_connection::is_locked() const
+{
+    // if the lock timeout date was not yet defined, it is not yet
+    // locked (we may still be trying to obtain the lock, though);
+    // one not zero, the lock is valid as long as that date is
+    // after 'now'
+    //
+    return f_lock_timeout_date != 0 && f_lock_timeout_date > time(nullptr);
+}
+
+
 /** \brief Retrieve the cutoff time for this lock.
  *
  * This lock will time out when this date is reached.
+ *
+ * If the value is zero, then the lock was not yet obtained.
+ *
+ * \return The lock timeout date
  */
-time_t lock_connection::get_timeout_date() const
+time_t lock_connection::get_lock_timeout_date() const
 {
-    return f_timeout_date;
+    return f_lock_timeout_date;
+}
+
+
+/** \brief Retrieve the cutoff time for this lock.
+ *
+ * This lock will time out when this date is reached.
+ *
+ * If the value is zero, then the lock was not yet obtained.
+ *
+ * \return The lock timeout date
+ */
+time_t lock_connection::get_obtention_timeout_date() const
+{
+    return f_obtention_timeout_date;
+}
+
+
+/** \brief The lock was not obtained in time.
+ *
+ * This function gets called whenever the lock does not take with
+ * the 'obtention_timeout' amount.
+ *
+ * Here we tell the system we are done with the lock so that way the
+ * run() function returns silently (instead of throwing an error.)
+ *
+ * The lock will not be active so a call to is_locked() will say
+ * so (i.e. return false.)
+ */
+void lock_connection::process_timeout()
+{
+    done();
 }
 
 
@@ -258,7 +376,7 @@ time_t lock_connection::get_timeout_date() const
  * This function is called whenever a complete message is read from
  * the snapcommunicator.
  *
- * In a perfect world, the following shows what happens message wise
+ * In a perfect world, the following shows what happens, message wise,
  * as far as the client is concerned. The snaplock sends many more
  * messages in order to obtain the lock (See src/snaplock/snaplock_ticket.cpp
  * for details about those events.)
@@ -314,7 +432,8 @@ void lock_connection::process_message(snap_communicator_message const & message)
             lock_message.set_service("snaplock");
             lock_message.add_parameter("object_name", f_object_name);
             lock_message.add_parameter("pid", gettid());
-            lock_message.add_parameter("timeout", f_timeout_date);
+            lock_message.add_parameter("timeout", f_obtention_timeout_date);
+            lock_message.add_parameter("duration", f_lock_duration);
             send_message(lock_message);
 
             return;
@@ -324,9 +443,8 @@ void lock_connection::process_message(snap_communicator_message const & message)
     case 'L':
         if(command == "LOCKED")
         {
-            // the lock worked
-            f_locked = message.get_parameter("object_name") == f_object_name;
-            if(!f_locked)
+            // the lock worked!
+            if(message.get_parameter("object_name") != f_object_name)
             {
                 // somehow we received the LOCKED message with the wrong object name
                 //
@@ -334,6 +452,12 @@ void lock_connection::process_message(snap_communicator_message const & message)
                                 .arg(message.get_parameter("object_name"))
                                 .arg(f_object_name));
             }
+            f_lock_timeout_date = message.get_integer_parameter("timeout_date");
+
+            // change the timeout to the new date, since we are about to
+            // quit the run() loop anyway, it should not be necessary
+            //
+            set_timeout_date(f_lock_timeout_date * 1000000L);
 
             // release hand back to the user while lock is still active
             //
@@ -344,21 +468,33 @@ void lock_connection::process_message(snap_communicator_message const & message)
         {
             if(message.get_parameter("object_name") == f_object_name)
             {
-                throw snap_lock_failed_exception(QString("lock for object \"%1\" failed (LOCKEDFAILED).")
-                                .arg(message.get_parameter("object_name")));
+                SNAP_LOG_WARNING("lock for object \"")
+                                (f_object_name)
+                                ("\" failed (LOCKEDFAILED).");
             }
-            throw snap_lock_failed_exception(QString("object \"%1\" just for a lock failure reported and we received its message while trying to lock \"%2\" (LOCKEDFAILED).")
-                            .arg(message.get_parameter("object_name"))
-                            .arg(f_object_name));
+            else
+            {
+                // this should not happen
+                //
+                SNAP_LOG_WARNING("object \"")
+                                (message.get_parameter("object_name"))
+                                ("\" just reported a lock failure and we received its message while trying to lock \"")
+                                (f_object_name)
+                                ("\" (LOCKEDFAILED).");
+            }
+
+            done();
+            return;
         }
         break;
 
     case 'Q':
         if(command == "QUITTING")
         {
-            SNAP_LOG_FATAL("we received the QUITTING command.");
-            throw snap_lock_failed_exception(QString("lock object \"%1\" received the QUITTING command, so the lock failed.")
-                            .arg(f_object_name));
+            SNAP_LOG_WARNING("we received the QUITTING command while waiting for a lock.");
+
+            done();
+            return;
         }
         break;
 
@@ -373,9 +509,10 @@ void lock_connection::process_message(snap_communicator_message const & message)
     case 'S':
         if(command == "STOP")
         {
-            SNAP_LOG_FATAL("we received the STOP command.");
-            throw snap_lock_failed_exception(QString("lock object \"%1\" received the STOP command, so the lock failed.")
-                            .arg(f_object_name));
+            SNAP_LOG_WARNING("we received the STOP command while waiting for a lock.");
+
+            done();
+            return;
         }
         break;
 
@@ -392,13 +529,21 @@ void lock_connection::process_message(snap_communicator_message const & message)
             // we should not receive the UNLOCKED before the LOCKED
             // and thus this should never be accessed; however, if
             // the LOCKED message got lost, we could very well receive
-            // this one instead
+            // this one instead (it should not because we use a different
+            // name each time we request a lock too, but who knows...)
             //
+            f_lock_timeout_date = 0;
             if(message.get_parameter("object_name") == f_object_name)
             {
+                SNAP_LOG_FATAL("lock for object \"")(f_object_name)("\" failed (UNLOCKED).");
                 throw snap_lock_failed_exception(QString("lock for object \"%1\" failed (UNLOCKED).")
-                                .arg(message.get_parameter("object_name")));
+                                .arg(f_object_name));
             }
+            SNAP_LOG_FATAL("object \"")
+                          (message.get_parameter("object_name"))
+                          ("\" just got unlocked and we received its message while trying to lock \"")
+                          (f_object_name)
+                          ("\" (UNLOCKED).");
             throw snap_lock_failed_exception(QString("object \"%1\" just got unlocked and we received its message while trying to lock \"%2\" (UNLOCKED).")
                                 .arg(message.get_parameter("object_name"))
                                 .arg(f_object_name));
@@ -429,54 +574,138 @@ void lock_connection::process_message(snap_communicator_message const & message)
 /** \brief Create an inter-process lock.
  *
  * This constructor blocks until you obtained an inter-process lock
- * named \p object_name.
+ * named \p object_name when you specify such a name. If you pass
+ * an empty string, then the lock object is in the "unlocked" state.
+ * You may call the lock() function once you are ready to lock the
+ * system.
  *
- * \note
- * The timeout of this function is a "Time To Live" in seconds. So if you
- * want to keep your lock for 1 hour, use 3600.
+ * By default you do not have to specify the lock_duration and
+ * lock_obtention_timeout. When set to -1 (the default in the
+ * constructor declaration,) these values are replaced by their
+ * defaults that are set using the initialize_lock_duration_timeout()
+ * and initialize_lock_obtention_timeout() functions.
+ *
+ * \warning
+ * If the object name is specified in the constructor, then the system
+ * attempts to lock the object immediately meaning that the only way
+ * we can let you know that the lock failed is by throwing an exception.
+ * If you want to avoid the exception, instead of doing a try/catch,
+ * use the contructor without any parameters and then call the lock()
+ * function and check whether you get true or false.
  *
  * \param[in] object_name  The name of the lock.
- * \param[in] timeout  The total number of seconds this specific lock will
- *                     last for or -1 to use the default.
+ * \param[in] lock_duration  The amount of time the lock will last if obtained.
+ * \param[in] lock_obtention_timeout  The amount of time to wait for the lock.
  *
- * \sa snap_lock::initialize()
+ * \sa snap_lock::initialize_lock_duration_timeout()
  */
-snap_lock::snap_lock(QString const & object_name, int timeout)
-    : f_lock_connection(std::make_shared<lock_connection>(object_name, timeout))
+snap_lock::snap_lock(QString const & object_name, timeout_t lock_duration, timeout_t lock_obtention_timeout)
+    //: f_lock_connection(nullptr) -- auto-init
 {
+    if(!object_name.isEmpty())
+    {
+        if(!lock(object_name, lock_duration, lock_obtention_timeout))
+        {
+            throw snap_lock_failed_exception(QString("locking \"%1\" failed.").arg(object_name));
+        }
+    }
 }
 
 
-/** \brief Set the default timeout of the inter-process lock.
+/** \brief Set how long inter-process locks last.
  *
- * This function let you set the timeout to "Time To Live" in seconds.
- * So if you want to keep your locks for 1 hour, use 3600.
+ * This function lets you change the default amount of time the
+ * inter-process locks last (i.e. their "Time To Live") in seconds.
+ *
+ * For example, to keep locks for 1 hour, use 3600.
+ *
+ * This value is used whenever a lock is created with its lock
+ * duration set to -1.
  *
  * \warning
  * This function is not thread safe.
  *
- * \param[in] timeout  The total number of seconds this specific lock will last for.
+ * \param[in] timeout  The total number of seconds locks will last for by default.
  */
-void snap_lock::initialize_timeout(int timeout)
+void snap_lock::initialize_lock_duration_timeout(timeout_t timeout)
 {
-    g_timeout = timeout;
+    // ensure a minimum of 3 seconds
+    if(timeout < SNAP_LOCK_MINIMUM_TIMEOUT)
+    {
+        timeout = SNAP_LOCK_MINIMUM_TIMEOUT;
+    }
+    g_lock_duration_timeout = timeout;
 }
 
 
-/** \brief Retrieve the current timeout.
+/** \brief Retrieve the current lock duration.
  *
  * This function returns the current lock timeout. It can be useful if
  * you want to use a lock with a different timeout and then restore
  * the previous value afterward.
  *
  * Although if you have access/control of the lock itself, you may instead
- * want to specify the timeout in the lock directly.
+ * want to specify the timeout in the snap_lock constructor directly.
  *
- * \return Current timeout TTL in seconds.
+ * \return Current lock TTL in seconds.
  */
-int snap_lock::current_timeout()
+snap_lock::timeout_t snap_lock::current_lock_duration_timeout()
 {
-    return g_timeout;
+    return g_lock_duration_timeout;
+}
+
+
+/** \brief Set how long to wait for an inter-process lock to take.
+ *
+ * This function lets you change the default amount of time the
+ * inter-process locks can wait before forfeiting the obtention
+ * of a new lock.
+ *
+ * This amount can generally remain pretty small. For example,
+ * you could say that you want to wait just 1 minute even though
+ * the lock you want to get will last 24 hours. This means, within
+ * one minute your process will be told that the lock cannot be
+ * realized. In other words, you cannot do the work you intended
+ * to do. If the lock is released within the 1 minute and you
+ * are next on the list, you will get the lock and can proceed
+ * with the work you intended to do.
+ *
+ * The default is five seconds which for a front end is already
+ * quite enormous.
+ *
+ * This value is used whenever a lock is created with its lock
+ * obtention timeout value set to -1.
+ *
+ * \warning
+ * This function is not thread safe.
+ *
+ * \param[in] timeout  The total number of seconds to wait to obtain future locks.
+ */
+void snap_lock::initialize_lock_obtention_timeout(timeout_t timeout)
+{
+    // ensure a minimum of 3 seconds
+    if(timeout < SNAP_LOCK_MINIMUM_TIMEOUT)
+    {
+        timeout = SNAP_LOCK_MINIMUM_TIMEOUT;
+    }
+    g_lock_obtention_timeout = timeout;
+}
+
+
+/** \brief Retrieve the current lock obtention duration.
+ *
+ * This function returns the current timeout for the obtention of a lock.
+ * It can be useful if you want to use a lock with a different obtention
+ * timeout and then restore the previous value afterward.
+ *
+ * Although if you have access/control of the lock itself, you may instead
+ * want to specify the timeout in the snap_lock constructor directly.
+ *
+ * \return Current lock obtention maximum wait period in seconds.
+ */
+snap_lock::timeout_t snap_lock::current_lock_obtention_timeout()
+{
+    return g_lock_obtention_timeout;
 }
 
 
@@ -501,13 +730,60 @@ void snap_lock::initialize_snapcommunicator(std::string const & addr, int port, 
 }
 
 
+/** \brief Attempt to lock the specified object.
+ *
+ * This function attempts to lock the specified object. If a lock
+ * was already in place, the function always sends an UNLOCK first.
+ *
+ * On a time scale, the lock_duration and lock_obtention_timeout
+ * parameters are used as follow:
+ *
+ * \li Get current time ('now')
+ * \li Calculate when it will be too late for this process to get the
+ *     lock, this is 'now + lock_obtention_timeout', if we get the
+ *     lock before then, all good, if not, we return with false
+ * \li Assuming we obtained the lock, get the new current time ('locked_time')
+ *     and add the lock_duration to know when the lock ends
+ *     ('lock_time + lock_duration'). Your process can run up until that
+ *     date is reached.
+ *
+ * \param[in] object_name  The name of the object to lock.
+ * \param[in] lock_duration  The amount of time the lock will last if obtained.
+ * \param[in] lock_obtention_timeout  The amount of time to wait for the lock.
+ *
+ * \return Whether the lock was obtained (true) or not (false).
+ */
+bool snap_lock::lock(QString const & object_name, timeout_t lock_duration, timeout_t lock_obtention_timeout)
+{
+    // although we have a shared pointer, the order in which the lock
+    // and unlock work would be inverted if we were to just call
+    // the reset() function (i.e. it would try to obtain the new lock
+    // first, then release the old lock second; which could cause a
+    // dead-lock,) therefore it is better if we explicitly call the
+    // unlock() function first
+    //
+    unlock();
+
+    f_lock_connection = std::make_shared<lock_connection>(object_name, lock_duration, lock_obtention_timeout);
+
+    return f_lock_connection->is_locked();
+}
+
+
 /** \brief Release the inter-process lock early.
  *
  * This function releases this inter-process lock early.
+ *
+ * If the lock was not active (i.e. lock() was never called or returned
+ * false last time you called it), then nothing happens.
  */
 void snap_lock::unlock()
 {
-    f_lock_connection->unlock();
+    if(f_lock_connection)
+    {
+        f_lock_connection->unlock();
+        f_lock_connection.reset();
+    }
 }
 
 
@@ -538,10 +814,18 @@ void snap_lock::unlock()
  * have a clock with a one second or so difference between various computers
  * so if the amount is really small (1 or 2) you should probably already
  * considered that the locked has timed out.
+ *
+ * \return The date when this lock will be over, or zero if the lock is
+ *         not currently active.
  */
 time_t snap_lock::get_timeout_date() const
 {
-    return f_lock_connection->get_timeout_date();
+    if(f_lock_connection)
+    {
+        return f_lock_connection->get_lock_timeout_date();
+    }
+
+    return 0;
 }
 
 

@@ -206,7 +206,7 @@ QByteArray dbutils::string_to_key( QString const & str )
     }
     else
     {
-        for( auto str_num : numList )
+        for( auto const & str_num : numList )
         {
             bool ok( false );
             ret.push_back( static_cast<char>( str_num.toInt( &ok, 16 ) ) );

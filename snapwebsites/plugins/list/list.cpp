@@ -2266,7 +2266,7 @@ int list::generate_new_lists(QString const & site_key)
         }
     }
 
-    for(auto it : lists_to_work_on)
+    for(auto const & it : lists_to_work_on)
     {
         content::path_info_t list_ipath;
         list_ipath.set_path(it);

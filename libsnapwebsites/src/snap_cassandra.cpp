@@ -134,7 +134,7 @@ SNAP_LOG_WARNING("snap_cassandra::init_context() should not be used anymore...")
             bool found(false);
             QString const data_centers(f_parameters["cassandra_data_centers"]);
             snap_string_list const names(data_centers.split(','));
-            for( const auto& dc : names )
+            for( const auto & dc : names )
             {
                 if( !dc.isEmpty() )
                 {
@@ -171,6 +171,9 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
     f_cassandra->contexts();
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     return f_cassandra->findContext(context_name);
+
+    //QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
+    //return f_cassandra->context(context_name);
 }
 
 
@@ -239,12 +242,12 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString con
         table = context->table(table_name);
 
         QtCassandra::QCassandraSchema::Value compaction;
-        auto& compaction_map(compaction.map());
+        auto & compaction_map(compaction.map());
         compaction_map["class"]         = QVariant("SizeTieredCompactionStrategy");
         compaction_map["min_threshold"] = QVariant(4);
         compaction_map["max_threshold"] = QVariant(22);
 
-        auto& table_fields(table->fields());
+        auto & table_fields(table->fields());
         table_fields["comment"]                     = QVariant(comment);
         table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
         table_fields["gc_grace_seconds"]            = QVariant(86400);
@@ -256,6 +259,15 @@ QtCassandra::QCassandraTable::pointer_t snap_cassandra::create_table(QString con
     }
     else if(f_created_table.contains(table_name))
     {
+        // TODO: add support for Future in case we create tables
+        //       so we can properly synchronize with the tables
+        //       here (although that requires a thread or something
+        //       like that... so we'll have to be careful!)
+        //for(auto const & tbl : created_table)
+        //{
+        //    tbl->wait_until_done();
+        //}
+
         // a single synchronization is enough for all created tables
         //
         f_created_table.clear();

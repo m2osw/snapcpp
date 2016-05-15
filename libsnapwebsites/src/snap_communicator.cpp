@@ -666,7 +666,9 @@ void snap_communicator_message::set_service(QString const & service)
         // broadcast is a special case that the verify_name() does not
         // support
         //
-        if(service != "*")
+        if(service != "*"
+        && service != "?"
+        && service != ".")
         {
             // this name can be empty and it supports lowercase
             //
@@ -957,7 +959,7 @@ void snap_communicator_message::verify_name(QString const & name, bool can_be_em
         throw snap_communicator_invalid_message("snap_communicator: a message name cannot be empty.");
     }
 
-    for(auto c : name)
+    for(auto const & c : name)
     {
         if((c < 'a' || c > 'z' || !can_be_lowercase)
         && (c < 'A' || c > 'Z')
@@ -2038,7 +2040,9 @@ void snap_communicator::snap_signal::process()
  *              // this function gets called when the thread is about
  *              // to exit or has exited; since the write to the pipe
  *              // happens before the thread really exited, but should
- *              // near the very end, you should be fine.
+ *              // be near the very end, you should be fine calling the
+ *              // snap_thread::stop() function to join with it very
+ *              // quickly.
  *              ...
  *          }
  *          ...
@@ -2057,6 +2061,11 @@ void snap_communicator::snap_signal::process()
  *      // around here, in the timeline, the process_read() function
  *      // gets called
  * \endcode
+ *
+ * \todo
+ * Change the implementation to use eventfd() instead of pipe2().
+ * Pipes are using more resources and are slower to use than
+ * an eventfd.
  */
 snap_communicator::snap_thread_done_signal::snap_thread_done_signal()
 {
@@ -3225,7 +3234,7 @@ bool snap_communicator::snap_tcp_server_client_connection::is_reader() const
  *                      client's address gets copied.
  *
  * \return Return the length of the address which may be smaller than
- *         sizeof(struct sockaddr). If zero, then no address is defined.
+ *         sizeof(address). If zero, then no address is defined.
  *
  * \sa get_addr()
  */
@@ -3255,7 +3264,7 @@ std::string snap_communicator::snap_tcp_server_client_connection::get_client_add
 {
     // make sure the address is defined and the socket open
     //
-    if(const_cast<snap_communicator::snap_tcp_server_client_connection *>(this)->define_address() != 0)
+    if(!const_cast<snap_communicator::snap_tcp_server_client_connection *>(this)->define_address())
     {
         return std::string();
     }
@@ -3288,6 +3297,69 @@ std::string snap_communicator::snap_tcp_server_client_connection::get_client_add
     }
 
     return buf;
+}
+
+
+/** \brief Retrieve the port.
+ *
+ * This function returns the port of the socket on our side.
+ *
+ * If the port is not available (not connected?), then -1 is returned.
+ *
+ * \return The client's port in host order.
+ */
+int snap_communicator::snap_tcp_server_client_connection::get_client_port() const
+{
+    // make sure the address is defined and the socket open
+    //
+    if(!const_cast<snap_communicator::snap_tcp_server_client_connection *>(this)->define_address())
+    {
+        return -1;
+    }
+
+    if(f_address.ss_family == AF_INET)
+    {
+        return ntohs(reinterpret_cast<struct sockaddr_in const &>(f_address).sin_port);
+    }
+    else
+    {
+        return ntohs(reinterpret_cast<struct sockaddr_in6 const &>(f_address).sin6_port);
+    }
+}
+
+
+/** \brief Retrieve the address in the form of a string.
+ *
+ * Like the get_addr() of the tcp client and server classes, this
+ * function returns the address in the form of a string which can
+ * easily be used to log information and other similar tasks.
+ *
+ * \return The client's address in the form of a string.
+ */
+std::string snap_communicator::snap_tcp_server_client_connection::get_client_addr_port() const
+{
+    // get the current address and port
+    std::string const addr(get_client_addr());
+    int const port(get_client_port());
+
+    // make sure they are defined
+    if(addr.empty()
+    || port < 0)
+    {
+        return std::string();
+    }
+
+    // calculate the result
+    std::stringstream buf;
+    if(f_address.ss_family == AF_INET)
+    {
+        buf << addr << ":" << port;
+    }
+    else
+    {
+        buf << "[" << addr << "]:" << port;
+    }
+    return buf.str();
 }
 
 
@@ -3628,11 +3700,11 @@ snap_communicator::snap_tcp_server_client_message_connection::snap_tcp_server_cl
 
     if(address.ss_family == AF_INET)
     {
-        f_remote_address = QString("%1:%2").arg(buf).arg(reinterpret_cast<struct sockaddr_in const &>(address).sin_port);
+        f_remote_address = QString("%1:%2").arg(buf).arg(ntohs(reinterpret_cast<struct sockaddr_in const &>(address).sin_port));
     }
     else
     {
-        f_remote_address = QString("%1:%2").arg(buf).arg(reinterpret_cast<struct sockaddr_in6 const &>(address).sin6_port);
+        f_remote_address = QString("[%1]:%2").arg(buf).arg(ntohs(reinterpret_cast<struct sockaddr_in6 const &>(address).sin6_port));
     }
 }
 
@@ -3701,6 +3773,9 @@ void snap_communicator::snap_tcp_server_client_message_connection::send_message(
  * the remote address and port in a string just after the connection
  * was established.
  *
+ * \warning
+ * This function returns BOTH: the address and the port.
+ *
  * \note
  * These parameters are the same as what was passed to the constructor,
  * only both will have been converted to numbers. So for example when
@@ -3745,7 +3820,7 @@ public:
             : snap_tcp_server_client_message_connection(socket)
             , f_client(client)
         {
-            set_name("snap_tcp_client_permanent_message_connection_impl messager");
+            set_name("snap_tcp_client_permanent_message_connection_impl::messager");
         }
 
         // snap_connection implementation
@@ -3788,6 +3863,7 @@ public:
         thread_done_signal(snap_tcp_client_permanent_message_connection_impl * client)
             : f_client(client)
         {
+            set_name("snap_tcp_client_permanent_message_connection_impl::thread_done_signal");
         }
 
         /** \brief This signal was emitted.
@@ -4050,6 +4126,19 @@ public:
     }
 
 
+    /** \brief Check whether the permanent connection is currently connected.
+     *
+     * This function returns true if the messager exists, which means that
+     * the connection is up.
+     *
+     * \return true if the connection is up.
+     */
+    bool is_connected()
+    {
+        return !!f_messager;
+    }
+
+
     /** \brief Try to start the thread runner.
      *
      * This function tries to start the thread runner in order to initiate
@@ -4081,7 +4170,7 @@ public:
 
         if(!f_thread.start())
         {
-            SNAP_LOG_ERROR("A background connection attempt is already in progress. Further requests are ignored.");
+            SNAP_LOG_ERROR("The thread used to run the background connection process did not start.");
             return false;
         }
 
@@ -4152,7 +4241,7 @@ public:
             //
             snap_communicator::instance()->add_connection(f_messager);
 
-            // if some signals were cached, process them immediately
+            // if some messages were cached, process them immediately
             //
             while(!f_message_cache.empty())
             {
@@ -4278,9 +4367,14 @@ private:
  * timer is used again to attempt a new connection. It will be reused
  * as long as the connection fails (as a delay). It has to be at least
  * 10 microseconds, although really you should not use less than 1
- * second (1000000). You may set the pause parameter to -1 in which case
+ * second (1000000). You may set the pause parameter to 0 in which case
  * you are responsible to set the delay (by default there will be no
  * delay and thus the timer will never time out.)
+ *
+ * To start with a delay, instead of trying to connect immediately,
+ * you may pass a negative pause parameter. So for example to get the
+ * first attempt 5 seconds after you created this object, you use
+ * -5000000LL as the pause parameter.
  *
  * The \p use_thread parameter determines whether the connection should
  * be attempted in a thread (asynchroneously) or immediately (which means
@@ -4293,14 +4387,14 @@ private:
  * \param[in] port  The port to listen on.
  * \param[in] mode  The mode to use to open the connection.
  * \param[in] pause  The amount of time to wait before attempting a new
- *                   connection after a failure, in microseconds, or -1.
+ *                   connection after a failure, in microseconds, or 0.
  * \param[in] use_thread  Whether a thread is used to connect to the
  *                        server.
  */
 snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client_permanent_message_connection(std::string const & address, int port, tcp_client_server::bio_client::mode_t mode, int64_t const pause, bool const use_thread)
-    : snap_timer(0)
+    : snap_timer(pause < 0 ? -pause : 0)
     , f_impl(new snap_tcp_client_permanent_message_connection_impl(this, address, port, mode))
-    , f_pause(pause)
+    , f_pause(llabs(pause))
     , f_use_thread(use_thread)
 {
 }
@@ -4324,6 +4418,25 @@ snap_communicator::snap_tcp_client_permanent_message_connection::snap_tcp_client
 bool snap_communicator::snap_tcp_client_permanent_message_connection::send_message(snap_communicator_message const & message, bool cache)
 {
     return f_impl->send_message(message, cache);
+}
+
+
+/** \brief Check whether the connection is up.
+ *
+ * This function returns true if the connection is considered to be up.
+ * This means sending messages will work quickly instead of being
+ * cached up until an actual TCP/IP connection gets established.
+ *
+ * Note that the connection may have hanged up since, and the system
+ * may not have yet detected the fact (i.e. the connection is going
+ * to receive the process_hup() call after the event in which you are
+ * working.)
+ *
+ * \return true if connected
+ */
+bool snap_communicator::snap_tcp_client_permanent_message_connection::is_connected() const
+{
+    return f_impl->is_connected();
 }
 
 
@@ -4412,13 +4525,20 @@ void snap_communicator::snap_tcp_client_permanent_message_connection::process_ti
     if(f_pause > 0)
     {
         set_timeout_delay(f_pause);
-        f_pause = -1;
+        f_pause = 0;
     }
 
     if(f_use_thread)
     {
         // in this case we create a thread, run it and know whether the
         // connection succeeded only when the thread tells us it did
+        //
+        // TODO: the background_connect() may return false in two situations:
+        //       1) when the thread is already running and then the behavior
+        //          we have below is INCORRECT
+        //       2) when the thread cannot be started (i.e. could not
+        //          allocate the stack?) in which case the if() below
+        //          is the correct behavior
         //
         if(f_impl->background_connect())
         {
@@ -4864,11 +4984,17 @@ void snap_communicator::snap_tcp_blocking_client_message_connection::run()
             //
             int64_t const next_timeout_timestamp(save_timeout_timestamp());
             int64_t const now(get_current_date());
-            int64_t timeout((next_timeout_timestamp - now) / 1000);
+            int64_t const timeout((next_timeout_timestamp - now) / 1000);
             if(timeout <= 0)
             {
                 // timed out
                 //
+                process_timeout();
+                if(f_done)
+                {
+                    return;
+                }
+                SNAP_LOG_FATAL("snap_communicator::snap_tcp_blocking_client_message_connection::run(): connection timed out before we could get the lock.");
                 throw snap_communicator_runtime_error("connection timed out");
             }
             errno = 0;
@@ -4982,7 +5108,7 @@ void snap_communicator::snap_tcp_blocking_client_message_connection::done()
  */
 bool snap_communicator::snap_tcp_blocking_client_message_connection::send_message(snap_communicator_message const & message)
 {
-    int s(get_socket());
+    int const s(get_socket());
     if(s >= 0)
     {
         // transform the message to a string and write to the socket

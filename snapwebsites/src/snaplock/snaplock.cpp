@@ -41,6 +41,7 @@
 #include "log.h"
 #include "qstring_stream.h"
 #include "dbutils.h"
+#include "snap_lock.h"
 #include "snap_string_list.h"
 
 // 3rd party libs
@@ -492,7 +493,7 @@ int snaplock::quorum() const
 void snaplock::process_message(snap::snap_communicator_message const & message)
 {
     // This adds way too many messages! Use only to debug if required.
-    //SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+    SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
 
     QString const command(message.get_command());
 
@@ -542,9 +543,16 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "ADDTICKET,DIED,DROPTICKET,GETMAXTICKET,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STOP,TICKETADDED,UNKNOWN,UNLOCK");
+            reply.add_parameter("list", "ADDTICKET,DIED,DROPTICKET,GETMAXTICKET,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STATUS,STOP,TICKETADDED,UNKNOWN,UNLOCK");
 
             f_messager->send_message(reply);
+
+            // Although it says "ready" and thus one would think that would
+            // work in the ready() function, this is done here because the
+            // COMMANDS message is required to first tell snapcommunicator
+            // that we understand "LOCKREADY"
+            //
+            send_lockready();
             return;
         }
         break;
@@ -624,15 +632,21 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
             // generate output for "snaplock --list"
             //
             QString ticketlist;
-            for(auto obj_ticket : f_tickets)
+            for(auto const & obj_ticket : f_tickets)
             {
-                for(auto key_ticket : obj_ticket.second)
+                for(auto const & key_ticket : obj_ticket.second)
                 {
                     QString const & obj_name(key_ticket.second->get_object_name());
                     QString const & key(key_ticket.second->get_entering_key());
                     snaplock_ticket::ticket_id_t const ticket_id(key_ticket.second->get_ticket_number());
+                    time_t const lock_timeout(key_ticket.second->get_lock_timeout());
 
-                    QString const msg(QString("%1/%2/%3\n").arg(ticket_id).arg(obj_name).arg(key));
+                    QString const msg(QString("ticket id: %1  object name: \"%2\"  key: %3  timeout %4 %5\n")
+                                    .arg(ticket_id)
+                                    .arg(obj_name)
+                                    .arg(key)
+                                    .arg(snap::snap_child::date_to_string(lock_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_SHORT))
+                                    .arg(snap::snap_child::date_to_string(lock_timeout * 1000000LL, snap::snap_child::date_format_t::DATE_FORMAT_TIME)));
                     ticketlist += msg;
                 }
             }
@@ -676,7 +690,14 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
         break;
 
     case 'S':
-        if(command == "STOP")
+        if(command == "STATUS")
+        {
+            // a connection managed by snapcommunicator is up
+            //
+            interpret_status(message);
+            return;
+        }
+        else if(command == "STOP")
         {
             // Someone is asking us to leave (probably snapinit)
             //
@@ -752,7 +773,11 @@ void snaplock::ready()
     dbready_message.set_service("snapinit");
     dbready_message.add_parameter("name", f_service_name);
     f_messager->send_message(dbready_message);
+}
 
+
+void snaplock::send_lockready()
+{
     // tell other snaplock instances that are already listening that
     // we are ready; this way we can calculate the number of computers
     // available in our ring and use that to calculate the QUORUM
@@ -934,6 +959,14 @@ void snaplock::lock(snap::snap_communicator_message const & message)
         return;
     }
 
+    int32_t const duration(message.get_integer_parameter("duration"));
+    if(duration < snap::snap_lock::SNAP_LOCK_MINIMUM_TIMEOUT)
+    {
+        // invalid duration, minimum is 3
+        //
+        throw snap::snap_communicator_invalid_message("snaplock::lock(): Invalid duration, the minimum accepted is 3.");
+    }
+
     // create an entering key
     //
     QString const entering_key(QString("%1/%2").arg(f_server_name).arg(client_pid));
@@ -944,6 +977,7 @@ void snaplock::lock(snap::snap_communicator_message const & message)
                                         object_name,
                                         entering_key,
                                         timeout,
+                                        duration,
                                         message.get_sent_from_server(),
                                         message.get_sent_from_service()));
 
@@ -972,7 +1006,7 @@ void snaplock::unlock(snap::snap_communicator_message const & message)
     if(obj_ticket != f_tickets.end())
     {
         QString const entering_key(QString("%1/%2").arg(f_server_name).arg(client_pid));
-        for(auto key_ticket : obj_ticket->second)
+        for(auto const & key_ticket : obj_ticket->second)
         {
             if(key_ticket.second->get_entering_key() == entering_key)
             {
@@ -1051,12 +1085,21 @@ void snaplock::lockentering(snap::snap_communicator_message const & message)
             // ticket does not exist, so create it now
             // (note: ticket should only exist on originator)
             //
+            int32_t const duration(message.get_integer_parameter("duration"));
+            if(duration < snap::snap_lock::SNAP_LOCK_MINIMUM_TIMEOUT)
+            {
+                // invalid duration, minimum is 3
+                //
+                throw snap::snap_communicator_invalid_message("snaplock::lockentering(): Invalid duration, the minimum accepted is 3.");
+            }
+
             f_entering_tickets[object_name][key] = std::make_shared<snaplock_ticket>(
                                       this
                                     , f_messager
                                     , object_name
                                     , key
                                     , timeout
+                                    , duration
                                     , ""
                                     , "");
         }
@@ -1130,7 +1173,7 @@ void snaplock::lockexiting(snap::snap_communicator_message const & message)
             auto const obj_ticket(f_tickets.find(object_name));
             if(obj_ticket != f_tickets.end())
             {
-                for(auto key_ticket : obj_ticket->second)
+                for(auto const & key_ticket : obj_ticket->second)
                 {
                     key_ticket.second->remove_entering(key);
                     run_activation = true;
@@ -1182,7 +1225,41 @@ void snaplock::lockready(snap::snap_communicator_message const & message)
     }
 
     QString const snaplock_key(QString("%1/%2").arg(server_name).arg(snaplock_pid));
-    f_computers[snaplock_key] = true;
+    if(f_computers.find(snaplock_key) == f_computers.end())
+    {
+        f_computers[snaplock_key] = true;
+
+        // avoid sending that message to ourselves, that's not useful because
+        // we know we already done that
+        //
+        if(server_name != f_server_name
+        && snaplock_pid != getpid())
+        {
+            send_lockready();
+        }
+    }
+}
+
+
+/** \brief With the STATUS message we know of new snapcommunicators.
+ *
+ * This function captures the STATUS message and if it sees that the
+ * name of the service is "remote communicator connection" then it
+ * sends a new LOCKREADY message to make sure that all snaplock's
+ * are aware of us.
+ *
+ * \param[in] message  The LOCKREADY message.
+ */
+void snaplock::interpret_status(snap::snap_communicator_message const & message)
+{
+    QString const service(message.get_parameter("service"));
+    if(service == "remote connection"                   // remote host connected to us
+    || service == "remote communicator connection")     // we connected to remote host
+    {
+        // TODO: we may want to not send the data across on a 'down'?
+        //
+        send_lockready();
+    }
 }
 
 
@@ -1237,13 +1314,39 @@ void snaplock::lockgone(snap::snap_communicator_message const & message)
 void snaplock::activate_first_lock(QString const & object_name)
 {
     auto const obj_ticket(f_tickets.find(object_name));
-    if(obj_ticket != f_tickets.end()
-    && !obj_ticket->second.empty())
+
+    if(obj_ticket != f_tickets.end())
     {
-        // there is a ticket that should be active
+        // loop through making sure that we activate a ticket only
+        // if the obtention date was not already reached; if that
+        // date was reached before we had the time to activate the
+        // lock, then the client should have abandonned the lock
+        // request anyway...
         //
-SNAP_LOG_WARNING("activate first lock called and we found a first ticket...");
-        obj_ticket->second.begin()->second->activate_lock();
+        // (this is already done in the cleanup(), but a couple of
+        // other functions may call the activate_first_lock()
+        // function!)
+        //
+        while(!obj_ticket->second.empty())
+        {
+            auto key_ticket(obj_ticket->second.begin());
+            if(!key_ticket->second->timed_out())
+            {
+                // there is still a ticket that should be active
+                //
+                key_ticket->second->activate_lock();
+                break;
+            }
+            key_ticket->second->lock_failed();
+            key_ticket = obj_ticket->second.erase(key_ticket);
+        }
+
+        if(obj_ticket->second.empty())
+        {
+            // it is empty now, get rid of that set of tickets
+            //
+            f_tickets.erase(obj_ticket);
+        }
     }
 }
 

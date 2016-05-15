@@ -43,71 +43,80 @@
 
 int main(int argc, char *argv[])
 {
-    QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
-
-    const char *host("localhost");
-    for(int i(1); i < argc; ++i)
+    try
     {
-        if(strcmp(argv[i], "--help") == 0)
+        QtCassandra::QCassandra::pointer_t cassandra( QtCassandra::QCassandra::create() );
+
+        const char *host("localhost");
+        for(int i(1); i < argc; ++i)
         {
-            qDebug() << "Usage:" << argv[0] << "[-h <hostname>]";
-            exit(1);
-        }
-        if(strcmp(argv[i], "-h") == 0)
-        {
-            ++i;
-            if(i >= argc)
+            if(strcmp(argv[i], "--help") == 0)
             {
-                qDebug() << "error: -h must be followed by a hostname.";
+                qDebug() << "Usage:" << argv[0] << "[-h <hostname>]";
                 exit(1);
             }
-            host = argv[i];
+            if(strcmp(argv[i], "-h") == 0)
+            {
+                ++i;
+                if(i >= argc)
+                {
+                    qDebug() << "error: -h must be followed by a hostname.";
+                    exit(1);
+                }
+                host = argv[i];
+            }
         }
-    }
 
-    cassandra->connect(host);
-    qDebug() << "Working on Cassandra Cluster Named" << cassandra->clusterName();
+        cassandra->connect(host);
+        qDebug() << "Working on Cassandra Cluster Named" << cassandra->clusterName();
 
-    QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_context"));
-    //
-    auto& fields(context->fields());
-    fields["durable_writes"] = QVariant(true);
-    //
-    auto& replication_map(fields["replication"].map());
-    replication_map["class"]              = QVariant("SimpleStrategy");
-    replication_map["replication_factor"] = QVariant(1);
-    //
-    try
-    {
+        QtCassandra::QCassandraContext::pointer_t context(cassandra->context("qt_cassandra_test_context"));
+        //
+        auto& fields(context->fields());
+        fields["durable_writes"] = QVariant(true);
+        //
+        auto& replication_map(fields["replication"].map());
+        replication_map["class"]              = QVariant("SimpleStrategy");
+        replication_map["replication_factor"] = QVariant(1);
+        //
+        try
+        {
+            context->drop();
+        }
+        catch(...)
+        {
+            // ignore errors, this happens when the context doesn't exist yet
+        }
+
+        QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
+        auto& table_fields( table->fields() );
+        table_fields["comment"]                     = QVariant("Our test table.");
+        table_fields["memtable_flush_period_in_ms"] = QVariant(60);
+        table_fields["gc_grace_seconds"]            = QVariant(86400);
+        //
+        auto& compaction_value_map(table_fields["compaction"].map());
+        compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
+        compaction_value_map["min_threshold"] = QVariant(4);
+        compaction_value_map["max_threshold"] = QVariant(22);
+
+        try
+        {
+            context->create();
+            qDebug() << "Done!";
+        }
+        catch( std::exception const & e )
+        {
+            qDebug() << "Exception is [" << e.what() << "]";
+            exit(1);
+        }
+
         context->drop();
     }
-    catch(...)
+    catch( std::overflow_error const & e )
     {
-        // ignore errors, this happens when the context doesn't exist yet
+        qDebug() << "std::overflow_error caught -- " << e.what();
+        exit(1);
     }
-
-    QtCassandra::QCassandraTable::pointer_t table(context->table("qt_cassandra_test_table"));
-    auto& table_fields( table->fields() );
-    table_fields["comment"]                     = QVariant("Our test table.");
-    table_fields["memtable_flush_period_in_ms"] = QVariant(60);
-    table_fields["gc_grace_seconds"]            = QVariant(86400);
-    //
-    auto& compaction_value_map(table_fields["compaction"].map());
-    compaction_value_map["class"]         = QVariant("SizeTieredCompactionStrategy");
-    compaction_value_map["min_threshold"] = QVariant(4);
-    compaction_value_map["max_threshold"] = QVariant(22);
-
-    try
-    {
-        context->create();
-        qDebug() << "Done!";
-    }
-    catch( const std::exception& e )
-    {
-        qDebug() << "Exception is [" << e.what() << "]";
-    }
-
-    context->drop();
 
     return 0;
 }

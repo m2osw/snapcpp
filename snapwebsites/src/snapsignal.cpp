@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
         s->setup_as_backend();
 
         // parse the command line arguments (this also brings in the .conf params)
-        s->config(argc, argv);
+        s->config(argc, argv, snap::server::SNAP_SERVER_CONFIG_OPTIONAL_SERVER_NAME);
 
         // Now create the qt application instance
         //

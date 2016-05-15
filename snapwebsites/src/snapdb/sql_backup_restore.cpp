@@ -122,7 +122,7 @@ void sqlBackupRestore::storeTables( const int count )
 {
     snapTableList   dump_list;
 
-    for( auto table_name : dump_list.tablesToDump() ) // f_context->tables() )
+    for( auto const & table_name : dump_list.tablesToDump() )
     {
         QString q_str = QString( "CREATE TABLE IF NOT EXISTS %1 "
                 "( id INTEGER PRIMARY KEY"
@@ -181,7 +181,7 @@ void sqlBackupRestore::restoreTables()
 {
     snapTableList   dump_list;
 
-    for( auto table_name : dump_list.tablesToDump() ) // f_context->tables() )
+    for( auto const & table_name : dump_list.tablesToDump() )
     {
         std::cout << "Restoring table [" << table_name << "]" << std::endl;
 

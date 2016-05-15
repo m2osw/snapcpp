@@ -1006,7 +1006,7 @@ QCassandraContext::pointer_t QCassandra::context( QCassandraSchema::SessionMeta:
     // otherwise create a new one
     QCassandraContext::pointer_t c( new QCassandraContext( shared_from_this(), keyspace_meta->getName() ) );
     f_contexts.insert( keyspace_meta->getName(), c );
-    //retrieveContextMeta( context_name ); -- we have the keyspace, just use it
+    //retrieveContextMeta( context_name ); -- we have the keyspace meta data, just use it
     c->parseContextDefinition( keyspace_meta );
 
     return c;
