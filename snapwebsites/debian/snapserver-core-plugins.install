@@ -1,1 +1,4 @@
+usr/include/*
 usr/lib/snapwebsites/plugins/*
+usr/share/javascript/snapwebsites/*
+usr/share/snapwebsites/dtd/*
