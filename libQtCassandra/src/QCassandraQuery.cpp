@@ -462,7 +462,14 @@ void QCassandraQuery::queryCallbackFunc( CassFuture* future, void *data )
 void QCassandraQuery::fireQueryTimer()
 {
     // Fire the timer signal so we get the query finished signal on the foreground thread.
+#if QT_VERSION >= 0x050501
+    // Newer C++-friendly connection
     QTimer::singleShot( 500, this, &QCassandraQuery::onQueryFinishedTimer );
+#else
+    // Older, runtime connection (for Ubuntu Trusty, this is not implemented yet since they are on Qt 5.2.X)
+    QTimer::singleShot( 500, this, SLOT(QCassandraQuery::onQueryFinishedTimer()) );
+#endif
+
 }
 
 

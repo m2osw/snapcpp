@@ -75,14 +75,14 @@ void QueryModel::init
 }
 
 
-void QueryModel::doQuery( QCassandraQuery::pointer_t query )
+void QueryModel::doQuery( QCassandraQuery::pointer_t q )
 {
     f_rows.clear();
     f_isMore = true;
 
     try
     {
-        f_query = query;
+        f_query = q;
         f_query->start( false /*don't block*/ );
     }
     catch( const std::exception& except )
