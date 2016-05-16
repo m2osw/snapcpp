@@ -69,43 +69,51 @@ public:
         NETWORK_TYPE_PUBLIC = NETWORK_TYPE_UNKNOWN  // we currently do not distinguish public and unknown
     };
 
-    typedef std::shared_ptr<addr>       pointer_t;
-    typedef std::vector<addr>           vector_t;
+    enum class computer_interface_address_t
+    {
+        COMPUTER_INTERFACE_ADDRESS_ERROR = -1,
+        COMPUTER_INTERFACE_ADDRESS_FALSE,
+        COMPUTER_INTERFACE_ADDRESS_TRUE
+    };
 
-                        addr();
-                        addr(std::string const & ap, std::string const & default_address, int const default_port, char const * protocol);
-                        addr(std::string const & ap, char const * protocol);
-                        addr(struct sockaddr_in const & in);
-                        addr(struct sockaddr_in6 const & in6);
+    typedef std::shared_ptr<addr>   pointer_t;
+    typedef std::vector<addr>       vector_t;
 
-    void                set_addr_port(std::string const & ap, std::string const & default_address, int const default_port, char const * protocol);
-    void                set_from_socket(int s);
-    void                set_ipv4(struct sockaddr_in const & in);
-    void                set_ipv6(struct sockaddr_in6 const & in6);
-    void                set_protocol(char const * protocol);
+                                    addr();
+                                    addr(std::string const & ap, std::string const & default_address, int const default_port, char const * protocol);
+                                    addr(std::string const & ap, char const * protocol);
+                                    addr(struct sockaddr_in const & in);
+                                    addr(struct sockaddr_in6 const & in6);
 
-    bool                is_ipv4() const;
-    void                get_ipv4(struct sockaddr_in & in) const;
-    void                get_ipv6(struct sockaddr_in6 & in6) const;
-    std::string         get_ipv4_string(bool include_port = false) const;
-    std::string         get_ipv6_string(bool include_port = false, bool include_brackets = true) const;
-    std::string         get_ipv4or6_string(bool include_port = false, bool include_brackets = true) const;
+    void                            set_addr_port(std::string const & ap, std::string const & default_address, int const default_port, char const * protocol);
+    void                            set_from_socket(int s);
+    void                            set_ipv4(struct sockaddr_in const & in);
+    void                            set_ipv6(struct sockaddr_in6 const & in6);
+    void                            set_protocol(char const * protocol);
 
-    network_type_t      get_network_type() const;
+    bool                            is_ipv4() const;
+    void                            get_ipv4(struct sockaddr_in & in) const;
+    void                            get_ipv6(struct sockaddr_in6 & in6) const;
+    std::string                     get_ipv4_string(bool include_port = false) const;
+    std::string                     get_ipv6_string(bool include_port = false, bool include_brackets = true) const;
+    std::string                     get_ipv4or6_string(bool include_port = false, bool include_brackets = true) const;
 
-    int                 get_port() const;
-    int                 get_protocol() const;
+    network_type_t                  get_network_type() const;
+    computer_interface_address_t    is_computer_interface_address() const;
 
-    bool                operator == (addr const & rhs) const;
-    bool                operator < (addr const & rhs) const;
+    int                             get_port() const;
+    int                             get_protocol() const;
+
+    bool                            operator == (addr const & rhs) const;
+    bool                            operator < (addr const & rhs) const;
 
 private:
-    void                address_changed();
+    void                            address_changed();
 
     // either way, keep address in an IPv6 structure
-    struct sockaddr_in6         f_address = sockaddr_in6();
-    int                         f_protocol = IPPROTO_TCP;
-    mutable network_type_t      f_private_network_defined = network_type_t::NETWORK_TYPE_UNDEFINED;
+    struct sockaddr_in6             f_address = sockaddr_in6();
+    int                             f_protocol = IPPROTO_TCP;
+    mutable network_type_t          f_private_network_defined = network_type_t::NETWORK_TYPE_UNDEFINED;
 };
 
 

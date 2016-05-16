@@ -32,31 +32,41 @@ namespace snap
 class snap_communicator_parameter_error : public snap_logic_exception
 {
 public:
-    snap_communicator_parameter_error(std::string const & what_msg) : snap_logic_exception(what_msg) {}
+    snap_communicator_parameter_error(char const *        what_msg) : snap_logic_exception("snap_communicator", what_msg) {}
+    snap_communicator_parameter_error(std::string const & what_msg) : snap_logic_exception("snap_communicator", what_msg) {}
+    snap_communicator_parameter_error(QString const &     what_msg) : snap_logic_exception("snap_communicator", what_msg) {}
 };
 
 class snap_communicator_exception : public snap_exception
 {
 public:
-    snap_communicator_exception(std::string const & what_msg) : snap_exception("snap_communicator", what_msg) {}
+    explicit snap_communicator_exception(char const *        what_msg) : snap_exception("snap_communicator", what_msg) {}
+    explicit snap_communicator_exception(std::string const & what_msg) : snap_exception("snap_communicator", what_msg) {}
+    explicit snap_communicator_exception(QString const &     what_msg) : snap_exception("snap_communicator", what_msg) {}
 };
 
 class snap_communicator_initialization_error : public snap_communicator_exception
 {
 public:
+    snap_communicator_initialization_error(char const *        what_msg) : snap_communicator_exception(what_msg) {}
     snap_communicator_initialization_error(std::string const & what_msg) : snap_communicator_exception(what_msg) {}
+    snap_communicator_initialization_error(QString const &     what_msg) : snap_communicator_exception(what_msg) {}
 };
 
 class snap_communicator_runtime_error : public snap_communicator_exception
 {
 public:
+    snap_communicator_runtime_error(char const *        what_msg) : snap_communicator_exception(what_msg) {}
     snap_communicator_runtime_error(std::string const & what_msg) : snap_communicator_exception(what_msg) {}
+    snap_communicator_runtime_error(QString const &     what_msg) : snap_communicator_exception(what_msg) {}
 };
 
 class snap_communicator_invalid_message : public snap_communicator_exception
 {
 public:
+    snap_communicator_invalid_message(char const *        what_msg) : snap_communicator_exception(what_msg) {}
     snap_communicator_invalid_message(std::string const & what_msg) : snap_communicator_exception(what_msg) {}
+    snap_communicator_invalid_message(QString const &     what_msg) : snap_communicator_exception(what_msg) {}
 };
 
 
