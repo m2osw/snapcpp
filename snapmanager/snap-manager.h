@@ -156,7 +156,6 @@ private:
     QPointer<QListView>             f_sites_list;
     QPointer<QLineEdit>             f_sites_name;
     QPointer<QTableView>            f_sites_parameters;
-    //QString                         f_sites_org_parameter_name;
     QPointer<QLineEdit>             f_sites_parameter_name;
     QString                         f_sites_org_parameter_value;
     QPointer<QLineEdit>             f_sites_parameter_value;

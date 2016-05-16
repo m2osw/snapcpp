@@ -814,7 +814,10 @@ bool snap_manager::getQueryResult( QCassandraQuery::pointer_t q )
     try
     {
         console->addItem( QString("[%1] has finished!").arg(q->description()) );
-        q->getQueryResult();
+        if( !q->queryActive() )
+        {
+            q->getQueryResult();
+        }
         return true;
     }
     catch( const std::exception& ex )
@@ -2229,12 +2232,13 @@ void snap_manager::onSitesListCurrentChanged( QModelIndex current, QModelIndex /
     f_row_model.init( f_session, context_name, table_name );
     f_row_model.setRowKey( f_sites_org_name.toUtf8() );
     f_row_model.doQuery();
+
+    f_sites_parameters->setEnabled(true);
 }
 
 
 void snap_manager::onSitesListLoaded()
 {
-    f_sites_parameters->setEnabled(true);
     f_sites_parameters->resizeColumnsToContents();
 }
 

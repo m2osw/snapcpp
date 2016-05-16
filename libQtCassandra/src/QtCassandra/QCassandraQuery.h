@@ -88,6 +88,7 @@ public:
 
     void                start               ( const bool block = true );
     bool	            isReady             () const;
+    bool				queryActive		    () const;
     void                getQueryResult      ();
     size_t              rowCount            () const;
     bool                nextRow             ();

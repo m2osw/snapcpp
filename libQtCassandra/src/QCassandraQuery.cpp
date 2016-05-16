@@ -634,6 +634,12 @@ bool QCassandraQuery::isReady() const
 }
 
 
+bool QCassandraQuery::queryActive() const
+{
+    return (f_queryResult && f_rowsIterator);
+}
+
+
 /** \brief Get the query result. This method blocks if the result is not ready yet.
  *
  * \note Throws std::runtime_error if query failed.
@@ -642,12 +648,6 @@ bool QCassandraQuery::isReady() const
  */
 void QCassandraQuery::getQueryResult()
 {
-    if( f_queryResult && f_rowsIterator )
-    {
-        // Already processed...
-        return;
-    }
-
     throwIfError( QString("Error in query string [%1]!").arg(f_queryString) );
 
     f_queryResult.reset ( cass_future_get_result   (f_sessionFuture.get()), resultDeleter() );
