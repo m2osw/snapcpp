@@ -68,19 +68,16 @@ private slots:
     void OnAboutToQuit();
     void on_domainFilter_clicked();
     void on_domainNew_clicked();
-    //void on_domainList_itemClicked(QListWidgetItem *item);
     void on_domainSelectionChanged( const QModelIndex & selected, const QModelIndex & deselected );
     void on_domainSave_clicked();
     void on_domainCancel_clicked();
     void on_domainDelete_clicked();
     void on_websiteNew_clicked();
-    //void on_websiteList_itemClicked(QListWidgetItem *item);
     void on_websiteSelectionChanged( const QModelIndex& selected, const QModelIndex& deselected );
     void on_websiteSave_clicked();
     void on_websiteCancel_clicked();
     void on_websiteDelete_clicked();
     void on_sitesFilter_clicked();
-    //void on_sitesList_itemClicked(QListWidgetItem *item);
     void onSitesListCurrentChanged( QModelIndex current, QModelIndex previous);
     void quit();
 
@@ -99,7 +96,6 @@ private slots:
 
     void onDomainsLoaded();
     void onWebsitesLoaded();
-    void onSitesListLoaded();
 
 private:
     enum tabs

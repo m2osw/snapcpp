@@ -180,12 +180,6 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_sites_name = getChild<QLineEdit>(this, "sitesDomainName");
     f_sites_parameters = getChild<QTableView>(this, "sitesParameters");
     f_sites_parameters->setModel( &f_row_model );
-    connect
-        ( &f_row_model
-        , &RowModel::queryFinished
-        , this
-        , &snap_manager::onSitesListLoaded
-        );
     f_sites_parameter_name = getChild<QLineEdit>(this, "sitesParameterName");
     f_sites_parameter_value = getChild<QLineEdit>(this, "sitesParameterValue");
     f_sites_parameter_type = getChild<QComboBox>(this, "sitesParameterType");
@@ -2233,13 +2227,11 @@ void snap_manager::onSitesListCurrentChanged( QModelIndex current, QModelIndex /
     f_row_model.setRowKey( f_sites_org_name.toUtf8() );
     f_row_model.doQuery();
 
+    auto hh( f_sites_parameters->horizontalHeader() );
+    hh->setSectionResizeMode( 0, QHeaderView::ResizeToContents );
+    hh->setSectionResizeMode( 1, QHeaderView::Stretch          );
+
     f_sites_parameters->setEnabled(true);
-}
-
-
-void snap_manager::onSitesListLoaded()
-{
-    f_sites_parameters->resizeColumnsToContents();
 }
 
 

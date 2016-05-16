@@ -67,6 +67,7 @@ public:
 
 signals:
     void exceptionCaught( const QString & what, const QString & message ) const;
+    void queryPageFinished() const;
     void queryFinished() const;
 
 protected:

@@ -163,6 +163,8 @@ void QueryModel::fetchMore ( const QModelIndex & prnt )
             }
         }
 
+        emit queryPageFinished();
+
         f_isMore = f_query->nextPage( false /*block*/ );
     }
     catch( const std::exception& except )
