@@ -1,4 +1,4 @@
-snapwebsites (1.0.0) trusty; urgency=high
+libsnapwebsites (1.0.0) trusty; urgency=high
 
   * Initial release of packaging for library.
 
