@@ -24,6 +24,7 @@
 
 #include <sstream>
 
+#include <ifaddrs.h>
 #include <netdb.h>
 
 namespace snap_addr
@@ -80,6 +81,19 @@ namespace
 void addrinfo_deleter(struct addrinfo * ai)
 {
     freeaddrinfo(ai);
+}
+
+
+/** \brief Delete an ifaddrs structure.
+ *
+ * This deleter is used to make sure all the ifaddrs get released when
+ * an exception occurs or the function using such exists.
+ *
+ * \param[in] ia  The ifaddrs structure to free.
+ */
+void ifaddrs_deleter(struct ifaddrs * ia)
+{
+    freeifaddrs(ia);
 }
 
 
@@ -726,6 +740,72 @@ void addr::address_changed()
     f_private_network_defined = network_type_t::NETWORK_TYPE_UNDEFINED;
 }
 
+
+/** \brief Check whether this address represents this computer.
+ *
+ * This function reads the addresses as given to us by the getifaddrs()
+ * function. This is a system function that returns a complete list of
+ * all the addresses this computer is managing / represents. In other
+ * words, a list of address that other computers can use to connect
+ * to this computer (assuming proper firewall, of course.)
+ *
+ * \warning
+ * The list of addresses from getifaddrs() is not being cached. So you
+ * probably do not want to call this function in a loop. That being
+ * said, I still would imagine that retrieving that list is fast.
+ *
+ * \return a computer_interface_address_t enumeration: error, true, or
+ *         false at this time; on error errno should be set to represent
+ *         what the error was.
+ */
+addr::computer_interface_address_t addr::is_computer_interface_address() const
+{
+    // TBD: maybe we could cache the ifaddrs for a small amount of time
+    //      (i.e. 1 minute) so additional calls within that time
+    //      can go even faster?
+    //
+
+    // get the list of interface addresses
+    //
+    struct ifaddrs * ifa_start(nullptr);
+    if(getifaddrs(&ifa_start) != 0)
+    {
+        return computer_interface_address_t::COMPUTER_INTERFACE_ADDRESS_ERROR;
+    }
+    std::shared_ptr<struct ifaddrs> auto_free(ifa_start, ifaddrs_deleter);
+
+    bool const ipv4(is_ipv4());
+    uint16_t const family(ipv4 ? AF_INET : AF_INET6);
+    for(struct ifaddrs * ifa(ifa_start); ifa != nullptr; ifa = ifa->ifa_next)
+    {
+        if(ifa->ifa_addr != nullptr
+        && ifa->ifa_addr->sa_family == family)
+        {
+            if(ipv4)
+            {
+                // the interface address structure is a 'struct sockaddr_in'
+                //
+                if(memcmp(&reinterpret_cast<struct sockaddr_in *>(ifa->ifa_addr)->sin_addr,
+                            f_address.sin6_addr.s6_addr32 + 3, //&reinterpret_cast<struct sockaddr_in const *>(&f_address)->sin_addr,
+                            sizeof(struct in_addr)) == 0)
+                {
+                    return computer_interface_address_t::COMPUTER_INTERFACE_ADDRESS_TRUE;
+                }
+            }
+            else
+            {
+                // the interface address structure is a 'struct sockaddr_in6'
+                //
+                if(memcmp(&reinterpret_cast<struct sockaddr_in6 *>(ifa->ifa_addr)->sin6_addr, &f_address.sin6_addr, sizeof(f_address.sin6_addr)) == 0)
+                {
+                    return computer_interface_address_t::COMPUTER_INTERFACE_ADDRESS_TRUE;
+                }
+            }
+        }
+    }
+
+    return computer_interface_address_t::COMPUTER_INTERFACE_ADDRESS_FALSE;
+}
 
 
 }
