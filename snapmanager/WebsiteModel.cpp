@@ -42,17 +42,17 @@ void WebsiteModel::doQuery()
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
-    auto query = std::make_shared<QCassandraQuery>(f_session);
-    query->query(
+    auto q = std::make_shared<QCassandraQuery>(f_session);
+    q->query(
         QString("SELECT column1 FROM %1.%2 WHERE key = ?")
             .arg(context_name)
             .arg(table_name)
         , 1
         );
-    query->bindByteArray( 0, row_index_name.toUtf8() );
-    query->setPagingSize( 10 );
+    q->bindByteArray( 0, row_index_name.toUtf8() );
+    q->setPagingSize( 10 );
 
-    QueryModel::doQuery( query );
+    QueryModel::doQuery( q );
 }
 
 

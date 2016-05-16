@@ -48,17 +48,17 @@ void RowModel::setRowKey( const QByteArray& val )
 
 void RowModel::doQuery()
 {
-    auto query = std::make_shared<QCassandraQuery>(f_session);
-    query->query(
+    auto q = std::make_shared<QCassandraQuery>(f_session);
+    q->query(
         QString("SELECT column1,value FROM %1.%2 WHERE key = ?")
             .arg(f_keyspaceName)
             .arg(f_tableName)
         , 1
         );
-    query->setPagingSize( 10 );
-    query->bindByteArray( 0, f_rowKey );
+    q->setPagingSize( 10 );
+    q->bindByteArray( 0, f_rowKey );
 
-    QueryModel::doQuery( query );
+    QueryModel::doQuery( q );
 }
 
 

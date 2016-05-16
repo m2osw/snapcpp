@@ -606,9 +606,9 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
         if(f_createcontext_window == nullptr)
         {
             f_createcontext_window = new snap_manager_createcontext(this);
-            connect( f_createcontext_window, &snap_manager_createcontext::createContext,
+            connect( f_createcontext_window.data(), &snap_manager_createcontext::createContext,
                      this, &snap_manager::create_context );
-            connect( f_createcontext_window, &snap_manager_createcontext::disconnectRequested,
+            connect( f_createcontext_window.data(), &snap_manager_createcontext::disconnectRequested,
                      this, &snap_manager::cassandraDisconnectButton_clicked );
         }
         f_createcontext_window->show();

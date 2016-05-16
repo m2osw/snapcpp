@@ -39,15 +39,15 @@ TableModel::TableModel()
 
 void TableModel::doQuery()
 {
-    auto query = std::make_shared<QCassandraQuery>(f_session);
-    query->query(
+    auto q = std::make_shared<QCassandraQuery>(f_session);
+    q->query(
         QString("SELECT DISTINCT key FROM %1.%2")
             .arg(f_keyspaceName)
             .arg(f_tableName)
             );
-    query->setPagingSize( 10 );
+    q->setPagingSize( 10 );
 
-    QueryModel::doQuery( query );
+    QueryModel::doQuery( q );
 }
 
 

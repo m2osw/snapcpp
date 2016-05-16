@@ -59,10 +59,10 @@ snap_manager_createcontext::snap_manager_createcontext
     f_snap_server_name     = getChild<QLineEdit>   (this, "snapServerName");
 
     // Close
-    connect( f_cancel_button, &QPushButton::clicked, this, &snap_manager_createcontext::cancel );
+    connect( f_cancel_button.data(), &QPushButton::clicked, this, &snap_manager_createcontext::cancel );
 
     // Send Request
-    connect( f_createcontext_button, &QPushButton::clicked, this, &snap_manager_createcontext::createcontext );
+    connect( f_createcontext_button.data(), &QPushButton::clicked, this, &snap_manager_createcontext::createcontext );
 }
 
 
