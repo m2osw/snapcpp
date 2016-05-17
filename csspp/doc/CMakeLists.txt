@@ -48,9 +48,14 @@ if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
         sample.css
     )
 
+    set( CSSPP_TOOL csspp-tool )
+
     add_custom_target(sample.css
-        DEPENDS csspp
-        COMMAND ../src/csspp -I ${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/scripts --debug --style expanded --output sample.css ${CMAKE_CURRENT_SOURCE_DIR}/sample.scss
+        DEPENDS ${CSSPP_TOOL}
+        COMMAND ${CSSPP_TOOL}
+            -I ${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/scripts
+            --debug --style expanded --output sample.css
+            ${CMAKE_CURRENT_SOURCE_DIR}/sample.scss
     )
 endif()
 
