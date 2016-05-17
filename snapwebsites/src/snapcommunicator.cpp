@@ -333,6 +333,9 @@ public:
     QString                     get_local_services() const;
     QString                     get_services_heard_of() const;
     bool                        add_neighbors(QString const & new_neighbors);
+    void                        remove_neighbor(QString const & neighbor);
+    void                        read_neighbors();
+    void                        save_neighbors();
     inline void                 verify_command(base_connection_pointer_t connection, snap::snap_communicator_message const & message);
     void                        process_connected(snap::snap_communicator::snap_connection::pointer_t connection);
     void                        broadcast_message(snap::snap_communicator_message const & message);
@@ -344,6 +347,7 @@ private:
     snap::server::pointer_t                             f_server;
 
     QString                                             f_server_name;
+    QString                                             f_neighbors_cache_filename;
     snap::snap_communicator::pointer_t                  f_communicator;
     snap::snap_communicator::snap_connection::pointer_t f_local_listener;   // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_listener;         // TCP/IP
@@ -2217,6 +2221,40 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
             }
             break;
 
+        case 'F':
+            if(command == "FORGET")
+            {
+                // whenever computers connect between each others, their
+                // IP address gets added to our list of neighbors; this
+                // means that the IP address is now stuck in the
+                // computer's brain "forever"
+                //
+                // once you notice many connection errors to other computers
+                // that have been removed from your cluster, you want the
+                // remaining computers to forget about that IP address and
+                // it is done by broadcasting a FORGET message to everyone
+                //
+                QString const forget_ip(message.get_parameter("ip"));
+                if(!message.has_parameter("broadcast_hops"))
+                {
+                    // this was sent directly to this instance only,
+                    // make sure to broadcast the message instead
+                    //
+                    snap::snap_communicator_message forget;
+                    forget.set_command("FORGET");
+                    forget.set_service("*");
+                    forget.add_parameter("ip", forget_ip);
+                    broadcast_message(forget);
+                }
+                // self is not a connection that get broadcast messages
+                // for snapcommunicator, so we also call the remove_neighbor()
+                // function now
+                //
+                remove_neighbor(forget_ip);
+                return;
+            }
+            break;
+
         case 'G':
             if(command == "GOSSIP")
             {
@@ -2354,7 +2392,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     reply.set_command("COMMANDS");
 
                     // list of commands understood by snapcommunicator
-                    reply.add_parameter("list", "ACCEPT,COMMANDS,CONNECT,DISCONNECT,GOSSIP,HELP,LOG,QUITTING,REFUSE,REGISTER,SERVICES,SHUTDOWN,STOP,UNKNOWN,UNREGISTER");
+                    reply.add_parameter("list", "ACCEPT,COMMANDS,CONNECT,DISCONNECT,FORGET,GOSSIP,HELP,LOG,QUITTING,REFUSE,REGISTER,SERVICES,SHUTDOWN,STOP,UNKNOWN,UNREGISTER");
 
                     //verify_command(base, reply); -- this verification does not work with remote snap communicator connections
                     if(remote_communicator)
@@ -3306,39 +3344,7 @@ bool snap_communicator_server::add_neighbors(QString const & new_neighbors)
 {
     // first time initialize and read the cache file
     //
-    static QString cache_filename;
-    if(cache_filename.isEmpty())
-    {
-        // get the path to the cache, create if necessary
-        //
-        cache_filename = f_server->get_parameter("cache_path");
-        if(cache_filename.isEmpty())
-        {
-            cache_filename = "/var/cache/snapwebsites";
-        }
-        snap::mkdir_p(cache_filename);
-        cache_filename += "/neighbors.txt";
-
-        QFile cache(cache_filename);
-        if(cache.open(QIODevice::ReadOnly))
-        {
-            char buf[1024];
-            for(;;)
-            {
-                qint64 const r(cache.readLine(buf, sizeof(buf)));
-                if(r < 0)
-                {
-                    break;
-                }
-                if(r > 0
-                && buf[0] != '#')
-                {
-                    QString const line(QString::fromUtf8(buf, r).trimmed());
-                    f_all_neighbors[line] = true;
-                }
-            }
-        }
-    }
+    read_neighbors();
 
     bool changed(false);
     if(!new_neighbors.isEmpty())
@@ -3362,25 +3368,98 @@ bool snap_communicator_server::add_neighbors(QString const & new_neighbors)
         //
         if(changed)
         {
-            QFile cache(cache_filename);
-            if(cache.open(QIODevice::WriteOnly))
-            {
-                for(sorted_list_of_strings_t::const_iterator n(f_all_neighbors.begin());
-                                                             n != f_all_neighbors.end();
-                                                             ++n)
-                {
-                    cache.write(n.key().toUtf8());
-                    cache.putChar('\n');
-                }
-            }
-            else
-            {
-                SNAP_LOG_ERROR("could not open cache file \"")(cache_filename)("\" for writing.");
-            }
+            save_neighbors();
         }
     }
 
     return changed;
+}
+
+
+/** \brief Remove a neighbor from our list of neighbors.
+ *
+ * This function removes a neighbor from the cache of this machine. If
+ * the neighbor is also defined in the configuration file, such as
+ * /etc/snapwebsites/snapcommunicator.conf, then the IP will not be
+ * forgotten any time soon.
+ *
+ * \param[in] neighbor  The neighbor to be removed.
+ */
+void snap_communicator_server::remove_neighbor(QString const & neighbor)
+{
+    if(f_all_neighbors.contains(neighbor))
+    {
+        f_all_neighbors.remove(neighbor);
+        save_neighbors();
+    }
+}
+
+
+/** \brief Read the list of neighbors from disk.
+ *
+ * The first time we deal with our list of neighbors we need to call this
+ * file to make sure we get that list ready as expected, which is with
+ * all the IP:port previously saved in the neighbors.txt file.
+ */
+void snap_communicator_server::read_neighbors()
+{
+    if(f_neighbors_cache_filename.isEmpty())
+    {
+        // get the path to the cache, create if necessary
+        //
+        f_neighbors_cache_filename = f_server->get_parameter("cache_path");
+        if(f_neighbors_cache_filename.isEmpty())
+        {
+            f_neighbors_cache_filename = "/var/cache/snapwebsites";
+        }
+        snap::mkdir_p(f_neighbors_cache_filename);
+        f_neighbors_cache_filename += "/neighbors.txt";
+
+        QFile cache(f_neighbors_cache_filename);
+        if(cache.open(QIODevice::ReadOnly))
+        {
+            char buf[1024];
+            for(;;)
+            {
+                qint64 const r(cache.readLine(buf, sizeof(buf)));
+                if(r < 0)
+                {
+                    break;
+                }
+                if(r > 0
+                && buf[0] != '#')
+                {
+                    QString const line(QString::fromUtf8(buf, r).trimmed());
+                    f_all_neighbors[line] = true;
+                }
+            }
+        }
+    }
+}
+
+
+/** \brief Save the current list of neighbors to disk.
+ *
+ * Whenever the list of neighbors changes, this function gets called
+ * so the changes can get save on disk and reused on a restart.
+ */
+void snap_communicator_server::save_neighbors()
+{
+    QFile cache(f_neighbors_cache_filename);
+    if(cache.open(QIODevice::WriteOnly))
+    {
+        for(sorted_list_of_strings_t::const_iterator n(f_all_neighbors.begin());
+                                                     n != f_all_neighbors.end();
+                                                     ++n)
+        {
+            cache.write(n.key().toUtf8());
+            cache.putChar('\n');
+        }
+    }
+    else
+    {
+        SNAP_LOG_ERROR("could not open cache file \"")(f_neighbors_cache_filename)("\" for writing.");
+    }
 }
 
 
