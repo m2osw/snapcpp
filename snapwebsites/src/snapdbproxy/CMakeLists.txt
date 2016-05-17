@@ -48,6 +48,7 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
+    ${LOG4CPLUS_LIBRARIES}
     ${QT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
