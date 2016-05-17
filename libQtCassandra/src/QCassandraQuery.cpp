@@ -467,7 +467,7 @@ void QCassandraQuery::fireQueryTimer()
     QTimer::singleShot( 500, this, &QCassandraQuery::onQueryFinishedTimer );
 #else
     // Older, runtime connection (for Ubuntu Trusty, this is not implemented yet since they are on Qt 5.2.X)
-    QTimer::singleShot( 500, this, SLOT(QCassandraQuery::onQueryFinishedTimer()) );
+    QTimer::singleShot( 500, this, SLOT(onQueryFinishedTimer()) );
 #endif
 }
 
