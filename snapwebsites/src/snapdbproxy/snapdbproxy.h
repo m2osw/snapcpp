@@ -204,7 +204,7 @@ private:
     int                                         f_cassandra_port = 9042;
     snapdbproxy_messager::pointer_t             f_messager;
     snapdbproxy_listener::pointer_t             f_listener;
-    long                                        f_max_pending_connections = -1;
+    int                                         f_max_pending_connections = -1;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
     QtCassandra::QCassandraSession::pointer_t   f_session;

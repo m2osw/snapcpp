@@ -379,7 +379,7 @@
  * \param[in] service_name  The server waiting for the LOCKED message.
  */
 snaplock_ticket::snaplock_ticket(
-              snaplock_running_t * running_computers
+              snaplock * sl
             , snaplock_messager::pointer_t messager
             , QString const & object_name
             , QString const & entering_key
@@ -387,7 +387,7 @@ snaplock_ticket::snaplock_ticket(
             , int32_t lock_duration
             , QString const & server_name
             , QString const & service_name)
-    : f_running_computers(running_computers)
+    : f_snaplock(sl)
     , f_messager(messager)
     , f_object_name(object_name)
     , f_obtention_timeout(obtention_timeout)
@@ -449,7 +449,7 @@ void snaplock_ticket::entered()
     {
         ++f_entered_count;
 
-        if(f_entered_count >= f_running_computers->quorum())
+        if(f_entered_count >= f_snaplock->quorum())
         {
             f_get_max_ticket = true;
 
@@ -519,7 +519,7 @@ void snaplock_ticket::max_ticket(int64_t new_max_ticket)
 
         ++f_max_ticket_count;
 
-        if(f_max_ticket_count >= f_running_computers->quorum())
+        if(f_max_ticket_count >= f_snaplock->quorum())
         {
             ++f_our_ticket;
 
@@ -585,7 +585,7 @@ void snaplock_ticket::ticket_added(snaplock_ticket::key_map_t const & still_ente
     {
         ++f_ticket_added_count;
 
-        if(f_ticket_added_count >= f_running_computers->quorum())
+        if(f_ticket_added_count >= f_snaplock->quorum())
         {
             f_added_ticket_quorum = true;
 
@@ -637,6 +637,22 @@ void snaplock_ticket::remove_entering(QString const & key)
         {
             f_still_entering.erase(it);
 
+            // just like the quorum computation, we compute the
+            // remaining list of entering tickets dynamically at
+            // the time we check the value
+            //
+            for(auto key_entering(f_still_entering.begin()); key_entering != f_still_entering.end(); )
+            {
+                if(key_entering->second->timed_out())
+                {
+                    key_entering = f_still_entering.erase(key_entering);
+                }
+                else
+                {
+                    ++key_entering;
+                }
+            }
+
             // once all removed, our ticket is ready!
             //
             if(f_still_entering.empty())
@@ -672,7 +688,7 @@ void snaplock_ticket::activate_lock()
         locked_message.set_service(f_service_name);
         locked_message.add_parameter("object_name", f_object_name);
         locked_message.add_parameter("timeout_date", f_lock_timeout);
-        locked_message.add_parameter("quorum", f_running_computers->quorum()); // mainly for debug/info so one can know how many computers replied before we said LOCKED
+        locked_message.add_parameter("quorum", f_snaplock->quorum()); // mainly for debug/info so one can know how many computers replied before we said LOCKED
         f_messager->send_message(locked_message);
     }
 }

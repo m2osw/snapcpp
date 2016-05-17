@@ -2267,6 +2267,10 @@ void service::set_stopping()
         // than enough for all to quit (only those running a really heavy
         // job and do not check their signals often enough...)
         //
+        // TODO: we probably want that 10 seconds to be a variable in the
+        //       .conf file, that way users can decide how long we should
+        //       be waiting here.
+        //
         // the test before the set_enable() and set_timeout_delay()
         // is there because set_stopping() could be called multiple times.
         //

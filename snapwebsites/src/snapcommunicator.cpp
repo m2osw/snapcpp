@@ -1574,13 +1574,13 @@ void snap_communicator_server::init()
 
     f_communicator = snap::snap_communicator::instance();
 
-    int max_pending_connections(10);
+    int max_pending_connections(-1);
     {
         QString const max_pending_connections_str(f_server->get_parameter("max_pending_connections"));
         if(!max_pending_connections_str.isEmpty())
         {
             bool ok(false);
-            max_pending_connections = max_pending_connections_str.toInt(&ok);
+            max_pending_connections = max_pending_connections_str.toInt(&ok, 10);
             if(!ok
             || max_pending_connections < 5
             || max_pending_connections > 1000)

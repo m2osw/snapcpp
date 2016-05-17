@@ -43,6 +43,7 @@ install(
         snapdbproxy.properties
         snapfirewall.properties
         snapinit.properties
+        snaplock.properties
 
         # snap configuration files
         snap-apache2.conf
@@ -51,6 +52,7 @@ install(
         snapdbproxy.conf
         snapfirewall.conf
         snapinit.conf
+        snaplock.conf
         snapserver.conf
 
         # various other files

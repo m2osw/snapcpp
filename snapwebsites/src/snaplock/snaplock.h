@@ -51,15 +51,6 @@
 class snaplock;
 
 
-// interface
-class snaplock_running_t
-{
-public:
-    virtual                 ~snaplock_running_t() {}
-
-    virtual int             get_computer_count() const = 0;
-    virtual int             quorum() const = 0;
-};
 
 
 class snaplock_messager
@@ -117,7 +108,7 @@ public:
     static ticket_id_t const                    NO_TICKET = 0;
 
                         snaplock_ticket(
-                                  snaplock_running_t * running_computers
+                                  snaplock * sl
                                 , snaplock_messager::pointer_t messager
                                 , QString const & object_name
                                 , QString const & entering_key
@@ -147,8 +138,11 @@ public:
     void                drop_ticket();
 
 private:
+    // this is owned by a snaplock function so no need for a smart pointer
+    // (and it would create a loop)
+    snaplock *                      f_snaplock = nullptr;
+
     // initialization
-    snaplock_running_t *            f_running_computers = nullptr;
     snaplock_messager::pointer_t    f_messager;
     QString                         f_object_name;
     time_t                          f_obtention_timeout = 0;
@@ -186,7 +180,6 @@ private:
 
 
 class snaplock
-        : public snaplock_running_t
 {
 public:
     typedef std::shared_ptr<snaplock>      pointer_t;
@@ -202,8 +195,8 @@ public:
     void                        tool_message(snap::snap_communicator_message const & message);
     void                        process_connection(int const s);
 
-    virtual int                 get_computer_count() const;
-    virtual int                 quorum() const;
+    int                         get_computer_count() const;
+    int                         quorum() const;
 
     static void                 sighandler( int sig );
 

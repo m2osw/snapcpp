@@ -95,7 +95,7 @@ public:
 
     static int const    MAX_CONNECTIONS = 50;
 
-                        tcp_server(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
+                        tcp_server(std::string const & addr, int port, int max_connections = MAX_CONNECTIONS, bool reuse_addr = false, bool auto_close = false);
                         tcp_server(tcp_server const & src) = delete;
     tcp_server &        operator = (tcp_server const & rhs) = delete;
                         ~tcp_server();

@@ -47,9 +47,6 @@
 // 3rd party libs
 //
 #include <QtCore>
-//#include <QtSql>
-#include <QtCassandra/QCassandra.h>
-//#include <controlled_vars/controlled_vars_need_init.h>
 #include <advgetopt/advgetopt.h>
 
 // system

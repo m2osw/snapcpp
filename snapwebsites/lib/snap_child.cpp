@@ -4694,7 +4694,7 @@ void snap_child::canonicalize_options()
     // *** BRANCH / REVISION ***
     // now take care of the branch and revision
 
-    // current or current working branch (working_branch=1)
+    // current or working branch (working_branch=1)
     QString const qs_working_branch(server->get_parameter("qs_working_branch"));
     QString const working_branch_entry(f_uri.query_option(qs_working_branch));
     bool const working_branch(!working_branch_entry.isEmpty());

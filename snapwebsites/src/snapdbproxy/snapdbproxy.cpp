@@ -298,7 +298,7 @@ snapdbproxy::snapdbproxy(int argc, char * argv[])
         if(!max_connections.isEmpty())
         {
             bool ok;
-            f_max_pending_connections = max_connections.toLong(&ok);
+            f_max_pending_connections = max_connections.toInt(&ok);
             if(!ok)
             {
                 SNAP_LOG_FATAL("invalid max_pending_connections, a valid number was expected instead of \"")(max_connections)("\".");

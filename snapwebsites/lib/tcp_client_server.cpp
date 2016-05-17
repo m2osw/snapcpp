@@ -483,9 +483,15 @@ int tcp_client::write(const char *buf, size_t size)
  * The server constructor creates a socket, binds it, and then listen to it.
  *
  * By default the server accepts a maximum of \p max_connections (set to
- * -1 to get the default tcp_server::MAX_CONNECTIONS) in its waiting queue.
+ * 0 or less to get the default tcp_server::MAX_CONNECTIONS) in its waiting queue.
  * If you use the server and expect a low connection rate, you may want to
  * reduce the count to 5. Although some very busy servers use larger numbers.
+ * This value gets clamped to a minimum of 5 and a maximum of 1,000.
+ *
+ * Note that the maximum number of connections is actually limited to
+ * /proc/sys/net/core/somaxconn connections. This number is generally 128 
+ * in 2016. So the  super high limit of 1,000 is anyway going to be ignored
+ * by the OS.
  *
  * The address is made non-reusable (which is the default for TCP sockets.)
  * It is possible to mark the server address as immediately reusable by
@@ -509,7 +515,7 @@ int tcp_client::write(const char *buf, size_t size)
  * \param[in] auto_close  Automatically close the client socket in accept and the destructor.
  */
 tcp_server::tcp_server(std::string const & addr, int port, int max_connections, bool reuse_addr, bool auto_close)
-    : f_max_connections(max_connections < 1 ? MAX_CONNECTIONS : max_connections)
+    : f_max_connections(max_connections <= 0 ? MAX_CONNECTIONS : max_connections)
     //, f_socket(-1) -- auto-init
     , f_port(port)
     , f_addr(addr)
@@ -519,11 +525,19 @@ tcp_server::tcp_server(std::string const & addr, int port, int max_connections, 
 {
     if(f_addr.empty())
     {
-        throw tcp_client_server_parameter_error("the address cannot be an empty string");
+        throw tcp_client_server_parameter_error("the address cannot be an empty string.");
     }
     if(f_port < 0 || f_port >= 65536)
     {
-        throw tcp_client_server_parameter_error("invalid port for a client socket");
+        throw tcp_client_server_parameter_error("invalid port for a client socket.");
+    }
+    if(f_max_connections < 5)
+    {
+        f_max_connections = 5;
+    }
+    else if(f_max_connections > 1000)
+    {
+        f_max_connections = 1000;
     }
 
     //char decimal_port[16];
