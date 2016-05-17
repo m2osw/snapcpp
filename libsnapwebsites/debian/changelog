@@ -1,3 +1,9 @@
+libsnapwebsites (1.0.0.2~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 17 May 2016 14:17:09 -0700
+
 libsnapwebsites (1.0.0.1~trusty) trusty; urgency=high
 
   * Nightly build.
