@@ -1280,7 +1280,7 @@ void snap_manager::on_domainSelectionChanged( const QModelIndex & /*selected*/, 
     query->setDescription( QString("Retrieving rules for domain [%1]").arg(f_domain_org_name) );
     size_t num = 0;
     query->bindByteArray( num++, f_domain_org_name.toUtf8() );
-    query->bindByteArray( num++, QString("core::original::rules").toUtf8() );
+    query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
     query->start();
 
     if( query->nextRow() )
@@ -1446,7 +1446,7 @@ void snap_manager::saveDomain()
     query->setDescription( QString("Update core rules for %1").arg(name) );
     num = 0;
     query->bindByteArray( num++, name.toUtf8() );
-    query->bindByteArray( num++, QString("core::original::rules").toUtf8() );
+    query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
     query->bindByteArray( num++, rules.toUtf8() );
     addQuery(query);
 
