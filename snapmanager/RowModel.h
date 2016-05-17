@@ -18,59 +18,44 @@
 
 #pragma once
 
-#include <QtCassandra/QCassandraRow.h>
-#include <QAbstractTableModel>
-#include <QModelIndex>
-#include <QString>
-#include <QVariant>
-
-#include <memory>
-
-namespace snap
-{
+#include <QtCassandra/QueryModel.h>
 
 class RowModel
-    : public QAbstractTableModel
+    : public QtCassandra::QueryModel
 {
     Q_OBJECT
 
 public:
-                    RowModel() {}
+    RowModel();
 
-    QtCassandra::QCassandraRow::pointer_t   getRow() const;
-    void                                    setRow( QtCassandra::QCassandraRow::pointer_t c );
+    const QByteArray&       rowKey() const;
+    void                    setRowKey( const QByteArray& val );
 
-    Qt::ItemFlags   flags         ( const QModelIndex & index ) const;
-    QVariant        data          ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
-    QVariant        headerData    ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
-    int             rowCount      ( const QModelIndex & parent = QModelIndex() ) const;
-    int             columnCount   ( const QModelIndex & parent = QModelIndex() ) const;
+    // Read access
+    //
+    virtual Qt::ItemFlags   flags           ( const QModelIndex & index ) const;
+    virtual QVariant        data            ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
+    virtual int             columnCount     ( const QModelIndex & parent = QModelIndex() ) const;
+    virtual QVariant        headerData      ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
+
+    virtual void            fetchCustomData ( QtCassandra::QCassandraQuery::pointer_t q );
 
     // Write access
     //
-    bool            setData       ( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole );
-    bool            setHeaderData ( int section, Qt::Orientation orientation, const QVariant & value, int role = Qt::EditRole );
+    virtual bool            setData         ( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole );
+    virtual bool            setHeaderData   ( int section, Qt::Orientation orientation, const QVariant & value, int role = Qt::EditRole );
 
     // Resizable methods
     //
-    bool            insertNewRow  ( const QString & new_name, const QString & new_value );
-    bool            insertRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
-    bool            removeRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
+    virtual bool            insertRows      ( int row, int count, const QModelIndex & parent = QModelIndex() );
+    virtual bool            removeRows      ( int row, int count, const QModelIndex & parent = QModelIndex() );
 
-signals:
-    void            exceptionCaught( const QString & what, const QString & message ) const;
+    void					doQuery();
 
 private:
-    QtCassandra::QCassandraRow::pointer_t   f_row;
-    QString                                 f_newName;
-    QString                                 f_newValue;
-
-    void            reset();
-    void            displayError( const std::exception & except, const QString & message ) const;
+    std::vector<QByteArray> f_columns;
+    QByteArray              f_rowKey;
 };
-
-}
-// namespace snap
 
 
 // vim: ts=4 sw=4 et

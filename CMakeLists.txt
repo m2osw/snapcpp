@@ -114,7 +114,7 @@ ConfigureMakeProject( PROJECT_NAME libQtSerialization
     DEPENDS snapCMakeModules
 )
 
-ConfigureMakeProject( PROJECT_NAME snapwebsites
+ConfigureMakeProject( PROJECT_NAME libsnapwebsites
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
@@ -123,21 +123,32 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
     DEPENDS zipios2 libQtCassandra libQtSerialization libtld as2js log4cplus csspp
 )
 
+ConfigureMakeProject( PROJECT_NAME snapwebsites
+    CONFIG_ARGS
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
+        -DCSSPP_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    DEPENDS advgetopt libsnapwebsites
+)
+
 ConfigureMakeProject( PROJECT_NAME snapwatchdog
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS snapwebsites
+    DEPENDS libsnapwebsites
 )
 
 ConfigureMakeProject( PROJECT_NAME snapmanager
     CONFIG_ARGS
+        -DADVGETOPT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTCASSANDRA_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtCassandra
-    DEPENDS snapwebsites
+    DEPENDS advgetopt libsnapwebsites
 )
 
 ConfigureMakeProject( PROJECT_NAME cassview
@@ -146,7 +157,7 @@ ConfigureMakeProject( PROJECT_NAME cassview
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
         -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS snapwebsites
+    DEPENDS libsnapwebsites
 )
 
 

@@ -2,74 +2,29 @@ Source: snapwebsites
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake,
-    doxygen, graphviz, liblog4cplus-dev (>= 1.2.0.387~trusty),
+    doxygen, graphviz, liblog4cplus-dev (>= 1.2.0.388~trusty),
     libssl-dev, libmagic-dev, libmagick++-dev (>= 6.7.7.10-6ubuntu3), libicu-dev,
     libqtwebkit-dev, libboost-dev, libxml2-utils, python-pip (>= 1.4.1-2),
-    libprocps3-dev | libprocps4-dev, libzipios-dev (>= 2.1.2.114~trusty), zip, uuid-dev,
+    libprocps3-dev | libprocps4-dev, libzipios-dev (>= 2.1.2.115~trusty), zip, uuid-dev,
     snapcmakemodules (>= 1.0.23.231~trusty),
     libcontrolledvars-dev (>= 1.4.15.231~trusty), libadvgetopt-dev (>= 1.0.15.231~trusty),
-    libtld-dev (>= 1.5.1.304~trusty), libqtcassandra-dev (>= 0.6.0.25~trusty),
-    libqtserialization-dev (>= 0.1.16.617~trusty), closure-linter (>= 2.3.13),
-    libas2js-dev (>= 0.1.14.112~trusty), libssl-dev (>= 1.0.1),
-    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.10.39~trusty),
-    catch (>= 1.0), csspp (>= 1.0.10.39~trusty),
-    qt5-default, libqt5xmlpatterns5-dev, qtscript5-dev
+    libtld-dev (>= 1.5.1.305~trusty), libqtcassandra-dev (>= 0.6.0.26~trusty),
+    libqtserialization-dev (>= 0.1.16.618~trusty), closure-linter (>= 2.3.13),
+    libas2js-dev (>= 0.1.14.113~trusty), libssl-dev (>= 1.0.1),
+    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.10.40~trusty),
+    catch (>= 1.0), csspp (>= 1.0.10.40~trusty),
+    qt5-default, libqt5xmlpatterns5-dev, qtscript5-dev,
+    libsnapwebsites-dev (>= 1.0.0)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
 Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 
-Package: libsnapwebsites-dev
-Section: libdevel
-Architecture: any
-Depends: libsnapwebsites (= ${binary:Version}), ${misc:Depends}, libboost-dev,
-    libqtcassandra-dev, libssl-dev
-Suggests: libsnapwebsites-doc (= ${binary:Version})
-Description: Fast Websites: powerful CMS for Apache written in C++ (development package).
- Snap! C++ runs your CMS using binary code written in C and C++.
- The basic concept is taken from a large set of Drupal 6.x
- modules from Drupal Core and necessary 3rd party modules (we've been using
- over 220 modules on top of the Core modules.) The result is quite
- extensible as it offers a plug-in mechanism that everyone is welcome to use to
- create their own extensions.
- .
- This is the development package complete with C++ headers.
-
-Package: libsnapwebsites-doc
-Section: doc
-Architecture: all
-Depends: ${misc:Depends}
-Suggests: libsnapwebsites (= ${binary:Version})
-Description: Fast Websites: powerful CMS for Apache written in C++ (documentation package).
- Snap! C++ runs your CMS using binary code written in C and C++.
- The basic concept is taken from a large set of Drupal 6.x
- modules from Drupal Core and necessary 3rd party modules (we've been using
- over 220 modules on top of the Core modules.) The result is quite
- extensible as it offers a plug-in mechanism that everyone is welcome to use to
- create their own extensions.
- .
- This is the documenation package, complete developer reference.
-
-Package: libsnapwebsites
-Section: libdevel
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Fast Websites: powerful CMS for Apache written in C++.
- Snap! C++ runs your CMS using binary code written in C and C++.
- The basic concept is taken from a large set of Drupal 6.x
- modules from Drupal Core and necessary 3rd party modules (we've been using
- over 220 modules on top of the Core modules.) The result is quite
- extensible as it offers a plug-in mechanism that everyone is welcome to use to
- create their own extensions.
- .
- This is the runtime package for the C++ library.
-
 Package: snapserver-core-plugins
 Section: web
 Architecture: any
-Depends: libsnapwebsites (= ${binary:Version}), ${shlibs:Depends},
-    ${misc:Depends}, html2text, clamav, libqrencode3 (>= 3.4)
+Depends: ${shlibs:Depends}, ${misc:Depends}, html2text, clamav, libqrencode3 (>= 3.4)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -87,8 +42,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
 Package: snapserver
 Section: web
 Architecture: any
-Depends: adduser, libsnapwebsites (= ${binary:Version}),
-    snapserver-core-plugins (= ${binary:Version}), iplock,
+Depends: adduser, snapserver-core-plugins (= ${binary:Version}), iplock,
     ${shlibs:Depends}, ${misc:Depends}
 Recommends: snapdb (= ${binary:Version})
 Suggests: cassandra (>= 2.0.3), snapcgi (= ${binary:Version}),
@@ -108,8 +62,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
 Package: snapdb
 Section: web
 Architecture: any
-Depends: libsnapwebsites (= ${binary:Version}),
-    libqt4-sql-sqlite, ${shlibs:Depends}, ${misc:Depends}
+Depends: libqt4-sql-sqlite, ${shlibs:Depends}, ${misc:Depends}
 Suggests: cassandra (>= 2.0.3), sqlite3 (>= 3.8.0)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
@@ -125,7 +78,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
 Package: snapcgi
 Section: web
 Architecture: any
-Depends: libsnapwebsites (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: apache2 (>=2.4)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
@@ -140,7 +93,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
 Package: snaputils
 Section: web
 Architecture: any
-Depends: libsnapwebsites (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:  ${shlibs:Depends}, ${misc:Depends}
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -155,7 +108,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
 Package: snapbounce
 Section: web
 Architecture: any
-Depends: libsnapwebsites (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:  ${shlibs:Depends}, ${misc:Depends}
 Suggests: snapserver (= ${binary:Version})
 Recommends: mail-transport-agent
 Description: Fast Websites: powerful CMS for Apache written in C++.

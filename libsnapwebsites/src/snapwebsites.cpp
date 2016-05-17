@@ -138,6 +138,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_BACKEND: // backend progress
         return "backend";
 
+    case name_t::SNAP_NAME_LOCKTABLE: // backend progress
+        return "lock_table";
+
     // names used by CORE (server and snap_child)
     case name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
         return "core::administrator_email";

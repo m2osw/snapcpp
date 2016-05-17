@@ -16,53 +16,23 @@
 //
 #pragma once
 
-#include <controlled_vars/controlled_vars_need_init.h>
+#include <QtCassandra/QueryModel.h>
 
-#include <QtCassandra/QCassandraTable.h>
-#include <QtCassandra/QCassandraPredicate.h>
-#include <QAbstractListModel>
 #include <QModelIndex>
 
-#include <memory>
-
-namespace snap
-{
-
 class TableModel
-    : public QAbstractListModel
+    : public QtCassandra::QueryModel
 {
     Q_OBJECT
 
 public:
-    TableModel( const int32_t row_count = 1000 );
-
-    QtCassandra::QCassandraTable::pointer_t getTable() const;
-    void                    setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp const & re );
+    TableModel();
 
     // Read only access
     //
-    virtual Qt::ItemFlags   flags       ( QModelIndex const & index ) const;
-    virtual QVariant        data        ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
-    virtual QVariant        headerData  ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
-    virtual int             rowCount    ( QModelIndex const & parent = QModelIndex() ) const;
+    virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const;
 
-    // Fecth more
-    //
-    virtual bool            canFetchMore ( QModelIndex const & index ) const;
-    virtual void            fetchMore    ( QModelIndex const & index );
-
-private:
-    QtCassandra::QCassandraTable::pointer_t 		f_table;
-    QtCassandra::QCassandraRowPredicate::pointer_t  f_rowp;
-    // TODO: use controlled_vars instead of constructor
-    controlled_vars::mint32_t               		f_rowCount;
-    controlled_vars::zint32_t               		f_rowsRemaining;
-    controlled_vars::zint32_t               		f_pos;
-
-    void            reset();
+    void doQuery();
 };
-
-}
-// namespace snap
 
 // vim: ts=4 sw=4 et

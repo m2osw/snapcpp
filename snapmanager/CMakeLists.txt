@@ -125,14 +125,17 @@ include_directories(
 )
 
 add_executable( ${PROJECT_NAME}
+    DomainModel.cpp
     RowModel.cpp
     TableModel.cpp
+    WebsiteModel.cpp
     snap-manager.cpp
     snap-manager-about.cpp
     snap-manager-createcontext.cpp
     snap-manager-help.cpp
     snap-manager-initialize-website.cpp
     snap-manager-decode-utf8.cpp
+    get_child.h
     ${SNAP_MANAGER_UIS_H}
     ${SNAP_MANAGER_RESOURCES_RCC}
 )

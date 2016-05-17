@@ -1,0 +1,5 @@
+libsnapwebsites (1.0.0) trusty; urgency=high
+
+  * Initial release of packaging for library.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 20 May 2016 10:45:41 -0800

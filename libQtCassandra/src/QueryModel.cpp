@@ -75,14 +75,14 @@ void QueryModel::init
 }
 
 
-void QueryModel::doQuery( QCassandraQuery::pointer_t query )
+void QueryModel::doQuery( QCassandraQuery::pointer_t q )
 {
     f_rows.clear();
     f_isMore = true;
 
     try
     {
-        f_query = query;
+        f_query = q;
         f_query->start( false /*don't block*/ );
     }
     catch( const std::exception& except )
@@ -126,9 +126,22 @@ bool QueryModel::canFetchMore ( const QModelIndex & prnt ) const
 }
 
 
+void QueryModel::fetchCustomData( QCassandraQuery::pointer_t q )
+{
+    // Default does nothing
+    //
+    NOTUSED(q);
+}
+
+
 void QueryModel::fetchMore ( const QModelIndex & prnt )
 {
     NOTUSED(prnt);
+
+    if( !f_query )
+    {
+        return;
+    }
 
     try
     {
@@ -145,15 +158,27 @@ void QueryModel::fetchMore ( const QModelIndex & prnt )
                           , f_rows.size()+1
                           );
                 f_rows.push_back( key );
+                fetchCustomData( f_query );
                 endInsertRows();
             }
         }
+
+        emit queryPageFinished();
 
         f_isMore = f_query->nextPage( false /*block*/ );
     }
     catch( const std::exception& except )
     {
         displayError( except, tr("Cannot read from database!") );
+    }
+
+    if( !f_isMore && f_query )
+    {
+        f_query.reset();
+
+        // Signal that we are completely done
+        //
+        emit queryFinished();
     }
 }
 
@@ -202,6 +227,12 @@ int QueryModel::rowCount( QModelIndex const & prnt ) const
     }
 
     return 0;
+}
+
+int QueryModel::columnCount( QModelIndex const & prnt ) const
+{
+    NOTUSED(prnt);
+    return 1;
 }
 
 

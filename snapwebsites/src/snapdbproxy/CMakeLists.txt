@@ -47,11 +47,11 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
     ${ADVGETOPT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(

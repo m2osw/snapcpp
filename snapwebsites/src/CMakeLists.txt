@@ -45,7 +45,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
@@ -68,7 +68,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${QT_LIBRARIES}
@@ -106,19 +106,14 @@ install(
 ##
 project(snapcgi)
 
-include_directories(
-    ${snapwebsites_SOURCE_DIR}
-    )
-
 add_executable(${PROJECT_NAME}
     snap.cpp
-    ${snapwebsites_SOURCE_DIR}/tcp_client_server.cpp
 )
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snap.cgi )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${ADVGETOPT_LIBRARIES}
     ${QT_LIBRARIES}
 )
@@ -138,7 +133,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${ADVGETOPT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
@@ -160,7 +155,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -182,10 +177,11 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
+    ${ADVGETOPT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
 )
 
@@ -204,7 +200,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -228,7 +224,7 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
 	${ADVGETOPT_LIBRARIES}
 	${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
@@ -253,11 +249,12 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
+    ${ADVGETOPT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
@@ -275,11 +272,12 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
+    ${ADVGETOPT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
@@ -297,11 +295,12 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
+    ${ADVGETOPT_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
@@ -322,11 +321,13 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
+    ${ADVGETOPT_LIBRARIES}
+    ${LIBPROCPS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
@@ -349,12 +350,13 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    snapwebsites
-    ${UUID}
+    ${ADVGETOPT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
+    ${SNAPWEBSITES_LIBRARIES}
+    ${UUID}
 )
 
 install(

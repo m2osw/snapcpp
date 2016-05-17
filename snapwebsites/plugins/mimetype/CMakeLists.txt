@@ -159,7 +159,7 @@ include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIRS}
 )
 target_link_libraries( ${PROJECT_NAME}
-    snapwebsites
+    ${SNAPWEBSITES_LIBRARIES}
 )
 # TODO: only install in the development version? (do we have such a component?)
 install(

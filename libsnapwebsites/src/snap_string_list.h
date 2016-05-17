@@ -18,6 +18,7 @@
 
 #include <QStringList>
 
+#include "snap_exception.h"
 
 namespace snap
 {

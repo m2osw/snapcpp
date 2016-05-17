@@ -67,7 +67,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -87,7 +87,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -107,7 +107,7 @@ if(CATCH_FOUND)
     add_dependencies( test_snap_cgi test_prereqs )
     # while developing you may need to set LD_LIBRARY_PATH
     target_link_libraries(test_snap_cgi
-        #snapwebsites
+        #${SNAPWEBSITES_LIBRARIES}
         #QtCassandra
         #QtCore
         #QtXml
@@ -124,7 +124,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -149,7 +149,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -165,7 +165,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -180,7 +180,7 @@ if(CATCH_FOUND)
     ##)
     ##add_dependencies( test_snap_udp_message test_prereqs )
     ##target_link_libraries(test_snap_udp_message
-    ##    snapwebsites
+    ##    ${SNAPWEBSITES_LIBRARIES}
     ##    ${QTCASSANDRA_LIBRARIES}
     ##    ${LIBTLD_LIBRARIES}
     ##    ${QT_LIBRARIES}
@@ -194,7 +194,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -210,7 +210,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -226,7 +226,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -247,7 +247,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -267,7 +267,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -282,7 +282,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -300,7 +300,7 @@ if(CATCH_FOUND)
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
-        snapwebsites
+        ${SNAPWEBSITES_LIBRARIES}
         ${QTCASSANDRA_LIBRARIES}
         ${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -319,7 +319,7 @@ if(CATCH_FOUND)
         string_speed.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        #snapwebsites
+        #${SNAPWEBSITES_LIBRARIES}
         #${QTCASSANDRA_LIBRARIES}
         #${LIBTLD_LIBRARIES}
         ${QT_LIBRARIES}
@@ -337,7 +337,7 @@ if(CATCH_FOUND)
         gethostips.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-        #snapwebsites
+        #${SNAPWEBSITES_LIBRARIES}
         #${QTCASSANDRA_LIBRARIES}
         #${LIBTLD_LIBRARIES}
         #${QT_LIBRARIES}

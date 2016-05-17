@@ -27,7 +27,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="tab_connections">
        <attribute name="title">
@@ -196,111 +196,6 @@ p, li { white-space: pre-wrap; }
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab_computers">
-       <attribute name="title">
-        <string>&amp;Hosts</string>
-       </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout_13">
-        <item>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_11">
-            <item>
-             <widget class="QLabel" name="label_17">
-              <property name="text">
-               <string>Filter:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="hostFilterString">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The filter allows you to limit the list of domains to a set that start with the given text. Only the beginning of the word is used. This filter requires a valid domain index.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="hostFilter">
-              <property name="text">
-               <string>Apply</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QListWidget" name="hostList"/>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QVBoxLayout" name="verticalLayout_6" stretch="1,0,0">
-          <item>
-           <widget class="QLabel" name="label_16">
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;As you add new computers to your Cassandra cluster, these computers need to be added to this table. This allows the Snap! system to lock all computers out of a specific table or row so that one process can work atomically. This is important for anything that needs to appear exactly once in the database. For example, when we add a new user, we cannot add the same user more than once (especially because their email address is used as the key to access that user's account.)&lt;/p&gt;&lt;p&gt;This table is a list of names as defined by the snap-server=... parameter in the server configuration file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-            </property>
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_10">
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="label_15">
-              <property name="text">
-               <string>Computer Name:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="hostName"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout">
-            <item>
-             <widget class="QPushButton" name="hostNew">
-              <property name="text">
-               <string>New</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="hostSave">
-              <property name="text">
-               <string>Save</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="hostCancel">
-              <property name="text">
-               <string>Cancel</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="hostDelete">
-              <property name="text">
-               <string>Delete</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="tab_domains">
        <attribute name="title">
         <string>&amp;Domains</string>
@@ -337,7 +232,7 @@ p, li { white-space: pre-wrap; }
            </layout>
           </item>
           <item>
-           <widget class="QListWidget" name="domainList"/>
+           <widget class="QListView" name="domainList"/>
           </item>
          </layout>
         </item>
@@ -419,7 +314,7 @@ p, li { white-space: pre-wrap; }
        </attribute>
        <layout class="QHBoxLayout" name="horizontalLayout_15">
         <item>
-         <widget class="QListWidget" name="websiteList"/>
+         <widget class="QListView" name="websiteList"/>
         </item>
         <item>
          <widget class="QFrame" name="verticalFrame_4">
@@ -635,7 +530,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>859</width>
-     <height>25</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

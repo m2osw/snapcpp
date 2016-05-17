@@ -59,6 +59,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Automatically run the moc compiler on qt files
 set( CMAKE_AUTOMOC TRUE )
 
+# Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
+set( DTD_SOURCE_PATH "${snapwebsites_project_SOURCE_DIR}/plugins" CACHE PATH "Location of the default DTD files" )
+
 enable_language( CXX )
 enable_language( C )
 
@@ -111,8 +114,13 @@ find_package( QtCassandra        REQUIRED )
 find_package( QtSerialization    REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapDoxygen        REQUIRED )
+find_package( SnapWebsites       REQUIRED )
 find_package( ZLIB               REQUIRED )
 find_package( ZipIos             REQUIRED 2.1      )
+
+include_directories(
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+)
 
 find_library( UUID uuid )
 if( ${UUID} STREQUAL "UUID-NOTFOUND" )
@@ -144,10 +152,6 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FR
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/lib
-    ${PROJECT_BINARY_DIR}
-    ${PROJECT_BINARY_DIR}/lib
     ${ADVGETOPT_INCLUDE_DIRS}
     ${QTCASSANDRA_INCLUDE_DIRS}
     ${QTSERIALIZATION_INCLUDE_DIRS}
@@ -159,13 +163,10 @@ include_directories(
 ##
 ## Compiling
 ##
-add_subdirectory(cmake)         # SnapWebsites CMake Modules
-add_subdirectory(lib)           # Common code which is too specialized to create a separate library
 add_subdirectory(plugins)       # Plug-ins (i.e. modular functionality)
 add_subdirectory(src)           # Actual Snap! Websites server
 add_subdirectory(layouts)       # Layouts offered along Core
 add_subdirectory(tests)         # Tests to run against the server
-add_subdirectory(doc)           # API Documentation
 add_subdirectory(conf)          # Configuration files and samples
 
 ##
@@ -191,13 +192,13 @@ add_custom_target(snap_code_analysis
     COMMAND mkdir -p ${PROJECT_BINARY_DIR}/analysis
     # Count things and report potential problems with different classes
     COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"
-    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc lib/*.cpp lib/*.h lib/*.h.in src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
+    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
     # Boost inspect tool that reports various problems
     COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/analysis/inspect.html"
     COMMAND inspect -tab -crlf -end -path_name -ascii -minmax -assert_macro -deprecated_macro -unnamed -link -copyright >"${PROJECT_BINARY_DIR}/analysis/inspect.html"
     # Static analysis of the code
     COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/analysis/cppcheck.out"
-    COMMAND cppcheck lib plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
+    COMMAND cppcheck plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
     # Count # of TODO, XXX, TBD, FIXME, and \todo: (documented in doxygen)
     COMMAND sh tests/todo.sh "${PROJECT_BINARY_DIR}/analysis"
 

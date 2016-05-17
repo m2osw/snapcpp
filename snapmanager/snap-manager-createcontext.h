@@ -18,6 +18,11 @@
 
 #include "ui_snap-manager-createcontextbox.h"
 
+#include <snapwebsites/snap_string_list.h>
+
+#include <QtCassandra/QCassandraSession.h>
+#include <QtCassandra/QCassandraQuery.h>
+
 #include <QPointer>
 
 class snap_manager_createcontext : public QDialog, public Ui_createContextBox
@@ -25,10 +30,14 @@ class snap_manager_createcontext : public QDialog, public Ui_createContextBox
     Q_OBJECT
 
 public:
-                    snap_manager_createcontext(QWidget *parent);
+                    snap_manager_createcontext( QWidget *prnt );
     virtual         ~snap_manager_createcontext();
 
     void            add_status(QString const& msg, bool const clear = false);
+
+signals:
+    void			disconnectRequested();
+    void		    createContext( int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name );
 
 private slots:
     void            cancel();

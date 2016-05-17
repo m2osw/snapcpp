@@ -16,22 +16,27 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snap-manager-createcontext.h"
-#include "snap-manager.h"
+#include "get_child.h"
 
 #include <QSettings>
 
 #include <stdio.h>
 
-snap_manager_createcontext::snap_manager_createcontext(QWidget *snap_parent)
+using namespace QtCassandra;
+
+snap_manager_createcontext::snap_manager_createcontext
+        ( QWidget *                     snap_parent
+        )
     : QDialog(snap_parent)
-    //, f_close_button() -- initialized below
+    //, f_query()               -- initialized below
+    //, f_close_button()        -- initialized below
     //, f_send_request_button() -- initialized below
-    //, f_snap_server_host() -- initialized below
-    //, f_snap_server_port() -- initialized below
-    //, f_website_url() -- initialized below
-    //, f_port() -- initialized below
-    //, f_initialize_website() -- auto-init
-    //, f_timer_id(0) -- auto-init
+    //, f_snap_server_host()    -- initialized below
+    //, f_snap_server_port()    -- initialized below
+    //, f_website_url()         -- initialized below
+    //, f_port()                -- initialized below
+    //, f_initialize_website()  -- auto-init
+    //, f_timer_id(0)           -- auto-init
 {
     setWindowModality(Qt::ApplicationModal);
     setupUi(this);
@@ -46,18 +51,18 @@ snap_manager_createcontext::snap_manager_createcontext(QWidget *snap_parent)
     snapServerName   ->setText( settings.value( "createcontext_snapservername",    ""       ).toString() );
 
     // setup widgets
-    f_cancel_button = getChild<QPushButton>(this, "cancelButton");
-    f_createcontext_button = getChild<QPushButton>(this, "createContextButton");
-    f_replication_factor = getChild<QLineEdit>(this, "replicationFactor");
-    f_strategy = getChild<QComboBox>(this, "strategy");
-    f_data_centers = getChild<QTextEdit>(this, "dataCenters");
-    f_snap_server_name = getChild<QLineEdit>(this, "snapServerName");
+    f_cancel_button        = getChild<QPushButton> (this, "cancelButton");
+    f_createcontext_button = getChild<QPushButton> (this, "createContextButton");
+    f_replication_factor   = getChild<QLineEdit>   (this, "replicationFactor");
+    f_strategy             = getChild<QComboBox>   (this, "strategy");
+    f_data_centers         = getChild<QTextEdit>   (this, "dataCenters");
+    f_snap_server_name     = getChild<QLineEdit>   (this, "snapServerName");
 
     // Close
-    connect(f_cancel_button, SIGNAL(clicked()), this, SLOT(cancel()));
+    connect( f_cancel_button.data(), &QPushButton::clicked, this, &snap_manager_createcontext::cancel );
 
     // Send Request
-    connect(f_createcontext_button, SIGNAL(clicked()), this, SLOT(createcontext()));
+    connect( f_createcontext_button.data(), &QPushButton::clicked, this, &snap_manager_createcontext::createcontext );
 }
 
 
@@ -83,12 +88,15 @@ void snap_manager_createcontext::cancel()
 {
     close();
 
+    emit disconnectRequested();
+#if 0
     // allow user to try again
     snap_manager * sm(dynamic_cast<snap_manager *>(parent()));
     if(sm)
     {
         sm->cassandraDisconnectButton_clicked();
     }
+#endif
 }
 
 #pragma GCC diagnostic push
@@ -161,6 +169,7 @@ void snap_manager_createcontext::createcontext()
         }
     }
 
+#if 0
     snap_manager * sm(dynamic_cast<snap_manager *>(parent()));
 
     if(sm)
@@ -175,8 +184,13 @@ void snap_manager_createcontext::createcontext()
         // allow user to try again
         sm->context_is_valid();
     }
+#else
+    emit createContext( replicationFactor->text().toInt(), s, data_centers, host_name );
+    close();
+#endif
 }
 #pragma GCC diagnostic pop
+
 
 
 // vim: ts=4 sw=4 et

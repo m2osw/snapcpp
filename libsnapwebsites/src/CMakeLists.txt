@@ -95,7 +95,6 @@ add_library( ${PROJECT_NAME} SHARED
     qstring_stream.h                            # Stream QString objects property to ostream objects.
     quoted_printable.cpp                        # to encode / decode data using the quoted printable format
     qxmlmessagehandler.cpp                      # Qt extension for us to capture the QXmlQuery messages
-    #row_model.cpp                               # libQtCassandra row model for use with a QTableView object.
     snap_backend.cpp                            # A type of snap_child, but for backends only
     snap_cassandra.cpp                          # Encapuslate initiating a connection to the database.
     snap_communicator.cpp                       # handle any number of sockets with a single process.
@@ -119,7 +118,6 @@ add_library( ${PROJECT_NAME} SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h  # binary output of header file (generated)
     snapwebsites.cpp                            # server
     tcp_client_server.cpp                       # low level TCP/IP that works
-    #table_model.cpp                             # libQtCassandra table model for use with a QListView object.
     udp_client_server.cpp                       # low level UDP/IP that works
     xslt.cpp                                    # code to do XSLT transformations
 )
@@ -140,8 +138,8 @@ target_link_libraries( ${PROJECT_NAME}
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
-    VERSION ${SNAPWEBSITES_VERSION_MAJOR}.${SNAPWEBSITES_VERSION_MINOR}
-    SOVERSION ${SNAPWEBSITES_VERSION_MAJOR}
+    VERSION ${LIBSNAPWEBSITES_VERSION_MAJOR}.${LIBSNAPWEBSITES_VERSION_MINOR}
+    SOVERSION ${LIBSNAPWEBSITES_VERSION_MAJOR}
 )
 
 install(
