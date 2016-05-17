@@ -76,7 +76,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
 Package: snapdb
 Section: web
 Architecture: any
-Depends: libqt4-sql-sqlite, ${shlibs:Depends}, ${misc:Depends}
+Depends: libqt5sql5-sqlite, ${shlibs:Depends}, ${misc:Depends}
 Suggests: cassandra (>= 2.0.3), sqlite3 (>= 3.8.0)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
