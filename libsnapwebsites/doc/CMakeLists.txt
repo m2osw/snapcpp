@@ -66,7 +66,6 @@ install(
         Session-Random-Number-Hacked.png
         Session-Random-Number.odg
         Session-Random-Number.png
-        snapbounce-postfix.txt
         snapwebsites-cluster-setup.odg
         snapwebsites-cluster-setup.png
     DESTINATION
