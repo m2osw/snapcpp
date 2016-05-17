@@ -36,17 +36,17 @@ RowModel::RowModel()
 
 void RowModel::doQuery()
 {
-    auto query = std::make_shared<QCassandraQuery>(f_session);
-    query->query(
+    auto q = std::make_shared<QCassandraQuery>(f_session);
+    q->query(
         QString("SELECT column1 FROM %1.%2 WHERE key = ?")
             .arg(f_keyspaceName)
             .arg(f_tableName)
         , 1
         );
-    query->setPagingSize( 10 );
-    query->bindByteArray( 0, f_rowKey );
+    q->setPagingSize( 10 );
+    q->bindByteArray( 0, f_rowKey );
 
-    QueryModel::doQuery( query );
+    QueryModel::doQuery( q );
 }
 
 
@@ -108,46 +108,50 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
     try
     {
-        const QString q_str(
+        {
+            const QString q_str(
                     QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
                     .arg(f_rowModel.keyspaceName())
                     .arg(f_rowModel.tableName())
                     );
-        QCassandraQuery query( f_session );
-        query.query( q_str, 2 );
-        query.bindByteArray( 0, f_rowModel.rowKey() );
-        query.bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
-        query.start();
-        QByteArray value( query.getByteArrayColumn(0) );
-        query.end():
+            QCassandraQuery q( f_session );
+            q.query( q_str, 2 );
+            q.bindByteArray( 0, f_rowModel.rowKey() );
+            q.bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
+            q.start();
+            QByteArray value( q.getByteArrayColumn(0) );
+            q.end():
 
-        QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
-        QByteArray save_value;
+                QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
+            QByteArray save_value;
 
-        QSettings settings;
-        const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
-        if( f_keyspaceName == snap_keyspace )
-        {
-            snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
-            du.set_column_value( key, save_value, value.toString() );
+            QSettings settings;
+            const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
+            if( f_keyspaceName == snap_keyspace )
+            {
+                snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
+                du.set_column_value( key, save_value, value.toString() );
+            }
+            else
+            {
+                QtCassandra::setStringValue( save_value, value.toString() );
+            }
         }
-        else
-        {
-            QtCassandra::setStringValue( save_value, value.toString() );
-        }
 
-        QCassandraQuery q( f_session );
-        q.query(
+        {
+            QCassandraQuery q( f_session );
+            q.query(
                     //QString("UPDATE %1.%2 SET key = ?, column1 = ? WHERE key = ?")
                     QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
-                        .arg(f_keyspaceName)
-                        .arg(f_tableName)
+                    .arg(f_keyspaceName)
+                    .arg(f_tableName)
                     , 3
-                    );
-        q.bindByteArray( 0, f_rowKey   );
-        q.bindByteArray( 1, save_value );
-        q.start();
-        q.end();
+                   );
+            q.bindByteArray( 0, f_rowKey   );
+            q.bindByteArray( 1, save_value );
+            q.start();
+            q.end();
+        }
 
         Q_EMIT dataChanged( idx, idx );
 
