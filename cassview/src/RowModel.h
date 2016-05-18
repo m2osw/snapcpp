@@ -28,11 +28,11 @@ class RowModel
 public:
     RowModel();
 
-    const QByteArray&	rowKey() const		               { return f_rowKey; }
-    void                setRowKey( const QByteArray& key ) { f_rowKey = key;  }
+    const QByteArray&	  rowKey() const		               { return f_rowKey; }
+    void                  setRowKey( const QByteArray& key ) { f_rowKey = key;  }
 
-    QVariant            data( const QModelIndex & index, int role = Qt::DisplayRole ) const;
-    Qt::ItemFlags		flags( const QModelIndex & idx ) const;
+    virtual QVariant      data  ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
+    virtual Qt::ItemFlags flags ( const QModelIndex & idx ) const;
 
 #if 0
     // Write access
@@ -43,7 +43,7 @@ public:
     //
     bool                insertRows( int row, int count, const QModelIndex & parent = QModelIndex() );
 #endif
-    bool                removeRows( int row, int count, const QModelIndex & parent = QModelIndex() );
+    virtual bool        removeRows( int row, int count, const QModelIndex & parent = QModelIndex() );
 
     void 				doQuery();
 

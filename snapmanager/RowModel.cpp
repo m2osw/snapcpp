@@ -31,6 +31,7 @@ using namespace QtCassandra;
 
 RowModel::RowModel()
 {
+    f_columnCount = 2;
 }
 
 
@@ -91,7 +92,12 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
         return QVariant();
     }
 
-    if( idx.column() < 0 || idx.column() > 1 )
+    if( idx.row() < 0 || idx.row() >= static_cast<int>(f_rows.size()) )
+    {
+        return QVariant();
+    }
+
+    if( idx.column() < 0 || idx.column() >= f_columnCount )
     {
         Q_ASSERT(false);
         return QVariant();

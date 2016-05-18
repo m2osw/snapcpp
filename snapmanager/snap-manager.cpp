@@ -2218,7 +2218,7 @@ void snap_manager::onSitesListCurrentChanged( QModelIndex current, QModelIndex /
         f_sites_list->selectionModel()->reset();
         for( int row = 0; row < f_table_model.rowCount(); ++row )
         {
-            QModelIndex idx( f_table_model.index( row ) );
+            QModelIndex idx( f_table_model.index( row, 0 ) );
             if( f_table_model.data(idx).toString() == f_sites_org_name )
             {
                 f_sites_list->selectionModel()->select( idx, QItemSelectionModel::Select );

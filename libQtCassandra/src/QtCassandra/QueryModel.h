@@ -21,7 +21,7 @@
 #include <QtCassandra/QCassandraQuery.h>
 #include <QtCassandra/QCassandraSession.h>
 
-#include <QAbstractListModel>
+#include <QAbstractItemModel>
 #include <QModelIndex>
 #include <QRegExp>
 
@@ -34,7 +34,7 @@ namespace QtCassandra
 
 
 class QueryModel
-    : public QAbstractListModel
+    : public QAbstractItemModel
 {
     Q_OBJECT
 
@@ -59,6 +59,8 @@ public:
     virtual void			fetchMore    ( const QModelIndex & prnt );
     virtual Qt::ItemFlags   flags        ( QModelIndex const & index ) const;
     virtual QVariant        data         ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
+    virtual QModelIndex     index        ( int row, int column, const QModelIndex &parent= QModelIndex() ) const;
+    virtual QModelIndex     parent       ( const QModelIndex &child ) const;
     virtual int             rowCount     ( QModelIndex const & prnt = QModelIndex() ) const;
     virtual int             columnCount  ( QModelIndex const & prnt = QModelIndex() ) const;
 
@@ -76,6 +78,7 @@ protected:
     QString                      f_tableName;
     std::vector<QByteArray>      f_rows;
     bool                         f_isMore;
+    int							 f_columnCount;
 
     void doQuery      ( QCassandraQuery::pointer_t query );
     void displayError ( const std::exception & except, const QString & message ) const;

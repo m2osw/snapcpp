@@ -43,6 +43,7 @@ namespace
 
 QueryModel::QueryModel()
     : f_isMore(false)
+    , f_columnCount(1)
 {
 }
 
@@ -152,10 +153,11 @@ void QueryModel::fetchMore ( const QModelIndex & prnt )
             const QByteArray key( f_query->getByteArrayColumn(0) );
             if( fetchFilter( key ) )
             {
+                const size_t new_row( f_rows.size() );
                 beginInsertRows
                         ( QModelIndex()
-                          , f_rows.size()
-                          , f_rows.size()+1
+                          , new_row
+                          , new_row
                           );
                 f_rows.push_back( key );
                 fetchCustomData( f_query );
@@ -210,6 +212,28 @@ QVariant QueryModel::data( QModelIndex const & idx, int role ) const
 }
 
 
+QModelIndex QueryModel::index( int row, int column, const QModelIndex & ) const
+{
+    if( row < 0 || row >= static_cast<int>(f_rows.size()) )
+    {
+        return QModelIndex();
+    }
+
+    if( column < 0 || column >= f_columnCount )
+    {
+        return QModelIndex();
+    }
+
+    return createIndex( row, column, (void*) 0 );
+}
+
+
+QModelIndex QueryModel::parent( const QModelIndex & ) const
+{
+    return QModelIndex();
+}
+
+
 int QueryModel::rowCount( QModelIndex const & prnt ) const
 {
     if( prnt.isValid() )
@@ -232,7 +256,7 @@ int QueryModel::rowCount( QModelIndex const & prnt ) const
 int QueryModel::columnCount( QModelIndex const & prnt ) const
 {
     NOTUSED(prnt);
-    return 1;
+    return f_columnCount;
 }
 
 
