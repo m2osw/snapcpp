@@ -952,8 +952,9 @@ void snap_manager::create_table(QString const & table_name, QString const & comm
 
 void snap_manager::reset_domains_index()
 {
-    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+    QString const table_name     ( snap::get_name( snap::name_t::SNAP_NAME_DOMAINS));
+    QString const row_index_name ( snap::get_name( snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+    QString const core_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_RULES));
 
     QString q_str("DELETE FROM %1.%2 WHERE key = ? IF EXISTS");
     auto delete_query( createQuery(table_name, q_str) );
@@ -964,8 +965,8 @@ void snap_manager::reset_domains_index()
     auto update_query = createQuery(table_name, q_str);
     update_query->setDescription("Reset all domain rules");
     size_t num = 0;
-    update_query->bindByteArray( num++, ""             );
-    update_query->bindByteArray( num++, "core::rules"  );
+    update_query->bindByteArray( num++, ""                       );
+    update_query->bindByteArray( num++, core_rules_name.toUtf8() );
 
     QMessageBox msg
               ( QMessageBox::Question
@@ -984,8 +985,9 @@ void snap_manager::reset_domains_index()
 
 void snap_manager::reset_websites_index()
 {
-    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
-    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+    QString const table_name     ( snap::get_name( snap::name_t::SNAP_NAME_WEBSITES));
+    QString const row_index_name ( snap::get_name( snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+    QString const core_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_RULES));
 
     QString q_str = "DELETE FROM %1.%2 WHERE key = ? IF EXISTS";
     auto query = createQuery(table_name, q_str);
@@ -997,7 +999,7 @@ void snap_manager::reset_websites_index()
     query = createQuery(table_name, q_str);
     query->setDescription("Reset all domain rules");
     query->setPagingSize(g_paging_size);
-    query->bindByteArray( 0, QString("core::rules").toUtf8() );
+    query->bindByteArray( 0, core_rules_name.toUtf8() );
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onResetWebsites );
     addQuery(query);
 
@@ -1274,13 +1276,14 @@ void snap_manager::on_domainSelectionChanged( const QModelIndex & /*selected*/, 
     f_domain_org_name = text;
     f_domain_name->setText(f_domain_org_name);
 
-    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
+    QString const table_name              ( snap::get_name( snap::name_t::SNAP_NAME_DOMAINS));
+    QString const core_original_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_ORIGINAL_RULES));
 
     auto query = createQuery( table_name, "SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?" );
     query->setDescription( QString("Retrieving rules for domain [%1]").arg(f_domain_org_name) );
     size_t num = 0;
     query->bindByteArray( num++, f_domain_org_name.toUtf8() );
-    query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
+    query->bindByteArray( num++, core_original_rules_name.toUtf8() );
     query->start();
 
     if( query->nextRow() )
@@ -1379,13 +1382,14 @@ void snap_manager::on_domainSave_clicked()
             return;
         }
 
-        QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
+        QString const table_name              ( snap::get_name( snap::name_t::SNAP_NAME_DOMAINS));
+        QString const core_original_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_ORIGINAL_RULES));
 
         auto query = createQuery( table_name, "SELECT * FROM %1.%2 WHERE key = ? AND column1 = ?" );
         query->setDescription( QString("Retrieving rules for domain [%1] to see if it already exists").arg(name) );
         size_t num = 0;
-        query->bindByteArray( num++, name.toUtf8() );
-        query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
+        query->bindByteArray( num++, name.toUtf8()                     );
+        query->bindByteArray( num++, core_original_rules_name.toUtf8() );
         query->start();
         if( query->rowCount() > 0 )
         {
@@ -1419,10 +1423,12 @@ void snap_manager::on_domainSave_clicked()
 
 void snap_manager::saveDomain()
 {
-    QString const name(f_domain_name->text());
-    QString const rules(f_domain_rules->toPlainText());
-    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+    QString const name                    ( f_domain_name->text());
+    QString const rules                   ( f_domain_rules->toPlainText());
+    QString const table_name              ( snap::get_name( snap::name_t::SNAP_NAME_DOMAINS));
+    QString const row_index_name          ( snap::get_name( snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+    QString const core_rules_name         ( snap::get_name( snap::name_t::SNAP_NAME_CORE_RULES));
+    QString const core_original_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_ORIGINAL_RULES));
 
     // save in the index
     //(*table)[row_index_name][name] = QtCassandra::QCassandraValue();
@@ -1446,7 +1452,7 @@ void snap_manager::saveDomain()
     query->setDescription( QString("Update core rules for %1").arg(name) );
     num = 0;
     query->bindByteArray( num++, name.toUtf8() );
-    query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
+    query->bindByteArray( num++, core_original_rules_name.toUtf8() );
     query->bindByteArray( num++, rules.toUtf8() );
     addQuery(query);
 
@@ -1455,7 +1461,7 @@ void snap_manager::saveDomain()
     query->setDescription( QString("Update core rules for %1").arg(name) );
     num = 0;
     query->bindByteArray( num++, name.toUtf8() );
-    query->bindByteArray( num++, QString("core::rules").toUtf8() );
+    query->bindByteArray( num++, core_rules_name.toUtf8() );
     query->bindByteArray( num++, compiled_rules );
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onFinishedSaveDomain );
     addQuery(query);
@@ -1789,8 +1795,8 @@ void snap_manager::on_websiteSelectionChanged( const QModelIndex & /*selected*/,
         return;
     }
 
-    //const auto& selection( f_website_list->selectionModel() );
-    const QString text( f_website_model.data( f_website_list->currentIndex() ).toString());
+    const QString text                    ( f_website_model.data( f_website_list->currentIndex() ).toString());
+    const QString core_original_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_ORIGINAL_RULES));
 
     f_website_org_name = text;
     f_website_name->setText(f_website_org_name);
@@ -1801,7 +1807,7 @@ void snap_manager::on_websiteSelectionChanged( const QModelIndex & /*selected*/,
     query->setDescription( QString("Get websites from domain [%1].").arg(f_website_org_name));
     size_t num = 0;
     query->bindByteArray( num++, f_website_org_name.toUtf8() );
-    query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
+    query->bindByteArray( num++, core_original_rules_name.toUtf8() );
     connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onLoadWebsite );
     addQuery(query);
     startQuery();
@@ -1923,8 +1929,10 @@ void snap_manager::on_websiteSave_clicked()
             return;
         }
 
-        QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
-        QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+        QString const table_name              ( snap::get_name( snap::name_t::SNAP_NAME_WEBSITES));
+        QString const row_index_name          ( snap::get_name( snap::name_t::SNAP_NAME_INDEX)); // "*index*"
+        QString const core_rules_name         ( snap::get_name( snap::name_t::SNAP_NAME_CORE_RULES));
+        QString const core_original_rules_name( snap::get_name( snap::name_t::SNAP_NAME_CORE_ORIGINAL_RULES));
 
 #if 0
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
@@ -1982,7 +1990,7 @@ void snap_manager::on_websiteSave_clicked()
         query->setDescription( QString("Update original core rules for %1").arg(name) );
         num = 0;
         query->bindByteArray( num++, name.toUtf8() );
-        query->bindByteArray( num++, QString("core::original_rules").toUtf8() );
+        query->bindByteArray( num++, core_original_rules_name.toUtf8() );
         query->bindByteArray( num++, rules.toUtf8() );
         addQuery(query);
 
@@ -1991,7 +1999,7 @@ void snap_manager::on_websiteSave_clicked()
         query->setDescription( QString("Update core rules for %1").arg(name) );
         num = 0;
         query->bindByteArray( num++, name.toUtf8() );
-        query->bindByteArray( num++, QString("core::rules").toUtf8() );
+        query->bindByteArray( num++, core_rules_name.toUtf8() );
         query->bindByteArray( num++, compiled_rules );
         connect( query.get(), &QCassandraQuery::queryFinished, this, &snap_manager::onFinishedSaveWebsite );
         addQuery(query);
