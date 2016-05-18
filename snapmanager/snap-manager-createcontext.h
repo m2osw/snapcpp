@@ -37,7 +37,7 @@ public:
 
 signals:
     void			disconnectRequested();
-    void		    createContext( int replication_factor, int strategy, snap::snap_string_list const & data_centers, QString const & host_name );
+    void		    createContext( int replication_factor, int strategy, snap::snap_string_list const & data_centers );
 
 private slots:
     void            cancel();

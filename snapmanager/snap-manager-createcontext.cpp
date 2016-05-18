@@ -25,7 +25,7 @@
 using namespace QtCassandra;
 
 snap_manager_createcontext::snap_manager_createcontext
-        ( QWidget *                     snap_parent
+        ( QWidget * snap_parent
         )
     : QDialog(snap_parent)
     //, f_query()               -- initialized below
@@ -48,7 +48,6 @@ snap_manager_createcontext::snap_manager_createcontext
     replicationFactor->setText( settings.value( "createcontext_replicationfactor", "3"      ).toString() );
     strategy         ->setCurrentIndex( settings.value( "createcontext_strategy",  0        ).toInt()    );
     dataCenters      ->setText( settings.value( "createcontext_datacenter",        "DC1"    ).toString() );
-    snapServerName   ->setText( settings.value( "createcontext_snapservername",    ""       ).toString() );
 
     // setup widgets
     f_cancel_button        = getChild<QPushButton> (this, "cancelButton");
@@ -56,7 +55,6 @@ snap_manager_createcontext::snap_manager_createcontext
     f_replication_factor   = getChild<QLineEdit>   (this, "replicationFactor");
     f_strategy             = getChild<QComboBox>   (this, "strategy");
     f_data_centers         = getChild<QTextEdit>   (this, "dataCenters");
-    f_snap_server_name     = getChild<QLineEdit>   (this, "snapServerName");
 
     // Close
     connect( f_cancel_button.data(), &QPushButton::clicked, this, &snap_manager_createcontext::cancel );
@@ -79,7 +77,6 @@ void snap_manager_createcontext::close()
     settings.setValue( "createcontext_replicationfactor", replicationFactor->text()         );
     settings.setValue( "createcontext_strategy",          strategy         ->currentIndex() );
     settings.setValue( "createcontext_datacenter",        dataCenters      ->toPlainText()  );
-    settings.setValue( "createcontext_snapservername",    snapServerName   ->text()         );
     //settings.setValue( "geometry",            saveGeometry()           );
 }
 
@@ -132,43 +129,6 @@ void snap_manager_createcontext::createcontext()
         }
     }
 
-    // make sure the host name is correct (i.e. [a-zA-Z0-9_]+)
-    QString const host_name(snapServerName->text());
-    {
-        if(host_name.isEmpty())
-        {
-            QMessageBox msg(
-                    QMessageBox::Critical,
-                    "Invalid Host Name",
-                    "The host name is a mandatory field.",
-                    QMessageBox::Ok,
-                    this);
-            msg.exec();
-            snapServerName->setFocus();
-            return;
-        }
-        int const max(host_name.length());
-        for(int i(0); i < max; ++i)
-        {
-            int const c(host_name[i].unicode());
-            if((c < 'a' || c > 'z')
-            && (c < 'A' || c > 'Z')
-            && (c < '0' || c > '9' || i == 0) // cannot start with a digit
-            && c != '_')
-            {
-                QMessageBox msg(
-                        QMessageBox::Critical,
-                        "Invalid Host Name",
-                        "The host name must only be composed of letters, digits, and underscores, also it cannot start with a digit ([0-9a-zA-Z_]+)",
-                        QMessageBox::Ok,
-                        this);
-                msg.exec();
-                snapServerName->setFocus();
-                return;
-            }
-        }
-    }
-
 #if 0
     snap_manager * sm(dynamic_cast<snap_manager *>(parent()));
 
@@ -185,7 +145,7 @@ void snap_manager_createcontext::createcontext()
         sm->context_is_valid();
     }
 #else
-    emit createContext( replicationFactor->text().toInt(), s, data_centers, host_name );
+    emit createContext( replicationFactor->text().toInt(), s, data_centers );
     close();
 #endif
 }
