@@ -1,3 +1,9 @@
+snapmanager (1.1.0.122~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 18 May 2016 03:02:22 -0700
+
 snapmanager (1.1.0.121~xenial) xenial; urgency=high
 
   * Fixed bug where domain rules wouldn't load.

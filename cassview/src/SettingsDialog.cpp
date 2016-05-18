@@ -50,7 +50,7 @@ SettingsDialog::SettingsDialog(QWidget *p)
     QSettings settings( this );
     restoreGeometry( settings.value( "settings_geometry", saveGeometry() ).toByteArray() );
     f_server  = settings.value( "cassandra_host", "127.0.0.1" );
-    f_port    = settings.value( "cassandra_port", "9160" );
+    f_port    = settings.value( "cassandra_port", "9042" );
     f_hostnameEdit->setText( f_server.toString() );
     f_portEdit->setValue( f_port.toInt() );
     f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( true );

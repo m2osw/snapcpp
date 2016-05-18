@@ -28,9 +28,11 @@ AboutDialog::AboutDialog(QWidget *p)
             , 0
             //, QApplication::UnicodeUTF8
         )
-);
+    );
 }
 
 AboutDialog::~AboutDialog()
 {
 }
+
+// vim: ts=4 sw=4 et

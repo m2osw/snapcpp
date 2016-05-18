@@ -167,6 +167,7 @@ void QCassandraSession::connect( const QStringList& host_list, const int port )
                                      host_list.join(",").toUtf8().data() );
 
     cass_cluster_set_port( f_cluster.get(), port );
+    cass_cluster_set_request_timeout(f_cluster.get(), static_cast<unsigned>(f_timeout));
     //
     f_session.reset( cass_session_new(), CassTools::sessionDeleter() );
     f_connection.reset(
@@ -342,8 +343,12 @@ int64_t QCassandraSession::setTimeout(CassTools::timeout_t timeout_ms)
 {
     CassTools::timeout_t const old_timeout(f_timeout);
     f_timeout = timeout_ms;
-//std::cerr << "*** setting cluster timeout to: " << f_timeout << "\n";
-    cass_cluster_set_request_timeout(f_cluster.get(), static_cast<unsigned>(f_timeout));
+    // the cluster may not yet have been allocated
+    if(f_cluster.get())
+    {
+//std::cerr << "*** setting cluster " << f_cluster.get() << " timeout to: " << f_timeout << "\n";
+        cass_cluster_set_request_timeout(f_cluster.get(), static_cast<unsigned>(f_timeout));
+    }
     return old_timeout;
 }
 

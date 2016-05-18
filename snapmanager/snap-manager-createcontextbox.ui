@@ -82,7 +82,7 @@ p, li { white-space: pre-wrap; }
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
+     <item row="4" column="1">
       <spacer name="verticalSpacer">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -98,7 +98,7 @@ p, li { white-space: pre-wrap; }
        </property>
       </spacer>
      </item>
-     <item row="6" column="1">
+     <item row="5" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QPushButton" name="createContextButton">
@@ -162,20 +162,6 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Then select a strategy. If &lt;span style=&quot; font-weight:600;&quot;&gt;Simple&lt;/span&gt; then the data centers are ignored. If not &lt;span style=&quot; font-weight:600;&quot;&gt;Simple&lt;/span&gt;, then the list of data centers must be correct. Enter one name per line. In most cases, if you are starting, this is going to be one data center. The default name in your Cassandra setups is DC1. You can find out using the &lt;span style=&quot; font-weight:600;&quot;&gt;nodetool ring &lt;/span&gt;command.&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Most of these parameters can be changed later, although it makes it simpler to choose the correct parameters on get go.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Server Name</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QLineEdit" name="snapServerName">
-       <property name="toolTip">
-        <string>Enter the name of the computer to run Snap!</string>
        </property>
       </widget>
      </item>
