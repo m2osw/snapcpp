@@ -2167,7 +2167,10 @@ void snap_manager::loadSites()
 
     // at first some of the entries are disabled
     // until a select is made or New is clicked
+    f_row_model.clear();
     f_sites_name->setText("");
+    f_sites_org_name = "";
+    f_sites_parameters->selectionModel()->clearSelection();
     f_sites_parameters->setEnabled(false);
     f_sites_parameter_name->setEnabled(false);
     f_sites_parameter_name->setText("");
