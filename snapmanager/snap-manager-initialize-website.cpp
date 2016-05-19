@@ -238,7 +238,7 @@ std::cerr << "Timer add_status(\"" << msg << "\");...\n";
             f_timer_id = 0;
 
             // send info to the console too
-            QListWidget *console = getChild<QListWidget>(parentWidget(), "snapServerConsole");
+            QListWidget * console = getChild<QListWidget>(parentWidget(), "snapServerConsole");
             console->addItem("Spurious timer event.");
             QMessageBox msg(QMessageBox::Critical, "Invalid State", "We received a spurious timer event (the f_initialize_website pointer is NULL).", QMessageBox::Ok, this);
             msg.exec();
