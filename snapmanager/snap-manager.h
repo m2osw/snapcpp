@@ -63,8 +63,6 @@ private slots:
     void snapStats();
     void on_f_cassandraConnectButton_clicked();
     void on_f_cassandraDisconnectButton_clicked();
-    void reset_domains_index();
-    void reset_websites_index();
     void initialize_website();
     void OnAboutToQuit();
     void on_domainFilter_clicked();
@@ -79,21 +77,26 @@ private slots:
     void on_websiteCancel_clicked();
     void on_websiteDelete_clicked();
     void on_sitesFilter_clicked();
-    void onSitesListCurrentChanged( QModelIndex current, QModelIndex previous);
     void quit();
 
-    void create_context         ( int replication_factor, int strategy, snap::snap_string_list const & data_centers );
-    void onQueryFinished        ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onContextCreated       ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onResetWebsites        ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onFinishedSaveDomain   ( QtCassandra::QCassandraQuery::pointer_t q );
-    //void onDeleteDomain         ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onFinishedDeleteDomain ( QtCassandra::QCassandraQuery::pointer_t q );
-    //void onLoadWebsites         ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onLoadWebsite          ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onFinishedSaveWebsite  ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onDeleteWebsite        ( QtCassandra::QCassandraQuery::pointer_t q );
-    void onCurrentTabChanged    ( int index );
+    void onCurrentTabChanged         ( int index );
+
+    void create_context              ( int replication_factor, int strategy, snap::snap_string_list const & data_centers );
+    void onQueryFinished             ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onContextCreated            ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onFinishedSaveDomain        ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onFinishedDeleteDomain      ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onLoadWebsite               ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onFinishedSaveWebsite       ( QtCassandra::QCassandraQuery::pointer_t q );
+    void onDeleteWebsite             ( QtCassandra::QCassandraQuery::pointer_t q );
+
+    void onSitesListCurrentChanged   ( QModelIndex current, QModelIndex previous );
+    void onSitesParamsCurrentChanged ( QModelIndex current, QModelIndex previous );
+    void onSitesParamsDataChanged    ( const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles );
+    void onSitesParamSaveFinished    ( QtCassandra::QCassandraQuery::pointer_t q );
+
+    void onSitesNewClicked           ( bool checked );
+    void onSitesSaveClicked          ( bool checked );
 
     void onDomainsLoaded();
     void onWebsitesLoaded();
@@ -118,8 +121,6 @@ private:
     QPointer<QWidget>               f_tab_domain;
     //controlled_vars::zint32_t       f_idx_domain;
 
-    QPointer<QAction>               f_reset_domains_index;
-    QPointer<QAction>               f_reset_websites_index;
     QPointer<QAction>               f_initialize_website;
 
     // snap domains
@@ -163,8 +164,8 @@ private:
     QPointer<QPushButton>           f_sites_delete;
 
     DomainModel                     f_domain_model;
-    RowModel						f_row_model;
-    TableModel						f_table_model;
+    RowModel						f_params_row_model;
+    TableModel						f_sites_table_model;
     WebsiteModel                    f_website_model;
     QPointer<QSortFilterProxyModel>	f_domain_sort_filter;
     QPointer<QSortFilterProxyModel>	f_website_sort_filter;
@@ -183,18 +184,17 @@ private:
 
     std::queue<QtCassandra::QCassandraQuery::pointer_t>	f_queryQueue;
 
-    void loadDomains();
-    void domainWithSelection();
-    bool domainChanged();
+    void loadDomains          ();
+    void domainWithSelection  ();
+    bool domainChanged        ();
+    void saveDomain           ();
 
-    void saveDomain();
+    void loadWebsites         ();
+    void websiteWithSelection ();
+    bool websiteChanged       ();
 
-    void loadWebsites();
-    void websiteWithSelection();
-    bool websiteChanged();
-
-    void loadSites();
-    bool sitesChanged();
+    void loadSites            ();
+    bool sitesChanged         ();
 
     virtual void closeEvent(QCloseEvent *event);
 

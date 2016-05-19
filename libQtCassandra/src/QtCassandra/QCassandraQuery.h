@@ -73,7 +73,7 @@ public:
     int64_t				timestamp           () const;
     void				setTimestamp        ( int64_t val );
 
-    void                query               ( const QString& query_string, const int bind_count = 0 );
+    void                query               ( const QString& query_string, const int bind_count = -1 );
     void                setPagingSize       ( const int size );
 
     void                bindBool            ( const size_t num, const bool          value );

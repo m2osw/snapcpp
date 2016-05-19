@@ -20,16 +20,26 @@
 
 #include <QtCassandra/QueryModel.h>
 
+#include <map>
+#include <vector>
+
 class RowModel
     : public QtCassandra::QueryModel
 {
     Q_OBJECT
 
 public:
+    typedef std::map<int,bool> modified_map_t;
+
     RowModel();
 
     const QByteArray&       rowKey          () const;
     void                    setRowKey       ( const QByteArray& val );
+    bool					isModified      () const;
+    const modified_map_t&   modifiedMap     () const;
+    void					clearModified   ();
+
+    virtual void            clear           ();
 
     // Read access
     //
@@ -54,6 +64,7 @@ public:
 
 private:
     std::vector<QByteArray> f_columns;
+    modified_map_t			f_columnsChanged;
     QByteArray              f_rowKey;
 };
 

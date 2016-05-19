@@ -530,7 +530,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>859</width>
-     <height>24</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -551,8 +551,6 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>&amp;Tools</string>
     </property>
-    <addaction name="actionResetDomainsIndex"/>
-    <addaction name="actionResetWebsitesIndex"/>
     <addaction name="actionInitializeWebsite"/>
     <addaction name="separator"/>
     <addaction name="actionDecodeUTF8"/>
