@@ -77,8 +77,8 @@ protected:
     QString                      f_keyspaceName;
     QString                      f_tableName;
     std::vector<QByteArray>      f_rows;
-    bool                         f_isMore;
-    int							 f_columnCount;
+    bool                         f_isMore = false;
+    int                          f_columnCount = 1;
 
     void doQuery      ( QCassandraQuery::pointer_t query );
     void displayError ( const std::exception & except, const QString & message ) const;
