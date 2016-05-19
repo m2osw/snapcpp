@@ -260,7 +260,7 @@ QtCassandra::QCassandraTable::pointer_t antihammering::get_antihammering_table()
 {
     if(!f_antihammering_table)
     {
-        f_antihammering_table = f_snap->create_table(get_name(name_t::SNAP_NAME_ANTIHAMMERING_TABLE), "Short URL management table.");
+        f_antihammering_table = f_snap->create_table(get_name(name_t::SNAP_NAME_ANTIHAMMERING_TABLE), "Data about users for hammering detection and to compute anti-hammering measures");
     }
     return f_antihammering_table;
 }
@@ -318,6 +318,7 @@ void antihammering::on_output_result(QString const & uri_path, QByteArray & outp
     //
     content::path_info_t ipath;
     ipath.set_path(uri_path);
+
     QtCassandra::QCassandraValue value;
     value.setStringValue(ipath.get_key());
     value.setTtl(10 * 60); // 10 min. -- change to use settings?

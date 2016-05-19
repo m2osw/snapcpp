@@ -31,10 +31,11 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "not_reached.h"
+#include "qstring_stream.h"
 #include "snap_version.h"
 #include "snap_image.h"
 #include "snapwebsites.h"
-#include "qstring_stream.h"
 #include "snap_cassandra.h"
 #include "snap_config.h"
 
@@ -681,6 +682,7 @@ QtCassandra::QCassandraContext::pointer_t snap_layout::get_snap_context()
             << "!"
             << std::endl;
         exit(1);
+        snap::NOTREACHED();
     }
 
     return f_cassandra.get_snap_context();
@@ -700,7 +702,7 @@ void snap_layout::add_files()
         // table is not there yet, create it
         table = context->table("layout");
 
-        auto& table_fields( table->fields() );
+        auto & table_fields( table->fields() );
         table_fields["comment"]                     = QVariant("Table of layouts");
         table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // 1 hour
         table_fields["gc_grace_seconds"]            = QVariant(86400);
@@ -1094,7 +1096,7 @@ int main(int argc, char * argv[])
 {
     try
     {
-        snap_layout     s(argc, argv);
+        snap_layout s(argc, argv);
         s.run();
         return 0;
     }

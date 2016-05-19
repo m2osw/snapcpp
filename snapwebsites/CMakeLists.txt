@@ -160,6 +160,9 @@ include_directories(
     ${LIBTLD_INCLUDE_DIRS}
 )
 
+set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
+
+
 ##
 ## Compiling
 ##

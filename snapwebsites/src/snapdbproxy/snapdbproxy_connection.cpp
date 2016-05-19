@@ -515,7 +515,7 @@ void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & orde
     if( q.nextRow() )
     {
         // the list of columns may vary so we get the count
-        int max_columns(order.columnCount());
+        int const max_columns(order.columnCount());
         for(int idx(0); idx < max_columns; ++idx)
         {
             result.addResult(q.getByteArrayColumn( idx ));

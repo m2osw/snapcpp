@@ -83,6 +83,11 @@ install(
     FILES ${HEADER_FILES}
     DESTINATION include/snapwebsites/plugins/layout
 )
+install(
+    FILES "layout-tables.xml"
+    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
+)
+
 
 ################################################################################
 # Install DTD file.

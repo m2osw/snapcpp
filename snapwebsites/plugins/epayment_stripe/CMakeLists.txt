@@ -80,6 +80,10 @@ install(
     TARGETS epayment_stripe LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
+    FILES "epayment_stripe-tables.xml"
+    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
+)
+install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwebsites/plugins/epayment_stripe
     FILES_MATCHING PATTERN "*.h"

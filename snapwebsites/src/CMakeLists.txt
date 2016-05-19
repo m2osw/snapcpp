@@ -194,6 +194,10 @@ target_link_libraries(${PROJECT_NAME}
 install(
     TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
+install(
+    FILES "snapfirewall-tables.xml"
+    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
+)
 
 
 #################################################################################

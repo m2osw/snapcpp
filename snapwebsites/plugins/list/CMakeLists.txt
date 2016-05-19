@@ -77,6 +77,10 @@ install(
     TARGETS list LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
+    FILES "list-tables.xml"
+    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
+)
+install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwebsites/plugins/list
     FILES_MATCHING PATTERN "*.h"
