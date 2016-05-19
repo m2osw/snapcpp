@@ -379,6 +379,17 @@ Somethings not offered by Cassandra:
    with a VPN) we could ask the proxy to compress the data before sending
    it to the backend.
 
+   Note: Cassandra uses compression on a per block manner; not only that
+         they also use a checksum which is used mainly to make sure that
+	 if a read fails it gets detected and they avoid using that
+	 block entirely (the checksum is a simple CRC); I am wondering
+	 about this since (1) if data becomes invalid the XFS or whatever
+	 other file system should detect that and (2) per block means
+	 that we'd have data saved on a per block manner which we are
+	 not currently considering doing such; instead we are thinking
+	 to do it on a per row basis [although we could be hit if a
+	 table only has super small rows...]
+
  * Query using regex against keys; right now we have to get ALL the data
    from the server and scan it ourselves; which can be really slow if the
    network uses things such as tinc to encrypt the data; and especially if
