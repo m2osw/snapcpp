@@ -5,7 +5,7 @@ Build-Depends: debhelper, cmake, libadvgetopt-dev (>= 1.0.15.231~trusty),
     qt5-default, libqtwebkit-dev, doxygen, graphviz, zip,
     libxml2-utils, snapcmakemodules (>= 1.0.23.230~trusty),
     libqtcassandra-dev (>= 0.5.7), libcontrolledvars-dev (>= 1.4.15.230~trusty),
-    libsnapwebsites-dev (>= 1.0.0.2~trusty), liblog4cplus-dev (>= 1.2.0),
+    libsnapwebsites-dev (>= 1.0.0.3~trusty), liblog4cplus-dev (>= 1.2.0),
     libtld-dev (>= 1.4.21.92~trusty), libqtserialization-dev (>= 0.1.16.231~trusty)
 Standards-Version: 3.9.4
 Section: admin
