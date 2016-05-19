@@ -19,6 +19,8 @@
 #include "WebsiteModel.h"
 #include <snapwebsites/snapwebsites.h>
 
+#include <libtld/tld.h>
+
 #include <QMessageBox>
 #include <QSettings>
 #include <QVariant>
@@ -40,17 +42,14 @@ void WebsiteModel::doQuery()
 {
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
-    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
     auto q = std::make_shared<QCassandraQuery>(f_session);
     q->query(
-        QString("SELECT column1 FROM %1.%2 WHERE key = ?")
+        QString("SELECT DISTINCT key FROM %1.%2")
             .arg(context_name)
             .arg(table_name)
-        , 1
         );
-    q->bindByteArray( 0, row_index_name.toUtf8() );
-    q->setPagingSize( 10 );
+    q->setPagingSize( 100 );
 
     QueryModel::doQuery( q );
 }
@@ -58,15 +57,41 @@ void WebsiteModel::doQuery()
 
 bool WebsiteModel::fetchFilter( const QByteArray& key )
 {
-    if( QueryModel::fetchFilter( key ) )
+    if( !QueryModel::fetchFilter( key ) )
     {
-        return key.left(f_domain_org_name.length()) == f_domain_org_name;
+        return false;
+    }
+
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX));
+    if( key == row_index_name )
+    {
+        // Ignore *index* entries
+        return false;
+    }
+
+    const char *d = key.data();
+    tld_info info;
+    tld_result r( tld( d, &info ) );
+    //
+    if( r == TLD_RESULT_SUCCESS )
+    {
+        const char *domain = d; // by default assume no sub-domain
+        for(; d < info.f_tld; ++d)
+        {
+            if(*d == '.')
+            {
+                domain = d + 1;
+            }
+        }
+
+        return domain == f_domain_org_name;
     }
 
     return false;
 }
 
 
+#if 0
 QVariant WebsiteModel::data( QModelIndex const & idx, int role ) const
 {
     if( role == Qt::UserRole )
@@ -85,9 +110,33 @@ QVariant WebsiteModel::data( QModelIndex const & idx, int role ) const
     }
 
     const QByteArray& row( f_rows[idx.row()] );
-    const QString key( QString::fromUtf8( row.constData(), row.size() ) );
-    const int mid_pos(f_domain_org_name.length() + 2);
-    if( key.length() <= mid_pos)
+    tld_result r;
+    tld_info info;
+    const char *d = row.data();
+    r = tld( d, &info );
+    if( r != TLD_RESULT_SUCCESS )
+    {
+        QMessageBox::critical
+                ( 0
+                , "Invalid TLD in Domain Name"
+                , QString("The TLD of this domain: \"%1\" is not valid. This entry will be skipped.")
+                          .arg(row.data())
+                , QMessageBox::Ok
+                );
+        return QVariant();
+    }
+    const char *domain = d; // by default assume no sub-domain
+    for(; d < info.f_tld; ++d)
+    {
+        if(*d == '.')
+        {
+            domain = d + 1;
+        }
+    }
+
+    //const int mid_pos(f_domain_org_name.length() + 2);
+    //if( key.length() <= mid_pos)
+    if( domain != f_domain_org_name )
     {
         // note that the length of the key is at least 4 additional
         // characters but at this point we don't make sure that the
@@ -101,8 +150,9 @@ QVariant WebsiteModel::data( QModelIndex const & idx, int role ) const
         return QueryModel::data( idx, role );
     }
 
-    return key.mid(mid_pos).toUtf8();
+    return row;
 }
+#endif
 
 
 // vim: ts=4 sw=4 et

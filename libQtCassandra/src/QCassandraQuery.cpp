@@ -287,8 +287,13 @@ void QCassandraQuery::setStatementTimestamp()
  * \param bind_count[in]    number of parameters to bind
  * 
  */
-void QCassandraQuery::query( const QString &query_string, const int bind_count )
+void QCassandraQuery::query( const QString &query_string, int bind_count )
 {
+    if( bind_count == -1 )
+    {
+        bind_count = query_string.count('?');
+    }
+
     f_queryStmt.reset(
         cass_statement_new( query_string.toUtf8().data(), bind_count )
         , statementDeleter()

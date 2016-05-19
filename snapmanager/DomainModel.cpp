@@ -39,19 +39,34 @@ void DomainModel::doQuery()
 {
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
-    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
     auto q = std::make_shared<QCassandraQuery>(f_session);
     q->query(
-        QString("SELECT column1 FROM %1.%2 WHERE key = ?")
+        QString("SELECT DISTINCT key FROM %1.%2")
             .arg(context_name)
             .arg(table_name)
-        , 1
         );
-    q->bindByteArray( 0, row_index_name.toUtf8() );
-    q->setPagingSize( 10 );
+    q->setPagingSize( 100 );
 
     QueryModel::doQuery( q );
+}
+
+
+bool DomainModel::fetchFilter( const QByteArray& key )
+{
+    if( !QueryModel::fetchFilter( key ) )
+    {
+        return false;
+    }
+
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX));
+    if( key == row_index_name )
+    {
+        // Ignore *index* entries
+        return false;
+    }
+
+    return true;
 }
 
 

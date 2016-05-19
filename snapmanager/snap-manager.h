@@ -34,8 +34,9 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPointer>
-#include <QTcpSocket>
+#include <QSortFilterProxyModel>
 #include <QString>
+#include <QTcpSocket>
 
 #include <queue>
 
@@ -165,6 +166,8 @@ private:
     RowModel						f_row_model;
     TableModel						f_table_model;
     WebsiteModel                    f_website_model;
+    QPointer<QSortFilterProxyModel>	f_domain_sort_filter;
+    QPointer<QSortFilterProxyModel>	f_website_sort_filter;
     int                             f_current_domain_index;
     int                             f_current_website_index;
 

@@ -30,6 +30,7 @@ public:
 
     // Read only access
     //
+    virtual bool fetchFilter( const QByteArray& key );
     //virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const;
 
     void doQuery();
