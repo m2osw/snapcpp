@@ -71,10 +71,9 @@ qt5_add_resources(SNAP_LIBRARY_RESOURCES_RCC
 
 add_library( ${PROJECT_NAME} SHARED
     addr.cpp                                    # handling of host IP addresses (IPv4 and IPv6)
-    cache_control.cpp                           # Parse / handle Cache-Control settings
-    compression.cpp                             # Compress/decompress data
-    dbutils.h                                   # Utilities to help convert coded table and row names
-    dbutils.cpp                                 # and column data.
+    cache_control.cpp                           # parse / handle Cache-Control settings
+    compression.cpp                             # compress/decompress data
+    dbutils.cpp                                 # utilities to help convert coded table and row names and column data. (see snap_tables.cpp too!)
     floats.cpp                                  # Floats helper functions
     fuzzy_string_compare.cpp                    # Compare strings in a fuzzy manner
     http_client_server.cpp                      # implementation of the HTTP protocol
@@ -92,15 +91,15 @@ add_library( ${PROJECT_NAME} SHARED
     qdomreceiver.cpp                            # Qt extension to output XSLT as XML
     qdomxpath.cpp                               # Qt extension to query a XML DOM with X-Path
     qhtmlserializer.cpp                         # Qt extension to output HTML as a string
-    qstring_stream.h                            # Stream QString objects property to ostream objects.
+    qstring_stream.h                            # stream QString objects property to ostream objects.
     quoted_printable.cpp                        # to encode / decode data using the quoted printable format
     qxmlmessagehandler.cpp                      # Qt extension for us to capture the QXmlQuery messages
-    snap_backend.cpp                            # A type of snap_child, but for backends only
-    snap_cassandra.cpp                          # Encapuslate initiating a connection to the database.
+    snap_backend.cpp                            # type of snap_child for backends
+    snap_cassandra.cpp                          # encapuslate initiating a connection to the database.
     snap_communicator.cpp                       # handle any number of sockets with a single process.
     snap_config.cpp                             # class to read in configuration
     snap_child.cpp                              # requests processing
-    snap_child_cache_control.cpp                # Manage cache controls in the snap_child class
+    snap_child_cache_control.cpp                # manage cache controls in the snap_child class
     snap_exception.cpp                          # exception stack backtrack
     snap_expr.cpp                               # snap C-like expression compiler and execution environment
     snap_image.cpp                              # image handling
@@ -109,12 +108,13 @@ add_library( ${PROJECT_NAME} SHARED
     snap_magic.cpp                              # support for MIME type
     snap_parser.cpp                             # lexer/parser for all our script like entries
     snap_pipe.cpp                               # RAII popen()/pclose() class
-    snap_listen_thread.cpp                      # Thread which listens on UDP and allows snapsignal to direct snapserver
+    snap_listen_thread.cpp                      # thread which listens on UDP and allows snapsignal to direct snapserver
+    snap_tables.cpp                             # table schema/definitions
     snap_thread.cpp                             # a C++ thread implementation
     snap_uri.cpp                                # URI handling
     snap_utf8.cpp                               # UTF-8 functions
     snap_version.cpp                            # extract name, version, browser info from a filename
-    snapwebsites.h.in                           # Header for server class (pre-parsed)
+    snapwebsites.h.in                           # header for server class (pre-parsed)
     ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h  # binary output of header file (generated)
     snapwebsites.cpp                            # server
     tcp_client_server.cpp                       # low level TCP/IP that works
@@ -144,6 +144,10 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 
 install(
     TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
+)
+install(
+    FILES "core-tables.xml"
+    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/

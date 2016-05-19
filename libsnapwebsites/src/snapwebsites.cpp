@@ -23,6 +23,7 @@
 #include "snap_backend.h"
 #include "snap_cassandra.h"
 #include "snap_lock.h"
+#include "snap_tables.h"
 #include "tcp_client_server.h"
 
 #include <sstream>
@@ -33,13 +34,13 @@
 #include <QCoreApplication>
 #include <QTextCodec>
 
-#include <syslog.h>
 #include <errno.h>
+#include <grp.h>
+#include <pwd.h>
 #include <signal.h>
+#include <syslog.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <pwd.h>
-#include <grp.h>
 
 #include "poison.h"
 
@@ -177,6 +178,9 @@ char const * get_name(name_t name)
 
     case name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH:
         return "plugins_path";
+
+    case name_t::SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH:
+        return "table_schema_path";
 
     case name_t::SNAP_NAME_CORE_PLUGINS:
         return "core::plugins";
@@ -720,7 +724,8 @@ server::server()
     // default parameters -- we may want to have a separate function and
     //                       maybe some clear separate variables?
     f_parameters["listen"]         = "0.0.0.0:4004";
-    f_parameters["plugins_path"]   = "/usr/lib/snapwebsites/plugins";
+    f_parameters[get_name(name_t::SNAP_NAME_CORE_PARAM_PLUGINS_PATH)]      = "/usr/lib/snapwebsites/plugins";
+    f_parameters[get_name(name_t::SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH)] = "/usr/lib/snapwebsites/tables";
     f_parameters["qs_action"]      = "a";
     f_parameters["qs_hit"]         = "hit";
     f_parameters["server_name"]    = "";
@@ -1338,9 +1343,13 @@ void server::prepare_cassandra()
     context->setHostName(f_parameters["server_name"]);
 
     // create missing tables
-    create_table(context, get_name(name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
-    create_table(context, get_name(name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
-    create_table(context, get_name(name_t::SNAP_NAME_BACKEND),  "List of sites to run backends against.");
+    //create_table(context, get_name(name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
+    //create_table(context, get_name(name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
+    //create_table(context, get_name(name_t::SNAP_NAME_BACKEND),  "List of sites to run backends against.");
+
+    // Create all the missing tables from all the plugins which
+    // packages are currently installed
+    create_table_list(context);
 
     // --prepare-cassandra used?
     if(f_opt->is_defined("prepare-cassandra"))
@@ -1433,6 +1442,290 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
         f_created_table.clear();
     }
     return table;
+}
+
+
+/** \brief Create a set if table as found under path.
+ *
+ * This function reads all the XML files found under the specified
+ * path.
+ *
+ * The format of these XML files is defined in the core system XML
+ * files definition the core system tables.
+ *
+ * These XML files define a keyspace of one or more tables.
+ *
+ * The format is defined in details in libsnapwebsites/src/core-tables.xml.
+ *
+ * \param[in] context  The context in which the table is to be created.
+ */
+void server::create_table_list(QtCassandra::QCassandraContext::pointer_t context)
+{
+    snap_tables tables;
+
+    // user may specify multiple paths separated by a colon
+    //
+    snap_string_list paths(f_parameters[get_name(name_t::SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH)].split(':'));
+    for(auto p : paths)
+    {
+        tables.load(p);
+    }
+
+    // now we have all the tables loaded,
+    //
+    snap_tables::table_schema_t::map_t const & schemas(tables.get_schemas());
+    for(auto const & s : schemas)
+    {
+        QString const table_name(s.second.get_name());
+
+        // does table exist?
+        QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
+        if(!table)
+        {
+            // create table
+            //
+            // setup the name in the "constructor"
+            //
+            table = context->table(table_name);
+
+            // other fields make use of a map
+            //
+            // for details see:
+            // http://docs.datastax.com/en/cql/3.1/cql/cql_reference/tabProp.html
+            //
+            auto & table_fields(table->fields());
+
+            // setup the comment for information
+            //
+            table_fields["comment"] = QVariant(s.second.get_name());
+
+            // how often we want the mem[ory] tables to be flushed out
+            //
+            snap_tables::model_t const model(s.second.get_model());
+            switch(model)
+            {
+            case snap_tables::model_t::MODEL_LOG:
+                // 99% of the time, there is really no need to keep
+                // log like data in memory, give it 5 min.
+                //
+                table_fields["memtable_flush_period_in_ms"] = QVariant(300);
+                break;
+
+            case snap_tables::model_t::MODEL_CONTENT:
+            case snap_tables::model_t::MODEL_DATA:
+            case snap_tables::model_t::MODEL_SESSION:
+                // keep the default, which is to disable the memory tables
+                // flushing mechanism; this means that data stays in memory
+                // as long as space is available for it
+                //
+                break;
+
+            default:
+                // once per hour for most of our tables, because their
+                // data is not generally necessary in the memory cache
+                //
+                table_fields["memtable_flush_period_in_ms"] = QVariant(3600000); // Once per hour
+                break;
+
+            }
+
+            // not so sure that we really want a read-repair mechanism
+            // to run on any read, but it sounds like it work working
+            // that way in older versions and since we use a ONE
+            // consistency with our writes, it may be safer to have
+            // a read repair at least in the few tables where we have
+            // what we consider end user data
+            //
+            // note that all my tables used to have 0.1 and it worked
+            // nicely
+            //
+            switch(model)
+            {
+            case snap_tables::model_t::MODEL_CONTENT:
+            case snap_tables::model_t::MODEL_DATA:
+            case snap_tables::model_t::MODEL_SESSION:
+                // 10% of the time, verify that the data being read is
+                // consistent (it does not slow down our direct reads,
+                // however, it makes Cassandra busier as it checks many
+                // values on each node that has a copy of that data)
+                //
+                table_fields["read_repair_chance"] = QVariant(0.1f);
+                break;
+
+            default:
+                // keep the default for the others (i.e. no repair)
+                //
+                break;
+
+            }
+
+            // force a retry on reads that timeout
+            //
+            // we keep the default for most tables, there are tables
+            // where we do not care as much and we can turn that
+            // feature off on those
+            //
+            switch(model)
+            {
+            case snap_tables::model_t::MODEL_LOG:
+                // no retry
+                //
+                table_fields["speculative_retry"] = QVariant("NONE");
+                break;
+
+            default:
+                // keep the default for the others (i.e. 99%)
+                //
+                break;
+
+            }
+
+            // The following sets up how often a table should be checked
+            // for tombstones; the models have quite different needs in
+            // this area
+            //
+            // Important notes about potential problems in regard to
+            // the Cassandra Gargbage Collection and tombstones not
+            // being taken in account:
+            //
+            //   https://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_about_deletes_c.html
+            //   http://stackoverflow.com/questions/21755286/what-exactly-happens-when-tombstone-limit-is-reached
+            //   http://cassandra-user-incubator-apache-org.3065146.n2.nabble.com/Crash-with-TombstoneOverwhelmingException-td7592018.html
+            //
+            // Garbage Collection of 1 day (could be a lot shorter for several
+            // tables such as the "list", "backend" and "antihammering"
+            // tables... we will have to fix that once we have our proper per
+            // table definitions)
+            switch(model)
+            {
+            case snap_tables::model_t::MODEL_DATA:
+            case snap_tables::model_t::MODEL_LOG: // TBD: we may have problems getting old tombstones removed if too large?
+                // default of 10 days for heavy write but nearly no upgrades
+                //
+                table_fields["gc_grace_seconds"] = QVariant(864000);
+                break;
+
+            case snap_tables::model_t::MODEL_QUEUE:
+                // 1h and we want a clean up; this is important in queue
+                // otherwise the tombstones build up very quickly
+                //
+                table_fields["gc_grace_seconds"] = QVariant(3600);
+                break;
+
+            default:
+                // 1 day, these tables need cleaning relatively often
+                // because they have quite a few updates
+                //
+                table_fields["gc_grace_seconds"] = QVariant(86400);
+                break;
+
+            }
+
+            // data can be compressed, in a few cases, there is really
+            // no need for such though
+            //
+            switch(model)
+            {
+            case snap_tables::model_t::MODEL_QUEUE:
+                // no compression for queues
+                //
+                // The documentation says to use "" for "no compression"
+                //
+                {
+                    QtCassandra::QCassandraSchema::Value compression;
+                    auto & compression_map(compression.map());
+                    compression_map["sstable_compression"] = QVariant(QString());
+                    table_fields["compression"] = compression;
+                }
+                break;
+
+            case snap_tables::model_t::MODEL_LOG:
+                // data that we do not generally re-read can be
+                // ultra-compressed only it will be slower to
+                // decompress such data
+                //
+                // TBD: we could enlarge block size to 1Mb, it would
+                //      help in terms of compression, but slow down
+                //      (dramatically?) in term of speed and it forces
+                //      that much memory to be used too...
+                //
+                {
+                    QtCassandra::QCassandraSchema::Value compression;
+                    auto & compression_map(compression.map());
+                    compression_map["sstable_compression"] = QVariant("DeflateCompressor");
+                    //compression_map["chunk_length_kb"] = QVariant(64);
+                    //compression_map["crc_check_chance"] = QVariant(1.0); // 100%
+                    table_fields["compression"] = compression;
+                }
+                break;
+
+            default:
+                // leave the default (LZ4Compressor at the moment)
+                break;
+
+            }
+
+            // Define the compaction mechanism; in most cases we want to
+            // use the Leveled compation as it looks like there is no real
+            // advantages to using the other compaction methods available
+            //
+            switch(model)
+            {
+            case snap_tables::model_t::MODEL_QUEUE:
+                {
+                    // we choose Data Tiered Compaction for queues because
+                    // Cassandra is smart enough to place rows with similar
+                    // timeout dates within the same file and just delete
+                    // an sstable file when all data within is past its
+                    // deadline
+                    //
+                    QtCassandra::QCassandraSchema::Value compaction;
+                    auto & compaction_map(compaction.map());
+                    compaction_map["class"] = QVariant("DateTieredCompactionStrategy");
+                    compaction_map["min_threshold"] = QVariant(4);
+                    compaction_map["max_threshold"] = QVariant(10);
+                    compaction_map["tombstone_threshold"] = QVariant(0.02); // 2%
+                    table_fields["compaction"] = compaction;
+
+                    table_fields["bloom_filter_fp_chance"] = QVariant(0.1f); // suggested default is 0.01 for date compaction, but I do not see the point of having tables 10x the size
+                }
+                break;
+
+            case snap_tables::model_t::MODEL_DATA:
+            case snap_tables::model_t::MODEL_LOG:
+                {
+                    // tables that have mainly just writes are better
+                    // handled with a Size Tiered Compaction (50% less I/O)
+                    //
+                    QtCassandra::QCassandraSchema::Value compaction;
+                    auto & compaction_map(compaction.map());
+                    compaction_map["class"] = QVariant("SizeTieredCompactionStrategy");
+                    //compaction_map["min_threshold"] = QVariant(4);
+                    //compaction_map["max_threshold"] = QVariant(32);
+                    //compaction_map["tombstone_threshold"] = QVariant(0.2); // 20%
+                    table_fields["compaction"] = compaction;
+
+                    table_fields["bloom_filter_fp_chance"] = QVariant(0.1f); // suggested default is 0.01 for date compaction, but I do not see the point of having tables 10x the size
+                }
+                break;
+
+            default:
+                {
+                    QtCassandra::QCassandraSchema::Value compaction;
+                    auto & compaction_map(compaction.map());
+                    compaction_map["class"] = QVariant("LeveledCompactionStrategy");
+                    //compaction_map["tombstone_threshold"] = QVariant(0.2); // 20%
+                    table_fields["compaction"] = compaction;
+
+                    table_fields["bloom_filter_fp_chance"] = QVariant(0.1f); // suggested for leveled compaction
+                }
+                break;
+
+            }
+
+            table->create();
+        }
+    }
 }
 
 

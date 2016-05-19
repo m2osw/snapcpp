@@ -23,14 +23,13 @@
 
 #include <qstring_stream.h>
 
-#include <dlfcn.h>
-#include <glob.h>
-#include <link.h>
-#include <sys/stat.h>
-
 #include <QDir>
 #include <QMap>
 #include <QFileInfo>
+
+#include <dlfcn.h>
+#include <link.h>
+#include <sys/stat.h>
 
 #include <sstream>
 

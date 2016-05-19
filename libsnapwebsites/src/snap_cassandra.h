@@ -62,7 +62,7 @@ public:
 private:
     QtCassandra::QCassandra::pointer_t          f_cassandra;
     QString                                     f_snapdbproxy_addr = "localhost";
-    int                                         f_snapdbproxy_port = 9042;
+    int                                         f_snapdbproxy_port = 4042;
     snap_config const &                         f_parameters;
     QMap<QString, bool>                         f_created_table;
 };

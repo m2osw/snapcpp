@@ -63,6 +63,7 @@ enum class name_t
     SNAP_NAME_CORE_PARAM_DEFAULT_PLUGINS,
     SNAP_NAME_CORE_PARAM_PLUGINS,
     SNAP_NAME_CORE_PARAM_PLUGINS_PATH,
+    SNAP_NAME_CORE_PARAM_TABLE_SCHEMA_PATH,
     SNAP_NAME_CORE_PLUGINS,
     SNAP_NAME_CORE_PLUGIN_THRESHOLD,
     SNAP_NAME_CORE_REDIRECT,
@@ -244,6 +245,7 @@ public:
     void                prepare_qtapp( int argc, char * argv[] );
     void                prepare_cassandra();
     QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
+    void                create_table_list(QtCassandra::QCassandraContext::pointer_t context);
     void                detach();
     void                listen();
     void                backend();
