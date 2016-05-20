@@ -1474,6 +1474,7 @@ void server::create_table_list(QtCassandra::QCassandraContext::pointer_t context
     // now we have all the tables loaded,
     //
     snap_tables::table_schema_t::map_t const & schemas(tables.get_schemas());
+    SNAP_LOG_INFO("check existence of ")(schemas.size())(" tables...");
     for(auto const & s : schemas)
     {
         QString const table_name(s.second.get_name());
@@ -1482,6 +1483,8 @@ void server::create_table_list(QtCassandra::QCassandraContext::pointer_t context
         QtCassandra::QCassandraTable::pointer_t table(context->findTable(table_name));
         if(!table)
         {
+            SNAP_LOG_INFO("creating table \"")(table_name)("\"");
+
             // create table
             //
             // setup the name in the "constructor"
