@@ -253,21 +253,49 @@ ssize_t snapdbproxy_connection::read(void * buf, size_t count)
     {
         return 0;
     }
-//int64_t n(timeofday());
-    ssize_t const r(::read(f_socket, buf, count));
-//std::cerr << "[" << getpid() << "/" << gettid() << "]: snapdbproxy_connection(): read() in " << (timeofday() - n) << " us.\n";
 
-    if(static_cast<size_t>(r) != count)
+    // we are supposed to have a blocking socket, but with large amounts
+    // of data the read() may return less than count bytes, for this
+    // reason we have to have a loop
+    //
+    size_t size(0);
+    for(;;)
     {
+        ssize_t const r(::read(f_socket, buf, count));
+        if(r < 0)
+        {
+            int const e(errno);
+            SNAP_LOG_ERROR("snapdbproxy_connection::read() returned with ")(r)(", errno ")(e)(", ")(strerror(e));
+            // TBD: we could "return size > 0 ? size : -1L;" too...
+            return -1L;
+        }
         if(r > 0)
         {
-            // should not happen with a blocking socket!?
-            SNAP_LOG_ERROR("snapdbproxy_connection::read() read ")(r)(" bytes instead of ")(count);
+            count -= r;
+            size += r;
+            if(count == 0)
+            {
+                return size;
+            }
+            buf = reinterpret_cast<char *>(buf) + r;
+            SNAP_LOG_TRACE("snapdbproxy_connection::read() needs more than one call (")(count)("/")(size)(").");
         }
-        return -1L;
+        else
+        {
+            // wait a bit and try again
+            // (this is when we receive a return value of 0)
+            //
+            struct pollfd fd;
+            fd.fd = f_socket;
+            fd.events = POLLIN | POLLPRI | POLLRDHUP | POLLHUP;
+            snap::NOTUSED(poll(&fd, 1, 0));
+            if((fd.revents & (POLLHUP | POLLRDHUP)) != 0)
+            {
+                SNAP_LOG_ERROR("snapdbproxy_connection::read() attempted to read from a socket that is closed.");
+                return -1L;
+            }
+        }
     }
-
-    return r;
 }
 
 
@@ -314,7 +342,48 @@ ssize_t snapdbproxy_connection::write(void const * buf, size_t count)
         return 0;
     }
 
-    return ::write(f_socket, buf, count);
+    // we are supposed to have a blocking socket, but with large amounts
+    // of data the write() may accept less than count bytes, for this
+    // reason we have to have a loop
+    //
+    size_t size(0);
+    for(;;)
+    {
+        ssize_t const r(::write(f_socket, buf, count));
+        if(r < 0)
+        {
+            int const e(errno);
+            SNAP_LOG_ERROR("snapdbproxy_connection::write() returned with ")(r)(", errno ")(e)(", ")(strerror(e));
+            // TBD: we could "return size > 0 ? size : -1L;" too...
+            return -1L;
+        }
+        if(r > 0)
+        {
+            count -= r;
+            size += r;
+            if(count == 0)
+            {
+                return size;
+            }
+            buf = reinterpret_cast<char const *>(buf) + r;
+            SNAP_LOG_TRACE("snapdbproxy_connection::write() needs more than one call (")(count)("/")(size)(").");
+        }
+        else
+        {
+            // wait a bit and try again
+            // (this is when we receive a return value of 0)
+            //
+            struct pollfd fd;
+            fd.fd = f_socket;
+            fd.events = POLLOUT | POLLRDHUP | POLLHUP;
+            snap::NOTUSED(poll(&fd, 1, 0));
+            if((fd.revents & (POLLHUP | POLLRDHUP)) != 0)
+            {
+                SNAP_LOG_ERROR("snapdbproxy_connection::write() attempted to write to a socket that is closed.");
+                return -1L;
+            }
+        }
+    }
 }
 
 

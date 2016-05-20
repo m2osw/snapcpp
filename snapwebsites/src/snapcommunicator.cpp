@@ -1775,8 +1775,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
 {
     {
         QString const received_message(message.to_message());
-        //if(received_message.indexOf(":snaplock ") == -1
-        //&& received_message.indexOf(":lock_") == -1)
+        if(received_message.indexOf(":snaplock ") == -1
+        && received_message.indexOf(":lock_") == -1)
         {
             SNAP_LOG_TRACE("received a message [")(received_message)("]");
         }
