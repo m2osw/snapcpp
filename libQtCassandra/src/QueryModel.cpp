@@ -42,8 +42,6 @@ namespace
 
 
 QueryModel::QueryModel()
-    : f_isMore(false)
-    , f_columnCount(1)
 {
 }
 

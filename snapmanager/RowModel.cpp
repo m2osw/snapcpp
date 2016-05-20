@@ -35,6 +35,13 @@ RowModel::RowModel()
 }
 
 
+void RowModel::clear()
+{
+    f_columnsChanged.clear();
+    QueryModel::clear();
+}
+
+
 const QByteArray& RowModel::rowKey() const
 {
     return f_rowKey;
@@ -44,6 +51,32 @@ const QByteArray& RowModel::rowKey() const
 void RowModel::setRowKey( const QByteArray& val )
 {
     f_rowKey = val;
+}
+
+
+bool RowModel::isModified() const
+{
+    bool modified = false;
+    for( const auto& pair : f_columnsChanged )
+    {
+        if( pair.second )
+        {
+            modified = true;
+        }
+    }
+    return modified;
+}
+
+
+const RowModel::modified_map_t& RowModel::modifiedMap() const
+{
+    return f_columnsChanged;
+}
+
+
+void RowModel::clearModified()
+{
+    f_columnsChanged.clear();
 }
 
 
@@ -161,23 +194,43 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
     try
     {
-        QByteArray result;
-        snap::dbutils du( f_tableName, f_rowKey );
-        const QByteArray& key( f_rows[idx.row()] );
-        du.set_column_value( key, result, value.toString() );
+        QByteArray& key( f_rows[idx.row()] );
 
+        switch( idx.column() )
+        {
+        case 0:
+            //du.set_column_name( column_name );	// TODO: implement this!
+            key = value.toByteArray();
+            break;
+
+        case 1:
+            {
+                QByteArray result;
+                snap::dbutils du( f_tableName, f_rowKey );
+                du.set_column_value( key, result, value.toString() );
+                f_columns[idx.row()] = result;
+            }
+            break;
+
+        default:
+            throw std::runtime_error( "We should never get here!" );
+        }
+
+        f_columnsChanged[idx.row()] = true;
+
+#if 0
         QCassandraQuery q( f_session );
         q.query(
                     QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
                         .arg(f_keyspaceName)
                         .arg(f_tableName)
-                    , 3
                     );
         q.bindByteArray( 0, f_rowKey );
         q.bindByteArray( 1, key      );
         q.bindByteArray( 2, result   );
         q.start();
         q.end();
+#endif
 
         Q_EMIT dataChanged( idx, idx );
 
@@ -216,18 +269,9 @@ bool RowModel::insertRows ( int row, int count, const QModelIndex & parent_index
             snap::dbutils du( f_tableName, f_rowKey );
             du.set_column_value( newcol, result, newval );
 
-            QCassandraQuery q( f_session );
-            q.query(
-                        QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
-                        .arg(f_keyspaceName)
-                        .arg(f_tableName)
-                        , 3
-                        );
-            q.bindByteArray( 0, f_rowKey );
-            q.bindByteArray( 1, newcol   );
-            q.bindByteArray( 2, newval   );
-            q.start();
-            q.end();
+            f_columnsChanged[row+i] = true;
+            f_rows[row+i]    = newcol;
+            f_columns[row+i] = newval;
         }
     }
     catch( const std::exception& except )
