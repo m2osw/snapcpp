@@ -182,10 +182,18 @@ snap_manager::snap_manager(QWidget *snap_parent)
     f_sites_new    = getChild<QPushButton>(this, "sitesNew");
     f_sites_save   = getChild<QPushButton>(this, "sitesSave");
     f_sites_delete = getChild<QPushButton>(this, "sitesDelete");
+    f_sites_apply  = getChild<QPushButton>(this, "sitesApply");
+    f_sites_revert = getChild<QPushButton>(this, "sitesRevert");
     connect( f_sites_new, &QPushButton::clicked,
             this, &snap_manager::onSitesNewClicked );
     connect( f_sites_save, &QPushButton::clicked,
             this, &snap_manager::onSitesSaveClicked );
+    connect( f_sites_delete, &QPushButton::clicked,
+            this, &snap_manager::onSitesDeleteClicked );
+    connect( f_sites_apply, &QPushButton::clicked,
+            this, &snap_manager::onSitesApplyClicked );
+    connect( f_sites_revert, &QPushButton::clicked,
+            this, &snap_manager::onSitesRevertClicked );
 
     f_sites_parameter_type->addItem("Null");
     f_sites_parameter_type->addItem("String"); // this is the default
@@ -714,6 +722,8 @@ void snap_manager::cassandraDisconnectButton_clicked()
     f_sites_new->setEnabled(false);
     f_sites_save->setEnabled(false);
     f_sites_delete->setEnabled(false);
+    f_sites_apply->setEnabled(false);
+    f_sites_revert->setEnabled(false);
 
     f_cassandraConnectButton->setEnabled( true );
 }
@@ -1953,6 +1963,8 @@ void snap_manager::loadSites()
     f_sites_new->setEnabled(false);
     f_sites_save->setEnabled(false);
     f_sites_delete->setEnabled(false);
+    f_sites_apply->setEnabled(false);
+    f_sites_revert->setEnabled(false);
 }
 
 void snap_manager::on_sitesFilter_clicked()
@@ -2006,6 +2018,7 @@ void snap_manager::onSitesListCurrentChanged( QModelIndex current, QModelIndex /
     // IMPORTANT: note that f_sites_org_name changed to the item->text() value
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_SITES));
+    f_params_row_model.clear();
     f_params_row_model.init( f_session, context_name, table_name );
     f_params_row_model.setRowKey( f_sites_org_name.toUtf8() );
     f_params_row_model.doQuery();
@@ -2034,7 +2047,9 @@ void snap_manager::onSitesParamsDataChanged( const QModelIndex &topLeft, const Q
     snap::NOTUSED(bottomRight);
     snap::NOTUSED(roles);
 
-    f_sites_save->setEnabled( f_params_row_model.isModified() );
+    const auto modified( f_params_row_model.isModified() );
+    f_sites_apply ->setEnabled( modified );
+    f_sites_revert->setEnabled( modified );
 }
 
 
@@ -2044,12 +2059,60 @@ void snap_manager::onSitesNewClicked( bool checked )
     f_sites_parameter_name ->setEnabled( true );
     f_sites_parameter_value->setEnabled( true );
     f_sites_parameter_type ->setEnabled( true );
+    f_sites_parameter_type->setCurrentIndex(1);
+    f_sites_new->setEnabled(false);
+    f_sites_save->setEnabled(true);
 }
 
 
 void snap_manager::onSitesSaveClicked( bool checked )
 {
     snap::NOTUSED(checked);
+
+    if( QMessageBox::question
+            ( this
+              , tr("About to save.")
+              , tr("You are about to write a new entry to the database. This cannot be reverted.\nAre you sure you want to continue?")
+              , QMessageBox::Yes | QMessageBox::No
+              )
+            == QMessageBox::Yes )
+    {
+        QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_SITES));
+        const auto& rowKey( f_params_row_model.rowKey() );
+        snap::dbutils du( table_name, rowKey.data() );
+        QByteArray result;
+        du.set_column_value( rowKey.data(), result, f_sites_parameter_value->text() );
+        //
+        // TODO: implement parameter type...
+        //
+        auto q = createQuery( table_name, "INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)" );
+        size_t num = 0;
+        q->bindByteArray( num++, rowKey );
+        q->bindByteArray( num++, f_sites_parameter_name->text().toUtf8() );
+        q->bindByteArray( num++, result );
+        q->start();
+        q->end();
+
+        f_sites_new->setEnabled(true);
+        f_sites_save->setEnabled(false);
+        f_sites_parameter_name->setText(QString());
+        f_sites_parameter_value->setText(QString());
+
+        f_params_row_model.clearModified();
+        f_params_row_model.doQuery();			// Force a reload
+    }
+}
+
+
+void snap_manager::onSitesDeleteClicked( bool clicked )
+{
+    snap::NOTUSED(clicked);
+}
+
+
+void snap_manager::onSitesApplyClicked( bool clicked )
+{
+    snap::NOTUSED(clicked);
 
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_SITES));
     const auto& rowKey( f_params_row_model.rowKey() );
@@ -2086,11 +2149,32 @@ void snap_manager::onSitesSaveClicked( bool checked )
 }
 
 
+void snap_manager::onSitesRevertClicked( bool clicked )
+{
+    snap::NOTUSED(clicked);
+
+    if( QMessageBox::question
+            ( this
+              , tr("Warning!")
+              , tr("You are about to lose all of your changes. Are you sure?")
+              , QMessageBox::Yes | QMessageBox::No
+              )
+            == QMessageBox::Yes )
+    {
+        f_sites_apply->setEnabled(false);
+        f_sites_revert->setEnabled(false);
+        f_params_row_model.clearModified();
+        f_params_row_model.doQuery();			// Force a reload
+    }
+}
+
+
 void snap_manager::onSitesParamSaveFinished( QCassandraQuery::pointer_t q )
 {
     snap::NOTUSED(q);
     f_params_row_model.clearModified();
-    f_sites_save->setEnabled(false);
+    f_sites_apply->setEnabled(false);
+    f_sites_revert->setEnabled(false);
 }
 
 

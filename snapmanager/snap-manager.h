@@ -97,6 +97,9 @@ private slots:
 
     void onSitesNewClicked           ( bool checked );
     void onSitesSaveClicked          ( bool checked );
+    void onSitesDeleteClicked        ( bool checked );
+    void onSitesApplyClicked         ( bool checked );
+    void onSitesRevertClicked        ( bool checked );
 
     void onDomainsLoaded();
     void onWebsitesLoaded();
@@ -117,9 +120,7 @@ private:
     QPointer<QWidget>               f_decode_utf8;
     QPointer<QTabWidget>            f_tabs;
     QPointer<QWidget>               f_tab_connect;
-    //controlled_vars::zint32_t       f_idx_connect;
     QPointer<QWidget>               f_tab_domain;
-    //controlled_vars::zint32_t       f_idx_domain;
 
     QPointer<QAction>               f_initialize_website;
 
@@ -162,6 +163,8 @@ private:
     QPointer<QPushButton>           f_sites_new;
     QPointer<QPushButton>           f_sites_save;
     QPointer<QPushButton>           f_sites_delete;
+    QPointer<QPushButton>           f_sites_apply;
+    QPointer<QPushButton>           f_sites_revert;
 
     DomainModel                     f_domain_model;
     RowModel						f_params_row_model;

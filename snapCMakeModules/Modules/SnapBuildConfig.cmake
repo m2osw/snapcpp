@@ -101,12 +101,14 @@ function( ConfigureMakeProjectInternal )
 			COMMENT "Running ${ARG_TARGET_NAME} configure script..."
 			)
 	else()
+		set( SNAP_CMAKE_GENERATOR "CodeBlocks - Unix Makefiles" CACHE STRING "CMake generator to use to configure all projects. Defaults to CodeBlocks, which is qtcreator friendly." )
 		set( BUILD_TYPE ${CMAKE_BUILD_TYPE} )
 		if( NOT BUILD_TYPE )
 			set( BUILD_TYPE Release )
 		endif()
 		set( COMMAND_LIST
 			${THE_CMAKE_COMMAND}
+				-G "${SNAP_CMAKE_GENERATOR}"
 				-DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 				-DCMAKE_INSTALL_PREFIX:PATH="${SNAP_DIST_DIR}"
 				-DCMAKE_PREFIX_PATH:PATH=${SNAP_DIST_DIR}
