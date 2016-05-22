@@ -214,8 +214,9 @@ public:
 
                                     snap_timer(int64_t timeout_us);
 
-        virtual int                 get_socket() const;
-        virtual bool                valid_socket() const;
+        // snap_connection implementation
+        virtual int                 get_socket() const override;
+        virtual bool                valid_socket() const override;
     };
 
     class snap_signal
@@ -228,8 +229,8 @@ public:
                                     ~snap_signal();
 
         // snap_connection implementation
-        virtual bool                is_signal() const;
-        virtual int                 get_socket() const;
+        virtual bool                is_signal() const override;
+        virtual int                 get_socket() const override;
 
         pid_t                       get_child_pid() const;
 
@@ -253,9 +254,9 @@ public:
                                     ~snap_thread_done_signal();
 
         // snap_connection implementation
-        virtual bool                is_reader() const;
-        virtual int                 get_socket() const;
-        virtual void                process_read();
+        virtual bool                is_reader() const override;
+        virtual int                 get_socket() const override;
+        virtual void                process_read() override;
 
         void                        thread_done();
 
@@ -272,13 +273,15 @@ public:
                                     snap_pipe_connection();
                                     ~snap_pipe_connection();
 
-        virtual ssize_t             read(void * buf, size_t count);
-        virtual ssize_t             write(void const * buf, size_t count);
         void                        close();
 
         // snap_connection implementation
-        virtual bool                is_reader() const;
-        virtual int                 get_socket() const;
+        virtual bool                is_reader() const override;
+        virtual int                 get_socket() const override;
+
+        // new callbacks
+        virtual ssize_t             read(void * buf, size_t count);
+        virtual ssize_t             write(void const * buf, size_t count);
 
     private:
         pid_t                       f_parent;       // the process that created these pipes (read/write to 0 if getpid() == f_parent, read/write to 1 if getpid() != f_parent)
@@ -292,13 +295,13 @@ public:
         typedef std::shared_ptr<snap_pipe_buffer_connection>    pointer_t;
 
         // snap::snap_communicator::snap_connection
-        virtual bool                is_writer() const;
+        virtual bool                is_writer() const override;
 
         // snap::snap_communicator::snap_pipe_connection implementation
-        virtual ssize_t             write(void const * data, size_t length);
-        virtual void                process_read();
-        virtual void                process_write();
-        virtual void                process_hup();
+        virtual ssize_t             write(void const * data, size_t length) override;
+        virtual void                process_read() override;
+        virtual void                process_write() override;
+        virtual void                process_hup() override;
 
         // new callback
         virtual void                process_line(QString const & line) = 0;
@@ -318,7 +321,7 @@ public:
         void                        send_message(snap_communicator_message const & message);
 
         // snap_tcp_server_client_buffer_connection implementation
-        virtual void                process_line(QString const & line);
+        virtual void                process_line(QString const & line) override;
 
         // new callback
         virtual void                process_message(snap_communicator_message const & message) = 0;
@@ -337,12 +340,13 @@ public:
 
         QString const &             get_remote_address() const;
 
+        // snap_connection implementation
+        virtual bool                is_reader() const override;
+        virtual int                 get_socket() const override;
+
+        // new callbacks
         virtual ssize_t             read(void * buf, size_t count);
         virtual ssize_t             write(void const * buf, size_t count);
-
-        // snap_connection implementation
-        virtual bool                is_reader() const;
-        virtual int                 get_socket() const;
 
     private:
         QString const               f_remote_address;
@@ -359,8 +363,8 @@ public:
                                     snap_tcp_server_connection(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
 
         // snap_connection implementation
-        virtual bool                is_listener() const;
-        virtual int                 get_socket() const;
+        virtual bool                is_listener() const override;
+        virtual int                 get_socket() const override;
     };
 
     class snap_tcp_server_client_connection
@@ -373,8 +377,6 @@ public:
                                     snap_tcp_server_client_connection(int socket);
         virtual                     ~snap_tcp_server_client_connection();
 
-        virtual ssize_t             read(void * buf, size_t count);
-        virtual ssize_t             write(void const * buf, size_t count);
         void                        close();
         size_t                      get_client_address(struct sockaddr_storage & address) const;
         std::string                 get_client_addr() const;
@@ -382,8 +384,12 @@ public:
         std::string                 get_client_addr_port() const;
 
         // snap_connection implementation
-        virtual bool                is_reader() const;
-        virtual int                 get_socket() const;
+        virtual bool                is_reader() const override;
+        virtual int                 get_socket() const override;
+
+        // new callbacks
+        virtual ssize_t             read(void * buf, size_t count);
+        virtual ssize_t             write(void const * buf, size_t count);
 
     private:
         bool                        define_address();
@@ -402,13 +408,13 @@ public:
                                     snap_tcp_server_client_buffer_connection(int socket);
 
         // snap::snap_communicator::snap_connection
-        virtual bool                is_writer() const;
+        virtual bool                is_writer() const override;
 
         // snap::snap_communicator::snap_tcp_server_client_connection implementation
-        virtual ssize_t             write(void const * data, size_t length);
-        virtual void                process_read();
-        virtual void                process_write();
-        virtual void                process_hup();
+        virtual ssize_t             write(void const * data, size_t length) override;
+        virtual void                process_read() override;
+        virtual void                process_write() override;
+        virtual void                process_hup() override;
 
         // new callback
         virtual void                process_line(QString const & line) = 0;
@@ -431,7 +437,7 @@ public:
         QString const &             get_remote_address() const;
 
         // snap_tcp_server_client_buffer_connection implementation
-        virtual void                process_line(QString const & line);
+        virtual void                process_line(QString const & line) override;
 
         // new callback
         virtual void                process_message(snap_communicator_message const & message) = 0;
@@ -449,12 +455,13 @@ public:
                                     snap_tcp_client_buffer_connection(std::string const & addr, int port, mode_t const mode = mode_t::MODE_PLAIN, bool const blocking = false);
 
         // snap::snap_communicator::snap_tcp_client_connection implementation
-        virtual ssize_t             write(void const * data, size_t length);
-        virtual bool                is_writer() const;
-        virtual void                process_read();
-        virtual void                process_write();
-        virtual void                process_hup();
+        virtual ssize_t             write(void const * data, size_t length) override;
+        virtual bool                is_writer() const override;
+        virtual void                process_read() override;
+        virtual void                process_write() override;
+        virtual void                process_hup() override;
 
+        // new callback
         virtual void                process_line(QString const & line) = 0;
 
     private:
@@ -474,7 +481,7 @@ public:
         void                        send_message(snap_communicator_message const & message);
 
         // snap_tcp_client_reader_connection implementation
-        virtual void                process_line(QString const & line);
+        virtual void                process_line(QString const & line) override;
 
         // new callback
         virtual void                process_message(snap_communicator_message const & message) = 0;
@@ -497,11 +504,11 @@ public:
         std::string                 get_client_addr() const;
 
         // snap_connection implementation
-        virtual void                process_timeout();
-        virtual void                process_error();
-        virtual void                process_hup();
-        virtual void                process_invalid();
-        virtual void                connection_removed();
+        virtual void                process_timeout() override;
+        virtual void                process_error() override;
+        virtual void                process_hup() override;
+        virtual void                process_invalid() override;
+        virtual void                connection_removed() override;
 
         // new callbacks
         virtual void                process_message(snap_communicator_message const & message) = 0;
@@ -526,8 +533,8 @@ public:
                                     snap_udp_server_connection(std::string const & addr, int port);
 
         // snap_connection implementation
-        virtual bool                is_reader() const;
-        virtual int                 get_socket() const;
+        virtual bool                is_reader() const override;
+        virtual int                 get_socket() const override;
     };
 
     class snap_udp_server_message_connection
@@ -543,7 +550,7 @@ public:
         static bool                 send_message(std::string const & addr, int port, snap_communicator_message const & message);
 
         // snap_connection implementation
-        virtual void                process_read();
+        virtual void                process_read() override;
 
         // new callback
         virtual void                process_message(snap_communicator_message const & message) = 0;
@@ -563,7 +570,7 @@ public:
         bool                        send_message(snap_communicator_message const & message);
 
         // snap_connection callback
-        virtual void                process_error();
+        virtual void                process_error() override;
 
         // new callback
         virtual void                process_message(snap_communicator_message const & message) = 0;
