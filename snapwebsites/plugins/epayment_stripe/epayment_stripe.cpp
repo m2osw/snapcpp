@@ -439,7 +439,7 @@ void epayment_stripe::on_generate_header_content(content::path_info_t & ipath, Q
 
     bool const debug(get_debug());
 
-    QString secret(get_stripe_key(debug));
+    QString const secret(get_stripe_key(debug));
 
     if(!secret.isEmpty())
     {
@@ -1312,12 +1312,19 @@ QString epayment_stripe::get_stripe_key(bool const debug)
             }
             else
             {
-                messages_plugin->set_error(
-                    "Stripe Not Available",
-                    "The Stripe service is not currently available. Please contact the webmaster so the problem can be resolved.",
-                    "An empty key generally happens because the administrator did not yet enter said key.",
-                    false
-                );
+                // TODO: People who do not have permission should see this
+                //       but really only of the very few pages where the
+                //       stripe payment would be required. At the same
+                //       time, if not setup we should not give users without
+                //       the required permissions to make a payment with
+                //       e-Stripe if not properly setup anyway.
+                //
+                //messages_plugin->set_error(
+                //    "Stripe Not Available",
+                //    "The Stripe service is not currently available. Please contact the webmaster so the problem can be resolved.",
+                //    "An empty key generally happens because the administrator did not yet enter said key.",
+                //    false
+                //);
             }
 
             return QString();
