@@ -22,7 +22,7 @@
 namespace snap
 {
 
-__attribute__ ((noreturn)) inline void NOTREACHED()
+[[noreturn]] inline void NOTREACHED()
 {
     // TODO: add call to print stack trace
     std::cerr << "NOTREACHED called, process will abort." << std::endl;

@@ -114,11 +114,11 @@ configuration::configuration()
 
     char buf[256];
     int line = 0;
-    while(fgets(buf, sizeof(buf) - 1, f) != NULL)
+    while(fgets(buf, sizeof(buf) - 1, f) != nullptr)
     {
         ++line;
         buf[sizeof(buf) - 1] = '\0';
-        char *s = buf;
+        char * s(buf);
         while(isspace(*s))
         {
             ++s;
@@ -128,7 +128,7 @@ configuration::configuration()
             // empty lines & comments
             continue;
         }
-        const char *name = s;
+        char const * name(s);
         while(*s != '=' && *s != '\0')
         {
             if(isspace(*s))
@@ -153,7 +153,7 @@ configuration::configuration()
         {
             ++s;
         }
-        const char *value = s;
+        char const * value = s;
         while(*s != '\0')
         {
             ++s;
@@ -186,8 +186,8 @@ const configuration::ports_t configuration::ports()
     if(!f_ports_defined)
     {
         f_ports_defined = true;
-        const std::string prts( operator [] ("ports") );
-        const char *s = prts.c_str();
+        std::string const prts( operator [] ("ports") );
+        char const * s = prts.c_str();
         while(*s != '\0')
         {
             while(*s == ',' || isspace(*s))
@@ -196,7 +196,7 @@ const configuration::ports_t configuration::ports()
             }
             if(*s != '\0')
             {
-                const char *p(s);
+                char const * p(s);
                 while(*s != '\0' && *s != ',' && !isspace(*s))
                 {
                     ++s;
@@ -221,9 +221,12 @@ void usage()
 }
 
 
-void block_ip(configuration& conf, const char *ip, bool quiet)
+void block_ip(configuration & conf, char const * ip, bool quiet)
 {
-    const configuration::ports_t& ports(conf.ports());
+    setuid(0);
+    setgid(0);
+
+    configuration::ports_t const & ports(conf.ports());
 
     // repeat the block for each specified port
     for(configuration::ports_t::const_iterator p(ports.begin());
@@ -247,9 +250,12 @@ void block_ip(configuration& conf, const char *ip, bool quiet)
 }
 
 
-void unblock_ip(configuration& conf, const char *ip, bool quiet)
+void unblock_ip(configuration & conf, char const * ip, bool quiet)
 {
-    const configuration::ports_t& ports = conf.ports();
+    setuid(0);
+    setgid(0);
+
+    configuration::ports_t const & ports(conf.ports());
 
     // repeat the unblock for each specified port
     for(configuration::ports_t::const_iterator p(ports.begin());
@@ -273,11 +279,11 @@ void unblock_ip(configuration& conf, const char *ip, bool quiet)
 }
 
 
-void verify_ip(const char *ip)
+void verify_ip(char const * ip)
 {
     int c(1);
     int n(-1);
-    const char *s(ip);
+    char const * s(ip);
     while(*s != '\0')
     {
         if(*s >= '0' && *s <= '9')
@@ -323,7 +329,7 @@ int main(int argc, char const * argv[])
 
     bool block(true);
     bool quiet(false);
-    for(int i = 1; i < argc; ++i)
+    for(int i(1); i < argc; ++i)
     {
         if(strcmp(argv[i], "-h") == 0
         || strcmp(argv[i], "--help") == 0)
