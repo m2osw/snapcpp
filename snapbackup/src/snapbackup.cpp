@@ -1,6 +1,6 @@
 /*
  * Text:
- *      sql_backup_restore.cpp
+ *      snapbackup.cpp
  *
  * Description:
  *      Reads and describes a Snap database. This ease checking out the
@@ -38,10 +38,12 @@
 
 // our lib
 //
-#include "sql_backup_restore.h"
+#include "snapbackup.h"
 #include "snap_table_list.h"
 #include "qstring_stream.h"
 #include "dbutils.h"
+
+#include <QtCassandra/QCassandraSchema.h>
 
 // 3rd party libs
 //
@@ -56,8 +58,13 @@
 
 using namespace QtCassandra;
 
-sqlBackupRestore::sqlBackupRestore( const QString& host_name, const QString& sqlDbFile )
+snapbackup::snapbackup()
     : f_session( QCassandraSession::create() )
+{
+}
+
+
+void snapbackup::setSqliteDbFile( const QString& sqlDbFile )
 {
 	QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE" );
 	db.setDatabaseName( sqlDbFile );
@@ -66,27 +73,42 @@ sqlBackupRestore::sqlBackupRestore( const QString& host_name, const QString& sql
         const QString error( QString("Cannot open SQLite database [%1]!").arg(sqlDbFile) );
         throw std::runtime_error( error.toUtf8().data() );
     }
-
-    f_session->connect( host_name );
 }
 
 
-void sqlBackupRestore::storeContext( const int count )
+void snapbackup::connectToCassandra( const QString& host, const int port )
+{
+    f_session->connect( host, port );
+}
+
+
+void snapbackup::dumpContext( const int count, const QString& context_name )
 {
     QSqlDatabase db( QSqlDatabase::database() );
+    if( !db.isOpen() )
+    {
+        throw std::runtime_error( "SQLite database not opened!" );
+    }
+
     db.transaction();
-    storeTables( count );
+    storeTables( count, context_name );
     db.commit();
 }
 
 
-void sqlBackupRestore::restoreContext()
+void snapbackup::restoreContext( const QString& context_name )
 {
-    restoreTables();
+    QSqlDatabase db( QSqlDatabase::database() );
+    if( !db.isOpen() )
+    {
+        throw std::runtime_error( "SQLite database not opened!" );
+    }
+
+    restoreTables( context_name );
 }
 
 
-void sqlBackupRestore::appendRowsToSqliteDb( QCassandraQuery& cass_query, const QString& table_name )
+void snapbackup::appendRowsToSqliteDb( QCassandraQuery& cass_query, const QString& table_name )
 {
     const QString q_str = QString( "INSERT OR REPLACE INTO %1 "
             "(key, column1, value ) "
@@ -118,7 +140,7 @@ void sqlBackupRestore::appendRowsToSqliteDb( QCassandraQuery& cass_query, const 
 //
 // Then you can call this method.
 //
-void sqlBackupRestore::storeTables( const int count )
+void snapbackup::storeTables( const int count, const QString& context_name )
 {
     snapTableList   dump_list;
 
@@ -167,7 +189,7 @@ void sqlBackupRestore::storeTables( const int count )
 /// \brief Restore snap_websites tables.
 //
 // This assumes that the Cassandra schema has been created already. On backup, follow the instructions
-// above sqlBackupRestore::storeTable() to create your schema.sql file. Then dump the database.
+// above snapbackup::storeTable() to create your schema.sql file. Then dump the database.
 //
 // In order to restore, drop the "snap_websites" context on the Cassandra node you wish to restore.
 // Then run the following commands:
@@ -177,7 +199,7 @@ void sqlBackupRestore::storeTables( const int count )
 //
 // Then call this method.
 //
-void sqlBackupRestore::restoreTables()
+void snapbackup::restoreTables( const QString& context_name )
 {
     snapTableList   dump_list;
 

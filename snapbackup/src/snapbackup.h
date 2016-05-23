@@ -1,6 +1,6 @@
 /*
  * Text:
- *      snap_table_list.cpp
+ *      snapbackup.h
  *
  * Description:
  *      Reads and describes a Snap database. This ease checking out the
@@ -44,22 +44,17 @@
 
 #include <memory>
 
-class sqlBackupRestore
+class snapbackup
 {
 public:
-    sqlBackupRestore( const QString& host_name, const QString& sqlDbFile );
+    snapbackup();
 
-    void storeContext( const int count );
-    void restoreContext();
+    void connectToCassandra( const QString& host, const int port );
 
-    //void outputSchema();
-    
-private:
-    void appendRowsToSqliteDb( QtCassandra::QCassandraQuery& cass_query, const QString& table_name );
-    void storeTables( const int count );
-    void restoreTables();
+    void dumpContext( const int count, const QString& context_name );
+    void restoreContext( const QString& context_name );
 
-    QtCassandra::QCassandraSession::pointer_t	f_session;
+    QtCassandra::QCassandraSession::pointer_t f_session;
 };
 
 // vim: ts=4 sw=4 et

@@ -1,0 +1,6 @@
+snapmanager (0.1.1) xenial; urgency=high
+
+  * Initial release of packaging for snapbackup. It has been moved out of
+    the snapwebsites project.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Fri, 20 May 2016 17:07:48 -0700
