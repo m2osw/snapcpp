@@ -64,10 +64,7 @@ public:
 
     void usage(advgetopt::getopt::status_t status);
     void info();
-    void drop_tables();
     void drop_context();
-    void dump_context();
-    void restore_context();
     void display();
 
 private:

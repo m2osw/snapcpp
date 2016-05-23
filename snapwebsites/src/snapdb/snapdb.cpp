@@ -40,8 +40,6 @@
 //
 #include "snapdb.h"
 #include "snapwebsites.h"
-#include "snap_table_list.h"
-#include "sql_backup_restore.h"
 #include "qstring_stream.h"
 #include "dbutils.h"
 
@@ -103,46 +101,6 @@ namespace
             "count",
             nullptr,
             "specify the number of rows to display",
-            advgetopt::getopt::optional_argument
-        },
-        {
-            '\0',
-            0,
-            "drop-tables",
-            nullptr,
-            "drop all the content tables of the specified context",
-            advgetopt::getopt::no_argument
-        },
-        {
-            '\0',
-            0,
-            "drop-context",
-            nullptr,
-            "drop the snapwebsites context (and ALL of the tables)",
-            advgetopt::getopt::no_argument
-        },
-        {
-            '\0',
-            0,
-            "dump-context",
-            nullptr,
-            "dump the snapwebsites context to SQLite database",
-            advgetopt::getopt::required_argument
-        },
-        {
-            '\0',
-            0,
-            "tables-to-dump",
-            nullptr,
-            "specify the list of tables to dump to SQLite database",
-            advgetopt::getopt::required_multiple_argument
-        },
-        {
-            '\0',
-            0,
-            "restore-context",
-            nullptr,
-            "restore the snapwebsites context from SQLite database (requires confirmation)",
             advgetopt::getopt::optional_argument
         },
         {
@@ -254,15 +212,6 @@ snapdb::snapdb(int argc, char * argv[])
             info();
             exit(0);
         }
-        if( f_opt->is_defined( "drop-tables" ) )
-        {
-            if( confirm_drop_check() )
-            {
-                drop_tables();
-                exit(0);
-            }
-            exit(1);
-        }
         if( f_opt->is_defined( "drop-context" ) )
         {
             if( confirm_drop_check() )
@@ -271,32 +220,6 @@ snapdb::snapdb(int argc, char * argv[])
                 exit(0);
             }
             exit(1);
-        }
-        if( f_opt->is_defined( "dump-context" ) )
-        {
-            try
-            {
-                dump_context();
-                exit(0);
-            }
-            catch( const std::exception& except )
-            {
-                std::cerr << "Exception caught! what=[" << except.what() << "]" << std::endl;
-                exit(1);
-            }
-        }
-        if( f_opt->is_defined( "restore-context" ) )
-        {
-            try
-            {
-                restore_context();
-                exit(0);
-            }
-            catch( const std::exception& except )
-            {
-                std::cerr << "Exception caught! what=[" << except.what() << "]" << std::endl;
-                exit(1);
-            }
         }
     }
     catch( const std::exception& except )
@@ -394,86 +317,10 @@ bool snapdb::confirm_drop_check() const
 }
 
 
-void snapdb::drop_tables()
-{
-    f_cassandra->connect(f_host, f_port);
-
-    snapTableList::initList();
-
-    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
-    //
-    // there are re-created when we connect and refilled when
-    // we access a page; obviously this is VERY dangerous on
-    // a live system!
-    //
-    snapTableList   list;
-    for( auto const & table_name : list.tablesToDrop() )
-    {
-        try
-        {
-            context->dropTable( table_name );
-        }
-        catch(std::exception const & e)
-        {
-            std::cerr << "table \""
-                      << table_name
-                      << "\" could not be dropped, maybe it did not exist (was not created.) Exception: "
-                      << e.what();
-        }
-    }
-}
-
-
 void snapdb::drop_context()
 {
     f_cassandra->connect(f_host, f_port);
     f_cassandra->dropContext( f_context );
-}
-
-
-namespace
-{
-    void do_query( const QString& q_str )
-    {
-        QSqlQuery q;
-        if( !q.exec( q_str ) )
-        {
-            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-            throw std::runtime_error( q.lastError().text().toUtf8().data() );
-        }
-    }
-}
-
-
-void snapdb::dump_context()
-{
-    const QString outfile( f_opt->get_string( "dump-context" ).c_str() );
-
-    snapTableList::initList();
-
-    if( f_opt->is_defined("tables-to-dump") )
-    {
-        QStringList tables_to_dump;
-        for( int idx = 0; idx < f_opt->size("tables-to-dump"); ++idx )
-        {
-            tables_to_dump << f_opt->get_string("tables-to-dump",idx).c_str();
-        }
-        snapTableList::overrideTablesToDump( tables_to_dump );
-    }
-
-    sqlBackupRestore backup( f_host, outfile );
-    backup.storeContext( f_count );
-}
-
-
-void snapdb::restore_context()
-{
-    const QString infile( f_opt->get_string( "restore-context" ).c_str() );
-
-    snapTableList::initList();
-
-    sqlBackupRestore backup( f_host, infile );
-    backup.restoreContext();
 }
 
 

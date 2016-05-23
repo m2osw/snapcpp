@@ -31,23 +31,22 @@
 
 
 #################################################################################
-## Snap DB process
+## Snap backup utility
 ##
-project(snapdb)
+project(snapbackup)
 
 add_executable(${PROJECT_NAME}
-    snapdb.h
-    snapdb.cpp
+    snap_table_list.cpp
+    snap_table_list.h
+    sql_backup_restore.cpp
+    sql_backup_restore.h
     main.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
 )
 
 install(
