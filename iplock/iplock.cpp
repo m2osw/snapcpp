@@ -84,7 +84,7 @@ public:
 
     const std::string operator [] (const std::string& name) const
     {
-        std::map<std::string, std::string>::const_iterator it = f_variables.find(name);
+        std::map<std::string, std::string>::const_iterator it(f_variables.find(name));
         if(it == f_variables.end()) {
             return "";
         }
@@ -105,7 +105,7 @@ configuration::configuration()
     : f_ports_defined(false)
     //, f_ports -- auto-init
 {
-    FILE * f = fopen("/etc/network/iplock.conf", "r");
+    FILE * f(fopen("/etc/network/iplock.conf", "r"));
     if(f == nullptr)
     {
         // no configuration
@@ -113,7 +113,7 @@ configuration::configuration()
     }
 
     char buf[256];
-    int line = 0;
+    int line(0);
     while(fgets(buf, sizeof(buf) - 1, f) != nullptr)
     {
         ++line;
@@ -153,7 +153,7 @@ configuration::configuration()
         {
             ++s;
         }
-        char const * value = s;
+        char const * value(s);
         while(*s != '\0')
         {
             ++s;
@@ -187,7 +187,7 @@ const configuration::ports_t configuration::ports()
     {
         f_ports_defined = true;
         std::string const prts( operator [] ("ports") );
-        char const * s = prts.c_str();
+        char const * s(prts.c_str());
         while(*s != '\0')
         {
             while(*s == ',' || isspace(*s))
@@ -221,10 +221,24 @@ void usage()
 }
 
 
+void make_root()
+{
+    if(setuid(0) != 0)
+    {
+        perror("iplock:setuid(0)");
+        exit(1);
+    }
+    if(setgid(0) != 0)
+    {
+        perror("iplock:setuid(0)");
+        exit(1);
+    }
+}
+
+
 void block_ip(configuration & conf, char const * ip, bool quiet)
 {
-    setuid(0);
-    setgid(0);
+    make_root();
 
     configuration::ports_t const & ports(conf.ports());
 
@@ -252,8 +266,7 @@ void block_ip(configuration & conf, char const * ip, bool quiet)
 
 void unblock_ip(configuration & conf, char const * ip, bool quiet)
 {
-    setuid(0);
-    setgid(0);
+    make_root();
 
     configuration::ports_t const & ports(conf.ports());
 
