@@ -58,8 +58,9 @@
 
 using namespace QtCassandra;
 
-snapbackup::snapbackup()
+snapbackup::snapbackup( getopt_ptr_t opt )
     : f_session( QCassandraSession::create() )
+    , f_opt(opt)
 {
 }
 
@@ -76,13 +77,33 @@ void snapbackup::setSqliteDbFile( const QString& sqlDbFile )
 }
 
 
-void snapbackup::connectToCassandra( const QString& host, const int port )
+void snapbackup::connectToCassandra()
 {
-    f_session->connect( host, port );
+    f_session->connect( f_opt->get_string("host"), f_opt->get_long("port") );
 }
 
 
-void snapbackup::dumpContext( const int count, const QString& context_name )
+void snapbackup::storeSchema( const QString& context_name )
+{
+}
+
+
+void snapbackup::dropContext( const QString& context_name )
+{
+    std::cout << QString("Dropping context [%1]...").arg(context_name);
+    QCassandraQuery q;
+    q.query( QString("DROP KEYSPACE IF EXISTS %1").arg(context_name) );
+    q.start( false );
+    while( !q.isReady() )
+    {
+        sleep(1);
+    }
+    q.getQueryResult();
+    q.end();
+}
+
+
+void snapbackup::dumpContext()
 {
     QSqlDatabase db( QSqlDatabase::database() );
     if( !db.isOpen() )
@@ -91,12 +112,12 @@ void snapbackup::dumpContext( const int count, const QString& context_name )
     }
 
     db.transaction();
-    storeTables( count, context_name );
+    storeTables( f_opt->get_long("count"), f_opt->get_string("context_name") );
     db.commit();
 }
 
 
-void snapbackup::restoreContext( const QString& context_name )
+void snapbackup::restoreContext()
 {
     QSqlDatabase db( QSqlDatabase::database() );
     if( !db.isOpen() )
@@ -104,7 +125,12 @@ void snapbackup::restoreContext( const QString& context_name )
         throw std::runtime_error( "SQLite database not opened!" );
     }
 
-    restoreTables( context_name );
+    if( f_opt->is_defined("drop-context-first") )
+    {
+        dropContext( f_opt->get_string("context_name").c_str() );
+    }
+
+    restoreTables( f_opt->get_string("context_name") );
 }
 
 

@@ -420,9 +420,9 @@ install(
 #################################################################################
 ## Other tools found in sub-directories
 ##
-add_subdirectory( snapdb )
+add_subdirectory( snapdb      )
 add_subdirectory( snapdbproxy )
-add_subdirectory( snaplock )
+add_subdirectory( snaplock    )
 
 
 # vim: ts=4 sw=4 et

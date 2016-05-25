@@ -71,14 +71,29 @@ enable_language( C )
 ##
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
+if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
+    message("Debug is in effect for snapbackup!")
+    add_definitions( -DDEBUG -D_DEBUG -DCONTROLLED_VARS_DEBUG )
+else()
+    message("Debug is turned OFF for snapbackup.")
+    add_definitions( -DNDEBUG )
+endif()
+# A few extra warnings specifically for snapwebsites libraries and tools
+# You can also play with -Weffc++ although we are definitively not compliant
+# (especially we do not define all the auto-initialized variables!)
+# -Wconversion -- would be nice, a few things are still not cooperating with that one
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept" )
+set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv"                       )
+
 find_package( AdvGetOpt          REQUIRED )
 #find_package( Boost              REQUIRED )
 find_package( ControlledVars     REQUIRED )
 #find_package( OpenSSL            REQUIRED )
-
 find_package( Qt5Core            REQUIRED )
 find_package( Qt5Network         REQUIRED )
 find_package( Qt5Sql             REQUIRED )
+find_package( QtCassandra        REQUIRED )
+find_package( SnapCMakeModules   REQUIRED )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
@@ -91,26 +106,6 @@ set( QT_LIBRARIES
     Qt5::Sql
 )
 
-find_package( QtCassandra        REQUIRED )
-find_package( SnapCMakeModules   REQUIRED )
-
-if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
-    message("Debug is in effect for snapbackup!")
-    add_definitions( -DDEBUG -D_DEBUG -DCONTROLLED_VARS_DEBUG )
-else()
-    message("Debug is turned OFF for snapbackup.")
-    add_definitions( -DNDEBUG )
-endif()
-# A few extra warnings specifically for snapwebsites libraries and tools
-# You can also play with -Weffc++ although we are definitively not compliant
-# (especially we do not define all the auto-initialized variables!)
-# -Wconversion -- would be nice, a few things are still not cooperating with that one
-# -DUNISTR_FROM_STRING_EXPLICIT=explicit is for the Unicode library, to make sure it does not copy strings arounds automatically
-# -DMAGICKCORE_QUANTUM_DEPTH=16 is the default depth, newer versions of ImageMagick require that definition from you (no internal default)
-# -DMAGICKCORE_HDRI_ENABLE=0 is also the default for ImageMagick; I'm not too sure what HDRI stands for though...
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
-set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
-
 include_directories(
     ${ADVGETOPT_INCLUDE_DIRS}
     ${QTCASSANDRA_INCLUDE_DIRS}
@@ -122,7 +117,7 @@ include_directories(
 ##
 ## Compiling
 ##
-add_subdirectory(src)           # Actual Snap! Websites server
+add_subdirectory(src)
 
 ##
 ## Code Analysis
@@ -131,21 +126,21 @@ add_subdirectory(src)           # Actual Snap! Websites server
 ## Look into a way to compile everything using the -Weffc++ flag because that
 ## gives us many interesting warnings;
 ##
-add_custom_target(snap_code_analysis
-    COMMAND mkdir -p ${PROJECT_BINARY_DIR}/analysis
-    # Count things and report potential problems with different classes
-    COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"
-    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
-    # Boost inspect tool that reports various problems
-    COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/analysis/inspect.html"
-    COMMAND inspect -tab -crlf -end -path_name -ascii -minmax -assert_macro -deprecated_macro -unnamed -link -copyright >"${PROJECT_BINARY_DIR}/analysis/inspect.html"
-    # Static analysis of the code
-    COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/analysis/cppcheck.out"
-    COMMAND cppcheck plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
-
-    # All of these are expected to work on source code so make sure we're
-    # in the source code top directory
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-)
+#add_custom_target(snap_code_analysis
+#    COMMAND mkdir -p ${PROJECT_BINARY_DIR}/analysis
+#    # Count things and report potential problems with different classes
+#    COMMAND echo "cccc -- output directory ${PROJECT_BINARY_DIR}/analysis/cccc -- and errors saved in ${PROJECT_BINARY_DIR}/analysis/cccc.output"
+#    COMMAND cccc --lang=c++ --html_outfile=${PROJECT_BINARY_DIR}/analysis/cccc/index.html --outdir=${PROJECT_BINARY_DIR}/analysis/cccc src/*.cpp plugins/*/*.cpp plugins/*/*.h >${PROJECT_BINARY_DIR}/analysis/cccc.output 2>&1
+#    # Boost inspect tool that reports various problems
+#    COMMAND echo "inspect -- output ${PROJECT_BINARY_DIR}/analysis/inspect.html"
+#    COMMAND inspect -tab -crlf -end -path_name -ascii -minmax -assert_macro -deprecated_macro -unnamed -link -copyright >"${PROJECT_BINARY_DIR}/analysis/inspect.html"
+#    # Static analysis of the code
+#    COMMAND echo "cppcheck -- output ${PROJECT_BINARY_DIR}/analysis/cppcheck.out"
+#    COMMAND cppcheck plugins src tests >"${PROJECT_BINARY_DIR}/analysis/cppcheck.out" 2>&1
+#
+#    # All of these are expected to work on source code so make sure we're
+#    # in the source code top directory
+#    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+#)
 
 # vim: ts=4 sw=4 et nocindent

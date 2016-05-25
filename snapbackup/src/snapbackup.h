@@ -3,12 +3,7 @@
  *      snapbackup.h
  *
  * Description:
- *      Reads and describes a Snap database. This ease checking out the
- *      current content of the database as the cassandra-cli tends to
- *      show everything in hexadecimal number which is quite unpractical.
- *      Now we do it that way for runtime speed which is much more important
- *      than readability by humans, but we still want to see the data in an
- *      easy practical way which this tool offers.
+ * 	    Dumps and restores the "snap_websites" context to/from a SQLite database.
  *
  * License:
  *      Copyright (c) 2012-2016 Made to Order Software Corp.
@@ -36,25 +31,36 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// 3rd party libs
+// Snap suppot libs
 //
+#include <advgetopt/advgetopt.h>
 #include <QtCassandra/QCassandraQuery.h>
 
-#include <QtCore>
-
+// 3rd party libs
+//
+#include <QString>
 #include <memory>
+
+typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
 class snapbackup
 {
 public:
-    snapbackup();
+    snapbackup( getopt_ptr_t opt );
 
-    void connectToCassandra( const QString& host, const int port );
+    void connectToCassandra();
 
-    void dumpContext( const int count, const QString& context_name );
-    void restoreContext( const QString& context_name );
+    void dumpContext();
+    void restoreContext();
 
+private:
     QtCassandra::QCassandraSession::pointer_t f_session;
+    getopt_ptr_t							  f_opt;
+
+    void storeSchema( const QString& context_name );
+    void dropContext( const QString& context_name );
+    void storeTables( const int count, const QString& context_name );
+    void restoreTables( const QString& context_name );
 };
 
 // vim: ts=4 sw=4 et
