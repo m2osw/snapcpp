@@ -1,0 +1,5 @@
+snapmanagercgi (1.0.0) xenial; urgency=high
+
+  * Initial release of packaging for snapmanager.cgi.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 25 May 2016 08:31:39 -0700
