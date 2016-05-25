@@ -1,3 +1,15 @@
+libsnapwebsites (1.0.0.6~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 24 May 2016 03:02:03 -0700
+
+libsnapwebsites (1.0.0.5~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 23 May 2016 16:26:31 -0700
+
 libsnapwebsites (1.0.0.4~trusty) trusty; urgency=high
 
   * Nightly build.
