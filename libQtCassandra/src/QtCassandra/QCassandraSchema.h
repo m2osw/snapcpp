@@ -47,36 +47,67 @@ namespace QtCassandra
 namespace QCassandraSchema
 {
 
+enum class column_type_t
+{
+    TypeUnknown    ,
+    TypeCustom     ,
+    TypeDecimal    ,
+    TypeLast_entry ,
+    TypeUdt        ,
+    TypeList       ,
+    TypeSet        ,
+    TypeTuple      ,
+    TypeMap        ,
+    TypeBlob       ,
+    TypeBoolean    ,
+    TypeFloat      ,
+    TypeDouble     ,
+    TypeTinyInt    ,
+    TypeSmallInt   ,
+    TypeInt        ,
+    TypeVarint     ,
+    TypeBigint     ,
+    TypeCounter    ,
+    TypeAscii      ,
+    TypeDate       ,
+    TypeText       ,
+    TypeTime       ,
+    TypeTimestamp  ,
+    TypeVarchar    ,
+    TypeUuid       ,
+    TypeTimeuuid   ,
+    TypeInet
+};
 
 class SessionMeta
-    : public std::enable_shared_from_this<SessionMeta>
+        : public std::enable_shared_from_this<SessionMeta>
 {
 public:
     typedef std::shared_ptr<SessionMeta>        pointer_t;
     typedef std::map<QString, pointer_t>        map_t;
 
     class KeyspaceMeta
-        : public std::enable_shared_from_this<KeyspaceMeta>
+            : public std::enable_shared_from_this<KeyspaceMeta>
     {
     public:
         typedef std::shared_ptr<KeyspaceMeta>       pointer_t;
         typedef std::map<QString, pointer_t>        map_t;
 
         class TableMeta
-            : public std::enable_shared_from_this<TableMeta>
+                : public std::enable_shared_from_this<TableMeta>
         {
         public:
             typedef std::shared_ptr<TableMeta>          pointer_t;
             typedef std::map<QString, pointer_t>        map_t;
 
             class ColumnMeta
-                : public std::enable_shared_from_this<ColumnMeta>
+                    : public std::enable_shared_from_this<ColumnMeta>
             {
             public:
                 typedef std::shared_ptr<ColumnMeta>         pointer_t;
                 typedef std::map<QString, pointer_t>        map_t;
 
-                enum type_t {
+                enum class type_t {
                     TypeRegular,
                     TypePartitionKey,
                     TypeClusteringKey,
@@ -84,10 +115,11 @@ public:
                     TypeCompactValue
                 };
 
-                                                ColumnMeta( TableMeta::pointer_t tbl = TableMeta::pointer_t() );
+                ColumnMeta( TableMeta::pointer_t tbl = TableMeta::pointer_t() );
 
                 const QString&                  getName() const;
                 type_t                          getType() const;
+                column_type_t                   getColumnType() const;
                 const Value::map_t&             getFields() const;
                 Value::map_t&                   getFields();
 
@@ -96,16 +128,19 @@ public:
                 void                            encodeColumnMeta(QCassandraEncoder& encoded) const;
                 void                            decodeColumnMeta(const QCassandraDecoder& decoder);
 
+                QString						    getCqlString() const;
+
             private:
                 friend class SessionMeta;
 
                 TableMeta::pointer_t            f_table;
                 QString                         f_name;
                 Value::map_t                    f_fields;
-                type_t                          f_type = TypeRegular;
+                type_t                          f_type       = type_t::TypeRegular;
+                column_type_t                   f_columnType = column_type_t::TypeUnknown;
             };
 
-                                            TableMeta( KeyspaceMeta::pointer_t kysp = KeyspaceMeta::pointer_t() );
+            TableMeta( KeyspaceMeta::pointer_t kysp = KeyspaceMeta::pointer_t() );
 
             const QString&                  getName()   const;
             const Value::map_t&             getFields() const;
@@ -118,6 +153,8 @@ public:
             void                            encodeTableMeta(QCassandraEncoder& encoded) const;
             void                            decodeTableMeta(const QCassandraDecoder& decoder);
 
+            QString						    getCqlString() const;
+
         private:
             friend class SessionMeta;
 
@@ -127,7 +164,7 @@ public:
             ColumnMeta::map_t               f_columns;
         };
 
-                                        KeyspaceMeta( SessionMeta::pointer_t session_meta = SessionMeta::pointer_t() );
+        KeyspaceMeta( SessionMeta::pointer_t session_meta = SessionMeta::pointer_t() );
 
         QCassandraSession::pointer_t    session() const;
 
@@ -142,6 +179,8 @@ public:
         void                            encodeKeyspaceMeta(QCassandraEncoder& encoded) const;
         void                            decodeKeyspaceMeta(const QCassandraDecoder& decoder);
 
+        QString						    getCqlString() const;
+
     private:
         friend class SessionMeta;
 
@@ -151,8 +190,8 @@ public:
         TableMeta::map_t                f_tables;
     };
 
-                                    SessionMeta( QCassandraSession::pointer_t session = QCassandraSession::pointer_t() );
-                                    ~SessionMeta();
+    SessionMeta( QCassandraSession::pointer_t session = QCassandraSession::pointer_t() );
+    ~SessionMeta();
 
     static pointer_t                create( QCassandraSession::pointer_t session );
     void                            loadSchema();
