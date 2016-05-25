@@ -405,10 +405,9 @@ bool snap_cgi::verify()
         char const * user_agent(getenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
         if(user_agent == nullptr)
         {
-            // this should NEVER happen because without a path after the method
-            // we probably do not have our snap.cgi run anyway...
+            // the Agent: ... field is required
             //
-            error("400 Bad Request", "The path to the page you want to read must be specified.", nullptr);
+            error("400 Bad Request", "The accessing agent must be specified.", nullptr);
             snap::server::block_ip(remote_addr, "month");
             return false;
         }
@@ -422,15 +421,15 @@ bool snap_cgi::verify()
             ++user_agent;
         }
 
-        // if we receive this, someone tried to directly access our snap.cgi
-        // which will not work right so better err immediately
+        // if we receive this, someone tried to directly access our
+        // snap.cgi, which will not work right so better err immediately
         //
         if(*user_agent == '\0'
         || (*user_agent == '-' && user_agent[1] == '\0')
         || strcasestr(user_agent, "ZmEu") != nullptr)
         {
             // note that we consider "-" as empty for this test
-            error("400 Bad Request", nullptr, "The HTTP_USER_AGENT cannot be empty.");
+            error("400 Bad Request", nullptr, "The agent string cannot be empty.");
             snap::server::block_ip(remote_addr, "month");
             return false;
         }
@@ -447,8 +446,8 @@ int snap_cgi::process()
     char const * request_method( getenv("REQUEST_METHOD") );
     if(request_method == nullptr)
     {
-        // the method was already checked in the validate, before this
-        // call so it should always be defined...
+        // the method was already checked in verify(), before this
+        // call so it should always be defined here...
         //
         SNAP_LOG_FATAL("Method not defined in REQUEST_METHOD.");
         std::string body("<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>");
