@@ -304,15 +304,28 @@ QString SessionMeta::KeyspaceMeta::getCqlString() const
 {
     QStringList cql;
     cql << QString("CREATE KEYSPACE IF NOT EXISTS %1").arg(f_name);
-    cql << "WITH replication =";
-    cql << f_fields.at("replication").output();
-    cql << "AND durable_writes = " + f_fields.at("durable_writes").output();
-    cql << "";
+
+    QString sep("\tWITH");
+    for( auto field : f_fields )
+    {
+        if( field.first == "keyspace_name" ) continue;
+
+        cql << QString("%1 %2 = %3")
+               .arg(sep)
+               .arg(field.first)
+               .arg(field.second.output())
+               ;
+
+        sep = "\tAND";
+    }
+
+    cql << "\t;\n";
 
     for( auto table : f_tables )
     {
         cql << table.second->getCqlString();
     }
+    cql << "";
 
     return cql.join('\n');
 }
@@ -544,21 +557,48 @@ void SessionMeta::KeyspaceMeta::TableMeta::decodeTableMeta(const QCassandraDecod
 QString SessionMeta::KeyspaceMeta::TableMeta::getCqlString() const
 {
     QStringList cql;
-    cql << QString("CREATE TABLE IF NOT EXISTS %1.%2")
+    cql << QString("CREATE TABLE IF NOT EXISTS %1.%2 (")
            .arg(f_keyspace->getName())
            .arg(f_name);
 
+    QString partition_key;
+    QString clustering;
     for( auto column : f_columns )
     {
-        cql << column.second->getCqlString();
+        cql <<  QString("\t%1,")
+                .arg(column.second->getCqlString())
+                ;
+
+        const QString kind( column.second->getFields()["kind"].variant().toString() );
+        if( kind == "partition_key" )
+        {
+            partition_key = column.first;
+        }
+        else if( kind == "clustering" )
+        {
+            clustering = column.first;
+        }
     }
 
-#if 0
-    cql << "WITH replication =";
-    cql << f_fields["replication"].output();
-    cql << "AND durable_writes = " + f_fields["durable_writes"].output();
-    cql << "";
-#endif
+    cql << QString("\tPRIMARY KEY (%1, %2)")
+           .arg(partition_key)
+           .arg(clustering)
+           ;
+    cql << ") WITH COMPACT STORAGE";
+
+    for( auto field : f_fields )
+    {
+        if( field.first == "flags"         ) continue;
+        if( field.first == "keyspace_name" ) continue;
+        if( field.first == "table_name"    ) continue;
+
+        cql << QString("\tAND %1 = %2")
+               .arg(field.first)
+               .arg(field.second.output())
+               ;
+    }
+
+    cql << "\t;\n";
     return cql.join('\n');
 }
 
@@ -581,8 +621,10 @@ const QString&
 
 QString SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getCqlString() const
 {
-    // TODO
-    return QString();
+    return QString("%1 %2")
+            .arg(f_name)
+            .arg(f_fields.at("type").variant().toString())
+            ;
 }
 
 

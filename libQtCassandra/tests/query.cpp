@@ -95,7 +95,7 @@ void QueryTest::describeSchema()
     if( snap_iter == keyspaces.end() )
     {
         std::cerr << "snap_websites keyspace has not been created, so ignoring test."
-                 << std::endl;
+                  << std::endl;
         return;
     }
 
@@ -132,6 +132,9 @@ void QueryTest::describeSchema()
             }
         }
     }
+
+    std::cout << "CQL Schema output:" << std::endl;
+    std::cout << kys->getCqlString();
 }
 
 
@@ -364,15 +367,11 @@ int main( int argc, char *argv[] )
     {
         QueryTest test( host );
         test.describeSchema();
-#if 0
-        // Temporarily remarked out while I figure out how to parse
-        // column fields
         test.dropSchema();
         test.createSchema();
         test.simpleInsert();
         test.simpleSelect();
         test.largeTableTest();
-#endif
     }
     catch( const std::exception& ex )
     {
