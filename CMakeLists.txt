@@ -129,6 +129,14 @@ ConfigureMakeProject( PROJECT_NAME libsnapwebsites
 #    DEPENDS advgetopt libQtCassandra snapCMakeModules
 #)
 
+ConfigureMakeProject( PROJECT_NAME snapmanagercgi
+    CONFIG_ARGS
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    DEPENDS advgetopt libsnapwebsites
+)
+
 ConfigureMakeProject( PROJECT_NAME snapwebsites
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include

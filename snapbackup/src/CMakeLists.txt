@@ -38,8 +38,8 @@ project(snapbackup)
 add_executable(${PROJECT_NAME}
     snap_table_list.cpp
     snap_table_list.h
-    sql_backup_restore.cpp
-    sql_backup_restore.h
+    snapbackup.cpp
+    snapbackup.h
     main.cpp
 )
 
