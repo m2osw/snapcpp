@@ -36,12 +36,15 @@
  */
 
 #include "QtCassandra/QCassandraQuery.h"
+#include "QtCassandra/QCassandraSchema.h"
+#include "QStringStream.h"
 #include <QtCore>
 
 #include <exception>
 #include <iostream>
 
 using namespace QtCassandra;
+using namespace QCassandraSchema;
 
 class QueryTest
 {
@@ -49,7 +52,7 @@ public:
     QueryTest( const QString& host );
     ~QueryTest();
 
-    void describeTest();
+    void describeSchema();
 
     void createSchema();
     void dropSchema();
@@ -82,16 +85,52 @@ QueryTest::~QueryTest()
 }
 
 
-void QueryTest::describeTest()
+void QueryTest::describeSchema()
 {
-    // ONLY for debugging purposes--not called normall as this causes a Syntax Error.
-    QCassandraQuery q( f_session );
-    q.query( "DESCRIBE KEYSPACES" );
-    q.start();
-    while( q.nextRow() )
+    SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
+    sm->loadSchema();
+
+    const auto& keyspaces( sm->getKeyspaces() );
+    auto snap_iter = keyspaces.find("snap_websites");
+    if( snap_iter == keyspaces.end() )
     {
-        const std::string text = q.getStringColumn( 0 ).toStdString();
-        std::cout << text << std::endl;
+        std::cerr << "snap_websites keyspace has not been created, so ignoring test."
+                 << std::endl;
+        return;
+    }
+
+    std::cout << "Keyspace fields:" << std::endl;
+    auto kys( snap_iter->second );
+    for( auto field : kys->getFields() )
+    {
+        std::cout << field.first << ": "
+                  << field.second.output()
+                  << std::endl;
+    }
+
+    std::cout << std::endl << "Tables: " << std::endl;
+    for( auto table : kys->getTables() )
+    {
+        std::cout << table.first << ": "
+                  << std::endl;
+
+        std::cout << "\tFields:" << std::endl;
+        for( auto field : table.second->getFields() )
+        {
+            std::cout << "\t\t" << field.first << ": " << field.second.output() << std::endl;
+        }
+
+        std::cout << std::endl;
+        std::cout << "\tColumns:" << std::endl;
+        for( auto column : table.second->getColumns() )
+        {
+            std::cout << "\t\t" << column.first << ": " << std::endl;
+            for( auto field : column.second->getFields() )
+            {
+                std::cout << "\t\t\t" << field.first << ": " << std::endl;
+                std::cout << "\t\t\t\t" << field.second.output() << std::endl;
+            }
+        }
     }
 }
 
@@ -324,12 +363,16 @@ int main( int argc, char *argv[] )
     try
     {
         QueryTest test( host );
-        //test.describeTest();
+        test.describeSchema();
+#if 0
+        // Temporarily remarked out while I figure out how to parse
+        // column fields
         test.dropSchema();
         test.createSchema();
         test.simpleInsert();
         test.simpleSelect();
         test.largeTableTest();
+#endif
     }
     catch( const std::exception& ex )
     {
