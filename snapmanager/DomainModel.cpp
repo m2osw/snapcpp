@@ -40,7 +40,7 @@ void DomainModel::doQuery()
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
 
-    auto q = std::make_shared<QCassandraQuery>(f_session);
+    auto q = QCassandraQuery::create(f_session);
     q->query(
         QString("SELECT DISTINCT key FROM %1.%2")
             .arg(context_name)

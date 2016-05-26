@@ -396,7 +396,7 @@ void snapdbproxy_connection::kill()
 }
 
 
-void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery * q, QtCassandra::QCassandraOrder const & order)
+void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery::pointer_t q, QtCassandra::QCassandraOrder const & order)
 {
     size_t const count(order.parameterCount());
 
@@ -430,12 +430,12 @@ void snapdbproxy_connection::send_order(QtCassandra::QCassandraQuery * q, QtCass
 void snapdbproxy_connection::declare_cursor(QtCassandra::QCassandraOrder const & order)
 {
     cursor_t cursor;
-    cursor.f_query = std::make_shared<QtCassandra::QCassandraQuery>(f_session);
+    cursor.f_query = QtCassandra::QCassandraQuery::create(f_session);
     cursor.f_column_count = order.columnCount();
 
     // in this case we have to keep the query so we allocate it
     //
-    send_order(cursor.f_query.get(), order);
+    send_order(cursor.f_query, order);
 
     QtCassandra::QCassandraOrderResult result;
     QByteArray cursor_index;
@@ -576,18 +576,18 @@ void snapdbproxy_connection::close_cursor(QtCassandra::QCassandraOrder const & o
 
 void snapdbproxy_connection::read_data(QtCassandra::QCassandraOrder const & order)
 {
-    QtCassandra::QCassandraQuery q( f_session );
-    send_order(&q, order);
+    auto q( QtCassandra::QCassandraQuery::create( f_session ) );
+    send_order(q, order);
 
     QtCassandra::QCassandraOrderResult result;
 
-    if( q.nextRow() )
+    if( q->nextRow() )
     {
         // the list of columns may vary so we get the count
         int const max_columns(order.columnCount());
         for(int idx(0); idx < max_columns; ++idx)
         {
-            result.addResult(q.getByteArrayColumn( idx ));
+            result.addResult(q->getByteArrayColumn( idx ));
         }
     }
 
@@ -626,8 +626,8 @@ void snapdbproxy_connection::execute_command(QtCassandra::QCassandraOrder const 
         order_session = f_session;
     }
 
-    QtCassandra::QCassandraQuery q( order_session );
-    send_order(&q, order);
+    auto q( QtCassandra::QCassandraQuery::create( f_session ) );
+    send_order(q, order);
 
     // success
     QtCassandra::QCassandraOrderResult result;

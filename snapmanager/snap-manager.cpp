@@ -586,12 +586,12 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     }
 
     // read and display the Cassandra information
-    QCassandraQuery q( f_session );
-    q.query( "SELECT cluster_name,native_protocol_version FROM system.local" );
-    q.start();
-    console->addItem("Cluster Name: " + q.getStringColumn("cluster_name"));
-    console->addItem("Protocol Version: " + q.getStringColumn("native_protocol_version"));
-    q.end();
+    auto q = QCassandraQuery::create( f_session );
+    q->query( "SELECT cluster_name,native_protocol_version FROM system.local" );
+    q->start();
+    console->addItem("Cluster Name: " + q->getStringColumn("cluster_name"));
+    console->addItem("Protocol Version: " + q->getStringColumn("native_protocol_version"));
+    q->end();
 
     // read all the contexts so the findContext() works
     SessionMeta::pointer_t meta( SessionMeta::create(f_session) );
@@ -751,7 +751,7 @@ QCassandraQuery::pointer_t snap_manager::createQuery
     )
 {
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-    auto query = std::make_shared<QCassandraQuery>(f_session);
+    auto query = QCassandraQuery::create(f_session);
     query->query( q_str
             .arg(context_name)
             , q_str.count('?')
@@ -766,7 +766,7 @@ QCassandraQuery::pointer_t snap_manager::createQuery
     )
 {
     QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
-    auto query = std::make_shared<QCassandraQuery>(f_session);
+    auto query = QCassandraQuery::create(f_session);
     query->query( q_str
             .arg(context_name)
             .arg(table_name)

@@ -341,14 +341,14 @@ void MainWindow::changeCell(const QModelIndex &index)
                     .arg(f_rowModel.keyspaceName())
                     .arg(f_rowModel.tableName())
                     );
-        QCassandraQuery query( f_session );
-        query.query( q_str, 2 );
-        query.bindByteArray( 0, f_rowModel.rowKey() );
-        query.bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
-        query.start();
+        auto query = QCassandraQuery::create( f_session );
+        query->query( q_str, 2 );
+        query->bindByteArray( 0, f_rowModel.rowKey() );
+        query->bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
+        query->start();
 
         auto doc( f_valueEdit->document() );
-        doc->setPlainText( query.getByteArrayColumn(0).data() );
+        doc->setPlainText( query->getByteArrayColumn(0).data() );
     }
     catch( const std::exception& except )
     {
@@ -376,16 +376,13 @@ void MainWindow::saveValue()
                             .arg(f_rowModel.keyspaceName())
                             .arg(f_rowModel.tableName())
                             );
-                QCassandraQuery query( f_session );
-                query.query( q_str, 3 );
-                query.bindByteArray( 0, doc->toPlainText().toUtf8() );
-                query.bindByteArray( 1, f_rowModel.rowKey() );
-                query.bindByteArray( 2, f_rowModel.data( selected_rows[0], Qt::UserRole ).toByteArray() );
-                query.start();
-                query.end();
-
-                // TODO: handle error... This probably should be run asynchronously;
-                // i.e. query.start( false /*block*/ );
+                auto query = QCassandraQuery::create( f_session );
+                query->query( q_str, 3 );
+                query->bindByteArray( 0, doc->toPlainText().toUtf8() );
+                query->bindByteArray( 1, f_rowModel.rowKey() );
+                query->bindByteArray( 2, f_rowModel.data( selected_rows[0], Qt::UserRole ).toByteArray() );
+                query->start();
+                query->end();
             }
         }
     }
