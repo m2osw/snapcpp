@@ -108,32 +108,63 @@ d) setup NTP; I'm not too sure whether we just want NTP or some other
 	TBD: determine how that works when the master goes down!
 
 
-e) setup a node after you gave it a type (we may want to say that the
+e) setup tincd on computers that have a shared private network like
+   at DigitalOcean. There is a tutotial, from which we did not
+   derive except for the name of the server:
+
+   See https://www.digitalocean.com/community/tutorials/how-to-install-tinc-and-set-up-a-basic-vpn-on-ubuntu-14-04
+
+   See also: https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-16-04
+   Because tinc is not as secure as OpenVPN...
+   (see https://www.tinc-vpn.org/security/ entry here)
+
+
+f) setup a node after you gave it a type (we may want to say that the
    type cannot be changed later, if you need a new type, create a new
    node and don't mess the type this time!)
 
    the type would be one of:
 
-   e.0) snap base: This gets installed on all systems (right now we 
+   f.0) snap base: This gets installed on all systems (right now we 
                    do not yet do that, but that's the long term plan)
 
-        install snapinit, snapcommunicator, snapmanager.cgi, snapwatchdog,
+	install snapinit, snapcommunicator, snapmanager.cgi, snapwatchdog,
 	snapdbproxy, snapfirewall; auto-start all if the database is
 	ready, otherwise avoid the snapdbproxy and snapfirewall (argh!)
 
 	See also SNAP-355
 
-   e.1) front end: install Apache2, snap.cgi, and snap base
+   f.1) front end: install Apache2, snap.cgi, and snap base
 
-        At this point, e.1 and e.2 are on the same computer; once we have
+	At this point, e.1 and e.2 are on the same computer; once we have
 	our own computers and no need for encryption between each server
 	we can have two layers, especially so we can load balance access.
 
-   e.2) snap server: install snapserver and plugins and snap base
+	For Apache2 we need to do a few more things:
 
-        Also see comment in (e.1)
+	f.1.1) allow for the installation of the domain name(s)
 
-   e.3) cassandra node: install Java, Cassandra, and snap base
+	f.1.2) setup SSL certificate(s)
+
+	f.1.3) make sure the necessary modules are enabled:
+	       * ssl
+	       * rewrite (now done in snapcgi.postinst)
+	       * cgi (now done in snapcgi.postinst)
+
+	f.1.4) look into what we want to do in regard to the default sites
+	       in Apache2; the 000-default.conf will give us a default page
+	       says "It works!"--we could change that default page or have
+	       a way to redirect people to the "correct page" (i.e. in our
+	       case, we probably would want to redirect people to
+	       www.m2osw.com or snap.website, however, a redirect in the
+	       default site can be "dangerous" if it fails... because then
+	       you get an infinite loop.)
+
+   f.2) snap server: install snapserver and plugins and snap base
+
+     Also see comment in (e.1)
+
+   f.3) cassandra node: install Java, Cassandra, and snap base
 
      The Java environment from Oracle:
 
@@ -174,14 +205,22 @@ e) setup a node after you gave it a type (we may want to say that the
      http://docs.datastax.com/en/cassandra/3.x/cassandra/install/installDeb.html
 
 
-   e.4) backend node: install snapbackend and snap base
+     Then we need to change the cassandra.yaml file to support
+     a cluster (Snitch & Seeds) and listen on the private address
+     (i.e. 10.0.0.2)
+
+     In the old setup we had tombstones setup at 1 million, but we
+     upgraded to 3.x to avoid that problem...
+
+
+   f.4) backend node: install snapbackend and snap base
 
      For the backends we need a way for the end user to define which
      backends run on that server and which on this server (it could be
      all on all backend servers...)
 
 
-   e.5) other(?): install snap base, allow to install SMTP, NTP, etc.
+   f.5) other(?): install snap base, allow to install SMTP, NTP, etc.
 
 
 
