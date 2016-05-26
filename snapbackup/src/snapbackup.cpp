@@ -40,10 +40,9 @@
 //
 #include "snapbackup.h"
 #include "snap_table_list.h"
-#include "qstring_stream.h"
-#include "dbutils.h"
 
 #include <QtCassandra/QCassandraSchema.h>
+#include <QtCassandra/QStringStream.h>
 
 // 3rd party libs
 //
@@ -57,6 +56,7 @@
 #include <sstream>
 
 using namespace QtCassandra;
+using namespace QCassandraSchema;
 
 snapbackup::snapbackup( getopt_ptr_t opt )
     : f_session( QCassandraSession::create() )
@@ -68,10 +68,17 @@ snapbackup::snapbackup( getopt_ptr_t opt )
 void snapbackup::setSqliteDbFile( const QString& sqlDbFile )
 {
 	QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE" );
+    if( !db.isValid() )
+    {
+        const QString error( "QSQLITE database is not valid for some reason!" );
+        std::cerr << "QSQLITE not valid!!!" << std::endl;
+        throw std::runtime_error( error.toUtf8().data() );
+    }
 	db.setDatabaseName( sqlDbFile );
 	if( !db.open() )
     {
         const QString error( QString("Cannot open SQLite database [%1]!").arg(sqlDbFile) );
+        std::cerr << "QSQLITE not open!!!" << std::endl;
         throw std::runtime_error( error.toUtf8().data() );
     }
 }
@@ -79,58 +86,157 @@ void snapbackup::setSqliteDbFile( const QString& sqlDbFile )
 
 void snapbackup::connectToCassandra()
 {
-    f_session->connect( f_opt->get_string("host"), f_opt->get_long("port") );
+    f_session->connect( f_opt->get_string("host").c_str(), f_opt->get_long("port") );
 }
 
 
 void snapbackup::storeSchema( const QString& context_name )
 {
+    std::cout << "Generating CQL schema blob..." << std::endl;
+    SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
+    sm->loadSchema();
+    const auto& keyspaces( sm->getKeyspaces() );
+    auto snap_iter = keyspaces.find(context_name);
+    if( snap_iter == keyspaces.end() )
+    {
+        throw std::runtime_error(
+                QString("Context '%1' does not exist! Aborting!")
+                .arg(context_name).toUtf8().data()
+                );
+    }
+
+    auto kys( snap_iter->second );
+
+    std::cout << "Creating CQL schema blob table..." << std::endl;
+    QString q_str = "CREATE TABLE IF NOT EXISTS cql_schema_list "
+            "( id INTEGER PRIMARY KEY"
+            ", description TEXT"
+            ", schema_line LONGBLOB"
+            ");"
+            ;
+    QSqlQuery q;
+    q.prepare( q_str );
+    if( !q.exec() )
+    {
+        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+        std::cerr << "query error=[" << q.lastError().text() << "]" << std::endl;
+        throw std::runtime_error( q.lastError().text().toUtf8().data() );
+    }
+
+    std::cout << "Storing schema blob..." << std::endl;
+    const auto& list(kys->getCqlList());
+    for( const auto& line : list )
+    {
+        q_str = "INSERT OR REPLACE INTO cql_schema_list "
+                "(description,schema_line) "
+                "VALUES "
+                "(:description,:schema_line);"
+                ;
+        q.clear();
+        q.prepare( q_str );
+        //
+        if( line == list[0] )
+        {
+            q.bindValue( ":description", "keyspace" );
+        }
+        else
+        {
+            q.bindValue( ":description", "table" );
+        }
+        q.bindValue( ":schema_line", line );
+        //
+        if( !q.exec() )
+        {
+            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+            throw std::runtime_error( q.lastError().text().toUtf8().data() );
+        }
+    }
+}
+
+
+void snapbackup::restoreSchema( const QString& context_name )
+{
+    std::cout << "Restoring CQL schema blob..." << std::endl;
+    const QString q_str( "SELECT description, schema_line FROM cql_schema_list;" );
+    QSqlQuery q;
+    q.prepare( q_str );
+    //
+    if( !q.exec() )
+    {
+        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
+        throw std::runtime_error( q.lastError().text().toUtf8().data() );
+    }
+
+    std::cout << "Creating keyspace '" << context_name << "', and tables." << std::endl;
+    const int desc_idx    = q.record().indexOf("description");
+    const int schema_idx  = q.record().indexOf("schema_line");
+    for( q.first(); q.isValid(); q.next() )
+    {
+        const QString desc( q.value(desc_idx).toString() );
+        const QString schema_string( q.value( schema_idx ).toString() );
+
+        auto cass_query = QCassandraQuery::create( f_session );
+        cass_query->query( schema_string );
+        cass_query->start( false );
+        std::cout << "Creating " << desc;
+        while( !cass_query->isReady() )
+        {
+            std::cout << "." << std::flush;
+            sleep(1);
+        }
+        std::cout << " created!" << std::endl;
+        cass_query->getQueryResult();
+        cass_query->end();
+    }
+
+    std::cout << std::endl << "Database creation finished!" << std::endl;
 }
 
 
 void snapbackup::dropContext( const QString& context_name )
 {
-    std::cout << QString("Dropping context [%1]...").arg(context_name);
-    QCassandraQuery q;
-    q.query( QString("DROP KEYSPACE IF EXISTS %1").arg(context_name) );
-    q.start( false );
-    while( !q.isReady() )
+    std::cout << QString("Dropping context [%1]...").arg(context_name) << std::endl;
+    auto q( QCassandraQuery::create(f_session) );
+    q->query( QString("DROP KEYSPACE IF EXISTS %1").arg(context_name) );
+    q->start( false );
+    std::cout << "Please wait...";
+    while( !q->isReady() )
     {
+        std::cout << "." << std::flush;
         sleep(1);
     }
-    q.getQueryResult();
-    q.end();
+    q->getQueryResult();
+    q->end();
+
+    std::cout << std::endl << "Context successfully dropped!" << std::endl;
 }
 
 
 void snapbackup::dumpContext()
 {
-    QSqlDatabase db( QSqlDatabase::database() );
-    if( !db.isOpen() )
-    {
-        throw std::runtime_error( "SQLite database not opened!" );
-    }
+    setSqliteDbFile( f_opt->get_string("dump-context").c_str() );
 
+    auto db( QSqlDatabase::database() );
     db.transaction();
-    storeTables( f_opt->get_long("count"), f_opt->get_string("context_name") );
+    const QString context_name( f_opt->get_string("context-name").c_str() );
+    storeSchema( context_name );
+    storeTables( f_opt->get_long("count"), context_name );
     db.commit();
 }
 
 
 void snapbackup::restoreContext()
 {
-    QSqlDatabase db( QSqlDatabase::database() );
-    if( !db.isOpen() )
-    {
-        throw std::runtime_error( "SQLite database not opened!" );
-    }
+    setSqliteDbFile( f_opt->get_string("restore-context").c_str() );
 
+    const QString context_name( f_opt->get_string("context-name").c_str() );
     if( f_opt->is_defined("drop-context-first") )
     {
-        dropContext( f_opt->get_string("context_name").c_str() );
+        dropContext( context_name );
     }
 
-    restoreTables( f_opt->get_string("context_name") );
+    restoreSchema( context_name );
+    restoreTables( context_name );
 }
 
 
@@ -170,8 +276,30 @@ void snapbackup::storeTables( const int count, const QString& context_name )
 {
     snapTableList   dump_list;
 
-    for( auto const & table_name : dump_list.tablesToDump() )
+    SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
+    sm->loadSchema();
+    const auto& keyspaces( sm->getKeyspaces() );
+    auto snap_iter = keyspaces.find(context_name);
+    if( snap_iter == keyspaces.end() )
     {
+        throw std::runtime_error(
+                QString("Context '%1' does not exist! Aborting!")
+                .arg(context_name).toUtf8().data()
+                );
+    }
+
+    auto kys( snap_iter->second );
+    auto tables_to_ignore( dump_list.tablesToIgnore() );
+
+    for( auto table : kys->getTables() )
+    {
+        const auto table_name( table.first );
+
+        if( tables_to_ignore.contains(table_name) )
+        {
+            continue;
+        }
+
         QString q_str = QString( "CREATE TABLE IF NOT EXISTS %1 "
                 "( id INTEGER PRIMARY KEY"
                 ", key LONGBLOB"
@@ -229,8 +357,30 @@ void snapbackup::restoreTables( const QString& context_name )
 {
     snapTableList   dump_list;
 
-    for( auto const & table_name : dump_list.tablesToDump() )
+    SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
+    sm->loadSchema();
+    const auto& keyspaces( sm->getKeyspaces() );
+    auto snap_iter = keyspaces.find(context_name);
+    if( snap_iter == keyspaces.end() )
     {
+        throw std::runtime_error(
+                QString("Context '%1' does not exist! Aborting!")
+                .arg(context_name).toUtf8().data()
+                );
+    }
+
+    auto kys( snap_iter->second );
+    auto tables_to_ignore( dump_list.tablesToIgnore() );
+
+    for( auto table : kys->getTables() )
+    {
+        const auto table_name( table.first );
+
+        if( tables_to_ignore.contains(table_name) )
+        {
+            continue;
+        }
+
         std::cout << "Restoring table [" << table_name << "]" << std::endl;
 
         const QString sql_select_string ("SELECT key,column1,value FROM %1");

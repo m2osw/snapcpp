@@ -35,6 +35,9 @@
 ##
 project(snapbackup)
 
+set( SNAPBACKUP_VERSION_STRING "${SNAPBACKUP_VERSION_MAJOR}.${SNAPBACKUP_VERSION_MINOR}.${SNAPBACKUP_VERSION_PATCH}" )
+add_definitions( -DSNAPBACKUP_VERSION_STRING="${SNAPBACKUP_VERSION_STRING}" )
+
 add_executable(${PROJECT_NAME}
     snap_table_list.cpp
     snap_table_list.h

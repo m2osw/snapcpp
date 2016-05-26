@@ -46,8 +46,6 @@
 
 snapTableList::snapTableList()
     //: f_tableName  -- auto-init
-    //, f_canDrop    -- auto-init
-    //, f_canDump    -- auto-init
     //, f_rowsToDump -- auto-init
 {
 }
@@ -56,70 +54,36 @@ void snapTableList::initList()
 {
     if( f_list.isEmpty() )
     {
-        // Set up defaults
+        // Ignore these tables by default
         //
-        addEntry("antihammering"           , true,  false );
-        addEntry("backend"                 , true,  false );
-        addEntry("branch"                  , true,  true  );
-        addEntry("cache"                   , true,  false );
-        addEntry("content"                 , true,  true  );
-        addEntry("domains"                 , false, true  );
-        addEntry("emails"                  , true,  true  );
-        addEntry("epayment_paypal"         , true,  true  );
-        addEntry("files"                   , true,  true  );
-        addEntry("firewall"                , true,  false );
-        addEntry("layout"                  , true,  true  );
-        addEntry("lock_table"              , false, true  );
-        addEntry("links"                   , true,  true  );
-        addEntry("list"                    , true,  false );
-        addEntry("listref"                 , true,  true  );
-        addEntry("password"                , true,  true  );
-        addEntry("processing"              , true,  true  );
-        addEntry("revision"                , true,  true  );
-        addEntry("secret"                  , true,  true  );
-        addEntry("serverstats"             , true,  false );
-        addEntry("sessions"                , true,  true  );
-        addEntry("shorturl"                , true,  true  );
-        addEntry("sites"                   , true,  true  );
-        addEntry("test_results"            , true,  false );
-        addEntry("tracker"                 , true,  false );
-        addEntry("users"                   , true,  true  );
-        addEntry("websites"                , false, true  );
-
-        f_list["lock_table"].f_rowsToDump << "hosts";
+        addEntry( "antihammering" );
+        addEntry( "backend"       );
+        addEntry( "cache"         );
+        addEntry( "firewall"      );
+        addEntry( "list"          );
+        addEntry( "serverstats"   );
+        addEntry( "test_results"  );
+        addEntry( "tracker"       );
     }
 }
 
 void snapTableList::overrideTablesToDump( const QStringList& tables_to_dump )
 {
-    for( auto & entry : f_list )
-    {
-        entry.f_canDump = false;
-    }
-
     for( auto const & table_name : tables_to_dump )
     {
-        f_list[table_name].f_canDump = true;
+        auto iter(f_list.find(table_name));
+        if( iter != f_list.end() )
+        {
+            f_list.erase(iter);
+        }
     }
 }
 
-QStringList snapTableList::tablesToDrop()
+QStringList snapTableList::snapTableList::tablesToIgnore()
 {
     QStringList the_list;
     for( auto const & entry : f_list )
     {
-        if( !entry.f_canDrop ) continue;
-        the_list << entry.f_tableName;
-    }
-    return the_list;
-}
-
-QStringList snapTableList::snapTableList::tablesToDump()
-{
-    QStringList the_list;
-    for( auto const & entry : f_list )
-    {
-        if( !entry.f_canDump ) continue;
         the_list << entry.f_tableName;
     }
     return the_list;
@@ -128,17 +92,14 @@ QStringList snapTableList::snapTableList::tablesToDump()
 bool snapTableList::canDumpRow( const QString& table_name, const QString& row_name )
 {
     const auto& entry(f_list[table_name]);
-    if( !entry.f_canDump )              return false;
     if( entry.f_rowsToDump.isEmpty() )  return true;
     return entry.f_rowsToDump.contains( row_name );
 }
 
-void snapTableList::addEntry( const QString& name, const bool can_drop, const bool can_dump )
+void snapTableList::addEntry( const QString& name )
 {
     snapTableList entry;
     entry.f_tableName = name;
-    entry.f_canDrop = can_drop;
-    entry.f_canDump = can_dump;
     f_list[name] = entry;
 }
 

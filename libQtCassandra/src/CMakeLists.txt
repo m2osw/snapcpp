@@ -64,6 +64,7 @@ set( HEADER_FILES
     QtCassandra/QCassandraTable.h
     QtCassandra/QCassandraValue.h
     QtCassandra/QCassandraVersion.h.in
+    QtCassandra/QStringStream.h
     QtCassandra/QueryModel.h
     ${PROJECT_BINARY_DIR}/QtCassandra/QCassandraVersion.h
 )

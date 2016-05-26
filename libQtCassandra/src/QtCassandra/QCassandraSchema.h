@@ -128,7 +128,7 @@ public:
                 void                            encodeColumnMeta(QCassandraEncoder& encoded) const;
                 void                            decodeColumnMeta(const QCassandraDecoder& decoder);
 
-                QString						    getCqlString() const;
+                QString     					getCqlString() const;
 
             private:
                 friend class SessionMeta;
@@ -153,7 +153,7 @@ public:
             void                            encodeTableMeta(QCassandraEncoder& encoded) const;
             void                            decodeTableMeta(const QCassandraDecoder& decoder);
 
-            QString						    getCqlString() const;
+            QString      					getCqlString() const;
 
         private:
             friend class SessionMeta;
@@ -179,7 +179,7 @@ public:
         void                            encodeKeyspaceMeta(QCassandraEncoder& encoded) const;
         void                            decodeKeyspaceMeta(const QCassandraDecoder& decoder);
 
-        QString						    getCqlString() const;
+        QStringList						getCqlList() const;
 
     private:
         friend class SessionMeta;

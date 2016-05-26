@@ -57,7 +57,12 @@ private:
     QtCassandra::QCassandraSession::pointer_t f_session;
     getopt_ptr_t							  f_opt;
 
+    void setSqliteDbFile( const QString& sqlDbFile );
+    void appendRowsToSqliteDb( QtCassandra::QCassandraQuery& cass_query, const QString& table_name );
+
     void storeSchema( const QString& context_name );
+    void restoreSchema( const QString& context_name );
+
     void dropContext( const QString& context_name );
     void storeTables( const int count, const QString& context_name );
     void restoreTables( const QString& context_name );

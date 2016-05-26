@@ -40,7 +40,10 @@
 
 #include "snapbackup.h"
 
+#include <QCoreApplication>
+
 #include <exception>
+#include <iostream>
 
 namespace
 {
@@ -53,7 +56,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         nullptr,
         nullptr,
-        "Usage: %p [-<opt>] [table [row]]",
+        "Usage: %p [-<opt>]",
         advgetopt::getopt::help_argument
     },
     {
@@ -74,7 +77,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
     },
     {
         'n',
-        0,
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "context-name",
         "snap_websites",
         "name of the context (or keyspace) to dump/restore (defaults to 'snap_websites')",
@@ -82,7 +85,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
     },
     {
         'd',
-        0,
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "dump-context",
         nullptr,
         "dump the snapwebsites context to SQLite database",
@@ -90,7 +93,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
     },
     {
         'T',
-        0,
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "tables",
         nullptr,
         "specify the list of tables to dump to SQLite database, or restore from SQLite to Cassandra",
@@ -98,7 +101,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
     },
     {
         'r',
-        0,
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "restore-context",
         nullptr,
         "restore the snapwebsites context from SQLite database (requires confirmation)",
@@ -106,7 +109,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
     },
     {
         '\0',
-        0,
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "drop-context-first",
         nullptr,
         "before restoring, drop the snap_websites keyspace first",
@@ -114,15 +117,15 @@ const advgetopt::getopt::option g_snapbackup_options[] =
     },
     {
         'c',
-        0,
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "count",
-        nullptr,
-        "specify the number of rows to display",
+        "100",
+        "specify the page size in rows (default 100)",
         advgetopt::getopt::optional_argument
     },
     {
         '\0',
-        0,
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "yes-i-know-what-im-doing",
         nullptr,
         "Force the dropping of context and overwriting of database, without warning and stdin prompt. Only use this if you know what you're doing!",
@@ -140,7 +143,7 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         'p',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "port",
-        9042,
+        "9042",
         "port on the host to connect to (defaults to 9042)",
         advgetopt::getopt::optional_argument
     },
@@ -190,11 +193,19 @@ int main(int argc, char *argv[])
 {
     int retval = 0;
 
+    QCoreApplication app(argc, argv);
+    app.setApplicationName   ( "snapbackup"              );
+    app.setApplicationVersion( SNAPBACKUP_VERSION_STRING );
+    app.setOrganizationDomain( "snapwebsites.org"        );
+    app.setOrganizationName  ( "M2OSW"                   );
+
     try
     {
-        getopt_ptr_t opt( new advgetopt::getopt( argc, argv, g_snapbackup_options, g_configuration_files, nullptr );
+        getopt_ptr_t opt( new advgetopt::getopt( argc, argv, g_snapbackup_options, g_configuration_files, nullptr ) );
 
         snapbackup  s(opt);
+        s.connectToCassandra();
+
         if( opt->is_defined("dump-context") )
         {
             s.dumpContext();

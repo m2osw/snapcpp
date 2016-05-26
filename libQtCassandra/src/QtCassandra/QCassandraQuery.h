@@ -64,6 +64,8 @@ public:
     QCassandraQuery                         ( QCassandraSession::pointer_t session );
     ~QCassandraQuery                        ();
 
+    static pointer_t    create( QCassandraSession::pointer_t session );
+
     const QString&      description         () const;
     void                setDescription      ( const QString& val );
 
