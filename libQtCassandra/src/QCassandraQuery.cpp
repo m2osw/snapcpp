@@ -148,6 +148,12 @@ QCassandraQuery::~QCassandraQuery()
 }
 
 
+QCassandraQuery::pointer_t QCassandraQuery::create( QCassandraSession::pointer_t session )
+{
+    return std::make_shared<QCassandraQuery>( session );
+}
+
+
 /** \brief Description of query instance.
  *
  * This property allows the user to set and read a string
@@ -659,7 +665,7 @@ bool QCassandraQuery::queryActive() const
  */
 void QCassandraQuery::getQueryResult()
 {
-    throwIfError( QString("Error in query string [%1]!").arg(f_queryString) );
+    throwIfError( QString("Error in query string:\n%1").arg(f_queryString) );
 
     f_queryResult.reset ( cass_future_get_result   (f_sessionFuture.get()), resultDeleter() );
     f_rowsIterator.reset( cass_iterator_from_result(f_queryResult.get()), iteratorDeleter() );

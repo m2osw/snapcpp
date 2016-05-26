@@ -1,3 +1,9 @@
+snapmanagercgi (1.0.0.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 25 May 2016 11:32:56 -0700
+
 snapmanagercgi (1.0.0) xenial; urgency=high
 
   * Initial release of packaging for snapmanager.cgi.

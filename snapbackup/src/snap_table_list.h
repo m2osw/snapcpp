@@ -51,8 +51,7 @@ public:
     static void initList();
     static void overrideTablesToDump( const QStringList& tables_to_dump );
 
-    QStringList tablesToDrop();
-    QStringList tablesToDump();
+    QStringList tablesToIgnore();
 
     bool    canDumpRow( const QString& table_name, const QString& row_name );
     QString tableName() const { return f_tableName; }
@@ -60,11 +59,9 @@ public:
 private:
     static name_to_list_t           f_list;
     QString                         f_tableName;    // Name of the table
-    controlled_vars::zbool_t        f_canDrop;      // Can drop this table using --drop-tables
-    controlled_vars::zbool_t        f_canDump;      // Can make a backup of this table
     QStringList                     f_rowsToDump;   // If empty, backup all rows
 
-    static void addEntry( const QString& name, const bool can_drop, const bool can_dump );
+    static void addEntry( const QString& name );
 };
 
 

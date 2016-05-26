@@ -174,11 +174,44 @@ void SessionMeta::loadSchema()
                 CassColumnType type = cass_column_meta_type( p_col.get() );
                 switch( type )
                 {
-                case CASS_COLUMN_TYPE_REGULAR        : column->f_type = ColumnMeta::TypeRegular;        break;
-                case CASS_COLUMN_TYPE_PARTITION_KEY  : column->f_type = ColumnMeta::TypePartitionKey;   break;
-                case CASS_COLUMN_TYPE_CLUSTERING_KEY : column->f_type = ColumnMeta::TypeClusteringKey;  break;
-                case CASS_COLUMN_TYPE_STATIC         : column->f_type = ColumnMeta::TypeStatic;         break;
-                case CASS_COLUMN_TYPE_COMPACT_VALUE  : column->f_type = ColumnMeta::TypeCompactValue;   break;
+                    case CASS_COLUMN_TYPE_REGULAR        : column->f_type = ColumnMeta::type_t::TypeRegular;        break;
+                    case CASS_COLUMN_TYPE_PARTITION_KEY  : column->f_type = ColumnMeta::type_t::TypePartitionKey;   break;
+                    case CASS_COLUMN_TYPE_CLUSTERING_KEY : column->f_type = ColumnMeta::type_t::TypeClusteringKey;  break;
+                    case CASS_COLUMN_TYPE_STATIC         : column->f_type = ColumnMeta::type_t::TypeStatic;         break;
+                    case CASS_COLUMN_TYPE_COMPACT_VALUE  : column->f_type = ColumnMeta::type_t::TypeCompactValue;   break;
+                }
+
+                CassValueType vt = cass_data_type_type( cass_column_meta_data_type(p_col.get()) );
+                switch( vt )
+                {
+                    case CASS_VALUE_TYPE_UNKNOWN    :   column->f_columnType = column_type_t::TypeUnknown    ; break;
+                    case CASS_VALUE_TYPE_CUSTOM     :   column->f_columnType = column_type_t::TypeCustom     ; break;
+                    case CASS_VALUE_TYPE_DECIMAL    :   column->f_columnType = column_type_t::TypeDecimal    ; break;
+                    case CASS_VALUE_TYPE_LAST_ENTRY :   column->f_columnType = column_type_t::TypeLast_entry ; break;
+                    case CASS_VALUE_TYPE_UDT        :   column->f_columnType = column_type_t::TypeUdt        ; break;
+                    case CASS_VALUE_TYPE_LIST       :   column->f_columnType = column_type_t::TypeList       ; break;
+                    case CASS_VALUE_TYPE_SET        :   column->f_columnType = column_type_t::TypeSet        ; break;
+                    case CASS_VALUE_TYPE_TUPLE      :   column->f_columnType = column_type_t::TypeTuple      ; break;
+                    case CASS_VALUE_TYPE_MAP        :   column->f_columnType = column_type_t::TypeMap        ; break;
+                    case CASS_VALUE_TYPE_BLOB       :   column->f_columnType = column_type_t::TypeBlob       ; break;
+                    case CASS_VALUE_TYPE_BOOLEAN    :   column->f_columnType = column_type_t::TypeBoolean    ; break;
+                    case CASS_VALUE_TYPE_FLOAT      :   column->f_columnType = column_type_t::TypeFloat      ; break;
+                    case CASS_VALUE_TYPE_DOUBLE     :   column->f_columnType = column_type_t::TypeDouble     ; break;
+                    case CASS_VALUE_TYPE_TINY_INT   :   column->f_columnType = column_type_t::TypeTinyInt    ; break;
+                    case CASS_VALUE_TYPE_SMALL_INT  :   column->f_columnType = column_type_t::TypeSmallInt   ; break;
+                    case CASS_VALUE_TYPE_INT        :   column->f_columnType = column_type_t::TypeInt        ; break;
+                    case CASS_VALUE_TYPE_VARINT     :   column->f_columnType = column_type_t::TypeVarint     ; break;
+                    case CASS_VALUE_TYPE_BIGINT     :   column->f_columnType = column_type_t::TypeBigint     ; break;
+                    case CASS_VALUE_TYPE_COUNTER    :   column->f_columnType = column_type_t::TypeCounter    ; break;
+                    case CASS_VALUE_TYPE_ASCII      :   column->f_columnType = column_type_t::TypeAscii      ; break;
+                    case CASS_VALUE_TYPE_DATE       :   column->f_columnType = column_type_t::TypeDate       ; break;
+                    case CASS_VALUE_TYPE_TEXT       :   column->f_columnType = column_type_t::TypeText       ; break;
+                    case CASS_VALUE_TYPE_TIME       :   column->f_columnType = column_type_t::TypeTime       ; break;
+                    case CASS_VALUE_TYPE_TIMESTAMP  :   column->f_columnType = column_type_t::TypeTimestamp  ; break;
+                    case CASS_VALUE_TYPE_VARCHAR    :   column->f_columnType = column_type_t::TypeVarchar    ; break;
+                    case CASS_VALUE_TYPE_UUID       :   column->f_columnType = column_type_t::TypeUuid       ; break;
+                    case CASS_VALUE_TYPE_TIMEUUID   :   column->f_columnType = column_type_t::TypeTimeuuid   ; break;
+                    case CASS_VALUE_TYPE_INET       :   column->f_columnType = column_type_t::TypeInet       ; break;
                 }
 
                 iterator_pointer_t meta_iter
@@ -262,6 +295,41 @@ SessionMeta::KeyspaceMeta::KeyspaceMeta( SessionMeta::pointer_t session_meta )
     : f_session(session_meta)
 {
     // TODO add sub-fields
+}
+
+
+/** \brief Generate CQL string to create the keyspace
+ */
+QStringList SessionMeta::KeyspaceMeta::getCqlList() const
+{
+    QStringList keyspace_cql;
+    keyspace_cql << QString("CREATE KEYSPACE IF NOT EXISTS %1").arg(f_name);
+
+    QString sep("  WITH");
+    for( auto field : f_fields )
+    {
+        if( field.first == "keyspace_name" ) continue;
+
+        keyspace_cql << QString("%1 %2 = %3")
+               .arg(sep)
+               .arg(field.first)
+               .arg(field.second.output())
+               ;
+
+        sep = "  AND";
+    }
+
+    keyspace_cql << "  ;\n";
+
+    QStringList ret_list;
+    ret_list << keyspace_cql.join('\n');
+
+    for( auto table : f_tables )
+    {
+        ret_list << table.second->getCqlString();
+    }
+
+    return ret_list;
 }
 
 
@@ -486,6 +554,69 @@ void SessionMeta::KeyspaceMeta::TableMeta::decodeTableMeta(const QCassandraDecod
 }
 
 
+/** \brief Generate CQL string to create the table
+ */
+QString SessionMeta::KeyspaceMeta::TableMeta::getCqlString() const
+{
+    QStringList table_cql;
+    table_cql << QString("CREATE TABLE IF NOT EXISTS %1.%2 (")
+           .arg(f_keyspace->getName())
+           .arg(f_name);
+
+    QString partition_key;
+    QString clustering;
+    for( auto column : f_columns )
+    {
+        table_cql <<  QString("  %1,")
+                .arg(column.second->getCqlString())
+                ;
+
+        const QString kind( column.second->getFields()["kind"].variant().toString() );
+        if( kind == "partition_key" )
+        {
+            partition_key = column.first;
+        }
+        else if( kind == "clustering" )
+        {
+            clustering = column.first;
+        }
+    }
+
+    if( !partition_key.isEmpty() )
+    {
+        if( clustering.isEmpty() )
+        {
+            table_cql << QString("  PRIMARY KEY (%1)")
+                .arg(partition_key)
+                ;
+        }
+        else
+        {
+            table_cql << QString("  PRIMARY KEY (%1, %2)")
+                .arg(partition_key)
+                .arg(clustering)
+                ;
+        }
+    }
+    table_cql << ") WITH COMPACT STORAGE";
+
+    for( auto field : f_fields )
+    {
+        if( field.first == "flags"         ) continue;
+        if( field.first == "keyspace_name" ) continue;
+        if( field.first == "table_name"    ) continue;
+
+        table_cql << QString("  AND %1 = %2")
+               .arg(field.first)
+               .arg(field.second.output())
+               ;
+    }
+
+    table_cql << "  ;\n";
+    return table_cql.join('\n');
+}
+
+
 //================================================================/
 // ColumnMeta
 //
@@ -499,6 +630,15 @@ const QString&
     SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getName() const
 {
     return f_name;
+}
+
+
+QString SessionMeta::KeyspaceMeta::TableMeta::ColumnMeta::getCqlString() const
+{
+    return QString("%1 %2")
+            .arg(f_name)
+            .arg(f_fields.at("type").variant().toString())
+            ;
 }
 
 
