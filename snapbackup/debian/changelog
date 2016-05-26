@@ -1,4 +1,4 @@
-snapmanager (0.1.1) xenial; urgency=high
+snapbackup (0.1.1) xenial; urgency=high
 
   * Initial release of packaging for snapbackup. It has been moved out of
     the snapwebsites project.
