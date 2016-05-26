@@ -1,7 +1,7 @@
-usr/bin/snapbackend usr/bin/snapcommunicator usr/bin/snapfirewall usr/bin/snapinit usr/bin/snaplayout usr/bin/snapserver usr/bin/snapsignal usr/bin/snapsiteinfo usr/bin/
+usr/bin/snapbackend usr/bin/snapcommunicator usr/bin/snapdbproxy usr/bin/snapfirewall usr/bin/snapinit usr/bin/snaplayout usr/bin/snaplock usr/bin/snapserver usr/bin/snapsignal usr/bin/snapsiteinfo usr/bin/
 usr/share/snapwebsites/layouts/*
-conf/loggingserver.properties conf/log.properties conf/logserver.properties conf/snapcommunicator.properties conf/snapfirewall.properties conf/snapinit.properties etc/snapwebsites/
-conf/snapcommunicator.conf conf/snapfirewall.conf conf/snapinit.conf conf/snapserver.conf etc/snapwebsites/
+conf/loggingserver.properties conf/log.properties conf/logserver.properties conf/snapcommunicator.properties conf/snapdbproxy.properties conf/snapfirewall.properties conf/snapinit.properties conf/snaplock.properties etc/snapwebsites/
+conf/snapcommunicator.conf conf/snapdbproxy.conf conf/snapfirewall.conf conf/snapinit.conf conf/snaplock.conf conf/snapserver.conf etc/snapwebsites/
 conf/snapinit.xml etc/snapwebsites
 conf/snap-apache2.conf etc/apache2/sites-available/
 usr/share/snapwebsites/conf/*
