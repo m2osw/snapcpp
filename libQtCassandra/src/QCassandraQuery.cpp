@@ -150,7 +150,7 @@ QCassandraQuery::~QCassandraQuery()
 
 QCassandraQuery::pointer_t QCassandraQuery::create( QCassandraSession::pointer_t session )
 {
-    return std::make_shared<QCassandraQuery>( session );
+    return pointer_t(new QCassandraQuery( session ));
 }
 
 

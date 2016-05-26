@@ -127,8 +127,15 @@ void QueryTest::describeSchema()
             }
         }
 
-        std::cout << "CQL Schema output:" << std::endl;
-        std::cout << kys.second->getCqlList().join('\n');
+        std::cout << "CQL Keyspace schema output:" << std::endl;
+        std::cout << kys.second->getKeyspaceCql();
+        std::cout << std::endl;
+        std::cout << "CQL Tables schema output:" << std::endl;
+        for( auto entry : kys.second->getTablesCql() )
+        {
+            std::cout << "Table [" << entry.first << "]:" << std::endl;
+            std::cout << entry.second << std::endl;
+        }
     }
 }
 
@@ -136,16 +143,16 @@ void QueryTest::describeSchema()
 void QueryTest::createSchema()
 {
     std::cout << "Creating keyspace and tables..." << std::endl;
-    QCassandraQuery q( f_session );
-    q.query( "CREATE KEYSPACE IF NOT EXISTS qtcassandra_query_test "
+    auto q = QCassandraQuery::create( f_session );
+    q->query( "CREATE KEYSPACE IF NOT EXISTS qtcassandra_query_test "
         "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'} "
         "AND durable_writes = true"
         );
-    q.start();
-    q.end();
+    q->start();
+    q->end();
 
     std::cout << "Creating table 'data'..." << std::endl;
-    q.query( "CREATE TABLE IF NOT EXISTS qtcassandra_query_test.data \n"
+    q->query( "CREATE TABLE IF NOT EXISTS qtcassandra_query_test.data \n"
                 "( id INT\n"                      //  0
                 ", name TEXT\n"                   //  1
                 ", test BOOLEAN\n"                //  2
@@ -157,19 +164,19 @@ void QueryTest::createSchema()
                 ", PRIMARY KEY (id, name)\n"
                 ");"
         );
-    q.start();
-    q.end();
+    q->start();
+    q->end();
 
     std::cout << "Creating table 'large_table'..." << std::endl;
-    q.query( "CREATE TABLE IF NOT EXISTS qtcassandra_query_test.large_table \n"
+    q->query( "CREATE TABLE IF NOT EXISTS qtcassandra_query_test.large_table \n"
                 "( id INT\n"                      //  0
                 ", name TEXT\n"                   //  2
                 ", blob_value BLOB\n"             //  3
                 ", PRIMARY KEY (id, name)\n"
                 ") WITH CLUSTERING ORDER BY (name ASC);"
         );
-    q.start();
-    q.end();
+    q->start();
+    q->end();
     std::cout << "Keyspace and tables created..." << std::endl;
 }
 
@@ -178,70 +185,70 @@ void QueryTest::dropSchema()
 {
     std::cout << "Dropping keyspace... (this may timeout if auto_snapshot is true in conf/cassandra.yaml)" << std::endl;
 
-    QCassandraQuery q( f_session );
-    q.query( "DROP KEYSPACE IF EXISTS qtcassandra_query_test" );
-    q.start();
+    auto q = QCassandraQuery::create( f_session );
+    q->query( "DROP KEYSPACE IF EXISTS qtcassandra_query_test" );
+    q->start();
 }
 
 
 void QueryTest::simpleInsert()
 {
     std::cout << "Insert into table 'data'..." << std::endl;
-    QCassandraQuery q( f_session );
-    q.query( "INSERT INTO qtcassandra_query_test.data "
+    auto q = QCassandraQuery::create( f_session );
+    q->query( "INSERT INTO qtcassandra_query_test.data "
                 "(id, name, test, float_value, double_value, blob_value, json_value, map_value) "
                 "VALUES "
                 "(?,?,?,?,?,?,?,?)"
              , 8
         );
     int bind_num = 0;
-    q.bindInt32  ( bind_num++, 5 );
-    q.bindString ( bind_num++, "This is a test" );
-    q.bindBool   ( bind_num++, true );
-    q.bindFloat  ( bind_num++, 4.5 );
-    q.bindDouble ( bind_num++, 45234.5L );
+    q->bindInt32  ( bind_num++, 5 );
+    q->bindString ( bind_num++, "This is a test" );
+    q->bindBool   ( bind_num++, true );
+    q->bindFloat  ( bind_num++, 4.5 );
+    q->bindDouble ( bind_num++, 45234.5L );
 
     QByteArray arr;
     arr += "This is a test";
     arr += " and yet more chars...";
-    q.bindByteArray( bind_num++, arr );
+    q->bindByteArray( bind_num++, arr );
 
     QCassandraQuery::string_map_t json_map;
     json_map["foo"]   = "bar";
     json_map["meyer"] = "bidge";
     json_map["silly"] = "walks";
-    q.bindJsonMap( bind_num++, json_map );
+    q->bindJsonMap( bind_num++, json_map );
 
     QCassandraQuery::string_map_t cass_map;
     cass_map["test"] = "more tests";
     cass_map["map"]  = "this";
     cass_map["fun"]  = "work";
-    q.bindMap( bind_num++, json_map );
-    q.start();
+    q->bindMap( bind_num++, json_map );
+    q->start();
 }
 
 
 void QueryTest::simpleSelect()
 {
     std::cout << "Select from table 'data'..." << std::endl;
-    QCassandraQuery q( f_session );
-    q.query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value\n"
+    auto q = QCassandraQuery::create( f_session );
+    q->query( "SELECT id,name,test,float_value,double_value,blob_value,json_value,map_value\n"
              //",COUNT(*) AS count\n"
              ",WRITETIME(blob_value) AS timestamp\n"
              "FROM qtcassandra_query_test.data" );
-    q.start();
-    while( q.nextRow() )
+    q->start();
+    while( q->nextRow() )
     {
-        const int32_t                       id           = q.getInt32Column     ( "id"           );
-        const std::string                   name         = q.getStringColumn    ( "name"         ).toStdString();
-        const bool                          test         = q.getBoolColumn      ( "test"         );
-        const int64_t                       count        = q.getInt64Column     ( "count"        );
-        const float                         float_value  = q.getFloatColumn     ( "float_value"  );
-        const double                        double_value = q.getDoubleColumn    ( "double_value" );
-        const QByteArray                    blob_value   = q.getByteArrayColumn ( "blob_value"   );
-        const QCassandraQuery::string_map_t json_value   = q.getJsonMapColumn   ( "json_value"   );
-        const QCassandraQuery::string_map_t map_value    = q.getMapColumn       ( "map_value"    );
-        const int64_t	                    timestamp    = q.getInt64Column     ( "timestamp"    );
+        const int32_t                       id           = q->getInt32Column     ( "id"           );
+        const std::string                   name         = q->getStringColumn    ( "name"         ).toStdString();
+        const bool                          test         = q->getBoolColumn      ( "test"         );
+        const int64_t                       count        = q->getInt64Column     ( "count"        );
+        const float                         float_value  = q->getFloatColumn     ( "float_value"  );
+        const double                        double_value = q->getDoubleColumn    ( "double_value" );
+        const QByteArray                    blob_value   = q->getByteArrayColumn ( "blob_value"   );
+        const QCassandraQuery::string_map_t json_value   = q->getJsonMapColumn   ( "json_value"   );
+        const QCassandraQuery::string_map_t map_value    = q->getMapColumn       ( "map_value"    );
+        const int64_t	                    timestamp    = q->getInt64Column     ( "timestamp"    );
 
         std::cout   << "id ="          << id                << std::endl
                     << "name="         << name              << std::endl
@@ -273,50 +280,50 @@ void QueryTest::largeTableTest()
     const int32_t row_count = 10000;
 
     std::cout << "Insert into table 'large_table'..." << std::endl;
-    QCassandraQuery q( f_session );
+    auto q = QCassandraQuery::create( f_session );
 
     for( int32_t i = 0; i < row_count; ++i )
     {
-        q.query( "INSERT INTO qtcassandra_query_test.large_table "
+        q->query( "INSERT INTO qtcassandra_query_test.large_table "
                 "(id, name, blob_value) "
                 "VALUES "
                 "(?,?,?)"
                 , 3
                );
         int bind_num = 0;
-        q.bindInt32  ( bind_num++, i );
-        q.bindString ( bind_num++, QString("This is test %1.").arg(i) );
+        q->bindInt32  ( bind_num++, i );
+        q->bindString ( bind_num++, QString("This is test %1.").arg(i) );
 
         QString blob;
         blob.fill( 'b', 10000 );
-        q.bindByteArray( bind_num++, blob.toUtf8() );
+        q->bindByteArray( bind_num++, blob.toUtf8() );
 
-        q.start();
-        q.end();
+        q->start();
+        q->end();
     }
 
     std::map<int32_t,QString> string_map;
 
     std::cout << "Select from 'large_table' and test paging functionality..." << std::endl;
-    q.query( "SELECT id, name, WRITETIME(blob_value) AS timestamp FROM qtcassandra_query_test.large_table" );
-    q.setPagingSize( 10 );
-    q.start();
+    q->query( "SELECT id, name, WRITETIME(blob_value) AS timestamp FROM qtcassandra_query_test.large_table" );
+    q->setPagingSize( 10 );
+    q->start();
     do
     {
 //        std::cout << "Iterate through page..." << std::endl;
-        while( q.nextRow() )
+        while( q->nextRow() )
         {
-            const int32_t id(q.getInt32Column("id"));
-            const QString name(q.getStringColumn("name"));
+            const int32_t id(q->getInt32Column("id"));
+            const QString name(q->getStringColumn("name"));
 //            std::cout
 //                    << "id=" << id
 //                    << ", name='" << name.toStdString() << "'"
-//                    << ", timestamp=" << q.getInt64Column("timestamp")
+//                    << ", timestamp=" << q->getInt64Column("timestamp")
 //                    << std::endl;
             string_map[id] = name;
         }
     }
-    while( q.nextPage() );
+    while( q->nextPage() );
 
     std::cout << "Check order of recovered records:" << std::endl;
     if( string_map.size() != static_cast<size_t>(row_count) )

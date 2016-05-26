@@ -61,8 +61,7 @@ public:
     typedef std::shared_ptr<QCassandraQuery>  pointer_t;
     typedef std::map<std::string,std::string> string_map_t;
 
-    QCassandraQuery                         ( QCassandraSession::pointer_t session );
-    ~QCassandraQuery                        ();
+    ~QCassandraQuery();
 
     static pointer_t    create( QCassandraSession::pointer_t session );
 
@@ -126,6 +125,8 @@ signals:
     void                threadQueryFinished( QCassandraQuery::pointer_t q );
 
 private:
+    QCassandraQuery( QCassandraSession::pointer_t session );
+
     // Current query
     //
     QCassandraSession::pointer_t   f_session;

@@ -300,7 +300,7 @@ SessionMeta::KeyspaceMeta::KeyspaceMeta( SessionMeta::pointer_t session_meta )
 
 /** \brief Generate CQL string to create the keyspace
  */
-QStringList SessionMeta::KeyspaceMeta::getCqlList() const
+QString	SessionMeta::KeyspaceMeta::getKeyspaceCql() const
 {
     QStringList keyspace_cql;
     keyspace_cql << QString("CREATE KEYSPACE IF NOT EXISTS %1").arg(f_name);
@@ -321,15 +321,19 @@ QStringList SessionMeta::KeyspaceMeta::getCqlList() const
 
     keyspace_cql << "  ;\n";
 
-    QStringList ret_list;
-    ret_list << keyspace_cql.join('\n');
+    return keyspace_cql.join('\n');
+}
 
+
+SessionMeta::string_map_t SessionMeta::KeyspaceMeta::getTablesCql() const
+{
+    string_map_t ret_map;
     for( auto table : f_tables )
     {
-        ret_list << table.second->getCqlString();
+        ret_map[table.first] = table.second->getCqlString();
     }
 
-    return ret_list;
+    return ret_map;
 }
 
 
