@@ -39,7 +39,7 @@ TableModel::TableModel()
 
 void TableModel::doQuery()
 {
-    auto q = std::make_shared<QCassandraQuery>(f_session);
+    auto q = QCassandraQuery::create(f_session);
     q->query(
         QString("SELECT DISTINCT key FROM %1.%2")
             .arg(f_keyspaceName)

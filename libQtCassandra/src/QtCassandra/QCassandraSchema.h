@@ -85,6 +85,7 @@ class SessionMeta
 public:
     typedef std::shared_ptr<SessionMeta>        pointer_t;
     typedef std::map<QString, pointer_t>        map_t;
+    typedef std::map<QString, QString>        	string_map_t;
 
     class KeyspaceMeta
             : public std::enable_shared_from_this<KeyspaceMeta>
@@ -179,7 +180,8 @@ public:
         void                            encodeKeyspaceMeta(QCassandraEncoder& encoded) const;
         void                            decodeKeyspaceMeta(const QCassandraDecoder& decoder);
 
-        QStringList						getCqlList() const;
+        QString							getKeyspaceCql() const;
+        string_map_t					getTablesCql() const;
 
     private:
         friend class SessionMeta;

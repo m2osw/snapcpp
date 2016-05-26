@@ -36,7 +36,7 @@ RowModel::RowModel()
 
 void RowModel::doQuery()
 {
-    auto q = std::make_shared<QCassandraQuery>(f_session);
+    auto q = QCassandraQuery::create(f_session);
     q->query(
         QString("SELECT column1 FROM %1.%2 WHERE key = ?")
             .arg(f_keyspaceName)
@@ -223,17 +223,17 @@ bool RowModel::removeRows( int row, int count, const QModelIndex & )
         {
             // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
             //
-            QCassandraQuery q( f_session );
-            q.query(
+            auto q = QCassandraQuery::create( f_session );
+            q->query(
                         QString("DELETE FROM %1.%2 WHERE key = ? AND column1 = ?")
                         .arg(f_keyspaceName)
                         .arg(f_tableName)
                         , 2
                         );
-            q.bindByteArray( 0, f_rowKey );
-            q.bindByteArray( 1, key 	 );
-            q.start();
-            q.end();
+            q->bindByteArray( 0, f_rowKey );
+            q->bindByteArray( 1, key 	 );
+            q->start();
+            q->end();
         }
 
         // Remove the columns from the model

@@ -127,7 +127,7 @@ private:
         int                                     f_column_count;
     };
 
-    void                        send_order(QtCassandra::QCassandraQuery * q, QtCassandra::QCassandraOrder const & order);
+    void                        send_order(QtCassandra::QCassandraQuery::pointer_t q, QtCassandra::QCassandraOrder const & order);
     void                        declare_cursor(QtCassandra::QCassandraOrder const & order);
     void                        describe_cluster(QtCassandra::QCassandraOrder const & order);
     void                        clear_cluster_description();

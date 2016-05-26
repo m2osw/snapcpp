@@ -89,6 +89,34 @@ void snapbackup::connectToCassandra()
     f_session->connect( f_opt->get_string("host").c_str(), f_opt->get_long("port") );
 }
 
+void snapbackup::exec( QSqlQuery& q )
+{
+    if( !q.exec() )
+    {
+        std::cerr << "lastQuery=[" << q.lastQuery() << "]" << std::endl;
+        std::cerr << "query error=[" << q.lastError().text() << "]" << std::endl;
+        throw std::runtime_error( q.lastError().text().toUtf8().data() );
+    }
+}
+
+void snapbackup::storeSchemaEntry( const QString& description, const QString& name, const QString& schema_line )
+{
+    const QString q_str =
+        "INSERT OR REPLACE INTO cql_schema_list "
+        "(description,name,schema_line) "
+        "VALUES "
+        "(:description,:name,:schema_line);"
+        ;
+    QSqlQuery q;
+    q.prepare( q_str );
+    //
+    q.bindValue( ":description", description );
+    q.bindValue( ":name",        name        );
+    q.bindValue( ":schema_line", schema_line );
+    //
+    exec( q );
+}
+
 
 void snapbackup::storeSchema( const QString& context_name )
 {
@@ -111,45 +139,19 @@ void snapbackup::storeSchema( const QString& context_name )
     QString q_str = "CREATE TABLE IF NOT EXISTS cql_schema_list "
             "( id INTEGER PRIMARY KEY"
             ", description TEXT"
+            ", name TEXT"
             ", schema_line LONGBLOB"
             ");"
             ;
     QSqlQuery q;
     q.prepare( q_str );
-    if( !q.exec() )
-    {
-        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-        std::cerr << "query error=[" << q.lastError().text() << "]" << std::endl;
-        throw std::runtime_error( q.lastError().text().toUtf8().data() );
-    }
+    exec( q );
 
     std::cout << "Storing schema blob..." << std::endl;
-    const auto& list(kys->getCqlList());
-    for( const auto& line : list )
+    storeSchemaEntry( "keyspace", context_name, kys->getKeyspaceCql() );
+    for( const auto& line : kys->getTablesCql() )
     {
-        q_str = "INSERT OR REPLACE INTO cql_schema_list "
-                "(description,schema_line) "
-                "VALUES "
-                "(:description,:schema_line);"
-                ;
-        q.clear();
-        q.prepare( q_str );
-        //
-        if( line == list[0] )
-        {
-            q.bindValue( ":description", "keyspace" );
-        }
-        else
-        {
-            q.bindValue( ":description", "table" );
-        }
-        q.bindValue( ":schema_line", line );
-        //
-        if( !q.exec() )
-        {
-            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-            throw std::runtime_error( q.lastError().text().toUtf8().data() );
-        }
+        storeSchemaEntry( "table", line.first, line.second );
     }
 }
 
@@ -157,34 +159,32 @@ void snapbackup::storeSchema( const QString& context_name )
 void snapbackup::restoreSchema( const QString& context_name )
 {
     std::cout << "Restoring CQL schema blob..." << std::endl;
-    const QString q_str( "SELECT description, schema_line FROM cql_schema_list;" );
+    const QString q_str( "SELECT description, name, schema_line FROM cql_schema_list;" );
     QSqlQuery q;
     q.prepare( q_str );
     //
-    if( !q.exec() )
-    {
-        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-        throw std::runtime_error( q.lastError().text().toUtf8().data() );
-    }
+    exec( q );
 
     std::cout << "Creating keyspace '" << context_name << "', and tables." << std::endl;
     const int desc_idx    = q.record().indexOf("description");
+    const int name_idx    = q.record().indexOf("name");
     const int schema_idx  = q.record().indexOf("schema_line");
     for( q.first(); q.isValid(); q.next() )
     {
         const QString desc( q.value(desc_idx).toString() );
+        const QString name( q.value(name_idx).toString() );
         const QString schema_string( q.value( schema_idx ).toString() );
 
         auto cass_query = QCassandraQuery::create( f_session );
         cass_query->query( schema_string );
         cass_query->start( false );
-        std::cout << "Creating " << desc;
+        std::cout << "Creating " << desc << " " << name;
         while( !cass_query->isReady() )
         {
             std::cout << "." << std::flush;
             sleep(1);
         }
-        std::cout << " created!" << std::endl;
+        std::cout << "done!" << std::endl;
         cass_query->getQueryResult();
         cass_query->end();
     }
@@ -240,7 +240,7 @@ void snapbackup::restoreContext()
 }
 
 
-void snapbackup::appendRowsToSqliteDb( QCassandraQuery& cass_query, const QString& table_name )
+void snapbackup::appendRowsToSqliteDb( QCassandraQuery::pointer_t cass_query, const QString& table_name )
 {
     const QString q_str = QString( "INSERT OR REPLACE INTO %1 "
             "(key, column1, value ) "
@@ -250,15 +250,11 @@ void snapbackup::appendRowsToSqliteDb( QCassandraQuery& cass_query, const QStrin
     QSqlQuery q;
     q.prepare( q_str );
     //
-    q.bindValue( ":key",     cass_query.getByteArrayColumn("key")     );
-    q.bindValue( ":column1", cass_query.getByteArrayColumn("column1") );
-    q.bindValue( ":value",   cass_query.getByteArrayColumn("value")   );
+    q.bindValue( ":key",     cass_query->getByteArrayColumn("key")     );
+    q.bindValue( ":column1", cass_query->getByteArrayColumn("column1") );
+    q.bindValue( ":value",   cass_query->getByteArrayColumn("value")   );
     //
-    if( !q.exec() )
-    {
-        std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-        throw std::runtime_error( q.lastError().text().toUtf8().data() );
-    }
+    exec( q );
 }
 
 /// \brief Backup snap_websites tables.
@@ -309,33 +305,26 @@ void snapbackup::storeTables( const int count, const QString& context_name )
                 ).arg(table_name);
         QSqlQuery q;
         q.prepare( q_str );
-        if( !q.exec() )
-        {
-            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-            std::cerr << "query error=[" << q.lastError().text() << "]" << std::endl;
-            throw std::runtime_error( q.lastError().text().toUtf8().data() );
-        }
+        exec( q );
 
         std::cout << "Dumping table [" << table_name << "]" << std::endl;
 
         const QString cql_select_string("SELECT key,column1,value FROM snap_websites.%1");
         q_str = cql_select_string.arg(table_name);
 
-        QCassandraQuery cass_query( f_session );
-        cass_query.query( q_str );
-        cass_query.setPagingSize( count );
-        cass_query.start();
+        auto cass_query = QCassandraQuery::create( f_session );
+        cass_query->query( q_str );
+        cass_query->setPagingSize( count );
+        cass_query->start();
 
         do
         {
-            while( cass_query.nextRow() )
+            while( cass_query->nextRow() )
             {
                 appendRowsToSqliteDb( cass_query, table_name );
             }
         }
-        while( cass_query.nextPage() );
-
-        cass_query.end();
+        while( cass_query->nextPage() );
     }
 }
 
@@ -387,12 +376,7 @@ void snapbackup::restoreTables( const QString& context_name )
         QString q_str                   ( sql_select_string.arg(table_name) );
         QSqlQuery q;
         q.prepare( q_str );
-        if( !q.exec() )
-        {
-            std::cerr << "lastQuery=[" << q.lastQuery().toUtf8().data() << "]" << std::endl;
-            std::cerr << "query error=[" << q.lastError().text() << "]" << std::endl;
-            throw std::runtime_error( q.lastError().text().toUtf8().data() );
-        }
+        exec( q );
 
         const int key_idx       = q.record().indexOf("key");
         const int column1_idx   = q.record().indexOf("column1");
@@ -406,15 +390,15 @@ void snapbackup::restoreTables( const QString& context_name )
             const QString cql_insert_string("INSERT INTO snap_websites.%1 (key,column1,value) VALUES (?,?,?);");
             const QString qstr( cql_insert_string.arg(table_name) );
 
-            QCassandraQuery cass_query( f_session );
-            cass_query.query( qstr, 3 );
+            auto cass_query = QCassandraQuery::create( f_session );
+            cass_query->query( qstr, 3 );
             int bind_num = 0;
-            cass_query.bindByteArray( bind_num++, key     );
-            cass_query.bindByteArray( bind_num++, column1 );
-            cass_query.bindByteArray( bind_num++, value   );
+            cass_query->bindByteArray( bind_num++, key     );
+            cass_query->bindByteArray( bind_num++, column1 );
+            cass_query->bindByteArray( bind_num++, value   );
 
-            cass_query.start();
-            cass_query.end();
+            cass_query->start();
+            cass_query->end();
         }
     }
 }

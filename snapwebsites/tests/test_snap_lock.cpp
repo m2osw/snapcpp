@@ -255,17 +255,17 @@ int main(int argc, char *argv[])
 
                         // read current value
                         {
-                            QtCassandra::QCassandraQuery q(cassandra_session);
+                            auto q( QtCassandra::QCassandraQuery::create(cassandra_session));
                             // key = '*test_snap_lock*'
                             // column1 = 'counter'
-                            q.query("SELECT value FROM snap_websites.domains WHERE key = 0x2a746573745f736e61705f6c6f636b2a AND column1 = 0x636f756e746572", 0);
-                            q.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-                            q.start();
+                            q->query("SELECT value FROM snap_websites.domains WHERE key = 0x2a746573745f736e61705f6c6f636b2a AND column1 = 0x636f756e746572", 0);
+                            q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+                            q->start();
 
                             // the very first time the value does not exist
-                            if(q.nextRow())
+                            if(q->nextRow())
                             {
-                                QByteArray const value(q.getByteArrayColumn("value"));
+                                QByteArray const value(q->getByteArrayColumn("value"));
                                 v = QtCassandra::safeInt32Value(value);
                             }
                         }
@@ -280,13 +280,13 @@ int main(int argc, char *argv[])
                             QByteArray value;
                             QtCassandra::setInt32Value(value, v);
 
-                            QtCassandra::QCassandraQuery q(cassandra_session);
+                            auto q( QtCassandra::QCassandraQuery::create(cassandra_session));
                             // key = '*test_snap_lock*'
                             // column1 = 'counter'
-                            q.query("INSERT INTO snap_websites.domains (key, column1, value) VALUES (0x2a746573745f736e61705f6c6f636b2a, 0x636f756e746572, ?)", 1);
-                            q.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-                            q.bindByteArray(0, value);
-                            q.start();
+                            q->query("INSERT INTO snap_websites.domains (key, column1, value) VALUES (0x2a746573745f736e61705f6c6f636b2a, 0x636f756e746572, ?)", 1);
+                            q->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+                            q->bindByteArray(0, value);
+                            q->start();
                         }
                     }
                 }
