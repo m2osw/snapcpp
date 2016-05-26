@@ -1210,6 +1210,10 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
             f_snapcommunicator_addr = "127.0.0.1";
             f_snapcommunicator_port = 4040;
             tcp_client_server::get_addr_port(addr_port, f_snapcommunicator_addr, f_snapcommunicator_port, "tcp");
+            if(f_snapcommunicator_addr != "127.0.0.1")
+            {
+                SNAP_LOG_WARNING("the address to connect to snapcommunicator is always expected to be 127.0.0.1 and not ")(f_snapcommunicator_addr)(".");
+            }
         }
     }
 

@@ -92,8 +92,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
 Package: snapcgi
 Section: web
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: apache2 (>=2.4)
+Depends: ${shlibs:Depends}, ${misc:Depends}, apache2 (>=2.4)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
