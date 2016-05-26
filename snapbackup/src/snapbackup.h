@@ -38,6 +38,7 @@
 
 // 3rd party libs
 //
+#include <QSqlQuery>
 #include <QString>
 #include <memory>
 
@@ -58,7 +59,11 @@ private:
     getopt_ptr_t							  f_opt;
 
     void setSqliteDbFile( const QString& sqlDbFile );
-    void appendRowsToSqliteDb( QtCassandra::QCassandraQuery& cass_query, const QString& table_name );
+    void appendRowsToSqliteDb( QtCassandra::QCassandraQuery::pointer_t cass_query, const QString& table_name );
+
+    void exec( QSqlQuery& q );
+
+    void storeSchemaEntry( const QString& description, const QString& name, const QString& schema_line );
 
     void storeSchema( const QString& context_name );
     void restoreSchema( const QString& context_name );
