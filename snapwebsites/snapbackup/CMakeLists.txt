@@ -32,9 +32,9 @@
 ##
 ## Initialization
 ##
-set(SNAPBACKUP_VERSION_MAJOR  0)
-set(SNAPBACKUP_VERSION_MINOR  1)
-set(SNAPBACKUP_VERSION_PATCH  1)
+#set(SNAPBACKUP_VERSION_MAJOR  0)
+#set(SNAPBACKUP_VERSION_MINOR  1)
+#set(SNAPBACKUP_VERSION_PATCH  1)
 
 cmake_minimum_required(VERSION 2.8)
 
@@ -94,6 +94,8 @@ find_package( Qt5Network         REQUIRED )
 find_package( Qt5Sql             REQUIRED )
 find_package( QtCassandra        REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
+
+SnapGetVersion( SNAPBACKUP ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}

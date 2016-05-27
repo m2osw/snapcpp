@@ -29,6 +29,6 @@ add_subdirectory (patternlayout_test)
 add_subdirectory (performance_test)
 add_subdirectory (priority_test)
 add_subdirectory (propertyconfig_test)
-#add_subdirectory (socket_test) # I don't know how this test is supposed to be executed
+add_subdirectory (socket_test) # I don't know how this test is supposed to be executed
 add_subdirectory (thread_test)
 add_subdirectory (timeformat_test)

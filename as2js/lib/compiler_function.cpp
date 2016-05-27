@@ -607,6 +607,7 @@ bool Compiler::check_function(Node::pointer_t function_node, Node::pointer_t& re
     // The fact that a function is marked UNUSED should
     // be an error, but overloading prevents us from
     // generating an error here...
+std::cerr << "check_function(): " << function_node->get_string() << " (" << function_node->get_type_name() << ") / " << name << "\n";
 //std::cerr << "check_function(): attributes\n";
     if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_UNUSED))
     {
@@ -679,6 +680,7 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
         return 0;
     }
 
+std::cerr << "Got in check function with params! " << *params ;
     Node::pointer_t match(function_node->create_replacement(Node::node_t::NODE_PARAM_MATCH));
     match->set_instance(function_node);
 
@@ -1225,14 +1227,15 @@ bool Compiler::resolve_call(Node::pointer_t call)
     // resolve all the parameters' expressions first
     // the parameters are always in a NODE_LIST
     // and no parameters is equivalent to an empty NODE_LIST
-    // and that is an expression, but we don't want to type
-    // that expression since it isn't necessary so we go
+    // and that is an expression, but we do not want to type
+    // that expression since it is not necessary so we go
     // through the list here instead
     Node::pointer_t params(call->get_child(1));
     size_t count(params->get_children_size());
     for(size_t idx(0); idx < count; ++idx)
     {
         Node::pointer_t child(params->get_child(idx));
+std::cerr << "+++ working on param[" << idx << "]\n" << *child;
         expression(child);
     }
 
@@ -1247,7 +1250,7 @@ bool Compiler::resolve_call(Node::pointer_t call)
         Node::pointer_t expr_params;
         expression(id, expr_params);
 
-        // remove the NODE_PARAMT_MATCH if there is one
+        // remove the NODE_PARAM_MATCH if there is one
         size_t const params_count(expr_params->get_children_size());
         if(params_count > 0)
         {
@@ -1269,8 +1272,10 @@ bool Compiler::resolve_call(Node::pointer_t call)
     // these need to be function names
     Node::pointer_t resolution;
 
+std::cerr << "---------- try resolving simple name:\n" << *id;
     if(resolve_name(id, id, resolution, params, SEARCH_FLAG_GETTER))
     {
+std::cerr << "  name was resolved...\n";
         if(resolution->get_type() == Node::node_t::NODE_CLASS
         || resolution->get_type() == Node::node_t::NODE_INTERFACE)
         {
@@ -1386,6 +1391,7 @@ bool Compiler::resolve_call(Node::pointer_t call)
 
     if(errcnt == Message::error_count())
     {
+std::cerr << ">>> Could not find that function...\n";
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_FOUND, id->get_position());
         msg << "function named '" << id->get_string() << "' not found.";
     }

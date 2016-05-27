@@ -603,10 +603,10 @@ void Compiler::binary_operator(Node::pointer_t& expr)
 
     Node::pointer_t l(expr->create_replacement(Node::node_t::NODE_IDENTIFIER));
     l->set_string("left");
+    l->set_type_node(ltype);
+
     Node::pointer_t r(expr->create_replacement(Node::node_t::NODE_IDENTIFIER));
     r->set_string("right");
-
-    l->set_type_node(ltype);
     r->set_type_node(rtype);
 
     Node::pointer_t params(expr->create_replacement(Node::node_t::NODE_LIST));
@@ -624,15 +624,22 @@ void Compiler::binary_operator(Node::pointer_t& expr)
     size_t const del(expr->get_children_size());
     expr->append_child(call);
 
+std::cerr << "----------------- search for " << id->get_string() << " operator using resolve_call()...\n" << *call;
+
+    if(resolve_call(call))
+    {
+std::cerr << "----------------- that worked!!! what do we do now?! ...\n";
+    }
+
+std::cerr << "----------------- search for " << id->get_string() << " operator...\n";
     Node::pointer_t resolution;
-    int funcs = 0;
     bool result;
     {
         NodeLock ln(expr);
-        result = find_field(ltype, call, funcs, resolution, params, 0);
+        result = resolve_name(id, id, resolution, params, 0);
         if(!result)
         {
-            result = find_field(rtype, call, funcs, resolution, params, 0);
+            result = resolve_name(id, id, resolution, params, 0);
         }
     }
 
@@ -1510,9 +1517,11 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
         return;
 
     case Node::node_t::NODE_CALL:
-        resolve_call(expr);
-        Optimizer::optimize(expr);
-        type_expr(expr);
+        if(resolve_call(expr))
+        {
+            Optimizer::optimize(expr);
+            type_expr(expr);
+        }
         return;
 
     default:
