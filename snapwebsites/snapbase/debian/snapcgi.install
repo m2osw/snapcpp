@@ -1,4 +1,0 @@
-usr/lib/cgi-bin/snap.cgi
-conf/snapcgi.conf etc/snapwebsites/
-conf/snapcgi.properties etc/snapwebsites/
-conf/snap-apache2.conf etc/apache2/sites-available/
