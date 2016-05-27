@@ -332,7 +332,12 @@ void process::add_environ(QString const & name, QString const & value)
  * The threads only handle standard exceptions. Non-standard exceptions
  * will likely terminate the whole process.
  *
- * \return The exit code of hte child process (0 to 255)
+ * \todo
+ * Change the current pipe() call with the "two way pipes" socketpair()
+ * if that indeed runs faster. Both sockets can be used to read and
+ * write data, instead of 4 descriptors in case of the pipe() call.
+ *
+ * \return The exit code of the child process (0 to 255)
  *         or -1 if an error occurs
  */
 int process::run()
@@ -536,7 +541,7 @@ int process::run()
 
         ~raii_fork()
         {
-            // in this case f_child should already be zero, if not we're
+            // in this case f_child should already be zero, if not we are
             // throwing or exiting with -1 anyway
             wait();
         }
@@ -587,6 +592,7 @@ int process::run()
 
     case 0:
         // child
+        try
         {
             // convert arguments so we can use them with execvpe()
             std::vector<std::string> args;
@@ -643,9 +649,15 @@ int process::run()
             close(0);  // stdin
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
-            dup(inout.f_pipes[0]);
+            if(dup(inout.f_pipes[0]) < 0)
+            {
+                throw snap_process_exception_initialization_failed("dup() of the stdin pipe failed");
+            }
             close(1);  // stdout
-            dup(inout.f_pipes[3]);
+            if(dup(inout.f_pipes[3]) < 0)
+            {
+                throw snap_process_exception_initialization_failed("dup() of the stdout pipe failed");
+            }
 #pragma GCC diagnostic pop
             // TODO should we redirect stderr somewhere else?
 
@@ -657,8 +669,25 @@ int process::run()
                 const_cast<char * const *>(&envs_strings[0])
             );
             // the child returns only if execvp() fails, which is possible
-            SNAP_LOG_ERROR("Starting child process \"")(f_command.toUtf8().data())(" ")(f_arguments.join(" "))("\" failed.");
+            SNAP_LOG_FATAL("Starting child process \"")(f_command.toUtf8().data())(" ")(f_arguments.join(" "))("\" failed.");
         }
+        catch( snap_exception const & except )
+        {
+            SNAP_LOG_FATAL("process::run(): snap_exception caught: ")(except.what());
+        }
+        catch( std::exception const & std_except )
+        {
+            // the snap_logic_exception is not a snap_exception
+            // and other libraries may generate other exceptions
+            // (i.e. controlled_vars, libQtCassandra...)
+            SNAP_LOG_FATAL("process::run(): std::exception caught: ")(std_except.what());
+        }
+        catch( ... )
+        {
+            SNAP_LOG_FATAL("process::run(): unknown exception caught!");
+        }
+        exit(1);
+        NOTREACHED();
         return -1;
 
     default:
@@ -703,7 +732,7 @@ int process::run()
                     f_pipe = -1;
                 }
 
-                const QByteArray &  f_input;
+                QByteArray const &  f_input;
                 int &               f_pipe;
             } in(f_input, inout.f_pipes[1]);
             snap_thread in_thread("process::in::thread", &in);

@@ -79,6 +79,15 @@ public:
     explicit snap_process_exception_data_not_available(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
+class snap_process_exception_initialization_failed : public snap_process_exception
+{
+public:
+    explicit snap_process_exception_initialization_failed(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_initialization_failed(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    explicit snap_process_exception_initialization_failed(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
+};
+
+
 
 
 class process

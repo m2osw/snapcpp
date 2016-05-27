@@ -166,6 +166,12 @@ f) setup a node after you gave it a type (we may want to say that the
 	       default site can be "dangerous" if it fails... because then
 	       you get an infinite loop.)
 
+	f.1.5) replace the default index.html with our own, make sure to
+	       put a "NOINDEX" in the robots.txt header <meta> tag because
+	       that specific entry should never be indexed (it even works
+	       with a bare IP address if the user does not switch the default
+	       to Snap!)
+
    f.2) snap server: install snapserver and plugins and snap base
 
      Also see comment in (e.1)
