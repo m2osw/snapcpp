@@ -7,10 +7,12 @@
 #include <log4cplus/helpers/sleep.h>
 #include <log4cplus/loggingmacros.h>
 #include <iomanip>
+#include <iostream>
 
 using namespace std;
 using namespace log4cplus;
 
+    extern "C" void sleep(int);
 int
 main(int argc, char **argv)
 {
@@ -18,7 +20,7 @@ main(int argc, char **argv)
     log4cplus::helpers::sleep(1);
     tstring serverName = (argc > 1 ? LOG4CPLUS_C_STR_TO_TSTRING(argv[1]) : tstring());
 //    tstring host = LOG4CPLUS_TEXT("192.168.2.10");
-    tstring host = LOG4CPLUS_TEXT("192.168.2.169");
+    tstring host = LOG4CPLUS_TEXT("127.0.0.1");
     SharedAppenderPtr append_1(new SocketAppender(host, 9998, serverName));
     append_1->setName( LOG4CPLUS_TEXT("First") );
     Logger::getRoot().addAppender(append_1);
@@ -52,6 +54,11 @@ main(int argc, char **argv)
                     "This is a long double: " 
                     << setprecision(15) 
                     << 123452342342.342L);
+
+    sleep(20);
+    LOG4CPLUS_FATAL(test, "sending last input?!?");
+
+    std::cerr << "Now we're done.\n";
 
     return 0;
 }

@@ -1558,11 +1558,11 @@ found_option:
                 }
             }
 
-//std::cerr << "Now compile...\n";
+std::cerr << "Now compile...\n";
             // run the compiler
             as2js::Compiler compiler(options);
             compiler.compile(root);
-//std::cerr << "Compiler returned!...\n" << *root;
+std::cerr << "Compiler returned!...\n" << *root;
 
             tc.got_called();
 

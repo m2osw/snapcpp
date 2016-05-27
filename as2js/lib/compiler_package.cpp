@@ -276,7 +276,7 @@ Node::pointer_t Compiler::load_module(char const *module, char const *file)
 
 
 
-void Compiler::find_packages_add_database_entry(String const& package_name, Node::pointer_t& element, char const *type)
+void Compiler::find_packages_add_database_entry(String const & package_name, Node::pointer_t & element, char const * type)
 {
     // here, we totally ignore internal, private
     // and false entries right away
@@ -316,7 +316,7 @@ void Compiler::find_packages_save_package_elements(Node::pointer_t package, Stri
         else if(child->get_type() == Node::node_t::NODE_FUNCTION)
         {
             // we do not save prototypes, that is tested later
-            const char *type;
+            char const * type;
             if(child->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER))
             {
                 type = "getter";
@@ -992,7 +992,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
 
     if(child->get_type() == Node::node_t::NODE_FUNCTION && params)
     {
-//std::cerr << "  +--> check_name(): resolved function...\n";
+std::cerr << "  +--> check_name(): resolved function...\n";
         if(check_function_with_params(child, params) < 0)
         {
             resolution.reset();

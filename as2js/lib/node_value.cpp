@@ -355,7 +355,7 @@ String const& Node::get_string() const
         break;
 
     default:
-        throw exception_internal_error("get_string() called with a non-string node type");
+        throw exception_internal_error(std::string("get_string() called with non-string node type: ") + get_type_name());
 
     }
 
