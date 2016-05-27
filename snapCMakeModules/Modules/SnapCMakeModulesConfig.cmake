@@ -75,4 +75,36 @@ find_package_handle_standard_args(
     CMAKE_CXX_FLAGS_RELEASE
 )
 
+
+find_program( DPKG_PARSECHANGELOG dpkg-parsechangelog )
+
+# Use this function to parse the version from the debian/changelog.
+# It will create four variables in the parent scope, each with ${PACKAGE_NAME}_
+# prepended.
+#
+# You must have dpkg-dev installed first!
+#
+function( SnapGetVersion PACKAGE_NAME WORKING_DIRECTORY )
+    if( ${DPKG_PARSECHANGELOG} STREQUAL ${DPKG_PARSECHANGELOG}-NOTFOUND )
+        message( FATAL_ERROR "dpkg-parsechangelog not found! Is dpkg-dev installed?" )
+    endif()
+
+    execute_process(
+        COMMAND ${DPKG_PARSECHANGELOG} -S Version
+        WORKING_DIRECTORY ${WORKING_DIRECTORY}
+        OUTPUT_VARIABLE VERSION
+        )
+
+    STRING( REGEX REPLACE "^([0-9]+)\\.[0-9]+\\.[0-9]+\\.[^$]+$" "\\1" major_version "${VERSION}" )
+    STRING( REGEX REPLACE "^[0-9]+\\.([0-9])+\\.[0-9]+\\.[^$]+$" "\\1" minor_version "${VERSION}" )
+    STRING( REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+)\\.[^$]+$" "\\1" patch_version "${VERSION}" )
+    STRING( REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\.([^\n]+)\n" "\\1" build_version "${VERSION}" )
+
+    set( ${PACKAGE_NAME}_VERSION_MAJOR ${major_version} PARENT_SCOPE )
+    set( ${PACKAGE_NAME}_VERSION_MINOR ${minor_version} PARENT_SCOPE )
+    set( ${PACKAGE_NAME}_VERSION_PATCH ${patch_version} PARENT_SCOPE )
+    set( ${PACKAGE_NAME}_VERSION_BUILD ${build_version} PARENT_SCOPE )
+
+endfunction()
+
 # vim: ts=4 sw=4 expandtab wrap
