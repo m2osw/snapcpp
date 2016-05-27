@@ -48,8 +48,8 @@ function( ConfigureMakeProjectInternal )
 		message( FATAL_ERROR "You must specify TARGET_NAME!" )
 	endif()
 
-	set( SRC_DIR        ${CMAKE_SOURCE_DIR}/${ARG_PROJECT_NAME} )
-	set( BUILD_DIR      ${CMAKE_BINARY_DIR}/${ARG_TARGET_NAME}  )
+	set( SRC_DIR        ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_PROJECT_NAME} )
+	set( BUILD_DIR      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_TARGET_NAME}  )
 	set( SNAP_DIST_DIR "${CMAKE_BINARY_DIR}/dist" CACHE PATH "Destination installation folder." )
 	if( ARG_DISTFILE_PATH )
 		set( RM_DIR ${SRC_DIR}   )
@@ -187,7 +187,7 @@ function( ConfigureMakeProjectInternal )
 		endforeach()
 		add_custom_target(
 			${ARG_TARGET_NAME}-incdeps
-			COMMAND ${INC_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${ARG_TARGET_NAME} ${ARG_DEPENDS}
+			COMMAND ${INC_DEPS_SCRIPT} ${CMAKE_CURRENT_SOURCE_DIR} ${ARG_TARGET_NAME} ${ARG_DEPENDS}
 			WORKING_DIRECTORY ${SRC_DIR}
 			COMMENT "Incrementing dependencies for debian package ${ARG_TARGET_NAME}"
 			)
