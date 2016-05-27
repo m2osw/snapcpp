@@ -1,0 +1,18 @@
+
+Template: snapwebsites/purge_database
+Type: select
+Default: No
+Choices: Yes, Full, No
+Description: Do you want to purge the snapwebsites database? Full means ALL tables!
+ When uninstalling, the snapwebsites package can purge all of the
+ snapwebsites-related data from the the Cassandra database.
+ .
+ Answering "Yes" will purge all snapwebsites tables except for the "websites"
+ and "domains" tables. This is useful if you want to keep your domain schema,
+ but want to purge all of the user data.
+ .
+ Answering "Full" will purge ALL snapwebsites tables (including "websites" and
+ "domains").
+ .
+ You need to be absolutely certain you want to do this! Make sure you backup
+ your database before taking this action!

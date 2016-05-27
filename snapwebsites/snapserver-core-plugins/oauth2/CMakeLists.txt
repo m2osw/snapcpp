@@ -30,7 +30,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_oauth2)
+project(oauth2)
 
 find_package( Qt5Core REQUIRED )
 
@@ -51,7 +51,7 @@ snap_validate_xml( oauth2-settings-page.xml     editor/editor-form.dtd )
 snap_validate_xml( oauth2-settings-parser.xsl   layout/simplified-xslt20.dtd )
 
 
-add_library(oauth2 SHARED
+add_library(${PROJECT_NAME} SHARED
     oauth2.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
@@ -61,20 +61,40 @@ add_library(oauth2 SHARED
     oauth2-logo-64x64.png
 )
 
-target_link_libraries( oauth2 Qt5::Core )
+target_link_libraries( ${PROJECT_NAME} Qt5::Core )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( oauth2 make_controlled_vars_headers )
+    add_dependencies( ${PROJECT_NAME} make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS oauth2 LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwebsites/plugins/oauth2
     FILES_MATCHING PATTERN "*.h"
+)
+
+
+#################################################################################
+## Encode a username and password for basic auth tool.
+##
+project(snap_uuencode_basic_auth)
+
+add_executable(${PROJECT_NAME}
+    snap_uuencode_basic_auth.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    ${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+    ${QT_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
 
 # vim: ts=4 sw=4 et
