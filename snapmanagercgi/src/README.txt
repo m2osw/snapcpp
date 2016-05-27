@@ -35,6 +35,7 @@ Everything else is to be setup with snapmanager.cgi
 
 The following are part that snapmanager.cgi help you with:
 
+
 a) setup the users as expected, especially, prevent root login from the
    outside (including ssh); add users with sudo and adm groups and your
    public key and a password (to make use of sudo you need a password.)
@@ -77,6 +78,11 @@ b) setup the firewall:
    b.3) Eventually allow DNS (53) and NTP (123) ports (TCP/UDP)
 
    b.4) Enable the port for emails (25)
+
+	Just like for other parts, this should be us installing a package
+	of some sort (or have that as part of the snapfirewall project?)
+	that includes the necessary rules to open the necessary ports for
+	sendmail and postmaster to work as expected.
 
    b.5) Allow ping from anyone or specific IPs (same IPs as for SSH)
 
@@ -220,7 +226,9 @@ f) setup a node after you gave it a type (we may want to say that the
      all on all backend servers...)
 
 
-   f.5) other(?): install snap base, allow to install SMTP, NTP, etc.
+   f.5) other(?): install snap base, allow to install SMTP, NTP (see (d) and
+	actually NTP is probably part of "base"--anyway Cassandra installs
+	it for us!!!), etc.
 
 
 
@@ -229,4 +237,82 @@ f) setup a node after you gave it a type (we may want to say that the
    tool can use to extend the firewall (or open additional ports)
    [so if uninstalled, we need to make sure that extension file gets
    removed since it would otherwise leave some ports open!]
+
+
+g) setup postfix -- I have a specific entry because this is a biggy, also
+   we may want to look into automating "everything" we know how to do in
+   postfix:
+   
+	. add users accounts
+	. create aliases / virtual entries
+	. add white lists
+	. add black lists
+	. offer to install postgrey (should be optional because some people
+	  do not like such at all)
+	. etc.
+
+   g.1) sudo apt-get install snapbounce
+
+   g.2) sudo apt-get install postfix
+
+   g.3) make sure the installation includes the proper domain name
+        (mydestinations = ... and myhostname = ...)
+
+   g.4) add the necessary elements to support bounces:
+
+	# Sat Oct  4 16:04:04 PDT 2014
+	# Adding this in preparation for SNAP-67
+	notify_classes = bounce
+	bounce_notice_recipient = bounces@snapwebsites.com
+	transport_maps = hash:/etc/postfix/transport.maps
+
+   g.5) add a file named transport.maps with one line and run the postmap
+	command to create the .db counterpart
+
+	# SNAP-67
+	# After changes, run postmap:
+	#   postmap /etc/postfix/transport.maps
+	#
+	#localhost bounces:
+	#mail.snapwebsites.com bounces:
+	bounces@snapwebsites.com snapbounce:
+
+   g.6) add one line of code to the master.cf so the snapbounce tool actually
+	gets executed whenever a bounced email is sent back to postfix.
+
+	# Service to save bounced emails in Cassandra
+	snapbounce unix -       n       n       -       -       pipe
+	  flags=FRq user=bounce argv=/usr/bin/snapbounce --sender ${sender} --recipient ${recipient}
+
+   g.7) offer to install postgrey (optional)
+
+
+h) setup a Cassandra node
+
+   Setting up a node is relatively easy, however, by default, after the
+   "apt-get install cassandra", you get a standalone node with a default
+   setup in the "cassandra.yaml". So we need snapmanager.cgi to tweak
+   the .yaml file for us, including the seeds and whatever else we want
+   to change in there (i.e. the IP addresses need to be changed to work
+   in a cluster.)
+
+   As the cluster is growing, with a certain limit (maybe 5?) we want to
+   update the replication factor of the system_auth keyspace because that
+   keyspace need replication (although at this point we do not ourselves
+   make use of authentication, if some of our users want to do that...)
+
+   See: http://docs.datastax.com/en/cql/3.0/cql/cql_using/update_ks_rf_t.html
+
+   Finally, we need to be able to change the replication factor of our
+   cluster for the end users. You run the ALTER command once and then
+   need to repair each node:
+
+      cqlsh -e "ALTER KEYSPACE snap_websites WITH replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };" <ip of this node>
+      nodetool repair
+      nodetool repair
+      ...
+
+   The replication factor should be selectable by end users. The default
+   should be the number of nodes minus one with a minimum of 2 unless
+   there is only one Cassandra node, then 1 is used.
 
