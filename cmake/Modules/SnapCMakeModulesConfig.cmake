@@ -95,15 +95,15 @@ function( SnapGetVersion PACKAGE_NAME WORKING_DIRECTORY )
         OUTPUT_VARIABLE VERSION
         )
 
-    STRING( REGEX REPLACE "^([0-9]+)\\.[0-9]+\\.[0-9]+\.[^$]+$" "\\1" major_version "${VERSION}" )
-    STRING( REGEX REPLACE "^[0-9]+\\.([0-9])+\\.[0-9]+\.[^$]+$" "\\1" minor_version "${VERSION}" )
-    STRING( REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+)\.[^$]+$" "\\1" patch_version "${VERSION}" )
-    STRING( REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\.([^$]+)$" "\\1" build_version "${VERSION}" )
+    STRING( REGEX REPLACE "^([0-9]+)\\.[0-9]+\\.[0-9]+\\.[^$]+$" "\\1" major_version "${VERSION}" )
+    STRING( REGEX REPLACE "^[0-9]+\\.([0-9])+\\.[0-9]+\\.[^$]+$" "\\1" minor_version "${VERSION}" )
+    STRING( REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+)\\.[^$]+$" "\\1" patch_version "${VERSION}" )
+    STRING( REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\.([^\n]+)\n" "\\1" build_version "${VERSION}" )
 
-    set( ${PACKAGE_NAME}_MAJOR_VERSION ${major_version} PARENT_SCOPE )
-    set( ${PACKAGE_NAME}_MINOR_VERSION ${minor_version} PARENT_SCOPE )
-    set( ${PACKAGE_NAME}_PATCH_VERSION ${patch_version} PARENT_SCOPE )
-    set( ${PACKAGE_NAME}_BUILD_VERSION ${build_version} PARENT_SCOPE )
+    set( ${PACKAGE_NAME}_VERSION_MAJOR ${major_version} PARENT_SCOPE )
+    set( ${PACKAGE_NAME}_VERSION_MINOR ${minor_version} PARENT_SCOPE )
+    set( ${PACKAGE_NAME}_VERSION_PATCH ${patch_version} PARENT_SCOPE )
+    set( ${PACKAGE_NAME}_VERSION_BUILD ${build_version} PARENT_SCOPE )
 
 endfunction()
 
