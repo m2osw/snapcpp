@@ -30,6 +30,28 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+cmake_minimum_required(VERSION 3.5)
+
+# Find includes in corresponding build directories
+set( CMAKE_INCLUDE_CURRENT_DIR ON )
+
+# Find required packaging
+find_package( AdvGetOpt          REQUIRED )
+find_package( log4cplus          REQUIRED )
+find_package( LibTLD             REQUIRED )
+find_package( Qt5Core            REQUIRED )
+find_package( QtCassandra        REQUIRED )
+find_package( SnapCMakeModules   REQUIRED )
+find_package( SnapDoxygen        REQUIRED )
+find_package( SnapWebsites       REQUIRED )
+
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+)
+set( QT_LIBRARIES
+    Qt5::Core
+)
+SnapGetVersion( SNAPLOCK )
 
 #################################################################################
 ## Snap Lock daemon
@@ -37,15 +59,15 @@
 project(snaplock)
 
 add_executable(${PROJECT_NAME}
-    snaplock.cpp
-    main.cpp
-    snaplock_messager.cpp
-    snaplock_ticket.cpp
-    snaplock_tool.cpp
+    src/snaplock.h
+    src/snaplock.cpp
+    src/main.cpp
+    src/snaplock_messager.cpp
+    src/snaplock_ticket.cpp
+    src/snaplock_tool.cpp
 )
-    #snaplock_entering.cpp -- there is a one to one relationship between tickets and entering so we have a single object
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries( ${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
@@ -57,6 +79,33 @@ target_link_libraries(${PROJECT_NAME}
 install(
     TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
+
+option( RUN_TESTS "Enable tests to run via CTest" OFF )
+if( ${RUN_TESTS} )
+    enable_testing()
+endif()
+
+find_package( Catch )
+
+if(CATCH_FOUND)
+    set( CASSANDRA_HOST_IP "127.0.0.1" CACHE STRING "Host IP address for the cassandra server to connect to." )
+    ##
+    ## Test the snap_lock from one or multiple computers
+    ##
+    project(test_snap_lock)
+    add_executable( ${PROJECT_NAME}
+        tests/test_snap_lock.cpp
+    )
+    target_link_libraries(${PROJECT_NAME}
+        ${SNAPWEBSITES_LIBRARIES}
+        ${LOG4CPLUS_LIBRARIES}
+        ${QTCASSANDRA_LIBRARIES}
+        ${LIBTLD_LIBRARIES}
+        ${QT_LIBRARIES}
+        dl
+    )
+    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --cassandra ${CASSANDRA_HOST_IP} )
+endif(CATCH_FOUND)
 
 
 # vim: ts=4 sw=4 et

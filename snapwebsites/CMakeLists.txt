@@ -46,10 +46,6 @@ ConfigureMakeProject( PROJECT_NAME libsnapwebsites
     DEPENDS zipios2 libQtCassandra libQtSerialization libtld as2js log4cplus csspp
 )
 
-ConfigureMakeProject( PROJECT_NAME snapbase
-    DEPENDS cmake
-)
-
 ConfigureMakeProject( PROJECT_NAME snapbackend
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
@@ -57,9 +53,53 @@ ConfigureMakeProject( PROJECT_NAME snapbackend
 )
 
 ConfigureMakeProject( PROJECT_NAME snapbackup
-    CONFIG_ARGS
-        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
     DEPENDS advgetopt libQtCassandra cmake
+)
+
+ConfigureMakeProject( PROJECT_NAME snapbase
+    DEPENDS cmake
+)
+
+ConfigureMakeProject( PROJECT_NAME snapbounce
+    DEPENDS libsnapwebsites snapbase
+)
+
+ConfigureMakeProject( PROJECT_NAME snapcgi
+    DEPENDS libsnapwebsites snapbase
+)
+
+ConfigureMakeProject( PROJECT_NAME snapcommunicator
+    DEPENDS libsnapwebsites snapbase
+)
+
+ConfigureMakeProject( PROJECT_NAME snapdb
+    CONFIG_ARGS
+        DEPENDS libsnapwebsites snapbase
+)
+
+ConfigureMakeProject( PROJECT_NAME snapdbproxy
+    CONFIG_ARGS
+        DEPENDS libsnapwebsites snapbase
+)
+
+ConfigureMakeProject( PROJECT_NAME snapfirewall
+    CONFIG_ARGS
+        DEPENDS libsnapwebsites snapbase
+)
+
+ConfigureMakeProject( PROJECT_NAME snapinit
+    CONFIG_ARGS
+        DEPENDS libsnapwebsites snapbase
+)
+
+ConfigureMakeProject( PROJECT_NAME snaplayout
+    CONFIG_ARGS
+        DEPENDS libsnapwebsites snapbase
+)
+
+ConfigureMakeProject( PROJECT_NAME snaplock
+    CONFIG_ARGS
+        DEPENDS libsnapwebsites snapbase
 )
 
 ConfigureMakeProject( PROJECT_NAME snapmanager
@@ -73,6 +113,22 @@ ConfigureMakeProject( PROJECT_NAME snapmanager
 )
 
 ConfigureMakeProject( PROJECT_NAME snapmanagercgi
+    CONFIG_ARGS
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    DEPENDS advgetopt libsnapwebsites
+)
+
+ConfigureMakeProject( PROJECT_NAME snapserver
+    CONFIG_ARGS
+        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    DEPENDS advgetopt libsnapwebsites
+)
+
+ConfigureMakeProject( PROJECT_NAME snapserver-core-plugins
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLIBTLD_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
