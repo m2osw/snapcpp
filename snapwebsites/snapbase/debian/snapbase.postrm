@@ -11,6 +11,8 @@ then
 		echo "Deleting snapwebsites user"
 		deluser --quiet snapwebsites > /dev/null || true
 	fi
+
+    rmdir /etc/snapwebsites
 fi
 
 #DEBHELPER#

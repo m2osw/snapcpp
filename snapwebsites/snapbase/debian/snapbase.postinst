@@ -48,37 +48,6 @@ then
     #
     mkdir -p /var/lib/snapwebsites
     chown snapwebsites.snapwebsites /var/lib/snapwebsites
-
-    # check to make sure that the layouts have been initialized properly.
-    #
-    set +e
-    if ! service cassandra status > /dev/null 2> /dev/null
-    #if [ "$?" != 0 ] 
-    then
-        echo "No cassandra server running, so you must initialize the DB by hand when the server is up."
-        exit 0;
-    fi  
-
-    [ -r /etc/default/snapserver ] && . /etc/default/snapserver
-
-    if [ "${SNAPSERVER_ENABLED}" != "yes" ]
-    then
-            echo "Snapwebsites service disabled. Modify your config files in /etc/snapwebsites, and then enable the service in /etc/default/snapserver."
-            exit 0
-    fi
-
-    if ! /usr/bin/snapdb layout > /dev/null 2> /dev/null
-    then
-        echo "Loading layouts into cassandra for the first time."
-        LAYOUTDIR=/usr/share/snapwebsites/layouts
-        for layout in `ls ${LAYOUTDIR}`
-        do  
-            FULLPATH=${LAYOUTDIR}/${layout}
-            /usr/bin/snaplayout ${FULLPATH}/*
-        done
-        /usr/bin/snapserver --no-log --add-host
-        echo "Basic database is complete, but you must add domains and websites using the snapmanager tool."
-    fi
 fi
 
 # vim: ts=4 sw=4 et nocindent
