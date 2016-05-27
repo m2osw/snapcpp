@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2015 Made to Order Software Corp.
+#      Copyright (c) 2011-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -32,10 +32,6 @@
 ##
 ## Initialization
 ##
-set(SNAPWEBSITES_VERSION_MAJOR  0)
-set(SNAPWEBSITES_VERSION_MINOR  1)
-set(SNAPWEBSITES_VERSION_PATCH 72)
-
 cmake_minimum_required(VERSION 2.8)
 
 # Reasons for warnings that are turned off:
@@ -118,6 +114,8 @@ find_package( SnapWebsites       REQUIRED )
 find_package( ZLIB               REQUIRED )
 find_package( ZipIos             REQUIRED 2.1      )
 
+SnapGetVersion( SNAPSERVER )
+
 include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
@@ -166,9 +164,7 @@ set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 ##
 ## Compiling
 ##
-add_subdirectory(plugins)       # Plug-ins (i.e. modular functionality)
 add_subdirectory(src)           # Actual Snap! Websites server
-add_subdirectory(layouts)       # Layouts offered along Core
 add_subdirectory(tests)         # Tests to run against the server
 add_subdirectory(conf)          # Configuration files and samples
 

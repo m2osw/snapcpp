@@ -44,7 +44,7 @@ project( snapwebsites_main )
 # Load up necessary modules
 #
 set( CMAKE_MODULE_PATH
-    ${CMAKE_SOURCE_DIR}/snapCMakeModules/Modules
+    ${CMAKE_SOURCE_DIR}/cmake/Modules
     ${CMAKE_BINARY_DIR}/dist/share/cmake-2.8/Modules
     ${CMAKE_BINARY_DIR}/dist/share/cmake
 )
@@ -54,7 +54,7 @@ find_package( SnapBuild REQUIRED )
 ################################################################################
 # Snap libraries
 #
-ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
+ConfigureMakeProject( PROJECT_NAME cmake )
 
 ConfigureMakeProject( PROJECT_NAME zipios2
     CONFIG_ARGS
@@ -71,47 +71,47 @@ ConfigureMakeProject( PROJECT_NAME log4cplus
 )
 
 ConfigureMakeProject( PROJECT_NAME iplock
-    DEPENDS snapCMakeModules
+    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME controlled_vars
-    DEPENDS snapCMakeModules
+    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME libtld
-    DEPENDS snapCMakeModules
+    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME advgetopt
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS snapCMakeModules controlled_vars
+    DEPENDS cmake controlled_vars
 )
 
 ConfigureMakeProject( PROJECT_NAME as2js
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS snapCMakeModules controlled_vars advgetopt
+    DEPENDS cmake controlled_vars advgetopt
 )
 
 ConfigureMakeProject( PROJECT_NAME csspp
-    DEPENDS snapCMakeModules advgetopt
+    DEPENDS cmake advgetopt
 )
 
 ConfigureMakeProject( PROJECT_NAME googlerank
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS snapCMakeModules controlled_vars
+    DEPENDS cmake controlled_vars
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
         CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS snapCMakeModules controlled_vars as2js libtld
+    DEPENDS cmake controlled_vars as2js libtld
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
-    DEPENDS snapCMakeModules
+    DEPENDS cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME libsnapwebsites
@@ -126,7 +126,7 @@ ConfigureMakeProject( PROJECT_NAME libsnapwebsites
 ConfigureMakeProject( PROJECT_NAME snapbackup
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS advgetopt libQtCassandra snapCMakeModules
+    DEPENDS advgetopt libQtCassandra cmake
 )
 
 ConfigureMakeProject( PROJECT_NAME snapmanagercgi

@@ -1,0 +1,18 @@
+#!/bin/sh -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if [ "$1" = "purge" ]
+then
+	rm -rf /var/lib/snapwebsites /var/log/snapwebsites
+	# delete snapwebsites daemon user, if it exists
+	if getent passwd snapwebsites > /dev/null ; then
+		echo "Deleting snapwebsites user"
+		deluser --quiet snapwebsites > /dev/null || true
+	fi
+fi
+
+#DEBHELPER#
+
+# vim: ts=4 sw=4 et nocindent

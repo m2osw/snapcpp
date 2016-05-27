@@ -1,0 +1,13 @@
+# Defaults for snapwebsites initscript
+# sourced by /etc/init.d/snapwebsites
+# installed at /etc/default/snapwebsites by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Set to "yes" to enable the daemon
+SNAPSERVER_ENABLED="no"
+
+# Additional options passed to snapinit.
+INIT_OPTS=""

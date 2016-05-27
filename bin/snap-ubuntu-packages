@@ -13,6 +13,7 @@ apt-get install \
     closure-linter \
     cmake \
     doxygen \
+    dpkg-dev \
     gcc \
     g++ \
     libboost-dev \
