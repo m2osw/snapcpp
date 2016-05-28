@@ -1,2 +1,2 @@
 conf/loggingserver.properties conf/log.properties conf/logserver.properties etc/snapwebsites
-usr/share/snapwebsites/conf/*
+src/* usr/share/snapwebsites/src

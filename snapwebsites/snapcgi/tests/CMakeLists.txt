@@ -38,6 +38,13 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
+if( 3RDPARTY_INCLUDED )
+    add_custom_target( test_prereqs DEPENDS make_controlled_vars_headers )
+else()
+    add_custom_target( test_prereqs )
+endif()
+
 set( CASSANDRA_HOST_IP "127.0.0.1" CACHE STRING "Host IP address for the cassandra server to connect to." )
 
 ##
@@ -48,47 +55,25 @@ find_package( Catch )
 
 if(CATCH_FOUND)
 
-    project(test_snap_communicator)
-
-    add_executable(${PROJECT_NAME}
-        # Main
-        snap_tests.cpp
-        catch_tests.cpp
-
-        # Test suites
-        catch_snap_communicator.cpp
-    )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
-    target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
-    )
-
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --host ${CASSANDRA_HOST_IP} )
-
     ##
-    ## A client used to test our Snap! Communicator
+    ## Send orders to the Snap Server via the snap.cgi tool
     ##
-    project(test_snap_communicator_client)
-    add_executable(${PROJECT_NAME}
-        # Main
+    project(test_snap_cgi)
+    add_executable(test_snap_cgi
         snap_tests.cpp
-        test_snap_communicator_client.cpp
+        test_snap_cgi.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
-    target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
+    add_dependencies( test_snap_cgi test_prereqs )
+    # while developing you may need to set LD_LIBRARY_PATH
+    target_link_libraries(test_snap_cgi
+        #${SNAPWEBSITES_LIBRARIES}
+        #QtCassandra
+        #QtCore
+        #QtXml
+        #QtNetwork
+        #tld
     )
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --host ${CASSANDRA_HOST_IP} )
+    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
 
 else(CATCH_FOUND)
 

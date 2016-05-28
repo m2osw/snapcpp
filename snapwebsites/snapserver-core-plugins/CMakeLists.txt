@@ -37,6 +37,105 @@ project( snapwebsites_plugins )
 #
 set( PLUGIN_INSTALL_DIR lib/snapwebsites/plugins )
 
+################################################################################
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+################################################################################
+# Automatically run the moc compiler on qt files
+set( CMAKE_AUTOMOC TRUE )
+
+################################################################################
+# Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
+set( DTD_SOURCE_PATH "${snapwebsites_project_SOURCE_DIR}/plugins" CACHE PATH "Location of the default DTD files" )
+
+## Include support modules
+##
+find_package( AdvGetOpt          REQUIRED )
+find_package( Boost              REQUIRED )
+find_package( CSSPP              REQUIRED )
+find_package( ControlledVars     REQUIRED )
+find_package( LibTLD             REQUIRED )
+find_package( LibXml2            REQUIRED )
+find_package( log4cplus          REQUIRED )
+find_package( OpenSSL            REQUIRED )
+find_package( ProcPS             REQUIRED )
+find_package( Qt5Core            REQUIRED )
+find_package( Qt5Network         REQUIRED )
+find_package( Qt5Script          REQUIRED )
+find_package( Qt5Sql             REQUIRED )
+find_package( Qt5Widgets         REQUIRED )
+find_package( Qt5Xml             REQUIRED )
+find_package( Qt5XmlPatterns     REQUIRED )
+find_package( QtCassandra        REQUIRED )
+find_package( QtSerialization    REQUIRED )
+find_package( SnapCMakeModules   REQUIRED )
+find_package( SnapDoxygen        REQUIRED )
+find_package( SnapWebsites       REQUIRED )
+find_package( ZLIB               REQUIRED )
+find_package( ZipIos             REQUIRED 2.1      )
+
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Script_INCLUDE_DIRS}
+    ${Qt5Sql_INCLUDE_DIRS}
+    ${Qt5Widgets_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS}
+    ${Qt5XmlPatterns_INCLUDE_DIRS}
+)
+include_directories(
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+)
+set( QT_LIBRARIES
+    Qt5::Core
+    Qt5::Network
+    Qt5::Script
+    Qt5::Sql
+    Qt5::Xml
+    Qt5::XmlPatterns
+)
+
+SnapGetVersion( COREPLUGINS )
+
+find_library( UUID uuid )
+if( ${UUID} STREQUAL "UUID-NOTFOUND" )
+    message( FATAL_ERROR "Cannot find uuid library!" )
+endif()
+
+find_program( ZIP zip               REQUIRED )
+find_program( CLOSURELINTER gjslint REQUIRED DOC "verify that Google JavaScript linter is installed: sudo apt-get install closure-linter" )
+
+if( "${XMLLINT_EXECUTABLE}" STREQUAL "XMLLINT_EXECUTABLE-NOTFOUND" )
+    message( FATAL_ERROR "xmllint was not found, you need to install libxml2-utils" )
+endif()
+
+if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
+    message("Debug is in effect for snapserver-core-plugins!")
+    add_definitions( -DDEBUG -D_DEBUG -DCONTROLLED_VARS_DEBUG )
+else()
+    message("Debug is turned OFF for snapserver-core-plugins")
+    add_definitions( -DNDEBUG )
+endif()
+# A few extra warnings specifically for snapwebsites libraries and tools
+# You can also play with -Weffc++ although we are definitively not compliant
+# (especially we do not define all the auto-initialized variables!)
+# -Wconversion -- would be nice, a few things are still not cooperating with that one
+# -DUNISTR_FROM_STRING_EXPLICIT=explicit is for the Unicode library, to make sure it does not copy strings arounds automatically
+# -DMAGICKCORE_QUANTUM_DEPTH=16 is the default depth, newer versions of ImageMagick require that definition from you (no internal default)
+# -DMAGICKCORE_HDRI_ENABLE=0 is also the default for ImageMagick; I'm not too sure what HDRI stands for though...
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
+set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
+
+include_directories(
+    ${ADVGETOPT_INCLUDE_DIRS}
+    ${QTCASSANDRA_INCLUDE_DIRS}
+    ${QTSERIALIZATION_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${LIBTLD_INCLUDE_DIRS}
+)
+
 ##
 ## Include xmllint utilties
 ##
@@ -107,6 +206,13 @@ add_subdirectory(users)
 add_subdirectory(users_ui)
 add_subdirectory(versions)
 add_subdirectory(webform)
+
+##
+## Analyse xml and javascript
+##
+snap_build_css_targets()
+snap_build_js_targets()
+snap_build_xml_targets()
 
 
 # vim: ts=4 sw=4 nocindent
