@@ -1,3 +1,25 @@
+# All: common log file so we can easily see who does what when
+/var/log/snapwebsites/all.log {
+    weekly
+    maxage 92
+    maxsize 10M
+    su snapwebsites snapwebsites
+    missingok
+    rotate 5
+    postrotate
+        # Use the '.' as the destination in this case so any process
+        # that may handle the 'all.log' has a change to restart their
+        # logger
+        /usr/bin/snapsignal ./LOG
+    endscript
+    compress
+    delaycompress
+    notifempty
+    shred
+    nomail
+    create 600 snapwebsites snapwebsites
+}
+
 # Snap Server
 /var/log/snapwebsites/snapserver.log {
     weekly
