@@ -1812,7 +1812,16 @@ void snaplock::ticket_list(snap::snap_communicator_message const & message)
     // add newlines for people who have TRACE mode would otherwise have
     // a hard time to find the actual list
     //
-    std::cout << std::endl << list << std::endl;
+    if(list.empty())
+    {
+        // TODO: add a --quiet command line option
+        //
+        std::cout << std::endl << "...no locks found..." << std::endl;
+    }
+    else
+    {
+        std::cout << std::endl << list << std::endl;
+    }
 }
 
 

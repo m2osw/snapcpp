@@ -2003,7 +2003,7 @@ QString sessions::get_from_session(session_info const & info, QString const & na
         return "";
     }
 
-    // if not defined, we'll get an empty string which is what's expected
+    // if not defined, we will get an empty string which is what is expected
     QtCassandra::QCassandraValue value(row->cell(name)->value());
 
     return value.stringValue();
