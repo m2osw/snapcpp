@@ -35,17 +35,20 @@ cmake_minimum_required(VERSION 3.5)
 #################################################################################
 ## The Snap! Passthrough CGI script
 ##
-project(snapcgi)
+project(snapcgi_project)
 
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -fPIC -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package( AdvGetOpt       REQUIRED )
-find_package( Qt5Core         REQUIRED )
-find_package( Qt5Xml          REQUIRED )
-find_package( SnapWebsites    REQUIRED )
+find_package( AdvGetOpt        REQUIRED )
+find_package( Qt5Core          REQUIRED )
+find_package( Qt5Xml           REQUIRED )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapWebsites     REQUIRED )
+
+SnapGetVersion( SNAPCGI ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
@@ -59,23 +62,8 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 
-add_executable(${PROJECT_NAME}
-    src/snap.cpp
-)
-
-set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snap.cgi )
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib/cgi-bin
-)
-
+add_subdirectory( conf  )
+add_subdirectory( src   )
 add_subdirectory( tests )
 
 # vim: ts=4 sw=4 et

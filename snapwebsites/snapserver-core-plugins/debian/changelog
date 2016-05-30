@@ -1,0 +1,5 @@
+snapwebsites-core-plugins (1.0.0) xenial; urgency=high
+
+  * Initial release of packaging for the new snapserver project.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 26 May 2016 20:23:45 -0800

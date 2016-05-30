@@ -35,7 +35,7 @@ cmake_minimum_required(VERSION 3.5)
 #################################################################################
 ## Backend process
 ##
-project(snapbackend)
+project(snapbackend_project)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -50,6 +50,8 @@ find_package( QtCassandra     REQUIRED )
 find_package( QtSerialization REQUIRED )
 find_package( SnapWebsites    REQUIRED )
 
+SnapGetVersion( SNAPBACKEND ${CMAKE_CURRENT_SOURCE_DIR} )
+
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Xml_INCLUDE_DIRS}
@@ -62,23 +64,6 @@ include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 
-add_executable(${PROJECT_NAME}
-    snapbackend.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    dl
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
+add_subdirectory( src )
 
 # vim: ts=4 sw=4 et

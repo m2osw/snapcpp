@@ -34,10 +34,6 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
 set( CASSANDRA_HOST_IP "127.0.0.1" CACHE STRING "Host IP address for the cassandra server to connect to." )
 
 ##
@@ -52,13 +48,13 @@ if(CATCH_FOUND)
 
     add_executable(${PROJECT_NAME}
         # Main
-        snap_tests.cpp
+        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.h
+        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.cpp
         catch_tests.cpp
 
         # Test suites
         catch_snap_communicator.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
@@ -76,10 +72,10 @@ if(CATCH_FOUND)
     project(test_snap_communicator_client)
     add_executable(${PROJECT_NAME}
         # Main
-        snap_tests.cpp
+        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.h
+        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.cpp
         test_snap_communicator_client.cpp
     )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}

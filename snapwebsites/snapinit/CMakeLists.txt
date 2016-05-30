@@ -32,7 +32,7 @@
 #
 cmake_minimum_required(VERSION 3.5)
 
-project(snapinit)
+project(snapinit_project)
 
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
@@ -48,6 +48,8 @@ find_package( QtCassandra     REQUIRED )
 find_package( QtSerialization REQUIRED )
 find_package( SnapWebsites    REQUIRED )
 
+SnapGetVersion( SNAPINIT ${CMAKE_CURRENT_SOURCE_DIR} )
+
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Xml_INCLUDE_DIRS}
@@ -59,25 +61,8 @@ set( QT_LIBRARIES
 
 include_directories( ${SNAPWEBSITES_INCLUDE_DIRS} )
 
-add_executable(${PROJECT_NAME}
-    snapinit.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBPROCPS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    dl
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
+add_subdirectory( conf )
+add_subdirectory( src  )
 
 
 # vim: ts=4 sw=4 et

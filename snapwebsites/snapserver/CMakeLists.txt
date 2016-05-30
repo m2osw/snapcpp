@@ -58,9 +58,6 @@ set( CMAKE_AUTOMOC TRUE )
 # Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
 set( DTD_SOURCE_PATH "${snapwebsites_project_SOURCE_DIR}/plugins" CACHE PATH "Location of the default DTD files" )
 
-enable_language( CXX )
-enable_language( C )
-
 option( RUN_TESTS "Enable tests to run via CTest" OFF )
 if( ${RUN_TESTS} )
     enable_testing()
@@ -79,7 +76,6 @@ find_package( LibXml2            REQUIRED )
 find_package( log4cplus          REQUIRED )
 find_package( OpenSSL            REQUIRED )
 find_package( ProcPS             REQUIRED )
-
 find_package( Qt5Core            REQUIRED )
 find_package( Qt5Network         REQUIRED )
 find_package( Qt5Script          REQUIRED )
@@ -87,6 +83,13 @@ find_package( Qt5Sql             REQUIRED )
 find_package( Qt5Widgets         REQUIRED )
 find_package( Qt5Xml             REQUIRED )
 find_package( Qt5XmlPatterns     REQUIRED )
+find_package( QtCassandra        REQUIRED )
+find_package( QtSerialization    REQUIRED )
+find_package( SnapCMakeModules   REQUIRED )
+find_package( SnapDoxygen        REQUIRED )
+find_package( SnapWebsites       REQUIRED )
+find_package( ZLIB               REQUIRED )
+find_package( ZipIos             REQUIRED 2.1      )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
@@ -106,15 +109,7 @@ set( QT_LIBRARIES
     Qt5::XmlPatterns
 )
 
-find_package( QtCassandra        REQUIRED )
-find_package( QtSerialization    REQUIRED )
-find_package( SnapCMakeModules   REQUIRED )
-find_package( SnapDoxygen        REQUIRED )
-find_package( SnapWebsites       REQUIRED )
-find_package( ZLIB               REQUIRED )
-find_package( ZipIos             REQUIRED 2.1      )
-
-SnapGetVersion( SNAPSERVER )
+SnapGetVersion( SNAPSERVER ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories(
     ${SNAPWEBSITES_INCLUDE_DIRS}
@@ -146,7 +141,7 @@ endif()
 # -DUNISTR_FROM_STRING_EXPLICIT=explicit is for the Unicode library, to make sure it does not copy strings arounds automatically
 # -DMAGICKCORE_QUANTUM_DEPTH=16 is the default depth, newer versions of ImageMagick require that definition from you (no internal default)
 # -DMAGICKCORE_HDRI_ENABLE=0 is also the default for ImageMagick; I'm not too sure what HDRI stands for though...
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 include_directories(
@@ -169,7 +164,7 @@ add_subdirectory(tests)         # Tests to run against the server
 add_subdirectory(conf)          # Configuration files and samples
 
 ##
-## Install run script
+## Install run scripts
 ##
 install(
     PROGRAMS

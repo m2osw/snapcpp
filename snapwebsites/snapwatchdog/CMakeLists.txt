@@ -32,10 +32,6 @@
 ##
 ## Initialization
 ##
-set(SNAPWATCHDOG_VERSION_MAJOR  0)
-set(SNAPWATCHDOG_VERSION_MINOR  2)
-set(SNAPWATCHDOG_VERSION_PATCH  1)
-
 cmake_minimum_required(VERSION 2.8)
 
 
@@ -60,7 +56,6 @@ set( CMAKE_MODULE_PATH
 )
 
 find_package(  AdvGetOpt        REQUIRED )
-#find_package( ControlledVars   REQUIRED )
 find_package(  LibTLD           REQUIRED )
 find_package(  log4cplus        REQUIRED )
 find_package(  Qt5Core          REQUIRED )
@@ -70,11 +65,9 @@ find_package(  Qt5XmlPatterns   REQUIRED )
 find_package(  QtCassandra      REQUIRED )
 find_package(  QtSerialization  REQUIRED )
 find_package(  SnapCMakeModules REQUIRED )
-#find_package( SnapDoxygen      REQUIRED )
 find_package(  SnapWebsites     REQUIRED )
-#find_package( ZLIB             REQUIRED )
-#find_package( ZipIos++         REQUIRED 0.1.5.9  )
-#find_program( ZIP              zip      REQUIRED )
+
+SnapGetVersion( SNAPWATCHDOG ${CMAKE_CURRENT_SOURCE_DIR} )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for snapwatchdog!")
@@ -101,13 +94,6 @@ include_directories(
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/lib
     ${SNAPWEBSITES_INCLUDE_DIRS}
-    ##${PROJECT_SOURCE_DIR}
-    ##${ADVGETOPT_INCLUDE_DIRS}
-    ##${QTCASSANDRA_INCLUDE_DIRS}
-    ##${QTSERIALIZATION_INCLUDE_DIRS}
-    ##${CMAKE_BINARY_DIR}
-    ##${CONTROLLEDVARS_INCLUDE_DIRS}
-    ##${LIBTLD_INCLUDE_DIRS}
 )
 
 ##
@@ -117,9 +103,6 @@ add_subdirectory(cmake)         # SnapWebsites CMake Modules
 add_subdirectory(lib)           # Common code which is too specialized to create a separate library
 add_subdirectory(plugins)       # Plug-ins (i.e. modular functionality)
 add_subdirectory(src)           # Actual Snap! Websites server
-#add_subdirectory(layouts)       # Layouts offered along Core
-#add_subdirectory(tests)         # Tests to run against the server
-#add_subdirectory(doc)           # API Documentation
 add_subdirectory(conf)          # Configuration files and samples
 
 ##

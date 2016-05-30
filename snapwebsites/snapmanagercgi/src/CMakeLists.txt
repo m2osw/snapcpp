@@ -29,9 +29,6 @@
 #      along with this program; if not, write to the Free Software
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-cmake_minimum_required(VERSION 3.5)
-
-
 project( snamanagercgi )
 
 # Put the version in the header file
@@ -45,8 +42,6 @@ include_directories( SYSTEM
 
 include_directories(
     ${PROJECT_BINARY_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
     ${LIBTLD_INCLUDE_DIRS}
     ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}

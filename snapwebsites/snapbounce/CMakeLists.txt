@@ -32,28 +32,26 @@
 #
 cmake_minimum_required(VERSION 3.5)
 
-################################################################################
-# Snap Bounced Email Handler
-#
-# This is kicked off by the mail server if the email bounces. It saves
-# the offending email into the cassanda database for later processing.
-#
-project(snapbounce)
+project( snapbounce_project )
 
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package( AdvGetOpt       REQUIRED )
-find_package( LibTLD          REQUIRED )
-find_package( ProcPS          REQUIRED )
-find_package( Qt5Core         REQUIRED )
-find_package( Qt5Xml          REQUIRED )
-find_package( QtCassandra     REQUIRED )
-find_package( QtSerialization REQUIRED )
-find_package( SnapWebsites    REQUIRED )
+find_package( AdvGetOpt        REQUIRED )
+find_package( LibTLD           REQUIRED )
+find_package( log4cplus        REQUIRED )
+find_package( Qt5Core          REQUIRED )
+find_package( Qt5Xml           REQUIRED )
+find_package( QtCassandra      REQUIRED )
+find_package( QtSerialization  REQUIRED )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapWebsites     REQUIRED )
 
+include_directories(
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+)
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Xml_INCLUDE_DIRS}
@@ -63,34 +61,9 @@ set( QT_LIBRARIES
     Qt5::Xml
 )
 
-find_library( UUID uuid )
-if( ${UUID} STREQUAL "UUID-NOTFOUND" )
-    message( FATAL_ERROR "Cannot find uuid library!" )
-endif()
+SnapGetVersion( SNAPBOUNCE ${CMAKE_CURRENT_SOURCE_DIR} )
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${SNAPWEBSITES_INCLUDE_DIRS}
-)
-
-add_executable(${PROJECT_NAME}
-    snapbounce.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${LIBPROCPS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${UUID}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
+add_subdirectory( src   )
+add_subdirectory( tests )
 
 # vim: ts=4 sw=4 et

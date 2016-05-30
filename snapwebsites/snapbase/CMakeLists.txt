@@ -33,7 +33,7 @@
 
 cmake_minimum_required( VERSION 3.5 )
 
-project(snapbase)
+project(snapbase_project)
 
 file( GLOB SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/* )
 install( FILES ${SRC_FILES} DESTINATION share/snapwebsites/src )
