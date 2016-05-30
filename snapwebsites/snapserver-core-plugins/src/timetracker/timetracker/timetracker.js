@@ -72,12 +72,9 @@ snapwebsites.inherits(snapwebsites.TimeTracker, snapwebsites.ServerAccessCallbac
 snapwebsites.TimeTrackerInstance = null; // static
 
 
-/** \brief The toolbar object.
+/** \brief The server access object.
  *
- * This variable represents the toolbar used by the editor.
- *
- * Note that this is the toolbar object, not the DOM. The DOM is
- * defined within the toolbar object and is considered private.
+ * This variable represents the server access used by TimeTracker.
  *
  * @type {snapwebsites.ServerAccess}
  * @private

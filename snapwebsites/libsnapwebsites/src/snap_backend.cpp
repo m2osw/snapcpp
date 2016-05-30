@@ -1004,7 +1004,7 @@ bool snap_backend::process_timeout()
         //
         QtCassandra::QCassandraRow::pointer_t row(f_backend_table->row(f_action));
         row->clearCache(); // just in case, make sure we do not have a query laying around
-        auto column_predicate = std::make_shared<QtCassandra::QCassandraCellRangePredicate>();
+        auto column_predicate(std::make_shared<QtCassandra::QCassandraCellRangePredicate>());
         column_predicate->setCount(1); // read only the first row -- WARNING: if you increase that number you MUST add a sub-loop
         column_predicate->setIndex(); // behave like an index
         for(;;)
@@ -1615,197 +1615,224 @@ bool snap_backend::process_backend_uri(QString const & uri)
         return true;
     }
 
-    SNAP_LOG_INFO("==================================== backend process website \"")(uri)("\" with ")(f_cron_action ? "cron " : "")("action \"")(f_action)("\" started.");
-
-    // make sure that Snap! Communicator is clean in the child,
-    // it really cannot be listening on g_messager or g_signal_child_death
+    // make it safe in the child process
     //
-    g_communicator->remove_connection(g_messager);
-    g_messager.reset();
-    g_communicator->remove_connection(g_wakeup_timer);
-    g_wakeup_timer.reset();
-    g_communicator->remove_connection(g_tick_timer);
-    g_tick_timer.reset();
-    g_communicator->remove_connection(g_signal_child_death);
-    g_signal_child_death.reset();
-
-    auto p_server( f_server.lock() );
-    if(!p_server)
+    try
     {
-        throw snap_logic_exception("snap_backend::process_backend_uri(): server pointer is NULL");
-    }
+        SNAP_LOG_INFO("==================================== backend process website \"")(uri)("\" with ")(f_cron_action ? "cron " : "")("action \"")(f_action)("\" started.");
 
-    QString const nice_value(p_server->get_parameter("backend_nice"));
-    if(!nice_value.isEmpty())
-    {
-        int nice(-1);
-        snap_string_list values(nice_value.split(','));
-        int const max_values(values.size());
-        for(int idx(0); idx < max_values; ++idx)
+        // make sure that Snap! Communicator is clean in the child,
+        // it really cannot be listening on g_messager or g_signal_child_death
+        //
+        g_communicator->remove_connection(g_messager);
+        g_messager.reset();
+        g_communicator->remove_connection(g_wakeup_timer);
+        g_wakeup_timer.reset();
+        g_communicator->remove_connection(g_tick_timer);
+        g_tick_timer.reset();
+        g_communicator->remove_connection(g_signal_child_death);
+        g_signal_child_death.reset();
+
+        auto p_server( f_server.lock() );
+        if(!p_server)
         {
-            bool ok(false);
-            snap_string_list const named_value(values[idx].split('/'));
-            if(named_value.size() == 1)
+            throw snap_logic_exception("snap_backend::process_backend_uri(): server pointer is NULL");
+        }
+
+        QString const nice_value(p_server->get_parameter("backend_nice"));
+        if(!nice_value.isEmpty())
+        {
+            int nice(-1);
+            snap_string_list values(nice_value.split(','));
+            int const max_values(values.size());
+            for(int idx(0); idx < max_values; ++idx)
             {
-                nice = named_value[0].toInt(&ok, 10);
-                if(!ok || nice < 0 || nice > 19)
+                bool ok(false);
+                snap_string_list const named_value(values[idx].split('/'));
+                if(named_value.size() == 1)
                 {
-                    nice = -1;
-                    SNAP_LOG_ERROR("the backend_nice value \"")(named_value[0])("\" could not be parsed as a decimal number or is too small (less than 0) or too large (more than 19).");
-                }
-                break;
-            }
-            else if(named_value.size() == 2)
-            {
-                if(named_value[0] == f_action)
-                {
-                    nice = named_value[1].toInt(&ok, 10);
+                    nice = named_value[0].toInt(&ok, 10);
                     if(!ok || nice < 0 || nice > 19)
                     {
                         nice = -1;
-                        SNAP_LOG_ERROR("the backend_nice value \"")(named_value[0])(":")(named_value[1])("\" could not be parsed as a decimal number or is too small (less than 0) or too large (more than 19).");
+                        SNAP_LOG_ERROR("the backend_nice value \"")(named_value[0])("\" could not be parsed as a decimal number or is too small (less than 0) or too large (more than 19).");
                     }
                     break;
                 }
-                // check name validity?
+                else if(named_value.size() == 2)
+                {
+                    if(named_value[0] == f_action)
+                    {
+                        nice = named_value[1].toInt(&ok, 10);
+                        if(!ok || nice < 0 || nice > 19)
+                        {
+                            nice = -1;
+                            SNAP_LOG_ERROR("the backend_nice value \"")(named_value[0])(":")(named_value[1])("\" could not be parsed as a decimal number or is too small (less than 0) or too large (more than 19).");
+                        }
+                        break;
+                    }
+                    // check name validity?
+                }
+                else
+                {
+                    SNAP_LOG_ERROR("the backend_nice value \"")(values[idx])("\" does not represent a valid entry. Ignoring.");
+                }
             }
-            else
+            // got a specific nice value?
+            if(nice != -1)
             {
-                SNAP_LOG_ERROR("the backend_nice value \"")(values[idx])("\" does not represent a valid entry. Ignoring.");
+                // process 0 represents 'self'
+                setpriority(PRIO_PROCESS, 0, nice);
             }
         }
-        // got a specific nice value?
-        if(nice != -1)
-        {
-            // process 0 represents 'self'
-            setpriority(PRIO_PROCESS, 0, nice);
-        }
-    }
 
-    // set the URI; if user supplied it, then it can fail!
-    //
-    if(!f_uri.set_uri(uri))
-    {
-        SNAP_LOG_FATAL("snap_backend::process_backend_uri() called with invalid URI: \"")(uri)("\", URI ignored.");
-        exit(1);
-        NOTREACHED();
-    }
-
-    // cassandra re-initialization
-    //
-    // this is already done in process_action() so we have to reset the
-    // pointer before we can call this function again otherwise it throws
-    //
-    snap_expr::expr::set_cassandra_context(nullptr);
-    f_sites_table.reset();
-    f_backend_table.reset();
-    f_cassandra.reset(); // here all the remaining QCassandra objects should all get deleted
-    connect_cassandra();
-
-    if(!is_ready(uri))
-    {
-        SNAP_LOG_FATAL("snap_backend::process_backend_uri() URI is not ready any more for \"")(uri)("\" once in the child:.");
-        exit(1);
-        NOTREACHED();
-    }
-
-    // process the f_uri parameter
-    canonicalize_domain();
-    canonicalize_website();
-    site_redirect();
-    if(f_site_key != f_original_site_key)
-    {
-        SNAP_LOG_FATAL("snap_backend::process_backend_uri() called with incorrect URI: \"")(f_site_key)("\", expected \"")(f_original_site_key)("\".");
-        exit(1);
-        NOTREACHED();
-    }
-
-    init_plugins(true);
-
-    canonicalize_options();
-
-    f_ready = true;
-
-    server::backend_action_set actions;
-    if(f_cron_action)
-    {
-        p_server->register_backend_cron(actions);
-#ifdef DEBUG
-        // since we are in control of the content plugin, this should
-        // never happen...
+        // set the URI; if user supplied it, then it can fail!
         //
-        if( actions.has_action("content::snapbackend") )
+        if(!f_uri.set_uri(uri))
         {
-            // the plugin HAS to be content
-            throw snap_logic_exception(QString("snap_backend::process_backend_uri(): plugin \"%1\" makes use of a CRON action named \"content::snapbackend\" which is reserved as a standard action by the system.")
-                                                .arg(actions.get_plugin_name("content::snapbackend")));
-        }
-        // XXX: we may want to test that none of the CRON actions are
-        //      defined as regular actions
-#endif
-    }
-    else
-    {
-        p_server->register_backend_action(actions);
-    }
-
-    if( actions.has_action(f_action) )
-    {
-        // this is a valid action, execute the corresponding function!
-        //
-        actions.execute_action(f_action);
-    }
-    else if( f_action == "list" )
-    {
-        std::cout << (f_cron_action ? "CRON " : "") << "Actions available for " << uri << std::endl;
-        actions.display();
-        std::cout << std::endl;
-    }
-    else
-    {
-        if(f_cron_action)
-        {
-            int const pos(f_action.indexOf(':'));
-            QString const namespace_name(f_action.mid(0, pos));
-            if(plugins::exists(namespace_name))
-            {
-                SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown CRON action \"")
-                              (f_action)
-                              ("\" even with plugin \"")
-                              (namespace_name)
-                              ("\" installed.");
-                exit(1);
-                NOTREACHED();
-            }
-            else
-            {
-                // we do not generate an error in case a plugin is not
-                // installed because with many websites installed on
-                // the same system, all may not have all the plugins
-                // installed... so this is just a debug message
-                //
-                SNAP_LOG_DEBUG("snap_backend::process_backend_uri(): unknown CRON action \"")
-                              (f_action)
-                              ("\" for \"")
-                              (uri)
-                              ("\" (although it could be that you need to install plugin \"")
-                              (namespace_name)
-                              ("\" if you wanted to run that backend against this website?)");
-            }
-        }
-        else
-        {
-            SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown action \"")
-                          (f_action)
-                          ("\".");
+            SNAP_LOG_FATAL("snap_backend::process_backend_uri() called with invalid URI: \"")(uri)("\", URI ignored.");
             exit(1);
             NOTREACHED();
         }
+
+        // cassandra re-initialization
+        //
+        // this is already done in process_action() so we have to reset the
+        // pointer before we can call this function again otherwise it throws
+        //
+        snap_expr::expr::set_cassandra_context(nullptr);
+        f_sites_table.reset();
+        f_backend_table.reset();
+        f_cassandra.reset(); // here all the remaining QCassandra objects should all get deleted
+        connect_cassandra();
+
+        if(!is_ready(uri))
+        {
+            SNAP_LOG_FATAL("snap_backend::process_backend_uri() URI is not ready any more for \"")(uri)("\" once in the child:.");
+            exit(1);
+            NOTREACHED();
+        }
+
+        // process the f_uri parameter
+        canonicalize_domain();
+        canonicalize_website();
+        site_redirect();
+        if(f_site_key != f_original_site_key)
+        {
+            SNAP_LOG_FATAL("snap_backend::process_backend_uri() called with incorrect URI: \"")(f_site_key)("\", expected \"")(f_original_site_key)("\".");
+            exit(1);
+            NOTREACHED();
+        }
+
+        init_plugins(true);
+
+        canonicalize_options();
+
+        f_ready = true;
+
+        server::backend_action_set actions;
+        if(f_cron_action)
+        {
+            p_server->register_backend_cron(actions);
+#ifdef DEBUG
+            // since we are in control of the content plugin, this should
+            // never happen...
+            //
+            if( actions.has_action("content::snapbackend") )
+            {
+                // the plugin HAS to be content
+                throw snap_logic_exception(QString("snap_backend::process_backend_uri(): plugin \"%1\" makes use of a CRON action named \"content::snapbackend\" which is reserved as a standard action by the system.")
+                                                    .arg(actions.get_plugin_name("content::snapbackend")));
+            }
+            // XXX: we may want to test that none of the CRON actions are
+            //      defined as regular actions
+#endif
+        }
+        else
+        {
+            p_server->register_backend_action(actions);
+        }
+
+        if( actions.has_action(f_action) )
+        {
+            // this is a valid action, execute the corresponding function!
+            //
+            actions.execute_action(f_action);
+        }
+        else if( f_action == "list" )
+        {
+            std::cout << (f_cron_action ? "CRON " : "") << "Actions available for " << uri << std::endl;
+            actions.display();
+            std::cout << std::endl;
+        }
+        else
+        {
+            if(f_cron_action)
+            {
+                int const pos(f_action.indexOf(':'));
+                QString const namespace_name(f_action.mid(0, pos));
+                if(plugins::exists(namespace_name))
+                {
+                    SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown CRON action \"")
+                                  (f_action)
+                                  ("\" even with plugin \"")
+                                  (namespace_name)
+                                  ("\" installed.");
+                    exit(1);
+                    NOTREACHED();
+                }
+                else
+                {
+                    // we do not generate an error in case a plugin is not
+                    // installed because with many websites installed on
+                    // the same system, all may not have all the plugins
+                    // installed... so this is just a debug message
+                    //
+                    SNAP_LOG_DEBUG("snap_backend::process_backend_uri(): unknown CRON action \"")
+                                  (f_action)
+                                  ("\" for \"")
+                                  (uri)
+                                  ("\" (although it could be that you need to install plugin \"")
+                                  (namespace_name)
+                                  ("\" if you wanted to run that backend against this website?)");
+                }
+            }
+            else
+            {
+                SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown action \"")
+                              (f_action)
+                              ("\".");
+                exit(1);
+                NOTREACHED();
+            }
+        }
+
+        // the child process is done successfully
+        exit(0);
+        NOTREACHED();
+    }
+    catch( snap_exception const & except )
+    {
+        SNAP_LOG_FATAL("snap_backend::process_backend_uri(): snap_exception caught: ")(except.what());
+    }
+    catch( std::exception const & std_except )
+    {
+        // the snap_logic_exception is not a snap_exception
+        // and other libraries may generate other exceptions
+        // (i.e. controlled_vars, thrift...)
+        SNAP_LOG_FATAL("snap_backend::process_backend_uri(): std::exception caught: ")(std_except.what());
+    }
+    catch( ... )
+    {
+        SNAP_LOG_FATAL("snap_backend::process_backend_uri(): unknown exception caught!");
     }
 
     // the child process is done
-    exit(0);
-    return false; // C++ compile expects a return
+    exit(1);
+    NOTREACHED();
+
+    // compiler expects a return
+    return false;
 }
 
 

@@ -2656,17 +2656,41 @@ pid_t snap_child::fork_child()
         //       working, give it a chance, then after X seconds, still
         //       force a kill)
         //
-        prctl(PR_SET_PDEATHSIG, SIGHUP);
-
-        // always reconfigure the logger in the child
-        logging::reconfigure();
-
-        // it could be that the prctrl() was made after the true parent died...
-        // so we have to test the PID of our parent
-        //
-        if(getppid() != parent_pid)
+        try
         {
-            SNAP_LOG_FATAL("snap_child::fork_child() lost parent too soon and did not receive SIGHUP; quit immediately.");
+            prctl(PR_SET_PDEATHSIG, SIGHUP);
+
+            // always reconfigure the logger in the child
+            logging::reconfigure();
+
+            // it could be that the prctrl() was made after the true parent died...
+            // so we have to test the PID of our parent
+            //
+            if(getppid() != parent_pid)
+            {
+                SNAP_LOG_FATAL("snap_child::fork_child() lost parent too soon and did not receive SIGHUP; quit immediately.");
+                exit(1);
+                NOTREACHED();
+            }
+        }
+        catch( snap_exception const & except )
+        {
+            SNAP_LOG_FATAL("snap_child::fork_child(): snap_exception caught: ")(except.what());
+            exit(1);
+            NOTREACHED();
+        }
+        catch( std::exception const & std_except )
+        {
+            // the snap_logic_exception is not a snap_exception
+            // and other libraries may generate other exceptions
+            // (i.e. controlled_vars, thrift...)
+            SNAP_LOG_FATAL("snap_child::fork_child(): std::exception caught: ")(std_except.what());
+            exit(1);
+            NOTREACHED();
+        }
+        catch( ... )
+        {
+            SNAP_LOG_FATAL("snap_child::fork_child(): unknown exception caught!");
             exit(1);
             NOTREACHED();
         }
@@ -2801,7 +2825,7 @@ bool snap_child::process(int socket)
         // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
         // (i.e. controlled_vars, thrift...)
-        SNAP_LOG_FATAL("snap_child::process(): std::exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("snap_child::process(): std::exception caught: ")(std_except.what());
     }
     catch( ... )
     {
@@ -2810,6 +2834,8 @@ bool snap_child::process(int socket)
 
     exit(1);
     NOTREACHED();
+
+    // compiler expects a return
     return false;
 }
 
