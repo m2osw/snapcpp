@@ -34,17 +34,6 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
-if( 3RDPARTY_INCLUDED )
-    add_custom_target( test_prereqs DEPENDS make_controlled_vars_headers )
-else()
-    add_custom_target( test_prereqs )
-endif()
-
 set( CASSANDRA_HOST_IP "127.0.0.1" CACHE STRING "Host IP address for the cassandra server to connect to." )
 
 ##
@@ -60,10 +49,10 @@ if(CATCH_FOUND)
     ##
     project(test_snap_cgi)
     add_executable(test_snap_cgi
-        snap_tests.cpp
+        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.h
+        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.cpp
         test_snap_cgi.cpp
     )
-    add_dependencies( test_snap_cgi test_prereqs )
     # while developing you may need to set LD_LIBRARY_PATH
     target_link_libraries(test_snap_cgi
         #${SNAPWEBSITES_LIBRARIES}

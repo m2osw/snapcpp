@@ -30,328 +30,7 @@
 #      along with this program; if not, write to the Free Software
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-
-#################################################################################
-## The Snap! Server
-##
-project(snapserver)
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-add_executable(${PROJECT_NAME}
-    snapserver.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    dl
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Backend process
-##
-project(snapbackend)
-
-add_executable(${PROJECT_NAME}
-    snapbackend.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    dl
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Encode a username and password for basic auth
-##
-project(snap_uuencode_basic_auth)
-
-add_executable(${PROJECT_NAME}
-    snap_uuencode_basic_auth.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${QT_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## The Snap! Passthrough CGI script
-##
-project(snapcgi)
-
-add_executable(${PROJECT_NAME}
-    snap.cpp
-)
-
-set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME snap.cgi )
-
-target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${ADVGETOPT_LIBRARIES}
-    ${QT_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION lib/cgi-bin
-)
-
-
-#################################################################################
-## Snap Sites table handling
-##
-project(snapsiteinfo)
-
-add_executable(${PROJECT_NAME}
-    snapsiteinfo.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${ADVGETOPT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Snap signal manager
-##
-project(snapcommunicator)
-
-add_executable(${PROJECT_NAME}
-    snapcommunicator.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Snap firewall manager
-##
-project(snapfirewall)
-
-add_executable(${PROJECT_NAME}
-    snapfirewall.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-install(
-    FILES "snapfirewall-tables.xml"
-    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
-)
-
-
-#################################################################################
-## Snap send signals
-##
-project(snapsignal)
-
-add_executable(${PROJECT_NAME}
-    snapsignal.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Snap layout process
-##
-project(snaplayout)
-
-include_directories( ${ZIPIOSCC_INCLUDE_DIRS} )
-
-add_executable(${PROJECT_NAME}
-    snaplayout.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-	${ADVGETOPT_LIBRARIES}
-	${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-	${ZIPIOSCC_LIBRARIES}
-    dl
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## XPath compiler
-##
-project(cxpath)
-
-add_executable(${PROJECT_NAME}
-    cxpath.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Snap Image Information Tool
-##
-project(snapimg)
-
-add_executable(${PROJECT_NAME}
-    snapimg.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Snap Expression Computation and Compilation
-##
-project(snapexpr)
-
-add_executable(${PROJECT_NAME}
-    snapexpr.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Snap Initalization Server
-##
-## This server reads in a configuration file and keeps specified services running.
-## When signaled, it will terminate those services cleanly.
-##
-project(snapinit)
-
-add_executable(${PROJECT_NAME}
-    snapinit.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${LIBPROCPS_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-
+cmake_minimum_required(VERSION 3.5)
 
 ################################################################################
 # Snap Bounced Email Handler
@@ -361,6 +40,39 @@ install(
 #
 project(snapbounce)
 
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
+set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+find_package( AdvGetOpt       REQUIRED )
+find_package( LibTLD          REQUIRED )
+find_package( ProcPS          REQUIRED )
+find_package( Qt5Core         REQUIRED )
+find_package( Qt5Xml          REQUIRED )
+find_package( QtCassandra     REQUIRED )
+find_package( QtSerialization REQUIRED )
+find_package( SnapWebsites    REQUIRED )
+
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS}
+)
+set( QT_LIBRARIES
+    Qt5::Core
+    Qt5::Xml
+)
+
+find_library( UUID uuid )
+if( ${UUID} STREQUAL "UUID-NOTFOUND" )
+    message( FATAL_ERROR "Cannot find uuid library!" )
+endif()
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+)
+
 add_executable(${PROJECT_NAME}
     snapbounce.cpp
 )
@@ -368,6 +80,7 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
     ${LOG4CPLUS_LIBRARIES}
+    ${LIBPROCPS_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
@@ -379,50 +92,5 @@ target_link_libraries(${PROJECT_NAME}
 install(
     TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
-
-
-#################################################################################
-## Build CGI
-##
-project(snapbuild)
-
-add_executable(${PROJECT_NAME}
-    build.cpp
-)
-
-set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME build.cgi )
-
-# We install the binary so that way the linking is finalized, but
-# we do not install that in a pacakage for now (maybe later if we
-# do a build system for snap, although I don't think we need such.)
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Build CGI
-##
-project(build-service)
-
-add_executable(${PROJECT_NAME}
-    build-service.cpp
-)
-
-# We install the binary so that way the linking is finalized, but
-# we do not install that in a pacakage for now (maybe later if we
-# do a build system for snap, although I don't think we need such.)
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
-#################################################################################
-## Other tools found in sub-directories
-##
-add_subdirectory( snapdb      )
-add_subdirectory( snapdbproxy )
-add_subdirectory( snaplock    )
-
 
 # vim: ts=4 sw=4 et

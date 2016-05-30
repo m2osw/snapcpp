@@ -144,4 +144,27 @@ ConfigureMakeProject( PROJECT_NAME snapwatchdog
     DEPENDS libsnapwebsites
 )
 
+get_property( BUILD_TARGETS    GLOBAL PROPERTY BUILD_TARGETS    )
+get_property( CLEAN_TARGETS    GLOBAL PROPERTY CLEAN_TARGETS    )
+get_property( PACKAGE_TARGETS  GLOBAL PROPERTY PACKAGE_TARGETS  )
+get_property( DPUT_TARGETS     GLOBAL PROPERTY DPUT_TARGETS     )
+get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
+
+add_custom_target( build-snapwebsites ALL
+    DEPENDS ${BUILD_TARGETS}
+    )
+add_custom_target( clean-snapwebsites
+    COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
+    DEPENDS ${CLEAN_TARGETS}
+    )
+add_custom_target( debuild-snapwebsites
+    DEPENDS ${PACKAGE_TARGETS}
+    )
+add_custom_target( dput-snapwebsites
+    DEPENDS ${DPUT_TARGETS}
+    )
+add_custom_target( pbuilder-snapwebsites
+    DEPENDS ${PBUILDER_TARGETS}
+    )
+
 # vim: ts=4 sw=4 et nocindent

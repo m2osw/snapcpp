@@ -29,8 +29,9 @@
 #      along with this program; if not, write to the Free Software
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-
 cmake_minimum_required(VERSION 3.5)
+
+project( snaplock )
 
 # Find includes in corresponding build directories
 set( CMAKE_INCLUDE_CURRENT_DIR ON )
@@ -40,6 +41,7 @@ find_package( AdvGetOpt          REQUIRED )
 find_package( log4cplus          REQUIRED )
 find_package( LibTLD             REQUIRED )
 find_package( Qt5Core            REQUIRED )
+find_package( Qt5Xml             REQUIRED )
 find_package( QtCassandra        REQUIRED )
 find_package( SnapCMakeModules   REQUIRED )
 find_package( SnapDoxygen        REQUIRED )
@@ -47,16 +49,16 @@ find_package( SnapWebsites       REQUIRED )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS}
 )
 set( QT_LIBRARIES
     Qt5::Core
+    Qt5::Xml
 )
-SnapGetVersion( SNAPLOCK )
-
-#################################################################################
-## Snap Lock daemon
-##
-project(snaplock)
+include_directories(
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+)
+SnapGetVersion( SNAPLOCK ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_executable(${PROJECT_NAME}
     src/snaplock.h

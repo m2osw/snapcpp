@@ -169,16 +169,15 @@ add_subdirectory(tests)         # Tests to run against the server
 add_subdirectory(conf)          # Configuration files and samples
 
 ##
-## Analyse xml and javascript
-##
-snap_build_css_targets()
-snap_build_js_targets()
-snap_build_xml_targets()
-
-##
 ## Install run script
 ##
-install( PROGRAMS reset-db.sh run-server.sh DESTINATION ./ )
+install(
+    PROGRAMS
+        scripts/reset-db.sh
+        scripts/run-server.sh
+    DESTINATION
+        ./
+)
 
 ##
 ## Code Analysis

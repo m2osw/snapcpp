@@ -1,0 +1,15 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+if [ "$1" = "configure" ]
+then
+	SNAPLOGDIR=/var/log/snapwebsites
+	mkdir -p ${SNAPLOGDIR}
+	SNAPCGI_LOG=${SNAPLOGDIR}/snapcgi.log
+	touch ${SNAPCGI_LOG}
+	chown www-data.www-data ${SNAPCGI_LOG}
+	chmod ug+rw ${SNAPCGI_LOG}
+fi
+
+# vim: ts=4 sw=4 et nocindent
