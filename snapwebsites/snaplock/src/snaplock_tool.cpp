@@ -56,9 +56,9 @@
 
 
 
-/** \brief The messager initialization.
+/** \brief The messenger initialization.
  *
- * The messager is a connection to the snapcommunicator server.
+ * The messenger is a connection to the snapcommunicator server.
  *
  * From the outside, we receive STOP and QUITTING messages.
  * We implement a few other generic messages too (HELP, READY...) Then
@@ -73,7 +73,7 @@
  * \param[in] port  The port to listen on (4040).
  */
 snaplock_tool::snaplock_tool(snaplock * sl, std::string const & addr, int port)
-    : snaplock_messager(sl, addr, port)
+    : snaplock_messenger(sl, addr, port)
 {
     set_name("snaplock tool");
 }

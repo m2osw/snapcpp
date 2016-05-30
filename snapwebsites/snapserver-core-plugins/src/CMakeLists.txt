@@ -32,9 +32,7 @@
 
 project( snapwebsites_plugins_src )
 
-################################################################################
-# Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
-set( DTD_SOURCE_PATH "${snapwebsites_project_SOURCE_DIR}/plugins" CACHE PATH "Location of the default DTD files" )
+set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
 
 ##
 ## Include xmllint utilties

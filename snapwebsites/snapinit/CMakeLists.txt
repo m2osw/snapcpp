@@ -39,14 +39,15 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package( AdvGetOpt       REQUIRED )
-find_package( LibTLD          REQUIRED )
-find_package( ProcPS          REQUIRED )
-find_package( Qt5Core         REQUIRED )
-find_package( Qt5Xml          REQUIRED )
-find_package( QtCassandra     REQUIRED )
-find_package( QtSerialization REQUIRED )
-find_package( SnapWebsites    REQUIRED )
+find_package( AdvGetOpt        REQUIRED )
+find_package( LibTLD           REQUIRED )
+find_package( ProcPS           REQUIRED )
+find_package( Qt5Core          REQUIRED )
+find_package( Qt5Xml           REQUIRED )
+find_package( QtCassandra      REQUIRED )
+find_package( QtSerialization  REQUIRED )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapWebsites     REQUIRED )
 
 SnapGetVersion( SNAPINIT ${CMAKE_CURRENT_SOURCE_DIR} )
 

@@ -357,7 +357,7 @@ void snaplock::run()
     //
     f_communicator = snap::snap_communicator::instance();
 
-    // create a messager to communicate with the Snap Communicator process
+    // create a messenger to communicate with the Snap Communicator process
     // and snapinit as required
     //
     if(f_opt.is_defined("list"))
@@ -367,13 +367,13 @@ void snaplock::run()
         // function specified on the command line such as --list
         //
         f_service_name = "snaplocktool";
-        f_messager.reset(new snaplock_tool(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
+        f_messenger.reset(new snaplock_tool(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
     }
     else
     {
-        f_messager.reset(new snaplock_messager(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
+        f_messenger.reset(new snaplock_messenger(this, f_communicator_addr.toUtf8().data(), f_communicator_port));
     }
-    f_communicator->add_connection(f_messager);
+    f_communicator->add_connection(f_messenger);
 
     // now run our listening loop
     //
@@ -490,7 +490,7 @@ int snaplock::quorum() const
 void snaplock::process_message(snap::snap_communicator_message const & message)
 {
     // This adds way too many messages! Use only to debug if required.
-    //SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+    //SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_server_name);
 
     QString const command(message.get_command());
 
@@ -542,7 +542,7 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
             //
             reply.add_parameter("list", "ADDTICKET,DISCONNECTED,DROPTICKET,GETMAXTICKET,HELP,LISTTICKETS,LOCK,LOCKENTERED,LOCKENTERING,LOCKEXITING,LOCKREADY,LOG,MAXTICKET,QUITTING,READY,STATUS,STOP,TICKETADDED,UNKNOWN,UNLOCK");
 
-            f_messager->send_message(reply);
+            f_messenger->send_message(reply);
 
             // Although it says "ready" and thus one would think that would
             // work in the ready() function, this is done here because the
@@ -651,7 +651,7 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
             list_message.set_command("TICKETLIST");
             list_message.reply_to(message);
             list_message.add_parameter("list", ticketlist);
-            f_messager->send_message(list_message);
+            f_messenger->send_message(list_message);
             return;
         }
         break;
@@ -740,7 +740,7 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
-        f_messager->send_message(reply);
+        f_messenger->send_message(reply);
     }
 
     return;
@@ -769,7 +769,7 @@ void snaplock::ready()
     dbready_message.set_command("SAFE");
     dbready_message.set_service("snapinit");
     dbready_message.add_parameter("name", f_service_name);
-    f_messager->send_message(dbready_message);
+    f_messenger->send_message(dbready_message);
 }
 
 
@@ -783,7 +783,7 @@ void snaplock::send_lockready()
     lockready_message.set_command("LOCKREADY");
     lockready_message.set_service("*");
     lockready_message.add_parameter("server_name", f_server_name);
-    f_messager->send_message(lockready_message);
+    f_messenger->send_message(lockready_message);
 }
 
 
@@ -792,25 +792,25 @@ void snaplock::send_lockready()
  * This function makes sure the snaplock exits as quickly as
  * possible.
  *
- * \li Marks the messager as done.
+ * \li Marks the messenger as done.
  * \li UNREGISTER from snapcommunicator.
  *
  * \note
- * If the f_messager is still in place, then just sending the
+ * If the f_messenger is still in place, then just sending the
  * UNREGISTER is enough to quit normally. The socket of the
- * f_messager will be closed by the snapcommunicator server
+ * f_messenger will be closed by the snapcommunicator server
  * and we will get a HUP signal. However, we get the HUP only
- * because we first mark the messager as done.
+ * because we first mark the messenger as done.
  *
  * \param[in] quitting  Set to true if we received a QUITTING message.
  */
 void snaplock::stop(bool quitting)
 {
-    if(f_messager)
+    if(f_messenger)
     {
-        f_messager->mark_done();
+        f_messenger->mark_done();
 
-        // unregister if we are still connected to the messager
+        // unregister if we are still connected to the messenger
         // and Snap! Communicator is not already quitting
         //
         if(!quitting)
@@ -818,7 +818,7 @@ void snaplock::stop(bool quitting)
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", f_service_name);
-            f_messager->send_message(cmd);
+            f_messenger->send_message(cmd);
         }
     }
 }
@@ -969,7 +969,7 @@ void snaplock::lock(snap::snap_communicator_message const & message)
 
     snaplock_ticket::pointer_t ticket(std::make_shared<snaplock_ticket>(
                                         this,
-                                        f_messager,
+                                        f_messenger,
                                         object_name,
                                         entering_key,
                                         timeout,
@@ -1091,7 +1091,7 @@ void snaplock::lockentering(snap::snap_communicator_message const & message)
 
             f_entering_tickets[object_name][key] = std::make_shared<snaplock_ticket>(
                                       this
-                                    , f_messager
+                                    , f_messenger
                                     , object_name
                                     , key
                                     , timeout
@@ -1105,7 +1105,7 @@ void snaplock::lockentering(snap::snap_communicator_message const & message)
         reply.reply_to(message);
         reply.add_parameter("object_name", object_name);
         reply.add_parameter("key", key);
-        f_messager->send_message(reply);
+        f_messenger->send_message(reply);
     }
 
     cleanup();
@@ -1538,7 +1538,7 @@ void snaplock::get_max_ticket(snap::snap_communicator_message const & message)
     reply.add_parameter("object_name", object_name);
     reply.add_parameter("key", key);
     reply.add_parameter("ticket_id", last_ticket);
-    f_messager->send_message(reply);
+    f_messenger->send_message(reply);
 }
 
 
@@ -1646,7 +1646,7 @@ void snaplock::add_ticket(snap::snap_communicator_message const & message)
     f_tickets[object_name][key] = key_entering_ticket->second;
     //f_tickets[object_name][key] = std::make_shared<snaplock_ticket>(
     //                                    this,
-    //                                    f_messager,
+    //                                    f_messenger,
     //                                    object_name,
     //                                    f_server_name,
     //                                    client_pid,
@@ -1659,7 +1659,7 @@ void snaplock::add_ticket(snap::snap_communicator_message const & message)
     ticket_added_message.reply_to(message);
     ticket_added_message.add_parameter("object_name", object_name);
     ticket_added_message.add_parameter("key", key);
-    f_messager->send_message(ticket_added_message);
+    f_messenger->send_message(ticket_added_message);
 }
 
 
@@ -1721,7 +1721,7 @@ void snaplock::tool_message(snap::snap_communicator_message const & message)
             //
             reply.add_parameter("list", "HELP,QUITTING,READY,STOP,TICKETLIST,UNKNOWN");
 
-            f_messager->send_message(reply);
+            f_messenger->send_message(reply);
             return;
         }
         break;
@@ -1748,7 +1748,7 @@ void snaplock::tool_message(snap::snap_communicator_message const & message)
                 list_message.set_command("LISTTICKETS");
                 list_message.set_service("snaplock");
                 list_message.set_server(f_server_name);
-                f_messager->send_message(list_message);
+                f_messenger->send_message(list_message);
             }
             return;
         }
@@ -1794,7 +1794,7 @@ void snaplock::tool_message(snap::snap_communicator_message const & message)
         snap::snap_communicator_message reply;
         reply.set_command("UNKNOWN");
         reply.add_parameter("command", command);
-        f_messager->send_message(reply);
+        f_messenger->send_message(reply);
     }
 
     return;

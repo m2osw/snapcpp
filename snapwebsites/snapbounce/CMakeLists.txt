@@ -64,6 +64,5 @@ set( QT_LIBRARIES
 SnapGetVersion( SNAPBOUNCE ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_subdirectory( src   )
-add_subdirectory( tests )
 
 # vim: ts=4 sw=4 et

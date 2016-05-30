@@ -53,13 +53,13 @@ class snaplock;
 
 
 
-class snaplock_messager
+class snaplock_messenger
         : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
 {
 public:
-    typedef std::shared_ptr<snaplock_messager>    pointer_t;
+    typedef std::shared_ptr<snaplock_messenger>    pointer_t;
 
-                                snaplock_messager(snaplock * sl, std::string const & addr, int port);
+                                snaplock_messenger(snaplock * sl, std::string const & addr, int port);
 
     // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
     virtual void                process_message(snap::snap_communicator_message const & message);
@@ -74,7 +74,7 @@ protected:
 
 
 class snaplock_tool
-        : public snaplock_messager
+        : public snaplock_messenger
 {
 public:
     typedef std::shared_ptr<snaplock_tool>    pointer_t;
@@ -109,7 +109,7 @@ public:
 
                         snaplock_ticket(
                                   snaplock * sl
-                                , snaplock_messager::pointer_t messager
+                                , snaplock_messenger::pointer_t messenger
                                 , QString const & object_name
                                 , QString const & entering_key
                                 , time_t obtention_timeout
@@ -143,7 +143,7 @@ private:
     snaplock *                      f_snaplock = nullptr;
 
     // initialization
-    snaplock_messager::pointer_t    f_messager;
+    snaplock_messenger::pointer_t    f_messenger;
     QString                         f_object_name;
     time_t                          f_obtention_timeout = 0;
     int32_t                         f_lock_duration = 0;
@@ -244,7 +244,7 @@ private:
     QString                                     f_host_list = "localhost";
     int                                         f_port = 9042;
     int                                         f_max_pending_connections = 20;
-    snaplock_messager::pointer_t                f_messager;
+    snaplock_messenger::pointer_t                f_messenger;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
     std::map<QString, bool>                     f_computers;

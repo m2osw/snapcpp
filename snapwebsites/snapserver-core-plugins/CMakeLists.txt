@@ -29,6 +29,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 ################################################################################
+cmake_minimum_required( VERSION 3.5 )
 
 project( snapwebsites_plugins )
 
@@ -47,7 +48,7 @@ set( CMAKE_AUTOMOC TRUE )
 
 ################################################################################
 # Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
-set( DTD_SOURCE_PATH "${snapwebsites_project_SOURCE_DIR}/plugins" CACHE PATH "Location of the default DTD files" )
+set( DTD_SOURCE_PATH "${snapwebsites_plugins_SOURCE_DIR}/src" CACHE PATH "Location of the default DTD files" )
 
 ## Include support modules
 ##

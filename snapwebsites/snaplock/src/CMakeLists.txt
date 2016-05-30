@@ -32,12 +32,12 @@
 project( snaplock )
 
 add_executable(${PROJECT_NAME}
-    src/snaplock.h
-    src/snaplock.cpp
-    src/main.cpp
-    src/snaplock_messager.cpp
-    src/snaplock_ticket.cpp
-    src/snaplock_tool.cpp
+    snaplock.h
+    snaplock.cpp
+    main.cpp
+    snaplock_messenger.cpp
+    snaplock_ticket.cpp
+    snaplock_tool.cpp
 )
 
 target_link_libraries( ${PROJECT_NAME}

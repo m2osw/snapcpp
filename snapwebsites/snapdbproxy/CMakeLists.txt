@@ -45,12 +45,14 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package( AdvGetOpt        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
+find_package( QtCassandra      REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
 SnapGetVersion( SNAPDBPROXY ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories(
+    ${QTCASSANDRA_INCLUDE_DIRS}
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 include_directories( SYSTEM

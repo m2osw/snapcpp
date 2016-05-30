@@ -38,7 +38,7 @@ if(CATCH_FOUND)
     ##
     project(test_snap_lock)
     add_executable( ${PROJECT_NAME}
-        tests/test_snap_lock.cpp
+        test_snap_lock.cpp
     )
     target_link_libraries(${PROJECT_NAME}
         ${SNAPWEBSITES_LIBRARIES}
