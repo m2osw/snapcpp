@@ -6,8 +6,8 @@
 # CATCH_FOUND, If false, do not try to use Catch.
 #
 # License:
-#      Zipios++ - a small C++ library that provides easy access to .zip files.
-#      Copyright (C) 2015  Made to Order Software Corporation
+#      Snap C++ - a web project in C++ to support clusters
+#      Copyright (C) 2015-2016  Made to Order Software Corporation
 #
 #      This library is free software; you can redistribute it and/or
 #      modify it under the terms of the GNU Lesser General Public
@@ -28,18 +28,21 @@ SET(CATCH_FOUND "NO")
 
 FIND_PATH(CATCH_INCLUDE_DIR
     catch.hpp
+    NO_DEFAULT_PATH
     PATHS
+        ${CMAKE_SOURCE_DIR}/contrib/catch 
         ${CMAKE_SOURCE_DIR}/contrib
-        /usr/local/include
-        /usr/include
 )
 
+IF(NOT CATCH_INCLUDE_DIR)
+    # Try again with default paths as per cmake
+    FIND_PATH(CATCH_INCLUDE_DIR
+        catch.hpp
+    )
+ENDIF()
+
 IF(CATCH_INCLUDE_DIR)
-    IF(CATCH_FIND_REQUIRED)
-        MESSAGE(SEND_ERROR "Could not find library Catch.")
-    ELSE(CATCH_FIND_REQUIRED)
-        SET(CATCH_FOUND "YES")
-    ENDIF(CATCH_FIND_REQUIRED)
+    SET(CATCH_FOUND "YES")
 ELSE(CATCH_INCLUDE_DIR)
     IF(CATCH_FIND_REQUIRED)
         MESSAGE(SEND_ERROR "Could not find library Catch.")
