@@ -363,6 +363,7 @@ private:
     remote_communicator_connections::pointer_t          f_remote_snapcommunicators;
     size_t                                              f_max_connections = SNAP_COMMUNICATOR_MAX_CONNECTIONS;
     bool                                                f_shutdown = false;
+    bool                                                f_debug_lock = false;
     snap::snap_communicator_message::vector_t           f_local_message_cache;
     std::map<QString, time_t>                           f_received_broadcast_messages;
 };
@@ -1536,6 +1537,8 @@ void snap_communicator_server::init()
     // keep a copy of the server name handy
     f_server_name = f_server->get_parameter("server_name");
 
+    f_debug_lock = !f_server->get_parameter("debug_lock_messages").isEmpty();
+
     // change nice value of the Snap! Communicator process
     {
         QString const nice_str(f_server->get_parameter("nice"));
@@ -1775,8 +1778,9 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
 {
     {
         QString const received_message(message.to_message());
-        if(received_message.indexOf(":snaplock ") == -1
-        && received_message.indexOf(":lock_") == -1)
+        if(f_debug_lock
+        || (received_message.indexOf(":snaplock ") == -1
+         && received_message.indexOf(":lock_") == -1))
         {
             SNAP_LOG_TRACE("received a message [")(received_message)("]");
         }

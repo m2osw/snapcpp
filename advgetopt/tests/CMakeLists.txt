@@ -3,15 +3,15 @@
 #      CMakeLists.txt
 #
 # Description:
-#      Create the documentation of the libtld library.
+#      Definitions to create all the unit tests of the advgetopt library.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2016 Made to Order Software Corp.
+#      Copyright (c) 2013-2016 Made to Order Software Corp.
 #
-#      http://snapwebsites.org/
+#      https://sourceforge.net/projects/unigw/
 #      contact@m2osw.com
 #
 #      Permission is hereby granted, free of charge, to any person obtaining a
@@ -34,31 +34,49 @@
 #      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# Note that if user does not have Catch then this does not get included
+# in the final output
+project(unittest)
 
-##
-## Documentation
-##
-project(documentation)
+if( NOT CMAKE_MODULE_PATH )
+    set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+endif()
 
-find_package( SnapDoxygen )
+find_package( Catch )
+if( CATCH_FOUND )
 
-set( PROJECT_ROOT_PATH ${CMAKE_SOURCE_DIR} )
+    add_definitions(
+        -DCATCH_CONFIG_PREFIX_ALL
+        -DADVGETOPT_THROW_FOR_EXIT
+    )
 
-AddDoxygenTarget( advgetopt
-    ${LIBADVGETOPT_VERSION_MAJOR}
-    ${LIBADVGETOPT_VERSION_MINOR}
-    ${LIBADVGETOPT_VERSION_PATCH}
-)
+    include_directories(
+        "${CMAKE_BINARY_DIR}"
+        "${CMAKE_BINARY_DIR}/src"
+        "${PROJECT_SOURCE_DIR}"
+        "${CATCH_INCLUDE_DIR}"
+    )
 
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/advgetopt-doc-${LIBADVGETOPT_VERSION_MAJOR}.${LIBADVGETOPT_VERSION_MINOR}/.
-    DESTINATION share/doc/libadvgetopt/html
-    COMPONENT documentation
-)
-install(
-    FILES ${advgetopt_library_SOURCE_DIR}/LICENSE.txt
-    DESTINATION share/doc/libadvgetopt
-    COMPONENT development
-)
+    add_executable( ${PROJECT_NAME}
+        unittest_main.cpp
+        unittest_advgetopt.cpp
+    )
+
+    target_link_libraries( ${PROJECT_NAME}
+        advgetopt
+    )
+
+    set( TMPDIR "${CMAKE_BINARY_DIR}/tmp" )
+    if( NOT EXISTS ${TMPDIR} )
+        file( MAKE_DIRECTORY ${TMPDIR} )
+    endif()
+
+    #unset( DEBUG_WORD )
+    #if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
+    #    set( DEBUG_WORD "_d" )
+    #endif()
+    add_test( unittests ${PROJECT_NAME} --tmp ${TMPDIR} )
+
+endif( CATCH_FOUND )
 
 # vim: ts=4 sw=4 et
