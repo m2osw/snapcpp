@@ -57,7 +57,7 @@ install(
     ARCHIVE DESTINATION lib
 )
 install(
-    FILES advgetopt.h
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/advgetopt.h
     DESTINATION include/advgetopt
 )
 
