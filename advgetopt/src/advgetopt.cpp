@@ -1,5 +1,5 @@
 /*    advgetopt -- advanced get option implementation
- *    Copyright (C) 2006-2013  Made to Order Software Corporation
+ *    Copyright (C) 2006-2016  Made to Order Software Corporation
  *
  *    This program is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -48,7 +48,9 @@
  * This namespace encompasses all the declarations and implementations
  * of functions used to parse and access the command line options.
  */
-namespace advgetopt {
+namespace advgetopt
+{
+
 
 namespace
 {
@@ -70,13 +72,15 @@ const int NO_DEFAULT_OPT = -1;
  * and the getopt class takes it as a command meaning any other parameter
  * is not an argument.
  */
-bool is_arg(const char *a)
+bool is_arg(char const * a)
 {
     // "-" and "--" are not options; however "--" returns true
     // because after a "--" we take the data as default arguments
     return a[0] == '-' && a[1] != '\0';
 }
-}
+
+} // no name namespace
+
 
 
 /** \class getopt_exception
@@ -183,7 +187,11 @@ bool is_arg(const char *a)
  * \param[in] configuration_files  A list of configuration file names.
  * \param[in] environment_variable_name  The name of an environment variable to parse as parameters.
  */
-getopt::getopt(int argc, char *argv[], const option *opts, const std::vector<std::string> configuration_files, const char *environment_variable_name)
+getopt::getopt(int argc
+             , char * argv[]
+             , option const * opts
+             , std::vector<std::string> const configuration_files
+             , char const * environment_variable_name)
 {
     reset(argc, argv, opts, configuration_files, environment_variable_name);
 }
@@ -265,7 +273,11 @@ getopt::getopt(int argc, char *argv[], const option *opts, const std::vector<std
  * \param[in] configuration_files  A list of configuration file names.
  * \param[in] environment_variable_name  The name of an environment variable to parse as parameters.
  */
-void getopt::reset(int argc, char *argv[], const option *opts, const std::vector<std::string> configuration_files, const char *environment_variable_name)
+void getopt::reset(int argc
+                 , char * argv[]
+                 , option const * opts
+                 , std::vector<std::string> const configuration_files
+                 , char const * environment_variable_name)
 {
     f_options = opts;
     f_map.clear();
@@ -601,11 +613,11 @@ void getopt::reset(int argc, char *argv[], const option *opts, const std::vector
  * \param[in] opt_by_short_name  A map of all the command options by short name (one letter).
  * \param[in] opt_by_long_name  A map of all the command options by long name (--\<name\>).
  */
-void getopt::parse_arguments(int argc, char *argv[], const option *opts, int def_opt,
+void getopt::parse_arguments(int argc, char * argv[], option const * opts, int def_opt,
                              short_opt_name_map_t opt_by_short_name, long_opt_name_map_t opt_by_long_name,
                              bool only_environment_variable)
 {
-    for(int i = 1; i < argc; ++i)
+    for(int i(1); i < argc; ++i)
     {
         if(argv[i][0] == '-')
         {
@@ -753,7 +765,7 @@ void getopt::parse_arguments(int argc, char *argv[], const option *opts, int def
  * \return true if the option was defined in a configuration file, the
  *         environment variable, or the command line.
  */
-bool getopt::is_defined(const std::string& name) const
+bool getopt::is_defined(std::string const & name) const
 {
     return f_map.find(name) != f_map.end();
 }
@@ -773,7 +785,7 @@ bool getopt::is_defined(const std::string& name) const
  *
  * \return The number of arguments specified on the command line or zero.
  */
-int getopt::size(const std::string& name) const
+int getopt::size(std::string const & name) const
 {
     optmap_t::const_iterator it(f_map.find(name));
     if(it != f_map.end())
@@ -801,7 +813,7 @@ int getopt::size(const std::string& name) const
  *
  * \return The default value or nullptr if no value is defined.
  */
-const char *getopt::get_default(const std::string& name) const
+char const * getopt::get_default(std::string const & name) const
 {
     if(name.empty())
     {
@@ -896,7 +908,7 @@ const char *getopt::get_default(const std::string& name) const
  *
  * \return The argument as a long.
  */
-long getopt::get_long(const std::string& name, int idx, long min, long max)
+long getopt::get_long(std::string const & name, int idx, long min, long max)
 {
     long result(0);
     int max_idx = size(name);
@@ -970,7 +982,7 @@ long getopt::get_long(const std::string& name, int idx, long min, long max)
  *
  * \return The option argument as a string.
  */
-std::string getopt::get_string(const std::string& name, int idx) const
+std::string getopt::get_string(std::string const & name, int idx) const
 {
     optmap_t::const_iterator it(f_map.find(name));
     if(it == f_map.end())
@@ -1003,8 +1015,12 @@ std::string getopt::get_string(const std::string& name, int idx) const
  * \code
  *    "Usage: %p [-opt] filename ..."
  * \endcode
+ *
+ * \param[in] help  A string that may include '%p'.
+ *
+ * \return The string with any '%p' replaced with the program name.
  */
-std::string getopt::process_help_string( char const *help ) const
+std::string getopt::process_help_string( char const * help ) const
 {
     std::string result;
 
@@ -1031,8 +1047,10 @@ std::string getopt::process_help_string( char const *help ) const
  * Assembles the command line arguments into a string and returns
  * the string.
  *
+ * \param[in] status  The status at the time the options are requested.
+ * \param[out] default_arg_help  
  */
-std::string getopt::assemble_options( status_t status, std::string& default_arg_help ) const
+std::string getopt::assemble_options( status_t status /*, std::string & default_arg_help*/ ) const
 {
     std::stringstream ss;
 
@@ -1088,9 +1106,12 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
                 }
                 else
                 {
-                    //throw getopt_exception_invalid("an option has help but no option name");
-                    default_arg_help = process_help_string(f_options[i].f_help);
-                    continue;
+                    // TODO: the 'default_arg_help' is not used and I am
+                    //       really thinking we should have the throw back in...
+                    //
+                    throw getopt_exception_invalid("an option has help but no option name");
+                    //default_arg_help = process_help_string(f_options[i].f_help);
+                    //continue;
                 }
                 switch(f_options[i].f_arg_mode)
                 {
@@ -1166,21 +1187,17 @@ std::string getopt::assemble_options( status_t status, std::string& default_arg_
  * wpkg_output does not use the getopt classes so we could use that.
  *
  * \param[in] status  The status when calling this function.
- * \param[in] msg  A C-like string format (with %s, %d, etc.).
+ * \param[in] msg  A printf() string format (with %s, %d, etc.).
  */
-void getopt::usage(status_t status, const char *msg, ...)
+void getopt::usage(status_t status, char const * msg, ...)
 {
-    std::string default_arg_help;
-    std::string options( assemble_options( status, default_arg_help ) );
+    //std::string default_arg_help;
+    std::string options( assemble_options( status /*, default_arg_help*/ ) );
 
-    va_list ap;
-    va_start(ap, msg);
-    unsigned char errflag(0);
-    const bool no_error_status = status == no_error || status == no_error_nobr;
+    bool const no_error_status(status == no_error || status == no_error_nobr);
     if( !no_error_status )
     {
-        errflag = GETOPT_FLAG_SHOW_USAGE_ON_ERROR;
-        const char *errstr(nullptr);
+        char const * errstr(nullptr);
         switch(status)
         {
         // other cases are eliminated by the test before this if() block
@@ -1202,37 +1219,19 @@ void getopt::usage(status_t status, const char *msg, ...)
         }
         std::cerr << errstr << ":" << f_program_name << ": ";
         // TODO: fix that with some form of << or () operator support
+        va_list ap;
+        va_start(ap, msg);
         vfprintf(stderr, msg, ap);
         std::cerr << "." << std::endl;
+
+        std::cerr << options << std::flush;
     }
-
-    // To make use more customizable, we expect the user to enter some
-    // special help entries in his list of options
-    //std::cout << std::endl << "usage: " << f_program_name;
-    ////
-    //if( !options.empty() )
-    //{
-    //    std::cout << " [options]";
-    //}
-    //if( !default_arg_help.empty() )
-    //{
-    //    std::cout << " " << default_arg_help;
-    //}
-    //if( options.empty() )
-    //{
-    //    std::cout << std::endl;
-    //}
-    //else
-    //{
-    //    std::cout << std::endl << "options:" << std::endl;
-    //    std::cout << options;
-    //}
-
-    std::cout << options;
-
-    // A little flush helps greatly under MS-Windows
-    //
-    std::cout << std::flush;
+    else
+    {
+        // A little flush helps greatly under MS-Windows
+        //
+        std::cout << options << std::flush;
+    }
 
 #ifdef ADVGETOPT_THROW_FOR_EXIT
     // for test purposes
@@ -1304,7 +1303,7 @@ std::string getopt::get_program_name() const
  * \param[in] argc  The number of arguments in the argv array.
  * \param[in] argv  The list of argument strings.
  */
-void getopt::add_options(const option *opt, int& i, int argc, char **argv)
+void getopt::add_options(option const * opt, int & i, int argc, char ** argv)
 {
     switch(opt->f_arg_mode)
     {
@@ -1424,7 +1423,7 @@ void getopt::add_options(const option *opt, int& i, int argc, char **argv)
  * \param[in] opt  The concerned option.
  * \param[in] value  The value to add to that option info.
  */
-void getopt::add_option(const option *opt, const char *value)
+void getopt::add_option(option const * opt, char const * value)
 {
     std::string name;
     if((opt->f_flags & advgetopt::getopt::GETOPT_FLAG_ALIAS) != 0)
@@ -1454,6 +1453,7 @@ void getopt::add_option(const option *opt, const char *value)
     {
         value = "";
     }
+
     if(f_map.find(name) == f_map.end())
     {
         // this is a new entry
@@ -1469,7 +1469,7 @@ void getopt::add_option(const option *opt, const char *value)
         switch(opt->f_arg_mode)
         {
         case no_argument:
-            // don't waste time, return immediately
+            // do not waste time, return immediately
             break;
 
         case required_argument:
@@ -1477,7 +1477,7 @@ void getopt::add_option(const option *opt, const char *value)
         case optional_argument:
         case optional_long:
         case default_argument:
-            // we don't expect more than one, overwrite previous value
+            // we do not expect more than one, overwrite previous value
             // if necessary
             f_map[name].f_val[0] = value;
             break;
@@ -1498,6 +1498,61 @@ void getopt::add_option(const option *opt, const char *value)
 
         }
     }
+}
+
+
+/** \brief Get the major version of the library
+ *
+ * This function returns the version of the running library (the
+ * one you are linked against at runtime).
+ *
+ * \return The major version.
+ */
+int getopt::get_major_version()
+{
+    return LIBADVGETOPT_VERSION_MAJOR;
+}
+
+
+/** \brief Get the release version of the library.
+ *
+ * This function returns the release version of the running library
+ * (the one you are linked against at runtime).
+ *
+ * \return The release version.
+ */
+int getopt::get_release_version()
+{
+    return LIBADVGETOPT_VERSION_MINOR;
+}
+
+
+/** \brief Get the patch version of the library.
+ *
+ * This function returns the patch version of the running library
+ * (the one you are linked against at runtime).
+ *
+ * \return The patch version.
+ */
+int getopt::get_patch_version()
+{
+    return LIBADVGETOPT_VERSION_PATCH;
+}
+
+
+/** \brief Get the full version of the library as a string.
+ *
+ * This function returns the major, release, and patch versions of the
+ * running library (the one you are linked against at runtime) in the
+ * form of a string.
+ *
+ * The build version is not made available.
+ *
+ * \return The library version.
+ */
+char const * getopt::get_version_string()
+{
+    return LIBADVGETOPT_VERSION_STRING;
 }
 
 

@@ -26,9 +26,9 @@
 # THE SOFTWARE.
 #
 
-set(ADVGETOPT_VERSION_MAJOR 1)
-set(ADVGETOPT_VERSION_MINOR 0)
-set(ADVGETOPT_VERSION_PATCH 16)
+set(LIBADVGETOPT_VERSION_MAJOR 1)
+set(LIBADVGETOPT_VERSION_MINOR 1)
+set(LIBADVGETOPT_VERSION_PATCH 0)
 
 cmake_minimum_required(VERSION 2.8.4)
 
@@ -57,5 +57,6 @@ endif()
 add_subdirectory( cmake )
 add_subdirectory( src   )
 add_subdirectory( doc   )
+add_subdirectory( tests )
 
 # vim: ts=4 sw=4 et nocindent

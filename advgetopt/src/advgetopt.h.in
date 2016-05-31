@@ -1,5 +1,5 @@
 /*    advgetopt.h -- a replacement to the Unix getopt() implementation
- *    Copyright (C) 2012-2013  Made to Order Software Corporation
+ *    Copyright (C) 2012-2016  Made to Order Software Corporation
  *
  *    This program is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -27,8 +27,6 @@
  * and configuration files in a seamless manner. This class is what is
  * used all around for that purpose.
  */
-#include    <controlled_vars/controlled_vars_auto_init.h>
-#include    <controlled_vars/controlled_vars_auto_enum_init.h>
 
 #include    <map>
 #include    <memory>
@@ -36,6 +34,11 @@
 #include    <string>
 #include    <vector>
 #include    <limits>
+
+#define    LIBADVGETOPT_VERSION_MAJOR   @LIBADVGETOPT_VERSION_MAJOR@
+#define    LIBADVGETOPT_VERSION_MINOR   @LIBADVGETOPT_VERSION_MINOR@
+#define    LIBADVGETOPT_VERSION_PATCH   @LIBADVGETOPT_VERSION_PATCH@
+#define    LIBADVGETOPT_VERSION_STRING  "@LIBADVGETOPT_VERSION_MAJOR@.@LIBADVGETOPT_VERSION_MINOR@.@LIBADVGETOPT_VERSION_PATCH@"
 
 namespace advgetopt
 {
@@ -125,24 +128,29 @@ public:
         argument_mode_t     f_arg_mode;
     };
 
-                    getopt(int argc, char *argv[], option const *opts, const std::vector<std::string> configuration_files, char const *environment_variable_name);
+                        getopt(int argc, char *argv[], option const *opts, const std::vector<std::string> configuration_files, char const *environment_variable_name);
 
-    void            reset(int argc, char *argv[], option const *opts, const std::vector<std::string> configuration_files, char const *environment_variable_name);
+    void                reset(int argc, char *argv[], option const *opts, const std::vector<std::string> configuration_files, char const *environment_variable_name);
 
-    bool            is_defined(const std::string& name) const;
-    int             size(std::string const& name) const;
-    char const *    get_default(std::string const& name) const;
-    long            get_long(std::string const& name, int idx = 0, long min = std::numeric_limits<long>::min(), long max = std::numeric_limits<long>::max());
-    std::string     get_string(std::string const& name, int idx = 0) const;
-    std::string     get_program_name() const;
-    std::string     get_program_fullname() const;
-    void            usage(status_t status, char const *msg, ...);
+    bool                is_defined(const std::string& name) const;
+    int                 size(std::string const& name) const;
+    char const *        get_default(std::string const& name) const;
+    long                get_long(std::string const& name, int idx = 0, long min = std::numeric_limits<long>::min(), long max = std::numeric_limits<long>::max());
+    std::string         get_string(std::string const& name, int idx = 0) const;
+    std::string         get_program_name() const;
+    std::string         get_program_fullname() const;
+    void                usage(status_t status, char const *msg, ...);
+
+    static int          get_major_version();
+    static int          get_release_version();
+    static int          get_patch_version();
+    static char const * get_version_string();
 
 private:
     struct optmap_info
     {
-        controlled_vars::fbool_t    f_cvt;  // whether f_int is defined (true) or not (false)
-        controlled_vars::zint32_t   f_idx;  // index in f_options
+        bool                        f_cvt = false;  // whether f_int is defined (true) or not (false)
+        int32_t                     f_idx = 0;      // index in f_options
         std::vector<long>           f_int;
         std::vector<std::string>    f_val;
     };
@@ -150,14 +158,14 @@ private:
     typedef std::map<char, int>                 short_opt_name_map_t;
     typedef std::map<std::string, int>          long_opt_name_map_t;
 
-    void                parse_arguments(int argc, char *argv[], const option *opts, int def_opt,
+    void                parse_arguments(int argc, char * argv[], option const * opts, int def_opt,
                                         short_opt_name_map_t opt_by_short_name,
                                         long_opt_name_map_t opt_by_long_name,
                                         bool only_environment_variable);
-    void                add_options(option const *opt, int& i, int argc, char **argv);
-    void                add_option(option const *opt, char const *value);
-    std::string         assemble_options( status_t status, std::string& default_arg_help ) const;
-    std::string         process_help_string( char const *help ) const;
+    void                add_options(option const * opt, int & i, int argc, char ** argv);
+    void                add_option(option const * opt, char const *value);
+    std::string         assemble_options( status_t status /*, std::string & default_arg_help*/ ) const;
+    std::string         process_help_string( char const * help ) const;
 
     std::string         f_program_fullname;
     std::string         f_program_name;

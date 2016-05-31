@@ -1,7 +1,7 @@
 # File:         CMakeLists.txt
 # Object:       Build the AdvGetopt library
 #
-# Copyright:    Copyright (c) 2011-2013 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2011-2016 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/
@@ -31,9 +31,13 @@
 ##
 project(advgetopt)
 
+# Put the version in the header file
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/advgetopt.h.in ${CMAKE_CURRENT_BINARY_DIR}/advgetopt.h )
+
 include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 add_library( ${PROJECT_NAME} SHARED
@@ -42,8 +46,8 @@ add_library( ${PROJECT_NAME} SHARED
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
-    VERSION ${ADVGETOPT_VERSION_MAJOR}.${ADVGETOPT_VERSION_MINOR}
-    SOVERSION ${ADVGETOPT_VERSION_MAJOR}
+    VERSION ${LIBADVGETOPT_VERSION_MAJOR}.${LIBADVGETOPT_VERSION_MINOR}
+    SOVERSION ${LIBADVGETOPT_VERSION_MAJOR}
 )
 
 install(

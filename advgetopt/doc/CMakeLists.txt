@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#      Copyright (c) 2011-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -45,13 +45,13 @@ find_package( SnapDoxygen )
 set( PROJECT_ROOT_PATH ${CMAKE_SOURCE_DIR} )
 
 AddDoxygenTarget( advgetopt
-    ${ADVGETOPT_VERSION_MAJOR}
-    ${ADVGETOPT_VERSION_MINOR}
-    ${ADVGETOPT_VERSION_PATCH}
+    ${LIBADVGETOPT_VERSION_MAJOR}
+    ${LIBADVGETOPT_VERSION_MINOR}
+    ${LIBADVGETOPT_VERSION_PATCH}
 )
 
 install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/advgetopt-doc-${ADVGETOPT_VERSION_MAJOR}.${ADVGETOPT_VERSION_MINOR}/.
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/advgetopt-doc-${LIBADVGETOPT_VERSION_MAJOR}.${LIBADVGETOPT_VERSION_MINOR}/.
     DESTINATION share/doc/libadvgetopt/html
     COMPONENT documentation
 )
