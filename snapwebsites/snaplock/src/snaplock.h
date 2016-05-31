@@ -247,6 +247,7 @@ private:
     snaplock_messager::pointer_t                f_messager;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
+    bool                                        f_debug_lock_messages = false;
     std::map<QString, bool>                     f_computers;
     snaplock_ticket::object_map_t               f_entering_tickets;
     snaplock_ticket::object_map_t               f_tickets;

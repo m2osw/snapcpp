@@ -103,6 +103,14 @@ namespace
         },
         {
             '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "debug-lock-messages",
+            nullptr,
+            "Log all the lock messages received by snaplock.",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
             nullptr,
@@ -241,6 +249,10 @@ snaplock::snaplock(int argc, char * argv[])
 
     // --debug
     f_debug = f_opt.is_defined("debug");
+
+    // --debug-lock-messages
+    f_debug_lock_messages = f_opt.is_defined("debug-lock-messages")     // command line
+                         || f_config.contains("debug_lock_messages");   // .conf file
 
     // --server-name (mandatory)
     f_server_name = f_opt.get_string("server-name").c_str();
@@ -489,8 +501,13 @@ int snaplock::quorum() const
  */
 void snaplock::process_message(snap::snap_communicator_message const & message)
 {
-    // This adds way too many messages! Use only to debug if required.
-    //SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+    // This adds way too many messages! By default we want these to be hidden
+    // use the --debug-messages command line flag to see the message debug flags
+    // (i.e. just the --debug flag is not enough)
+    if(f_debug_lock_messages)
+    {
+        SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+    }
 
     QString const command(message.get_command());
 
