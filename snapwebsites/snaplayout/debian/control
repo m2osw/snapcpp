@@ -1,7 +1,7 @@
 Source: snaplayout
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, qt5-default, libxml2-utils, zip
+Build-Depends: debhelper, cmake, qt5-default, libxml2-utils, zip,
     snapcmakemodules (>= 1.0.23.231~trusty), snapbase-dev (>= 1.0.0),
     libadvgetopt-dev, libtld-dev, liblog4cplus-dev, libqtcassandra-dev,
     libqtserialization-dev, libsnapwebsites-dev, libzipios-dev

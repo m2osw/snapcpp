@@ -1,9 +1,10 @@
 Source: snapdbproxy
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, qt5-default, libqt5webkit5-dev,
-    snapcmakemodules (>= 1.0.25.124~xenial), libadvgetopt-dev (>= 1.0.16.368~xenial),
-    libcontrolledvars-dev (>= 1.4.15.231~trusty), libqtcassandra-dev (>= 0.6.0.37~xenial)
+Build-Depends: debhelper, cmake, qt5-default, libqt5webkit5-dev, libxml2-utils, zip, libzipios-dev,
+    liblog4cplus-dev, libtld-dev, snapcmakemodules (>= 1.0.25.124~xenial),
+    libadvgetopt-dev (>= 1.0.16.368~xenial), libcontrolledvars-dev (>= 1.4.15.231~trusty),
+    libqtcassandra-dev (>= 0.6.0.37~xenial), libqtserialization-dev, libsnapwebsites-dev
 Standards-Version: 3.9.4
 Section: admin
 Homepage: http://www.snapwebsites.org/
