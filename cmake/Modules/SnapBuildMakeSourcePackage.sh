@@ -76,6 +76,6 @@ fi
 # Build the source package itself. The output will be placed in the parent directory
 # of the CWD.
 #
-debuild -S -sa -m"${DEBEMAIL}"
+debuild -S -sa -nc -m"${DEBEMAIL}"
 
 # vim: ts=4 sw=4 et
