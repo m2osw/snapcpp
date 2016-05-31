@@ -10,4 +10,9 @@
 #export DH_VERBOSE=1
 
 %:
-	dh $@ 
+	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DCMAKE_PREFIX_PATH=/usr
+
