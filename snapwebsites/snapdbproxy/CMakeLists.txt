@@ -30,34 +30,41 @@
 #      along with this program; if not, write to the Free Software
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
-
+cmake_minimum_required(VERSION 3.5)
 
 #################################################################################
 ## Snap DB Proxy daemon
 ##
-project(snapdbproxy)
+project(snapdbproxy_project)
 
-add_executable(${PROJECT_NAME}
-    snapdbproxy.cpp
-    main.cpp
-    snapdbproxy_connection.cpp
-    snapdbproxy_listener.cpp
-    snapdbproxy_messager.cpp
-    snapdbproxy_thread.cpp
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
+set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+find_package( AdvGetOpt        REQUIRED )
+find_package( Qt5Core          REQUIRED )
+find_package( Qt5Xml           REQUIRED )
+find_package( QtCassandra      REQUIRED )
+find_package( SnapCMakeModules REQUIRED )
+find_package( SnapWebsites     REQUIRED )
+
+SnapGetVersion( SNAPDBPROXY ${CMAKE_CURRENT_SOURCE_DIR} )
+
+include_directories(
+    ${QTCASSANDRA_INCLUDE_DIRS}
+    ${SNAPWEBSITES_INCLUDE_DIRS}
+)
+include_directories( SYSTEM
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Xml_INCLUDE_DIRS}
+)
+set( QT_LIBRARIES
+    Qt5::Core
+    Qt5::Xml
 )
 
-target_link_libraries(${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
+add_subdirectory( conf )
+add_subdirectory( src  )
 
 # vim: ts=4 sw=4 et

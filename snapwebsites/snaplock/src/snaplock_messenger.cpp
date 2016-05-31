@@ -1,12 +1,12 @@
 /*
  * Text:
- *      snaplock_messager.cpp
+ *      snaplock_messenger.cpp
  *
  * Description:
  *      A daemon to synchronize processes between any number of computers
  *      by blocking all of them but one.
  *
- *      The messager implementation listens for messages from other
+ *      The messenger implementation listens for messages from other
  *      services. It understands the basic messages as well as the
  *      LOCK and other messages implemented by the snaplock implementation
  *      (since snaplock daemons communicate between each others.)
@@ -48,7 +48,7 @@
 
 
 
-/** \class snaplock_messager
+/** \class snaplock_messenger
  * \brief Handle messages from the Snap Communicator server.
  *
  * This class is an implementation of the TCP client message connection
@@ -57,9 +57,9 @@
 
 
 
-/** \brief The messager initialization.
+/** \brief The messenger initialization.
  *
- * The messager is a connection to the snapcommunicator server.
+ * The messenger is a connection to the snapcommunicator server.
  *
  * From the outside, we receive LOCK, UNLOCK, STOP, and LOG messages.
  * We implement a few other generic messages too (HELP, READY...) Then
@@ -73,11 +73,11 @@
  * \param[in] addr  The address to connect to. Most often it is 127.0.0.1.
  * \param[in] port  The port to listen on (4040).
  */
-snaplock_messager::snaplock_messager(snaplock * sl, std::string const & addr, int port)
+snaplock_messenger::snaplock_messenger(snaplock * sl, std::string const & addr, int port)
     : snap_tcp_client_permanent_message_connection(addr, port)
     , f_snaplock(sl)
 {
-    set_name("snaplock messager");
+    set_name("snaplock messenger");
 }
 
 
@@ -90,15 +90,15 @@ snaplock_messager::snaplock_messager(snaplock * sl, std::string const & addr, in
  *
  * \param[in] message  The message we just received.
  */
-void snaplock_messager::process_message(snap::snap_communicator_message const & message)
+void snaplock_messenger::process_message(snap::snap_communicator_message const & message)
 {
     f_snaplock->process_message(message);
 }
 
 
-/** \brief The messager could not connect to snapcommunicator.
+/** \brief The messenger could not connect to snapcommunicator.
  *
- * This function is called whenever the messagers fails to
+ * This function is called whenever the messengers fails to
  * connect to the snapcommunicator server. This could be
  * because snapcommunicator is not running or because the
  * configuration information for the snaplock is wrong...
@@ -109,7 +109,7 @@ void snaplock_messager::process_message(snap::snap_communicator_message const & 
  *
  * \param[in] error_message  An error message.
  */
-void snaplock_messager::process_connection_failed(std::string const & error_message)
+void snaplock_messenger::process_connection_failed(std::string const & error_message)
 {
     SNAP_LOG_ERROR("connection to snapcommunicator failed (")(error_message)(")");
 
@@ -123,10 +123,10 @@ void snaplock_messager::process_connection_failed(std::string const & error_mess
  * Whenever the connection is established with the Snap! Communicator,
  * this callback function is called.
  *
- * The messager reacts by REGISTERing the snaplock with the Snap!
+ * The messenger reacts by REGISTERing the snaplock with the Snap!
  * Communicator.
  */
-void snaplock_messager::process_connected()
+void snaplock_messenger::process_connected()
 {
     snap_tcp_client_permanent_message_connection::process_connected();
 

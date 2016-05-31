@@ -380,7 +380,7 @@
  */
 snaplock_ticket::snaplock_ticket(
               snaplock * sl
-            , snaplock_messager::pointer_t messager
+            , snaplock_messenger::pointer_t messenger
             , QString const & object_name
             , QString const & entering_key
             , time_t obtention_timeout
@@ -388,7 +388,7 @@ snaplock_ticket::snaplock_ticket(
             , QString const & server_name
             , QString const & service_name)
     : f_snaplock(sl)
-    , f_messager(messager)
+    , f_messenger(messenger)
     , f_object_name(object_name)
     , f_obtention_timeout(obtention_timeout)
     , f_lock_duration(lock_duration)
@@ -426,7 +426,7 @@ void snaplock_ticket::entering()
     entering_message.add_parameter("key", f_entering_key);
     entering_message.add_parameter("timeout", f_obtention_timeout);
     entering_message.add_parameter("duration", f_lock_duration);
-    f_messager->send_message(entering_message);
+    f_messenger->send_message(entering_message);
 }
 
 
@@ -459,7 +459,7 @@ void snaplock_ticket::entered()
             add_ticket_message.add_parameter("object_name", f_object_name);
             add_ticket_message.add_parameter("key", f_entering_key);
             //add_ticket_message.add_parameter("timeout", f_timeout);
-            f_messager->send_message(add_ticket_message);
+            f_messenger->send_message(add_ticket_message);
         }
     }
 }
@@ -567,7 +567,7 @@ void snaplock_ticket::add_ticket()
     add_ticket_message.add_parameter("timeout", f_obtention_timeout);
     //add_ticket_message.add_parameter("source_service", f_service_name); -- that can be tricky, who should send the LOCKFAILED message now?
     //add_ticket_message.add_parameter("source_sent_from", f_sent_from);
-    f_messager->send_message(add_ticket_message);
+    f_messenger->send_message(add_ticket_message);
 }
 
 
@@ -613,7 +613,7 @@ void snaplock_ticket::exiting()
     exiting_message.set_service("*");
     exiting_message.add_parameter("object_name", f_object_name);
     exiting_message.add_parameter("key", f_entering_key);
-    f_messager->send_message(exiting_message);
+    f_messenger->send_message(exiting_message);
 }
 
 
@@ -689,7 +689,7 @@ void snaplock_ticket::activate_lock()
         locked_message.add_parameter("object_name", f_object_name);
         locked_message.add_parameter("timeout_date", f_lock_timeout);
         locked_message.add_parameter("quorum", f_snaplock->quorum()); // mainly for debug/info so one can know how many computers replied before we said LOCKED
-        f_messager->send_message(locked_message);
+        f_messenger->send_message(locked_message);
     }
 }
 
@@ -708,7 +708,7 @@ void snaplock_ticket::drop_ticket()
     drop_ticket_message.set_service("*");
     drop_ticket_message.add_parameter("object_name", f_object_name);
     drop_ticket_message.add_parameter("key", f_ticket_key.isEmpty() ? f_entering_key : f_ticket_key);
-    f_messager->send_message(drop_ticket_message);
+    f_messenger->send_message(drop_ticket_message);
 
     if(!f_service_name.isEmpty())
     {
@@ -729,7 +729,7 @@ void snaplock_ticket::drop_ticket()
         unlocked_message.set_server(f_server_name);
         unlocked_message.set_service(f_service_name);
         unlocked_message.add_parameter("object_name", f_object_name);
-        f_messager->send_message(unlocked_message);
+        f_messenger->send_message(unlocked_message);
     }
 }
 
@@ -789,7 +789,7 @@ void snaplock_ticket::lock_failed()
             lock_failed_message.set_service(f_service_name);
             lock_failed_message.add_parameter("object_name", f_object_name);
             lock_failed_message.add_parameter("error", "timedout");
-            f_messager->send_message(lock_failed_message);
+            f_messenger->send_message(lock_failed_message);
         }
         else
         {
@@ -801,7 +801,7 @@ void snaplock_ticket::lock_failed()
             lock_failed_message.set_service(f_service_name);
             lock_failed_message.add_parameter("object_name", f_object_name);
             lock_failed_message.add_parameter("error", "failed");
-            f_messager->send_message(lock_failed_message);
+            f_messenger->send_message(lock_failed_message);
         }
     }
 }

@@ -43,22 +43,4 @@ snap_zip_layout( LAYOUT_NAME white
         theme-parser.xsl
 )
 
-#set( ZIPFILE ${PROJECT_BINARY_DIR}/white_layout.zip )
-#
-#add_custom_command( OUTPUT ${ZIPFILE}
-#	COMMAND ${ZIP} ${ZIPFILE} ${LAYOUT_FILES}
-#	DEPENDS ${LAYOUT_FILES}
-#	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-#)
-#
-#add_custom_target( white_zipfile ALL DEPENDS ${ZIPFILE} )
-#
-#install(
-#    FILES
-#        ${ZIPFILE}
-#    DESTINATION
-#        share/snapwebsites/layouts/white
-#)
-
-
 # vim: ts=4 sw=4 et

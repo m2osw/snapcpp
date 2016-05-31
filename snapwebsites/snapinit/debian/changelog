@@ -1,0 +1,5 @@
+snapinit (1.0.0) xenial; urgency=high
+
+  * Initial release of packaging.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 26 May 2016 22:49:55 -0800

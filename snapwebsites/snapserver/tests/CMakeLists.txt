@@ -55,73 +55,18 @@ find_package( Catch )
 
 if(CATCH_FOUND)
 
-    project(test_snap)
-
-    add_executable(${PROJECT_NAME}
-        # Main
-        snap_tests.cpp
-        catch_tests.cpp
-
-        # Test suites
-        catch_snap_communicator.cpp
-    )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
-    target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
+    # TODO: turn this into a static library, because it takes a lot
+    # longer to compile each test.
+    set( SNAP_TESTS
+        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.h
+        ${CMAKE_PREFIX_PATH}/share/snapwebsites/src/snap_tests.cpp
     )
 
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --host ${CASSANDRA_HOST_IP} )
-
-    ##
-    ## A client used to test our Snap! Communicator
-    ##
-    project(test_snap_communicator_client)
-    add_executable(${PROJECT_NAME}
-        # Main
-        snap_tests.cpp
-        test_snap_communicator_client.cpp
-    )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
-    target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
-    )
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} --host ${CASSANDRA_HOST_IP} )
-
-
-    ##
-    ## Send orders to the Snap Server via the snap.cgi tool
-    ##
-    project(test_snap_cgi)
-    add_executable(test_snap_cgi
-        snap_tests.cpp
-        test_snap_cgi.cpp
-    )
-    add_dependencies( test_snap_cgi test_prereqs )
-    # while developing you may need to set LD_LIBRARY_PATH
-    target_link_libraries(test_snap_cgi
-        #${SNAPWEBSITES_LIBRARIES}
-        #QtCassandra
-        #QtCore
-        #QtXml
-        #QtNetwork
-        #tld
-    )
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
-
+    include_directories( ${CMAKE_PREFIX_PATH}/share/snapwebsites/src )
 
     project(test_snap_parser)
     add_executable(${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_snap_parser.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -138,7 +83,7 @@ if(CATCH_FOUND)
 
     project( test_unix_timestamp )
     add_executable(${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_unix_timestamp.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -147,7 +92,7 @@ if(CATCH_FOUND)
 
     project( test_entity_filter )
     add_executable(${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_entity_filter.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -164,7 +109,7 @@ if(CATCH_FOUND)
 
     project( test_ip_strings )
     add_executable(${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_ip_strings.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -194,7 +139,7 @@ if(CATCH_FOUND)
 
     project(test_quoted_printable)
     add_executable(${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_quoted_printable.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -211,7 +156,7 @@ if(CATCH_FOUND)
 
     project(test_snap_child_date_parser)
     add_executable(${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_snap_child_date_parser.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -228,7 +173,7 @@ if(CATCH_FOUND)
 
     project(test_snap_version)
     add_executable( ${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_snap_version.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -250,7 +195,7 @@ if(CATCH_FOUND)
     ##
     project(test_snap_exception)
     add_executable( ${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_snap_exception.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -271,7 +216,7 @@ if(CATCH_FOUND)
     ##
     project(test_shutdown_server)
     add_executable( ${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_shutdown_server.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -287,7 +232,7 @@ if(CATCH_FOUND)
 
     project(test_shutdown_client)
     add_executable( ${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         test_shutdown_client.cpp
     )
     add_dependencies( ${PROJECT_NAME} test_prereqs )
@@ -303,31 +248,11 @@ if(CATCH_FOUND)
 
 
     ##
-    ## Test the snap_lock from one or multiple computers
-    ##
-    project(test_snap_lock)
-    add_executable( ${PROJECT_NAME}
-        test_snap_lock.cpp
-    )
-    add_dependencies( ${PROJECT_NAME} test_prereqs )
-    target_link_libraries(${PROJECT_NAME}
-        ${SNAPWEBSITES_LIBRARIES}
-        ${LOG4CPLUS_LIBRARIES}
-        ${QTCASSANDRA_LIBRARIES}
-        ${LIBTLD_LIBRARIES}
-        ${QT_LIBRARIES}
-        dl
-    )
-    add_test( NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME} )
-
-
-
-    ##
     ## String Speed (testing a Qt feature)
     ##
     project(string_speed)
     add_executable( ${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         string_speed.cpp
     )
     target_link_libraries(${PROJECT_NAME}
@@ -345,7 +270,7 @@ if(CATCH_FOUND)
     ##
     project(gethostips)
     add_executable( ${PROJECT_NAME}
-        snap_tests.cpp
+        ${SNAP_TESTS}
         gethostips.cpp
     )
     target_link_libraries(${PROJECT_NAME}

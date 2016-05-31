@@ -43,14 +43,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set( CMAKE_AUTOMOC TRUE )
 
 ##
-## Version
-##
-set(SNAPMANAGER_VERSION_MAJOR 1)
-set(SNAPMANAGER_VERSION_MINOR 1)
-set(SNAPMANAGER_VERSION_PATCH 0)
-add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGER_VERSION_MAJOR}.${SNAPMANAGER_VERSION_MINOR}.${SNAPMANAGER_VERSION_PATCH}\" )
-
-##
 ## CMake module path
 ##
 if( NOT CMAKE_PREFIX_PATH )
@@ -79,6 +71,12 @@ find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
+##
+## Version
+##
+SnapGetVersion( SNAPMANAGER ${CMAKE_CURRENT_SOURCE_DIR} )
+add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGER_VERSION_MAJOR}.${SNAPMANAGER_VERSION_MINOR}.${SNAPMANAGER_VERSION_PATCH}\" )
+
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
     ${Qt5Network_INCLUDE_DIRS}
@@ -100,61 +98,15 @@ set( QT_LIBRARIES
 # We remove the -Wswitch-default because qt has some problematic headers in that regard
 #set(CMAKE_CXX_FLAGS "-Werror -Wall -Wextra -pedantic -std=c++0x -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused -Wno-variadic-macros -Wno-parentheses -fdiagnostics-show-option")
 
-qt5_wrap_ui(SNAP_MANAGER_UIS_H
-    snap-manager-mainwindow.ui
-    snap-manager-aboutbox.ui
-    snap-manager-createcontextbox.ui
-    snap-manager-helpbox.ui
-    snap-manager-initialize-websitebox.ui
-    snap-manager-decode-utf8-dialog.ui
-    snap-manager-connectform.ui
-    snap-manager-domainform.ui
-)
-qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
-    snap-manager-resources.qrc
-)
-
-
 include_directories(
-    ${PROJECT_BINARY_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
     ${LIBTLD_INCLUDE_DIRS}
     ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
 
-add_executable( ${PROJECT_NAME}
-    DomainModel.cpp
-    RowModel.cpp
-    TableModel.cpp
-    WebsiteModel.cpp
-    snap-manager.cpp
-    snap-manager-about.cpp
-    snap-manager-createcontext.cpp
-    snap-manager-help.cpp
-    snap-manager-initialize-website.cpp
-    snap-manager-decode-utf8.cpp
-    get_child.h
-    ${SNAP_MANAGER_UIS_H}
-    ${SNAP_MANAGER_RESOURCES_RCC}
-)
-
-# while developing you may need to set LD_LIBRARY_PATH
-target_link_libraries( ${PROJECT_NAME}
-    ${ADVGETOPT_LIBRARIES}
-    ${LOG4CPLUS_LIBRARY}
-    ${QT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QTSERIALIZATION_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-    ${SNAPWEBSITES_LIBRARIES}
-    dl
-)
-
-install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin )
-install( FILES snapmanager.desktop  DESTINATION share/applications )
-install( FILES snap-medium-icon.png DESTINATION share/pixmaps/ RENAME snapmanager.png )
+add_subdirectory( src )
 
 ## TODO: add code coverage, doxygen and unittests
 

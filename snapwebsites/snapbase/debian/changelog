@@ -1,4 +1,4 @@
-snapwebsites (1.0.0) xenial; urgency=high
+snapbase (1.0.0) xenial; urgency=high
 
   * Initial release of packaging.
 

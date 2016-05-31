@@ -31,10 +31,11 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-#################################################################################
-## The Snap! Server
-##
-project(snapbase)
+cmake_minimum_required( VERSION 3.5 )
 
+project(snapbase_project)
+
+file( GLOB SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/* )
+install( FILES ${SRC_FILES} DESTINATION share/snapwebsites/src )
 
 # vim: ts=4 sw=4 et

@@ -1,9 +1,9 @@
 Source: snaplock
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, doxygen, graphviz,
+Build-Depends: debhelper, cmake, doxygen, graphviz, libxml2-utils,
     liblog4cplus-dev (>= 1.2.0.388~trusty), qt5-default, catch (>= 1.0),
-    snapcmakemodules (>= 1.0.23.231~trusty) libadvgetopt-dev (>= 1.0.16.368~xenial),
+    snapcmakemodules (>= 1.0.23.231~trusty), libadvgetopt-dev (>= 1.0.16.368~xenial),
     libtld-dev (>= 1.5.1.305~trusty), libqtcassandra-dev (>= 0.6.0.26~trusty),
     libsnapwebsites-dev (>= 1.0.0.9~xenial)
 Standards-Version: 3.9.4

@@ -1,0 +1,5 @@
+snapdbproxy (1.0.1) xenial; urgency=high
+
+  * Initial release of packaging for snapdbproxy. 
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Mon, 30 May 2016 13:38:48 -0700

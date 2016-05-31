@@ -32,11 +32,7 @@
 ##
 ## Initialization
 ##
-set(LIBSNAPWEBSITES_VERSION_MAJOR  1)
-set(LIBSNAPWEBSITES_VERSION_MINOR  0)
-set(LIBSNAPWEBSITES_VERSION_PATCH  0)
-
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 # Reasons for warnings that are turned off:
 # * We use variadic macros for the signals, very useful to avoid otherwise
@@ -75,7 +71,6 @@ find_package( LibXml2            REQUIRED )
 find_package( log4cplus          REQUIRED )
 find_package( OpenSSL            REQUIRED )
 find_package( ProcPS             REQUIRED )
-
 find_package( Qt5Core            REQUIRED )
 find_package( Qt5Network         REQUIRED )
 find_package( Qt5Script          REQUIRED )
@@ -83,6 +78,12 @@ find_package( Qt5Sql             REQUIRED )
 find_package( Qt5Widgets         REQUIRED )
 find_package( Qt5Xml             REQUIRED )
 find_package( Qt5XmlPatterns     REQUIRED )
+find_package( QtCassandra        REQUIRED )
+find_package( QtSerialization    REQUIRED )
+find_package( SnapCMakeModules   REQUIRED )
+find_package( SnapDoxygen        REQUIRED )
+find_package( ZLIB               REQUIRED )
+find_package( ZipIos             REQUIRED 2.1      )
 
 include_directories( SYSTEM
     ${Qt5Core_INCLUDE_DIRS}
@@ -102,12 +103,7 @@ set( QT_LIBRARIES
     Qt5::XmlPatterns
 )
 
-find_package( QtCassandra        REQUIRED )
-find_package( QtSerialization    REQUIRED )
-find_package( SnapCMakeModules   REQUIRED )
-find_package( SnapDoxygen        REQUIRED )
-find_package( ZLIB               REQUIRED )
-find_package( ZipIos             REQUIRED 2.1      )
+SnapGetVersion( LIBSNAPWEBSITES ${CMAKE_CURRENT_SOURCE_DIR} )
 
 find_library( UUID uuid )
 if( ${UUID} STREQUAL "UUID-NOTFOUND" )
@@ -128,7 +124,7 @@ endif()
 # -DUNISTR_FROM_STRING_EXPLICIT=explicit is for the Unicode library, to make sure it does not copy strings arounds automatically
 # -DMAGICKCORE_QUANTUM_DEPTH=16 is the default depth, newer versions of ImageMagick require that definition from you (no internal default)
 # -DMAGICKCORE_HDRI_ENABLE=0 is also the default for ImageMagick; I'm not too sure what HDRI stands for though...
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 include_directories(
