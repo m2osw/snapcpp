@@ -42,7 +42,7 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
 Package: snapserver-core-plugins-dev
 Section: web
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, snapserver-core-plugins (= ${binary:Version})
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
