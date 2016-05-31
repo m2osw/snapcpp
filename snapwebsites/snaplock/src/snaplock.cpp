@@ -1812,7 +1812,7 @@ void snaplock::ticket_list(snap::snap_communicator_message const & message)
     // add newlines for people who have TRACE mode would otherwise have
     // a hard time to find the actual list
     //
-    if(list.empty())
+    if(list.isEmpty())
     {
         // TODO: add a --quiet command line option
         //

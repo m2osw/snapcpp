@@ -63,6 +63,11 @@ set( QT_LIBRARIES
 
 SnapGetVersion( SNAPBOUNCE ${CMAKE_CURRENT_SOURCE_DIR} )
 
+find_library( UUID uuid )
+if( ${UUID} STREQUAL "UUID-NOTFOUND" )
+    message( FATAL_ERROR "Cannot find uuid library!" )
+endif()
+
 add_subdirectory( src   )
 
 # vim: ts=4 sw=4 et

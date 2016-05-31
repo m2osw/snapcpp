@@ -1,4 +1,4 @@
-snapwebsites-core-plugins (1.0.0) xenial; urgency=high
+snapserver-core-plugins (1.0.0) xenial; urgency=high
 
   * Initial release of packaging for the new snapserver project.
 
