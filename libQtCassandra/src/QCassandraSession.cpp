@@ -166,8 +166,10 @@ void QCassandraSession::connect( const QStringList& host_list, const int port )
     cass_cluster_set_contact_points( f_cluster.get(),
                                      host_list.join(",").toUtf8().data() );
 
-    cass_cluster_set_port( f_cluster.get(), port );
-    cass_cluster_set_request_timeout(f_cluster.get(), static_cast<unsigned>(f_timeout));
+    cass_cluster_set_port                        ( f_cluster.get(), port );
+    cass_cluster_set_request_timeout             ( f_cluster.get(), static_cast<unsigned>(f_timeout) );
+    cass_cluster_set_write_bytes_high_water_mark ( f_cluster.get(), f_highWaterMark );
+    cass_cluster_set_write_bytes_low_water_mark  ( f_cluster.get(), f_lowWaterMark  );
     //
     f_session.reset( cass_session_new(), CassTools::sessionDeleter() );
     f_connection.reset(
@@ -353,20 +355,33 @@ int64_t QCassandraSession::setTimeout(CassTools::timeout_t timeout_ms)
 }
 
 
-void QCassandraSession::setWriteBytesHighWaterMark( uint32_t val )
+uint32_t QCassandraSession::highWaterMark() const
 {
+    return f_highWaterMark;
+}
+
+
+uint32_t QCassandraSession::lowWaterMark() const
+{
+    return f_lowWaterMark;
+}
+
+void QCassandraSession::setHighWaterMark( uint32_t val )
+{
+    f_highWaterMark = val;
     if( f_cluster )
     {
-        cass_cluster_set_write_bytes_high_water_mark( f_cluster.get(), val );
+        cass_cluster_set_write_bytes_high_water_mark( f_cluster.get(), f_highWaterMark );
     }
 }
 
 
-void QCassandraSession::setWriteBytesLowWaterMark( uint32_t val )
+void QCassandraSession::setLowWaterMark( uint32_t val )
 {
+    f_lowWaterMark = val;
     if( f_cluster )
     {
-        cass_cluster_set_write_bytes_low_water_mark( f_cluster.get(), val );
+        cass_cluster_set_write_bytes_low_water_mark( f_cluster.get(), f_lowWaterMark );
     }
 }
 

@@ -67,15 +67,15 @@ snapbackup::snapbackup( getopt_ptr_t opt )
 
 void snapbackup::setSqliteDbFile( const QString& sqlDbFile )
 {
-	QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE" );
+    QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE" );
     if( !db.isValid() )
     {
         const QString error( "QSQLITE database is not valid for some reason!" );
         std::cerr << "QSQLITE not valid!!!" << std::endl;
         throw std::runtime_error( error.toUtf8().data() );
     }
-	db.setDatabaseName( sqlDbFile );
-	if( !db.open() )
+    db.setDatabaseName( sqlDbFile );
+    if( !db.open() )
     {
         const QString error( QString("Cannot open SQLite database [%1]!").arg(sqlDbFile) );
         std::cerr << "QSQLITE not open!!!" << std::endl;
@@ -86,9 +86,9 @@ void snapbackup::setSqliteDbFile( const QString& sqlDbFile )
 
 void snapbackup::connectToCassandra()
 {
+    f_session->setLowWaterMark  ( f_opt->get_long("low-watermark")  );
+    f_session->setHighWaterMark ( f_opt->get_long("high-watermark") );
     f_session->connect( f_opt->get_string("host").c_str(), f_opt->get_long("port") );
-    f_session->setWriteBytesLowWaterMark  ( f_opt->get_long("low-watermark")  );
-    f_session->setWriteBytesHighWaterMark ( f_opt->get_long("high-watermark") );
 }
 
 void snapbackup::exec( QSqlQuery& q )
@@ -160,6 +160,23 @@ void snapbackup::storeSchema( const QString& context_name )
 
 void snapbackup::restoreSchema( const QString& context_name )
 {
+    SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
+    sm->loadSchema();
+    const auto& keyspaces( sm->getKeyspaces() );
+    auto snap_iter = keyspaces.find(context_name);
+    if( snap_iter != keyspaces.end() )
+    {
+        if( f_opt->is_defined("force-schema-creation") )
+        {
+            std::cout << "Context " << context_name << " already exists, but forcing (re)creation as requested." << std::endl;
+        }
+        else
+        {
+            std::cout << "Context " << context_name << " already exists, so skipping schema creation." << std::endl;
+            return;
+        }
+    }
+
     std::cout << "Restoring CQL schema blob..." << std::endl;
     const QString q_str( "SELECT description, name, schema_line FROM cql_schema_list;" );
     QSqlQuery q;
@@ -325,6 +342,15 @@ void snapbackup::storeTables( const int count, const QString& context_name )
     auto kys( snap_iter->second );
     auto tables_to_ignore( dump_list.tablesToIgnore() );
 
+    QStringList tables_to_dump;
+    if( f_opt->is_defined("tables") )
+    {
+        for( int idx = 0; idx < f_opt->size("tables"); ++idx )
+        {
+            tables_to_dump << QString(f_opt->get_string( "tables", idx ).c_str());
+        }
+    }
+
     for( auto table : kys->getTables() )
     {
         const auto table_name( table.first );
@@ -332,6 +358,14 @@ void snapbackup::storeTables( const int count, const QString& context_name )
         if( tables_to_ignore.contains(table_name) )
         {
             continue;
+        }
+
+        if( !tables_to_dump.isEmpty() )
+        {
+            if( !tables_to_dump.contains(table_name) )
+            {
+                continue;
+            }
         }
 
         QString q_str = QString( "CREATE TABLE IF NOT EXISTS %1 "
@@ -399,6 +433,15 @@ void snapbackup::restoreTables( const QString& context_name )
     auto kys( snap_iter->second );
     auto tables_to_ignore( dump_list.tablesToIgnore() );
 
+    QStringList tables_to_restore;
+    if( f_opt->is_defined("tables") )
+    {
+        for( int idx = 0; idx < f_opt->size("tables"); ++idx )
+        {
+            tables_to_restore << QString(f_opt->get_string( "tables", idx ).c_str());
+        }
+    }
+
     for( auto table : kys->getTables() )
     {
         const auto table_name( table.first );
@@ -406,6 +449,14 @@ void snapbackup::restoreTables( const QString& context_name )
         if( tables_to_ignore.contains(table_name) )
         {
             continue;
+        }
+
+        if( !tables_to_restore.isEmpty() )
+        {
+            if( !tables_to_restore.contains(table_name) )
+            {
+                continue;
+            }
         }
 
         std::cout << "Restoring table [" << table_name << "]" << std::endl;

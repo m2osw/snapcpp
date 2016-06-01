@@ -111,8 +111,10 @@ public:
     CassTools::timeout_t timeout() const;
     CassTools::timeout_t setTimeout(CassTools::timeout_t timeout_ms);
 
-    void setWriteBytesHighWaterMark ( uint32_t val );
-    void setWriteBytesLowWaterMark  ( uint32_t val );
+    uint32_t highWaterMark () const;
+    uint32_t lowWaterMark  () const;
+    void setHighWaterMark  ( uint32_t val );
+    void setLowWaterMark   ( uint32_t val );
 
 private:
     QCassandraSession();
@@ -120,7 +122,9 @@ private:
     CassTools::cluster_pointer_t        f_cluster;
     CassTools::session_pointer_t        f_session;
     CassTools::future_pointer_t         f_connection;
-    CassTools::timeout_t                f_timeout = DEFAULT_TIMEOUT; // 12s
+    CassTools::timeout_t                f_timeout       = DEFAULT_TIMEOUT; // 12s
+    uint32_t                            f_highWaterMark = 65536;
+    uint32_t                            f_lowWaterMark  = 0;
 };
 
 
