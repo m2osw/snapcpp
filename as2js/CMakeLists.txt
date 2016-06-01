@@ -27,7 +27,7 @@
 # THE SOFTWARE.
 #
 # Build command for now:
-#   (mkdir -p ../BUILD/as2js; cd ../BUILD/as2js; cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/snapwebsites/BUILD/dist -DCMAKE_MODULE_PATH:PATH=/home/snapwebsites/BUILD/dist/share/cmake-2.8/Modules -DCONTROLLEDVARS_INCLUDE_DIR=../dist/include ../../as2js)
+#   (mkdir -p ../BUILD/as2js; cd ../BUILD/as2js; cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/snapwebsites/BUILD/dist -DCMAKE_MODULE_PATH:PATH=/home/snapwebsites/BUILD/dist/share/cmake-3.5/Modules -DCONTROLLEDVARS_INCLUDE_DIR=../dist/include ../../as2js)
 #
 # Build with DEBUG turned on using this definition:
 #   -DCMAKE_BUILD_TYPE=Debug
@@ -40,7 +40,7 @@ set(AS2JS_VERSION_MAJOR 0)
 set(AS2JS_VERSION_MINOR 1)
 set(AS2JS_VERSION_PATCH 14)
 
-cmake_minimum_required(VERSION 2.8.4)
+cmake_minimum_required(VERSION 3.5)
 
 project(as2js_compiler)
 
@@ -70,7 +70,7 @@ enable_language( C )
 #
 if( NOT CMAKE_MODULE_PATH AND CMAKE_PREFIX_PATH )
     set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-        ${CMAKE_PREFIX_PATH}/share/cmake-2.8/Modules
+        ${CMAKE_PREFIX_PATH}/share/cmake-3.5/Modules
         )
 endif()
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )

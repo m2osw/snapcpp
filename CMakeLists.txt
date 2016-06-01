@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2015 Made to Order Software Corp.
+#      Copyright (c) 2011-2016 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -45,7 +45,7 @@ project( snapwebsites_main )
 #
 set( CMAKE_MODULE_PATH
     ${CMAKE_SOURCE_DIR}/cmake/Modules
-    ${CMAKE_BINARY_DIR}/dist/share/cmake-2.8/Modules
+    ${CMAKE_BINARY_DIR}/dist/share/cmake-3.5/Modules
     ${CMAKE_BINARY_DIR}/dist/share/cmake
 )
 find_package( SnapBuild REQUIRED )
@@ -98,11 +98,12 @@ ConfigureMakeProject( PROJECT_NAME csspp
     DEPENDS cmake advgetopt
 )
 
-ConfigureMakeProject( PROJECT_NAME googlerank
-    CONFIG_ARGS
-        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS cmake controlled_vars
-)
+# Google does not release Page Rank anymore
+#ConfigureMakeProject( PROJECT_NAME googlerank
+#    CONFIG_ARGS
+#        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+#    DEPENDS cmake controlled_vars
+#)
 
 ConfigureMakeProject( PROJECT_NAME libQtCassandra
         CONFIG_ARGS

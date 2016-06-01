@@ -11,7 +11,7 @@ To compile and install as2js from source:
 cmake can be tweaked with different flags as follow:
 
   cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/snapwebsites/BUILD/dist \
-	-DCMAKE_MODULE_PATH:PATH=/home/snapwebsites/BUILD/dist/share/cmake-2.8/Modules \
+	-DCMAKE_MODULE_PATH:PATH=/home/snapwebsites/BUILD/dist/share/cmake-3.5/Modules \
 	../as2js
 
 You may also change the installation path to /usr to install in the standard
