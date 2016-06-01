@@ -76,7 +76,7 @@ case "$1" in
 	esac
 	;;
   *)
-	echo "Usage: /etc/init.d/snapinit {start|stop|status|restart|force-reload}" >&2
+	echo "Usage: /etc/init.d/snapserver {start|stop|status|restart|force-reload}" >&2
 	exit 3
 	;;
 esac
