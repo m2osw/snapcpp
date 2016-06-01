@@ -29,11 +29,10 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-cmake_minimum_required(VERSION 2.8.4)
+cmake_minimum_required(VERSION 3.5)
 
 project( snapCMakeModules )
 
-install( FILES Modules/CheckCXXAbstractClass.cmake DESTINATION share/cmake-2.8/Modules )
 install( FILES Modules/CheckCXXAbstractClass.cmake DESTINATION share/cmake-3.5/Modules )
 
 set( MODULES_LIST
