@@ -353,6 +353,24 @@ int64_t QCassandraSession::setTimeout(CassTools::timeout_t timeout_ms)
 }
 
 
+void QCassandraSession::setWriteBytesHighWaterMark( uint32_t val )
+{
+    if( f_cluster )
+    {
+        cass_cluster_set_write_bytes_high_water_mark( f_cluster.get(), val );
+    }
+}
+
+
+void QCassandraSession::setWriteBytesLowWaterMark( uint32_t val )
+{
+    if( f_cluster )
+    {
+        cass_cluster_set_write_bytes_low_water_mark( f_cluster.get(), val );
+    }
+}
+
+
 } // namespace QtCassandra
 
 // vim: ts=4 sw=4 et

@@ -216,7 +216,7 @@ function( ConfigureMakeProjectInternal )
 		)
 	add_custom_target(
 		${ARG_TARGET_NAME}-pbuilder
-		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} 
+		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} ${MAKEFLAGS}
 			1> ${BUILD_DIR}/pbuilder.log
 		DEPENDS ${PBUILDER_DEPS}
 		WORKING_DIRECTORY ${SRC_DIR}

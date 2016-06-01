@@ -42,6 +42,8 @@
 
 #include <QCoreApplication>
 
+#include <QtCassandra/QStringStream.h>
+
 #include <exception>
 #include <iostream>
 
@@ -110,10 +112,10 @@ const advgetopt::getopt::option g_snapbackup_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        "drop-context-first",
+        "drop-context",
         nullptr,
-        "before restoring, drop the snap_websites keyspace first",
-        advgetopt::getopt::optional_argument
+        "drop the snap_websites keyspace",
+        advgetopt::getopt::no_argument
     },
     {
         'c',
@@ -122,6 +124,22 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         "100",
         "specify the page size in rows (default 100)",
         advgetopt::getopt::optional_argument
+    },
+    {
+        'l',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "low-watermark",
+        "0",
+        "specify the low water mark bytes (default 0)",
+        advgetopt::getopt::required_argument
+    },
+    {
+        'm',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "high-watermark",
+        "65536",
+        "specify the high water mark bytes (default 0)",
+        advgetopt::getopt::required_argument
     },
     {
         '\0',
@@ -165,10 +183,10 @@ const advgetopt::getopt::option g_snapbackup_options[] =
     }
 };
 
-bool confirm_drop_check()
+bool confirm_drop_check( const QString& msg )
 {
-    std::cout << "WARNING! This command is about to overwrite the Snap context on the " << std::endl
-              << "         database server and is IRREVERSIBLE!" << std::endl
+    std::cout << "WARNING! " << msg << std::endl
+              << "         This action is IRREVERSIBLE!" << std::endl
               << std::endl
               << "Make sure you know what you are doing and have appropriate backups" << std::endl
               << "before proceeding!" << std::endl
@@ -206,14 +224,22 @@ int main(int argc, char *argv[])
         snapbackup  s(opt);
         s.connectToCassandra();
 
-        if( opt->is_defined("dump-context") )
+        if( opt->is_defined("drop-context") )
+        {
+            if( opt->is_defined("yes-i-know-what-im-doing")
+                || confirm_drop_check( "This command is about to drop the Snap context on the server completely!" ) )
+            {
+                s.dropContext();
+            }
+        }
+        else if( opt->is_defined("dump-context") )
         {
             s.dumpContext();
         }
         else if( opt->is_defined("restore-context") )
         {
             if( opt->is_defined("yes-i-know-what-im-doing")
-                || confirm_drop_check() )
+                || confirm_drop_check( "This command is about to overwrite the Snap context on the server!" ) )
             {
                 s.restoreContext();
             }
@@ -224,7 +250,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            throw std::runtime_error("You must specify either --dump-context or --restore-context!");
+            throw std::runtime_error("You must specify --drop-context, --dump-context, or --restore-context!");
             retval = 1;
         }
     }

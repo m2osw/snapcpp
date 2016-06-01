@@ -52,9 +52,30 @@ while( <$input> )
 		my @package = @{$DEPHASH{$key}};
 		my $version = $package[0];
 		shift @package;
+		my $evaluate_line = 0;
 		for my $name ( @package )
 		{
-			s/$name \(>= [^\)]+\)/$name \(>= $version\)/;
+			# Only evaluate the build-depends section
+			if( /^Build-Depends:/ )
+			{
+				$evaluate_line = 1;
+			}
+			elsif( /^[A-Za-z-]+:/ )
+			{
+				$evaluate_line = 0;
+			}
+
+			if( $evaluate_line == 1 )
+			{
+				if( /$name \(>= [^\)]+\)/ )
+				{
+					s/$name \(>= [^\)]+\)/$name \(>= $version\)/;
+				}
+				else
+				{
+					s/$name/$name \(>= $version\)/;
+				}
+			}
 		}
 	}
 

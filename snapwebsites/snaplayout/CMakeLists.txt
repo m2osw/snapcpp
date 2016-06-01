@@ -66,7 +66,8 @@ include_directories(
     ${ZIPIOSCC_INCLUDE_DIRS}
 )
 
-add_subdirectory( src  )
+add_subdirectory( src     )
+add_subdirectory( layouts )
 
 
 # vim: ts=4 sw=4 et
