@@ -1,3 +1,9 @@
+snapcgi (1.0.0.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 31 May 2016 22:12:30 -0700
+
 snapcgi (1.0.0.1~xenial) xenial; urgency=high
 
   * Nightly build.
