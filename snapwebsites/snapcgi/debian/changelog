@@ -1,3 +1,9 @@
+snapcgi (1.0.0.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 31 May 2016 16:54:50 -0700
+
 snapcgi (1.0.0) xenial; urgency=high
 
   * Initial release of packaging.
