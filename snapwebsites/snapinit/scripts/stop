@@ -5,8 +5,10 @@ then
 	# (very useful when you start the server the first time to
 	# create the domains, websites, and initialize the first
 	# website)
-	../BUILD/snapwebsites/src/snapsignal --action snapserver STOP
+	BUILD/snapwebsites/snapcommunicator/src/snapsignal --action snapserver STOP
 else
 	# stop all the snap services managed by snapinit on this computer
-	../BUILD/snapwebsites/src/snapinit --binary-path ../BUILD/snapwebsites/src:../BUILD/snapwatchdog/src stop
+	BUILD/snapwebsites/snapinit/src/snapinit \
+		--binary-path `ls -dm BUILD/snapwebsites/*/src | tr -d '\n' | sed -e 's/,/:/g' -e 's/ //g'` \
+		stop
 fi

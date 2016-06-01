@@ -1,0 +1,10 @@
+#!/bin/sh
+if test "$1" = "-r"
+then
+	BUILD/snapwebsites/src/snapinit --remove-lock
+fi
+
+# We have many binary paths where we can find the executables
+BUILD/snapwebsites/snapinit/src/snapinit --debug \
+	--binary-path `ls -dm BUILD/snapwebsites/*/src | tr -d '\n' | sed -e 's/,/:/g' -e 's/ //g'` \
+	start

@@ -323,16 +323,16 @@ advgetopt::getopt::option const g_snapinit_options[] =
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         "Usage: %p [-<opt>] <start|restart|stop>",
         advgetopt::getopt::help_argument
     },
     {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
         "where -<opt> is one or more of:",
         advgetopt::getopt::help_argument
     },
@@ -437,7 +437,7 @@ advgetopt::getopt::option const g_snapinit_options[] =
         0,
         nullptr,
         nullptr,
-        "start|restart|stop",
+        nullptr,
         advgetopt::getopt::default_argument
     },
     {
