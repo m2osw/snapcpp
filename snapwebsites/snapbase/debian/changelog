@@ -1,3 +1,9 @@
+snapbase (1.0.0.2~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Tue, 31 May 2016 22:12:37 -0700
+
 snapbase (1.0.0.1~xenial) xenial; urgency=high
 
   * Nightly build.
