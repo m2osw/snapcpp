@@ -16,6 +16,11 @@ then
     exit 1
 fi
 
+if [ -n "$2" ]
+then
+    export MAKEFLAGS=$2
+fi
+
 if [ ! -e debian/changelog ]
 then
 	echo "No debian changelog found!"
