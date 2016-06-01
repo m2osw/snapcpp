@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          snapserver
+# Provides:          snapinit
 # Required-Start:    $network $local_fs
 # Required-Stop:
 # Default-Start:     2 3 4 5
@@ -17,7 +17,7 @@
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC=snapinit
-NAME=snapserver
+NAME=snapinit
 USER=snapwebsites
 SNAPINIT=/usr/bin/snapinit
 PIDFILE=/run/lock/snapwebsites/snapinit-lock.pid
@@ -27,13 +27,13 @@ PIDFILE=/run/lock/snapwebsites/snapinit-lock.pid
 
 if [ "${SNAPSERVER_ENABLED}" != "yes" ]
 then
-        echo "Snapwebsites service disabled. Modify your config files in /etc/snapwebsites, and then enable the service in /etc/default/snapserver"
+        echo "Snapwebsites service disabled. Modify your config files in /etc/snapwebsites, and then enable the service in /etc/default/snapinit"
         exit 0
 fi
 
 mkdir -p /var/lock/snapwebsites
 
-INIT_ARGS="--detach ${INIT_OPTS}"				# INIT_OPTS  comes from /etc/default/snapserver
+INIT_ARGS="--detach ${INIT_OPTS}"				# INIT_OPTS  comes from /etc/default/snapinit
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
@@ -61,7 +61,7 @@ case "$1" in
 	esac
 	;;
   status)
-	status_of_proc -p $PIDFILE "snapserver" "$NAME"
+	status_of_proc -p $PIDFILE "snapinit" "$NAME"
 	exit $?
 	;;
   restart|force-reload)
@@ -77,7 +77,7 @@ case "$1" in
 	esac
 	;;
   *)
-	echo "Usage: /etc/init.d/snapserver {start|stop|status|restart|force-reload}" >&2
+	echo "Usage: /etc/init.d/snapinit {start|stop|status|restart|force-reload}" >&2
 	exit 3
 	;;
 esac
