@@ -51,6 +51,7 @@ public:
 
     void connectToCassandra();
 
+    void dropContext();
     void dumpContext();
     void restoreContext();
 

@@ -196,17 +196,51 @@ void snapbackup::restoreSchema( const QString& context_name )
 void snapbackup::dropContext( const QString& context_name )
 {
     std::cout << QString("Dropping context [%1]...").arg(context_name) << std::endl;
-    auto q( QCassandraQuery::create(f_session) );
-    q->query( QString("DROP KEYSPACE IF EXISTS %1").arg(context_name) );
-    q->start( false );
-    std::cout << "Please wait...";
-    while( !q->isReady() )
+
+    SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
+    sm->loadSchema();
+    const auto& keyspaces( sm->getKeyspaces() );
+    auto snap_iter = keyspaces.find(context_name);
+    if( snap_iter == keyspaces.end() )
     {
-        std::cout << "." << std::flush;
-        sleep(1);
+        throw std::runtime_error(
+                QString("Context '%1' does not exist! Aborting!")
+                .arg(context_name).toUtf8().data()
+                );
     }
-    q->getQueryResult();
-    q->end();
+
+    auto kys( snap_iter->second );
+
+    for( auto table : kys->getTables() )
+    {
+        const auto table_name( table.first );
+
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("DROP TABLE %1.%2").arg(context_name).arg(table_name) );
+        q->start( false );
+        std::cout << "Dropping table " << table_name;
+        while( !q->isReady() )
+        {
+            std::cout << "." << std::flush;
+            sleep(1);
+        }
+        q->getQueryResult();
+        std::cout << "dropped!" << std::endl;
+    }
+
+    {
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("DROP KEYSPACE %1").arg(context_name) );
+        q->start( false );
+        std::cout << "Dropping keyspace " << context_name;
+        while( !q->isReady() )
+        {
+            std::cout << "." << std::flush;
+            sleep(1);
+        }
+        q->getQueryResult();
+        std::cout << "dropped!" << std::endl;
+    }
 
     std::cout << std::endl << "Context successfully dropped!" << std::endl;
 }
@@ -225,16 +259,18 @@ void snapbackup::dumpContext()
 }
 
 
+void snapbackup::dropContext()
+{
+    const QString context_name( f_opt->get_string("context-name").c_str() );
+    dropContext( context_name );
+}
+
+
 void snapbackup::restoreContext()
 {
     setSqliteDbFile( f_opt->get_string("restore-context").c_str() );
 
     const QString context_name( f_opt->get_string("context-name").c_str() );
-    if( f_opt->is_defined("drop-context-first") )
-    {
-        dropContext( context_name );
-    }
-
     restoreSchema( context_name );
     restoreTables( context_name );
 }
