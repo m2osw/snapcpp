@@ -126,6 +126,22 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         advgetopt::getopt::optional_argument
     },
     {
+        'l',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "low-watermark",
+        "0",
+        "specify the low water mark bytes (default 0)",
+        advgetopt::getopt::required_argument
+    },
+    {
+        'm',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "high-watermark",
+        "65536",
+        "specify the high water mark bytes (default 0)",
+        advgetopt::getopt::required_argument
+    },
+    {
         '\0',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "yes-i-know-what-im-doing",
