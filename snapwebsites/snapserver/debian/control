@@ -25,7 +25,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapserver
 Section: web
 Architecture: any
-Depends: adduser, snapserver-core-plugins (>= 1.0.0), iplock, ${shlibs:Depends}, ${misc:Depends}
+Depends: snapserver-core-plugins (>= 1.0.0), iplock, ${shlibs:Depends}, ${misc:Depends}
 Recommends: snapdb
 Suggests: cassandra (>= 3.5.0), snapcgi, snaputils, snapbounce
 Description: Fast Websites: powerful CMS for Apache written in C++.
