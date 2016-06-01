@@ -3,7 +3,7 @@
  *      snapbackup.h
  *
  * Description:
- * 	    Dumps and restores the "snap_websites" context to/from a SQLite database.
+ *      Dumps and restores the "snap_websites" context to/from a SQLite database.
  *
  * License:
  *      Copyright (c) 2012-2016 Made to Order Software Corp.
@@ -40,6 +40,7 @@
 //
 #include <QSqlQuery>
 #include <QString>
+#include <exception>
 #include <memory>
 
 typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
@@ -47,6 +48,15 @@ typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 class snapbackup
 {
 public:
+    class schema_already_exists_exception : public std::runtime_error
+    {
+    public:
+        schema_already_exists_exception( const QString& msg )
+            : std::runtime_error(msg.toUtf8().data())
+        {
+        }
+    };
+
     snapbackup( getopt_ptr_t opt );
 
     void connectToCassandra();
@@ -57,7 +67,7 @@ public:
 
 private:
     QtCassandra::QCassandraSession::pointer_t f_session;
-    getopt_ptr_t							  f_opt;
+    getopt_ptr_t                              f_opt;
 
     void setSqliteDbFile( const QString& sqlDbFile );
     void appendRowsToSqliteDb( QtCassandra::QCassandraQuery::pointer_t cass_query, const QString& table_name );
