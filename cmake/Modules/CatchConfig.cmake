@@ -28,10 +28,10 @@ SET(CATCH_FOUND "NO")
 
 FIND_PATH(CATCH_INCLUDE_DIR
     catch.hpp
-    NO_DEFAULT_PATH
     PATHS
         ${CMAKE_SOURCE_DIR}/contrib/catch 
         ${CMAKE_SOURCE_DIR}/contrib
+    NO_DEFAULT_PATH
 )
 
 IF(NOT CATCH_INCLUDE_DIR)
