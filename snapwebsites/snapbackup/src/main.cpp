@@ -39,6 +39,7 @@
  */
 
 #include "snapbackup.h"
+#include "snap_table_list.h"
 
 #include <QCoreApplication>
 
@@ -150,6 +151,14 @@ const advgetopt::getopt::option g_snapbackup_options[] =
         advgetopt::getopt::no_argument
     },
     {
+        'f',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "force-schema-creation",
+        nullptr,
+        "Force the creation of the context even if it already exists (default ignore)",
+        advgetopt::getopt::no_argument
+    },
+    {
         'h',
         advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
         "host",
@@ -219,6 +228,8 @@ int main(int argc, char *argv[])
 
     try
     {
+        snapTableList::initList();
+
         getopt_ptr_t opt( new advgetopt::getopt( argc, argv, g_snapbackup_options, g_configuration_files, nullptr ) );
 
         snapbackup  s(opt);
