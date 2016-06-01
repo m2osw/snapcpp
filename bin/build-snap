@@ -14,4 +14,4 @@ cd BUILD
 # Configure and generate (Debug or Release)
 cmake -DCMAKE_BUILD_TYPE=Debug ..
 
-make
+make -j 4
