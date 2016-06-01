@@ -1,0 +1,13 @@
+[Unit]
+Description=snapinit daemon
+After=network.target
+
+[Service]
+Type=forking
+EnvironmentFile=/etc/default/snapinit
+ExecStart=/etc/init.d/snapinit start
+ExecStop=/etc/init.d/snapinit stop
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
