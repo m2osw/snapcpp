@@ -1,3 +1,9 @@
+snapserver-core-plugins (1.0.0.3~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 01 Jun 2016 03:01:45 -0700
+
 snapserver-core-plugins (1.0.0.2~xenial) xenial; urgency=high
 
   * Nightly build.
