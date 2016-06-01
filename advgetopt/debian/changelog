@@ -1,3 +1,9 @@
+advgetopt (1.1.0.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 31 May 2016 16:54:04 -0700
+
 advgetopt (1.1.0) xenial; urgency=high
 
   * Cleaned up the project with version definition available in the header.

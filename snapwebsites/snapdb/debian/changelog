@@ -1,3 +1,9 @@
+snapdb (1.0.1.1~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 31 May 2016 16:55:02 -0700
+
 snapdb (1.0.1) xenial; urgency=high
 
   * Initial release of packaging for snapdb. 
