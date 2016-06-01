@@ -977,6 +977,7 @@ void snap_backend::process_tick()
  */
 bool snap_backend::process_timeout()
 {
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- called");
     // STOP received?
     // Child still running? (our timer should never be on when we have
     // a child running, but it is way safer this way)
@@ -984,6 +985,7 @@ bool snap_backend::process_timeout()
     if(f_stop_received
     || g_child_connection)
     {
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- stop received or g_child_connection != nullptr");
         return false;
     }
 
@@ -993,9 +995,11 @@ bool snap_backend::process_timeout()
         // both be defined, but just in case since we have rather lose
         // event agreggations...
         //
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- no specific website");
         if(!f_sites_table
         || !f_backend_table)
         {
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- sites or backend table(s) missing?");
             return false;
         }
 
@@ -1013,6 +1017,7 @@ bool snap_backend::process_timeout()
             QtCassandra::QCassandraCells const cells(row->cells());
             if(cells.isEmpty())
             {
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- no more cells in \"backend\" table");
                 // it looks like we are done
                 break;
             }
@@ -1023,6 +1028,12 @@ bool snap_backend::process_timeout()
             //
             QByteArray const key(cells.begin().key());
             int64_t const time_limit(QtCassandra::safeInt64Value(key, 0, 0));
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- found cells in \"backend\" table: ")
+    (cells.size())
+    (" with time limit ")
+    (time_limit)
+    (" vs now: ")
+    (get_current_date() + 10000LL);
             if(time_limit <= get_current_date() + 10000LL)
             {
                 // note how we remove the URI from the backend table before
@@ -1030,13 +1041,16 @@ bool snap_backend::process_timeout()
                 // (currently) has a problem, then we just end up skipping
                 // it and we will just try again later.
                 //
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- process this entry!");
                 QtCassandra::QCassandraCell::pointer_t cell(*cells.begin());
                 QString const website_uri(cell->value().stringValue());
                 remove_processed_uri(f_action, key, website_uri);
                 if(process_backend_uri(website_uri))
                 {
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- starting process worked...");
                     return true;
                 }
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- check next because process did not start...");
             }
             else
             {
@@ -1044,6 +1058,7 @@ bool snap_backend::process_timeout()
                 // we can exit the loop now after we stamped the timer
                 // for when we want to wake up next
                 //
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- thinking process has to run in the future?");
                 g_wakeup_timer->set_timeout_date(time_limit);
                 break;
             }
@@ -1051,6 +1066,7 @@ bool snap_backend::process_timeout()
     }
     else
     {
+SNAP_LOG_WARNING("snap_backend::process_timeout() -- backend with a specific URI???");
         process_backend_uri(f_website);
         return true;
     }
