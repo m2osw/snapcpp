@@ -111,6 +111,9 @@ public:
     CassTools::timeout_t timeout() const;
     CassTools::timeout_t setTimeout(CassTools::timeout_t timeout_ms);
 
+    void setWriteBytesHighWaterMark ( uint32_t val );
+    void setWriteBytesLowWaterMark  ( uint32_t val );
+
 private:
     QCassandraSession();
 

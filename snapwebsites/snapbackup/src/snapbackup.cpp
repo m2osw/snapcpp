@@ -87,6 +87,8 @@ void snapbackup::setSqliteDbFile( const QString& sqlDbFile )
 void snapbackup::connectToCassandra()
 {
     f_session->connect( f_opt->get_string("host").c_str(), f_opt->get_long("port") );
+    f_session->setWriteBytesLowWaterMark( 0 );
+    f_session->setWriteBytesHighWaterMark( 500000 );
 }
 
 void snapbackup::exec( QSqlQuery& q )
