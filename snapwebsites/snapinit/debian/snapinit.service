@@ -1,5 +1,5 @@
 [Unit]
-Description=snapinit daemon
+Description=Snap! Websites snapinit daemon
 After=network.target
 
 [Service]
@@ -8,6 +8,7 @@ EnvironmentFile=/etc/default/snapinit
 ExecStart=/etc/init.d/snapinit start
 ExecStop=/etc/init.d/snapinit stop
 Restart=on-failure
+PIDFile=/run/lock/snapwebsites/snapinit-lock.pid
 
-[Install]
-WantedBy=multi-user.target
+#[Install]
+#WantedBy=multi-user.target
