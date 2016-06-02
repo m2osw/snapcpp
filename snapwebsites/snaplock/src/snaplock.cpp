@@ -506,7 +506,7 @@ void snaplock::process_message(snap::snap_communicator_message const & message)
     // (i.e. just the --debug flag is not enough)
     if(f_debug_lock_messages)
     {
-        SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+        SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_server_name);
     }
 
     QString const command(message.get_command());

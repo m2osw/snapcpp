@@ -244,7 +244,7 @@ private:
     QString                                     f_host_list = "localhost";
     int                                         f_port = 9042;
     int                                         f_max_pending_connections = 20;
-    snaplock_messenger::pointer_t                f_messenger;
+    snaplock_messenger::pointer_t               f_messenger;
     bool                                        f_stop_received = false;
     bool                                        f_debug = false;
     bool                                        f_debug_lock_messages = false;

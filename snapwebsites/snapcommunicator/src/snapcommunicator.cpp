@@ -3589,6 +3589,7 @@ void snap_communicator_server::shutdown(bool full)
             else
             {
                 // STOP means we do not shutdown the entire cluster
+                // so here we use DISCONNECT instead
                 reply.set_command("DISCONNECT");
 
                 // in this case, the remote server closes the socket so

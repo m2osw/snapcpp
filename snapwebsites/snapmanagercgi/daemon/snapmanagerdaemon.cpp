@@ -113,7 +113,7 @@ namespace snap_manager
  * \param[in] argc  The number of argiments defined in argv.
  * \param[in] argv  The array of arguments.
  */
-manager::manager( int argc, char * argv[] )
+manager_daemon::manager_daemon( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapmanagerdaemon_options, g_configuration_files, "SNAPMANAGERDAEMON_OPTIONS")
     , f_communicator_port(4040)
     , f_communicator_address("127.0.0.1")
@@ -135,397 +135,344 @@ manager::manager( int argc, char * argv[] )
 }
 
 
-manager::~manager()
+manager_daemon::~manager_daemon()
 {
 }
 
 
-int manager::error(char const * code, char const * msg, char const * details)
+bool manager_daemon::init()
 {
-    if(details == nullptr)
-    {
-        details = "No details.";
-    }
+    // --server-name (mandatory)
+    f_server_name = f_opt.get_string("server-name").c_str();
 
-    SNAP_LOG_FATAL("error(\"")(code)("\", \"")(msg)("\", \"")(details)("\")");
+    // --connect (mandatory)
+    tcp_client_server::get_addr_port(f_opt.get_string("connect").c_str(), f_communicator_address, f_communicator_port, "tcp");
 
-    std::string body("<h1>");
-    body += code;
-    body += "</h1><p>";
-    body += (msg == nullptr ? "Sorry! We found an invalid server configuration or some other error occurred." : msg);
-    body += "</p>";
-
-    std::cout   << "Status: " << code                       << std::endl
-                << "Expires: Sun, 19 Nov 1978 05:00:00 GMT" << std::endl
-                << "Connection: close"                      << std::endl
-                << "Content-Type: text/html; charset=utf-8" << std::endl
-                << "Content-Length: " << body.length()      << std::endl
-                << "X-Powered-By: snapmanager.cgi"          << std::endl
-                << std::endl
-                << body
-                ;
-
-    return 1;
-}
-
-
-/** \brief Verify that the request is acceptable.
- *
- * This function makes sure that the request corresponds to what we
- * generally expect.
- *
- * \return true if the request is accepted, false otherwise.
- */
-bool manager::verify()
-{
-    // If not defined, keep the default of localhost:4040
-    if(f_opt.is_defined("snapcommunicator"))
-    {
-        // TODO: convert to use "snap_addr::addr"
-        //
-        std::string const snapcommunicator(f_opt.get_string("snapcommunicator"));
-        std::string::size_type const pos(snapcommunicator.find_first_of(':'));
-        if(pos == std::string::npos)
-        {
-            // only an address
-            f_communicator_address = snapcommunicator;
-        }
-        else
-        {
-            // address first
-            f_communicator_address = snapcommunicator.substr(0, pos);
-            // port follows
-            std::string const port(snapcommunicator.substr(pos + 1));
-            f_communicator_port = 0;
-            for(char const * p(port.c_str()); *p != '\0'; ++p)
-            {
-                char const c(*p);
-                if(c < '0' || c > '9')
-                {
-                    SNAP_LOG_FATAL("Invalid port (found a character that is not a digit in \"")(snapcommunicator)("\".");
-                    throw snap::snap_exception("the port in the snapcommunicator parameter is not valid: " + snapcommunicator + ".");
-                }
-                f_communicator_port = f_communicator_port * 10 + c - '0';
-                if(f_communicator_port > 65535)
-                {
-                    SNAP_LOG_FATAL("Invalid port (Port number too large in \"")(snapcommunicator)("\".");
-                    throw snap::snap_exception("the port in the snapcommunicator parameter is too large (we only support a number from 1 to 65535): " + snapcommunicator + ".");
-                }
-            }
-            // forbid port zero
-            if(f_communicator_port <= 0)
-            {
-                SNAP_LOG_FATAL("Invalid port (Port number too small in \"")(snapcommunicator)("\".");
-                throw snap::snap_exception("the port in the snapcommunicator parameter is too small (we only support a number from 1 to 65535): " + snapcommunicator + ".");
-            }
-        }
-    }
-
-    // catch "invalid" methods early so we do not waste
-    // any time with methods we do not support at all
+    // TODO: make us snapwebsites by default and root only when required...
+    //       (and use RAII to do the various switches)
     //
-    // later we want to add support for PUT, PATCH and DELETE though
+    if(setuid(0) != 0)
     {
-        // WARNING: do not use std::string because nullptr will crash
-        //
-        char const * request_method(getenv("REQUEST_METHOD"));
-        if(request_method == nullptr)
-        {
-            SNAP_LOG_FATAL("Request method is not defined.");
-            std::string body("<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET and POST.</p></body></html>");
-            std::cout   << "Status: 405 Method Not Defined"         << std::endl
-                        << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
-                        << "Allow: GET, POST"                       << std::endl
-                        << "Connection: close"                      << std::endl
-                        << "Content-Type: text/html; charset=utf-8" << std::endl
-                        << "Content-Length: " << body.length()      << std::endl
-                        << "X-Powered-By: snapmanager.cgi"          << std::endl
-                        << std::endl
-                        << body;
-            return false;
-        }
-        if(strcmp(request_method, "GET") != 0
-        && strcmp(request_method, "POST") != 0)
-        {
-            SNAP_LOG_FATAL("Request method is \"")(request_method)("\", which we currently refuse.");
-            if(strcmp(request_method, "BREW") == 0)
-            {
-                // see http://tools.ietf.org/html/rfc2324
-                std::cout << "Status: 418 I'm a teapot" << std::endl;
-            }
-            else
-            {
-                std::cout << "Status: 405 Method Not Allowed" << std::endl;
-            }
-            //
-            std::string body("<html><head><title>Method Not Allowed</title></head><body><p>Sorry. We only support GET and POST.</p></body></html>");
-            std::cout   << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
-                        << "Allow: GET, POST"                       << std::endl
-                        << "Connection: close"                      << std::endl
-                        << "Content-Type: text/html; charset=utf-8" << std::endl
-                        << "Content-Length: " << body.length()      << std::endl
-                        << "X-Powered-By: snapamanager.cgi"         << std::endl
-                        << std::endl
-                        << body;
-            return false;
-        }
+        perror("manager_daemon:setuid(0)");
+        return false;
     }
-
-    // get the client IP address
-    //
-    char const * remote_addr(getenv("REMOTE_ADDR"));
-    if(remote_addr == nullptr)
+    if(setgid(0) != 0)
     {
-        error("400 Bad Request", nullptr, "The REMOTE_ADDR parameter is not available.");
+        perror("manager_daemon:setuid(0)");
         return false;
     }
 
-    // verify that this is a client we allow to use snapmanager.cgi
-    //
-    if(!f_opt.is_defined("clients"))
-    {
-        error("403 Forbidden", "You are not allowed on this server.", "The clients=... parameter is undefined.");
-        return false;
-    }
-
-    {
-        snap_addr::addr const remote_address(std::string(remote_addr) + ":80", "tcp");
-        std::string const client(f_opt.get_string("clients"));
-
-        snap::snap_string_list const client_list(QString::fromUtf8(client.c_str()).split(',', QString::SkipEmptyParts));
-        bool found(false);
-        for(auto const & c : client_list)
-        {
-            snap_addr::addr const client_address((c + ":80").toUtf8().data(), "tcp");
-            if(client_address == remote_address)
-            {
-                found = true;
-                break;
-            }
-        }
-        if(!found)
-        {
-            error("403 Forbidden", "You are not allowed on this server.", ("Your remote address is " + remote_address.get_ipv4or6_string()).c_str());
-            return false;
-        }
-    }
-
-    {
-        // WARNING: do not use std::string because nullptr will crash
-        //
-        char const * http_host(getenv("HTTP_HOST"));
-        if(http_host == nullptr)
-        {
-            error("400 Bad Request", "The host you want to connect to must be specified.", nullptr);
-            return false;
-        }
-#ifdef _DEBUG
-        //SNAP_LOG_DEBUG("HTTP_HOST=")(http_host);
-#endif
-        if(tcp_client_server::is_ipv4(http_host))
-        {
-            SNAP_LOG_ERROR("The host cannot be an IPv4 address.");
-            std::cout   << "Status: 444 No Response"        << std::endl
-                        << "Connection: close"              << std::endl
-                        << "X-Powered-By: snapmanager.cgi"  << std::endl
-                        << std::endl
-                        ;
-            snap::server::block_ip(remote_addr, "week");
-            return false;
-        }
-        if(tcp_client_server::is_ipv6(http_host))
-        {
-            SNAP_LOG_ERROR("The host cannot be an IPv6 address.");
-            std::cout   << "Status: 444 No Response"        << std::endl
-                        << "Connection: close"              << std::endl
-                        << "X-Powered-By: snapmanager.cgi"  << std::endl
-                        << std::endl
-                        ;
-            snap::server::block_ip(remote_addr, "week");
-            return false;
-        }
-    }
-
-    {
-        // WARNING: do not use std::string because nullptr will crash
-        //
-        char const * request_uri(getenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_REQUEST_URI)));
-        if(request_uri == nullptr)
-        {
-            // this should NEVER happen because without a path after the method
-            // we probably do not have our snapmanager.cgi run anyway...
-            //
-            error("400 Bad Request", "The path to the page you want to read must be specified.", nullptr);
-            return false;
-        }
-#ifdef _DEBUG
-        //SNAP_LOG_DEBUG("REQUEST_URI=")(request_uri);
-#endif
-
-        // if we do not receive this, somehow someone was able to access
-        // snapmanager.cgi without specifying /cgi-bin/... which is not
-        // correct
-        //
-        if(strncasecmp(request_uri, "/cgi-bin/", 9) != 0)
-        {
-            error("404 Page Not Found", "We could not find the page you were looking for.", "The REQUEST_URI cannot start with \"/cgi-bin/\".");
-            snap::server::block_ip(remote_addr);
-            return false;
-        }
-
-        // TBD: we could test <protocol>:// instead of specifically http
-        //
-        if(strncasecmp(request_uri, "http://", 7) == 0
-        || strncasecmp(request_uri, "https://", 8) == 0)
-        {
-            // avoid proxy accesses
-            error("404 Page Not Found", nullptr, "The REQUEST_URI cannot start with \"http[s]://\".");
-            snap::server::block_ip(remote_addr);
-            return false;
-        }
-
-		// TODO: move to snapserver because this could be the name of a legal page...
-        if(strcasestr(request_uri, "phpmyadmin") != nullptr)
-        {
-            // block myPhpAdmin accessors
-            error("410 Gone", "MySQL left.", nullptr);
-            snap::server::block_ip(remote_addr, "year");
-            return false;
-        }
-    }
-
-    {
-        // WARNING: do not use std::string because nullptr will crash
-        //
-        char const * user_agent(getenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
-        if(user_agent == nullptr)
-        {
-            // we request an agent specification
-            //
-            error("400 Bad Request", "The accessing agent must be specified.", nullptr);
-            snap::server::block_ip(remote_addr, "month");
-            return false;
-        }
-#ifdef _DEBUG
-        //SNAP_LOG_DEBUG("HTTP_USER_AGENT=")(request_uri);
-#endif
-
-        // left trim
-        while(isspace(*user_agent))
-        {
-            ++user_agent;
-        }
-
-        // if we receive this, someone tried to directly access our
-        // snapmanager.cgi, which will not work right so better
-        // err immediately
-        //
-        if(*user_agent == '\0'
-        || (*user_agent == '-' && user_agent[1] == '\0')
-        || strcasestr(user_agent, "ZmEu") != nullptr)
-        {
-            // note that we consider "-" as empty for this test
-            error("400 Bad Request", nullptr, "The agent string cannot be empty.");
-            snap::server::block_ip(remote_addr, "month");
-            return false;
-        }
-    }
-
-    // success
     return true;
 }
 
 
-/** \brief Process one hit to snapmanager.cgi.
- *
- * This is the function that generates the HTML or AJAX reply to
- * the client.
- *
- * \return 0 if the process worked as expected, 1 otherwise.
- */
-int manager::process()
-{
-    // WARNING: do not use std::string because nullptr will crash
-    char const * request_method( getenv("REQUEST_METHOD") );
-    if(request_method == nullptr)
-    {
-        // the method was already checked in verify(), before this
-        // call so it should always be defined here...
-        //
-        SNAP_LOG_FATAL("Method not defined in REQUEST_METHOD.");
-        std::string body("<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET and POST.</p></body></html>");
-        std::cout   << "Status: 405 Method Not Defined"         << std::endl
-                    << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
-                    << "Connection: close"                      << std::endl
-                    << "Allow: GET, POST"                       << std::endl
-                    << "Content-Type: text/html; charset=utf-8" << std::endl
-                    << "Content-Length: " << body.length()      << std::endl
-                    << "X-Powered-By: snap.cgi"                 << std::endl
-                    << std::endl
-                    << body;
-        return false;
-    }
-#ifdef _DEBUG
-    SNAP_LOG_DEBUG("processing request_method=")(request_method);
-#endif
 
-    std::string body("<html><head><title>Snap Manager</title></head><body><p>...TODO...</p></body></html>");
-    std::cout   //<< "Status: 200 OK"                         << std::endl
-                << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
-                << "Connection: close"                      << std::endl
-                << "Content-Type: text/html; charset=utf-8" << std::endl
-                << "Content-Length: " << body.length()      << std::endl
-                << "X-Powered-By: snap.cgi"                 << std::endl
-                << std::endl
-                << body;
+int manager_daemon::run()
+{
+    // Stop on these signals, log them, then terminate.
+    //
+    // Note: the handler uses the logger which the create_instance()
+    //       initializes
+    //
+    signal( SIGSEGV, manager_daemon::sighandler );
+    signal( SIGBUS,  manager_daemon::sighandler );
+    signal( SIGFPE,  manager_daemon::sighandler );
+    signal( SIGILL,  manager_daemon::sighandler );
+
+    // initialize the communicator and its connections
+    //
+    f_communicator = snap::snap_communicator::instance();
+
+    // create a messenger to communicate with the Snap Communicator process
+    // and snapmanager.cgi as required
+    //
+    f_messenger.reset(new manager_messenger(this, f_communicator_address.toUtf8().data(), f_communicator_port));
+    f_communicator->add_connection(f_messenger);
+
+    // now run our listening loop
+    //
+    f_communicator->run();
 
     return 0;
 }
+
+
+/** \brief A static function to capture various signals.
+ *
+ * This function captures unwanted signals like SIGSEGV and SIGILL.
+ *
+ * The handler logs the information and then the service exists.
+ * This is done mainly so we have a chance to debug problems even
+ * when it crashes on a remote server.
+ *
+ * \warning
+ * The signals are setup after the construction of the manager_daemon
+ * object because that is where we initialize the logger.
+ *
+ * \param[in] sig  The signal that was just emitted by the OS.
+ */
+void manager_daemon::sighandler( int sig )
+{
+    QString signame;
+    switch( sig )
+    {
+    case SIGSEGV:
+        signame = "SIGSEGV";
+        break;
+
+    case SIGBUS:
+        signame = "SIGBUS";
+        break;
+
+    case SIGFPE:
+        signame = "SIGFPE";
+        break;
+
+    case SIGILL:
+        signame = "SIGILL";
+        break;
+
+    default:
+        signame = "UNKNOWN";
+        break;
+
+    }
+
+    {
+        snap::snap_exception_base::output_stack_trace();
+        SNAP_LOG_FATAL("Fatal signal caught: ")(signame);
+    }
+
+    // Exit with error status
+    //
+    ::exit( 1 );
+    snap::NOTREACHED();
+}
+
+
+/** \brief Process a message received from Snap! Communicator.
+ *
+ * This function gets called whenever the Snap! Communicator sends
+ * us a message. This includes the basic READY, HELP, and STOP commands.
+ *
+ * \param[in] message  The message we just received.
+ */
+void manager_daemon::process_message(snap::snap_communicator_message const & message)
+{
+    SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_server_name);
+
+    QString const command(message.get_command());
+
+    switch(command[0].unicode())
+    {
+    case 'H':
+        if(command == "HELP")
+        {
+            // Snap! Communicator is asking us about the commands that we support
+            //
+            snap::snap_communicator_message reply;
+            reply.set_command("COMMANDS");
+
+            // list of commands understood by service
+            // (many are considered to be internal commands... users
+            // should look at the LOCK and UNLOCK messages only)
+            //
+            reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+
+            f_messenger->send_message(reply);
+            return;
+        }
+        break;
+
+    case 'L':
+        if(command == "LOG")
+        {
+            // logrotate just rotated the logs, we have to reconfigure
+            //
+            SNAP_LOG_INFO("Logging reconfiguration.");
+            snap::logging::reconfigure();
+            return;
+        }
+        break;
+
+    case 'M':
+        if(command == "MANAGE")
+        {
+            // run the RPC call
+            //
+            manage(message);
+        }
+        break;
+
+    case 'Q':
+        if(command == "QUITTING")
+        {
+            // If we received the QUITTING command, then somehow we sent
+            // a message to Snap! Communicator, which is already in the
+            // process of quitting... we should get a STOP too, but we
+            // can just quit ASAP too
+            //
+            stop(true);
+            return;
+        }
+        break;
+
+    case 'R':
+        if(command == "READY")
+        {
+            // we now are connected to the snapcommunicator
+            //
+            return;
+        }
+        break;
+
+    case 'S':
+        if(command == "STOP")
+        {
+            // Someone is asking us to leave (probably snapinit)
+            //
+            stop(false);
+            return;
+        }
+        break;
+
+    case 'U':
+        if(command == "UNKNOWN")
+        {
+            // we sent a command that Snap! Communicator did not understand
+            //
+            SNAP_LOG_ERROR("we sent unknown command \"")(message.get_parameter("command"))("\" and probably did not get the expected result.");
+            return;
+        }
+        break;
+
+    }
+
+    // unknown commands get reported and process goes on
+    //
+    SNAP_LOG_ERROR("unsupported command \"")(command)("\" was received on the connection with Snap! Communicator.");
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("UNKNOWN");
+        reply.add_parameter("command", command);
+        f_messenger->send_message(reply);
+    }
+
+    return;
+}
+
+
+
+
+/** \brief Called whenever we receive the STOP command or equivalent.
+ *
+ * This function makes sure the manager_daemon exits as quickly as
+ * possible.
+ *
+ * \li Marks the messenger as done.
+ * \li UNREGISTER from snapcommunicator.
+ *
+ * \note
+ * If the f_messenger is still in place, then just sending the
+ * UNREGISTER is enough to quit normally. The socket of the
+ * f_messenger will be closed by the snapcommunicator server
+ * and we will get a HUP signal. However, we get the HUP only
+ * because we first mark the messenger as done.
+ *
+ * \param[in] quitting  Set to true if we received a QUITTING message.
+ */
+void manager_daemon::stop(bool quitting)
+{
+    if(f_messenger)
+    {
+        f_messenger->mark_done();
+
+        // unregister if we are still connected to the messenger
+        // and Snap! Communicator is not already quitting
+        //
+        if(!quitting)
+        {
+            snap::snap_communicator_message cmd;
+            cmd.set_command("UNREGISTER");
+            cmd.add_parameter("service", "snapmanagerdaemon");
+            f_messenger->send_message(cmd);
+        }
+    }
+}
+
+
+/** \brief Manage this computer.
+ *
+ * This function processes a MANAGE command received by this daemon.
+ *
+ * This command is the one that allows us to fully manage a remote
+ * computer from snapmanager.cgi.
+ *
+ * We decided that we would use ONE global message which supports
+ * many functions rather than defining many messages and possibly
+ * have problems later because of some clashes.
+ *
+ * \param[in] message  The message being worked on.
+ */
+void manager_daemon::manage(snap::snap_communicator_message const & message)
+{
+    // check that the service sending a MANAGE command is the one we
+    // expect (note that's not a very powerful security check, but overall
+    // it allows us to make sure that snap_child() and other such services
+    // do not contact us with a MANAGE command.)
+    //
+    QString const & service(message.get_service());
+    if(service != "snapmanagercgi")
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("INVALID");
+        reply.add_parameter("what", "command MANAGE cannot be sent from service " + service);
+        f_messenger->send_message(reply);
+        return;
+    }
+
+    // check the command requested by the sender, this is found in
+    // the "function" parameter; functions must be specified in
+    // uppercase just like commands
+    //
+    QString const function(message.get_parameter("function"));
+    if(function.isEmpty())
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("INVALID");
+        reply.add_parameter("what", "command MANAGE must have a \"function\" parameter");
+        f_messenger->send_message(reply);
+        return;
+    }
+
+    switch(function[0].unicode())
+    {
+    case 'I':
+        if(function == "INSTALL")
+        {
+            installer(message);
+            return;
+        }
+        break;
+
+    }
+
+    {
+        snap::snap_communicator_message reply;
+        reply.set_command("INVALID");
+        reply.add_parameter("what", "command MANAGE did not understand function \"" + function + "\"");
+        f_messenger->send_message(reply);
+    }
+}
+
+
+
+
+
 
 
 
 
 }
 // namespace snap_manager
-
-
-
-int main(int argc, char * argv[])
-{
-    try
-    {
-        snap_manager::manager cgi(argc, argv);
-        try
-        {
-            if(!cgi.verify())
-            {
-                // not acceptable, the verify() function already sent a
-                // response, just exit with 1
-                return 1;
-            }
-            return cgi.process();
-        }
-        catch(std::runtime_error const & e)
-        {
-            // this should rarely happen!
-            return cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
-        }
-        catch(std::logic_error const & e)
-        {
-            // this should never happen!
-            return cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
-        }
-        catch(...)
-        {
-            return cgi.error("503 Service Unavailable", nullptr, "The Snap! C++ CGI script caught an unknown exception.");
-        }
-    }
-    catch(std::exception const & e)
-    {
-        // we are in trouble, we cannot even answer!
-        std::cerr << "snapmanager: initialization exception: " << e.what() << std::endl;
-        return 1;
-    }
-}
-
 // vim: ts=4 sw=4 et

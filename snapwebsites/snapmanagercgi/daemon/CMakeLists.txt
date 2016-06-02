@@ -32,7 +32,7 @@
 
 ## TODO: once we get rid of the GUI version (if we do so some day) then
 ##       we can rename this project snapmanager instead of snapmanagerdaemon
-project( snamanagerdaemon )
+project( snapmanagerdaemon )
 
 # Put the version in the header file
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapmanagerdaemon.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapmanagerdaemon.h )
@@ -53,7 +53,10 @@ include_directories(
 )
 
 add_executable( ${PROJECT_NAME}
+    main.cpp
     snapmanagerdaemon.cpp
+    manager_messenger.cpp
+    installer.cpp
 )
 
 target_link_libraries( ${PROJECT_NAME}

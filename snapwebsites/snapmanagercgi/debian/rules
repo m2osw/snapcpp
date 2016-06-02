@@ -13,5 +13,10 @@
 	dh $@ 
 
 override_dh_auto_configure:
-		dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release
+
+# Add the 's' flag to the daemon to make sure we can run as root
+override_dh_fixperms:
+	dh_fixperms
+	chmod u+s debian/snapmanagercgi/usr/bin/snapmanagerdaemon
 

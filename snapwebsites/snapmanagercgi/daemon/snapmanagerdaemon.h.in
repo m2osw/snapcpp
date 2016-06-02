@@ -35,20 +35,54 @@ namespace snap_manager
 #define SNAPMANAGERDAEMON_VERSION_PATCH   @SNAPMANAGERCGI_VERSION_PATCH@
 #define SNAPMANAGERDAEMON_VERSION_STRING  "@SNAPMANAGERCGI_VERSION_MAJOR@.@SNAPMANAGERCGI_VERSION_MINOR@.@SNAPMANAGERCGI_VERSION_PATCH@"
 
-class manager
+class manager_daemon;
+
+class manager_messenger
+        : public snap::snap_communicator::snap_tcp_client_permanent_message_connection
 {
 public:
-                                manager( int argc, char * argv[] );
-    virtual                     ~manager();
+    typedef std::shared_ptr<manager_messenger>    pointer_t;
 
-    int                         error(char const * code, char const * msg, char const * details);
-    bool                        verify();
-    int                         process();
+                                manager_messenger(manager_daemon * md, std::string const & addr, int port);
+
+    // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
+    virtual void                process_message(snap::snap_communicator_message const & message);
+    virtual void                process_connection_failed(std::string const & error_message);
+    virtual void                process_connected();
+
+protected:
+    // these objects are owned by the manager_daemon objects so no need
+    // for a smart pointer (and it would create a loop unless we use a weakptr)
+    manager_daemon *            f_manager = nullptr;
+};
+
+
+class manager_daemon
+{
+public:
+                                manager_daemon( int argc, char * argv[] );
+    virtual                     ~manager_daemon();
+
+    bool                        init();
+    int                         run();
+    void                        process_message(snap::snap_communicator_message const & message);
 
 private:
-    advgetopt::getopt           f_opt;
-    int                         f_communicator_port = -1;    // snap server port
-    std::string                 f_communicator_address;      // snap server address
+    static void                 sighandler( int sig );
+    void                        stop(bool quitting);
+
+    // the MANAGE command and all of its sub-functions
+    void                        manage(snap::snap_communicator_message const & message);
+    void                            installer(snap::snap_communicator_message const & message);
+    int                                 install(QString const & package_name);
+
+    advgetopt::getopt                           f_opt;
+    QString                                     f_server_name;
+    int                                         f_communicator_port = -1;    // snap server port
+    QString                                     f_communicator_address;      // snap server address
+    snap::snap_communicator::pointer_t          f_communicator;
+    manager_messenger::pointer_t                f_messenger;
+    QString                                     f_output;           // commands output, to be sent to end user
 };
 
 
