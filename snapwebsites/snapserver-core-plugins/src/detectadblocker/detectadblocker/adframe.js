@@ -29,7 +29,6 @@
 /*global jQuery: false, Uint8Array: true */
 
 
-
 /** \brief Change the 'present' variable value to false.
  *
  * This variable gets redefined with the value false instead of the

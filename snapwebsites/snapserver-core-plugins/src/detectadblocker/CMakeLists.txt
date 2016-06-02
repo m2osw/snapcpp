@@ -58,6 +58,7 @@ add_library(detectadblocker SHARED
     detectadblocker/content.xml
     detectadblocker/detectadblocker.js
     detectadblocker/detectadblocker-logo-64x64.png
+    detectadblocker/adframe.js
 )
 
 target_link_libraries( detectadblocker Qt5::Core )

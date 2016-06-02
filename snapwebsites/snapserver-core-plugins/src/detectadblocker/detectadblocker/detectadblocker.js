@@ -1,6 +1,6 @@
 /** @preserve
  * Name: detectadblocker
- * Version: 0.0.1
+ * Version: 0.0.4
  * Browsers: all
  * Copyright: Copyright 2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5)
@@ -60,11 +60,10 @@ snapwebsites.DetectAdBlocker = function()
     //
     if(detectadblocker__inform_server)
     {
-        this.timer_ = setTimeout(function()
+        setTimeout(function()
             {
-                that.timer_ = NaN;
-                that.informAboutBlocker();
-            }, 0);
+                that.informAboutBlocker_();
+            }, 1000);
     }
 
     return this;
@@ -79,14 +78,14 @@ snapwebsites.DetectAdBlocker = function()
 snapwebsites.inherits(snapwebsites.DetectAdBlocker, snapwebsites.ServerAccessCallbacks);
 
 
-/** \brief The TimeTracker instance.
+/** \brief The DetectAdBlocker instance.
  *
  * This class is a singleton and as such it makes use of a static
  * reference to itself. It gets created on load.
  *
- * @type {snapwebsites.TimeTracker}
+ * @type {snapwebsites.DetectAdBlocker}
  */
-snapwebsites.TimeTrackerInstance = null; // static
+snapwebsites.DetectAdBlockerInstance = null; // static
 
 
 /** \brief Whether the ad blocker is present (true) or not (false).
@@ -117,21 +116,7 @@ snapwebsites.DetectAdBlocker.present = true;
  * @type {snapwebsites.ServerAccess}
  * @private
  */
-snapwebsites.TimeTracker.prototype.serverAccess_ = null;
-
-
-/** \brief The timer to know when to send the AJAX order.
- *
- * The timer_ variable is used internally to hold a timer identifier.
- * The timer will be triggered after the page is loaded, at which
- * point we know whether the client runs an ad blocker and if so
- * we can let the server know (and on further access from the client,
- * completely avoid sending anything in link with ads.)
- *
- * @type {number}
- * @private
- */
-snapwebsites.TimeTracker.prototype.timer_ = NaN;
+snapwebsites.DetectAdBlocker.prototype.serverAccess_ = null;
 
 
 /** \brief Force a reload of the calendar.
@@ -145,7 +130,7 @@ snapwebsites.TimeTracker.prototype.timer_ = NaN;
  *
  * @private
  */
-snapwebsites.TimeTracker.informAboutBlocker = function() // static
+snapwebsites.DetectAdBlocker.prototype.informAboutBlocker_ = function()
 {
     if(!this.serverAccess_)
     {
@@ -155,11 +140,11 @@ snapwebsites.TimeTracker.informAboutBlocker = function() // static
     // now we know whether the client browser has an ad blocker running
     // or not, send the information to the server with AJAX...
     //
-    that.serverAccess_.setURI("/detectadblocker");
-    that.serverAccess_.setData({
+    this.serverAccess_.setURI("/detectadblocker");
+    this.serverAccess_.setData({
                 detected_ad_blocker: snapwebsites.DetectAdBlocker.present ? "true" : "false"
             });
-    that.serverAccess_.send();
+    this.serverAccess_.send();
 };
 
 

@@ -44,7 +44,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						</div>
 
 						<div class="editor-block">
-							<label for="prevent_ads_duration">Prevent Ads Duration:</lable>
+							<label for="prevent_ads_duration">Prevent Ads Duration:</label>
 							<xsl:copy-of select="page/body/detectadblocker/prevent_ads_duration/node()"/>
 						</div>
 

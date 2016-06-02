@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </widget>
 
   <!-- inform server -->
-  <widget id="inform_server" type="checkmark" field="dectectadblocker::inform_server" path="dectectadblocker/inform_server" auto-save="int8">
+  <widget id="inform_server" type="checkmark" field="detectadblocker::inform_server" path="detectadblocker/inform_server" auto-save="int8">
     <label>Inform server of the status of the ad blocker on the client side via AJAX</label>
     <tooltip>
       This checkbox is selected by default making this plugin send us

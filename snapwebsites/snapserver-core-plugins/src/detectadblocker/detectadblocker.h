@@ -30,6 +30,7 @@ enum class name_t
     SNAP_NAME_DETECTADBLOCKER_INFORM_SERVER,
     SNAP_NAME_DETECTADBLOCKER_PATH,
     SNAP_NAME_DETECTADBLOCKER_PREVENT_ADS_DURATION,
+    SNAP_NAME_DETECTADBLOCKER_SETTINGS_PATH,
     SNAP_NAME_DETECTADBLOCKER_STATUS_SESSION_NAME
 };
 char const * get_name(name_t name) __attribute__ ((const));
@@ -70,6 +71,9 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
     virtual void            bootstrap(snap_child * snap);
 
+    // snapwebsites signals
+    void                    on_detach_from_session();
+
     // path_execute implementation
     virtual bool            on_path_execute(content::path_info_t & ipath);
 
@@ -78,7 +82,6 @@ public:
 
     // layout signals
     void                    on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata);
-
 
     bool                    was_detected() const;
 

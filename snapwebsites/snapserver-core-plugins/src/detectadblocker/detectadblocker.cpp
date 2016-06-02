@@ -70,6 +70,9 @@ char const * get_name(name_t name)
     case name_t::SNAP_NAME_DETECTADBLOCKER_PREVENT_ADS_DURATION:
         return "detectadblocker::prevent_ads_duration";
 
+    case name_t::SNAP_NAME_DETECTADBLOCKER_SETTINGS_PATH:
+        return "admin/settings/detectadblocker";
+
     case name_t::SNAP_NAME_DETECTADBLOCKER_STATUS_SESSION_NAME:
         return "detectadblocker_status";
 
@@ -110,7 +113,7 @@ detectadblocker::~detectadblocker()
  */
 detectadblocker * detectadblocker::instance()
 {
-    return g_plugin_timetracker_factory.instance();
+    return g_plugin_detectadblocker_factory.instance();
 }
 
 
@@ -182,7 +185,7 @@ int64_t detectadblocker::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 4, 7, 1, 45, 41, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 6, 2, 1, 22, 15, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -223,7 +226,7 @@ void detectadblocker::bootstrap(snap_child * snap)
 
 void detectadblocker::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata)
 {
-    NOTUSED(header);
+    NOTUSED(ipath);
     NOTUSED(metadata);
 
     if(!f_detected)
@@ -232,9 +235,11 @@ void detectadblocker::on_generate_header_content(content::path_info_t & ipath, Q
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
         content::path_info_t settings_ipath;
-        settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
+        settings_ipath.set_path(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_SETTINGS_PATH));
         QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
-        int8_t const inform_server(settings_row->cell(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_INFORM_SERVER))->value().signedCharValue()); // AJAX On/Off
+        int8_t const inform_server(settings_row->cell(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_INFORM_SERVER))->value().safeSignedCharValue(0, 1)); // AJAX On/Off
+
+        QDomDocument doc(header.ownerDocument());
 
         QString const code(QString(
             "/* detectadblocker plugin */"
@@ -273,7 +278,7 @@ void detectadblocker::on_detach_from_session()
             QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
             content::path_info_t settings_ipath;
-            settings_ipath.set_path(get_name(name_t::SNAP_NAME_LOCALE_SETTINGS_PATH));
+            settings_ipath.set_path(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_SETTINGS_PATH));
             QtCassandra::QCassandraRow::pointer_t settings_row(revision_table->row(settings_ipath.get_revision_key()));
             int64_t const prevent_ads_duration(settings_row->cell(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_PREVENT_ADS_DURATION))->value().safeInt64Value(0, 1)); // AJAX On/Off
 
@@ -282,7 +287,7 @@ void detectadblocker::on_detach_from_session()
             bool const timed_out(timeout + 86400 * prevent_ads_duration < start_time);
             if(timed_out)
             {
-                user_plugin->detach_from_session(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_STATUS_SESSION_NAME));
+                users_plugin->detach_from_session(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_STATUS_SESSION_NAME));
             }
             f_detected = !timed_out && time_status[1] == "true";
         }
@@ -307,7 +312,7 @@ bool detectadblocker::on_path_execute(content::path_info_t & ipath)
         // (in case we do not receive the correct variable or the
         // value is not exactly "true" or "false")
         //
-        bool f_detected = false;
+        f_detected = false;
         if(f_snap->postenv_exists("detected_ad_blocker"))
         {
             QString const status(f_snap->postenv("detected_ad_blocker"));
@@ -316,7 +321,7 @@ bool detectadblocker::on_path_execute(content::path_info_t & ipath)
         users::users * users_plugin(users::users::instance());
         time_t const start_time(f_snap->get_start_time());
         users_plugin->attach_to_session(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_STATUS_SESSION_NAME),
-                                        f_detected ? QString("%1,%1").arg(start_time).arg(detected ? "true" : "false"));
+                                        QString("%1,%1").arg(start_time).arg(f_detected ? "true" : "false"));
 
         // TODO: add two counters to know how many accesses we get with
         //       ad blockers and how many without ad blockers
