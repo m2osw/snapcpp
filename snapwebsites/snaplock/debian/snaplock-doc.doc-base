@@ -1,7 +1,7 @@
 Document: snaplock
-Title: snaplock tool
+Title: snaplock daemon
 Author: Alexis Wilke
-Abstract: This is the reference manual for the snaplock tool.
+Abstract: This is the reference manual for the snaplock daemon.
 Section: web
 
 Format: HTML
