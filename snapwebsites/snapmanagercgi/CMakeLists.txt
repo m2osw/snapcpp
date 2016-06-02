@@ -83,7 +83,11 @@ set( QT_LIBRARIES
 )
 
 
-add_subdirectory( src )
+##
+## Compiling
+##
+add_subdirectory( conf )           # Configuration files and samples
+add_subdirectory( src  )           # Actual Snap! Websites server
 
 
 # vim: ts=4 sw=4 et nocindent

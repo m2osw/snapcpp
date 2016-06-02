@@ -157,9 +157,9 @@ include_directories(
 ##
 ## Compiling
 ##
-add_subdirectory(src)           # Actual Snap! Websites server
-add_subdirectory(tests)         # Tests to run against the server
-add_subdirectory(conf)          # Configuration files and samples
+add_subdirectory( conf  )           # Configuration files and samples
+add_subdirectory( src   )           # Actual Snap! Websites server
+add_subdirectory( tests )           # Tests to run against the server
 
 ##
 ## Install run scripts

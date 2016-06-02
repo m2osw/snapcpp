@@ -33,13 +33,11 @@
 ## Config files
 ##
 install(
-    FILES 
-        # log4cplus properties
-        # These are managed by snapbase because they are common to
-        # snapserver and snapbackend and possibly other tools too
-
-        # snap configuration files
-        snapserver.conf
+    FILES
+        # log4cplus properties for snapserver and the log4cplus server
+        loggingserver.properties
+        log.properties
+        logserver.properties
 
     DESTINATION
         share/snapwebsites/conf

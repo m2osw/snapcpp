@@ -38,4 +38,6 @@ project(snapbase_project)
 file( GLOB SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/* )
 install( FILES ${SRC_FILES} DESTINATION share/snapwebsites/src )
 
+add_subdirectory( conf )
+
 # vim: ts=4 sw=4 et

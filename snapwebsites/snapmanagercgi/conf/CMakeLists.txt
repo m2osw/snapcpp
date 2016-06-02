@@ -35,11 +35,13 @@
 install(
     FILES 
         # log4cplus properties
-        # These are managed by snapbase because they are common to
-        # snapserver and snapbackend and possibly other tools too
+        snapmanagercgi.properties
 
         # snap configuration files
-        snapserver.conf
+        snapmanagercgi.conf
+
+        # misc files -- TODO add a sample apache settings?
+        #snapmanager-apache2.conf
 
     DESTINATION
         share/snapwebsites/conf
