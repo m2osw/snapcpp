@@ -47,6 +47,7 @@ find_package( Qt5Xml           REQUIRED )
 find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
 include_directories(
@@ -65,6 +66,7 @@ SnapGetVersion( SNAPCOMMUNICATOR ${CMAKE_CURRENT_SOURCE_DIR} )
 
 add_subdirectory( conf  )
 add_subdirectory( src   )
+add_subdirectory( doc   )
 add_subdirectory( tests )
 
 # vim: ts=4 sw=4 et
