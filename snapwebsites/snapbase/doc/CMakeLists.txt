@@ -33,9 +33,6 @@
 ##
 ## Documentation
 ##
-message("Got version? " ${SNAPBASE_VERSION_MAJOR} "."
-    ${SNAPBASE_VERSION_MINOR} "."
-    ${SNAPBASE_VERSION_PATCH})
 AddDoxygenTarget(
     snapbase
     ${SNAPBASE_VERSION_MAJOR}

@@ -18,7 +18,9 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: libsnapwatchdog-dev
 Section: libdevel
 Architecture: any
-Depends: libsnapwatchdog (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends},
+    libsnapwatchdog (= ${binary:Version})
+    snapdbproxy
 Description: Track status and health of any number of servers.
  Snap! Watchdog is a tool that works on any number of servers to
  gather various information that let you know how your server is
@@ -40,8 +42,9 @@ Description: Track status and health of any number of servers.
 Package: snapwatchdog
 Section: utils
 Architecture: any
-Depends: adduser, libsnapwatchdog (= ${binary:Version}),
-    snapwatchdog-core-plugins, ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends},
+    libsnapwatchdog (= ${binary:Version}),
+    snapwatchdog-core-plugins
 Suggests: cassandra (>= 2.0.3), snapserver (= ${binary:Version})
 Description: Track status and health of any number of servers.
  Snap! Watchdog is a tool that works on any number of servers to

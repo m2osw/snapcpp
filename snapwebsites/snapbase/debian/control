@@ -1,7 +1,8 @@
 Source: snapbase
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, snapcmakemodules (>= 1.0.23.231~trusty)
+Build-Depends: debhelper, cmake, doxygen, graphviz,
+    snapcmakemodules (>= 1.0.23.231~trusty)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
@@ -12,6 +13,7 @@ Package: snapbase
 Section: admin
 Architecture: any
 Depends: adduser, ${shlibs:Depends}, ${misc:Depends}
+Suggests: snapbase-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -36,5 +38,19 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  create their own extensions.
  .
  Common code for developers. For example, the snap_test.h/cpp files are here.
+
+Package: snapbase-doc
+Section: admin
+Architecture: all
+Depends: ${misc:Depends}
+Description: Fast Websites: powerful CMS for Apache written in C++.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ The basic concept is taken from a large set of Drupal 6.x
+ modules from Drupal Core and necessary 3rd party modules (we've been using
+ over 220 modules on top of the Core modules.) The result is quite
+ extensible as it offers a plug-in mechanism that everyone is welcome to use to
+ create their own extensions.
+ .
+ Documentation package.
 
 # vim: ts=4 sw=4 et

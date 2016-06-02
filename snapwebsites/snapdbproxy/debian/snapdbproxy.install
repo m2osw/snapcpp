@@ -1,0 +1,3 @@
+usr/bin/*
+usr/share/snapwebsites/*
+conf/snapdbproxy.properties conf/snapdbproxy.conf etc/snapwebsites/

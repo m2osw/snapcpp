@@ -1,0 +1,4 @@
+usr/bin/*
+usr/lib/*
+usr/share/snapwebsites/*
+conf/snapfirewall.properties conf/snapfirewall.conf etc/snapwebsites

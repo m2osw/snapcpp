@@ -1,7 +1,8 @@
 Source: snapdb
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, qt5-default, libqt5webkit5-dev, libxml2-utils, zip, libzipios-dev,
+Build-Depends: debhelper, cmake, qt5-default, libqt5webkit5-dev, libxml2-utils,
+    zip, libzipios-dev,
     liblog4cplus-dev, libtld-dev, snapcmakemodules (>= 1.0.25.124~xenial),
     libadvgetopt-dev (>= 1.0.16.368~xenial), libcontrolledvars-dev (>= 1.4.15.231~trusty),
     libqtcassandra-dev (>= 0.6.0.37~xenial), libqtserialization-dev, libsnapwebsites-dev
@@ -14,8 +15,8 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapdb
 Section: admin
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: cassandra (>= 3.5.0), snapdbproxy
+Depends: ${shlibs:Depends}, ${misc:Depends}, snapdbproxy
+Suggests: cassandra (>= 3.5.0)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x

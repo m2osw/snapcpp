@@ -47,6 +47,7 @@ find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
 find_package( QtCassandra      REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
 SnapGetVersion( SNAPDBPROXY ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -66,5 +67,6 @@ set( QT_LIBRARIES
 
 add_subdirectory( conf )
 add_subdirectory( src  )
+add_subdirectory( doc  )
 
 # vim: ts=4 sw=4 et

@@ -1,6 +1,6 @@
 #
 # File:
-#      src/CMakeLists.txt
+#      snapcgi/CMakeLists.txt
 #
 # Description:
 #      The Snap! Websites Server. The server is the main() of the Snap!
@@ -42,11 +42,12 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package( AdvGetOpt        REQUIRED )
-find_package( Qt5Core          REQUIRED )
-find_package( Qt5Xml           REQUIRED )
-find_package( SnapCMakeModules REQUIRED )
-find_package( SnapWebsites     REQUIRED )
+find_package( AdvGetOpt         REQUIRED )
+find_package( Qt5Core           REQUIRED )
+find_package( Qt5Xml            REQUIRED )
+find_package( SnapCMakeModules  REQUIRED )
+find_package( SnapDoxygen       REQUIRED )
+find_package( SnapWebsites      REQUIRED )
 
 SnapGetVersion( SNAPCGI ${CMAKE_CURRENT_SOURCE_DIR} )
 
@@ -64,6 +65,7 @@ set( QT_LIBRARIES
 
 add_subdirectory( conf  )
 add_subdirectory( src   )
+add_subdirectory( doc   )
 add_subdirectory( tests )
 
 # vim: ts=4 sw=4 et

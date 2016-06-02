@@ -14,8 +14,8 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapbounce
 Section: admin
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: snapserver
+Depends: ${shlibs:Depends}, ${misc:Depends}, snapdbproxy
+Suggests: snapserver, snapbackend, postfix
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -24,6 +24,6 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  extensible as it offers a plug-in mechanism that everyone is welcome to use to
  create their own extensions.
  .
- Email bounce handler.
+ Email bounce handler for postfix.
 
 # vim: ts=4 sw=4 et

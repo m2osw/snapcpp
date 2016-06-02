@@ -1,20 +1,25 @@
 Source: snapserver
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake,
-    doxygen, graphviz, liblog4cplus-dev (>= 1.2.0.388~trusty),
-    libssl-dev, libmagic-dev, libmagick++-dev (>= 6.7.7.10-6ubuntu3), libicu-dev,
-    libqtwebkit-dev, libboost-dev, libxml2-utils, python-pip (>= 1.4.1-2),
-    libprocps3-dev | libprocps4-dev, libzipios-dev (>= 2.1.2.115~trusty), zip, uuid-dev,
-    snapcmakemodules (>= 1.0.23.231~trusty),
-    libcontrolledvars-dev (>= 1.4.15.231~trusty), libadvgetopt-dev (>= 1.0.16.368~xenial),
-    libtld-dev (>= 1.5.1.305~trusty), libqtcassandra-dev (>= 0.6.0.26~trusty),
-    libqtserialization-dev (>= 0.1.16.618~trusty), closure-linter (>= 2.3.13),
-    libas2js-dev (>= 0.1.14.113~trusty), libssl-dev (>= 1.0.1),
-    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.10.40~trusty),
-    catch (>= 1.0), csspp (>= 1.0.10.40~trusty),
+Build-Depends: debhelper, cmake, libssl-dev, zip, uuid-dev, libicu-dev,
+    libmagic-dev, doxygen, graphviz, libboost-dev, libxml2-utils,
+    libmagick++-dev (>= 6.7.7.10-6ubuntu3), closure-linter (>= 2.3.13),
+    libqtwebkit-dev, python-pip (>= 1.4.1-2), libprocps3-dev | libprocps4-dev,
+    catch (>= 1.0), libssl-dev (>= 1.0.1),
     qt5-default, libqt5xmlpatterns5-dev, qtscript5-dev,
-    libsnapwebsites-dev (>= 1.0.0.9~xenial), snapserver-core-plugins-dev (>= 1.0.0),
+    libzipios-dev (>= 2.1.2.115~trusty),
+    snapcmakemodules (>= 1.0.23.231~trusty),
+    liblog4cplus-dev (>= 1.2.0.388~trusty),
+    libcontrolledvars-dev (>= 1.4.15.231~trusty),
+    libadvgetopt-dev (>= 1.0.16.368~xenial),
+    libtld-dev (>= 1.5.1.305~trusty),
+    libqtcassandra-dev (>= 0.6.0.26~trusty),
+    libqtserialization-dev (>= 0.1.16.618~trusty),
+    libas2js-dev (>= 0.1.14.113~trusty),
+    libcsspp-dev (>= 1.0.10.40~trusty),
+    csspp (>= 1.0.10.40~trusty),
+    libsnapwebsites-dev (>= 1.0.0.9~xenial),
+    snapserver-core-plugins-dev (>= 1.0.0),
     snapbase-dev
 Standards-Version: 3.9.4
 Section: libs
@@ -25,9 +30,10 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapserver
 Section: web
 Architecture: any
-Depends: snapserver-core-plugins (>= 1.0.0), iplock, ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends},
+    snapserver-core-plugins (>= 1.0.0), snaplock, snapdbproxy
 Recommends: snapdb
-Suggests: cassandra (>= 3.5.0), snapcgi, snaputils, snapbounce
+Suggests: cassandra (>= 3.5.0), snapcgi, snapbounce, snapserver-doc
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
@@ -39,5 +45,19 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  This package installs the server daemon that communicates with the
  Cassandra server.
  iplock require for snapfirewall.
+
+Package: snapserver-doc
+Section: admin
+Architecture: all
+Depends: ${misc:Depends}
+Description: Fast Websites: powerful CMS for Apache written in C++.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ The basic concept is taken from a large set of Drupal 6.x
+ modules from Drupal Core and necessary 3rd party modules (we've been using
+ over 220 modules on top of the Core modules.) The result is quite
+ extensible as it offers a plug-in mechanism that everyone is welcome to use to
+ create their own extensions.
+ .
+ Documentation package.
 
 # vim: ts=4 sw=4 et

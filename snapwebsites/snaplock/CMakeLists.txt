@@ -67,6 +67,7 @@ endif()
 
 add_subdirectory( conf  )
 add_subdirectory( src   )
+add_subdirectory( doc   )
 add_subdirectory( tests )
 
 # vim: ts=4 sw=4 et

@@ -1,0 +1,3 @@
+usr/bin/*
+usr/share/snapwebsites/*
+conf/snapcommunicator.properties conf/snapcommunicator.conf etc/snapwebsites/

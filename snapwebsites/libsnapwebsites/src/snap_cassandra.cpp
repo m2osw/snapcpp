@@ -59,6 +59,8 @@ void snap_cassandra::connect()
 }
 
 
+// Since we have -Werror, we cannot really use the [[deprecated]] attribute just yet
+//[[deprecated("We should be able to access the database without having to load the full context, so this is marked as deprecated for now")]]
 void snap_cassandra::init_context()
 {
 // WARNING: This function should not be used anymore (only to check whether

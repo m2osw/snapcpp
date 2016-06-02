@@ -1,2 +1,3 @@
-lib/cgi-bin/snap.cgi usr/lib/cgi-bin/
+usr/lib/*
+usr/share/snapwebsites/*
 conf/snap-apache2.conf conf/snapcgi.conf conf/snapcgi.properties etc/snapwebsites

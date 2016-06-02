@@ -42,11 +42,14 @@ set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+set( SNAP_TABLE_DESCRIPTION_PATH lib/snapwebsites/tables )
+
 find_package( AdvGetOpt        REQUIRED )
 find_package( Qt5Core          REQUIRED )
 find_package( Qt5Xml           REQUIRED )
 find_package( QtCassandra      REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
 SnapGetVersion( SNAPFIREWALL ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -66,5 +69,6 @@ set( QT_LIBRARIES
 
 add_subdirectory( conf  )
 add_subdirectory( src   )
+add_subdirectory( doc   )
 
 # vim: ts=4 sw=4 et

@@ -68,6 +68,7 @@ find_package( Qt5Xml            REQUIRED )
 find_package( QtCassandra       REQUIRED )
 find_package( QtSerialization   REQUIRED )
 find_package( SnapCMakeModules  REQUIRED )
+find_package( SnapDoxygen       REQUIRED )
 find_package( SnapWebsites      REQUIRED )
 
 ##
@@ -88,6 +89,7 @@ set( QT_LIBRARIES
 ##
 add_subdirectory( conf )           # Configuration files and samples
 add_subdirectory( src  )           # Actual Snap! Websites server
+add_subdirectory( doc  )           # Documentation generation
 
 
 # vim: ts=4 sw=4 et nocindent

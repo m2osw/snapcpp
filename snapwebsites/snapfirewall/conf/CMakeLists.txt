@@ -40,11 +40,13 @@ install(
         # snap configuration files
         snapfirewall.conf
 
-        # various other files
-        snapfirewall-tables.xml
-
     DESTINATION
         share/snapwebsites/conf
+)
+
+install(
+    FILES "snapfirewall-tables.xml"
+    DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
 )
 
 
