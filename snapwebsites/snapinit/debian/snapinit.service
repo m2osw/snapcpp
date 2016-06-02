@@ -5,6 +5,6 @@ After=network.target
 [Service]
 Type=forking
 ExecStart=/usr/bin/snapinit --detach start
-ExecStop=/usr/bin/snapinit --detach stop
+ExecStop=/usr/bin/snapinit stop
 Restart=on-failure
 PIDFile=/run/lock/snapwebsites/snapinit-lock.pid
