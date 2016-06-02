@@ -10,7 +10,7 @@
         # Use the '.' as the destination in this case so any process
         # that may handle the 'all.log' has a change to restart their
         # logger
-        /usr/bin/snapsignal ./LOG
+        if test -x /usr/bin/snapsignal; then /usr/bin/snapsignal ./LOG; fi
     endscript
     compress
     delaycompress
@@ -28,7 +28,10 @@
     missingok
     rotate 10
     postrotate
-        /usr/bin/snapsignal snapserver/LOG
+        # Use the '.' as the destination in this case so any process
+        # that may handle the 'snapserver.log' has a change to restart
+        # their logger (i.e. snapserver and snapbackend)
+        if test -x /usr/bin/snapsignal; then /usr/bin/snapsignal ./LOG; fi
     endscript
     compress
     delaycompress
@@ -43,7 +46,10 @@
     missingok
     rotate 5
     postrotate
-        /usr/bin/snapsignal snapserver/LOG
+        # Use the '.' as the destination in this case so any process
+        # that may handle the 'snapserver.log' has a change to restart
+        # their logger (i.e. snapserver and snapbackend)
+        if test -x /usr/bin/snapsignal; then /usr/bin/snapsignal ./LOG; fi
     endscript
     compress
     delaycompress

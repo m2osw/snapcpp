@@ -159,6 +159,7 @@ include_directories(
 ##
 add_subdirectory( conf  )           # Configuration files and samples
 add_subdirectory( src   )           # Actual Snap! Websites server
+add_subdirectory( doc   )           # Generate the documentation
 add_subdirectory( tests )           # Tests to run against the server
 
 ##

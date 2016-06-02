@@ -49,4 +49,20 @@ Description: Fast Websites: powerful CMS for Apache written in C++.
  .
  Documentation package.
 
+Package: snapmanagerdaemon
+Section: admin
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: snapfirewall
+Suggests: snapbackend
+Description: Apply administrative commands on any computer in a cluster.
+ Snap! C++ runs your CMS using binary code written in C and C++.
+ It works using many other software freely available under Linux.
+ In order to manage that software installation, removal, administration,
+ this process is given root permissions and runs on all your computers
+ in your cluster.
+ .
+ This package contains a backend daemon capable of installing and removing
+ various software used by the Snap! C++ environment.
+
 # vim: ts=4 sw=4 et

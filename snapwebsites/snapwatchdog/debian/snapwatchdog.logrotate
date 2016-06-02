@@ -1,19 +1,19 @@
-# Snap Init
-/var/log/snapwebsites/snapinit.log {
+# Snap Lock
+/var/log/snapwebsites/snapwatchdog.log {
     weekly
     maxsize 10M
     su snapwebsites snapwebsites
     missingok
     rotate 10
     postrotate
-        if test -x /usr/bin/snapsignal; then /usr/bin/snapsignal snapinit/LOG; fi
+        /usr/bin/snapsignal snapwatchdog/LOG
     endscript
     compress
     delaycompress
     notifempty
     create 640 snapwebsites snapwebsites
 }
-/var/log/snapwebsites/secure/snapinit.log {
+/var/log/snapwebsites/secure/snapwatchdog.log {
     weekly
     maxage 92
     maxsize 10M
@@ -21,7 +21,7 @@
     missingok
     rotate 5
     postrotate
-        if test -x /usr/bin/snapsignal; then /usr/bin/snapsignal snapinit/LOG; fi
+        /usr/bin/snapsignal snapwatchdog/LOG
     endscript
     compress
     delaycompress

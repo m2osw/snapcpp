@@ -87,9 +87,10 @@ set( QT_LIBRARIES
 ##
 ## Compiling
 ##
-add_subdirectory( conf )           # Configuration files and samples
-add_subdirectory( src  )           # Actual Snap! Websites server
-add_subdirectory( doc  )           # Documentation generation
+add_subdirectory( conf   )          # Configuration files and samples
+add_subdirectory( cgi    )          # The snapmanager.cgi application
+add_subdirectory( daemon )          # The snapmanagerdaemon to apply commands on any computer
+add_subdirectory( doc    )          # Documentation generation
 
 
 # vim: ts=4 sw=4 et nocindent

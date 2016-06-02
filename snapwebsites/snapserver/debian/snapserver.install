@@ -1,0 +1,3 @@
+bin/snapserver bin/cxpath bin/snapimg bin/snapexpr usr/bin
+usr/share/snapsebsites/conf/*
+conf/snapserver.conf /etc/snapwebsites
