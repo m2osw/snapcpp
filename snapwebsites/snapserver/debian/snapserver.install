@@ -1,3 +1,2 @@
-bin/snapserver bin/cxpath bin/snapimg bin/snapexpr usr/bin
-usr/share/snapsebsites/conf/*
+debian/tmp/usr/bin/snapserver bin/cxpath debian/usr/bin/snapimg debian/usr/bin/snapexpr usr/bin
 conf/snapserver.conf /etc/snapwebsites
