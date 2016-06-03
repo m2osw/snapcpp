@@ -82,8 +82,8 @@ void snap_config::read_config_file( QString const & filename )
     int const pos(filename.lastIndexOf('/'));
     if(pos > 0)
     {
-        QString const subdir(QString("%1/snapwebsites.d/%2").arg(filename.mid(0, pos)).arg(filename.mid(pos + 1)));
-        actual_read_config_file(filename, true);
+        QString const subdir_filename(QString("%1/snapwebsites.d/%2").arg(filename.mid(0, pos)).arg(filename.mid(pos + 1)));
+        actual_read_config_file(subdir_filename, true);
     }
 
     actual_read_config_file(filename, false);
@@ -187,6 +187,7 @@ void snap_config::actual_read_config_file( QString const & filename, bool quiet 
         // keep the command line defined parameters if defined
         if(!f_cmdline_params.contains(n))
         {
+SNAP_LOG_WARNING("saving parameter value [")(n)("] = [")(v)("]");
             f_parameters[n] = QString::fromUtf8(v);
         }
         else
