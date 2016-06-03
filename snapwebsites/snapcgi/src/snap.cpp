@@ -73,10 +73,10 @@
 
 namespace
 {
-    const std::vector<std::string> g_configuration_files =
+    const std::vector<std::string> g_configuration_files
     {
-        "/etc/snapwebsites/snapcgi.conf"//,
-        //"~/.snapwebsites/snapcgi.conf"    // TODO: tildes are not supported
+        "@snapwebsites@", // project name
+        "/etc/snapwebsites/snapcgi.conf"
     };
 
     const advgetopt::getopt::option g_snapcgi_options[] =

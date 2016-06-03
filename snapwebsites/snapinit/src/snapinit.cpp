@@ -311,7 +311,7 @@ bool g_isatty = false;
  * empty here because the configuration file may include parameters
  * that are not otherwise defined as command line options.
  */
-std::vector<std::string> const g_configuration_files;
+std::vector<std::string> const g_configuration_files; // Empty
 
 
 /** \brief Command line options.

@@ -95,7 +95,7 @@ void manager_daemon::status(snap::snap_communicator_message const & message)
     snap::snap_communicator_message reply;
     reply.set_command("SERVERSTATUS");
     reply.reply_to(message);
-    reply.add_parameter("status", "TODO");
+    reply.add_parameter("status", "TODO: status string not available yet (need a thread, etc.)");
     f_messenger->send_message(reply);
     return;
 }

@@ -31,7 +31,7 @@
 
 namespace
 {
-    const std::vector<std::string> g_configuration_files =
+    std::vector<std::string> const g_configuration_files
     {
         "/etc/snapwebsites/snapmanagerdaemon.conf"
     };

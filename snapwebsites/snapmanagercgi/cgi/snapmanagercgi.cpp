@@ -31,13 +31,13 @@
 
 namespace
 {
-    const std::vector<std::string> g_configuration_files =
+    std::vector<std::string> const g_configuration_files
     {
-        "/etc/snapwebsites/snapmanagercgi.conf"//,
-        //"~/.snapwebsites/snapmanagercgi.conf"    // TODO: tildes are not supported
+        "@snapwebsites@",  // project name
+        "/etc/snapwebsites/snapmanagercgi.conf"
     };
 
-    const advgetopt::getopt::option g_snapmanagercgi_options[] =
+    advgetopt::getopt::option const g_snapmanagercgi_options[] =
     {
         {
             '\0',

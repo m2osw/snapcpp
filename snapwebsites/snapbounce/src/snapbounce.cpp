@@ -60,8 +60,9 @@ namespace
      * This variable is used as a list of configuration files. It may be
      * empty.
      */
-    std::vector<std::string> const g_configuration_files = 
+    std::vector<std::string> const g_configuration_files
     {
+        "@snapwebsites@",       // project name
         "/etc/snapwebsites/snapbounce.conf"
     };
 
