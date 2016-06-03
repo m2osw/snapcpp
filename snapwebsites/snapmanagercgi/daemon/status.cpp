@@ -128,6 +128,7 @@ void manager_daemon::status(snap::snap_communicator_message const & message)
 # | mailserver    | postfix with snapbounce                   | Front |
 # | ntp           | time server                               | All   |
 # | vpn           | tinc / openvpn                            | All   |
+# | logserver     | loggingserver from log4cplus              | Back  |
 # +===============+===========================================+=======+
 #
 # Note that the snapserver plugins come with clamav.
