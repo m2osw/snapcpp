@@ -75,9 +75,11 @@ void snap_config::set_cmdline_params( parameter_map_t const & params )
  */
 void snap_config::read_config_file( QString const & filename )
 {
-    // first try reading a file of the same name in a sub-directory named
-    // "snapwebsites.d"; we have to do it first because we do not overwrite
-    // parameters (i.e. we keep the very first instance only)
+    actual_read_config_file(filename, false);
+
+    // second try reading a file of the same name in a sub-directory named
+    // "snapwebsites.d"; we have to do it last because we do overwrite
+    // parameters (i.e. we keep the very last instance only)
     //
     int const pos(filename.lastIndexOf('/'));
     if(pos > 0)
@@ -85,8 +87,6 @@ void snap_config::read_config_file( QString const & filename )
         QString const subdir_filename(QString("%1/snapwebsites.d/%2").arg(filename.mid(0, pos)).arg(filename.mid(pos + 1)));
         actual_read_config_file(subdir_filename, true);
     }
-
-    actual_read_config_file(filename, false);
 }
 
 
