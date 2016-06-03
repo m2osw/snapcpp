@@ -349,6 +349,7 @@ void MainWindow::changeCell(const QModelIndex &index)
 
         auto doc( f_valueEdit->document() );
         doc->setPlainText( query->getByteArrayColumn(0).data() );
+        doc->setModified( false );
     }
     catch( const std::exception& except )
     {
