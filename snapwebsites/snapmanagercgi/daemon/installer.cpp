@@ -87,6 +87,7 @@ int manager_daemon::install(QString const & package_name)
 void manager_daemon::installer(snap::snap_communicator_message const & message)
 {
     snap::snap_communicator_message reply;
+    reply.reply_to(message);
 
     QString const system(message.get_parameter("system"));
     if(system.isEmpty())
@@ -152,6 +153,10 @@ void manager_daemon::installer(snap::snap_communicator_message const & message)
         f_messenger->send_message(reply);
         return;
     }
+
+    reply.set_command("INVALID");
+    reply.add_parameter("what", "unknown system parameter \"" + system + "\" in command MANAGE/function=INSTALL.");
+    f_messenger->send_message(reply);
 }
 
 

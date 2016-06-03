@@ -35,12 +35,7 @@ int main(int argc, char * argv[])
     try
     {
         snap_manager::manager_daemon daemon(argc, argv);
-        if(daemon.init())
-        {
-            return daemon.run();
-        }
-        std::cerr << "snapmanagerdaemon: initialization failed." << std::endl;
-        return 1;
+        return daemon.run();
     }
     catch(std::runtime_error const & e)
     {

@@ -4,7 +4,7 @@ Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, libssl-dev, zip, uuid-dev, libicu-dev,
     libmagic-dev, doxygen, graphviz, libboost-dev, libxml2-utils,
     libmagick++-dev (>= 6.7.7.10-6ubuntu3), closure-linter (>= 2.3.13),
-    libqtwebkit-dev, python-pip (>= 1.4.1-2), libprocps3-dev | libprocps4-dev,
+    libqtwebkit-dev, python-pip (>= 1.4.1-2), libprocps4-dev,
     catch (>= 1.0), libssl-dev (>= 1.0.1),
     qt5-default, libqt5xmlpatterns5-dev, qtscript5-dev,
     libzipios-dev (>= 2.1.2.115~trusty),

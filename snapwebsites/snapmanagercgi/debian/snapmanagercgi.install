@@ -1,4 +1,4 @@
 usr/bin/*
 usr/lib/*
 usr/share/snapwebsites/*
-conf/snapmanagercgi.properties conf/snapmanagercgi.conf etc/snapwebsites/
+conf/snapmanagercgi.properties conf/snapmanagercgi.conf conf/snapmanagerdaemon.properties conf/snapmanagerdaemon.conf etc/snapwebsites/

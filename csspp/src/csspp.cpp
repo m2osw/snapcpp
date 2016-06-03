@@ -295,7 +295,7 @@ advgetopt::getopt::option const g_options[] =
         0,
         nullptr,
         nullptr,
-        "specify a path to various user defined CSS files; \"-\" to clear the list",
+        "specify a path to various user defined CSS files; \"-\" to clear the list (i.e. \"-I -\")",
         advgetopt::getopt::required_multiple_argument
     },
     {

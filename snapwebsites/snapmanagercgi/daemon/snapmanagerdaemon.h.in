@@ -63,7 +63,6 @@ public:
                                 manager_daemon( int argc, char * argv[] );
     virtual                     ~manager_daemon();
 
-    bool                        init();
     int                         run();
     void                        process_message(snap::snap_communicator_message const & message);
 
@@ -73,13 +72,19 @@ private:
 
     // the MANAGE command and all of its sub-functions
     void                        manage(snap::snap_communicator_message const & message);
+    void                            status(snap::snap_communicator_message const & message);
+    int                                 package_status(QString const & package_name, bool add_info_only_if_present);
     void                            installer(snap::snap_communicator_message const & message);
     int                                 install(QString const & package_name);
 
     advgetopt::getopt                           f_opt;
+    snap::snap_config                           f_config;
+    QString                                     f_log_conf = "/etc/snapwebsites/snaplock.properties";
     QString                                     f_server_name;
-    int                                         f_communicator_port = -1;    // snap server port
-    QString                                     f_communicator_address;      // snap server address
+    QString                                     f_server_types;             // sent to use by snapcommunicator
+    bool                                        f_debug = true;
+    int                                         f_communicator_port = -1;   // snap server port
+    QString                                     f_communicator_address;     // snap server address
     snap::snap_communicator::pointer_t          f_communicator;
     manager_messenger::pointer_t                f_messenger;
     QString                                     f_output;           // commands output, to be sent to end user

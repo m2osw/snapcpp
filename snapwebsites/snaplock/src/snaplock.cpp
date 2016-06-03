@@ -245,7 +245,7 @@ snaplock::snaplock(int argc, char * argv[])
 
     // read the configuration file
     //
-    f_config.read_config_file( f_opt.get_string("config").c_str() );
+    f_config.read_config_file( QString::fromUtf8( f_opt.get_string("config").c_str() ) );
 
     // --debug
     f_debug = f_opt.is_defined("debug");

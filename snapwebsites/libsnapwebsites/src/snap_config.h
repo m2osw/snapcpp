@@ -40,6 +40,8 @@ public:
     bool            contains( QString const & name ) const;
 
 private:
+    void            actual_read_config_file( QString const & filename, bool quiet );
+
     parameter_map_t f_parameters;
     parameter_map_t f_cmdline_params;
 };

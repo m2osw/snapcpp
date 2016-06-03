@@ -1,7 +1,7 @@
 Source: snapwatchdog
 Priority: extra
 Maintainer: Alexis Wilke <alexis@m2osw.com>
-Build-Depends: debhelper, cmake, zip, libprocps3-dev | libprocps4-dev,
+Build-Depends: debhelper, cmake, zip, libprocps4-dev,
     libboost-dev, libxml2-utils, snapcmakemodules (>= 1.0.23.36~trusty),
     libcontrolledvars-dev (>= 1.4.15.44~trusty),
     libadvgetopt-dev (>= 1.0.15.43~trusty), libtld-dev (>= 1.4.21.92~trusty),

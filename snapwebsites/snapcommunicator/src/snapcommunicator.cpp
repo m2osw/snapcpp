@@ -329,7 +329,6 @@ public:
     void                        process_message(snap::snap_communicator::snap_connection::pointer_t connection, snap::snap_communicator_message const & message, bool udp);
 
     void                        send_status(snap::snap_communicator::snap_connection::pointer_t connection);
-    QString                     get_server_types() const;
     QString                     get_local_services() const;
     QString                     get_services_heard_of() const;
     bool                        add_neighbors(QString const & new_neighbors);
@@ -352,7 +351,6 @@ private:
     snap::snap_communicator::snap_connection::pointer_t f_local_listener;   // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_listener;         // TCP/IP
     snap::snap_communicator::snap_connection::pointer_t f_ping;             // UDP/IP
-    QString                                             f_server_types;
     snap_addr::addr                                     f_my_address;
     QString                                             f_local_services;
     sorted_list_of_strings_t                            f_local_services_list;
@@ -374,6 +372,14 @@ class base_connection
 {
 public:
     typedef std::shared_ptr<base_connection>    pointer_t;
+
+
+    enum class connection_type_t
+    {
+        CONNECTION_TYPE_DOWN,   // not connected
+        CONNECTION_TYPE_LOCAL,  // a service on this computer
+        CONNECTION_TYPE_REMOTE  // another snapcommunicator on another computer
+    };
 
 
     /** \brief Initialize the base_connection() object.
@@ -497,30 +503,30 @@ public:
      * When a REGISTER is received instead of a CONNECT or an ACCEPT, then
      * the type is set to "client".
      *
-     * \param[in] types  List of connection types of this snapcommunicator.
+     * \param[in] type  The type of connection.
      */
-    void set_connection_types(QString const & types)
+    void set_connection_type(connection_type_t type)
     {
-        f_types = types;
+        f_type = type;
     }
 
 
     /** \brief Retrieve the current type of this connection.
      *
-     * By default a connection is given the special type "" which means
-     * that it is not currently properly initialized yet. To properly
-     * initialize a connection one has to either CONNECT (between
-     * snapcommunicator servers) or REGISTER (a snapbackend, snapserver,
-     * snapwatchdog, and other local services.)
+     * By default a connection is given the type CONNECTION_TYPE_DOWN,
+     * which means that it is not currently connected. To initialize
+     * a connection one has to either CONNECT (between snapcommunicator
+     * servers) or REGISTER (a service such as snapbackend, snapserver,
+     * snapwatchdog, and others.)
      *
-     * The type is set to "client" for local services and another
-     * word, such as "frontend", when representing another snapserver.
+     * The type is set to CONNECTION_TYPE_LOCAL for local services and
+     * CONNECTION_TYPE_REMOTE when representing another snapserver.
      *
      * \return The type of server this connection represents.
      */
-    QString const & get_connection_types() const
+    connection_type_t get_connection_type() const
     {
-        return f_types;
+        return f_type;
     }
 
 
@@ -715,7 +721,7 @@ private:
     sorted_list_of_strings_t                f_understood_commands;
     int64_t                                 f_started_on = -1;
     int64_t                                 f_ended_on = -1;
-    QString                                 f_types;
+    connection_type_t                       f_type;
     QString                                 f_server_name;
     sorted_list_of_strings_t                f_services;
     sorted_list_of_strings_t                f_services_heard_of;
@@ -1225,9 +1231,9 @@ public:
         //
         connection_ended();
 
-        // clearly mark this connection as "invalid"
+        // clearly mark this connection as down
         //
-        set_connection_types("");
+        set_connection_type(connection_type_t::CONNECTION_TYPE_DOWN);
 
         // make sure that if we were a connection understanding STATUS
         // we do not send that status
@@ -1556,8 +1562,6 @@ void snap_communicator_server::init()
     }
 
     {
-        f_server_types = canonicalize_server_types(f_server->get_parameter("server_types"));
-
         f_explicit_neighbors = canonicalize_neighbors(f_server->get_parameter("neighbors"));
         add_neighbors(f_explicit_neighbors);
 
@@ -1864,7 +1868,7 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                         SNAP_LOG_ERROR("ACCEPT was received without a \"types\" or \"server_name\" parameter, which are mandatory.");
                         return;
                     }
-                    base->set_connection_types(canonicalize_server_types(message.get_parameter("types")));
+                    base->set_connection_type(base->connection_type_t::CONNECTION_TYPE_REMOTE);
                     base->set_server_name(message.get_parameter("server_name"));
 
                     // reply to a CONNECT, this was to connect to another
@@ -2032,9 +2036,6 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     //       behavior accordingly. Both IP addresses have
                     //       to be different and on the same network.
 
-                    // always retrieve the connection types
-                    //
-                    base->set_connection_types(canonicalize_server_types(message.get_parameter("types")));
                     base->set_server_name(message.get_parameter("server_name"));
 
                     snap::snap_communicator_message reply;
@@ -2046,11 +2047,6 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     {
                         reply.add_parameter("neighbors", f_explicit_neighbors);
                     }
-
-                    // always send the server type, whether we accept or
-                    // refuse this connection
-                    //
-                    reply.add_parameter("types", f_server_types);
 
                     // cool, a remote snapcommunicator wants to connect
                     // with us, make sure we did not reach the maximum
@@ -2065,6 +2061,10 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     }
                     else
                     {
+                        // set the connection type if we are not refusing it
+                        //
+                        base->set_connection_type(base->connection_type_t::CONNECTION_TYPE_REMOTE);
+
                         // same as ACCEPT (see above) -- maybe we could have
                         // a sub-function...
                         //
@@ -2178,15 +2178,14 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // this has to be another snapcommunicator
                     // (i.e. an object that sent ACCEPT or CONNECT)
                     //
-                    QString const types(base->get_connection_types());
-                    if(!types.isEmpty()
-                    && types != "client")
+                    base_connection::connection_type_t const type(base->get_connection_type());
+                    if(type == base->connection_type_t::CONNECTION_TYPE_REMOTE)
                     {
                         // we must ignore and we do ignore connections with a
                         // type of "" since they represent an uninitialized
                         // connection item (unconnected)
                         //
-                        base->set_connection_types("");
+                        base->set_connection_type(base->connection_type_t::CONNECTION_TYPE_DOWN);
 
                         if(!remote_communicator)
                         {
@@ -2218,7 +2217,9 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     }
                     else
                     {
-                        SNAP_LOG_ERROR("DISCONNECT was sent from a connection which is not of the right type (")(types)(").");
+                        SNAP_LOG_ERROR("DISCONNECT was sent from a connection which is not of the right type (")
+                                      (type == base->connection_type_t::CONNECTION_TYPE_DOWN ? "down" : "client")
+                                      (").");
                     }
                     return;
                 }
@@ -2503,7 +2504,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                         service_conn->properly_named();
                     }
 
-                    base->set_connection_types("client");
+                    base->set_connection_type(base->connection_type_t::CONNECTION_TYPE_LOCAL);
 
                     // connection is up now
                     //
@@ -2694,7 +2695,7 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     // also remove all the connection types
                     // an empty string represents an unconnected item
                     //
-                    base->set_connection_types("");
+                    base->set_connection_type(base->connection_type_t::CONNECTION_TYPE_DOWN);
 
                     // connection is down now
                     //
@@ -2853,12 +2854,19 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
                     {
                         throw std::runtime_error("server name missing in connection " + conn->get_name().toStdString() + "...");
                     }
-                    if(base_conn->get_connection_types().isEmpty())
+                    switch(base_conn->get_connection_type())
                     {
+                    case base_connection::connection_type_t::CONNECTION_TYPE_DOWN:
                         // not connected yet, forget about it
                         continue;
+
+                    case base_connection::connection_type_t::CONNECTION_TYPE_LOCAL:
+                        throw std::runtime_error("server name missing in connection \"local service\"...");
+
+                    case base_connection::connection_type_t::CONNECTION_TYPE_REMOTE:
+                        throw std::runtime_error("server name missing in connection \"remote snapcommunicator\"...");
+
                     }
-                    throw std::runtime_error("server name missing in connection " + base_conn->get_connection_types().toStdString() + "...");
                 }
 
                 if(all_servers
@@ -3263,8 +3271,8 @@ void snap_communicator_server::send_status(snap::snap_communicator::snap_connect
     if(base_connection)
     {
         // check whether the connection is now up or down
-        QString const types(base_connection->get_connection_types());
-        reply.add_parameter("status", types.isEmpty() ? "down" : "up");
+        base_connection::connection_type_t const type(base_connection->get_connection_type());
+        reply.add_parameter("status", type == base_connection->connection_type_t::CONNECTION_TYPE_DOWN ? "down" : "up");
 
         // get the time when it was considered up
         int64_t const up_since(base_connection->get_connection_started());
@@ -3303,14 +3311,6 @@ void snap_communicator_server::send_status(snap::snap_communicator::snap_connect
             sc->send_message(reply);
         }
     }
-}
-
-
-/** \brief Return the server type of this snap communicator server.
- */
-QString snap_communicator_server::get_server_types() const
-{
-    return f_server_types;
 }
 
 
@@ -3607,8 +3607,8 @@ void snap_communicator_server::shutdown(bool full)
             service_connection::pointer_t c(std::dynamic_pointer_cast<service_connection>(connection));
             if(c)
             {
-                QString const types(c->get_connection_types());
-                if(types.isEmpty())
+                base_connection::connection_type_t const type(c->get_connection_type());
+                if(type == c->connection_type_t::CONNECTION_TYPE_DOWN)
                 {
                     // not initialized, just get rid of that one
                     f_communicator->remove_connection(c);
@@ -3616,7 +3616,7 @@ void snap_communicator_server::shutdown(bool full)
                 else
                 {
                     snap::snap_communicator_message reply;
-                    if(types != "client")
+                    if(type == c->connection_type_t::CONNECTION_TYPE_REMOTE)
                     {
 
 // TODO: if the remote communicator IP address is the same as the
@@ -3674,7 +3674,6 @@ void snap_communicator_server::process_connected(snap::snap_communicator::snap_c
     snap::snap_communicator_message connect;
     connect.set_command("CONNECT");
     connect.add_parameter("version", snap::snap_communicator::VERSION);
-    connect.add_parameter("types", f_server_types);
     connect.add_parameter("my_address", QString::fromUtf8(f_my_address.get_ipv4or6_string(true).c_str()));
     connect.add_parameter("server_name", f_server_name);
     if(!f_explicit_neighbors.isEmpty())

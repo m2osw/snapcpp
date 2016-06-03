@@ -118,34 +118,54 @@ manager_daemon::manager_daemon( int argc, char * argv[] )
     , f_communicator_port(4040)
     , f_communicator_address("127.0.0.1")
 {
-    if(f_opt.is_defined("version"))
-    {
-        std::cerr << SNAPMANAGERDAEMON_VERSION_MAJOR << "." << SNAPMANAGERDAEMON_VERSION_MINOR << "." << SNAPMANAGERDAEMON_VERSION_PATCH << std::endl;
-        exit(1);
-    }
+    // --help
+    //
     if(f_opt.is_defined("help"))
     {
-        f_opt.usage(advgetopt::getopt::no_error, "Usage: %s -<arg> ...\n", argv[0]);
+        f_opt.usage(f_opt.no_error, "Usage: %s -<arg> ...\n", argv[0]);
         exit(1);
     }
 
-    // read log_config and setup the logger
-    std::string logconfig(f_opt.get_string("log_config"));
-    snap::logging::configure_conffile( logconfig.c_str() );
-}
+    // --version
+    //
+    if(f_opt.is_defined("version"))
+    {
+        std::cerr << SNAPMANAGERDAEMON_VERSION_STRING << std::endl;
+        exit(1);
+    }
 
+    // read the configuration file
+    //
+    f_config.read_config_file( QString::fromUtf8( f_opt.get_string("config").c_str() ) );
 
-manager_daemon::~manager_daemon()
-{
-}
-
-
-bool manager_daemon::init()
-{
     // --server-name (mandatory)
     f_server_name = f_opt.get_string("server-name").c_str();
 
-    // --connect (mandatory)
+    // --debug
+    //
+    f_debug = f_opt.is_defined("debug");
+
+    // setup the logger
+    // the definition in the configuration file has priority...
+    //
+    f_log_conf = QString::fromUtf8(f_opt.get_string("log_config").c_str());
+    if(f_config.contains("log_config"))
+    {
+        // use .conf definition when available
+        f_log_conf = f_config["log_config"];
+    }
+    snap::logging::configure_conffile( f_log_conf );
+
+    if(f_debug)
+    {
+        // Force the logger level to DEBUG
+        // (unless already lower)
+        //
+        snap::logging::reduce_log_output_level( snap::logging::log_level_t::LOG_LEVEL_DEBUG );
+    }
+
+    // --connect <communicator IP:port> (mandatory)
+    //
     tcp_client_server::get_addr_port(f_opt.get_string("connect").c_str(), f_communicator_address, f_communicator_port, "tcp");
 
     // TODO: make us snapwebsites by default and root only when required...
@@ -154,17 +174,28 @@ bool manager_daemon::init()
     if(setuid(0) != 0)
     {
         perror("manager_daemon:setuid(0)");
-        return false;
+        throw std::runtime_error("fatal error: could not setup executable to run as user root.");
     }
     if(setgid(0) != 0)
     {
-        perror("manager_daemon:setuid(0)");
-        return false;
+        perror("manager_daemon:setgid(0)");
+        throw std::runtime_error("fatal error: could not setup executable to run as group root.");
     }
 
-    return true;
+    // make sure there are no standalone parameters
+    //
+    if( f_opt.is_defined( "--" ) )
+    {
+        std::cerr << "fatal error: unexpected parameter found on daemon command line." << std::endl;
+        f_opt.usage(f_opt.error, "Usage: %s -<arg> ...\n", argv[0]);
+        snap::NOTREACHED();
+    }
 }
 
+
+manager_daemon::~manager_daemon()
+{
+}
 
 
 int manager_daemon::run()
@@ -277,7 +308,7 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "HELP,LOG,QUITTING,READY,STOP,UNKNOWN");
+            reply.add_parameter("list", "HELP,LOG,QUITTING,READY,SERVERTYPES,STOP,UNKNOWN");
 
             f_messenger->send_message(reply);
             return;
@@ -451,6 +482,14 @@ void manager_daemon::manage(snap::snap_communicator_message const & message)
         if(function == "INSTALL")
         {
             installer(message);
+            return;
+        }
+        break;
+
+    case 'S':
+        if(function == "STATUS")
+        {
+            status(message);
             return;
         }
         break;

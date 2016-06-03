@@ -230,7 +230,7 @@ void make_root()
     }
     if(setgid(0) != 0)
     {
-        perror("iplock:setuid(0)");
+        perror("iplock:setgid(0)");
         exit(1);
     }
 }

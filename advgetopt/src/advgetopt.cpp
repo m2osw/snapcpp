@@ -215,6 +215,20 @@ getopt::getopt(int argc
  * The list of files is checked from beginning to end. So if a later file
  * changes an option of an earlier file, it is the one effective.
  *
+ * Configuration file support a project name as defined in the
+ * get_project_name() function. It allows for a sub-directory to
+ * be inserted between the path and the basename of the configuration
+ * file. This allows for a file to be search in an extra sub-directory
+ * so one can avoid changing the original definitions and only use
+ * configuration files in the sub-directory. The path looks like this
+ * when a project name is specified:
+ *
+ * \code
+ *      <path>/<project name>.d/<basename>
+ * \endcode
+ *
+ * Notice that we add a ".d" as usual in other projects under Linux.
+ *
  * \li Environment Variable
  *
  * If the name of an environment variable is specified, then it is read
@@ -382,136 +396,165 @@ void getopt::reset(int argc
     }
 
     // load options from configuration files as specified by caller
-    for( auto filename : configuration_files )
+    for( size_t use_sub_path(0); use_sub_path < (f_project_name.empty() ? 1UL : 2UL); ++use_sub_path)
     {
-        std::ifstream conf(filename);
-        if( !conf )
+        for( auto const & filename : configuration_files )
         {
-            if(errno == ENOENT)
+            // empty strings in this array are just ignored
+            if(filename.empty())
             {
                 continue;
             }
-            // we let it go through and we'll get an error from the read_file() instead
-        }
+            if(filename[0] == '@'
+            && filename.back() == '@'
+            && filename.size() > 2)
+            {
+                // record the project name
+                //
+                f_project_name = filename.substr(1, filename.length() - 2);
+                continue;
+            }
 
-        std::string str;
-        int line(0);
-        while( !conf.eof() )
-        {
-            std::getline( conf, str );
-            ++line;
-            const char *s(str.c_str());
-            while(isspace(*s))
+            std::string adjusted_filename(filename);
+            if(use_sub_path)
             {
-                ++s;
-            }
-            if(*s == '\0' || *s == '#')
-            {
-                // skip empty lines and comments
-                continue;
-            }
-            const char *str_name(s);
-            const char *e(nullptr);
-            while(*s != '=' && *s != '\0')
-            {
-                if(isspace(*s))
+                size_t const pos(filename.find_last_of('/'));
+                if(pos != std::string::npos && pos > 0)
                 {
-                    e = s;
-                    while(isspace(*s))
+                    adjusted_filename = filename.substr(0, pos) + "/" + f_project_name + ".d" + filename.substr(pos);
+                }
+            }
+
+            std::ifstream conf(filename);
+            if( !conf )
+            {
+                if(errno == ENOENT)
+                {
+                    continue;
+                }
+                // we let it go through and we will get an error from
+                // the read_file() instead
+            }
+
+            std::string str;
+            int line(0);
+            while( !conf.eof() )
+            {
+                std::getline( conf, str );
+                ++line;
+                char const * s(str.c_str());
+                while(isspace(*s))
+                {
+                    ++s;
+                }
+                if(*s == '\0' || *s == '#')
+                {
+                    // skip empty lines and comments
+                    continue;
+                }
+                char const * str_name(s);
+                char const * e(nullptr);
+                while(*s != '=' && *s != '\0')
+                {
+                    if(isspace(*s))
+                    {
+                        e = s;
+                        while(isspace(*s))
+                        {
+                            ++s;
+                        }
+                        if(*s != '\0' && *s != '=')
+                        {
+                            usage(error, "option name from \"%s\" on line %d in configuration file \"%s\" cannot include a space, missing = sign?",
+                                            str.c_str(), line, filename.c_str());
+                            /*NOTREACHED*/
+                        }
+                    }
+                    else
                     {
                         ++s;
                     }
-                    if(*s != '\0' && *s != '=')
+                }
+                if(e == nullptr)
+                {
+                    e = s;
+                }
+                if(e - str_name == 0)
+                {
+                    usage(error, "no option name in \"%s\" on line %d from configuration file \"%s\", missing name before = sign?",
+                                    str.c_str(), line, filename.c_str());
+                    /*NOTREACHED*/
+                }
+                if(*str_name == '-')
+                {
+                    usage(error, "option names in configuration files cannot start with a dash in \"%s\" on line %d from configuration file \"%s\"",
+                                    str.c_str(), line, filename.c_str());
+                    /*NOTREACHED*/
+                }
+                std::string name(str_name, e - str_name);
+                if(opt_by_long_name.find(name) == opt_by_long_name.end())
+                {
+                    usage(error, "unknown options \"%s\" found in configuration file \"%s\"", name.c_str(), filename.c_str());
+                    /*NOTREACHED*/
+                }
+                if((opts[opt_by_long_name[name.c_str()]].f_flags & GETOPT_FLAG_CONFIGURATION_FILE) == 0)
+                {
+                    usage(error, "options \"%s\" is not supported in configuration files (found in \"%s\")", name.c_str(), filename.c_str());
+                    /*NOTREACHED*/
+                }
+                if(*s == '=')
+                {
+                    do
                     {
-                        usage(error, "option name from \"%s\" on line %d in configuration file \"%s\" cannot include a space, missing = sign?",
-                                        str.c_str(), line, filename.c_str());
-                        /*NOTREACHED*/
+                        ++s;
                     }
+                    while(isspace(*s));
+                }
+                const char *str_value(s);
+                std::vector<std::string> values;
+                while(*s != '\0')
+                {
+                    if(isspace(*s))
+                    {
+                        if(s > str_value)
+                        {
+                            std::string v(str_value, s - str_value);
+                            values.push_back(v);
+                        }
+                        str_value = s + 1;
+                    }
+                    ++s;
+                }
+                if(s > str_value)
+                {
+                    std::string v(str_value, s - str_value);
+                    values.push_back(v);
+                }
+                if(values.size() > 0)
+                {
+                    // got parameters
+                    int sub_argc(static_cast<int>(values.size() + 2)), sub_i(1);
+                    std::vector<char *> sub_argv;
+                    sub_argv.resize(values.size() + 3);
+                    sub_argv[0] = argv[0];
+                    sub_argv[1] = const_cast<char *>(name.c_str());
+                    for(size_t idx(0); idx < values.size(); ++idx)
+                    {
+                        sub_argv[idx + 2] = const_cast<char *>(values[idx].c_str());
+                    }
+                    sub_argv[values.size() + 2] = nullptr;
+                    add_options(opts + opt_by_long_name[name.c_str()], sub_i, sub_argc, &sub_argv[0]);
                 }
                 else
                 {
-                    ++s;
+                    // no parameters
+                    int sub_argc(2), sub_i(1);
+                    char *sub_argv[3];
+                    sub_argv[0] = argv[0];
+                    sub_argv[1] = const_cast<char *>(name.c_str());
+                    sub_argv[2] = nullptr;
+                    add_options(opts + opt_by_long_name[name.c_str()], sub_i, sub_argc, sub_argv);
                 }
-            }
-            if(e == nullptr)
-            {
-                e = s;
-            }
-            if(e - str_name == 0)
-            {
-                usage(error, "no option name in \"%s\" on line %d from configuration file \"%s\", missing name before = sign?",
-                                str.c_str(), line, filename.c_str());
-                /*NOTREACHED*/
-            }
-            if(*str_name == '-')
-            {
-                usage(error, "option names in configuration files cannot start with a dash in \"%s\" on line %d from configuration file \"%s\"",
-                                str.c_str(), line, filename.c_str());
-                /*NOTREACHED*/
-            }
-            std::string name(str_name, e - str_name);
-            if(opt_by_long_name.find(name) == opt_by_long_name.end())
-            {
-                usage(error, "unknown options \"%s\" found in configuration file \"%s\"", name.c_str(), filename.c_str());
-                /*NOTREACHED*/
-            }
-            if((opts[opt_by_long_name[name.c_str()]].f_flags & GETOPT_FLAG_CONFIGURATION_FILE) == 0)
-            {
-                usage(error, "options \"%s\" is not supported in configuration files (found in \"%s\")", name.c_str(), filename.c_str());
-                /*NOTREACHED*/
-            }
-            if(*s == '=')
-            {
-                do
-                {
-                    ++s;
-                }
-                while(isspace(*s));
-            }
-            const char *str_value(s);
-            std::vector<std::string> values;
-            while(*s != '\0')
-            {
-                if(isspace(*s))
-                {
-                    if(s > str_value)
-                    {
-                        std::string v(str_value, s - str_value);
-                        values.push_back(v);
-                    }
-                    str_value = s + 1;
-                }
-                ++s;
-            }
-            if(s > str_value)
-            {
-                std::string v(str_value, s - str_value);
-                values.push_back(v);
-            }
-            if(values.size() > 0)
-            {
-                // got parameters
-                int sub_argc(static_cast<int>(values.size() + 2)), sub_i(1);
-                std::vector<char *> sub_argv;
-                sub_argv.resize(values.size() + 3);
-                sub_argv[0] = argv[0];
-                sub_argv[1] = const_cast<char *>(name.c_str());
-                for(size_t idx(0); idx < values.size(); ++idx)
-                {
-                    sub_argv[idx + 2] = const_cast<char *>(values[idx].c_str());
-                }
-                sub_argv[values.size() + 2] = nullptr;
-                add_options(opts + opt_by_long_name[name.c_str()], sub_i, sub_argc, &sub_argv[0]);
-            }
-            else
-            {
-                // no parameters
-                int sub_argc(2), sub_i(1);
-                char *sub_argv[3];
-                sub_argv[0] = argv[0];
-                sub_argv[1] = const_cast<char *>(name.c_str());
-                sub_argv[2] = nullptr;
-                add_options(opts + opt_by_long_name[name.c_str()], sub_i, sub_argc, sub_argv);
             }
         }
     }
@@ -1282,6 +1325,53 @@ std::string getopt::get_program_fullname() const
 std::string getopt::get_program_name() const
 {
     return f_program_name;
+}
+
+
+/** \brief Retrieve the project name if one is defined.
+ *
+ * This function returns the name of the project as defined in the list
+ * of configuration files under '@' characters. For example, the
+ * snapwebsites project makes use of "@snapwebsites@" as one of its
+ * configuration filename. This ensures that the configuration files
+ * are searched for under the indicated folders and again under:
+ *
+ * \code
+ *      <existing path>/@<project name>@/<basename>
+ * \endcode
+ *
+ * So if you have a configuration file named "snapserver.conf" with
+ * a path such as "/etc/snapwebsites", you end up with:
+ *
+ * \code
+ *      "/etc/snapwebsites/snapserver.conf"
+ *      "/etc/snapwebsites/snapwebsites.d/snapserver.conf"
+ * \endcode
+ *
+ * Notice that the loader adds a ".d" at the end of the project name.
+ * Also, if the user were to specify a different filename with the
+ * --config command line option, it could end up like this:
+ *
+ * \code
+ *      ... --config /home/alexis/.config/iplock/iplock.conf ...
+ *
+ *      # First we read this file:
+ *      "/home/alexis/.config/iplock/iplock.conf"
+ *
+ *      # Second we read this file (assuming the same project name
+ *      # of "@snapwebsites@"):
+ *      "/home/alexis/.config/iplock/snapwebsites.d/iplock.conf"
+ * \endcode
+ *
+ * Since we test with the additional project name in the path, it
+ * can be defined anywhere in the list of configuration filenames.
+ *
+ * \return The name of the project if one was defined in the vector of
+ *         configuration filename.
+ */
+std::string getopt::get_project_name() const
+{
+    return f_project_name;
 }
 
 

@@ -128,18 +128,19 @@ public:
         argument_mode_t     f_arg_mode;
     };
 
-                        getopt(int argc, char *argv[], option const *opts, const std::vector<std::string> configuration_files, char const *environment_variable_name);
+                        getopt(int argc, char * argv[], option const * opts, const std::vector<std::string> configuration_files, char const * environment_variable_name);
 
-    void                reset(int argc, char *argv[], option const *opts, const std::vector<std::string> configuration_files, char const *environment_variable_name);
+    void                reset(int argc, char * argv[], option const * opts, const std::vector<std::string> configuration_files, char const * environment_variable_name);
 
-    bool                is_defined(const std::string& name) const;
-    int                 size(std::string const& name) const;
-    char const *        get_default(std::string const& name) const;
-    long                get_long(std::string const& name, int idx = 0, long min = std::numeric_limits<long>::min(), long max = std::numeric_limits<long>::max());
-    std::string         get_string(std::string const& name, int idx = 0) const;
+    bool                is_defined(std::string const & name) const;
+    int                 size(std::string const & name) const;
+    char const *        get_default(std::string const & name) const;
+    long                get_long(std::string const & name, int idx = 0, long min = std::numeric_limits<long>::min(), long max = std::numeric_limits<long>::max());
+    std::string         get_string(std::string const & name, int idx = 0) const;
     std::string         get_program_name() const;
     std::string         get_program_fullname() const;
-    void                usage(status_t status, char const *msg, ...);
+    std::string         get_project_name() const;
+    void                usage(status_t status, char const * msg, ...);
 
     static int          get_major_version();
     static int          get_release_version();
@@ -163,12 +164,13 @@ private:
                                         long_opt_name_map_t opt_by_long_name,
                                         bool only_environment_variable);
     void                add_options(option const * opt, int & i, int argc, char ** argv);
-    void                add_option(option const * opt, char const *value);
+    void                add_option(option const * opt, char const * value);
     std::string         assemble_options( status_t status /*, std::string & default_arg_help*/ ) const;
     std::string         process_help_string( char const * help ) const;
 
     std::string         f_program_fullname;
     std::string         f_program_name;
+    std::string         f_project_name;
     option const *      f_options;
     optmap_t            f_map;
 };
