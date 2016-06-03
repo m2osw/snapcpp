@@ -407,10 +407,19 @@ void getopt::reset(int argc
             }
             if(filename[0] == '@'
             && filename.back() == '@'
-            && filename.size() > 2)
+            && filename.length() > 2)
             {
                 // record the project name
                 //
+                if(!f_project_name.empty())
+                {
+                    if(use_sub_path == 0)
+                    {
+                        throw getopt_exception_invalid("the list of configuration filenames cannot include more than one project name.");
+                    }
+                    // no need to extract this name again
+                    continue;
+                }
                 f_project_name = filename.substr(1, filename.length() - 2);
                 continue;
             }
@@ -423,9 +432,13 @@ void getopt::reset(int argc
                 {
                     adjusted_filename = filename.substr(0, pos) + "/" + f_project_name + ".d" + filename.substr(pos);
                 }
+                else
+                {
+                    adjusted_filename = f_project_name + ".d/" + filename;
+                }
             }
 
-            std::ifstream conf(filename);
+            std::ifstream conf(adjusted_filename);
             if( !conf )
             {
                 if(errno == ENOENT)
