@@ -187,7 +187,6 @@ void snap_config::actual_read_config_file( QString const & filename, bool quiet 
         // keep the command line defined parameters if defined
         if(!f_cmdline_params.contains(n))
         {
-SNAP_LOG_WARNING("saving parameter value [")(n)("] = [")(v)("]");
             f_parameters[n] = QString::fromUtf8(v);
         }
         else
