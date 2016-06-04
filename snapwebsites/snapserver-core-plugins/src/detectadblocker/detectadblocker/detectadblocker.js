@@ -1,6 +1,6 @@
 /** @preserve
  * Name: detectadblocker
- * Version: 0.0.4
+ * Version: 0.0.5
  * Browsers: all
  * Copyright: Copyright 2016 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.1.5)
@@ -140,10 +140,8 @@ snapwebsites.DetectAdBlocker.prototype.informAboutBlocker_ = function()
     // now we know whether the client browser has an ad blocker running
     // or not, send the information to the server with AJAX...
     //
-    this.serverAccess_.setURI("/detectadblocker");
-    this.serverAccess_.setData({
-                detected_ad_blocker: snapwebsites.DetectAdBlocker.present ? "true" : "false"
-            });
+    this.serverAccess_.setURI("/detectadblocker/" + (snapwebsites.DetectAdBlocker.present ? "true" : "false"));
+    this.serverAccess_.setMethod("GET");
     this.serverAccess_.send();
 };
 

@@ -17,12 +17,7 @@
 
 #include "detectadblocker.h"
 
-//#include "../layout/layout.h"
-//#include "../list/list.h"
-//#include "../locale/snap_locale.h"
-//#include "../messages/messages.h"
 #include "../output/output.h"
-//#include "../permissions/permissions.h"
 #include "../users/users.h"
 
 #include "log.h"
@@ -94,6 +89,7 @@ detectadblocker::detectadblocker()
 {
 }
 
+
 /** \brief Clean up the detectadblocker plugin.
  *
  * Ensure the detectadblocker object is clean before it is gone.
@@ -101,6 +97,7 @@ detectadblocker::detectadblocker()
 detectadblocker::~detectadblocker()
 {
 }
+
 
 /** \brief Get a pointer to the detectadblocker plugin.
  *
@@ -185,7 +182,7 @@ int64_t detectadblocker::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2016, 6, 2, 1, 22, 15, content_update);
+    SNAP_PLUGIN_UPDATE(2016, 6, 4, 0, 53, 15, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -306,22 +303,23 @@ void detectadblocker::on_detach_from_session()
 bool detectadblocker::on_path_execute(content::path_info_t & ipath)
 {
     QString const cpath(ipath.get_cpath());
-    if(cpath == get_name(name_t::SNAP_NAME_DETECTADBLOCKER_PATH))
+    bool detected(false);
+    if(cpath == QString("%1/true").arg(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_PATH)))
     {
-        // be conservative and assume it was not detected by default
-        // (in case we do not receive the correct variable or the
-        // value is not exactly "true" or "false")
-        //
+        detected = true;
+        f_detected = true;
+    }
+    else if(cpath == QString("%1/false").arg(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_PATH)))
+    {
+        detected = true;
         f_detected = false;
-        if(f_snap->postenv_exists("detected_ad_blocker"))
-        {
-            QString const status(f_snap->postenv("detected_ad_blocker"));
-            f_detected = status == "true";
-        }
+    }
+    if(detected)
+    {
         users::users * users_plugin(users::users::instance());
         time_t const start_time(f_snap->get_start_time());
         users_plugin->attach_to_session(get_name(name_t::SNAP_NAME_DETECTADBLOCKER_STATUS_SESSION_NAME),
-                                        QString("%1,%1").arg(start_time).arg(f_detected ? "true" : "false"));
+                                        QString("%1,%2").arg(start_time).arg(f_detected ? "true" : "false"));
 
         // TODO: add two counters to know how many accesses we get with
         //       ad blockers and how many without ad blockers

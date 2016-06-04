@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.41
+ * Version: 0.0.1.42
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2016 (c) Made to Order Software Corporation  All rights reverved.
@@ -395,6 +395,19 @@ snapwebsites.ServerAccess.FORM_ = "form"; // static const
 snapwebsites.ServerAccess.prototype.callback_ = null;
 
 
+/** \brief The method to use to send the request.
+ *
+ * This value is the method to use to send the request.
+ *
+ * The default value is POST. It can be set to any method that the server
+ * supports such as GET, PUT, DELETE.
+ *
+ * @typedef {string}
+ * @private
+ */
+snapwebsites.ServerAccess.prototype.method_ = "POST";
+
+
 /** \brief Whether to darken the screen.
  *
  * This variable can be modified using the showWaitScreen() function.
@@ -503,6 +516,36 @@ snapwebsites.ServerAccess.prototype.dataType_ = "object";
  * @private
  */
 snapwebsites.ServerAccess.prototype.data_ = null;
+
+
+/** \brief Change the method to use when sending this request.
+ *
+ * This function lets you change the method to use to send the
+ * request to the server. By default the request is set to POST.
+ *
+ * The function does not limit the methods that can be used since
+ * servers can be setup to accept absolutely any method.
+ *
+ * @param {string} method  The method to use when send() gets called.
+ */
+snapwebsites.ServerAccess.prototype.setMethod = function(method)
+{
+    this.method_ = method;
+};
+
+
+/** \brief Get the method to use when sending this request.
+ *
+ * This function lets you retrieve the method that will be used
+ * to send the request to the server. By default the request is
+ * set to POST. It can be changed with the setMethod() function.
+ *
+ * @return {string}  The method that is going to be used.
+ */
+snapwebsites.ServerAccess.prototype.getMethod = function()
+{
+    return this.method_;
+};
 
 
 /** \brief Check whether the user will be redirected.
@@ -825,7 +868,7 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
     //       to have closure ensure we do not mess up this object parameters
     var ajax_options =
         {
-            method: "POST",
+            method: this.method_,
             headers:
             {
                 // The 'no-transform' is important if we have intermediate

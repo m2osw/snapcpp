@@ -24,7 +24,31 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       This page is used with AJAX from our Detect Ad Blocker plugin
       with information on whether ads will be displayed or not.
     </param>
-    <!-- at this time we allow even spammers on this page... -->
+    <!--
+      at this time we allow even spammers on this page...
+    -->
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+  </content>
+  <content path="/detectadblocker/true"> <!-- well, an ad blocker is active -->
+    <param name="content::title" revision="revision">Ad Blocker is Active</param>
+    <param name="content::body" revision="revision">
+      This page is used with AJAX from our Detect Ad Blocker plugin
+      with information on whether ads will be displayed or not.
+    </param>
+    <!--
+      at this time we allow even spammers on this page...
+    -->
+    <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+  </content>
+  <content path="/detectadblocker/false"> <!-- no ad blocker -->
+    <param name="content::title" revision="revision">No Ad Blocker Active</param>
+    <param name="content::body" revision="revision">
+      This page is used with AJAX from our Detect Ad Blocker plugin
+      with information on whether ads will be displayed or not.
+    </param>
+    <!--
+      at this time we allow even spammers on this page...
+    -->
     <link name="permissions::direct::action::view" to="permissions::link_back::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
   </content>
   <content path="/admin/settings/detectadblocker" owner="output">
