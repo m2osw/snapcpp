@@ -32,8 +32,6 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <algorithm>
-
 #include "MainWindow.h"
 #include "SettingsDialog.h"
 
@@ -48,15 +46,26 @@ int main( int argc, char * argv[] )
     app.setOrganizationName   ( "M2OSW"              );
     app.setWindowIcon         ( QIcon(":icons/icon") );
 
-    QSettings settings;
-    if( !settings.contains( "cassandra_host") )
+    bool show_settings = true;
+    do
     {
-        SettingsDialog dlg;
-        if( dlg.exec() != QDialog::Accepted )
+        SettingsDialog dlg( nullptr, true /*first_time*/ );
+        QSettings settings;
+        if( settings.contains( "cassandra_host") )
         {
-            return 1;
+            show_settings = !dlg.tryConnection();
+        }
+
+        if( show_settings )
+        {
+            if( dlg.exec() != QDialog::Accepted )
+            {
+                qDebug() << "User abort!";
+                exit( 1 );
+            }
         }
     }
+    while( show_settings );
 
     MainWindow win;
     win.show();

@@ -11,8 +11,10 @@ class SettingsDialog
     Q_OBJECT
 
 public:
-    explicit SettingsDialog(QWidget *parent = 0);
+    explicit SettingsDialog( QWidget *p = nullptr, const bool first_time = false );
     ~SettingsDialog();
+
+    static bool tryConnection( QWidget* p = nullptr );
 
 protected:
     void closeEvent( QCloseEvent * e );

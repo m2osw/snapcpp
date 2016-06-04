@@ -41,51 +41,86 @@
 
 using namespace QtCassandra;
 
+namespace
+{
+    const char* SERVER_ID      = "cassandra_host"       ;
+    const char* PORT_ID        = "cassandra_port"       ;
+    const char* PROMPT_ID      = "prompt_before_commit" ;
+    const char* GEOMETRY_ID    = "settings_geometry"    ;
+    const char* SERVER_DEFAULT = "127.0.0.1"            ;
+    const int   PORT_DEFAULT   = 9042                   ;
+    const bool  PROMPT_DEFAULT = true                   ; // Prompt before saving to database
+}
 
-SettingsDialog::SettingsDialog(QWidget *p)
+
+SettingsDialog::SettingsDialog( QWidget *p, const bool first_time )
     : QDialog(p)
 {
     setupUi( this );
 
     QSettings settings( this );
-    restoreGeometry( settings.value( "settings_geometry", saveGeometry() ).toByteArray() );
-    f_server           = settings.value( "cassandra_host",       "127.0.0.1" );
-    f_port             = settings.value( "cassandra_port",       "9042"      );
-    f_promptBeforeSave = settings.value( "prompt_before_commit", true        );
+    restoreGeometry( settings.value( GEOMETRY_ID, saveGeometry() ).toByteArray() );
+    f_server           = settings.value( SERVER_ID, SERVER_DEFAULT );
+    f_port             = settings.value( PORT_ID,   PORT_DEFAULT   );
+    f_promptBeforeSave = settings.value( PROMPT_ID, PROMPT_DEFAULT );
     f_hostnameEdit->setText( f_server.toString() );
     f_portEdit->setValue( f_port.toInt() );
     f_promptCB->setChecked( f_promptBeforeSave.toBool() );
-    f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( false );
+    f_buttonBox->button( QDialogButtonBox::Ok )->setEnabled( first_time );
 }
 
 
 SettingsDialog::~SettingsDialog()
 {
     QSettings settings( this );
-    settings.setValue( "settings_geometry",   saveGeometry()	);
+    settings.setValue( GEOMETRY_ID, saveGeometry() );
 }
 
 
-void SettingsDialog::on_f_buttonBox_accepted()
+bool SettingsDialog::tryConnection( QWidget* p )
 {
     try
     {
+        QSettings settings;
+        const QString server = settings.value( SERVER_ID, SERVER_DEFAULT ).toString();
+        const int     port   = settings.value( PORT_ID,   PORT_DEFAULT   ).toInt();
+
         QCassandraSession::pointer_t session( QCassandraSession::create() );
-        session->connect( f_server.toString(), f_port.toInt() );
+        session->connect( server, port );
     }
     catch( const std::exception& ex )
     {
         qDebug()
-            << "Caught exception in SettingsDialog::on_f_buttonBox_accepted()! "
+            << "Caught exception in SettingsDialog::tryConnection()! "
             << ex.what();
-        QMessageBox::critical( this, tr("Error"), tr("Cannot connect to cassandra server!") );
+        QMessageBox::critical( p, tr("Cassview Connection Error"), tr("Cannot connect to cassandra server!") );
+        return false;
+    }
+
+    return true;
+}
+
+void SettingsDialog::on_f_buttonBox_accepted()
+{
+    QSettings settings( this );
+
+    const QString prev_server = settings.value( SERVER_ID, SERVER_DEFAULT ).toString();
+    const int     prev_port   = settings.value( PORT_ID,   PORT_DEFAULT   ).toInt();
+    //
+    settings.setValue( SERVER_ID, f_server           );
+    settings.setValue( PORT_ID,   f_port             );
+
+    if( !tryConnection( this ) )
+    {
+        // Put back the old values and return, causing the dialog to stay open.
+        settings.setValue( SERVER_ID, prev_server           );
+        settings.setValue( PORT_ID,   prev_port             );
         return;
     }
 
-    QSettings settings( this );
-    settings.setValue( "cassandra_host",       f_server           );
-    settings.setValue( "cassandra_port",       f_port             );
-    settings.setValue( "prompt_before_commit", f_promptBeforeSave );
+    // Accept the settings and exit
+    //
+    settings.setValue( PROMPT_ID, f_promptBeforeSave );
 
     accept();
 }
