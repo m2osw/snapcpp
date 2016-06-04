@@ -825,6 +825,13 @@ void snap_backend::process_action()
     //
     f_website = p_server->get_parameter("__BACKEND_URI");
 
+    // check whether this action should use a global lock when running
+    // (this is for those actions that cannot be run simultaneously
+    // against more than one website at a time; i.e. the sendmail
+    // backend is website agnostic, for example.)
+    //
+    f_global_lock = !p_server->get_parameter("GLOBAL_LOCK").isEmpty();
+
     // get the snap_communicator singleton
     //
     g_communicator = snap_communicator::instance();
@@ -1506,6 +1513,14 @@ bool snap_backend::is_ready(QString const & uri)
     //
     if(f_sites_table->exists(uri))
     {
+        // TODO: to fix SNAP-125 we also want a form of lock, i.e. a parameter
+        //       (or just a lock? but our locks are exclusive...) that tell
+        //       us that the website is being updated now...
+        //
+        //       and conversely we need to know that a backend is running
+        //       against a given website so we do not start an update while
+        //       that is going on!
+        //
         return f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED))
             && f_sites_table->row(uri)->exists(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
     }
@@ -1579,7 +1594,21 @@ bool snap_backend::process_backend_uri(QString const & uri)
     // We also lock that website while this backend process is running.
     // The lock depends on the URI and the action taken.
     //
-    QString const lock_uri(QString("%1#%2").arg(uri).arg(f_action));
+    QString lock_uri;
+    if(f_global_lock)
+    {
+        // this action can only run one instance of itself on any
+        // one computer in your cluster so the lock does not depend
+        // on the URI
+        //
+        lock_uri = QString("global-backend-lock#%1").arg(f_action);
+    }
+    else
+    {
+        // this action can run against multiple websites simultaneous
+        //
+        lock_uri = QString("%1#%2").arg(uri).arg(f_action);
+    }
     if(!g_child_connection->lock(lock_uri))
     {
         g_child_connection.reset();

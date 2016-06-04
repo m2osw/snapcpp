@@ -349,6 +349,7 @@ void MainWindow::changeCell(const QModelIndex &index)
 
         auto doc( f_valueEdit->document() );
         doc->setPlainText( query->getByteArrayColumn(0).data() );
+        doc->setModified( false );
     }
     catch( const std::exception& except )
     {
@@ -370,19 +371,33 @@ void MainWindow::saveValue()
             auto selected_rows( f_cellsView->selectionModel()->selectedRows() );
             if( selected_rows.size() == 1 )
             {
-                const QByteArray key( f_rowModel.data( *(selected_rows.begin()) ).toByteArray() );
-                const QString q_str(
+                int response = QMessageBox::Yes;
+                QSettings settings;
+                if( settings.value("prompt_before_commit",true).toBool() )
+                {
+                    response = QMessageBox::question
+                            ( this
+                              , tr("Data has been changed!")
+                              , tr("Are you sure you want to save the changes?")
+                              , QMessageBox::Yes | QMessageBox::No
+                              );
+                }
+                if( response == QMessageBox::Yes )
+                {
+                    const QByteArray key( f_rowModel.data( *(selected_rows.begin()) ).toByteArray() );
+                    const QString q_str(
                             QString("UPDATE %1.%2 SET value = ? WHERE key = ? AND column1 = ?")
                             .arg(f_rowModel.keyspaceName())
                             .arg(f_rowModel.tableName())
                             );
-                auto query = QCassandraQuery::create( f_session );
-                query->query( q_str, 3 );
-                query->bindByteArray( 0, doc->toPlainText().toUtf8() );
-                query->bindByteArray( 1, f_rowModel.rowKey() );
-                query->bindByteArray( 2, f_rowModel.data( selected_rows[0], Qt::UserRole ).toByteArray() );
-                query->start();
-                query->end();
+                    auto query = QCassandraQuery::create( f_session );
+                    query->query( q_str, 3 );
+                    query->bindByteArray( 0, doc->toPlainText().toUtf8() );
+                    query->bindByteArray( 1, f_rowModel.rowKey() );
+                    query->bindByteArray( 2, f_rowModel.data( selected_rows[0], Qt::UserRole ).toByteArray() );
+                    query->start();
+                    query->end();
+                }
             }
         }
     }

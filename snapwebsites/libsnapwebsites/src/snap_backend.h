@@ -66,6 +66,7 @@ private:
     bool                                    f_stop_received = false;
     bool                                    f_emit_warning = true;
     bool                                    f_pinged = false;
+    bool                                    f_global_lock = false;
 };
 
 

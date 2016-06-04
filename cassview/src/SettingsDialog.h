@@ -23,8 +23,11 @@ private slots:
     void on_f_hostnameEdit_textEdited(const QString &arg1);
     void on_f_portEdit_valueChanged(int arg1);
 
+    void on_f_promptCB_toggled(bool checked);
+
 private:
-    QVariant			f_server;
-    QVariant			f_port;
+    QVariant	f_server;
+    QVariant	f_port;
+    QVariant    f_promptBeforeSave;
 };
 
