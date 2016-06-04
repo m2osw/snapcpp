@@ -50,11 +50,10 @@ private:
     RowModel		  f_rowModel;
     QString           f_context;
 
-    void        connectCassandra();
-    void        fillTableList();
-    void        changeRow(const QModelIndex &index);
-    void        changeCell(const QModelIndex &index);
-    void	 	saveValue();
+    void connectCassandra ();
+    void fillTableList    ();
+    void saveValue        ();
+    void saveValue        ( const QModelIndex &index );
 };
 
 

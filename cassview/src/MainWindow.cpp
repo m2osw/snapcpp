@@ -308,96 +308,48 @@ void MainWindow::onExceptionCaught( const QString & what, const QString & messag
 }
 
 
-void MainWindow::changeRow(const QModelIndex &index)
-{
-    saveValue();
-
-    auto doc( f_valueEdit->document() );
-    doc->clear();
-
-    const QByteArray row_key( f_tableModel.data(index).toByteArray() );
-
-    f_rowModel.init
-        ( f_session
-        , f_tableModel.keyspaceName()
-        , f_tableModel.tableName()
-        );
-    f_rowModel.setRowKey( row_key );
-    f_rowModel.doQuery();
-
-    action_InsertColumn->setEnabled( true );
-    action_DeleteColumns->setEnabled( true );
-}
-
-
-void MainWindow::changeCell(const QModelIndex &index)
-{
-    saveValue();
-
-    try
-    {
-        const QString q_str(
-                    QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
-                    .arg(f_rowModel.keyspaceName())
-                    .arg(f_rowModel.tableName())
-                    );
-        auto query = QCassandraQuery::create( f_session );
-        query->query( q_str, 2 );
-        query->bindByteArray( 0, f_rowModel.rowKey() );
-        query->bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
-        query->start();
-
-        auto doc( f_valueEdit->document() );
-        doc->setPlainText( query->getByteArrayColumn(0).data() );
-        doc->setModified( false );
-    }
-    catch( const std::exception& except )
-    {
-        displayError( except
-                    , tr("Database Error")
-                    , tr("Cannot read value data from server!")
-                    );
-    }
-}
-
-
 void MainWindow::saveValue()
 {
+    auto selected_cells( f_cellsView->selectionModel()->selectedRows() );
+    if( selected_cells.size() == 1 )
+    {
+        saveValue( selected_cells[0] );
+    }
+}
+
+
+void MainWindow::saveValue( const QModelIndex& index )
+{
     try
     {
         auto doc( f_valueEdit->document() );
-        if( doc->isModified() )
+        if( doc->isModified() && index.isValid() )
         {
-            auto selected_rows( f_cellsView->selectionModel()->selectedRows() );
-            if( selected_rows.size() == 1 )
+            int response = QMessageBox::Yes;
+            QSettings settings;
+            if( settings.value("prompt_before_commit",true).toBool() )
             {
-                int response = QMessageBox::Yes;
-                QSettings settings;
-                if( settings.value("prompt_before_commit",true).toBool() )
-                {
-                    response = QMessageBox::question
-                            ( this
-                              , tr("Data has been changed!")
-                              , tr("Are you sure you want to save the changes?")
-                              , QMessageBox::Yes | QMessageBox::No
-                              );
-                }
-                if( response == QMessageBox::Yes )
-                {
-                    const QByteArray key( f_rowModel.data( *(selected_rows.begin()) ).toByteArray() );
-                    const QString q_str(
+                response = QMessageBox::question
+                        ( this
+                          , tr("Data has been changed!")
+                          , tr("Are you sure you want to save the changes?")
+                          , QMessageBox::Yes | QMessageBox::No
+                          );
+            }
+            if( response == QMessageBox::Yes )
+            {
+                const QString q_str(
                             QString("UPDATE %1.%2 SET value = ? WHERE key = ? AND column1 = ?")
                             .arg(f_rowModel.keyspaceName())
                             .arg(f_rowModel.tableName())
                             );
-                    auto query = QCassandraQuery::create( f_session );
-                    query->query( q_str, 3 );
-                    query->bindByteArray( 0, doc->toPlainText().toUtf8() );
-                    query->bindByteArray( 1, f_rowModel.rowKey() );
-                    query->bindByteArray( 2, f_rowModel.data( selected_rows[0], Qt::UserRole ).toByteArray() );
-                    query->start();
-                    query->end();
-                }
+                auto query = QCassandraQuery::create( f_session );
+                query->query( q_str, 3 );
+                query->bindByteArray( 0, doc->toPlainText().toUtf8() );
+                query->bindByteArray( 1, f_rowModel.rowKey() );
+                query->bindByteArray( 2, f_rowModel.data( index, Qt::UserRole ).toByteArray() );
+                query->start();
+                query->end();
             }
         }
     }
@@ -415,9 +367,25 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
 {
     try
     {
+        saveValue();
+
         if( current.isValid() )
         {
-            changeRow( current );
+            auto doc( f_valueEdit->document() );
+            doc->clear();
+
+            const QByteArray row_key( f_tableModel.data(current).toByteArray() );
+
+            f_rowModel.init
+                ( f_session
+                  , f_tableModel.keyspaceName()
+                  , f_tableModel.tableName()
+                );
+            f_rowModel.setRowKey( row_key );
+            f_rowModel.doQuery();
+
+            action_InsertColumn->setEnabled( true );
+            action_DeleteColumns->setEnabled( true );
         }
     }
     catch( const std::exception& except )
@@ -430,21 +398,39 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
 }
 
 
-void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ )
+void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QModelIndex & previous )
 {
     try
     {
+        if( previous.isValid() )
+        {
+            saveValue( previous );
+        }
+
         if( current.isValid() )
         {
-            changeCell( current );
+            const QString q_str(
+                    QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
+                    .arg(f_rowModel.keyspaceName())
+                    .arg(f_rowModel.tableName())
+                    );
+            auto query = QCassandraQuery::create( f_session );
+            query->query( q_str, 2 );
+            query->bindByteArray( 0, f_rowModel.rowKey() );
+            query->bindByteArray( 1, f_rowModel.data(current, Qt::UserRole).toByteArray() );
+            query->start();
+
+            auto doc( f_valueEdit->document() );
+            doc->setPlainText( query->getByteArrayColumn(0).data() );
+            doc->setModified( false );
         }
     }
     catch( const std::exception& except )
     {
         displayError( except
-                    , tr("Connection Error")
-                    , tr("Error connecting to the server!")
-                    );
+                , tr("Connection Error")
+                , tr("Error connecting to the server!")
+                );
     }
 }
 
