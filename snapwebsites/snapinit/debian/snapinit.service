@@ -8,3 +8,6 @@ ExecStart=/usr/bin/snapinit --detach start
 ExecStop=/usr/bin/snapinit stop
 Restart=on-failure
 PIDFile=/run/lock/snapwebsites/snapinit-lock.pid
+
+[Install]
+WantedBy=multi-user.target
