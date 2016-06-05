@@ -847,7 +847,7 @@ void snap_layout::add_files()
         catch( const std::exception& ex )
         {
             std::cout << "error!" << std::endl;
-            std::cerr << "QCassandraQuery exception caught! What=" << ex.what() << std::endl;
+            std::cerr << "Layout table creation QCassandraQuery exception caught! What=" << ex.what() << std::endl;
             exit(1);
             snap::NOTREACHED();
         }
@@ -955,32 +955,30 @@ void snap_layout::add_files()
             time_t layout_modified;
             load_xsl_info(doc, filename, row_name, cell_name, layout_modified);
 
-            size_t row_count( 0 );
-            QCassandraValue existing;
-            try
-            {
-                auto q( QCassandraQuery::create(f_session) );
-                q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
-                int bind = 0;
-                q->bindByteArray( bind++, row_name.toUtf8()  );
-                q->bindByteArray( bind++, cell_name.toUtf8() );
-                q->start();
-                row_count = q->rowCount();
-                if( q->nextRow() )
-                {
-                    existing.setBinaryValue( q->getByteArrayColumn("value") );
-                }
-            }
-            catch( const std::exception& ex )
-            {
-                std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
-                continue;
-            }
-
-            if( row_count > 0 )
+            //if(table->exists(row_name))
+            if( rowExists("layout", row_name.toUtf8()) )
             {
                 // the row already exists, try getting the area
                 //QtCassandra::QCassandraValue existing(table->row(row_name)->cell(cell_name)->value());
+                QCassandraValue existing;
+                try
+                {
+                    auto q( QCassandraQuery::create(f_session) );
+                    q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
+                    int bind = 0;
+                    q->bindString( bind++, row_name  );
+                    q->bindString( bind++, cell_name );
+                    q->start();
+                    if( q->nextRow() )
+                    {
+                        existing.setBinaryValue( q->getByteArrayColumn("value") );
+                    }
+                }
+                catch( const std::exception& ex )
+                {
+                    std::cerr << "Get existing layout QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+                    continue;
+                }
                 if(!existing.nullValue())
                 {
                     QDomDocument existing_doc("stylesheet");
@@ -1040,7 +1038,7 @@ void snap_layout::add_files()
         }
         catch( const std::exception& ex )
         {
-            std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+            std::cerr << "UPDATE layout QCassandraQuery exception caught! what=" << ex.what() << std::endl;
             exit(1);
             snap::NOTREACHED();
         }
@@ -1058,22 +1056,30 @@ void snap_layout::add_files()
     {
         // mtimes holds times in seconds, convert to microseconds
         const int64_t last_updated(i.value() * 1000000);
+        QCassandraValue existing_last_updated;
         try
         {
-            QCassandraValue existing_last_updated;
-
+            auto q( QCassandraQuery::create(f_session) );
+            q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
+            int bind = 0;
+            q->bindByteArray( bind++, i.key().toUtf8()  );
+            q->bindByteArray( bind++, last_updated_name );
+            q->start();
+            if( q->nextRow() )
             {
-                auto q( QCassandraQuery::create(f_session) );
-                q->query( QString("SELECT value FROM %1.layout WHERE key = ? and column1 = ?;").arg(context_name) );
-                int bind = 0;
-                q->bindByteArray( bind++, i.key().toUtf8()  );
-                q->bindByteArray( bind++, last_updated_name );
-                q->start();
-                q->nextRow();
                 existing_last_updated.setBinaryValue( q->getByteArrayColumn("value") );
-                q->end();
             }
+            q->end();
+        }
+        catch( const std::exception& ex )
+        {
+            std::cerr << "SELECT existing layout QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+            exit(1);
+            snap::NOTREACHED();
+        }
 
+        try
+        {
             if( existing_last_updated.nullValue() || existing_last_updated.int64Value() < last_updated )
             {
                 auto q( QCassandraQuery::create(f_session) );
@@ -1088,7 +1094,7 @@ void snap_layout::add_files()
         }
         catch( const std::exception& ex )
         {
-            std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+            std::cerr << "UPDATE layout QCassandraQuery exception caught! what=" << ex.what() << std::endl;
             exit(1);
             snap::NOTREACHED();
         }
@@ -1195,7 +1201,7 @@ void snap_layout::set_theme()
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Theme set QCassandraQuery exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -1253,7 +1259,7 @@ void snap_layout::remove_theme()
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
@@ -1360,7 +1366,7 @@ void snap_layout::extract_file()
     }
     catch( const std::exception& ex )
     {
-        std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        std::cerr << "Extract file QCassandraQuery exception caught! what=" << ex.what() << std::endl;
         exit(1);
         snap::NOTREACHED();
     }
