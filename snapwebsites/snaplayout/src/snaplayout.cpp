@@ -171,7 +171,7 @@ advgetopt::getopt::option const g_snaplayout_options[] =
     {
         '\0',
         0,
-        "<layout filename(s)>",
+        nullptr,
         nullptr,
         "layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl or layout.zip",
         advgetopt::getopt::default_multiple_argument
@@ -731,6 +731,7 @@ bool snap_layout::tableExists( const QString& table_name ) const
     {
         const QString context_name( f_opt->get_string("context").c_str() );
         auto meta( QCassandraSchema::SessionMeta::create(f_session) );
+        meta->loadSchema();
         const auto& tables( meta->getKeyspaces().at(context_name)->getTables() );
         return tables.find(table_name) != tables.end();
     }

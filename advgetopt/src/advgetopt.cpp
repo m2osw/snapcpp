@@ -620,7 +620,7 @@ void getopt::reset(int argc
                 args.push_back(a);
             }
             // TODO: expand the arguments that include unquoted '*', '?', '[...]'
-            
+
             std::vector<char *> sub_argv;
             sub_argv.resize(args.size() + 2);
             sub_argv[0] = argv[0];
@@ -1104,7 +1104,7 @@ std::string getopt::process_help_string( char const * help ) const
  * the string.
  *
  * \param[in] status  The status at the time the options are requested.
- * \param[out] default_arg_help  
+ * \param[out] default_arg_help
  */
 std::string getopt::assemble_options( status_t status /*, std::string & default_arg_help*/ ) const
 {
@@ -1135,11 +1135,13 @@ std::string getopt::assemble_options( status_t status /*, std::string & default_
             {
                 std::stringstream opt_ss;
 
-                if( (opt.f_arg_mode == default_argument)
-                ||  (opt.f_arg_mode == default_multiple_argument)
-                  )
+                if( opt.f_arg_mode == default_argument )
                 {
-                    opt_ss << opt.f_name;
+                    opt_ss << "[default argument]";
+                }
+                else if( opt.f_arg_mode == default_multiple_argument)
+                {
+                    opt_ss << "[default arguments]";
                 }
                 else
                 {
