@@ -101,6 +101,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="f_clearFilter">
+        <property name="text">
+         <string>Clear</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="f_refreshView">
         <property name="text">
          <string>&amp;Refresh</string>

@@ -135,6 +135,7 @@ namespace
 QCassandraQuery::QCassandraQuery( QCassandraSession::pointer_t session )
     : f_session( session )
 {
+    connect( this, &QCassandraQuery::threadQueryFinished, this, &QCassandraQuery::onThreadQueryFinished );
 }
 
 
@@ -312,6 +313,11 @@ void QCassandraQuery::query( const QString &query_string, int bind_count )
 }
 
 
+int QCassandraQuery::pagingSize() const
+{
+    return f_pagingSize;
+}
+
 /** \brief Set the paging size for the current query.
  *
  * Call this method after you have called the query() method, but before
@@ -325,6 +331,7 @@ void QCassandraQuery::query( const QString &query_string, int bind_count )
  */
 void QCassandraQuery::setPagingSize( const int size )
 {
+    f_pagingSize = size;
     cass_statement_set_paging_size( f_queryStmt.get(), size );
 }
 
@@ -466,36 +473,28 @@ void QCassandraQuery::queryCallbackFunc( CassFuture* future, void *data )
     }
 
     // This comes from the background thread created by the Cassandra driver
-    emit this_query->threadQueryFinished(this_query->shared_from_this());
+    // However, when Qt5 emits it, it is properly marshalled into the
+    // main thread (when using the GUI, this would be the GUI thread).
+    // Therefore, this is completely thread safe, so there is no need to
+    // serialize access to any shared data members.
+    //
+    // However, one of the side effects is that I have to send the bare pointer
+    // through the signal into the main thread. Qt does not let me marshall
+    // the shared_ptr<> for some reason. However, once in the main thread, the
+    // emmissions from that point on will only be shared_ptr.
+    //
+    emit this_query->threadQueryFinished( this_query );
 }
 
 
-void QCassandraQuery::fireQueryTimer()
+void QCassandraQuery::onThreadQueryFinished( QCassandraQuery* q )
 {
-    // Fire the timer signal so we get the query finished signal on the foreground thread.
-#if QT_VERSION >= 0x050501
-    // Newer C++-friendly connection
-    QTimer::singleShot( 500, this, &QCassandraQuery::onQueryFinishedTimer );
-#else
-    // Older, runtime connection (for Ubuntu Trusty, this is not implemented yet since they are on Qt 5.2.X)
-    QTimer::singleShot( 500, this, SLOT(onQueryFinishedTimer()) );
-#endif
-}
-
-
-void QCassandraQuery::onQueryFinishedTimer()
-{
-    if( isReady() )
+    if( q != this )
     {
-        // Done, so emit finished signal
-        emit queryFinished(shared_from_this());
+        throw std::runtime_error("Query objects are not the same!");
     }
-    else
-    {
-        // Check in again later
-        //
-        fireQueryTimer();
-    }
+
+    emit queryFinished( shared_from_this() );
 }
 
 
@@ -627,8 +626,6 @@ void QCassandraQuery::start( const bool block )
             , &QCassandraQuery::queryCallbackFunc
             , reinterpret_cast<void*>(this)
             );
-
-        fireQueryTimer();
     }
 }
 

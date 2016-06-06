@@ -23,6 +23,7 @@
 #include "NotUsed.h"
 
 #include <QSettings>
+#include <QTimer>
 #include <QVariant>
 
 #include <iostream>
@@ -76,12 +77,19 @@ void QueryModel::init
 
 void QueryModel::doQuery( QCassandraQuery::pointer_t q )
 {
+    if( f_query )
+    {
+        disconnect( f_query.get(), &QCassandraQuery::queryFinished, this, &QueryModel::onQueryFinished );
+    }
+
     f_rows.clear();
+    while( !f_pendingRows.empty() ) f_pendingRows.pop();
     f_isMore = true;
 
     try
     {
         f_query = q;
+        connect( f_query.get(), &QCassandraQuery::queryFinished, this, &QueryModel::onQueryFinished );
         f_query->start( false /*don't block*/ );
     }
     catch( const std::exception& except )
@@ -95,11 +103,16 @@ void QueryModel::doQuery( QCassandraQuery::pointer_t q )
 
 void QueryModel::clear()
 {
+    if( f_query )
+    {
+        disconnect( f_query.get(), &QCassandraQuery::queryFinished, this, &QueryModel::onQueryFinished );
+    }
     f_query.reset();
     f_session.reset();
     f_keyspaceName.clear();
     f_tableName.clear();
     f_rows.clear();
+    while( !f_pendingRows.empty() ) f_pendingRows.pop();
     reset();
 }
 
@@ -118,10 +131,35 @@ bool QueryModel::fetchFilter( const QByteArray& key )
 }
 
 
-bool QueryModel::canFetchMore ( const QModelIndex & prnt ) const
+void QueryModel::onQueryFinished( QCassandraQuery::pointer_t q )
 {
-    NOTUSED(prnt);
-    return f_isMore;
+    try
+    {
+        q->getQueryResult();
+        while( q->nextRow() )
+        {
+            const QByteArray key( q->getByteArrayColumn(0) );
+            if( fetchFilter( key ) )
+            {
+                f_pendingRows.push( key );
+            }
+        }
+    }
+    catch( const std::exception& except )
+    {
+        displayError( except, tr("Cannot read from database!") );
+    }
+
+    // Trigger a new page if there is more
+    //
+    if( !q->nextPage( false /*block*/ ) )
+    {
+        // Signal that we are completely done
+        //
+        emit queryFinished();
+    }
+
+    QTimer::singleShot( 1000, this, &QueryModel::onFetchMore );
 }
 
 
@@ -133,52 +171,32 @@ void QueryModel::fetchCustomData( QCassandraQuery::pointer_t q )
 }
 
 
-void QueryModel::fetchMore ( const QModelIndex & prnt )
+void QueryModel::onFetchMore()
 {
-    NOTUSED(prnt);
-
-    if( !f_query )
-    {
-        return;
-    }
-
     try
     {
-        f_query->getQueryResult();
-
-        while( f_query->nextRow() )
+        for( int idx = 0; idx < f_rowPageSize; ++idx )
         {
-            const QByteArray key( f_query->getByteArrayColumn(0) );
-            if( fetchFilter( key ) )
+            if( f_pendingRows.empty() )
             {
-                const size_t new_row( f_rows.size() );
-                beginInsertRows
-                        ( QModelIndex()
-                          , new_row
-                          , new_row
-                          );
-                f_rows.push_back( key );
-                fetchCustomData( f_query );
-                endInsertRows();
+                break;
             }
+
+            const size_t new_row( f_rows.size() );
+            beginInsertRows
+                    ( QModelIndex()
+                      , new_row
+                      , new_row
+                      );
+            f_rows.push_back( f_pendingRows.front() );
+            f_pendingRows.pop();
+            fetchCustomData( f_query );
+            endInsertRows();
         }
-
-        emit queryPageFinished();
-
-        f_isMore = f_query->nextPage( false /*block*/ );
     }
     catch( const std::exception& except )
     {
         displayError( except, tr("Cannot read from database!") );
-    }
-
-    if( !f_isMore && f_query )
-    {
-        f_query.reset();
-
-        // Signal that we are completely done
-        //
-        emit queryFinished();
     }
 }
 

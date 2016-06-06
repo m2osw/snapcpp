@@ -283,8 +283,14 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 
 void MainWindow::on_f_applyFilter_clicked()
 {
-    saveValue();
+    QString const table_name( f_tables->currentText( ) );
+    on_f_tables_currentIndexChanged( table_name );
+}
 
+
+void MainWindow::on_f_clearFilter_clicked()
+{
+    f_filterEdit->clear();
     QString const table_name( f_tables->currentText( ) );
     on_f_tables_currentIndexChanged( table_name );
 }
@@ -292,8 +298,6 @@ void MainWindow::on_f_applyFilter_clicked()
 
 void MainWindow::on_f_refreshView_clicked()
 {
-    saveValue();
-
     QString const table_name( f_tables->currentText( ) );
     on_f_tables_currentIndexChanged( table_name );
 }
