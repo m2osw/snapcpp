@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/icons">
-        <file alias="icon">snap-medium-icon.png</file>
-        <file alias="snap-logo">snap-logo.png</file>
-        <file alias="find_icon">find_icon.png</file>
-        <file alias="clear_icon">clear_icon.png</file>
-        <file alias="reload_icon">reload_icon.png</file>
-    </qresource>
-</RCC>
