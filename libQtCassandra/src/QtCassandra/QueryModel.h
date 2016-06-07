@@ -26,7 +26,7 @@
 #include <QRegExp>
 
 #include <memory>
-#include <stack>
+#include <queue>
 #include <vector>
 
 namespace QtCassandra
@@ -55,8 +55,6 @@ public:
 
     // Read only access
     //
-    virtual bool			canFetchMore ( const QModelIndex & prnt ) const;
-    virtual void			fetchMore    ( const QModelIndex & prnt );
     virtual Qt::ItemFlags   flags        ( QModelIndex const & index ) const;
     virtual QVariant        data         ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
     virtual QModelIndex     index        ( int row, int column, const QModelIndex &parent= QModelIndex() ) const;
@@ -69,7 +67,6 @@ public:
 
 signals:
     void exceptionCaught( const QString & what, const QString & message ) const;
-    void queryPageFinished() const;
     void queryFinished() const;
 
 protected:
@@ -79,15 +76,22 @@ protected:
     std::vector<QByteArray>      f_rows;
     bool                         f_isMore      = false;
     int                          f_columnCount = 1;
+    const int                    f_rowPageSize = 10;    // This is for internal pagination--it has nothing to do with the query.
 
     void doQuery      ( QCassandraQuery::pointer_t query );
     void displayError ( const std::exception & except, const QString & message ) const;
 
 private:
-    QCassandraQuery::pointer_t   f_query;
-    QRegExp                      f_filter;
+    QCassandraQuery::pointer_t      f_query;
+    QRegExp                         f_filter;
+    std::queue<QByteArray>          f_pendingRows;
 
     void reset();
+    void fetchPageFromServer( std::vector<QByteArray>& fetched_rows );
+
+private slots:
+    void onFetchMore();
+    void onQueryFinished( QCassandraQuery::pointer_t q );
 };
 
 

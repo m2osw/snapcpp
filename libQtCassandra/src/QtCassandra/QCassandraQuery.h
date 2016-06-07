@@ -39,9 +39,9 @@
 #include <memory>
 #include <string>
 
+#include <QByteArray>
 #include <QObject>
 #include <QString>
-#include <QByteArray>
 
 #include "QtCassandra/QCassandraConsistencyLevel.h"
 #include "QtCassandra/QCassandraSession.h"
@@ -75,6 +75,7 @@ public:
     void				setTimestamp        ( int64_t val );
 
     void                query               ( const QString& query_string, const int bind_count = -1 );
+    int                 pagingSize          () const;
     void                setPagingSize       ( const int size );
 
     void                bindBool            ( const size_t num, const bool          value );
@@ -117,12 +118,12 @@ public:
     string_map_t        getMapColumn        ( const QString& name ) const;
     string_map_t        getMapColumn        ( const int num ) const;
 
-private slots:
-    void                onQueryFinishedTimer();
-
 signals:
+    void                threadQueryFinished( QCassandraQuery* q );
     void                queryFinished( QCassandraQuery::pointer_t q );
-    void                threadQueryFinished( QCassandraQuery::pointer_t q );
+
+private slots:
+    void                onThreadQueryFinished( QCassandraQuery* q );
 
 private:
     QCassandraQuery( QCassandraSession::pointer_t session );
@@ -137,8 +138,9 @@ private:
     CassTools::result_pointer_t    f_queryResult;
     CassTools::iterator_pointer_t  f_rowsIterator;
     consistency_level_t			   f_consistencyLevel = CONSISTENCY_LEVEL_DEFAULT;
-    int64_t						   f_timestamp = 0;
-    int64_t						   f_timeout = 0;
+    int64_t						   f_timestamp  = 0;
+    int64_t						   f_timeout    = 0;
+    int                            f_pagingSize = -1;
 
     void 		        setStatementConsistency();
     void 		        setStatementTimestamp();
@@ -147,7 +149,6 @@ private:
     string_map_t        getMapFromValue       ( const CassValue* value ) const;
     void                throwIfError          ( const QString& msg     );
 
-    void			    fireQueryTimer();
     static void		    queryCallbackFunc( CassFuture* future, void *data );
 };
 
@@ -155,5 +156,6 @@ private:
 }
 // namespace QtCassandra
 
-    
+Q_DECLARE_METATYPE( QtCassandra::QCassandraQuery::pointer_t )
+
 // vim: ts=4 sw=4 et

@@ -1,3 +1,21 @@
+libqtcassandra (0.6.0.50~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 06 Jun 2016 03:01:28 -0700
+
+libqtcassandra (0.6.0.49~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 05 Jun 2016 03:01:29 -0700
+
+libqtcassandra (0.6.0.48~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 04 Jun 2016 03:01:26 -0700
+
 libqtcassandra (0.6.0.47~xenial) xenial; urgency=high
 
   * Nightly build.

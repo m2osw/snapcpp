@@ -6,6 +6,7 @@
 #include "SettingsDialog.h"
 
 #include <snapwebsites/not_used.h>
+#include <snapwebsites/dbutils.h>
 
 #include <QMessageBox>
 
@@ -33,6 +34,8 @@ MainWindow::MainWindow(QWidget *p)
     f_tables->setModel( &f_contextModel );
     f_rowsView->setModel( &f_tableModel );
     f_cellsView->setModel( &f_rowModel );
+
+    f_tableModel.setSortModel( true );
 
     f_cassandraModel.setCassandra( f_session );
     int const idx = f_contextCombo->findText( f_context );
@@ -283,8 +286,14 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 
 void MainWindow::on_f_applyFilter_clicked()
 {
-    saveValue();
+    QString const table_name( f_tables->currentText( ) );
+    on_f_tables_currentIndexChanged( table_name );
+}
 
+
+void MainWindow::on_f_clearFilter_clicked()
+{
+    f_filterEdit->clear();
     QString const table_name( f_tables->currentText( ) );
     on_f_tables_currentIndexChanged( table_name );
 }
@@ -292,8 +301,6 @@ void MainWindow::on_f_applyFilter_clicked()
 
 void MainWindow::on_f_refreshView_clicked()
 {
-    saveValue();
-
     QString const table_name( f_tables->currentText( ) );
     on_f_tables_currentIndexChanged( table_name );
 }
@@ -338,6 +345,11 @@ void MainWindow::saveValue( const QModelIndex& index )
             }
             if( response == QMessageBox::Yes )
             {
+                const QByteArray column_key(f_rowModel.data(index, Qt::UserRole).toByteArray());
+                QByteArray value;
+                snap::dbutils du( f_rowModel.tableName(), QString::fromUtf8(f_rowModel.rowKey().data()) );
+                du.set_column_value( column_key, value, doc->toPlainText().toUtf8() );
+
                 const QString q_str(
                             QString("UPDATE %1.%2 SET value = ? WHERE key = ? AND column1 = ?")
                             .arg(f_rowModel.keyspaceName())
@@ -345,9 +357,9 @@ void MainWindow::saveValue( const QModelIndex& index )
                             );
                 auto query = QCassandraQuery::create( f_session );
                 query->query( q_str, 3 );
-                query->bindByteArray( 0, doc->toPlainText().toUtf8() );
+                query->bindByteArray( 0, value               );
                 query->bindByteArray( 1, f_rowModel.rowKey() );
-                query->bindByteArray( 2, f_rowModel.data( index, Qt::UserRole ).toByteArray() );
+                query->bindByteArray( 2, column_key          );
                 query->start();
                 query->end();
             }
@@ -409,6 +421,7 @@ void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QMode
 
         if( current.isValid() )
         {
+            const QByteArray column_key(f_rowModel.data(current, Qt::UserRole).toByteArray());
             const QString q_str(
                     QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
                     .arg(f_rowModel.keyspaceName())
@@ -417,11 +430,14 @@ void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QMode
             auto query = QCassandraQuery::create( f_session );
             query->query( q_str, 2 );
             query->bindByteArray( 0, f_rowModel.rowKey() );
-            query->bindByteArray( 1, f_rowModel.data(current, Qt::UserRole).toByteArray() );
+            query->bindByteArray( 1, column_key );
             query->start();
 
+            snap::dbutils du( f_rowModel.tableName(), QString::fromUtf8(f_rowModel.rowKey().data()) );
+            const QString value = du.get_column_value( column_key, query->getByteArrayColumn(0) );
+
             auto doc( f_valueEdit->document() );
-            doc->setPlainText( query->getByteArrayColumn(0).data() );
+            doc->setPlainText( value );
             doc->setModified( false );
         }
     }

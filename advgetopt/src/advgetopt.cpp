@@ -620,7 +620,7 @@ void getopt::reset(int argc
                 args.push_back(a);
             }
             // TODO: expand the arguments that include unquoted '*', '?', '[...]'
-            
+
             std::vector<char *> sub_argv;
             sub_argv.resize(args.size() + 2);
             sub_argv[0] = argv[0];
@@ -1104,7 +1104,7 @@ std::string getopt::process_help_string( char const * help ) const
  * the string.
  *
  * \param[in] status  The status at the time the options are requested.
- * \param[out] default_arg_help  
+ * \param[out] default_arg_help
  */
 std::string getopt::assemble_options( status_t status /*, std::string & default_arg_help*/ ) const
 {
@@ -1122,91 +1122,79 @@ std::string getopt::assemble_options( status_t status /*, std::string & default_
         // ignore entries with a nullptr pointer
         // ignore entries representing an alias
         // only display error marked entries if error status
-        if(f_options[i].f_help
-            && (f_options[i].f_flags & advgetopt::getopt::GETOPT_FLAG_ALIAS) == 0
-            && (((f_options[i].f_flags & errflag) == 0) ^ !no_error_status))
+        const auto& opt( f_options[i] );
+        if(opt.f_help
+            && (opt.f_flags & advgetopt::getopt::GETOPT_FLAG_ALIAS) == 0
+            && (((opt.f_flags & errflag) == 0) ^ !no_error_status))
         {
-            if( f_options[i].f_arg_mode == help_argument )
+            if( opt.f_arg_mode == help_argument )
             {
-                ss << process_help_string(f_options[i].f_help) << std::endl;
+                ss << process_help_string(opt.f_help) << std::endl;
             }
             else
             {
                 std::stringstream opt_ss;
 
-                switch(f_options[i].f_arg_mode)
+                if( opt.f_arg_mode == default_argument )
                 {
-                case default_argument:
-                case default_multiple_argument:
-                    // we want to mark the flag as optional
-                    opt_ss << "[";
-                    break;
-
-                default:
-                    break;
-
+                    opt_ss << "[default argument]";
                 }
-
-                if(f_options[i].f_opt != '\0' && f_options[i].f_name != nullptr)
+                else if( opt.f_arg_mode == default_multiple_argument)
                 {
-                    // both options!
-                    opt_ss << "--" << f_options[i].f_name << " or -" << f_options[i].f_opt;
-                }
-                else if(f_options[i].f_opt != '\0')
-                {
-                    opt_ss << "-" << f_options[i].f_opt;
-                }
-                else if(f_options[i].f_name != nullptr)
-                {
-                    opt_ss << "--" << f_options[i].f_name;
+                    opt_ss << "[default arguments]";
                 }
                 else
                 {
-                    // TODO: the 'default_arg_help' is not used and I am
-                    //       really thinking we should have the throw back in...
-                    //
-                    throw getopt_exception_invalid("an option has help but no option name");
-                    //default_arg_help = process_help_string(f_options[i].f_help);
-                    //continue;
-                }
-                switch(f_options[i].f_arg_mode)
-                {
-                case no_argument:
-                    break;
+                    if(opt.f_opt != '\0' && opt.f_name != nullptr)
+                    {
+                        // both options!
+                        opt_ss << "--" << opt.f_name << " or -" << opt.f_opt;
+                    }
+                    else if(opt.f_opt != '\0')
+                    {
+                        opt_ss << "-" << opt.f_opt;
+                    }
+                    else if(opt.f_name != nullptr)
+                    {
+                        opt_ss << "--" << opt.f_name;
+                    }
+                    else
+                    {
+                        // TODO: the 'default_arg_help' is not used and I am
+                        //       really thinking we should have the throw back in...
+                        //
+                        throw getopt_exception_invalid("an option has help but no option name");
+                        //default_arg_help = process_help_string(opt.f_help);
+                        //continue;
+                    }
+                    switch(opt.f_arg_mode)
+                    {
+                        case no_argument:
+                            break;
 
-                case required_argument:
-                case required_long:
-                    opt_ss << " <arg>";
-                    break;
+                        case required_argument:
+                        case required_long:
+                            opt_ss << " <arg>";
+                            break;
 
-                case optional_argument:
-                case optional_long:
-                    opt_ss << " [<arg>]";
-                    break;
+                        case optional_argument:
+                        case optional_long:
+                            opt_ss << " [<arg>]";
+                            break;
 
-                case required_multiple_argument:
-                case required_multiple_long:
-                    opt_ss << " <arg> {<arg>}";
-                    break;
+                        case required_multiple_argument:
+                        case required_multiple_long:
+                            opt_ss << " <arg> {<arg>}";
+                            break;
 
-                case optional_multiple_argument:
-                case optional_multiple_long:
-                    opt_ss << " {<arg>}";
-                    break;
+                        case optional_multiple_argument:
+                        case optional_multiple_long:
+                            opt_ss << " {<arg>}";
+                            break;
 
-                case default_argument:
-                    // we mark the flag as optional
-                    opt_ss << "] <arg>";
-                    break;
-
-                case default_multiple_argument:
-                    // we mark the flag as optional
-                    opt_ss << "] {<arg>}";
-                    break;
-
-                default:
-                    throw getopt_exception_invalid("an option uses an invalid argument mode");
-
+                        default:
+                            throw getopt_exception_invalid("an option uses an invalid argument mode");
+                    }
                 }
 
                 // Output argument string with help
@@ -1223,7 +1211,7 @@ std::string getopt::assemble_options( status_t status /*, std::string & default_
                     ss << options;
                 }
                 //
-                ss << process_help_string(f_options[i].f_help) << std::endl;
+                ss << process_help_string(opt.f_help) << std::endl;
             }
         }
     }

@@ -17,7 +17,6 @@
 //===============================================================================
 
 #include "TableModel.h"
-#include <snapwebsites/dbutils.h>
 #include <snapwebsites/log.h>
 #include <snapwebsites/not_used.h>
 
@@ -34,6 +33,12 @@ using namespace QtCassandra;
 
 TableModel::TableModel()
 {
+    QSettings settings;
+    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
+    if( f_keyspaceName == snap_keyspace )
+    {
+        f_dbutils = std::make_shared<snap::dbutils>( f_tableName, "" );
+    }
 }
 
 
@@ -63,20 +68,45 @@ QVariant TableModel::data( QModelIndex const & idx, int role ) const
         return QVariant();
     }
 
-    if( static_cast<int>(f_rows.size()) <= idx.row() )
+    if( static_cast<int>(f_sortMap.size()) <= idx.row() )
     {
         return QVariant();
     }
 
-    QSettings settings;
-    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
-    if( f_keyspaceName == snap_keyspace )
+    if( f_sortModel )
     {
-        snap::dbutils du( f_tableName, "" );
-        return du.get_row_name( f_rows[idx.row()] );
+        auto iter = f_sortMap.begin();
+        for( int i = 0; i < idx.row(); ++i) iter++;
+        return iter->first;
+    }
+    else
+    {
+        if( f_dbutils )
+        {
+            return f_dbutils->get_row_name( f_rows[idx.row()] );
+        }
+
+        return QueryModel::data( idx, role );
+    }
+}
+
+
+void TableModel::fetchCustomData( QCassandraQuery::pointer_t q )
+{
+    if( !f_sortModel )
+    {
+        return;
     }
 
-    return QueryModel::data( idx, role );
+    const QByteArray value(q->getByteArrayColumn(0));
+    if( f_dbutils )
+    {
+        f_sortMap[f_dbutils->get_row_name(value)] = QModelIndex();
+    }
+    else
+    {
+        f_sortMap[value] = QModelIndex();
+    }
 }
 
 
