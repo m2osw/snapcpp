@@ -151,6 +151,8 @@ void QueryModel::onQueryFinished( QCassandraQuery::pointer_t q )
         displayError( except, tr("Cannot read from database!") );
     }
 
+    QTimer::singleShot( 1000, this, &QueryModel::onFetchMore );
+
     // Trigger a new page if there is more
     //
     if( !q->nextPage( false /*block*/ ) )
@@ -159,8 +161,6 @@ void QueryModel::onQueryFinished( QCassandraQuery::pointer_t q )
         //
         emit queryFinished();
     }
-
-    QTimer::singleShot( 1000, this, &QueryModel::onFetchMore );
 }
 
 

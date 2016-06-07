@@ -35,6 +35,8 @@ MainWindow::MainWindow(QWidget *p)
     f_rowsView->setModel( &f_tableModel );
     f_cellsView->setModel( &f_rowModel );
 
+    f_tableModel.setSortModel( true );
+
     f_cassandraModel.setCassandra( f_session );
     int const idx = f_contextCombo->findText( f_context );
     if( idx != -1 )

@@ -20,6 +20,8 @@
 
 #include <QtCassandra/QueryModel.h>
 
+#include <snapwebsites/dbutils.h>
+
 class TableModel
     : public QtCassandra::QueryModel
 {
@@ -30,9 +32,19 @@ public:
 
     void doQuery();
 
+    bool sortModel() const              { return f_sortModel; }
+    void setSortModel( const bool val ) { f_sortModel = val;  }
+
     // Read only access
     //
-    virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const;
+    virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const override;
+    virtual void     fetchCustomData( QtCassandra::QCassandraQuery::pointer_t q ) override;
+
+private:
+    typedef std::map<QString,QModelIndex> sort_map_t;
+    sort_map_t                      f_sortMap;
+    std::shared_ptr<snap::dbutils>  f_dbutils;
+    bool                            f_sortModel = false;
 };
 
 
