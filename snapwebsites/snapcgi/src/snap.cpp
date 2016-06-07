@@ -63,6 +63,7 @@
 // SCRIPT_NAME=/cgi-bin/snap.cgi
 //
 
+#include "addr.h"
 #include "log.h"
 #include "not_reached.h"
 #include "snapwebsites.h"
@@ -162,7 +163,7 @@ private:
 snap_cgi::snap_cgi( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapcgi_options, g_configuration_files, "SNAPCGI_OPTIONS")
     , f_port(4004)
-    , f_address("0.0.0.0")
+    , f_address("127.0.0.1")
 {
     if(f_opt.is_defined("version"))
     {
@@ -217,45 +218,12 @@ int snap_cgi::error(char const * code, char const * msg, char const * details)
 
 bool snap_cgi::verify()
 {
-    // If not defined, keep the default of localhost:4004
+    // If not defined, keep the default of 127.0.0.1:4004
     if(f_opt.is_defined("snapserver"))
     {
-        std::string snapserver(f_opt.get_string("snapserver"));
-        std::string::size_type pos(snapserver.find_first_of(':'));
-        if(pos == std::string::npos)
-        {
-            // only an address
-            f_address = snapserver;
-        }
-        else
-        {
-            // address first
-            f_address = snapserver.substr(0, pos);
-            // port follows
-            std::string const port(snapserver.substr(pos + 1));
-            f_port = 0;
-            for(char const * p(port.c_str()); *p != '\0'; ++p)
-            {
-                char const c(*p);
-                if(c < '0' || c > '9')
-                {
-                    SNAP_LOG_FATAL("Invalid port (found a character that is not a digit in \"")(snapserver)("\".");
-                    throw tcp_client_server::tcp_client_server_parameter_error("the port in the snapserver parameter is not valid: " + snapserver + ".");
-                }
-                f_port = f_port * 10 + c - '0';
-                if(f_port > 65535)
-                {
-                    SNAP_LOG_FATAL("Invalid port (Port number too large in \"")(snapserver)("\".");
-                    throw tcp_client_server::tcp_client_server_parameter_error("the port in the snapserver parameter is too large (we only support a number from 1 to 65535): " + snapserver + ".");
-                }
-            }
-            // forbid port zero
-            if(f_port <= 0)
-            {
-                SNAP_LOG_FATAL("Invalid port (Port number too small in \"")(snapserver)("\".");
-                throw tcp_client_server::tcp_client_server_parameter_error("the port in the snapserver parameter is too small (we only support a number from 1 to 65535): " + snapserver + ".");
-            }
-        }
+        snap_addr::addr a(f_opt.get_string("snapserver"), f_address, f_port, "tcp");
+        f_address = a.get_ipv4or6_string(false, false);
+        f_port = a.get_port();
     }
 
     // catch "invalid" methods early so we do not waste

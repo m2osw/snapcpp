@@ -36,12 +36,14 @@ install(
     FILES 
         # log4cplus properties
         snapmanagercgi.properties
+        snapmanagerdaemon.properties
 
         # snap configuration files
         snapmanagercgi.conf
+        snapmanagerdaemon.conf
 
         # misc files -- TODO add a sample apache settings?
-        #snapmanager-apache2.conf
+        snapmanagercgi-parser.xsl
 
     DESTINATION
         share/snapwebsites/conf

@@ -76,6 +76,15 @@
                   in this way.
 
       <service>
+      <snapdbproxy>
+                  Define the IP address and port to use to connect to
+                  the snapdbproxy service and ultimately to the Cassandra
+                  database. By default this is 127.0.0.1:4042.
+
+                  This parameter is passed down to the other services
+                  started by snapinit.
+
+      <service>
       <command>   Define the path and name of the command. The path is
                   optional and if not specified the standard Unix PATH
                   variable is used to find the command. You may also
@@ -133,7 +142,7 @@
                   list of services. If this parameter is defined,
                   then we will try yet again after that many
                   seconds. This is generally used for backends
-                  with a value of about 3600 seconds (1h.)
+                  with a value of about 60 seconds (1min.)
 
       <service>
       <coredump>  Define the size of the core dump file.
@@ -225,6 +234,10 @@
     <priority>75</priority>
     <config>/etc/snapwebsites/snapserver.conf</config>
     <cron>300</cron>
+  </service>
+  <service name="snapmanagerdaemon" disabled="disabled">
+    <config>/etc/snapwebsites/snapmanagerdaemon.conf</config>
+    <recovery>60</recovery>
   </service>
 </snapservices>
 <!--

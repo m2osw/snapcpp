@@ -1526,10 +1526,10 @@ void snap_uri::unset_query_option(QString const& name)
  *
  * \param[in] uri_query_string  The query string to add to the existing data.
  */
-void snap_uri::set_query_string(QString const& uri_query_string)
+void snap_uri::set_query_string(QString const & uri_query_string)
 {
-    snap_string_list value_pairs(uri_query_string.split('&', QString::SkipEmptyParts));
-    for(snap_string_list::iterator it = value_pairs.begin();
+    snap_string_list const value_pairs(uri_query_string.split('&', QString::SkipEmptyParts));
+    for(snap_string_list::const_iterator it(value_pairs.begin());
                             it != value_pairs.end();
                             ++it)
     {

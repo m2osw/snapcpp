@@ -56,11 +56,27 @@ namespace
         },
         {
             '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "config",
+            "/etc/snapwebsites/snapmanagerdaemon.conf",
+            "Path and filename of the snapmanagerdaemon configuration file.",
+            advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "connect",
             nullptr,
             "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "debug",
+            nullptr,
+            "Set the service in debug mode.",
+            advgetopt::getopt::no_argument
         },
         {
             '\0',
@@ -68,7 +84,7 @@ namespace
             "log_config",
             "/etc/snapwebsites/snapmanagerdaemon.properties",
             "Full path of log configuration file",
-            advgetopt::getopt::optional_argument
+            advgetopt::getopt::required_argument
         },
         {
             'h',
@@ -77,6 +93,22 @@ namespace
             nullptr,
             "Show this help screen.",
             advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "server-name",
+            0,
+            "Name of the server on which snapmanagerdaemon is running.",
+            advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "snapdbproxy",
+            0,
+            "The IP address and port of the snapdbproxy service.",
+            advgetopt::getopt::required_argument
         },
         {
             '\0',
@@ -117,6 +149,9 @@ manager_daemon::manager_daemon( int argc, char * argv[] )
     : f_opt(argc, argv, g_snapmanagerdaemon_options, g_configuration_files, "SNAPMANAGERDAEMON_OPTIONS")
     , f_communicator_port(4040)
     , f_communicator_address("127.0.0.1")
+    , f_status_connection(new status_connection(this))
+    , f_status_runner(f_status_connection)
+    , f_status_thread("status", &f_status_runner)
 {
     // --help
     //
@@ -209,6 +244,8 @@ int manager_daemon::run()
     signal( SIGBUS,  manager_daemon::sighandler );
     signal( SIGFPE,  manager_daemon::sighandler );
     signal( SIGILL,  manager_daemon::sighandler );
+
+    SNAP_LOG_INFO("--------------------------------- snapmanagerdaemon started on ")(f_server_name);
 
     // initialize the communicator and its connections
     //
@@ -308,7 +345,7 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "HELP,LOG,QUITTING,READY,SERVERTYPES,STOP,UNKNOWN");
+            reply.add_parameter("list", "HELP,LOG,MANAGE,MANAGERSTATUS,QUITTING,READY,STOP,UNKNOWN");
 
             f_messenger->send_message(reply);
             return;
@@ -332,6 +369,14 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // run the RPC call
             //
             manage(message);
+            return;
+        }
+        else if(command == "MANAGERSTATUS")
+        {
+            // record the status of this and other managers
+            //
+            set_manager_status(message);
+            return;
         }
         break;
 
@@ -452,7 +497,7 @@ void manager_daemon::manage(snap::snap_communicator_message const & message)
     // it allows us to make sure that snap_child() and other such services
     // do not contact us with a MANAGE command.)
     //
-    QString const & service(message.get_service());
+    QString const & service(message.get_sent_from_service());
     if(service != "snapmanagercgi")
     {
         snap::snap_communicator_message reply;

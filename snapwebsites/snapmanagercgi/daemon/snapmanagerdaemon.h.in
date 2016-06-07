@@ -46,15 +46,62 @@ public:
                                 manager_messenger(manager_daemon * md, std::string const & addr, int port);
 
     // snap::snap_communicator::snap_tcp_client_permanent_message_connection implementation
-    virtual void                process_message(snap::snap_communicator_message const & message);
-    virtual void                process_connection_failed(std::string const & error_message);
-    virtual void                process_connected();
+    virtual void                process_message(snap::snap_communicator_message const & message) override;
+    virtual void                process_connection_failed(std::string const & error_message) override;
+    virtual void                process_connected() override;
 
 protected:
     // these objects are owned by the manager_daemon objects so no need
     // for a smart pointer (and it would create a loop unless we use a weakptr)
     manager_daemon *            f_manager = nullptr;
 };
+
+
+
+class manager_daemon;
+class manager_status;
+
+
+class status_connection
+        : public snap::snap_communicator::snap_inter_thread_message_connection
+{
+public:
+    typedef std::shared_ptr<status_connection>   pointer_t;
+
+                                status_connection(manager_daemon * md);
+
+    void                        set_thread_b(manager_status * ms);
+
+    // snap::snap_communicator::snap_pipe_message_connection implementation
+    virtual void                process_message_a(snap::snap_communicator_message const & message) override;
+    virtual void                process_message_b(snap::snap_communicator_message const & message) override;
+
+private:
+    manager_daemon *            f_manager_daemon;
+    manager_status *            f_manager_status;
+};
+
+
+
+class manager_status
+    : public snap::snap_thread::snap_runner
+{
+public:
+                                manager_status(status_connection::pointer_t sc);
+
+    virtual void                run();
+
+    QString                     get_server_status() const;
+
+    void                        process_message(snap::snap_communicator_message const & message);
+
+private:
+    status_connection::pointer_t    f_status_connection;
+    QString                         f_server_status;
+    bool                            f_running = true;
+};
+
+
 
 
 class manager_daemon
@@ -67,6 +114,8 @@ public:
     void                        process_message(snap::snap_communicator_message const & message);
 
 private:
+    typedef std::map<QString, QString>      status_t;
+
     static void                 sighandler( int sig );
     void                        stop(bool quitting);
 
@@ -74,6 +123,7 @@ private:
     void                        manage(snap::snap_communicator_message const & message);
     void                            status(snap::snap_communicator_message const & message);
     int                                 package_status(QString const & package_name, bool add_info_only_if_present);
+    void                            set_manager_status(snap::snap_communicator_message const & message);
     void                            installer(snap::snap_communicator_message const & message);
     int                                 install(QString const & package_name);
 
@@ -87,6 +137,10 @@ private:
     QString                                     f_communicator_address;     // snap server address
     snap::snap_communicator::pointer_t          f_communicator;
     manager_messenger::pointer_t                f_messenger;
+    status_connection::pointer_t                f_status_connection;
+    manager_status                              f_status_runner;
+    snap::snap_thread                           f_status_thread;
+    status_t                                    f_status;
     QString                                     f_output;           // commands output, to be sent to end user
 };
 

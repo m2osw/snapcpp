@@ -50,6 +50,8 @@ find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 
+include( SnapXmlLint )
+
 SnapGetVersion( SNAPINIT ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories( SYSTEM
@@ -66,5 +68,7 @@ include_directories( ${SNAPWEBSITES_INCLUDE_DIRS} )
 add_subdirectory( conf )
 add_subdirectory( src  )
 add_subdirectory( doc  )
+
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et

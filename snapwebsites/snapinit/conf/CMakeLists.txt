@@ -29,6 +29,10 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+project( snapinit_conf )
+
+snap_validate_xml( snapinit.xml snapinit.xsd )
+
 #################################################################################
 ## Config files
 ##
@@ -42,6 +46,7 @@ install(
 
         # various other files
         snapinit.xml
+        snapinit.xsd
 
     DESTINATION
         share/snapwebsites/conf

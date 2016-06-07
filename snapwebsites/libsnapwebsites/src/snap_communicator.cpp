@@ -26,7 +26,6 @@
 #include "not_reached.h"
 #include "not_used.h"
 #include "qstring_stream.h"
-#include "snap_thread.h"
 
 #include <sstream>
 #include <limits>
@@ -35,8 +34,10 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+#include <sys/eventfd.h>
 #include <sys/ioctl.h>
 #include <sys/resource.h>
+#include <sys/syscall.h>
 #include <sys/time.h>
 
 #include "poison.h"
@@ -95,6 +96,31 @@ snap_communicator::pointer_t        g_instance;
  * as well have been a boolean.
  */
 sigset_t                            g_signal_handlers = sigset_t();
+
+
+/** \brief Retrieve the identifier of the current thread.
+ *
+ * This function returns the pid_t of the current thread.
+ *
+ * \return The current thread identifier.
+ */
+pid_t gettid()
+{
+    return syscall(SYS_gettid);
+}
+
+
+/** \brief Close a file descriptor object.
+ *
+ * This deleter is used to make sure that any file descriptor gets
+ * closed as expected even if an exception occurs.
+ *
+ * \param[in] fd  The file descriptor gets closed.
+ */
+void fd_deleter(int * fd)
+{
+    close(*fd);
+}
 
 
 } // no name namespace
@@ -2156,6 +2182,355 @@ void snap_communicator::snap_thread_done_signal::thread_done()
 
 
 
+//////////////////////////////////
+// Snap Inter-Thread Connection //
+//////////////////////////////////
+
+
+
+/** \brief Initializes the inter-thread connection.
+ *
+ * This function creates two queues to communicate between two threads.
+ * At this point, we expect such connections to only be used between
+ * two threads because we cannot listen on more than one socket.
+ *
+ * The connection is expected to be created by "thread A". This means
+ * the send_message() for "thread A" adds messages to the queue of
+ * "thread B" and the process_message() for "thread A" reads
+ * messages from the "thread A" queue, and vice versa.
+ *
+ * In order to know whether a queue has data in it, we use an eventfd().
+ * One of them is for "thread A" and the other is for "thread B".
+ *
+ * \todo
+ * To support all the features of a snap_connection on both sides
+ * we would have to allocate a sub-connection object for thread B.
+ * That sub-connection object would then be used just like a full
+ * regular connection with all of its own parameters. Actually the
+ * FIFO of messages could then clearly be segregated in each object.
+ *
+ * \exception snap_communicator_initialization_error
+ * This exception is raised if the pipes (socketpair) cannot be created.
+ */
+snap_communicator::snap_inter_thread_message_connection::snap_inter_thread_message_connection()
+{
+    f_creator_id = gettid();
+
+    f_thread_a.reset(new int(eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK | EFD_SEMAPHORE)), fd_deleter);
+    if(*f_thread_a == -1)
+    {
+        // eventfd could not be created
+        throw snap_communicator_initialization_error("could not create eventfd for thread A");
+    }
+
+    f_thread_b.reset(new int(eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK | EFD_SEMAPHORE)), fd_deleter);
+    if(*f_thread_b == -1)
+    {
+        // eventfd could not be created
+        throw snap_communicator_initialization_error("could not create eventfd for thread B");
+    }
+}
+
+
+/** \brief Make sure to close the eventfd objects.
+ *
+ * The destructor ensures that the eventfd objects allocated by the
+ * constructor get closed.
+ */
+snap_communicator::snap_inter_thread_message_connection::~snap_inter_thread_message_connection()
+{
+}
+
+
+/** \brief Close the thread communication early.
+ *
+ * This function closes the pair of eventfd managed by this
+ * inter-thread connection object.
+ *
+ * After this call, the inter-thread connection is closed and cannot be
+ * used anymore. The read and write functions will return immediately
+ * if called.
+ */
+void snap_communicator::snap_inter_thread_message_connection::close()
+{
+    f_thread_a.reset();
+    f_thread_b.reset();
+}
+
+
+/** \brief Poll the connection in the child.
+ *
+ * There can be only one snap_communicator, therefore, the threa
+ * cannot make use of it since it is only for the main application.
+ * This poll() function can be used by the child to wait on the
+ * connection.
+ *
+ * You may specify a timeout as usual.
+ *
+ * \exception snap_communicator_runtime_error
+ * If an interrupt happens and stops the poll() then this exception is
+ * raised. If not enough memory is available to run the poll() function,
+ * this errors is raised.
+ *
+ * \exception snap_communicator_parameter_error
+ * Somehow a buffer was moved out of our client's space (really that one
+ * is not likely to happen...). Too many file descriptors in the list of
+ * fds (not likely to happen since we just have one!)
+ *
+ * \exception snap_communicator_parameter_error
+ *
+ * \param[in] timeout  The maximum amount of time to wait in microseconds.
+ *                     Use zero (0) to not block at all.
+ *
+ * \return -1 if an error occurs, 0 on success
+ */
+int snap_communicator::snap_inter_thread_message_connection::poll(int timeout)
+{
+    for(;;)
+    {
+        // are we even enabled?
+        //
+        struct pollfd fd;
+        fd.events = POLLIN | POLLPRI | POLLRDHUP;
+        fd.fd = get_socket();
+
+        if(fd.fd < 0
+        || !is_enabled())
+        {
+            return -1;
+        }
+
+        // we cannot use this connection timeout information; it would
+        // otherwise be common to both threads; so instead we have
+        // a parameter which is used by the caller to tell us how long
+        // we have to wait
+        //
+        // convert microseconds to milliseconds for poll()
+        //
+        if(timeout > 0)
+        {
+            timeout /= 1000;
+            if(timeout == 0)
+            {
+                // less than one is a waste of time (CPU intenssive
+                // until the time is reached, we can be 1 ms off
+                // instead...)
+                //
+                timeout = 1;
+            }
+        }
+        else
+        {
+            // negative numbers are adjusted to zero.
+            //
+            timeout = 0;
+        }
+
+        int const r(::poll(&fd, 1, timeout));
+        if(r < 0)
+        {
+            // r < 0 means an error occurred
+            //
+            int const e(errno);
+
+            if(e == EINTR)
+            {
+                // Note: if the user wants to prevent this error, he should
+                //       use the snap_signal with the Unix signals that may
+                //       happen while calling poll().
+                //
+                throw snap_communicator_runtime_error("EINTR occurred while in poll() -- interrupts are not supported yet though");
+            }
+            if(e == EFAULT)
+            {
+                throw snap_communicator_parameter_error("buffer was moved out of our address space?");
+            }
+            if(e == EINVAL)
+            {
+                // if this is really because nfds is too large then it may be
+                // a "soft" error that can be fixed; that being said, my
+                // current version is 16K files which frankly when we reach
+                // that level we have a problem...
+                //
+                struct rlimit rl;
+                getrlimit(RLIMIT_NOFILE, &rl);
+                throw snap_communicator_parameter_error(QString("too many file fds for poll, limit is currently %1, your kernel top limit is %2")
+                            .arg(rl.rlim_cur)
+                            .arg(rl.rlim_max).toStdString());
+            }
+            if(e == ENOMEM)
+            {
+                throw snap_communicator_runtime_error("poll() failed because of memory");
+            }
+            throw snap_communicator_runtime_error(QString("poll() failed with error %1").arg(e).toStdString());
+        }
+
+        if(r == 0)
+        {
+            // poll() timed out, just return so the thread can do some
+            // additional work
+            //
+            return 0;
+        }
+
+        // we reach here when there is something to read
+        //
+        if((fd.revents & (POLLIN | POLLPRI)) != 0)
+        {
+            process_read();
+        }
+        // at this point we do not request POLLOUT and assume that the
+        // write() function will never fail
+        //
+        //if((fd.revents & POLLOUT) != 0)
+        //{
+        //    process_write();
+        //}
+        if((fd.revents & POLLERR) != 0)
+        {
+            process_error();
+        }
+        if((fd.revents & (POLLHUP | POLLRDHUP)) != 0)
+        {
+            process_hup();
+        }
+        if((fd.revents & POLLNVAL) != 0)
+        {
+            process_invalid();
+        }
+    }
+    NOTREACHED();
+}
+
+
+/** \brief Pipe connections accept reads.
+ *
+ * This function returns true meaning that the pipe connection can be
+ * used to read data.
+ *
+ * \return true since a pipe connection is a reader.
+ */
+bool snap_communicator::snap_inter_thread_message_connection::is_reader() const
+{
+    return true;
+}
+
+
+/** \brief This function returns the pipe we want to listen on.
+ *
+ * This function returns the file descriptor of one of the two
+ * sockets. The parent process returns the descriptor of socket
+ * number 0. The child process returns the descriptor of socket
+ * number 1.
+ *
+ * \note
+ * If the close() function was called, this function returns -1.
+ *
+ * \return A pipe descriptor to listen on with poll().
+ */
+int snap_communicator::snap_inter_thread_message_connection::get_socket() const
+{
+    if(f_creator_id == gettid())
+    {
+        return *f_thread_a;
+    }
+
+    return *f_thread_b;
+}
+
+
+/** \brief Read one message from the FIFO.
+ *
+ * This function reads one message from the FIFO specific to this
+ * thread. If the FIFO is empty, 
+ *
+ * The function makes sure to use the correct socket for the calling
+ * process (i.e. depending on whether this is the parent or child.)
+ *
+ * Just like the system write(2) function, errno is set to the error
+ * that happened when the function returns -1.
+ *
+ * \return The number of bytes written to this pipe socket, or -1 on errors.
+ */
+void snap_communicator::snap_inter_thread_message_connection::process_read()
+{
+    snap_communicator_message message;
+
+    bool const is_thread_a(f_creator_id == gettid());
+
+    // retrieve the message
+    //
+    bool const got_message((is_thread_a ? f_message_a : f_message_b).pop_front(message, 0));
+
+    // "remove" that one object from the semaphore counter
+    //
+    uint64_t value(1);
+    read(is_thread_a ? *f_thread_a : *f_thread_b, &value, sizeof(value));
+
+    // send the message for processing
+    // got_message should always be true, but just in case...
+    //
+    if(got_message)
+    {
+        if(is_thread_a)
+        {
+            process_message_a(message);
+        }
+        else
+        {
+            process_message_b(message);
+        }
+    }
+}
+
+
+/** \brief Send a message to the other end of this connection.
+ *
+ * This function sends the specified \p message to the thread
+ * on the other side of the connection.
+ *
+ * \note
+ * We are not a writer. We directly write to the corresponding
+ * thread eventfd() so it can wake up and read the message we
+ * just sent. There is only one reason for which the write
+ * would not be available, we already sent 2^64-2 messages,
+ * which is not likely to happen since memory would not support
+ * that many messages.
+ *
+ * \todo
+ * One day we probably will want to be able to have support for a
+ * process_write() callback... Maybe we should do the write there.
+ * Only we need to know where the write() would have to happen...
+ * That's a bit complicated right now for a feature that would not
+ * get tested well...
+ *
+ * \param[in] message  The message to send to the other side.
+ */
+void snap_communicator::snap_inter_thread_message_connection::send_message(snap_communicator_message const & message)
+{
+    if(f_creator_id == gettid())
+    {
+        f_message_b.push_back(message);
+        uint64_t const value(1);
+        if(write(*f_thread_b, &value, sizeof(value)) != sizeof(value))
+        {
+            throw snap_communicator_runtime_error("an error occurred while writing to inter-thread eventfd description (thread B)");
+        }
+    }
+    else
+    {
+        f_message_a.push_back(message);
+        uint64_t const value(1);
+        if(write(*f_thread_a, &value, sizeof(value)) != sizeof(value))
+        {
+            throw snap_communicator_runtime_error("an error occurred while writing to inter-thread eventfd description (thread B)");
+        }
+    }
+}
+
+
+
+
 //////////////////////////
 // Snap Pipe Connection //
 //////////////////////////
@@ -2180,7 +2555,7 @@ void snap_communicator::snap_thread_done_signal::thread_done()
  * to create a new child.
  *
  * \exception snap_communicator_initialization_error
- * This exception is raised if the pipes cannot be created.
+ * This exception is raised if the pipes (socketpair) cannot be created.
  */
 snap_communicator::snap_pipe_connection::snap_pipe_connection()
 {
@@ -4965,7 +5340,8 @@ void snap_communicator::snap_tcp_blocking_client_message_connection::run()
             struct pollfd fd;
             fd.events = POLLIN | POLLPRI | POLLRDHUP;
             fd.fd = get_socket();
-            if(fd.fd < 0)
+            if(fd.fd < 0
+            || !is_enabled())
             {
                 // invalid socket
                 process_error();
@@ -4999,7 +5375,7 @@ void snap_communicator::snap_tcp_blocking_client_message_connection::run()
             }
             errno = 0;
             fd.revents = 0; // probably useless... (kernel should clear those)
-            int const r(poll(&fd, 1, timeout));
+            int const r(::poll(&fd, 1, timeout));
             if(r < 0)
             {
                 // r < 0 means an error occurred

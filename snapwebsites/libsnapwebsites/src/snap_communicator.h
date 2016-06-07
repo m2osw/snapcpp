@@ -17,6 +17,7 @@
 #pragma once
 
 #include "snap_exception.h"
+#include "snap_thread.h"
 #include "tcp_client_server.h"
 #include "udp_client_server.h"
 
@@ -264,6 +265,44 @@ public:
         int                         f_pipe[2];      // pipes
     };
 
+    class snap_inter_thread_message_connection
+        : public snap_connection
+    {
+    public:
+        typedef std::shared_ptr<snap_inter_thread_message_connection>    pointer_t;
+
+                                    snap_inter_thread_message_connection();
+                                    ~snap_inter_thread_message_connection();
+
+        void                        close();
+
+        // the child cannot have its own snap_communicator object, so...
+        int                         poll(int timeout);
+
+        // snap_connection implementation
+        virtual bool                is_reader() const override;
+        //virtual bool                is_writer() const override;
+        virtual int                 get_socket() const override;
+        virtual void                process_read();
+
+        void                        send_message(snap_communicator_message const & message);
+
+        // new callback
+        virtual void                process_message_a(snap_communicator_message const & message) = 0;
+        virtual void                process_message_b(snap_communicator_message const & message) = 0;
+
+    private:
+        pid_t                       f_creator_id = -1;
+
+        std::shared_ptr<int>        f_thread_a;
+        snap::snap_thread::snap_fifo<snap_communicator_message>
+                                    f_message_a;
+
+        std::shared_ptr<int>        f_thread_b;
+        snap::snap_thread::snap_fifo<snap_communicator_message>
+                                    f_message_b;
+    };
+
     class snap_pipe_connection
         : public snap_connection
     {
@@ -284,7 +323,7 @@ public:
         virtual ssize_t             write(void const * buf, size_t count);
 
     private:
-        pid_t                       f_parent;       // the process that created these pipes (read/write to 0 if getpid() == f_parent, read/write to 1 if getpid() != f_parent)
+        pid_t                       f_parent = -1;  // the process that created these pipes (read/write to 0 if getpid() == f_parent, read/write to 1 if getpid() != f_parent)
         int                         f_socket[2];    // socket pair
     };
 

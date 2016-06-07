@@ -89,6 +89,14 @@ namespace
         },
         {
             '\0',
+            0,
+            "stylesheet",
+            "/etc/snapwebsites/snapmanagercgi-parser.xsl",
+            "The stylesheet to use to transform the data before sending it to the client as HTML.",
+            advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
@@ -129,7 +137,7 @@ manager::manager( int argc, char * argv[] )
 {
     if(f_opt.is_defined("version"))
     {
-        std::cerr << SNAPMANAGERCGI_VERSION_MAJOR << "." << SNAPMANAGERCGI_VERSION_MINOR << "." << SNAPMANAGERCGI_VERSION_PATCH << std::endl;
+        std::cerr << SNAPMANAGERCGI_VERSION_STRING << std::endl;
         exit(1);
     }
     if(f_opt.is_defined("help"))
@@ -190,44 +198,9 @@ bool manager::verify()
     // If not defined, keep the default of localhost:4040
     if(f_opt.is_defined("snapcommunicator"))
     {
-        // TODO: convert to use "snap_addr::addr"
-        //
-        std::string const snapcommunicator(f_opt.get_string("snapcommunicator"));
-        std::string::size_type const pos(snapcommunicator.find_first_of(':'));
-        if(pos == std::string::npos)
-        {
-            // only an address
-            f_communicator_address = snapcommunicator;
-        }
-        else
-        {
-            // address first
-            f_communicator_address = snapcommunicator.substr(0, pos);
-            // port follows
-            std::string const port(snapcommunicator.substr(pos + 1));
-            f_communicator_port = 0;
-            for(char const * p(port.c_str()); *p != '\0'; ++p)
-            {
-                char const c(*p);
-                if(c < '0' || c > '9')
-                {
-                    SNAP_LOG_FATAL("Invalid port (found a character that is not a digit in \"")(snapcommunicator)("\".");
-                    throw snap::snap_exception("the port in the snapcommunicator parameter is not valid: " + snapcommunicator + ".");
-                }
-                f_communicator_port = f_communicator_port * 10 + c - '0';
-                if(f_communicator_port > 65535)
-                {
-                    SNAP_LOG_FATAL("Invalid port (Port number too large in \"")(snapcommunicator)("\".");
-                    throw snap::snap_exception("the port in the snapcommunicator parameter is too large (we only support a number from 1 to 65535): " + snapcommunicator + ".");
-                }
-            }
-            // forbid port zero
-            if(f_communicator_port <= 0)
-            {
-                SNAP_LOG_FATAL("Invalid port (Port number too small in \"")(snapcommunicator)("\".");
-                throw snap::snap_exception("the port in the snapcommunicator parameter is too small (we only support a number from 1 to 65535): " + snapcommunicator + ".");
-            }
-        }
+        snap_addr::addr const a(f_opt.get_string("snapcommunicator"), "127.0.0.1", 4040, "tcp");
+        f_communicator_address = a.get_ipv4or6_string(false, false);
+        f_communicator_port = a.get_port();
     }
 
     // catch "invalid" methods early so we do not waste
@@ -267,7 +240,7 @@ bool manager::verify()
                 std::cout << "Status: 405 Method Not Allowed" << std::endl;
             }
             //
-            std::string body("<html><head><title>Method Not Allowed</title></head><body><p>Sorry. We only support GET and POST.</p></body></html>");
+            std::string const body("<html><head><title>Method Not Allowed</title></head><body><p>Sorry. We only support GET and POST.</p></body></html>");
             std::cout   << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
                         << "Allow: GET, POST"                       << std::endl
                         << "Connection: close"                      << std::endl
@@ -478,7 +451,33 @@ int manager::process()
     SNAP_LOG_DEBUG("processing request_method=")(request_method);
 #endif
 
-    std::string body("<html><head><title>Snap Manager</title></head><body><p>...TODO...</p></body></html>");
+    // retrieve the query string, that's all we use in this one (i.e.
+    // at this point we ignore the path)
+    //
+    // TODO: add support to make sure the administrator uses HTTPS?
+    //       (this can be done in Apache2)
+    //
+    char const * query_string(getenv("QUERY_STRING"));
+    if(query_string != nullptr)
+    {
+        f_uri.set_query_string(QString::fromUtf8(query_string));
+    }
+
+    QDomDocument doc;
+    QDomElement root(doc.createElement("manager"));
+    doc.appendChild(root);
+
+    generate_content(doc, root);
+
+    std::string const xsl_filename(f_opt.get_string("stylesheet"));
+//SNAP_LOG_WARNING("Doc = [")(doc.toString())("]");
+
+    snap::xslt x;
+    x.set_xsl_from_file(QString::fromUtf8(xsl_filename.c_str()));
+    x.set_document(doc);
+    QString const body(x.evaluate_to_string());
+
+    //std::string body("<html><head><title>Snap Manager</title></head><body><p>...TODO...</p></body></html>");
     std::cout   //<< "Status: 200 OK"                         << std::endl
                 << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
                 << "Connection: close"                      << std::endl
@@ -492,6 +491,74 @@ int manager::process()
 }
 
 
+/** \brief Generate the body of the page.
+ *
+ * This function checks the various query strings passed to the manager
+ * and depending on those, generates a page.
+ */
+void manager::generate_content(QDomDocument doc, QDomElement root)
+{
+    QDomElement output(doc.createElement("output"));
+    root.appendChild(output);
+
+    QString const function(f_uri.query_option("function"));
+
+QString body = "so we assume something happened in there...";
+
+    // is a host name specified?
+    // if so then the function / page has to be applied to that specific host
+    //
+    if(f_uri.has_query_option("host"))
+    {
+        // the function is to be applied to that specific host
+        //
+        if(!function.isEmpty())
+        {
+            // apply a function on that specific host
+            //
+        }
+        else
+        {
+            // no function + specific host, show a complete status from
+            // that host
+            //
+        }
+    }
+    else
+    {
+        // no host specified, if there is a function it has to be applied
+        // to all computers, otherwise show the list of computers and their
+        // basic status
+        //
+        if(!function.isEmpty())
+        {
+            // execute function on all computers
+            //
+        }
+        else
+        {
+            // just a cluster status...
+            //
+            snap::snap_communicator_message message;
+            message.set_command("MANAGE");
+            message.set_service("snapmanagerdaemon");
+            message.add_parameter("function", "STATUS");
+            messenger msg(f_communicator_address, f_communicator_port, message);
+
+            if(msg.result().isEmpty())
+            {
+                body = "request to snapmanagerdaemon did not return a result (timedout?)";
+            }
+            else
+            {
+                body = msg.result();
+            }
+        }
+    }
+
+    QDomText text(doc.createTextNode(body));
+    output.appendChild(text);
+}
 
 
 }
@@ -499,42 +566,5 @@ int manager::process()
 
 
 
-int main(int argc, char * argv[])
-{
-    try
-    {
-        snap_manager::manager cgi(argc, argv);
-        try
-        {
-            if(!cgi.verify())
-            {
-                // not acceptable, the verify() function already sent a
-                // response, just exit with 1
-                return 1;
-            }
-            return cgi.process();
-        }
-        catch(std::runtime_error const & e)
-        {
-            // this should rarely happen!
-            return cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
-        }
-        catch(std::logic_error const & e)
-        {
-            // this should never happen!
-            return cgi.error("503 Service Unavailable", nullptr, ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
-        }
-        catch(...)
-        {
-            return cgi.error("503 Service Unavailable", nullptr, "The Snap! C++ CGI script caught an unknown exception.");
-        }
-    }
-    catch(std::exception const & e)
-    {
-        // we are in trouble, we cannot even answer!
-        std::cerr << "snapmanager: initialization exception: " << e.what() << std::endl;
-        return 1;
-    }
-}
 
 // vim: ts=4 sw=4 et

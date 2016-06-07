@@ -20,8 +20,10 @@
 #include "snapwebsites/addr.h"
 #include "snapwebsites/log.h"
 #include "snapwebsites/snap_exception.h"
-#include "snapwebsites/tcp_client_server.h"
+#include "snapwebsites/snap_communicator.h"
+#include "snapwebsites/snap_uri.h"
 #include "snapwebsites/snapwebsites.h"
+#include "snapwebsites/xslt.h"
 
 #include <string>
 #include <iostream>
@@ -34,6 +36,32 @@ namespace snap_manager
 #define SNAPMANAGERCGI_VERSION_PATCH   @SNAPMANAGERCGI_VERSION_PATCH@
 #define SNAPMANAGERCGI_VERSION_STRING  "@SNAPMANAGERCGI_VERSION_MAJOR@.@SNAPMANAGERCGI_VERSION_MINOR@.@SNAPMANAGERCGI_VERSION_PATCH@"
 
+
+
+
+
+class messenger
+        : public snap::snap_communicator::snap_tcp_blocking_client_message_connection
+{
+public:
+                            messenger(std::string const & address, int port, snap::snap_communicator_message const & message);
+                            ~messenger();
+
+    QString const &         result();
+
+    // implementation of snap_communicator::snap_tcp_blocking_client_message_connection
+    void                    process_timeout();
+    void                    process_message(snap::snap_communicator_message const & message);
+
+private:
+    snap::snap_communicator_message f_message;
+    QString                         f_result;
+};
+
+
+
+
+
 class manager
 {
 public:
@@ -45,7 +73,10 @@ public:
     int                         process();
 
 private:
+    void                        generate_content(QDomDocument doc, QDomElement root);
+
     advgetopt::getopt           f_opt;
+    snap::snap_uri              f_uri;
     int                         f_communicator_port = -1;    // snap server port
     std::string                 f_communicator_address;      // snap server address
 };

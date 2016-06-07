@@ -9,6 +9,6 @@ then
 else
 	# stop all the snap services managed by snapinit on this computer
 	BUILD/snapwebsites/snapinit/src/snapinit \
-		--binary-path `ls -dm BUILD/snapwebsites/*/src | tr -d '\n' | sed -e 's/,/:/g' -e 's/ //g'` \
+		--binary-path `ls -dm BUILD/snapwebsites/*/src BUILD/snapwebsites/snapmanagercgi/daemon | tr -d '\n' | sed -e 's/,/:/g' -e 's/ //g'` \
 		stop
 fi

@@ -162,6 +162,7 @@ public:
     time_t                  get_lock_timeout_date() const;
     time_t                  get_obtention_timeout_date() const;
 
+    // implementation of snap_communicator::snap_tcp_blocking_client_message_connection
     void                    process_timeout();
     void                    process_message(snap_communicator_message const & message);
 
@@ -409,7 +410,7 @@ void lock_connection::process_timeout()
 void lock_connection::process_message(snap_communicator_message const & message)
 {
     // This adds way too many messages! Use only to debug if required.
-    //SNAP_LOG_TRACE("received messager message [")(message.to_message())("] for ")(f_server_name);
+    //SNAP_LOG_TRACE("received messenger message [")(message.to_message())("] for ")(f_server_name);
 
     QString const command(message.get_command());
 

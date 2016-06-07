@@ -734,7 +734,7 @@ bool snap_thread::snap_runner::continue_running() const
  *
  * \return A snap_thread pointer or nullptr.
  */
-snap_thread *snap_thread::snap_runner::get_thread() const
+snap_thread * snap_thread::snap_runner::get_thread() const
 {
     return f_thread;
 }
@@ -770,7 +770,7 @@ snap_thread *snap_thread::snap_runner::get_thread() const
  * \param[in] name  The name of the process.
  * \param[in] runner  The runner (the actual thread) to handle.
  */
-snap_thread::snap_thread(QString const& name, snap_runner *runner)
+snap_thread::snap_thread(QString const & name, snap_runner * runner)
     : f_name(name)
     , f_runner(runner)
     //, f_mutex() -- auto-init

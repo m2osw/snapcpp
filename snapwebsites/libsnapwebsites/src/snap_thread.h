@@ -29,7 +29,7 @@
 
 #include <sys/time.h>
 
-#include <deque>
+#include <queue>
 
 
 namespace snap
@@ -198,7 +198,7 @@ public:
         void push_back(T const & v)
         {
             snap_lock lock_mutex(*this);
-            f_stack.push_back(v);
+            f_stack.push(v);
             signal();
         }
 
@@ -266,7 +266,7 @@ public:
                 }
             }
             v = f_stack.front();
-            f_stack.pop_front();
+            f_stack.pop();
             return true;
         }
 
@@ -294,7 +294,7 @@ public:
          * This typedef declaration defines the type of items in this
          * FIFO object.
          */
-        typedef std::deque<T>   items_t;
+        typedef std::queue<T>   items_t;
 
         /** \brief The actual FIFO.
          *
