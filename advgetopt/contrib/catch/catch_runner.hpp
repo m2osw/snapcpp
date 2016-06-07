@@ -69,8 +69,11 @@ namespace Catch {
                     }
                 }
             }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
             if( testsRunForGroup == 0 && !filterGroup.getName().empty() )
                 m_reporter->noMatchingTestCases( filterGroup.getName() );
+#pragma GCC diagnostic pop
             return totals;
 
         }
