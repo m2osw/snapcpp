@@ -25,12 +25,11 @@ MainWindow::MainWindow(QWidget *p)
 
     f_mainSplitter->restoreState( settings.value( "splitterState", f_mainSplitter->saveState() ).toByteArray() );
 
-    f_context = settings.value("context", "snap_websites").toString();
+    f_context = settings.value("snap_keyspace", "snap_websites").toString();
 
     f_session = QCassandraSession::create();
     connectCassandra();
 
-    f_contextCombo->setModel( &f_cassandraModel );
     f_tables->setModel( &f_contextModel );
     f_rowsView->setModel( &f_tableModel );
     f_cellsView->setModel( &f_rowModel );
@@ -38,11 +37,7 @@ MainWindow::MainWindow(QWidget *p)
     f_tableModel.setSortModel( true );
 
     f_cassandraModel.setCassandra( f_session );
-    int const idx = f_contextCombo->findText( f_context );
-    if( idx != -1 )
-    {
-        f_contextCombo->setCurrentIndex( idx );
-    }
+    f_contextEdit->setText(f_context);
 
     f_tables->setCurrentIndex( 0 );
 
@@ -59,15 +54,19 @@ MainWindow::MainWindow(QWidget *p)
     action_InsertColumn->setEnabled( false );
     action_DeleteColumns->setEnabled( false );
 
-    connect( &f_tableModel,                 &TableModel::exceptionCaught,           this, &MainWindow::onExceptionCaught        );
-    connect( &f_rowModel,                   &RowModel::exceptionCaught,             this, &MainWindow::onExceptionCaught        );
-    connect( &f_rowModel,                   &RowModel::modelReset,                  this, &MainWindow::onCellsModelReset        );
-    connect( f_rowsView,                    &QListView::customContextMenuRequested, this, &MainWindow::onShowRowsContextMenu   );
-    connect( f_rowsView->selectionModel(),  &QItemSelectionModel::currentChanged,   this, &MainWindow::onRowsCurrentChanged     );
-    connect( f_cellsView,                   &QListView::customContextMenuRequested, this, &MainWindow::onShowCellsContextMenu   );
-    connect( f_cellsView->selectionModel(), &QItemSelectionModel::currentChanged,   this, &MainWindow::onCellsCurrentChanged    );
-    connect( f_filterEdit,                  &QLineEdit::returnPressed,              this, &MainWindow::on_f_applyFilter_clicked );
-    connect( qApp,                          &QApplication::aboutToQuit,             this, &MainWindow::onAboutToQuit            );
+    connect( &f_tableModel,                 &TableModel::exceptionCaught,           this, &MainWindow::onExceptionCaught         );
+    connect( &f_tableModel,                 &TableModel::queryFinished,             this, &MainWindow::onTableModelQueryFinished );
+    connect( &f_rowModel,                   &RowModel::exceptionCaught,             this, &MainWindow::onExceptionCaught         );
+    connect( &f_rowModel,                   &RowModel::modelReset,                  this, &MainWindow::onCellsModelReset         );
+    connect( &f_rowModel,                   &RowModel::queryFinished,               this, &MainWindow::onRowModelQueryFinished   );
+    connect( f_rowsView,                    &QListView::customContextMenuRequested, this, &MainWindow::onShowRowsContextMenu     );
+    connect( f_rowsView->selectionModel(),  &QItemSelectionModel::currentChanged,   this, &MainWindow::onRowsCurrentChanged      );
+    connect( f_cellsView,                   &QListView::customContextMenuRequested, this, &MainWindow::onShowCellsContextMenu    );
+    connect( f_cellsView->selectionModel(), &QItemSelectionModel::currentChanged,   this, &MainWindow::onCellsCurrentChanged     );
+    connect( f_filterEdit,                  &QLineEdit::returnPressed,              this, &MainWindow::on_f_applyFilter_clicked  );
+    connect( qApp,                          &QApplication::aboutToQuit,             this, &MainWindow::onAboutToQuit             );
+
+    fillTableList();
 }
 
 
@@ -129,7 +128,6 @@ void MainWindow::onAboutToQuit()
     settings.setValue( "geometry",      saveGeometry()                );
     settings.setValue( "state",         saveState()                   );
     settings.setValue( "splitterState", f_mainSplitter->saveState()   );
-    settings.setValue( "context",       f_contextCombo->currentText() );
 }
 
 
@@ -143,11 +141,7 @@ void MainWindow::fillTableList()
 
     f_contextModel.setCassandra( f_session, f_context );
 
-    const int idx = f_contextCombo->findText( f_context );
-    if( idx != -1 )
-    {
-        f_contextCombo->setCurrentIndex( idx );
-    }
+    f_contextEdit->setText( f_context );
 }
 
 
@@ -182,6 +176,19 @@ void MainWindow::onShowCellsContextMenu( const QPoint& mouse_pos )
 void MainWindow::onCellsModelReset()
 {
     //f_cellsView->resizeColumnsToContents();
+    setCursor( Qt::ArrowCursor );
+}
+
+
+void MainWindow::onTableModelQueryFinished()
+{
+    setCursor( Qt::ArrowCursor );
+}
+
+
+void MainWindow::onRowModelQueryFinished()
+{
+    setCursor( Qt::ArrowCursor );
 }
 
 
@@ -204,30 +211,6 @@ void MainWindow::on_action_Settings_triggered()
                       , tr("Connection Error")
                       , tr("Error connecting to the server!")
                       );
-    }
-}
-
-
-void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
-{
-    saveValue();
-
-    if( arg1.isEmpty() )
-    {
-        return;
-    }
-
-    try
-    {
-        f_context = arg1;
-        fillTableList();
-    }
-    catch( const std::exception& except )
-    {
-        displayError( except
-                    , tr("Connection Error")
-                    , tr("Error connecting to the server!")
-                    );
     }
 }
 
@@ -281,6 +264,8 @@ void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 
     action_InsertRow->setEnabled( true );
     action_DeleteRows->setEnabled( true );
+
+    setCursor( Qt::WaitCursor );
 }
 
 
@@ -288,6 +273,7 @@ void MainWindow::on_f_applyFilter_clicked()
 {
     QString const table_name( f_tables->currentText( ) );
     on_f_tables_currentIndexChanged( table_name );
+    setCursor( Qt::WaitCursor );
 }
 
 
@@ -296,6 +282,7 @@ void MainWindow::on_f_clearFilter_clicked()
     f_filterEdit->clear();
     QString const table_name( f_tables->currentText( ) );
     on_f_tables_currentIndexChanged( table_name );
+    setCursor( Qt::WaitCursor );
 }
 
 
@@ -303,15 +290,17 @@ void MainWindow::on_f_refreshView_clicked()
 {
     QString const table_name( f_tables->currentText( ) );
     on_f_tables_currentIndexChanged( table_name );
+    setCursor( Qt::WaitCursor );
 }
 
 
-void MainWindow::onExceptionCaught( const QString & what, const QString & message ) const
+void MainWindow::onExceptionCaught( const QString & what, const QString & message )
 {
     displayError( what
                   , tr("Exception Caught!")
                   , message
                   );
+    setCursor( Qt::ArrowCursor );
 }
 
 
@@ -398,6 +387,7 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
 
             action_InsertColumn->setEnabled( true );
             action_DeleteColumns->setEnabled( true );
+            setCursor( Qt::WaitCursor );
         }
     }
     catch( const std::exception& except )

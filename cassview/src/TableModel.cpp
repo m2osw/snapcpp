@@ -33,17 +33,13 @@ using namespace QtCassandra;
 
 TableModel::TableModel()
 {
-    QSettings settings;
-    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
-    if( f_keyspaceName == snap_keyspace )
-    {
-        f_dbutils = std::make_shared<snap::dbutils>( f_tableName, "" );
-    }
 }
 
 
 void TableModel::doQuery()
 {
+    f_dbutils = std::make_shared<snap::dbutils>( f_tableName, "" );
+
     auto q = QCassandraQuery::create(f_session);
     q->query(
         QString("SELECT DISTINCT key FROM %1.%2")
@@ -81,12 +77,7 @@ QVariant TableModel::data( QModelIndex const & idx, int role ) const
     }
     else
     {
-        if( f_dbutils )
-        {
-            return f_dbutils->get_row_name( f_rows[idx.row()] );
-        }
-
-        return QueryModel::data( idx, role );
+        return f_dbutils->get_row_name( f_rows[idx.row()] );
     }
 }
 
@@ -99,14 +90,7 @@ void TableModel::fetchCustomData( QCassandraQuery::pointer_t q )
     }
 
     const QByteArray value(q->getByteArrayColumn(0));
-    if( f_dbutils )
-    {
-        f_sortMap[f_dbutils->get_row_name(value)] = QModelIndex();
-    }
-    else
-    {
-        f_sortMap[value] = QModelIndex();
-    }
+    f_sortMap[f_dbutils->get_row_name(value)] = QModelIndex();
 }
 
 

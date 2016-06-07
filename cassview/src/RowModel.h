@@ -20,6 +20,10 @@
 
 #include <QtCassandra/QueryModel.h>
 
+#include <snapwebsites/dbutils.h>
+
+#include <memory>
+
 class RowModel
     : public QtCassandra::QueryModel
 {
@@ -48,7 +52,8 @@ public:
     void 				doQuery();
 
 private:
-    QByteArray          f_rowKey;
+    QByteArray                      f_rowKey;
+    std::shared_ptr<snap::dbutils>  f_dbutils;
 };
 
 
