@@ -142,6 +142,7 @@ void QueryModel::onQueryFinished( QCassandraQuery::pointer_t q )
             if( fetchFilter( key ) )
             {
                 f_pendingRows.push( key );
+                fetchCustomData( f_query );
             }
         }
     }
@@ -186,7 +187,6 @@ void QueryModel::onFetchMore()
 
             f_rows.push_back( f_pendingRows.front() );
             f_pendingRows.pop();
-            fetchCustomData( f_query );
         }
         beginInsertRows
                 ( QModelIndex()
