@@ -115,15 +115,6 @@ ConfigureMakeProject( PROJECT_NAME libQtSerialization
     DEPENDS cmake
 )
 
-ConfigureMakeProject( PROJECT_NAME cassview
-    CONFIG_ARGS
-        -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-        -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
-        -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
-    DEPENDS libsnapwebsites
-)
-
 # Include snapwebsites projects next
 add_subdirectory( snapwebsites )
 
