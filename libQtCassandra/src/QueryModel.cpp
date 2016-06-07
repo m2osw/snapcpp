@@ -175,24 +175,25 @@ void QueryModel::onFetchMore()
 {
     try
     {
-        for( int idx = 0; idx < f_rowPageSize; ++idx )
+        const size_t start_row = f_rows.size();
+        size_t end_row = start_row;
+        for( int idx = 0; idx < f_rowPageSize; ++idx, ++end_row )
         {
             if( f_pendingRows.empty() )
             {
                 break;
             }
 
-            const size_t new_row( f_rows.size() );
-            beginInsertRows
-                    ( QModelIndex()
-                      , new_row
-                      , new_row
-                      );
             f_rows.push_back( f_pendingRows.front() );
             f_pendingRows.pop();
             fetchCustomData( f_query );
-            endInsertRows();
         }
+        beginInsertRows
+                ( QModelIndex()
+                  , start_row
+                  , end_row
+                  );
+        endInsertRows();
     }
     catch( const std::exception& except )
     {
