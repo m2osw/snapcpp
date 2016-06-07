@@ -1,0 +1,3 @@
+debian/cassview/usr/bin/*
+debian/cassview/usr/share/pixmaps/*
+debian/cassview/usr/share/applications/*

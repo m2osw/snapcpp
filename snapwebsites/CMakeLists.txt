@@ -46,6 +46,15 @@ ConfigureMakeProject( PROJECT_NAME libsnapwebsites
     DEPENDS zipios2 libQtCassandra libQtSerialization libtld as2js log4cplus csspp
 )
 
+ConfigureMakeProject( PROJECT_NAME cassview
+    CONFIG_ARGS
+        #-DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        #-DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        #-DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
+        #-DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+    DEPENDS libQtCassandra libsnapwebsites
+)
+
 ConfigureMakeProject( PROJECT_NAME snapbackend
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
