@@ -33,7 +33,7 @@ namespace
 {
     std::vector<std::string> const g_configuration_files
     {
-        "/etc/snapwebsites/snapmanagerdaemon.conf"
+        //"/etc/snapwebsites/snapmanagerdaemon.conf" -- we use the snap f_config variable instead
     };
 
     const advgetopt::getopt::option g_snapmanagerdaemon_options[] =
@@ -68,14 +68,6 @@ namespace
             "connect",
             nullptr,
             "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-            advgetopt::getopt::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-            "data_path",
-            "/var/lib/snapwebsites/cluster-status",
-            "Path to this process data directory to save the cluster status.",
             advgetopt::getopt::required_argument
         },
         {
