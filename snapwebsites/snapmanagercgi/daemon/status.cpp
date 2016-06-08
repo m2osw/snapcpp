@@ -39,221 +39,28 @@
 // our lib
 //
 #include "log.h"
-#include "process.h"
+
+// C lib
+//
+#include <sys/file.h>
 
 
 namespace snap_manager
 {
 
 
-status_connection::status_connection(manager_daemon * md)
-    : f_manager_daemon(md)
+namespace
 {
+
+// TODO: make a common header file...
+char const status_file_magic[] = "Snap! Status v1\n";
+
 }
-
-
-void status_connection::set_thread_b(manager_status * ms)
-{
-    f_manager_status = ms;
-
-    snap::snap_communicator_message thread_ready;
-    thread_ready.set_command("THREADREADY");
-    send_message(thread_ready);
-}
-
-
-void status_connection::process_message_a(snap::snap_communicator_message const & message)
-{
-    f_manager_daemon->process_message(message);
-}
-
-
-void status_connection::process_message_b(snap::snap_communicator_message const & message)
-{
-    f_manager_status->process_message(message);
-}
-
-
-/** \brief Initialize the manager status.
- *
- * This constructor names the runner object "manager_status". It also
- * saves a reference to the status connection object which is used
- * to (1) send new MANAGERSTATUS and (2) receive STOP when we are done
- * and the thread needs to quit.
- */
-manager_status::manager_status(status_connection::pointer_t sc)
-    : snap_runner("manager_status")
-    , f_status_connection(sc)
-{
-    f_status_connection->set_thread_b(this);
-}
-
-
-/** \brief Thread used to permanently gather this server status.
- *
- * Each computer in the Snap! cluster should be running an instance
- * of the snapmanagerdaemon system. This will gather basic information
- * about the state of the each system and send the information to
- * all the computers who have snapmanager.cgi active.
- */
-void manager_status::run()
-{
-    // run as long as the parent thread did not ask us to quit
-    //
-    for(;;)
-    {
-        // we may be asked to wake up immediately and at that point
-        // we may notice that we are not expected to continue working
-        //
-        if(!continue_running() || !f_running)
-        {
-            return;
-        }
-
-        // wait for messages or 1 minute
-        //
-        f_status_connection->poll(60 * 1000000LL);
-
-        // gather status information
-
-        QString status("this is status from manager_status!");
-
-
-        // generate a message to send the snapmanagerdaemon
-        //
-        snap::snap_communicator_message status_message;
-        status_message.set_command("MANAGERSTATUS");
-        status_message.add_parameter("status", status);
-        f_status_connection->send_message(status_message);
-    }
-}
-
-
-/** \brief Process a message sent to us by our "parent".
- *
- * This function gets called whenever the manager_daemon object
- * sends us a message.
- *
- * \param[in] message  The message to process.
- */
-void manager_status::process_message(snap::snap_communicator_message const & message)
-{
-    QString const & command(message.get_command());
-
-    switch(command[0].unicode())
-    {
-    case 'S':
-        if(command == "STOP")
-        {
-            // this will stop the manager_status thread as soon as possible
-            //
-            f_running = false;
-        }
-        break;
-
-    }
-}
+// no name namespace
 
 
 
 
-
-
-/** \brief Installs one Debian package.
- *
- * This function installs ONE package as specified by \p package_name.
- *
- * \param[in] package_name  The name of the package to install.
- * \param[in] add_info_only_if_present  Whether to add information about
- *            non installed packages in the output.
- *
- * \return The exit code of the apt-get install command.
- */
-int manager_daemon::package_status(QString const & package_name, bool add_info_only_if_present)
-{
-    snap::process p("check status");
-    p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
-    p.set_command("dpkg-query");
-    p.add_argument("-W");
-    p.add_argument(package_name);
-    int r(p.run());
-
-    // the output is saved so we can send it to the user and log it...
-    if(r == 0)
-    {
-        QString const output(p.get_output(true));
-        f_output += output;
-        SNAP_LOG_TRACE("package status:\n")(output);
-    }
-    else if(!add_info_only_if_present)
-    {
-        // in this case the output is likely empty (i.e. we do not read
-        // stderr...), so we ignore it
-        //
-        f_output += package_name + " is not installed";
-        SNAP_LOG_TRACE("package named \"")(package_name)("\" isnot installed.");
-    }
-
-    return r;
-}
-
-
-
-
-void manager_daemon::status(snap::snap_communicator_message const & message)
-{
-    // we just send the most current status we have
-    snap::snap_communicator_message reply;
-    reply.set_command("MANAGEREPLY");
-    reply.reply_to(message);
-
-    // the status is actually the status of all the servers in one
-    // message; we probably will want to rethink that if the number
-    // of servers grows to thousands...
-    //
-    QString status;
-    int size(0);
-    for(auto const & s : f_status)
-    {
-        size += s.first.length() + s.second.length() + 2;
-    }
-    if(size == 0)
-    {
-        // asked too soon, we do not have any status information yet!
-        //
-        status = "not-available";
-    }
-    else
-    {
-        status.reserve(size);
-
-        // Now we can create the final status
-        //
-        // Note that the server name (s.first) is already known to
-        // include only safe characters (a-z0-9_) although we do
-        // check in set_manager_status(), just in case.
-        //
-        // However, the status value (s.second) is checked in
-        // the set_manager_status and made valid there if it
-        // includes any pipe (|) character, those will have been
-        // escaped with a backslash (as in "\|").
-        //
-        for(auto const & s : f_status)
-        {
-            if(status.isEmpty())
-            {
-                status += QString("%1=%2").arg(s.first).arg(s.second);
-            }
-            else
-            {
-                status += QString("|%1=%2").arg(s.first).arg(s.second);
-            }
-        }
-    }
-
-    reply.add_parameter("result", status);
-    f_messenger->send_message(reply);
-}
 
 
 /** \brief Function called whenever the MANAGERSTATUS message is received.
@@ -265,61 +72,123 @@ void manager_daemon::status(snap::snap_communicator_message const & message)
  */
 void manager_daemon::set_manager_status(snap::snap_communicator_message const & message)
 {
+    // WARNING: not using the ofstream class because we want to lock
+    //          the file and there is no standard way to access 'fd'
+    //          in an ofstream object
+    //
+    class safe_status_file
+    {
+    public:
+        safe_status_file(QString const & data_path, QString const & server)
+            : f_filename(QString("%1/%2.db").arg(data_path).arg(server).toUtf8().data())
+            //, f_fd(-1)
+            //, f_keep(false)
+        {
+        }
+
+        ~safe_status_file()
+        {
+            close();
+        }
+
+        void close()
+        {
+            if(f_fd != -1)
+            {
+                // Note: there is no need for an explicit unlock, the close()
+                //       has the same effect on that file
+                //::flock(f_fd, LOCK_UN);
+                ::close(f_fd);
+            }
+            if(!f_keep)
+            {
+                ::unlink(f_filename.c_str());
+            }
+        }
+
+        bool open()
+        {
+            close();
+
+            // open the file
+            //
+            f_fd = ::open(f_filename.c_str(), O_WRONLY | O_CLOEXEC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            if(f_fd < 0)
+            {
+                SNAP_LOG_ERROR("could not open file \"")
+                              (f_filename)
+                              ("\" to save snapmanagerdamon status.");
+                return false;
+            }
+
+            // make sure we are the only one on the case
+            //
+            if(::flock(f_fd, LOCK_EX) != 0)
+            {
+                SNAP_LOG_ERROR("could not lock file \"")
+                              (f_filename)
+                              ("\" to save snapmanagerdamon status.");
+                return false;
+            }
+
+            return true;
+        }
+
+        bool write(void const * buf, size_t size)
+        {
+            if(::write(f_fd, buf, size) != static_cast<ssize_t>(size))
+            {
+                SNAP_LOG_ERROR("could not write to file \"")
+                              (f_filename)
+                              ("\" to save snapmanagerdamon status.");
+                return false;
+            }
+
+            return true;
+        }
+
+        void keep()
+        {
+            // it worked, make sure the file is kept around
+            // (if this does not get called the file gets deleted)
+            //
+            f_keep = true;
+        }
+
+    private:
+        std::string f_filename;
+        int         f_fd = -1;
+        bool        f_keep = false;
+    };
+
     // TBD: should we check that the name of the sending service is one of us?
     //
-    QString const server(message.get_sent_from_server());
-    QString value(message.get_parameter("status"));
-    value.replace("|", "\\|");
 
-    if(server.indexOf('|') != -1
-    || server.indexOf('=') != -1)
+    QString const server(message.get_sent_from_server());
+    QString const status(message.get_parameter("status"));
+
     {
-        SNAP_LOG_ERROR("the name of a server cannot include the '|' or the '=' characters, \"")
-                      (server)
-                      ("\" is considered invalid. The message will be ignored.");
-        return;
+        QByteArray const status_utf8(status.toUtf8());
+
+        safe_status_file out(f_data_path, server);
+        if(!out.open()
+        || !out.write(status_file_magic, sizeof(status_file_magic) - 1)
+        || !out.write(status_utf8.data(), status_utf8.size()))
+        {
+            return;
+        }
+        out.keep();
     }
 
-    f_status[server] = value;
+    // keep a copy of our own information
+    //
+    if(server == f_server_name)
+    {
+        f_status = status;
+    }
 }
 
 
-/*
- * This needs to be 100% dynamic
- *
-# server_types=<list of names>
-#
-# List what functionality this server offers as a list of names as defined
-# below.
-#
-# The "Comp." column (Computer) defines where such and such service should
-# be running. Each set of services can run on the same computer (often does
-# while doing development.) However, running everything on a single computer
-# is not how Snap! was designed. The idea is to be able to run the websites
-# on any number of computers in a cluster. This is why we have Cassandra,
-# but really all parts can be running on any number of computers.
-#
-# +===============+===========================================+=======+
-# |    Name       |              Description                  | Comp. |
-# +===============+===========================================+=======+
-# | anti-virus    | clamav along snapbackend                  | Back  |
-# | application   | snapserver and clamav                     | Back  |
-# | backend       | one or more snapbackend                   | Back  |
-# | base          | snamanager.cgi and dependencies           | All   |
-# | cassandra     | cassandra database                        | Back  |
-# | firewall      | snapfirewall                              | All   |
-# | frontend      | apache with snap.cgi                      | Front |
-# | mailserver    | postfix with snapbounce                   | Front |
-# | ntp           | time server                               | All   |
-# | vpn           | tinc / openvpn                            | All   |
-# | logserver     | loggingserver from log4cplus              | Back  |
-# +===============+===========================================+=======+
-#
-# Note that the snapserver plugins come with clamav.
-#
-# Default: base
-server_types=base
-*/
 
 } // namespace snap_manager
 // vim: ts=4 sw=4 et

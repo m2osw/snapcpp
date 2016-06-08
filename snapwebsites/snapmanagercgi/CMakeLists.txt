@@ -71,11 +71,12 @@ find_package( SnapCMakeModules  REQUIRED )
 find_package( SnapDoxygen       REQUIRED )
 find_package( SnapWebsites      REQUIRED )
 
+include( SnapXmlLint )
+
 ##
 ## Version
 ##
 SnapGetVersion( SNAPMANAGERCGI ${CMAKE_CURRENT_SOURCE_DIR} )
-add_definitions( -DSNAPMANAGERCGI_VERSION=\"${SNAPMANAGERCGI_VERSION_MAJOR}.${SNAPMANAGERCGI_VERSION_MINOR}.${SNAPMANAGERCGI_VERSION_PATCH}\" )
 
 set( QT_LIBRARIES
     Qt5::Core
@@ -92,5 +93,6 @@ add_subdirectory( cgi    )          # The snapmanager.cgi application
 add_subdirectory( daemon )          # The snapmanagerdaemon to apply commands on any computer
 add_subdirectory( doc    )          # Documentation generation
 
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et nocindent

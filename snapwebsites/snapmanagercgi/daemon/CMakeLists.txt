@@ -56,8 +56,10 @@ add_executable( ${PROJECT_NAME}
     main.cpp
     snapmanagerdaemon.cpp
     manager_messenger.cpp
+    manager_status.cpp
     installer.cpp
     status.cpp
+    status_connection.cpp
 )
 
 target_link_libraries( ${PROJECT_NAME}

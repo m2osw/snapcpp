@@ -1,0 +1,16 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if [ "$1" = "configure" ]
+then
+    # create the directory to be used to save the status files
+    #
+    mkdir -p /var/lib/snapwebsites/cluster-status
+    chown snapwebsites.snapwebsites /var/lib/snapwebsites/cluster-status
+fi
+
+# vim: ts=4 sw=4 et nocindent

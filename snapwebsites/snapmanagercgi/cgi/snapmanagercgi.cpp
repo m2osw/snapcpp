@@ -29,89 +29,119 @@
 
 #include "snapmanagercgi.h"
 
+// C lib
+//
+#include <fcntl.h>
+#include <glob.h>
+#include <sys/file.h>
+
 namespace
 {
-    std::vector<std::string> const g_configuration_files
-    {
-        "@snapwebsites@",  // project name
-        "/etc/snapwebsites/snapmanagercgi.conf"
-    };
 
-    advgetopt::getopt::option const g_snapmanagercgi_options[] =
+/** \brief The magic at expected on the first line of a status file.
+ *
+ * This string defines the magic string expected on the first line of
+ * the file.
+ *
+ * \note
+ * Note that our reader ignores \r characters so this is not currently
+ * a 100% exact match, but since only our application is expected to
+ * create / read these files, we are not too concerned.
+ */
+char const status_file_magic[] = "Snap! Status v1";
+
+std::vector<std::string> const g_configuration_files
+{
+    "@snapwebsites@",  // project name
+    "/etc/snapwebsites/snapmanagercgi.conf"
+};
+
+advgetopt::getopt::option const g_snapmanagercgi_options[] =
+{
     {
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            nullptr,
-            nullptr,
-            "Usage: %p [-<opt>]",
-            advgetopt::getopt::help_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            nullptr,
-            nullptr,
-            "where -<opt> is one or more of:",
-            advgetopt::getopt::help_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
-            "clients",
-            nullptr,
-            "Define the address of computers that are authorized to connect to this snapmanager.cgi instance.",
-            advgetopt::getopt::optional_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "connect",
-            nullptr,
-            "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
-            advgetopt::getopt::optional_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "log_config",
-            "/etc/snapwebsites/snapmanagercgi.properties",
-            "Full path of log configuration file",
-            advgetopt::getopt::optional_argument
-        },
-        {
-            'h',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "help",
-            nullptr,
-            "Show this help screen.",
-            advgetopt::getopt::no_argument
-        },
-        {
-            '\0',
-            0,
-            "stylesheet",
-            "/etc/snapwebsites/snapmanagercgi-parser.xsl",
-            "The stylesheet to use to transform the data before sending it to the client as HTML.",
-            advgetopt::getopt::required_argument
-        },
-        {
-            '\0',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "version",
-            nullptr,
-            "Show the version of the snapcgi executable.",
-            advgetopt::getopt::no_argument
-        },
-        {
-            '\0',
-            0,
-            nullptr,
-            nullptr,
-            nullptr,
-            advgetopt::getopt::end_of_options
-        }
-    };
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        nullptr,
+        nullptr,
+        "Usage: %p [-<opt>]",
+        advgetopt::getopt::help_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        nullptr,
+        nullptr,
+        "where -<opt> is one or more of:",
+        advgetopt::getopt::help_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "clients",
+        nullptr,
+        "Define the address of computers that are authorized to connect to this snapmanager.cgi instance.",
+        advgetopt::getopt::optional_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "connect",
+        nullptr,
+        "Define the address and port of the snapcommunicator service (i.e. 127.0.0.1:4040).",
+        advgetopt::getopt::optional_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+        "data_path",
+        "/var/lib/snapwebsites/cluster-status",
+        "Path to this process data directory to save the cluster status.",
+        advgetopt::getopt::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "log_config",
+        "/etc/snapwebsites/snapmanagercgi.properties",
+        "Full path of log configuration file",
+        advgetopt::getopt::optional_argument
+    },
+    {
+        'h',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "help",
+        nullptr,
+        "Show this help screen.",
+        advgetopt::getopt::no_argument
+    },
+    {
+        '\0',
+        0,
+        "stylesheet",
+        "/etc/snapwebsites/snapmanagercgi-parser.xsl",
+        "The stylesheet to use to transform the data before sending it to the client as HTML.",
+        advgetopt::getopt::required_argument
+    },
+    {
+        '\0',
+        advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+        "version",
+        nullptr,
+        "Show the version of the snapcgi executable.",
+        advgetopt::getopt::no_argument
+    },
+    {
+        '\0',
+        0,
+        nullptr,
+        nullptr,
+        nullptr,
+        advgetopt::getopt::end_of_options
+    }
+};
+
+
+
 }
 // no name namespace
 
@@ -503,8 +533,6 @@ void manager::generate_content(QDomDocument doc, QDomElement root)
 
     QString const function(f_uri.query_option("function"));
 
-QString body = "so we assume something happened in there...";
-
     // is a host name specified?
     // if so then the function / page has to be applied to that specific host
     //
@@ -537,34 +565,320 @@ QString body = "so we assume something happened in there...";
         }
         else
         {
-            // just a cluster status...
+            // "just" a cluster status...
             //
-            snap::snap_communicator_message message;
-            message.set_command("MANAGE");
-            message.set_service("snapmanagerdaemon");
-            message.add_parameter("function", "STATUS");
-            messenger msg(f_communicator_address, f_communicator_port, message);
-
-            if(msg.result().isEmpty())
-            {
-                body = "request to snapmanagerdaemon did not return a result (timedout?)";
-            }
-            else
-            {
-                body = msg.result();
-            }
+            get_cluster_status(doc, output);
         }
     }
 
-    QDomText text(doc.createTextNode(body));
-    output.appendChild(text);
 }
+
+
+void manager::get_cluster_status(QDomDocument doc, QDomElement output)
+{
+    struct err_callback
+    {
+        static int func(const char * epath, int eerrno)
+        {
+            SNAP_LOG_ERROR("an error occurred while reading directory under \"")
+                          (epath)
+                          ("\". Got error: ")
+                          (eerrno)
+                          (", ")
+                          (strerror(eerrno))
+                          (".");
+
+            // do not abort on a directory read error...
+            return 0;
+        }
+    };
+
+    class safe_status_file
+    {
+    public:
+        safe_status_file(char const * filename)
+            : f_filename(filename)
+            //, f_fd(-1)
+        {
+        }
+
+        ~safe_status_file()
+        {
+            close();
+        }
+
+        void close()
+        {
+            if(f_fd != -1)
+            {
+                // Note: there is no need for an explicit unlock, the close()
+                //       has the same effect on that file
+                //::flock(f_fd, LOCK_UN);
+                ::close(f_fd);
+            }
+        }
+
+        bool open()
+        {
+            close();
+
+            // open the file
+            //
+            f_fd = ::open(f_filename.c_str(), O_RDONLY | O_CLOEXEC, 0);
+            if(f_fd < 0)
+            {
+                SNAP_LOG_ERROR("could not open file \"")
+                              (f_filename)
+                              ("\" to save snapmanagerdamon status.");
+                return false;
+            }
+
+            // make sure we are the only one on the case
+            //
+            if(::flock(f_fd, LOCK_SH) != 0)
+            {
+                SNAP_LOG_ERROR("could not lock file \"")
+                              (f_filename)
+                              ("\" to read snapmanagerdamon status.");
+                return false;
+            }
+
+            // transform to a FILE * so that way we benefit from the
+            // caching mechanism without us having to re-implement such
+            //
+            f_file = fdopen(f_fd, "rb");
+            if(f_file == nullptr)
+            {
+                SNAP_LOG_ERROR("could not allocate a FILE* for file \"")
+                              (f_filename)
+                              ("\" to read snapmanagerdamon status.");
+                return false;
+            }
+
+            return true;
+        }
+
+        bool readline(QString & result)
+        {
+            std::string line;
+            for(;;)
+            {
+                char buf[2];
+                int const r(::fread(buf, sizeof(buf[0]), 1, f_file));
+                if(r != 1)
+                {
+                    // reached end of file?
+                    if(feof(f_file))
+                    {
+                        // we reached the EOF
+                        result = QString::fromUtf8(line.c_str());
+                        return false;
+                    }
+                    // there was an error
+                    int const e(errno);
+                    SNAP_LOG_ERROR("an error occurred while reading status file. Error: ")
+                                  (e)
+                                  (", ")
+                                  (strerror(e));
+                    result = QString();
+                    return false; // simulate an EOF so we stop the reading loop
+                }
+                if(buf[0] == '\n')
+                {
+                    result = QString::fromUtf8(line.c_str());
+                    return true;
+                }
+                // ignore any '\r'
+                if(buf[0] != '\r')
+                {
+                    buf[1] = '\0';
+                    line += buf;
+                }
+            }
+            snap::NOTREACHED();
+        }
+
+    private:
+        std::string f_filename;
+        int         f_fd = -1;
+        FILE *      f_file = nullptr;
+    };
+
+    std::string pattern;
+    if(f_opt.get_string("data_path").empty())
+    {
+        pattern = "*.db";
+    }
+    else
+    {
+        pattern = f_opt.get_string("data_path") + "/*.db";
+    }
+    glob_t dir = glob_t();
+    int const r(glob(pattern.c_str(), GLOB_NOESCAPE, err_callback::func, &dir));
+    if(r != 0)
+    {
+        //globfree(&dir); -- needed in this case?
+
+        // do nothing when errors occur
+        //
+        switch(r)
+        {
+        case GLOB_NOSPACE:
+            SNAP_LOG_ERROR("glob() did not have enough memory to alllocate its buffers.");
+            break;
+
+        case GLOB_ABORTED:
+            SNAP_LOG_ERROR("glob() was aborted after a read error.");
+            break;
+
+        case GLOB_NOMATCH:
+            SNAP_LOG_ERROR("glob() could not find any status information.");
+            break;
+
+        default:
+            SNAP_LOG_ERROR("unknown glob() error code: ")(r)(".");
+            break;
+
+        }
+        QDomText text(doc.createTextNode("An error occurred while reading status data. Please check your snapmanagercgi.log file for more information."));
+        output.appendChild(text);
+        return;
+    }
+
+    // output/table
+    QDomElement table(doc.createElement("table"));
+    output.appendChild(table);
+
+    table.setAttribute("class", "cluster-status");
+
+    // output/table/tr
+    QDomElement tr(doc.createElement("tr"));
+    table.appendChild(tr);
+
+    // output/table/th[1]
+    QDomElement th(doc.createElement("th"));
+    tr.appendChild(th);
+
+        QDomText text(doc.createTextNode("Host"));
+        th.appendChild(text);
+
+    // output/table/th[2]
+    th = doc.createElement("th");
+    tr.appendChild(th);
+
+        text = doc.createTextNode("Status");
+        th.appendChild(text);
+
+    bool has_error(false);
+    for(size_t idx(0); idx < dir.gl_pathc; ++idx)
+    {
+        safe_status_file file(dir.gl_pathv[idx]);
+        if(file.open())
+        {
+            QString line;
+            if(!file.readline(line))
+            {
+                SNAP_LOG_ERROR("an error occurred while trying to read the first line of status file \"")
+                              (dir.gl_pathv[idx])
+                              ("\".");
+                has_error = true;
+            }
+            else if(line == status_file_magic)
+            {
+                // we got what looks like a valid status file
+                //
+                while(file.readline(line))
+                {
+                    int const pos(line.indexOf('='));
+                    if(pos < 1)
+                    {
+                        SNAP_LOG_ERROR("invalid line in \"")
+                                      (dir.gl_pathv[idx])
+                                      ("\", it has no \"name=...\".");
+                    }
+                    else
+                    {
+                        QString const path(dir.gl_pathv[idx]);
+                        int basename_pos(path.lastIndexOf('/'));
+                        if(basename_pos < 0)
+                        {
+                            // this should not happen, although it is perfectly
+                            // possible that the administrator used "" as the
+                            // path where statuses should be saved.
+                            //
+                            basename_pos = 0;
+                        }
+                        QString const host(path.mid(basename_pos + 1, path.length() - basename_pos - 1 - 3));
+
+                        QString const name(line.mid(0, pos));
+                        QString const value(line.mid(pos + 1));
+
+                        if(name == "status")
+                        {
+                            // output/table/tr
+                            tr = doc.createElement("tr");
+                            table.appendChild(tr);
+
+                            // output/table/td[1]
+                            QDomElement td(doc.createElement("td"));
+                            tr.appendChild(td);
+
+                                // output/table/td[1]/a
+                                QDomElement anchor(doc.createElement("a"));
+                                td.appendChild(anchor);
+
+                                anchor.setAttribute("href", QString("?host=%1").arg(host));
+
+                                    text = doc.createTextNode(host);
+                                    anchor.appendChild(text);
+
+                            // output/table/td[2]
+                            td = doc.createElement("td");
+                            tr.appendChild(td);
+
+                                text = doc.createTextNode(value);
+                                td.appendChild(text);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                SNAP_LOG_ERROR("status file \"")
+                              (dir.gl_pathv[idx])
+                              ("\" does not start with the expected magic. Found: \"")
+                              (line)
+                              ("\", expected: \"")
+                              (status_file_magic)
+                              ("\".");
+                has_error = true;
+            }
+        }
+        else
+        {
+            SNAP_LOG_ERROR("could not open file \"")(dir.gl_pathv[idx])("\", skipping.");
+            has_error = true;
+        }
+    }
+
+    if(has_error)
+    {
+        // output/p
+        QDomElement p(doc.createElement("p"));
+        output.appendChild(p);
+
+        p.setAttribute("class", "error");
+
+            text = doc.createTextNode("Errors occurred while reading the status. Please check your snapmanagercgi.log file for details.");
+            p.appendChild(text);
+    }
+
+    // free that memory (not useful in a CGI script though)
+    globfree(&dir);
+}
+
 
 
 }
 // namespace snap_manager
-
-
-
-
 // vim: ts=4 sw=4 et

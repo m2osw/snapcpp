@@ -5,13 +5,22 @@
 
 if [ "$1" = "purge" ]
 then
-	rm -rf /var/lib/snapwebsites /var/log/snapwebsites
-	# delete snapwebsites daemon user, if it exists
-	if getent passwd snapwebsites > /dev/null ; then
-		echo "Deleting snapwebsites user"
-		deluser --quiet snapwebsites > /dev/null || true
-	fi
+    # delete the data directory
+    rm -rf /var/lib/snapwebsites /var/log/snapwebsites
 
+    # delete snapwebsites daemon user, if it exists
+    if getent passwd snapwebsites > /dev/null ; then
+        echo "Deleting snapwebsites user"
+        deluser --quiet snapwebsites > /dev/null || true
+    fi
+
+    # delete snapwebsites daemon group, if it exists
+    if getent group snapwebsites > /dev/null ; then
+        echo "Deleting snapwebsites group"
+        delgroup --quiet snapwebsites > /dev/null || true
+    fi
+
+    # delete the settings
     rmdir /etc/snapwebsites
 fi
 

@@ -1862,10 +1862,9 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                 {
                     // the type is mandatory in an ACCEPT message
                     //
-                    if(!message.has_parameter("types")
-                    || !message.has_parameter("server_name"))
+                    if(!message.has_parameter("server_name"))
                     {
-                        SNAP_LOG_ERROR("ACCEPT was received without a \"types\" or \"server_name\" parameter, which are mandatory.");
+                        SNAP_LOG_ERROR("ACCEPT was received without a \"server_name\" parameter, which is mandatory.");
                         return;
                     }
                     base->set_connection_type(base->connection_type_t::CONNECTION_TYPE_REMOTE);
@@ -2011,12 +2010,11 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                     // first we verify that we have a valid version to
                     // communicate between two snapcommunicators
                     //
-                    if(!message.has_parameter("types")
-                    || !message.has_parameter("version")
+                    if(!message.has_parameter("version")
                     || !message.has_parameter("my_address")
                     || !message.has_parameter("server_name"))
                     {
-                        SNAP_LOG_ERROR("CONNECT was sent without a \"types\", \"version\", or \"my_address\" parameter, both are mandatory.");
+                        SNAP_LOG_ERROR("CONNECT was sent without a \"version\", or \"my_address\" parameter, both are mandatory.");
                         return;
                     }
                     if(message.get_integer_parameter("version") != snap::snap_communicator::VERSION)
