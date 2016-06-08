@@ -212,6 +212,14 @@ bool snap_communicator_message::from_message(QString const & message)
         // First ++m to skip the '<'
         for(++m; !m->isNull() && m->unicode() != ':'; ++m)
         {
+            if(m->unicode() == ' ')
+            {
+                // invalid syntax from input message
+                //
+                SNAP_LOG_ERROR("a message with sent_from_server must not include a space in the server name (")(message)(").");
+                return false;
+            }
+
             sent_from_server += m->unicode();
         }
         if(!m->isNull())
@@ -226,6 +234,7 @@ bool snap_communicator_message::from_message(QString const & message)
         {
             // invalid syntax from input message
             //
+            SNAP_LOG_ERROR("a message cannot only include a 'sent from service' definition.");
             return false;
         }
         // Skip the ' '
@@ -245,6 +254,7 @@ bool snap_communicator_message::from_message(QString const & message)
                 // we cannot have more than one ':'
                 // and the name cannot be empty if ':' is used
                 // we also cannot have a ':' after the '/'
+                SNAP_LOG_ERROR("a server name cannot be empty when specified, also it cannot include two server names and a server name after a service name was specified.");
                 return false;
             }
             has_server = true;
@@ -258,6 +268,7 @@ bool snap_communicator_message::from_message(QString const & message)
             {
                 // we cannot have more than one '/'
                 // and the name cannot be empty if '/' is used
+                SNAP_LOG_ERROR("a service name is mandatory when the message includes a slash (/), also it cannot include two service names.");
                 return false;
             }
             has_service = true;
@@ -273,6 +284,7 @@ bool snap_communicator_message::from_message(QString const & message)
     if(command.isEmpty())
     {
         // command is mandatory
+        SNAP_LOG_ERROR("a command is mandatory in in a message.");
         return false;
     }
 
@@ -290,15 +302,17 @@ bool snap_communicator_message::from_message(QString const & message)
             if(param_name.isEmpty())
             {
                 // parameters must have a name
+                SNAP_LOG_ERROR("could not accept message because an empty parameter name is not valid.");
                 return false;
             }
             try
             {
                 verify_name(param_name);
             }
-            catch(snap_communicator_invalid_message const &)
+            catch(snap_communicator_invalid_message const & e)
             {
                 // name is not empty, but it has invalid characters in it
+                SNAP_LOG_ERROR("could not accept message because parameter name \"")(param_name)("\" is not considered valid: ")(e.what());
                 return false;
             }
 
@@ -306,6 +320,7 @@ bool snap_communicator_message::from_message(QString const & message)
             || m->unicode() != '=')
             {
                 // ?!?
+                SNAP_LOG_ERROR("message parameters must be followed by an equal (=) character.");
                 return false;
             }
             ++m;
@@ -333,16 +348,11 @@ bool snap_communicator_message::from_message(QString const & message)
                 || m->unicode() != '"')
                 {
                     // closing quote (") is missing
+                    SNAP_LOG_ERROR("a quoted message parameter must end with a quote (\").");
                     return false;
                 }
+                // skip the quote
                 ++m;
-
-                // now we have to have the ';' if the string goes on
-                if(!m->isNull()
-                && m->unicode() != ';')
-                {
-                    return false;
-                }
             }
             else
             {
@@ -357,7 +367,8 @@ bool snap_communicator_message::from_message(QString const & message)
             {
                 if(m->unicode() != ';')
                 {
-                    // this should neverh append
+                    // this should never happend
+                    SNAP_LOG_ERROR("two parameters must be separated by a semicolon (;).");
                     return false;
                 }
                 // skip the ';'
@@ -992,14 +1003,14 @@ void snap_communicator_message::verify_name(QString const & name, bool can_be_em
         && (c < '0' || c > '9')
         && c != '_')
         {
-            throw snap_communicator_invalid_message(QString("snap_communicator: a message name must be composed of ASCII 'a'..'z', 'A'..'Z', '0'..'9', or '_' only (also a command must be uppercase only,) \"%1\" is not valid.").arg(name).toUtf8().data());
+            throw snap_communicator_invalid_message(QString("snap_communicator: a message name must be composed of ASCII 'a'..'z', 'A'..'Z', '0'..'9', or '_' only (also a command must be uppercase only,) \"%1\" is not valid.").arg(name));
         }
     }
 
     ushort const fc(name[0].unicode());
     if(fc >= '0' && fc <= '9')
     {
-        throw snap_communicator_invalid_message("parameter name cannot start with a digit.");
+        throw snap_communicator_invalid_message(QString("snap_communicator: parameter name cannot start with a digit, \"%1\" is not valid.").arg(name));
     }
 }
 
