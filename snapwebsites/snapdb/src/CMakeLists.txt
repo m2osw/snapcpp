@@ -55,27 +55,4 @@ install(
 )
 
 
-#################################################################################
-## Snap Sites table handling
-##
-project(snapsiteinfo)
-
-add_executable(${PROJECT_NAME}
-    snapsiteinfo.cpp
-)
-
-target_link_libraries(${PROJECT_NAME}
-    ${SNAPWEBSITES_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-    ${ADVGETOPT_LIBRARIES}
-    ${QTCASSANDRA_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${LIBTLD_LIBRARIES}
-)
-
-install(
-    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
-)
-
-
 # vim: ts=4 sw=4 et

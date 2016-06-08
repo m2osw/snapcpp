@@ -36,24 +36,26 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// our lib
-//
 #include "snapdb.h"
-#include "snapwebsites.h"
-#include "qstring_stream.h"
+
+// snapwebsites library
+//
 #include "dbutils.h"
+#include "qstring_stream.h"
+#include "snapwebsites.h"
 
 // 3rd party libs
 //
 #include <QtCore>
 #include <QtSql>
-#include <QtCassandra/QCassandra.h>
+#include <QtCassandra/QCassandraSchema.h>
 #include <controlled_vars/controlled_vars_need_init.h>
 #include <advgetopt/advgetopt.h>
 
 // system
 //
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 
@@ -68,7 +70,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             nullptr,
             nullptr,
-            "Usage: %p [-<opt>] [table [row]]",
+            "Usage: %p [-<opt>] [table [row] [cell] [value]]",
             advgetopt::getopt::help_argument
         },
         {
@@ -102,6 +104,38 @@ namespace
             nullptr,
             "specify the number of rows to display",
             advgetopt::getopt::optional_argument
+        },
+        {
+            '\0',
+            0,
+            "create-row",
+            nullptr,
+            "allows the creation of a row when writing a value",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            0,
+            "drop-cell",
+            nullptr,
+            "drop the specified cell (specify row and cell)",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            0,
+            "drop-row",
+            nullptr,
+            "drop the specified row (specify row)",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            0,
+            "full-cell",
+            nullptr,
+            "show all the data from that cell, by default large binary cells get truncated for display",
+            advgetopt::getopt::no_argument
         },
         {
             '\0',
@@ -148,7 +182,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             nullptr,
             nullptr,
-            "[table [row]]",
+            "[table [row] [cell] [value]]",
             advgetopt::getopt::default_multiple_argument
         },
         {
@@ -164,11 +198,12 @@ namespace
 //namespace
 
 using namespace QtCassandra;
+using namespace QCassandraSchema;
 
 snapdb::snapdb(int argc, char * argv[])
-    : f_cassandra( QCassandra::create() )
+    : f_session( QCassandraSession::create() )
     , f_host("localhost") // default
-    , f_port(4042) //default to connect to snapdbproxy
+    , f_port(9042) //default to connect to snapdbproxy
     , f_count(100)
     , f_context("snap_websites")
     //, f_table("") -- auto-init
@@ -212,15 +247,6 @@ snapdb::snapdb(int argc, char * argv[])
             info();
             exit(0);
         }
-        if( f_opt->is_defined( "drop-context" ) )
-        {
-            if( confirm_drop_check() )
-            {
-                drop_context();
-                exit(0);
-            }
-            exit(1);
-        }
     }
     catch( const std::exception& except )
     {
@@ -237,9 +263,9 @@ snapdb::snapdb(int argc, char * argv[])
     if( f_opt->is_defined( "--" ) )
     {
         const int arg_count = f_opt->size( "--" );
-        if( arg_count >= 3 )
+        if( arg_count > 4 )
         {
-            std::cerr << "error: only two parameters (table and row) can be specified on the command line." << std::endl;
+            std::cerr << "error: only four parameters (table, row, cell and value) can be specified on the command line." << std::endl;
             usage(advgetopt::getopt::error);
         }
         for( int idx = 0; idx < arg_count; ++idx )
@@ -251,6 +277,14 @@ snapdb::snapdb(int argc, char * argv[])
             else if( idx == 1 )
             {
                 f_row = f_opt->get_string( "--", idx ).c_str();
+            }
+            else if( idx == 2 )
+            {
+                f_cell = f_opt->get_string( "--", idx ).c_str();
+            }
+            else if( idx == 3 )
+            {
+                f_value = f_opt->get_string( "--", idx ).c_str();
             }
         }
     }
@@ -264,204 +298,392 @@ void snapdb::usage(advgetopt::getopt::status_t status)
 
 void snapdb::info()
 {
-    f_cassandra->connect(f_host, f_port);
-    if(f_cassandra->isConnected())
+    try
     {
-        std::cout << "Working on Cassandra Cluster Named \""    << f_cassandra->clusterName()     << "\"." << std::endl;
-        std::cout << "Working on Cassandra Protocol Version \"" << f_cassandra->protocolVersion() << "\"." << std::endl;
-        std::cout << "Using Cassandra Partitioner \"" << f_cassandra->partitioner() << "\"." << std::endl;
+        f_session->connect(f_host, f_port);
+        if(f_session->isConnected())
+        {
+            // read and display the Cassandra information
+            auto q = QCassandraQuery::create( f_session );
+            q->query( "SELECT cluster_name,native_protocol_version,partitioner FROM system.local" );
+            q->start();
+            std::cout << "Working on Cassandra Cluster Named \""    << q->getStringColumn("cluster_name")            << "\"." << std::endl;
+            std::cout << "Working on Cassandra Protocol Version \"" << q->getStringColumn("native_protocol_version") << "\"." << std::endl;
+            std::cout << "Using Cassandra Partitioner \""           << q->getStringColumn("partitioner")             << "\"." << std::endl;
+            q->end();
 
-        // At this time the following does not work, we will need CQL support first
-        //const QCassandraClusterInformation& cluster_info(f_cassandra->clusterInformation());
-        //int max(cluster_info.size());
-        //std::cout << "With " << max << " nodes running." << std::endl;
-        //for(int idx(0); idx < max; ++idx)
-        //{
-        //    const QCassandraNode& node(cluster_info.node(idx));
-        //    std::cout << "H:" << node.nodeHost() << " R:" << node.nodeRack() << " DC:" << node.nodeDataCenter() << std::endl;
-        //}
-        exit(0);
+            // At this time the following does not work, we will need CQL support first
+            //const QCassandraClusterInformation& cluster_info(f_cassandra->clusterInformation());
+            //int max(cluster_info.size());
+            //std::cout << "With " << max << " nodes running." << std::endl;
+            //for(int idx(0); idx < max; ++idx)
+            //{
+            //    const QCassandraNode& node(cluster_info.node(idx));
+            //    std::cout << "H:" << node.nodeHost() << " R:" << node.nodeRack() << " DC:" << node.nodeDataCenter() << std::endl;
+            //}
+            exit(0);
+        }
+        else
+        {
+            std::cerr << "The connection failed!" << std::endl;
+            exit(1);
+        }
     }
-    else
+    catch( const std::exception& ex )
     {
-        std::cerr << "The connection failed!" << std::endl;
+        std::cerr << "The connection failed! what=" << ex.what() << std::endl;
         exit(1);
     }
 }
 
 
-bool snapdb::confirm_drop_check() const
+void snapdb::drop_row() const
 {
-    if( f_opt->is_defined("yes-i-know-what-im-doing") )
+    try
     {
-        return true;
+        snap::dbutils du( f_table, f_row );
+        const QByteArray row_key( du.get_row_key() );
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("DELETE FROM %1.%2 WHERE key = ?;")
+                    .arg(f_context)
+                    .arg(f_table)
+                    );
+        int bind = 0;
+        q->bindString( bind++, row_key );
+        q->start();
+        q->end();
     }
-
-    std::cout << "WARNING! This command is about to drop vital tables from the Snap!" << std::endl
-              << "         database and is IRREVERSIBLE!" << std::endl
-              << std::endl
-              << "Make sure you know what you are doing and have appropriate backups" << std::endl
-              << "before proceeding!" << std::endl
-              << std::endl
-              << "Are you really sure you want to do this?" << std::endl
-              << "(type in \"Yes I know what I'm doing\" and press ENTER): "
-              ;
-    std::string input;
-    std::getline( std::cin, input );
-    bool const confirm( (input == "Yes I know what I'm doing") );
-    if( !confirm )
+    catch( const std::exception& ex )
     {
-        std::cerr << "warning: Not dropping tables, so exiting." << std::endl;
+        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        exit(1);
+        snap::NOTREACHED();
     }
-    return confirm;
 }
 
 
-void snapdb::drop_context()
+void snapdb::drop_cell() const
 {
-    f_cassandra->connect(f_host, f_port);
-    f_cassandra->dropContext( f_context );
+    try
+    {
+        snap::dbutils du( f_table, f_row );
+        const QByteArray row_key( du.get_row_key() );
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("DELETE FROM %1.%2 WHERE key = ? and column1 = ?;")
+            .arg(f_context)
+            .arg(f_table)
+            );
+        int bind = 0;
+        q->bindString( bind++, row_key );
+        q->bindString( bind++, f_cell );
+        q->start();
+        q->end();
+    }
+    catch( const std::exception& ex )
+    {
+        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        exit(1);
+        snap::NOTREACHED();
+    }
+}
+
+
+bool snapdb::row_exists() const
+{
+    try
+    {
+        snap::dbutils du( f_table, f_row );
+        const QByteArray row_key( du.get_row_key() );
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("SELECT COUNT(*) FROM %1.%2 WHERE key = ?")
+            .arg(f_context)
+            .arg(f_table)
+            );
+        int bind = 0;
+        q->bindString( bind++, row_key );
+        q->start();
+        if( q->nextRow() )
+        {
+            return q->getInt32Column(0) > 0;
+        }
+    }
+    catch( const std::exception& ex )
+    {
+        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        exit(1);
+        snap::NOTREACHED();
+    }
+
+    return false;
 }
 
 
 void snapdb::display_tables() const
 {
-    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
-
-    // list of all the tables
-    const QCassandraTables& tables(context->tables());
-    for(QCassandraTables::const_iterator t(tables.begin());
-        t != tables.end();
-        ++t)
+    try
     {
-        std::cout << (*t)->tableName() << std::endl;
+        SessionMeta::pointer_t sm( SessionMeta::create(f_session) );
+        sm->loadSchema();
+        const auto& keyspaces( sm->getKeyspaces() );
+        auto snap_iter = keyspaces.find(f_context);
+        if( snap_iter == keyspaces.end() )
+        {
+            throw std::runtime_error(
+                    QString("Context '%1' does not exist! Aborting!")
+                    .arg(f_context).toUtf8().data()
+                    );
+        }
+
+        auto kys( snap_iter->second );
+        for( auto table : kys->getTables() )
+        {
+            std::cout << table.first << std::endl;
+        }
+    }
+    catch( const std::exception& ex )
+    {
+        std::cerr << "Exception caught! what=" << ex.what() << std::endl;
+        exit(1);
     }
 }
 
 
 void snapdb::display_rows() const
 {
-    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
-
-    // list of rows in that table
-    QCassandraTable::pointer_t table(context->findTable(f_table));
-    if(!table)
+    try
     {
-        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
-        exit(1);
+        snap::dbutils du( f_table, f_row );
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("SELECT DISTINCT key FROM %1.%2;")
+                    .arg(f_context)
+                    .arg(f_table)
+                    );
+        q->setPagingSize(f_count);
+        q->start();
+        do
+        {
+            while( q->nextRow() )
+            {
+                std::cout << du.get_row_name( q->getByteArrayColumn(0) ) << std::endl;
+            }
+        }
+        while( q->nextPage() );
+        q->end();
     }
-
-    snap::dbutils du( f_table, f_row );
-    auto row_predicate = std::make_shared<QCassandraRowPredicate>();
-    row_predicate->setCount(f_count);
-    table->readRows(row_predicate);
-    const QCassandraRows& rows(table->rows());
-    for( auto const & p_r : rows )
+    catch( const std::exception& ex )
     {
-        std::cout << du.get_row_name( p_r ) << std::endl;
+        std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        exit(1);
+        snap::NOTREACHED();
     }
 }
 
 
 void snapdb::display_rows_wildcard() const
 {
-    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+    try
+    {
+        snap::dbutils du( f_table, f_row );
+        QString const row_start(f_row.left(f_row.length() - 1));
+        std::stringstream ss;
 
-    // list of rows in that table
-    QCassandraTable::pointer_t table(context->findTable(f_table));
-    if(!table)
-    {
-        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
-        exit(1);
-    }
-    table->clearCache();
-    auto row_predicate = std::make_shared<QCassandraRowPredicate>();
-    QString row_start(f_row.left(f_row.length() - 1));
-    // remember that the start/end on row doesn't work in "alphabetical"
-    // order so we cannot use it here...
-    //row_predicate->setStartRowName(row_start);
-    //row_predicate->setEndRowName(row_start + QCassandraColumnPredicate::first_char);
-    row_predicate->setCount(f_count);
-    std::stringstream ss;
-    for(;;)
-    {
-        table->readRows(row_predicate);
-        const QCassandraRows& rows(table->rows());
-        if(rows.isEmpty())
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("SELECT DISTINCT key FROM %1.%2;")
+                    .arg(f_context)
+                    .arg(f_table)
+                    );
+        q->setPagingSize(f_count);
+        q->start();
+        do
         {
-            break;
-        }
-        for( auto const & p_r : rows )
-        {
-            const QString name(p_r->rowName());
-            if(name.length() >= row_start.length()
-                    && row_start == name.mid(0, row_start.length()))
+            while( q->nextRow() )
             {
-                ss << name << std::endl;
+                const QString name(du.get_row_name(q->getByteArrayColumn(0)));
+                if( name.length() >= row_start.length()
+                    && row_start == name.mid(0, row_start.length()))
+                {
+                    ss << name << std::endl;
+                }
             }
         }
-    }
+        while( q->nextPage() );
+        q->end();
 
-    std::cout << ss.str();
+        std::cout << ss.str();
+    }
+    catch( const std::exception& ex )
+    {
+        std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        exit(1);
+        snap::NOTREACHED();
+    }
 }
 
 
 void snapdb::display_columns() const
 {
+    if( f_opt->is_defined("drop-row") )
+    {
+        drop_row();
+        return;
+    }
+
     try
     {
-        QCassandraContext::pointer_t context(f_cassandra->context(f_context));
-
-        // display all the columns of a row
-        QCassandraTable::pointer_t table(context->findTable(f_table));
-        if(!table)
-        {
-            std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
-            exit(1);
-        }
         snap::dbutils du( f_table, f_row );
-        QByteArray const row_key( du.get_row_key() );
-        if(!table->exists(row_key))
-        {
-            std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
-            exit(1);
-        }
 
-        QCassandraRow::pointer_t row(table->row(row_key));
-        row->clearCache();
-        auto column_predicate(std::make_shared<QCassandraCellRangePredicate>());
-        column_predicate->setCount(f_count);
-        column_predicate->setIndex();
-        for(;;)
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("SELECT column1, value FROM %1.%2 WHERE key = ?;")
+                    .arg(f_context)
+                    .arg(f_table)
+                    );
+        q->bindByteArray( 0, du.get_row_key() );
+        q->setPagingSize(f_count);
+        q->start();
+        do
         {
-            row->readCells(column_predicate);
-            QCassandraCells const& cells(row->cells());
-            if(cells.isEmpty())
+            while( q->nextRow() )
             {
-                break;
-            }
-            for( auto const & c : cells )
-            {
+                const auto column_key( q->getByteArrayColumn("column1") );
+                const auto column_val( q->getByteArrayColumn("value") );
                 std::cout
-                    << du.get_column_name(c)
+                    << du.get_column_name( column_key )
                     << " = "
-                    << du.get_column_value( c, true /*display_only*/ )
+                    << du.get_column_value( column_key, column_val, true /*display_only*/ )
                     << std::endl;
             }
         }
+        while( q->nextPage() );
+        q->end();
     }
-    catch(snap::snap_exception const& e)
+    catch( std::exception const& e )
     {
         // in most cases we get here because of something invalid in
         // the database
-        std::cerr << "error: could not properly read row \"" << f_row << "\" in table \"" << f_table << "\". It may not exist or its key is not defined as expected (i.e. not a valid md5sum)" << std::endl;
+        std::cerr   << "error: could not properly read row \""
+                    << f_row
+                    << "\" in table \""
+                    << f_table
+                    << "\". It may not exist or its key is not defined as expected (i.e. not a valid md5sum)"
+                    << std::endl
+                    << "what=" << e.what()
+                    << std::endl;
     }
 }
 
 
-void snapdb::display()
+void snapdb::display_cell() const
 {
-    f_cassandra->connect(f_host, f_port);
+    if(f_opt->is_defined("drop-cell"))
+    {
+        drop_cell();
+    }
+    else
+    {
+        snap::dbutils du( f_table, f_row );
+
+        QByteArray value;
+        try
+        {
+            const QByteArray row_key( du.get_row_key() );
+            auto q( QCassandraQuery::create(f_session) );
+            q->query( QString("SELECT value FROM %1.%2 WHERE key = ? and column1 = ?;")
+                    .arg(f_context)
+                    .arg(f_table)
+                    );
+            int num = 0;
+            q->bindByteArray( num++, row_key );
+            q->bindString   ( num++, f_cell  );
+            q->start();
+            if( !q->nextRow() )
+            {
+                throw std::runtime_error( "Row/cell NOT FOUND!" );
+            }
+            value = q->getByteArrayColumn("value");
+            q->end();
+        }
+        catch( const std::exception& ex )
+        {
+            std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+            exit(1);
+            snap::NOTREACHED();
+        }
+
+        if(f_opt->is_defined("save-cell"))
+        {
+            std::fstream out;
+            out.open(f_opt->get_string( "save-cell" ), std::fstream::out );
+            if( !out.is_open() )
+            {
+                std::cerr << "error:display_cell(): could not open \"" << f_opt->get_string( "save-cell" )
+                    << "\" to output content of cell \"" << f_cell
+                    << "\" in table \"" << f_table
+                    << "\" and row \"" << f_row
+                    << "\"." << std::endl;
+                exit(1);
+                snap::NOTREACHED();
+            }
+            out.write( value.data(), value.size() );
+        }
+        else
+        {
+            std::cout << du.get_column_value
+                ( f_cell.toUtf8(), value
+                , !f_opt->is_defined("full-cell") /*display_only*/
+                ) << std::endl;
+        }
+    }
+}
+
+
+void snapdb::set_cell() const
+{
+    if( !f_opt->is_defined("create-row") )
+    {
+        if( !row_exists() )
+        {
+            std::cerr << "error:set_cell(): row \""
+                      << f_row
+                      << "\" not found in table \""
+                      << f_table
+                      << "\"."
+                      << std::endl;
+            exit(1);
+            snap::NOTREACHED();
+        }
+    }
+
+    try
+    {
+        snap::dbutils du( f_table, f_row );
+        QByteArray const row_key( du.get_row_key() );
+        QByteArray value;
+        du.set_column_value( f_cell.toUtf8(), value, f_value );
+
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("UPDATE %1.%2 SET value = ? WHERE key = ? and column1 = ?;")
+                .arg(f_context)
+                .arg(f_table)
+                );
+        int bind_num = 0;
+        q->bindByteArray( bind_num++, value   );
+        q->bindByteArray( bind_num++, row_key );
+        q->bindString   ( bind_num++, f_cell  );
+        q->start();
+        q->end();
+    }
+    catch( const std::exception& ex )
+    {
+        std::cerr << "QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        exit(1);
+        snap::NOTREACHED();
+    }
+}
+
+
+void snapdb::exec()
+{
+    f_session->connect( f_host, f_port );
 
     if(f_table.isEmpty())
     {
@@ -475,9 +697,17 @@ void snapdb::display()
     {
         display_rows_wildcard();
     }
-    else
+    else if(f_cell.isEmpty())
     {
         display_columns();
+    }
+    else if(f_value.isEmpty())
+    {
+        display_cell();
+    }
+    else
+    {
+        set_cell();
     }
 }
 

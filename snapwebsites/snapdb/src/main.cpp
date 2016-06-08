@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     try
     {
         snapdb  s(argc, argv);
-        s.display();
+        s.exec();
     }
     catch(std::exception const& e)
     {
