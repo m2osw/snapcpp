@@ -64,8 +64,7 @@ public:
 
     void usage(advgetopt::getopt::status_t status);
     void info();
-    void drop_context();
-    void display();
+    void exec();
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
@@ -77,13 +76,20 @@ private:
     QString                            f_context;
     QString                            f_table;
     QString                            f_row;
+    QString                            f_cell;
+    QString                            f_value;
     getopt_ptr_t                       f_opt;
 
     bool confirm_drop_check() const;
+    void drop_context();
+    //void drop_row();
+    //void drop_cell();
     void display_tables() const;
     void display_rows() const;
     void display_rows_wildcard() const;
     void display_columns() const;
+    void display_cell() const;
+    void set_cell() const;
 };
 
 // vim: ts=4 sw=4 et

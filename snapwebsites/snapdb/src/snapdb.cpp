@@ -24,6 +24,7 @@
  *      permit persons to whom the Software is furnished to do so, subject to
  *      the following conditions:
  *
+#include <fstream>
  *      The above copyright notice and this permission notice shall be included
  *      in all copies or substantial portions of the Software.
  *
@@ -54,6 +55,7 @@
 // system
 //
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 
@@ -68,7 +70,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             nullptr,
             nullptr,
-            "Usage: %p [-<opt>] [table [row]]",
+            "Usage: %p [-<opt>] [table [row] [cell] [value]]",
             advgetopt::getopt::help_argument
         },
         {
@@ -148,7 +150,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             nullptr,
             nullptr,
-            "[table [row]]",
+            "[table [row] [cell] [value]]",
             advgetopt::getopt::default_multiple_argument
         },
         {
@@ -237,9 +239,9 @@ snapdb::snapdb(int argc, char * argv[])
     if( f_opt->is_defined( "--" ) )
     {
         const int arg_count = f_opt->size( "--" );
-        if( arg_count >= 3 )
+        if( arg_count > 4 )
         {
-            std::cerr << "error: only two parameters (table and row) can be specified on the command line." << std::endl;
+            std::cerr << "error: only four parameters (table, row, cell and value) can be specified on the command line." << std::endl;
             usage(advgetopt::getopt::error);
         }
         for( int idx = 0; idx < arg_count; ++idx )
@@ -251,6 +253,14 @@ snapdb::snapdb(int argc, char * argv[])
             else if( idx == 1 )
             {
                 f_row = f_opt->get_string( "--", idx ).c_str();
+            }
+            else if( idx == 2 )
+            {
+                f_cell = f_opt->get_string( "--", idx ).c_str();
+            }
+            else if( idx == 3 )
+            {
+                f_value = f_opt->get_string( "--", idx ).c_str();
             }
         }
     }
@@ -322,6 +332,55 @@ void snapdb::drop_context()
     f_cassandra->connect(f_host, f_port);
     f_cassandra->dropContext( f_context );
 }
+
+
+#if 0
+void snapdb::drop_row()
+{
+    try
+    {
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("DELETE FROM %1.%2 WHERE key = ?;")
+                    .arg(f_context)
+                    .arg(f_table)
+                    );
+        int bind = 0;
+        q->bindString( bind++, f_row );
+        q->start();
+        q->end();
+    }
+    catch( const std::exception& ex )
+    {
+        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        exit(1);
+        snap::NOTREACHED();
+    }
+}
+
+
+void snapdb::drop_cell()
+{
+    try
+    {
+        auto q( QCassandraQuery::create(f_session) );
+        q->query( QString("DELETE FROM %1.%2 WHERE key = ? and column1 = ?;")
+            .arg(f_context)
+            .arg(f_table)
+            );
+        int bind = 0;
+        q->bindString( bind++, f_row );
+        q->bindString( bind++, f_cell );
+        q->start();
+        q->end();
+    }
+    catch( const std::exception& ex )
+    {
+        std::cerr << "Remove theme QCassandraQuery exception caught! what=" << ex.what() << std::endl;
+        exit(1);
+        snap::NOTREACHED();
+    }
+}
+#endif
 
 
 void snapdb::display_tables() const
@@ -459,7 +518,95 @@ void snapdb::display_columns() const
 }
 
 
-void snapdb::display()
+void snapdb::display_cell() const
+{
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+
+    // display all the columns of a row
+    QCassandraTable::pointer_t table(context->findTable(f_table));
+    if(!table)
+    {
+        std::cerr << "error:display_cell(): table \"" << f_table << "\" not found." << std::endl;
+        exit(1);
+    }
+    snap::dbutils du( f_table, f_row );
+    const QByteArray row_key( du.get_row_key() );
+    if(!table->exists(row_key))
+    {
+        std::cerr << "error:display_cell(): row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
+        exit(1);
+    }
+
+    QCassandraRow::pointer_t row(table->row(row_key));
+    if(!row->exists(f_cell))
+    {
+        std::cerr << "error:display_cell(): cell \"" << f_cell << "\" not found in table \"" << f_table << "\" and row \"" << f_row << "\"." << std::endl;
+        exit(1);
+    }
+
+    // drop or display?
+    if(f_opt->is_defined("drop-cell"))
+    {
+        row->dropCell(f_cell);
+    }
+    else if(f_opt->is_defined("save-cell"))
+    {
+        QCassandraCell::pointer_t c(row->cell(f_cell));
+        std::fstream out;
+        out.open(f_opt->get_string( "save-cell" ), std::fstream::out );
+        if(out.is_open())
+        {
+            QtCassandra::QCassandraValue value(c->value());
+            out.write(value.binaryValue().data(), value.size());
+        }
+        else
+        {
+            std::cerr << "error:display_cell(): could not open \"" << f_opt->get_string( "save-cell" )
+                      << "\" to output content of cell \"" << f_cell
+                      << "\" in table \"" << f_table
+                      << "\" and row \"" << f_row
+                      << "\"." << std::endl;
+            exit(1);
+        }
+    }
+    else
+    {
+        QCassandraCell::pointer_t c(row->cell(f_cell));
+        std::cout << du.get_column_value( c, !f_opt->is_defined("full-cell") /*display_only*/ ) << std::endl;
+    }
+}
+
+
+void snapdb::set_cell() const
+{
+    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+
+    // display all the columns of a row
+    QCassandraTable::pointer_t table(context->findTable(f_table));
+    if(!table)
+    {
+        std::cerr << "error:set_cell(): table \"" << f_table << "\" not found." << std::endl;
+        exit(1);
+    }
+    snap::dbutils du( f_table, f_row );
+    QByteArray const row_key( du.get_row_key() );
+    if(!f_opt->is_defined("create-row"))
+    {
+        if(!table->exists(row_key))
+        {
+            std::cerr << "error:set_cell(): row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
+            exit(1);
+        }
+    }
+
+    QCassandraRow::pointer_t row(table->row(row_key));
+
+    QCassandraCell::pointer_t c(row->cell(f_cell));
+    du.set_column_value( c, f_value );
+}
+
+
+void snapdb::exec()
 {
     f_cassandra->connect(f_host, f_port);
 
@@ -475,9 +622,17 @@ void snapdb::display()
     {
         display_rows_wildcard();
     }
-    else
+    else if(f_cell.isEmpty())
     {
         display_columns();
+    }
+    else if(f_value.isEmpty())
+    {
+        display_cell();
+    }
+    else
+    {
+        set_cell();
     }
 }
 
