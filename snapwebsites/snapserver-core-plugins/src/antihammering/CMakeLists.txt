@@ -47,7 +47,7 @@ snap_validate_xml( content.xml                              content/content.dtd 
 
 snap_validate_xml( editor/antihammering-settings-page.xml   editor/editor-form.dtd )
 
-snap_validate_xml( layout/antihammering-settings-parser.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/antihammering-settings-parser.xsl simplified-xslt20.dtd )
 
 add_library(antihammering SHARED
     antihammering.cpp

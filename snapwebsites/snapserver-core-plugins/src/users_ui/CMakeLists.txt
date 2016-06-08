@@ -61,7 +61,7 @@ snap_validate_xml( users_ui/verify-form.xml              form/snap-form.dtd )
 
 snap_validate_xml( editor/users-settings-page.xml        editor/editor-form.dtd )
 
-snap_validate_xml( layout/users-settings-parser.xsl      layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/users-settings-parser.xsl      simplified-xslt20.dtd )
 
 add_library(users_ui SHARED
     users_ui.cpp

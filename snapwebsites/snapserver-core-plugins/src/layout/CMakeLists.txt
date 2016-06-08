@@ -48,11 +48,11 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 ##
 snap_validate_css( layout/style.css )
 snap_validate_xml( layout/content.xml content/content.dtd )
-snap_validate_xml( layout/html-header.xsl            layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/default-theme-parser.xsl   layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/functions.xsl              layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/user-messages.xsl          layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/default-body-parser.xsl    layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/html-header.xsl            simplified-xslt20.dtd )
+snap_validate_xml( layout/default-theme-parser.xsl   simplified-xslt20.dtd )
+snap_validate_xml( layout/functions.xsl              simplified-xslt20.dtd )
+snap_validate_xml( layout/user-messages.xsl          simplified-xslt20.dtd )
+snap_validate_xml( layout/default-body-parser.xsl    simplified-xslt20.dtd )
 
 
 add_library(layout SHARED
@@ -88,15 +88,5 @@ install(
     DESTINATION ${SNAP_TABLE_DESCRIPTION_PATH}
 )
 
-
-################################################################################
-# Install DTD file.
-#
-install(
-	FILES
-		simplified-xslt20.dtd
-	DESTINATION
-		share/snapwebsites/dtd
-)
 
 # vim: ts=4 sw=4 et

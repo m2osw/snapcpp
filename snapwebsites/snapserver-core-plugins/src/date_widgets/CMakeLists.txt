@@ -52,8 +52,8 @@ snap_validate_xml( content.xml                      content/content.dtd )
 
 snap_validate_xml( date-widgets-test-page.xml       editor/editor-form.dtd )
 
-snap_validate_xml( date_widgets/date-form.xsl       layout/simplified-xslt20.dtd )
-snap_validate_xml( date-widgets-test-parser.xsl     layout/simplified-xslt20.dtd )
+snap_validate_xml( date_widgets/date-form.xsl       simplified-xslt20.dtd )
+snap_validate_xml( date-widgets-test-parser.xsl     simplified-xslt20.dtd )
 
 snap_validate_js( date_widgets/date-widgets.js )
 

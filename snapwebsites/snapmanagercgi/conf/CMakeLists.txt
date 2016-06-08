@@ -31,7 +31,7 @@
 
 project(snapmanagercgi_conf)
 
-snap_validate_xml( snapmanagercgi-parser.xsl ../../snapserver-core-plugins/src/layout/simplified-xslt20.dtd )
+snap_validate_xml( snapmanagercgi-parser.xsl simplified-xslt20.dtd )
 
 #################################################################################
 ## Config files

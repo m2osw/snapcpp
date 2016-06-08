@@ -44,7 +44,7 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( detectadblocker/content.xml                  content/content.dtd )
 snap_validate_xml( editor/detectadblocker-settings-page.xml     editor/editor-form.dtd )
-snap_validate_xml( layout/detectadblocker-settings-parser.xsl   layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/detectadblocker-settings-parser.xsl   simplified-xslt20.dtd )
 snap_validate_js( detectadblocker/detectadblocker.js )
 snap_validate_js( detectadblocker/adframe.js )
 

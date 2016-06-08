@@ -45,8 +45,8 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     form.qrc
 )
 
-snap_validate_xml( content.xml content/content.dtd )
-snap_validate_xml( core-form.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( content.xml    content/content.dtd   )
+snap_validate_xml( core-form.xsl  simplified-xslt20.dtd )
 snap_validate_js ( form.js )
 
 # Unfortunate, but at this time this doesn't work too well...

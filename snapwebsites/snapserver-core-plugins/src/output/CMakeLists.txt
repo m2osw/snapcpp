@@ -43,9 +43,10 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     output.qrc
 )
 
-snap_validate_xml( content.xml content/content.dtd )
-snap_validate_xml( layout/notheme-body-parser.xsl layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/notheme-theme-parser.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( content.xml                      content/content.dtd )
+
+snap_validate_xml( layout/notheme-body-parser.xsl   simplified-xslt20.dtd )
+snap_validate_xml( layout/notheme-theme-parser.xsl  simplified-xslt20.dtd )
 
 
 # jQuery does not need to be validated

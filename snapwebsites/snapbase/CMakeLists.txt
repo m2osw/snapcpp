@@ -44,6 +44,16 @@ SnapGetVersion( SNAPBASE ${CMAKE_CURRENT_SOURCE_DIR} )
 file( GLOB SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/* )
 install( FILES ${SRC_FILES} DESTINATION share/snapwebsites/src )
 
+################################################################################
+# Install DTD file.
+#
+install(
+	FILES
+		dtd/simplified-xslt20.dtd
+	DESTINATION
+		share/snapwebsites/dtd
+)
+
 add_subdirectory( conf )
 add_subdirectory( doc  )
 

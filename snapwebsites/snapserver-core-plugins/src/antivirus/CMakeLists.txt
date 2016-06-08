@@ -46,7 +46,7 @@ snap_validate_xml( content.xml                      content/content.dtd )
 
 snap_validate_xml( antivirus-settings-page.xml      editor/editor-form.dtd )
 
-snap_validate_xml( antivirus-settings-parser.xsl    layout/simplified-xslt20.dtd )
+snap_validate_xml( antivirus-settings-parser.xsl    simplified-xslt20.dtd )
 
 
 add_library(antivirus SHARED

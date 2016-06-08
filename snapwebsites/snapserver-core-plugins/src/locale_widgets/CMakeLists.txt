@@ -48,8 +48,10 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 ## Validate content
 ##
 snap_validate_css( locale-timezone.css )
-snap_validate_xml( content.xml      content/content.dtd )
-snap_validate_xml( locale-form.xsl  ../layout/simplified-xslt20.dtd )
+
+snap_validate_xml( content.xml      content/content.dtd   )
+
+snap_validate_xml( locale-form.xsl  simplified-xslt20.dtd )
 
 
 add_library( locale_widgets SHARED

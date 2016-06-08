@@ -55,7 +55,7 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 snap_validate_css( epayment-paypal.css )
 snap_validate_xml( content.xml content/content.dtd )
 snap_validate_xml( epayment-paypal-settings-page.xml   editor/editor-form.dtd )
-snap_validate_xml( epayment-paypal-settings-parser.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( epayment-paypal-settings-parser.xsl simplified-xslt20.dtd )
 snap_validate_js ( epayment-paypal.js )
 
 

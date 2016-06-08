@@ -44,10 +44,10 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
     sitemapxml.qrc
 )
 
-snap_validate_xml( content.xml content/content.dtd )
+snap_validate_xml( content.xml              content/content.dtd )
 
-snap_validate_xml( sitemapxml-to-text.xsl layout/simplified-xslt20.dtd )
-snap_validate_xml( sitemapxml-to-html.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( sitemapxml-to-text.xsl   simplified-xslt20.dtd )
+snap_validate_xml( sitemapxml-to-html.xsl   simplified-xslt20.dtd )
 
 add_library(sitemapxml SHARED
     sitemapxml.cpp
