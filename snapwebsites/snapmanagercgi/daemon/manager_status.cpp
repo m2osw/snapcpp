@@ -39,16 +39,8 @@
 // our lib
 //
 #include "log.h"
-//#include "process.h"
+#include "process.h"
 
-// C++ lib
-//
-//#include <fstream>
-
-// C lib
-//
-//#include <fcntl.h>
-//#include <sys/file.h>
 
 
 namespace snap_manager
@@ -58,6 +50,24 @@ namespace snap_manager
 namespace
 {
 
+/** \brief List of functions to run to gather a computer's status.
+ *
+ * This function calculates the status of a computer. This includes
+ * many things such as:
+ *
+ * \li Is a certain package installed
+ * \li Is a certain process currently running
+ * \li Is a certain .conf file defined and does it make sense
+ *     (i.e. are parameters out of wack, missing, etc.)
+ *
+ * We do not record the system load or similar things that the
+ * snapwatchdog takes care of. We are more interested about
+ * the installation currently running on a certain system.
+ *
+ * The snapmanager gives the administrator a way to monitor
+ * all the computers in a cluster and act on them by adding,
+ * removing, updating software and other similar actions.
+ */
 manager_status::status_function_t const g_status_functions[] =
 {
     &manager_status::status_check_running_services,
@@ -75,6 +85,14 @@ manager_status::status_function_t const g_status_functions[] =
  * saves a reference to the status connection object which is used
  * to (1) send new MANAGERSTATUS and (2) receive STOP when we are done
  * and the thread needs to quit.
+ *
+ * \warning
+ * Remember that the status_connection only sends messages to the
+ * manager_daemon, although the manager_daemon will detect if the
+ * name of the service is specified and in that case it will
+ * forward messages to snapcommunicator.
+ *
+ * \param[in] sc  The status connection object.
  */
 manager_status::manager_status(status_connection::pointer_t sc)
     : snap_runner("manager_status")
@@ -118,6 +136,8 @@ void manager_status::set_snapmanager_frontend(QString const & snapmanager_fronte
  * of the snapmanagerdaemon system. This will gather basic information
  * about the state of the each system and send the information to
  * all the computers who have snapmanager.cgi active.
+ *
+ * \sa set_snapmanager_frontend()
  */
 void manager_status::run()
 {
@@ -251,6 +271,45 @@ void manager_status::process_message(snap::snap_communicator_message const & mes
 }
 
 
+/** \brief Installs one Debian package.
+ *
+ * This function installs ONE package as specified by \p package_name.
+ *
+ * \param[in] package_name  The name of the package to install.
+ * \param[in] add_info_only_if_present  Whether to add information about
+ *            non installed packages in the output.
+ *
+ * \return The exit code of the apt-get install command.
+ */
+int manager_status::package_status(QString const & package_name, bool add_info_only_if_present)
+{
+    snap::process p("check status");
+    p.set_mode(snap::process::mode_t::PROCESS_MODE_OUTPUT);
+    p.set_command("dpkg-query");
+    p.add_argument("-W");
+    p.add_argument(package_name);
+    int r(p.run());
+
+    // the output is saved so we can send it to the user and log it...
+    if(r == 0)
+    {
+        QString const output(p.get_output(true));
+        //f_output += output;
+        SNAP_LOG_TRACE("package status:\n")(output);
+    }
+    else if(!add_info_only_if_present)
+    {
+        // in this case the output is likely empty (i.e. we do not read
+        // stderr...), so we ignore it
+        //
+        //f_output += package_name + " is not installed";
+        SNAP_LOG_TRACE("package named \"")(package_name)("\" isnot installed.");
+    }
+
+    return r;
+}
+
+
 void manager_status::status_check_running_services()
 {
     f_server_status["status"] = "Up";
@@ -266,6 +325,45 @@ void manager_status::status_has_list_of_frontend_computers()
 }
 
 
+
+
+
+/*
+ * This needs to be 100% dynamic
+ *
+# server_types=<list of names>
+#
+# List what functionality this server offers as a list of names as defined
+# below.
+#
+# The "Comp." column (Computer) defines where such and such service should
+# be running. Each set of services can run on the same computer (often does
+# while doing development.) However, running everything on a single computer
+# is not how Snap! was designed. The idea is to be able to run the websites
+# on any number of computers in a cluster. This is why we have Cassandra,
+# but really all parts can be running on any number of computers.
+#
+# +===============+===========================================+=======+
+# |    Name       |              Description                  | Comp. |
+# +===============+===========================================+=======+
+# | anti-virus    | clamav along snapbackend                  | Back  |
+# | application   | snapserver and clamav                     | Back  |
+# | backend       | one or more snapbackend                   | Back  |
+# | base          | snamanager.cgi and dependencies           | All   |
+# | cassandra     | cassandra database                        | Back  |
+# | firewall      | snapfirewall                              | All   |
+# | frontend      | apache with snap.cgi                      | Front |
+# | mailserver    | postfix with snapbounce                   | Front |
+# | ntp           | time server                               | All   |
+# | vpn           | tinc / openvpn                            | All   |
+# | logserver     | loggingserver from log4cplus              | Back  |
+# +===============+===========================================+=======+
+#
+# Note that the snapserver plugins come with clamav.
+#
+# Default: base
+server_types=base
+*/
 
 
 

@@ -582,14 +582,6 @@ void manager_daemon::manage(snap::snap_communicator_message const & message)
         }
         break;
 
-    case 'S':
-        if(function == "STATUS")
-        {
-            status(message);
-            return;
-        }
-        break;
-
     }
 
     {

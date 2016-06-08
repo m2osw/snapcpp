@@ -105,7 +105,5 @@ void status_connection::process_message_b(snap::snap_communicator_message const 
 
 
 
-
-
 } // namespace snap_manager
 // vim: ts=4 sw=4 et
