@@ -43,7 +43,7 @@
 // 3rd party libs
 //
 #include <QtCore>
-#include <QtCassandra/QCassandra.h>
+#include <QtCassandra/QCassandraSession.h>
 #include <controlled_vars/controlled_vars.h>
 #include <advgetopt/advgetopt.h>
 
@@ -64,26 +64,33 @@ public:
 
     void usage(advgetopt::getopt::status_t status);
     void info();
-    void drop_context();
-    void display();
+    void exec();
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
 
-    QtCassandra::QCassandra::pointer_t f_cassandra;
-    QString                            f_host;
-    controlled_vars::mint32_t          f_port;
-    controlled_vars::mint32_t          f_count;
-    QString                            f_context;
-    QString                            f_table;
-    QString                            f_row;
-    getopt_ptr_t                       f_opt;
+    QtCassandra::QCassandraSession::pointer_t f_session;
+    QString                                   f_host;
+    controlled_vars::mint32_t                 f_port;
+    controlled_vars::mint32_t                 f_count;
+    QString                                   f_context;
+    QString                                   f_table;
+    QString                                   f_row;
+    QString                                   f_cell;
+    QString                                   f_value;
+    getopt_ptr_t                              f_opt;
 
-    bool confirm_drop_check() const;
-    void display_tables() const;
-    void display_rows() const;
+    bool confirm_drop_check()    const;
+    void drop_context()          const;
+    void drop_row()              const;
+    void drop_cell()             const;
+    bool row_exists()            const;
+    void display_tables()        const;
+    void display_rows()          const;
     void display_rows_wildcard() const;
-    void display_columns() const;
+    void display_columns()       const;
+    void display_cell()          const;
+    void set_cell()              const;
 };
 
 // vim: ts=4 sw=4 et

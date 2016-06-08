@@ -108,6 +108,8 @@ public:
 private:
     typedef std::map<QString, QString>  status_t;
 
+    int                         package_status(QString const & package_name, bool add_info_only_if_present);
+
     status_connection::pointer_t    f_status_connection;
     status_t                        f_server_status;
     bool                            f_running = true;
@@ -133,8 +135,6 @@ private:
 
     // the MANAGE command and all of its sub-functions
     void                        manage(snap::snap_communicator_message const & message);
-    void                            status(snap::snap_communicator_message const & message);
-    int                                 package_status(QString const & package_name, bool add_info_only_if_present);
     void                            set_manager_status(snap::snap_communicator_message const & message);
     void                            installer(snap::snap_communicator_message const & message);
     int                                 install(QString const & package_name);
