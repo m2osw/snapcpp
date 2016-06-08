@@ -71,6 +71,8 @@ find_package( SnapCMakeModules  REQUIRED )
 find_package( SnapDoxygen       REQUIRED )
 find_package( SnapWebsites      REQUIRED )
 
+include( SnapXmlLint )
+
 ##
 ## Version
 ##
@@ -92,5 +94,6 @@ add_subdirectory( cgi    )          # The snapmanager.cgi application
 add_subdirectory( daemon )          # The snapmanagerdaemon to apply commands on any computer
 add_subdirectory( doc    )          # Documentation generation
 
+snap_build_xml_targets()
 
 # vim: ts=4 sw=4 et nocindent

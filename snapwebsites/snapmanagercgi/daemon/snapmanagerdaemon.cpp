@@ -73,6 +73,14 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
+            "data_path",
+            "/var/lib/snapwebsites/cluster-status",
+            "Path to this process data directory to save the cluster status.",
+            advgetopt::getopt::required_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE,
             "debug",
             nullptr,
             "Set the service in debug mode.",
@@ -225,6 +233,24 @@ manager_daemon::manager_daemon( int argc, char * argv[] )
         f_opt.usage(f_opt.error, "Usage: %s -<arg> ...\n", argv[0]);
         snap::NOTREACHED();
     }
+
+    // get the data path, we will be saving the status of each computer
+    // in the cluster using this path
+    //
+    f_data_path = "/var/lib/snapwebsites/cluster-status";
+    if(f_config.contains("data_path"))
+    {
+        // use .conf definition when available
+        f_data_path = f_config["data_path"];
+    }
+
+    // get the list of front end servers (as far as snapmanager.cgi is
+    // concerned)
+    //
+    if(f_config.contains("snapmanager_frontend"))
+    {
+        f_status_runner.set_snapmanager_frontend(f_config["snapmanager_frontend"]);
+    }
 }
 
 
@@ -256,6 +282,10 @@ int manager_daemon::run()
     //
     f_messenger.reset(new manager_messenger(this, f_communicator_address.toUtf8().data(), f_communicator_port));
     f_communicator->add_connection(f_messenger);
+
+    // also add the status connection created in the constructor
+    //
+    f_communicator->add_connection(f_status_connection);
 
     // now run our listening loop
     //
@@ -398,6 +428,11 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
         {
             // we now are connected to the snapcommunicator
             //
+
+            // start the status thread, used to gather this computer's status
+            //
+            f_status_thread.start();
+
             return;
         }
         break;
@@ -473,6 +508,22 @@ void manager_daemon::stop(bool quitting)
             cmd.add_parameter("service", "snapmanagerdaemon");
             f_messenger->send_message(cmd);
         }
+    }
+
+    if(f_status_connection)
+    {
+        snap::snap_communicator_message cmd;
+        cmd.set_command("STOP");
+        f_status_connection->send_message(cmd);
+
+        // WARNING: currently, the send_message() of an inter-process
+        //          connection immediately writes the message in the
+        //          destination thread FIFO and immediately sends a
+        //          signal; as a side effect we can immediatly forget
+        //          about the status connection
+        //
+        f_communicator->remove_connection(f_status_connection);
+        f_status_connection.reset();
     }
 }
 
@@ -552,6 +603,30 @@ void manager_daemon::manage(snap::snap_communicator_message const & message)
 
 
 
+/** \brief Forword message to snapcommunicator.
+ *
+ * When we receive a message from our thread, and that message is not
+ * directory to us (i.e. service name is the empty string of
+ * snapmanagerdaemon) then the message needs to be sent to the
+ * snapcommunicator.
+ *
+ * This function makes sure to send the message to the specified services
+ * or even computers.
+ *
+ * At this time this is used to send the MANAGERSTATUS to all the
+ * computer currently registered.
+ *
+ * \param[in] message  The message to forward to snapcommunicator.
+ */
+void manager_daemon::forward_message(snap::snap_communicator_message const & message)
+{
+    // make sure the messenger is still alive
+    //
+    if(f_messenger)
+    {
+        f_messenger->send_message(message);
+    }
+}
 
 
 

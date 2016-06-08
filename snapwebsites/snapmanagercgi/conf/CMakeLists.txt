@@ -29,6 +29,10 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
+project(snapmanagercgi_conf)
+
+snap_validate_xml( snapmanagercgi-parser.xsl ../../snapserver-core-plugins/src/layout/simplified-xslt20.dtd )
+
 #################################################################################
 ## Config files
 ##

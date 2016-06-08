@@ -41,9 +41,34 @@
 #include "log.h"
 #include "process.h"
 
+// C++ lib
+//
+#include <fstream>
+
+// C lib
+//
+#include <fcntl.h>
+#include <sys/file.h>
+
 
 namespace snap_manager
 {
+
+
+namespace
+{
+
+
+char const status_file_magic[] = "Snap! Status v1\n";
+
+manager_status::status_function_t const g_status_functions[] =
+{
+    &manager_status::status_check_running_services,
+    &manager_status::status_has_list_of_frontend_computers
+};
+
+}
+// no name namespace
 
 
 status_connection::status_connection(manager_daemon * md)
@@ -64,7 +89,27 @@ void status_connection::set_thread_b(manager_status * ms)
 
 void status_connection::process_message_a(snap::snap_communicator_message const & message)
 {
-    f_manager_daemon->process_message(message);
+    // here we just received a message from the thread...
+    //
+    // if that message is MANAGERSTATUS, then it is expected to
+    // be sent to all the computers in the cluster, not just this
+    // computer, only the inter-thread connection does not allow
+    // for broadcasting (i.e. the message never leaves the
+    // snapmanagerdaemon process with that type of connection!)
+    //
+    // so here we check for the name of the service to where the
+    // message is expected to arrive; if not empty, we instead
+    // send the message to snapcommunicator
+    //
+    if(message.get_service().isEmpty()
+    || message.get_service() == "snapmanagerdaemon")
+    {
+        f_manager_daemon->process_message(message);
+    }
+    else
+    {
+        f_manager_daemon->forward_message(message);
+    }
 }
 
 
@@ -72,6 +117,10 @@ void status_connection::process_message_b(snap::snap_communicator_message const 
 {
     f_manager_status->process_message(message);
 }
+
+
+
+
 
 
 /** \brief Initialize the manager status.
@@ -84,8 +133,36 @@ void status_connection::process_message_b(snap::snap_communicator_message const 
 manager_status::manager_status(status_connection::pointer_t sc)
     : snap_runner("manager_status")
     , f_status_connection(sc)
+    //, f_running(true)
 {
     f_status_connection->set_thread_b(this);
+}
+
+
+/** \brief Save the list of front end snapmanager.cgi computers.
+ *
+ * We really only need to forward the current status of the
+ * cluster computer to a few front end computers accepting
+ * requests from snapmanager.cgi (these should be 100% private
+ * computers if you have an in house stack of computers.)
+ *
+ * The list includes hosts name. The same name you define in
+ * the snapinit.conf file. If undefined there, then that name
+ * would be your hostname.
+ *
+ * If the list is undefined (remains empty) then the messages
+ * are broadcast to all computers.
+ *
+ * \param[in] snapmanager_frontend  The comma separated list of host names.
+ */
+void manager_status::set_snapmanager_frontend(QString const & snapmanager_frontend)
+{
+    f_snapmanager_frontend = snapmanager_frontend.split(",", QString::SkipEmptyParts);
+
+    for(auto & f : f_snapmanager_frontend)
+    {
+        f = f.trimmed();
+    }
 }
 
 
@@ -100,31 +177,104 @@ void manager_status::run()
 {
     // run as long as the parent thread did not ask us to quit
     //
+    QString status;
+
     for(;;)
     {
-        // we may be asked to wake up immediately and at that point
-        // we may notice that we are not expected to continue working
+        // first gather a new set of statuses
         //
-        if(!continue_running() || !f_running)
+        f_server_status.clear();
+
+        size_t const max_status(sizeof(g_status_functions) / sizeof(g_status_functions[0]));
+        for(size_t idx(0); idx < max_status; ++idx)
         {
-            return;
+            // we may be asked to wake up immediately and at that point
+            // we may notice that we are not expected to continue working
+            //
+            if(!continue_running() || !f_running)
+            {
+                return;
+            }
+
+            // get one status
+            //
+            (this->*g_status_functions[idx])();
+        }
+
+        // now convert the resulting f_server_status to a string,
+        // make sure to place the "status" first since we load just
+        // that when we show the entire cluster information
+        //
+        QString const previous_status(status);
+        status.clear();
+        QString status_string;
+        for(auto const & ss : f_server_status)
+        {
+            if(ss.first == "status")
+            {
+                status_string = ss.second;
+            }
+            else
+            {
+                // sanity check to make sure user does not use '='
+                // in the name (otherwise we will have a bug when
+                // parsing that back to name / value later.)
+                //
+                if(ss.first.indexOf('=') != -1)
+                {
+                    throw std::runtime_error("the name of a status variable cannot include an '=' character.");
+                }
+
+                status += QString("%1=%2\n").arg(ss.first).arg(ss.second);
+            }
+        }
+
+        // always prepend the status variable
+        status = QString("status=%1\n%2").arg(status_string).arg(status);
+
+        // generate a message to send the snapmanagerdaemon
+        // (but only if the status changed, otherwise it would be a waste)
+        //
+        if(status != previous_status)
+        {
+            // TODO: designate a few computers that are to be used as
+            //       front ends with snapmanager.cgi and only send the
+            //       status information to those computers
+            //
+            if(f_snapmanager_frontend.isEmpty())
+            {
+                // user did not specify a list of front end hosts for
+                // snapmanager.cgi so we instead broadcast the message
+                // to all computers in the cluster (with a large cluster
+                // this is not a good idea...)
+                //
+                snap::snap_communicator_message status_message;
+                status_message.set_command("MANAGERSTATUS");
+                status_message.set_service("*");
+                status_message.add_parameter("status", status);
+                f_status_connection->send_message(status_message);
+            }
+            else
+            {
+                // send the message only to the few specified frontends
+                // so that way we can be sure to avoid send a huge pile
+                // of messages throughout the entire cluster
+                //
+                for(auto const & f : f_snapmanager_frontend)
+                {
+                    snap::snap_communicator_message status_message;
+                    status_message.set_command("MANAGERSTATUS");
+                    status_message.set_server(f);
+                    status_message.set_service("snapmanagerdaemon");
+                    status_message.add_parameter("status", status);
+                    f_status_connection->send_message(status_message);
+                }
+            }
         }
 
         // wait for messages or 1 minute
         //
         f_status_connection->poll(60 * 1000000LL);
-
-        // gather status information
-
-        QString status("this is status from manager_status!");
-
-
-        // generate a message to send the snapmanagerdaemon
-        //
-        snap::snap_communicator_message status_message;
-        status_message.set_command("MANAGERSTATUS");
-        status_message.add_parameter("status", status);
-        f_status_connection->send_message(status_message);
     }
 }
 
@@ -155,6 +305,19 @@ void manager_status::process_message(snap::snap_communicator_message const & mes
 }
 
 
+void manager_status::status_check_running_services()
+{
+    f_server_status["status"] = "Up";
+}
+
+
+void manager_status::status_has_list_of_frontend_computers()
+{
+    if(f_snapmanager_frontend.isEmpty())
+    {
+        f_server_status["warning:snapmanager_no_frontend"] = "The snapmanager_frontend variable is empty. This is most likely not what you want.";
+    }
+}
 
 
 
@@ -211,47 +374,7 @@ void manager_daemon::status(snap::snap_communicator_message const & message)
     // message; we probably will want to rethink that if the number
     // of servers grows to thousands...
     //
-    QString status;
-    int size(0);
-    for(auto const & s : f_status)
-    {
-        size += s.first.length() + s.second.length() + 2;
-    }
-    if(size == 0)
-    {
-        // asked too soon, we do not have any status information yet!
-        //
-        status = "not-available";
-    }
-    else
-    {
-        status.reserve(size);
-
-        // Now we can create the final status
-        //
-        // Note that the server name (s.first) is already known to
-        // include only safe characters (a-z0-9_) although we do
-        // check in set_manager_status(), just in case.
-        //
-        // However, the status value (s.second) is checked in
-        // the set_manager_status and made valid there if it
-        // includes any pipe (|) character, those will have been
-        // escaped with a backslash (as in "\|").
-        //
-        for(auto const & s : f_status)
-        {
-            if(status.isEmpty())
-            {
-                status += QString("%1=%2").arg(s.first).arg(s.second);
-            }
-            else
-            {
-                status += QString("|%1=%2").arg(s.first).arg(s.second);
-            }
-        }
-    }
-
-    reply.add_parameter("result", status);
+    reply.add_parameter("result", f_status.isEmpty() ? "status=not-available\n" : f_status);
     f_messenger->send_message(reply);
 }
 
@@ -265,22 +388,120 @@ void manager_daemon::status(snap::snap_communicator_message const & message)
  */
 void manager_daemon::set_manager_status(snap::snap_communicator_message const & message)
 {
+    // WARNING: not using the ofstream class because we want to lock
+    //          the file and there is no standard way to access 'fd'
+    //          in an ofstream object
+    //
+    class safe_status_file
+    {
+    public:
+        safe_status_file(QString const & data_path, QString const & server)
+            : f_filename(QString("%1/%2.db").arg(data_path).arg(server).toUtf8().data())
+            //, f_fd(-1)
+            //, f_keep(false)
+        {
+        }
+
+        ~safe_status_file()
+        {
+            close();
+        }
+
+        void close()
+        {
+            if(f_fd != -1)
+            {
+                // Note: there is no need for an explicit unlock, the close()
+                //       has the same effect on that file
+                //::flock(f_fd, LOCK_UN);
+                ::close(f_fd);
+            }
+            if(!f_keep)
+            {
+                ::unlink(f_filename.c_str());
+            }
+        }
+
+        bool open()
+        {
+            close();
+
+            // open the file
+            //
+            f_fd = ::open(f_filename.c_str(), O_WRONLY | O_CLOEXEC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            if(f_fd < 0)
+            {
+                SNAP_LOG_ERROR("could not open file \"")
+                              (f_filename)
+                              ("\" to save snapmanagerdamon status.");
+                return false;
+            }
+
+            // make sure we are the only one on the case
+            //
+            if(::flock(f_fd, LOCK_EX) != 0)
+            {
+                SNAP_LOG_ERROR("could not lock file \"")
+                              (f_filename)
+                              ("\" to save snapmanagerdamon status.");
+                return false;
+            }
+
+            return true;
+        }
+
+        bool write(void const * buf, size_t size)
+        {
+            if(::write(f_fd, buf, size) != static_cast<ssize_t>(size))
+            {
+                SNAP_LOG_ERROR("could not write to file \"")
+                              (f_filename)
+                              ("\" to save snapmanagerdamon status.");
+                return false;
+            }
+
+            return true;
+        }
+
+        void keep()
+        {
+            // it worked, make sure the file is kept around
+            // (if this does not get called the file gets deleted)
+            //
+            f_keep = true;
+        }
+
+    private:
+        std::string f_filename;
+        int         f_fd = -1;
+        bool        f_keep = false;
+    };
+
     // TBD: should we check that the name of the sending service is one of us?
     //
-    QString const server(message.get_sent_from_server());
-    QString value(message.get_parameter("status"));
-    value.replace("|", "\\|");
 
-    if(server.indexOf('|') != -1
-    || server.indexOf('=') != -1)
+    QString const server(message.get_sent_from_server());
+    QString const status(message.get_parameter("status"));
+
     {
-        SNAP_LOG_ERROR("the name of a server cannot include the '|' or the '=' characters, \"")
-                      (server)
-                      ("\" is considered invalid. The message will be ignored.");
-        return;
+        QByteArray const status_utf8(status.toUtf8());
+
+        safe_status_file out(f_data_path, server);
+        if(!out.open()
+        || !out.write(status_file_magic, sizeof(status_file_magic) - 1)
+        || !out.write(status_utf8.data(), status_utf8.size()))
+        {
+            return;
+        }
+        out.keep();
     }
 
-    f_status[server] = value;
+    // keep a copy of our own information
+    //
+    if(server == f_server_name)
+    {
+        f_status = status;
+    }
 }
 
 

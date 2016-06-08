@@ -712,7 +712,7 @@ bool snap_thread::snap_runner::continue_running() const
     {
         return true;
     }
-    return f_thread->is_stopping();
+    return !f_thread->is_stopping();
 }
 
 
