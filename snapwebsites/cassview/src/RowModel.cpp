@@ -18,7 +18,6 @@
 
 #include "RowModel.h"
 
-#include <snapwebsites/dbutils.h>
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/qstring_stream.h>
 
@@ -36,6 +35,8 @@ RowModel::RowModel()
 
 void RowModel::doQuery()
 {
+    f_dbutils = std::make_shared<snap::dbutils>( f_tableName, QString::fromUtf8(f_rowKey.data()) );
+
     auto q = QCassandraQuery::create(f_session);
     q->query(
         QString("SELECT column1 FROM %1.%2 WHERE key = ?")
@@ -84,17 +85,9 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
         return QVariant();
     }
 
-    QSettings settings;
     auto const column_name( *(f_rows.begin() + idx.row()) );
-    const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
-    if( f_keyspaceName == snap_keyspace )
-    {
-        snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
-        du.set_display_len( 24 );
-        return du.get_column_name( column_name );
-    }
-
-    return QueryModel::data( idx, role );
+    f_dbutils->set_display_len( 24 );
+    return f_dbutils->get_column_name( column_name );
 }
 
 
@@ -122,20 +115,9 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
             QByteArray value( q.getByteArrayColumn(0) );
             q.end():
 
-                QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
+            QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
             QByteArray save_value;
-
-            QSettings settings;
-            const QString snap_keyspace( settings.value("snap_keyspace","snap_websites").toString() );
-            if( f_keyspaceName == snap_keyspace )
-            {
-                snap::dbutils du( f_tableName, QString::fromUtf8(f_rowKey.data()) );
-                du.set_column_value( key, save_value, value.toString() );
-            }
-            else
-            {
-                QtCassandra::setStringValue( save_value, value.toString() );
-            }
+            f_dbutils->set_column_value( key, save_value, value.toString() );
         }
 
         {

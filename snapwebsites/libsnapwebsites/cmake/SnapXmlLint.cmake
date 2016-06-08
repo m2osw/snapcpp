@@ -36,7 +36,7 @@ endif()
 #
 set( lint_script ${CMAKE_BINARY_DIR}/dolint.sh CACHE INTERNAL "XML lint script" FORCE )
 file( WRITE  ${lint_script} "#!${BASH}\n"                                                            )
-file( APPEND ${lint_script} "if test $\{3##*.} = 'dtd'; then\n" )
+file( APPEND ${lint_script} "if test \${3##*.} = 'dtd'; then\n" )
 file( APPEND ${lint_script} "  ${XMLLINT} --dtdvalid $3 --output $2 $1 && exit 0 || (rm $2; exit 1)\n" )
 file( APPEND ${lint_script} "else\n" )
 file( APPEND ${lint_script} "  ${XMLLINT} --schema $3 --output $2 $1 && exit 0 || (rm $2; exit 1)\n" )

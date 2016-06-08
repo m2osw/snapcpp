@@ -62,7 +62,8 @@ qt5_add_resources(RES_FILES
 )
 
 add_executable(${PROJECT_NAME}
-	AboutDialog.cpp
+    resources.qrc
+    AboutDialog.cpp
     CassandraModel.cpp
     KeyspaceModel.cpp
 	DisplayException.h

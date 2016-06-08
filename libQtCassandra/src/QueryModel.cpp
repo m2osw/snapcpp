@@ -155,12 +155,7 @@ void QueryModel::onQueryFinished( QCassandraQuery::pointer_t q )
 
     // Trigger a new page if there is more
     //
-    if( !q->nextPage( false /*block*/ ) )
-    {
-        // Signal that we are completely done
-        //
-        emit queryFinished();
-    }
+    f_isMore = q->nextPage( false /*block*/ );
 }
 
 
@@ -194,6 +189,13 @@ void QueryModel::onFetchMore()
                   , end_row
                   );
         endInsertRows();
+
+        if( !f_isMore )
+        {
+            // Signal that we are completely done
+            //
+            emit queryFinished();
+        }
     }
     catch( const std::exception& except )
     {

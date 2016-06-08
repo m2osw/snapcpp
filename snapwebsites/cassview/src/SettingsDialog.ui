@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>313</width>
-    <height>160</height>
+    <height>180</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,6 +50,20 @@
        </property>
       </widget>
      </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="f_contextEdit">
+       <property name="text">
+        <string>snap_websites</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Snap! Context:</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -84,6 +98,12 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>f_hostnameEdit</tabstop>
+  <tabstop>f_portEdit</tabstop>
+  <tabstop>f_contextEdit</tabstop>
+  <tabstop>f_promptCB</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

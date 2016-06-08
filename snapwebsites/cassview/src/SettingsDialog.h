@@ -27,9 +27,12 @@ private slots:
 
     void on_f_promptCB_toggled(bool checked);
 
+    void on_f_contextEdit_textChanged(const QString &arg1);
+
 private:
     QVariant	f_server;
     QVariant	f_port;
     QVariant    f_promptBeforeSave;
+    QVariant    f_contextName;
 };
 

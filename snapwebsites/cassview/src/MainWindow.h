@@ -25,8 +25,9 @@ private slots:
     void onCellsModelReset();
     void on_action_Settings_triggered();
     void onAboutToQuit();
-    void on_f_contextCombo_currentIndexChanged(const QString &arg1);
     void on_f_tables_currentIndexChanged(const QString &table_name);
+    void onTableModelQueryFinished();
+    void onRowModelQueryFinished();
     void onRowsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
     void onCellsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
     void on_action_About_triggered();
@@ -40,7 +41,7 @@ private slots:
     void on_f_applyFilter_clicked();
     void on_f_clearFilter_clicked();
     void on_f_refreshView_clicked();
-    void onExceptionCaught( const QString & what, const QString & message ) const;
+    void onExceptionCaught( const QString & what, const QString & message );
 
 private:
     typedef QtCassandra::QCassandraSession::pointer_t cassandra_t;
