@@ -368,9 +368,22 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // (many are considered to be internal commands... users
             // should look at the LOCK and UNLOCK messages only)
             //
-            reply.add_parameter("list", "HELP,LOG,MANAGE,MANAGERSTATUS,QUITTING,READY,STOP,UNKNOWN");
+            reply.add_parameter("list", "HELP,LOG,MANAGE,MANAGERRESEND,MANAGERSTATUS,QUITTING,READY,STOP,UNKNOWN");
 
             f_messenger->send_message(reply);
+
+            // if we are a front end computer, we want to be kept informed
+            // of the status of all the other computers in the cluster...
+            // so ask all the other snapmanagerdaemon to broadcast their
+            // status again
+            //
+            if(f_status_runner.is_snapmanager_frontend(f_server_name))
+            {
+                snap::snap_communicator_message resend;
+                resend.set_service("*");
+                resend.set_command("MANAGERRESEND");
+                f_messenger->send_message(resend);
+            }
             return;
         }
         break;
@@ -392,6 +405,11 @@ void manager_daemon::process_message(snap::snap_communicator_message const & mes
             // run the RPC call
             //
             manage(message);
+            return;
+        }
+        else if(command == "MANAGERRESEND")
+        {
+            f_status_runner.resend_status();
             return;
         }
         else if(command == "MANAGERSTATUS")

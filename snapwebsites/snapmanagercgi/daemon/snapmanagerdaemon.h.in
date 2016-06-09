@@ -98,8 +98,9 @@ public:
 
     virtual void                run();
 
-    QString                     get_server_status() const;
+    void                        resend_status();
     void                        set_snapmanager_frontend(QString const & snapmanager_frontend);
+    bool                        is_snapmanager_frontend(QString const & server_name) const;
 
     void                        process_message(snap::snap_communicator_message const & message);
 
@@ -115,6 +116,7 @@ private:
     status_connection::pointer_t    f_status_connection;
     status_t                        f_server_status;
     bool                            f_running = true;
+    bool                            f_resend_status = false;
     snap::snap_string_list          f_snapmanager_frontend;
 };
 
