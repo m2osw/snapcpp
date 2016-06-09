@@ -993,6 +993,7 @@ void snap_communicator_message::verify_name(QString const & name, bool can_be_em
     if(!can_be_empty
     && name.isEmpty())
     {
+        SNAP_LOG_FATAL("snap_communicator: a message name cannot be empty.");
         throw snap_communicator_invalid_message("snap_communicator: a message name cannot be empty.");
     }
 
@@ -1003,6 +1004,7 @@ void snap_communicator_message::verify_name(QString const & name, bool can_be_em
         && (c < '0' || c > '9')
         && c != '_')
         {
+            SNAP_LOG_FATAL("snap_communicator: a message name must be composed of ASCII 'a'..'z', 'A'..'Z', '0'..'9', or '_' only (also a command must be uppercase only,) \"")(name)("\" is not valid.");
             throw snap_communicator_invalid_message(QString("snap_communicator: a message name must be composed of ASCII 'a'..'z', 'A'..'Z', '0'..'9', or '_' only (also a command must be uppercase only,) \"%1\" is not valid.").arg(name));
         }
     }
@@ -1010,6 +1012,7 @@ void snap_communicator_message::verify_name(QString const & name, bool can_be_em
     ushort const fc(name[0].unicode());
     if(fc >= '0' && fc <= '9')
     {
+        SNAP_LOG_FATAL("snap_communicator: parameter name cannot start with a digit, \"")(name)("\" is not valid.");
         throw snap_communicator_invalid_message(QString("snap_communicator: parameter name cannot start with a digit, \"%1\" is not valid.").arg(name));
     }
 }
