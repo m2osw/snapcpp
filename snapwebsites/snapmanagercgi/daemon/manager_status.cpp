@@ -228,6 +228,16 @@ void manager_status::run()
             resend = f_resend_status;
             f_resend_status = false;
         }
+        // XXX: see whether it would be useful to also save the last time
+        //      we send the MANAGERSTATUS message and if it was more than
+        //      X hours or days, resend it to make sure "all" as of now
+        //      have a copy as expected
+        //
+        //      i.e. the MANAGERRESEND message may fail because we may
+        //      not yet be inter-computer connected when that event gets
+        //      sent (i.e. a remote computer may wait 15 minutes before
+        //      connecting back to us...)
+        //
         if(status != previous_status
         || resend)
         {
