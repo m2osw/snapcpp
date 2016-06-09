@@ -73,6 +73,25 @@ void status_connection::set_thread_b(manager_status * ms)
 }
 
 
+/** \brief Save the server name in the status connection.
+ *
+ * In order for the status connection to know whether a message it is
+ * processing needs to go to the manager daemon or needs to be
+ * forwarded, it needs to know the name of the server.
+ *
+ * So, if a message has its server name field defined and it is equal
+ * to the server name defined by this function, the message is expected
+ * to be processed by this snapmanagerdaemon. Otherwise it gets forwarded
+ * to with all or one specific service on that other server.
+ *
+ * \param[in] server_name
+ */
+void status_connection::set_server_name(QString const & server_name)
+{
+    f_server_name = server_name;
+}
+
+
 void status_connection::process_message_a(snap::snap_communicator_message const & message)
 {
     // here we just received a message from the thread...
@@ -87,8 +106,8 @@ void status_connection::process_message_a(snap::snap_communicator_message const 
     // message is expected to arrive; if not empty, we instead
     // send the message to snapcommunicator
     //
-    if(message.get_service().isEmpty()
-    || message.get_service() == "snapmanagerdaemon")
+    if((message.get_server().isEmpty() || message.get_server() == f_server_name)
+    && (message.get_service().isEmpty() || message.get_service() == "snapmanagerdaemon"))
     {
         f_manager_daemon->process_message(message);
     }

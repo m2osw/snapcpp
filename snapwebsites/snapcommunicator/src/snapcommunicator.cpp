@@ -1813,6 +1813,11 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
         }
     }
 
+    // if the destination server was specified, we have to forward
+    // the message to that specific server
+    //
+    QString const server_name(message.get_server());
+    QString const service(message.get_service());
     QString const command(message.get_command());
 
     base_connection::pointer_t base(std::dynamic_pointer_cast<base_connection>(connection));
@@ -1822,9 +1827,8 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
     // TODO: move all the command bodies to sub-funtions.
 
     // check who this message is for
-    QString const service(message.get_service());
-    if(service.isEmpty()
-    || service == "snapcommunicator")
+    if((server_name.isEmpty() || server_name == f_server_name)      // match server
+    && (service.isEmpty() || service == "snapcommunicator"))        // and service?
     {
         if(f_shutdown)
         {
@@ -2229,8 +2233,17 @@ void snap_communicator_server::process_message(snap::snap_communicator::snap_con
                             //
                             f_communicator->remove_connection(connection);
                         }
-                        //else -- in this case we are in charge of attempting
-                        //        to reconnect until it work...
+                        else
+                        {
+                            // in this case we are in charge of attempting
+                            // to reconnect until it work... however, it
+                            // is likely that the other side just shutdown
+                            // so we want to "induce a long enough pause"
+                            // to avoid attempting to reconnect like crazy
+                            //
+                            QString const addr(QString::fromUtf8(remote_communicator->get_client_addr().c_str()));
+                            f_remote_snapcommunicators->shutting_down(addr);
+                        }
 
                         // we just got some new services information,
                         // refresh our cache
@@ -2851,15 +2864,27 @@ SNAP_LOG_ERROR("GOSSIP is not yet fully implemented.");
     //
 
     // broadcasting?
+    //
     if(service == "*"
     || service == "?"
     || service == ".")
     {
+        if(!server_name.isEmpty()
+        && server_name != "*"
+        && (service == "*" || service == "?"))
+        {
+            // do not send the message in this case!
+            //
+            // we cannot at the same time send it to this local server
+            // and broadcast it to other servers... it is contradictory;
+            // either set the server to "*" or empty, or do not broadcast
+            //
+            SNAP_LOG_ERROR("you cannot at the same time specify a server name (")(server_name)(") and \"*\" or \"?\" as the service.");
+            return;
+        }
         broadcast_message(message);
         return;
     }
-
-    QString const server_name(message.get_server());
 
     remote_snap_communicator_vector_t accepting_remote_connections;
     bool const all_servers(server_name.isEmpty() || server_name == "*");

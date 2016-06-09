@@ -130,6 +130,27 @@ void manager_status::set_snapmanager_frontend(QString const & snapmanager_fronte
 }
 
 
+/** \brief Check whether the specified server is a front end computer.
+ *
+ * This function is used to check whether the specified \p server_name
+ * represents a front end computer, as far as snapmanager.cgi is
+ * concerned, and if so, it returns true.
+ *
+ * Note that the snapmanagerdaemon status will verify that all the
+ * snapmanagerdaemon frontend parameter is exactly the same on all
+ * computers.
+ *
+ * \param[in] server_name  The name of the server being checked.
+ *
+ * \return true if the server is considered a snapmanager.cgi front end.
+ */
+bool manager_status::is_snapmanager_frontend(QString const & server_name) const
+{
+    return f_snapmanager_frontend.empty()
+        || f_snapmanager_frontend.contains(server_name);
+}
+
+
 /** \brief Thread used to permanently gather this server status.
  *
  * Each computer in the Snap! cluster should be running an instance
@@ -201,7 +222,14 @@ void manager_status::run()
         // generate a message to send the snapmanagerdaemon
         // (but only if the status changed, otherwise it would be a waste)
         //
-        if(status != previous_status)
+        bool resend(false);
+        {
+            snap::snap_thread::snap_lock guard(f_mutex);
+            resend = f_resend_status;
+            f_resend_status = false;
+        }
+        if(status != previous_status
+        || resend)
         {
             // TODO: designate a few computers that are to be used as
             //       front ends with snapmanager.cgi and only send the
@@ -270,6 +298,18 @@ void manager_status::process_message(snap::snap_communicator_message const & mes
         break;
 
     }
+}
+
+
+/** \brief Request for the status to be resent.
+ *
+ * This function clears the last status information so that way we can
+ * make sure it gets resent to all the other snapmanagerdaemons running.
+ */
+void manager_status::resend_status()
+{
+    snap::snap_thread::snap_lock guard(f_mutex);
+    f_resend_status = true;
 }
 
 
