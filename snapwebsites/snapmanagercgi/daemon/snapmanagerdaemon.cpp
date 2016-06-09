@@ -175,6 +175,7 @@ manager_daemon::manager_daemon( int argc, char * argv[] )
 
     // --server-name (mandatory)
     f_server_name = f_opt.get_string("server-name").c_str();
+    f_status_connection->set_server_name(f_server_name);
 
     // --debug
     //
@@ -493,18 +494,15 @@ void manager_daemon::stop(bool quitting)
         // unregister if we are still connected to the messenger
         // and Snap! Communicator is not already quitting
         //
-SNAP_LOG_WARNING("manager_daemon: should be sending UNREGISTER now...");
         if(!quitting)
         {
             snap::snap_communicator_message cmd;
             cmd.set_command("UNREGISTER");
             cmd.add_parameter("service", "snapmanagerdaemon");
             f_messenger->send_message(cmd);
-SNAP_LOG_WARNING("manager_daemon: UNREGISTER being sent!?...");
         }
     }
 
-SNAP_LOG_WARNING("manager_daemon: stopping status thread too if necessary");
     if(f_status_connection)
     {
         snap::snap_communicator_message cmd;

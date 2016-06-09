@@ -74,6 +74,7 @@ public:
                                 status_connection(manager_daemon * md);
 
     void                        set_thread_b(manager_status * ms);
+    void                        set_server_name(QString const & server_name);
 
     // snap::snap_communicator::snap_pipe_message_connection implementation
     virtual void                process_message_a(snap::snap_communicator_message const & message) override;
@@ -82,6 +83,7 @@ public:
 private:
     manager_daemon *            f_manager_daemon;
     manager_status *            f_manager_status;
+    QString                     f_server_name;
 };
 
 
