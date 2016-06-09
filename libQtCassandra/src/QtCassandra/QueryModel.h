@@ -55,13 +55,15 @@ public:
 
     // Read only access
     //
-    virtual Qt::ItemFlags   flags        ( QModelIndex const & index ) const;
-    virtual QVariant        data         ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
-    virtual QModelIndex     index        ( int row, int column, const QModelIndex &parent= QModelIndex() ) const;
-    virtual QModelIndex     parent       ( const QModelIndex &child ) const;
-    virtual int             rowCount     ( QModelIndex const & prnt = QModelIndex() ) const;
-    virtual int             columnCount  ( QModelIndex const & prnt = QModelIndex() ) const;
+    virtual Qt::ItemFlags   flags        ( QModelIndex const & index ) const override;
+    virtual QVariant        data         ( QModelIndex const & index, int role = Qt::DisplayRole ) const override;
+    virtual QModelIndex     index        ( int row, int column, const QModelIndex &parent= QModelIndex() ) const override;
+    virtual QModelIndex     parent       ( const QModelIndex &child ) const override;
+    virtual int             rowCount     ( QModelIndex const & prnt = QModelIndex() ) const override;
+    virtual int             columnCount  ( QModelIndex const & prnt = QModelIndex() ) const override;
 
+    // Local virtual methods
+    //
     virtual bool			fetchFilter     ( const QByteArray& key );
     virtual void			fetchCustomData ( QCassandraQuery::pointer_t q );
 
@@ -74,6 +76,7 @@ protected:
     QString                      f_keyspaceName;
     QString                      f_tableName;
     std::vector<QByteArray>      f_rows;
+    QRegExp                      f_filter;
     bool                         f_isMore      = false;
     int                          f_columnCount = 1;
     const int                    f_rowPageSize = 10;    // This is for internal pagination--it has nothing to do with the query.
@@ -83,7 +86,6 @@ protected:
 
 private:
     QCassandraQuery::pointer_t      f_query;
-    QRegExp                         f_filter;
     std::queue<QByteArray>          f_pendingRows;
 
     void reset();

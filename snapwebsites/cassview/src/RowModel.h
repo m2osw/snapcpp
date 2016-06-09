@@ -35,17 +35,19 @@ public:
     const QByteArray&	  rowKey() const		               { return f_rowKey; }
     void                  setRowKey( const QByteArray& key ) { f_rowKey = key;  }
 
-    virtual QVariant      data  ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
-    virtual Qt::ItemFlags flags ( const QModelIndex & idx ) const;
+    virtual bool          fetchFilter( const QByteArray& key ) override;
+
+    virtual QVariant      data  ( const QModelIndex & index, int role = Qt::DisplayRole ) const override;
+    virtual Qt::ItemFlags flags ( const QModelIndex & idx ) const override;
 
     // Write access
     //
-    bool                setData( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole );
+    bool                setData( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole ) override;
 
     // Resizable methods
     //
-    bool                insertRows( int row, int count, const QModelIndex & parent = QModelIndex() );
-    virtual bool        removeRows( int row, int count, const QModelIndex & parent = QModelIndex() );
+    bool                insertRows( int row, int count, const QModelIndex & parent = QModelIndex() ) override;
+    virtual bool        removeRows( int row, int count, const QModelIndex & parent = QModelIndex() ) override;
 
     void 				doQuery();
 

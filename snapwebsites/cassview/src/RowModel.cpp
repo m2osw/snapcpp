@@ -20,6 +20,7 @@
 
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/snap_exception.h>
 
 #include <QtCore>
 
@@ -48,6 +49,22 @@ void RowModel::doQuery()
     q->bindByteArray( 0, f_rowKey );
 
     QueryModel::doQuery( q );
+}
+
+
+bool RowModel::fetchFilter( const QByteArray& key )
+{
+    QString const col_key( f_dbutils->get_column_name( key ) );
+
+    if( !f_filter.isEmpty() )
+    {
+        if( f_filter.indexIn( col_key ) == -1 )
+        {
+            return false;
+        }
+    }
+    //
+    return true;
 }
 
 
@@ -86,7 +103,6 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
     }
 
     auto const column_name( *(f_rows.begin() + idx.row()) );
-    f_dbutils->set_display_len( 24 );
     return f_dbutils->get_column_name( column_name );
 }
 
@@ -131,8 +147,21 @@ bool RowModel::setData( const QModelIndex & index, const QVariant & new_col_vari
             // format of the new column key.
             //
             QByteArray new_value;
-            QString str_val( f_dbutils->get_column_value( f_rows[index.row()], value ) );
-            f_dbutils->set_column_value( new_col_key, new_value, str_val );
+            try
+            {
+                QString str_val( f_dbutils->get_column_value( f_rows[index.row()], value ) );
+                f_dbutils->set_column_value( new_col_key, new_value, str_val );
+            }
+            catch( snap::snap_exception )
+            {
+                // It must have not liked the conversion...
+                //
+                new_value = f_dbutils->get_column_value( f_rows[index.row()], value ).toUtf8();
+            }
+            catch( ... )
+            {
+                throw;
+            }
 
             // Now do the query:
             //
