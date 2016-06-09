@@ -368,14 +368,16 @@ void snapdb::drop_cell() const
     {
         snap::dbutils du( f_table, f_row );
         const QByteArray row_key( du.get_row_key() );
+        QByteArray col_key;
+        du.set_column_name( col_key, f_cell );
         auto q( QCassandraQuery::create(f_session) );
         q->query( QString("DELETE FROM %1.%2 WHERE key = ? and column1 = ?;")
             .arg(f_context)
             .arg(f_table)
             );
         int bind = 0;
-        q->bindString( bind++, row_key );
-        q->bindString( bind++, f_cell );
+        q->bindByteArray( bind++, row_key );
+        q->bindByteArray( bind++, col_key );
         q->start();
         q->end();
     }
@@ -586,6 +588,8 @@ void snapdb::display_cell() const
         try
         {
             const QByteArray row_key( du.get_row_key() );
+            QByteArray col_key;
+            du.set_column_name( col_key, f_cell );
             auto q( QCassandraQuery::create(f_session) );
             q->query( QString("SELECT value FROM %1.%2 WHERE key = ? and column1 = ?;")
                     .arg(f_context)
@@ -593,7 +597,7 @@ void snapdb::display_cell() const
                     );
             int num = 0;
             q->bindByteArray( num++, row_key );
-            q->bindString   ( num++, f_cell  );
+            q->bindByteArray( num++, col_key );
             q->start();
             if( !q->nextRow() )
             {
@@ -657,6 +661,8 @@ void snapdb::set_cell() const
     {
         snap::dbutils du( f_table, f_row );
         QByteArray const row_key( du.get_row_key() );
+        QByteArray col_key;
+        du.set_column_name( col_key, f_cell );
         QByteArray value;
         du.set_column_value( f_cell.toUtf8(), value, f_value );
 
@@ -668,7 +674,7 @@ void snapdb::set_cell() const
         int bind_num = 0;
         q->bindByteArray( bind_num++, value   );
         q->bindByteArray( bind_num++, row_key );
-        q->bindString   ( bind_num++, f_cell  );
+        q->bindByteArray( bind_num++, col_key );
         q->start();
         q->end();
     }

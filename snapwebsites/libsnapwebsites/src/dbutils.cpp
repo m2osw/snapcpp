@@ -490,8 +490,8 @@ void dbutils::set_column_name( QByteArray& key, const QString& name ) const
             throw std::runtime_error( "The column key is expected to be in the form: <name>_<browser>_<version>!" );
         }
 
-        QtCassandra::appendStringValue( key, arr[0] );       // name
-        QtCassandra::appendStringValue( key, arr[1] );       // browser
+        QtCassandra::appendStringValue( key, arr[0] + "_" );       // name
+        QtCassandra::appendStringValue( key, arr[1] + "_" );       // browser
 
         QStringList version( arr[2].split('.') );
         for( auto rev : version )
