@@ -254,7 +254,7 @@ void manager_status::run()
  */
 void manager_status::process_message(snap::snap_communicator_message const & message)
 {
-    SNAP_LOG_TRACE("manager-status thread received messenger message [")(message.to_message())("] for ")(f_server_name);
+    SNAP_LOG_TRACE("manager-status thread received messenger message [")(message.to_message()); //("] for ")(f_server_name);
 
     QString const & command(message.get_command());
 
