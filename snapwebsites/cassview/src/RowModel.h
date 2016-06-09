@@ -38,7 +38,6 @@ public:
     virtual QVariant      data  ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
     virtual Qt::ItemFlags flags ( const QModelIndex & idx ) const;
 
-#if 0
     // Write access
     //
     bool                setData( const QModelIndex & index, const QVariant & value, int role = Qt::EditRole );
@@ -46,7 +45,6 @@ public:
     // Resizable methods
     //
     bool                insertRows( int row, int count, const QModelIndex & parent = QModelIndex() );
-#endif
     virtual bool        removeRows( int row, int count, const QModelIndex & parent = QModelIndex() );
 
     void 				doQuery();

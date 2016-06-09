@@ -473,8 +473,8 @@ void MainWindow::on_action_DeleteRows_triggered()
 
 void MainWindow::on_action_InsertColumn_triggered()
 {
-    QMessageBox::critical( this, tr("Notice"), tr("Column insertion has been disabled for now.") );
-    //f_rowModel.insertRows( 0, 1 );
+    //QMessageBox::critical( this, tr("Notice"), tr("Column insertion has been disabled for now.") );
+    f_rowModel.insertRows( 0, 1 );
 }
 
 
