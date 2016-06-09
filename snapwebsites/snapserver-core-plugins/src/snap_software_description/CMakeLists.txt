@@ -49,8 +49,8 @@ snap_validate_xml( content.xml                                      content/cont
 
 snap_validate_xml( snap_software_description-settings-page.xml      editor/editor-form.dtd )
 
-snap_validate_xml( snap_software_description-settings-parser.xsl    layout/simplified-xslt20.dtd )
-#snap_validate_xml( padlist-parser.xsl                               layout/simplified-xslt20.dtd )
+snap_validate_xml( snap_software_description-settings-parser.xsl    simplified-xslt20.dtd )
+#snap_validate_xml( padlist-parser.xsl                               simplified-xslt20.dtd )
 
 snap_validate_xml( snap-software-description-catalog-parser.xsl     snap-software-description-xslt20.dtd )
 snap_validate_xml( snap-software-description-file-parser.xsl        snap-software-description-xslt20.dtd )

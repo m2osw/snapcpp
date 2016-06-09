@@ -46,10 +46,10 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( list/content.xml             content/content.dtd )
 
-snap_validate_xml( list/default-item-theme.xsl  layout/simplified-xslt20.dtd )
-snap_validate_xml( list/default-item-body.xsl   layout/simplified-xslt20.dtd )
-snap_validate_xml( list/default-list-theme.xsl  layout/simplified-xslt20.dtd )
-snap_validate_xml( list/default-list-body.xsl   layout/simplified-xslt20.dtd )
+snap_validate_xml( list/default-item-theme.xsl  simplified-xslt20.dtd )
+snap_validate_xml( list/default-item-body.xsl   simplified-xslt20.dtd )
+snap_validate_xml( list/default-list-theme.xsl  simplified-xslt20.dtd )
+snap_validate_xml( list/default-list-body.xsl   simplified-xslt20.dtd )
 
 snap_validate_js( list/list.js )
 

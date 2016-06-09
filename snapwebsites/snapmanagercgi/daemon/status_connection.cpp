@@ -66,9 +66,10 @@ void status_connection::set_thread_b(manager_status * ms)
 {
     f_manager_status = ms;
 
-    snap::snap_communicator_message thread_ready;
-    thread_ready.set_command("THREADREADY");
-    send_message(thread_ready);
+    // The thread gets started "way" later so we do not need such a message
+    //snap::snap_communicator_message thread_ready;
+    //thread_ready.set_command("THREADREADY");
+    //send_message(thread_ready);
 }
 
 

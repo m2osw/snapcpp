@@ -12,6 +12,9 @@ cd BUILD
 #export CXX=g++-4.9 cmake
 
 # Configure and generate (Debug or Release)
-cmake -DCMAKE_BUILD_TYPE=Debug ..
+cmake \
+	-DCMAKE_BUILD_TYPE=Debug \
+	-DDTD_SOURCE_PATH:PATH="`pwd`/BUILD/dist/share/snapwebsites/dtd" \
+	..
 
 make -j 4

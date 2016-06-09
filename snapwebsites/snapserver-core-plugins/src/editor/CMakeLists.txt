@@ -53,8 +53,8 @@ snap_validate_xml( new-draft.xml form/snap-form.dtd )
 snap_validate_xml( content.xml              content/content.dtd )
 snap_validate_xml( default-page.xml         editor/editor-form.dtd )
 snap_validate_xml( editor-test-page.xml     editor/editor-form.dtd )
-snap_validate_xml( editor-test-parser.xsl   layout/simplified-xslt20.dtd )
-snap_validate_xml( editor-form.xsl          layout/simplified-xslt20.dtd )
+snap_validate_xml( editor-test-parser.xsl   simplified-xslt20.dtd )
+snap_validate_xml( editor-form.xsl          simplified-xslt20.dtd )
 
 # Unfortunate, but at this time this doesn't work too well...
 # (i.e. xmllint [as in libxml2] does not support this complex XSD schema)

@@ -50,8 +50,8 @@ snap_validate_xml( content.xml                                      content/cont
 snap_validate_xml( editor/epayment-credit-card-settings-page.xml    editor/editor-form.dtd )
 snap_validate_xml( editor/epayment-credit-card-page.xml             editor/editor-form.dtd )
 
-snap_validate_xml( layout/epayment-credit-card-settings-parser.xsl  layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/epayment-credit-card-parser.xsl           layout/simplified-xslt20.dtd )
+snap_validate_xml( layout/epayment-credit-card-settings-parser.xsl  simplified-xslt20.dtd )
+snap_validate_xml( layout/epayment-credit-card-parser.xsl           simplified-xslt20.dtd )
 
 snap_validate_js( epayment-credit-card.js )
 snap_validate_js( epayment-credit-card-form.js )

@@ -50,8 +50,8 @@ snap_validate_xml( content.xml                      content/content.dtd )
 
 snap_validate_xml( epayment-settings-page.xml       editor/editor-form.dtd )
 
-snap_validate_xml( epayment-settings-parser.xsl     layout/simplified-xslt20.dtd )
-snap_validate_xml( epayment-product-parser.xsl      layout/simplified-xslt20.dtd )
+snap_validate_xml( epayment-settings-parser.xsl     simplified-xslt20.dtd )
+snap_validate_xml( epayment-product-parser.xsl      simplified-xslt20.dtd )
 
 snap_validate_js( epayment.js )
 

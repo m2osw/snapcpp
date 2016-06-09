@@ -50,8 +50,8 @@ snap_validate_xml( content.xml              content/content.dtd )
 
 snap_validate_xml( feed-settings-page.xml   editor/editor-form.dtd )
 
-snap_validate_xml( feed-parser.xsl          layout/simplified-xslt20.dtd )
-snap_validate_xml( feed-settings-parser.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( feed-parser.xsl          simplified-xslt20.dtd )
+snap_validate_xml( feed-settings-parser.xsl simplified-xslt20.dtd )
 
 snap_validate_xml( atom.xsl                 feed/atom-xslt20.dtd )
 snap_validate_xml( rss.xsl                  feed/rss-xslt20.dtd )

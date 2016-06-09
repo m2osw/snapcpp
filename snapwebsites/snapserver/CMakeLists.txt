@@ -55,9 +55,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Automatically run the moc compiler on qt files
 set( CMAKE_AUTOMOC TRUE )
 
-# Override the DTD_SOURCE_PATH that is provided by the libsnapwebsites library
-set( DTD_SOURCE_PATH "${snapwebsites_project_SOURCE_DIR}/plugins" CACHE PATH "Location of the default DTD files" )
-
 option( RUN_TESTS "Enable tests to run via CTest" OFF )
 if( ${RUN_TESTS} )
     enable_testing()

@@ -50,14 +50,18 @@ qt5_add_resources(SNAP_MANAGER_RESOURCES_RCC
 ## Validate content
 ##
 snap_validate_css( info.css )
+
 snap_validate_xml( content.xml                          content/content.dtd )
+
 snap_validate_xml( editor/info-settings-page.xml        editor/editor-form.dtd )
 snap_validate_xml( editor/plugin-settings-page.xml      editor/editor-form.dtd )
 snap_validate_xml( editor/unsubscribe-page.xml          editor/editor-form.dtd )
-snap_validate_xml( layout/info-settings-parser.xsl      layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/plugin-settings-parser.xsl    layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/unsubscribe-parser.xsl        layout/simplified-xslt20.dtd )
-snap_validate_xml( layout/unsubscribe-theme-parser.xsl  layout/simplified-xslt20.dtd )
+
+snap_validate_xml( layout/info-settings-parser.xsl      simplified-xslt20.dtd )
+snap_validate_xml( layout/plugin-settings-parser.xsl    simplified-xslt20.dtd )
+snap_validate_xml( layout/unsubscribe-parser.xsl        simplified-xslt20.dtd )
+snap_validate_xml( layout/unsubscribe-theme-parser.xsl  simplified-xslt20.dtd )
+
 snap_validate_js( plugin-selection/plugin-selection.js )
 snap_validate_js( sendmail/unsubscribe.js )
 
