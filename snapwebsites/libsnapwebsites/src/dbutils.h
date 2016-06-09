@@ -77,6 +77,8 @@ public:
     QString             get_column_name ( QtCassandra::QCassandraCell::pointer_t c ) const;
     QString				get_column_name ( const QByteArray& key ) const;
 
+    void                set_column_name ( QByteArray& key, const QString& name ) const;
+
     QString             get_column_value( QtCassandra::QCassandraCell::pointer_t c, bool const display_only = false ) const;
     QString             get_column_value( const QByteArray& key, const QByteArray& value, bool const display_only = false ) const;
 

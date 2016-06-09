@@ -359,7 +359,7 @@ QString dbutils::get_column_name( const QByteArray& key ) const
     else if((f_tableName == "files" && f_rowName == "images"))
     {
         QString const time(microseconds_to_string(QtCassandra::safeInt64Value(key, 0), true));
-        name = QString("%1 %4").arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
+        name = QString("%1 %2").arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
     }
     else if(f_tableName == "branch" && (key.startsWith(content_attachment_reference.toLatin1())) )
     {
@@ -437,6 +437,107 @@ QString dbutils::get_column_name( const QByteArray& key ) const
 
     return name;
 }
+
+
+void dbutils::set_column_name( QByteArray& key, const QString& name ) const
+{
+    QString const content_attachment_reference( "content::attachment::reference::" );
+
+    if(f_tableName == "files" && f_rowName == "new")
+    {
+        key = string_to_key( name );
+    }
+    else if((f_tableName == "list" && f_rowName != "*standalone*"))
+    {
+        QStringList arr( name.split(' ') );
+        if( arr.size() != 3 )
+        {
+            throw std::runtime_error("expected 3 arguments!");
+        }
+
+        const char priority = arr[0][0].toLatin1();
+        QtCassandra::appendUnsignedCharValue( key, priority );
+
+        const uint64_t microsec( string_to_microseconds( arr[1] ) );
+        QtCassandra::appendInt64Value( key, microsec );
+        QtCassandra::appendStringValue( key, arr[2] );
+    }
+    else if((f_tableName == "files" && f_rowName == "images"))
+    {
+        QStringList arr( name.split(' ') );
+        if( arr.size() != 2 )
+        {
+            throw std::runtime_error("expected 3 arguments!");
+        }
+
+        const uint64_t microsec( string_to_microseconds( arr[0] ) );
+        QtCassandra::appendInt64Value( key, microsec );
+
+        QtCassandra::appendStringValue( key, arr[1] );
+    }
+    else if(f_tableName == "branch" && (name.startsWith(content_attachment_reference.toLatin1())) )
+    {
+        QtCassandra::appendStringValue( key, content_attachment_reference );
+        QtCassandra::appendStringValue( key, name );
+    }
+    else if((f_tableName == "files" && f_rowName == "javascripts")
+         || (f_tableName == "files" && f_rowName == "css"))
+    {
+        // this row name is "<name>"_"<browser>"_<version as integers>
+        QStringList arr( name.split('_') );
+        if( arr.size() != 3 )
+        {
+            throw std::runtime_error( "The column key is expected to be in the form: <name>_<browser>_<version>!" );
+        }
+
+        QtCassandra::appendStringValue( key, arr[0] );       // name
+        QtCassandra::appendStringValue( key, arr[1] );       // browser
+
+        QStringList version( arr[2].split('.') );
+        for( auto rev : version )
+        {
+            QtCassandra::appendUInt32Value( key, static_cast<uint32_t>(rev.toUInt()) );
+        }
+    }
+    else if((f_tableName == "users"    && f_rowName == "*index_row*")
+         || (f_tableName == "shorturl" && f_rowName.endsWith("/*index_row*"))
+         || f_tableName == "serverstats")
+    {
+        QtCassandra::appendInt64Value( key, static_cast<int64_t>(name.toLong()) );
+    }
+    else if(f_tableName == "tracker"
+         || (f_tableName == "backend" && !f_rowName.startsWith("*"))
+         || f_tableName == "firewall")
+    {
+        const uint64_t microsec( string_to_microseconds( name ) );
+        QtCassandra::appendInt64Value( key, microsec );
+    }
+    else if(f_tableName == "emails" && f_rowName == "bounced_raw")
+    {
+        QStringList arr( name.split(' ') );
+        if( arr.size() == 2 )
+        {
+            const uint64_t microsec( string_to_microseconds( arr[0] ) );
+            QtCassandra::appendInt64Value( key, microsec );
+            //
+            uuid_t uuid;
+            uuid_parse( arr[1].toUtf8().data(), uuid );
+            char unique_key[sizeof(uuid)];
+            memcpy( unique_key, uuid, sizeof(uuid) );
+            QtCassandra::appendBinaryValue( key, QByteArray(unique_key, sizeof(unique_key)) );
+        }
+        else
+        {
+            const uint64_t microsec( string_to_microseconds( name ) );
+            QtCassandra::appendInt64Value( key, microsec );
+        }
+    }
+    else
+    {
+        key = name.toUtf8();
+    }
+}
+
 
 dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) const
 {
