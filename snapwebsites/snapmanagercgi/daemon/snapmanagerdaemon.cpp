@@ -175,6 +175,7 @@ manager_daemon::manager_daemon( int argc, char * argv[] )
 
     // --server-name (mandatory)
     f_server_name = f_opt.get_string("server-name").c_str();
+    f_status_connection->set_server_name(f_server_name);
 
     // --debug
     //
