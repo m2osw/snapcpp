@@ -15,7 +15,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 Package: snapdb
 Section: admin
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, snapdbproxy
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Suggests: cassandra (>= 3.5.0)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
