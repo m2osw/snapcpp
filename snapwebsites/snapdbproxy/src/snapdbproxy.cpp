@@ -479,6 +479,8 @@ void snapdbproxy::process_message(snap::snap_communicator_message const & messag
 
     QString const command(message.get_command());
 
+// TODO: use a switch statement
+
     if(command == "LOG")
     {
         // logrotate just rotated the logs, we have to reconfigure

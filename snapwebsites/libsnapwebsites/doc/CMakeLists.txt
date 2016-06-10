@@ -34,7 +34,7 @@
 ## Documentation
 ##
 AddDoxygenTarget(
-    snapwebsites
+    libsnapwebsites
     ${LIBSNAPWEBSITES_VERSION_MAJOR}
     ${LIBSNAPWEBSITES_VERSION_MINOR}
     ${LIBSNAPWEBSITES_VERSION_PATCH}
@@ -69,7 +69,7 @@ install(
         snapwebsites-cluster-setup.odg
         snapwebsites-cluster-setup.png
     DESTINATION
-        share/doc/snapwebsites
+        share/doc/snapwebsites/libsnapwebsites
 )
 
 # vim: ts=4 sw=4 et nocindent

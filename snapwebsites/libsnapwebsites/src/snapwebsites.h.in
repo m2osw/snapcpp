@@ -29,6 +29,14 @@
 
 #include <QTranslator>
 
+/** \file
+ * \brief Main header file of the libsnapwebsites library.
+ *
+ * This header file defines the server class which is the main
+ * class in the snapserver daemon. It executes the run() loop.
+ *
+ * See the .cpp file for more details.
+ */
 
 #define    SNAPWEBSITES_VERSION_MAJOR   @LIBSNAPWEBSITES_VERSION_MAJOR@
 #define    SNAPWEBSITES_VERSION_MINOR   @LIBSNAPWEBSITES_VERSION_MINOR@

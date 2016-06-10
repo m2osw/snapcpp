@@ -433,7 +433,7 @@ void messages::bootstrap(snap_child * snap)
  * \sa set_info()
  * \sa set_debug()
  */
-messages::message& messages::set_http_error(snap_child::http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security)
+messages::message & messages::set_http_error(snap_child::http_code_t err_code, QString err_name, const QString& err_description, const QString& err_details, bool err_security)
 {
     ++f_error_count;
 

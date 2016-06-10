@@ -3595,7 +3595,7 @@ void users::on_detach_from_session()
  *
  * \param[in,out] locales  Locales as defined by the user.
  */
-void users::on_define_locales(QString& locales)
+void users::on_define_locales(QString & locales)
 {
     if(!f_user_key.isEmpty())
     {
