@@ -23,16 +23,17 @@ private slots:
     void onShowRowsContextMenu( const QPoint& pos );
     void onShowCellsContextMenu( const QPoint& pos );
     void onCellsModelReset();
-    void on_action_Settings_triggered();
     void onAboutToQuit();
-    void on_f_tables_currentIndexChanged(const QString &table_name);
+    void onTablesCurrentIndexChanged(const QString &table_name);
     void onTableModelQueryFinished();
     void onRowModelQueryFinished();
     void onRowsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
     void onCellsCurrentChanged( const QModelIndex & current, const QModelIndex & /*previous*/ );
+    void onSectionClicked( int section );
+    void onExceptionCaught( const QString & what, const QString & message );
+    void on_action_Settings_triggered();
     void on_action_About_triggered();
     void on_action_AboutQt_triggered();
-    void onSectionClicked( int section );
     void on_action_InsertRow_triggered();
     void on_action_DeleteRows_triggered();
     void on_action_InsertColumn_triggered();
@@ -41,16 +42,18 @@ private slots:
     void on_f_applyFilter_clicked();
     void on_f_clearFilter_clicked();
     void on_f_refreshView_clicked();
-    void onExceptionCaught( const QString & what, const QString & message );
 
 private:
     typedef QtCassandra::QCassandraSession::pointer_t cassandra_t;
-    cassandra_t       f_session;
-    CassandraModel    f_cassandraModel;
-    KeyspaceModel     f_contextModel;
-    TableModel		  f_tableModel;
-    RowModel		  f_rowModel;
-    QString           f_context;
+    typedef std::shared_ptr<KeyspaceModel>  keyspace_model_t;
+    typedef std::shared_ptr<TableModel>     table_model_t;
+    typedef std::shared_ptr<RowModel>       row_model_t;
+
+    cassandra_t      f_session;
+    keyspace_model_t f_contextModel;
+    table_model_t    f_tableModel;
+    row_model_t		 f_rowModel;
+    QString          f_context;
 
     void connectCassandra ();
     void fillTableList    ();

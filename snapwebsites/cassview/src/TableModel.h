@@ -37,6 +37,7 @@ public:
 
     // Read only access
     //
+    virtual bool     fetchFilter( const QByteArray& key ) override;
     virtual QVariant data( QModelIndex const & index, int role = Qt::DisplayRole ) const override;
     virtual void     fetchCustomData( QtCassandra::QCassandraQuery::pointer_t q ) override;
 

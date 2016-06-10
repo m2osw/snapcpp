@@ -52,6 +52,22 @@ void TableModel::doQuery()
 }
 
 
+bool TableModel::fetchFilter( const QByteArray& key )
+{
+    QString const row_name( f_dbutils->get_row_name( key ) );
+
+    if( !f_filter.isEmpty() )
+    {
+        if( f_filter.indexIn( row_name ) == -1 )
+        {
+            return false;
+        }
+    }
+    //
+    return true;
+}
+
+
 QVariant TableModel::data( QModelIndex const & idx, int role ) const
 {
     if( role == Qt::UserRole )

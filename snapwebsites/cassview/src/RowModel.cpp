@@ -20,6 +20,7 @@
 
 #include <snapwebsites/not_used.h>
 #include <snapwebsites/qstring_stream.h>
+#include <snapwebsites/snap_exception.h>
 
 #include <QtCore>
 
@@ -51,9 +52,24 @@ void RowModel::doQuery()
 }
 
 
+bool RowModel::fetchFilter( const QByteArray& key )
+{
+    QString const col_key( f_dbutils->get_column_name( key ) );
+
+    if( !f_filter.isEmpty() )
+    {
+        if( f_filter.indexIn( col_key ) == -1 )
+        {
+            return false;
+        }
+    }
+    //
+    return true;
+}
+
+
 Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
 {
-#if 0
     // Editing is disabled for now.
     Qt::ItemFlags f = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     if( idx.column() == 0 )
@@ -61,9 +77,10 @@ Qt::ItemFlags RowModel::flags( const QModelIndex & idx ) const
         f |= Qt::ItemIsEditable;
     }
     return f;
-#endif
+#if 0
     snap::NOTUSED(idx);
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+#endif
 }
 
 
@@ -86,13 +103,11 @@ QVariant RowModel::data( QModelIndex const & idx, int role ) const
     }
 
     auto const column_name( *(f_rows.begin() + idx.row()) );
-    f_dbutils->set_display_len( 24 );
     return f_dbutils->get_column_name( column_name );
 }
 
 
-#if 0
-bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int role )
+bool RowModel::setData( const QModelIndex & index, const QVariant & new_col_variant, int role )
 {
     if( role != Qt::EditRole )
     {
@@ -101,41 +116,89 @@ bool RowModel::setData( const QModelIndex & idx, const QVariant & value, int rol
 
     try
     {
+        QByteArray value;
+        QByteArray new_col_key;
+        f_dbutils->set_column_name( new_col_key, new_col_variant.toString() );
+
+        // First, get the value from the current record.
+        //
         {
             const QString q_str(
                     QString("SELECT value FROM %1.%2 WHERE key = ? AND column1 = ?")
-                    .arg(f_rowModel.keyspaceName())
-                    .arg(f_rowModel.tableName())
+                    .arg(f_keyspaceName)
+                    .arg(f_tableName)
                     );
-            QCassandraQuery q( f_session );
-            q.query( q_str, 2 );
-            q.bindByteArray( 0, f_rowModel.rowKey() );
-            q.bindByteArray( 1, f_rowModel.data(index, Qt::UserRole ).toByteArray() );
-            q.start();
-            QByteArray value( q.getByteArrayColumn(0) );
-            q.end():
-
-            QByteArray key( data( idx, Qt::UserRole ).toByteArray() );
-            QByteArray save_value;
-            f_dbutils->set_column_value( key, save_value, value.toString() );
+            auto q = QCassandraQuery::create( f_session );
+            q->query( q_str );
+            int num = 0;
+            q->bindByteArray( num++, f_rowKey );
+            q->bindByteArray( num++, f_rows[index.row()] );
+            q->start();
+            if( q->nextRow() )
+            {
+                value = q->getByteArrayColumn(0);
+            }
+            q->end();
         }
 
+        // Next, insert the new value with the new column key. This creates a new record.
         {
-            QCassandraQuery q( f_session );
-            q.query(
-                    //QString("UPDATE %1.%2 SET key = ?, column1 = ? WHERE key = ?")
+            // We must convert the value of the cell from the old format, whatever it is, to the
+            // format of the new column key.
+            //
+            QByteArray new_value;
+            try
+            {
+                QString str_val( f_dbutils->get_column_value( f_rows[index.row()], value ) );
+                f_dbutils->set_column_value( new_col_key, new_value, str_val );
+            }
+            catch( snap::snap_exception )
+            {
+                // It must have not liked the conversion...
+                //
+                new_value = f_dbutils->get_column_value( f_rows[index.row()], value ).toUtf8();
+            }
+            catch( ... )
+            {
+                throw;
+            }
+
+            // Now do the query:
+            //
+            auto q = QCassandraQuery::create( f_session );
+            q->query(
                     QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
                     .arg(f_keyspaceName)
                     .arg(f_tableName)
-                    , 3
                    );
-            q.bindByteArray( 0, f_rowKey   );
-            q.bindByteArray( 1, save_value );
-            q.start();
-            q.end();
+            int num = 0;
+            q->bindByteArray( num++, f_rowKey    );
+            q->bindByteArray( num++, new_col_key );
+            q->bindByteArray( num++, new_value   );
+            q->start();
+            q->end();
         }
 
-        Q_EMIT dataChanged( idx, idx );
+        // Remove the old column key record.
+        {
+            auto q = QCassandraQuery::create( f_session );
+            q->query(
+                    QString("DELETE FROM %1.%2 WHERE key = ? AND column1 = ?")
+                    .arg(f_keyspaceName)
+                    .arg(f_tableName)
+                   );
+            int num = 0;
+            q->bindByteArray( num++, f_rowKey            );
+            q->bindByteArray( num++, f_rows[index.row()] );
+            q->start();
+            q->end();
+        }
+
+        // Change the row value
+        //
+        f_rows[index.row()] = new_col_key;
+
+        Q_EMIT dataChanged( index, index );
 
         return true;
     }
@@ -161,18 +224,18 @@ bool RowModel::insertRows ( int row, int count, const QModelIndex & parent_index
 
             // TODO: this might be pretty slow. I need to utilize the "prepared query" API.
             //
-            QCassandraQuery q( f_session );
-            q.query(
+            auto q = QCassandraQuery::create( f_session );
+            q->query(
                         QString("INSERT INTO %1.%2 (key,column1,value) VALUES (?,?,?)")
                         .arg(f_keyspaceName)
                         .arg(f_tableName)
-                        , 3
                         );
-            q.bindByteArray( 0, f_rowKey    );
-            q.bindByteArray( 1, newcol      );
-            q.bindByteArray( 2, "New Value" );
-            q.start();
-            q.end();
+            int num = 0;
+            q->bindByteArray( num++, f_rowKey    );
+            q->bindByteArray( num++, newcol      );
+            q->bindByteArray( num++, "New Value" );
+            q->start();
+            q->end();
         }
         endInsertRows();
     }
@@ -184,7 +247,6 @@ bool RowModel::insertRows ( int row, int count, const QModelIndex & parent_index
 
     return true;
 }
-#endif
 
 bool RowModel::removeRows( int row, int count, const QModelIndex & )
 {

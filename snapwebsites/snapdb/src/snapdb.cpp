@@ -397,17 +397,14 @@ bool snapdb::row_exists() const
         snap::dbutils du( f_table, f_row );
         const QByteArray row_key( du.get_row_key() );
         auto q( QCassandraQuery::create(f_session) );
-        q->query( QString("SELECT COUNT(*) FROM %1.%2 WHERE key = ?")
+        q->query( QString("SELECT column1 FROM %1.%2 WHERE key = ?")
             .arg(f_context)
             .arg(f_table)
             );
         int bind = 0;
-        q->bindString( bind++, row_key );
+        q->bindByteArray( bind++, row_key );
         q->start();
-        if( q->nextRow() )
-        {
-            return q->getInt32Column(0) > 0;
-        }
+        return q->rowCount() > 0;
     }
     catch( const std::exception& ex )
     {
