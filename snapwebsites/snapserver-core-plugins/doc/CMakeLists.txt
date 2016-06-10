@@ -34,42 +34,17 @@
 ## Documentation
 ##
 AddDoxygenTarget(
-    libsnapwebsites
-    ${LIBSNAPWEBSITES_VERSION_MAJOR}
-    ${LIBSNAPWEBSITES_VERSION_MINOR}
-    ${LIBSNAPWEBSITES_VERSION_PATCH}
+    snapserver_core_plugins
+    ${COREPLUGINS_VERSION_MAJOR}
+    ${COREPLUGINS_VERSION_MINOR}
+    ${COREPLUGINS_VERSION_PATCH}
 )
 
 install(
     FILES
-        Cassandra-node-distribution.odt
-        content-data-details.png
-        content-data.odg
-        content-data.png
-        Ecma-262.pdf
         footer.html
-        install-snap.sh
-        js-editor-650x650.png
-        js-editor.odg
-        js-editor.png
-        layout-determination.odg
-        layout-determination.png
-        permission-formula.odf
-        permission-hierarchy-example.odg
-        permission-hierarchy-example.png
-        Permissions-Computation.odg
-        Permissions-Computation.pdf
-        Permissions-Computation.png
-        plan_interference_e_language.pdf
-        Registration-Login-Process.odg
-        Registration-Login-Process.svg
-        Session-Random-Number-Hacked.png
-        Session-Random-Number.odg
-        Session-Random-Number.png
-        snapwebsites-cluster-setup.odg
-        snapwebsites-cluster-setup.png
     DESTINATION
-        share/doc/snapwebsites/libsnapwebsites
+        share/doc/snapwebsites/snapserver-core-plugins
 )
 
 # vim: ts=4 sw=4 et nocindent

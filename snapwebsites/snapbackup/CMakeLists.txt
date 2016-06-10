@@ -36,7 +36,7 @@
 #set(SNAPBACKUP_VERSION_MINOR  1)
 #set(SNAPBACKUP_VERSION_PATCH  1)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 # Reasons for warnings that are turned off:
 # * We use variadic macros for the signals, very useful to avoid otherwise

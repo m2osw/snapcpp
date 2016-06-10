@@ -613,7 +613,7 @@ void output::on_generate_page_content(content::path_info_t & ipath, QDomElement 
         for(int i(0); i < max_messages; ++i)
         {
             QString type;
-            messages::messages::message const& msg(messages_plugin->get_message(i));
+            messages::messages::message const & msg(messages_plugin->get_message(i));
             switch(msg.get_type())
             {
             case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_ERROR:

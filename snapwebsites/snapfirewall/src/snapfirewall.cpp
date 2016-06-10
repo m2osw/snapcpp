@@ -824,6 +824,8 @@ void snap_firewall::process_message(snap::snap_communicator_message const & mess
 
     QString const command(message.get_command());
 
+// TODO: make use of a switch()
+
     if(command == "BLOCK")
     {
         // BLOCK an ip address

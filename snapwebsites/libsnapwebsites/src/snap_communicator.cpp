@@ -141,17 +141,18 @@ void fd_deleter(int * fd)
  * The message format supported is:
  *
  * \code
- *      ( '<' server / service ' ')? ( service '/' )? command ' ' ( parameter_name '=' value ';' )*
+ *      ( '<' sent-from-server ':' sent-from-service ' ')? ( ( server ':' )? service '/' )? command ' ' ( parameter_name '=' value ';' )*
  * \endcode
  *
- * The sender "<server/service" names are added by snapcommunicator
- * when it receives a message which is destined for another service (i.e.
- * not itself). This can be used by the receiver to reply back to the exact
- * same process if it is a requirement for that message (i.e a process that
- * sends a LOCK message, for example, expects to receive the LOCKED message
- * back as an answer.) Note that it is assumed that there cannot be more
- * than one service named 'service' per server. This is enforced by the
- * snapcommunicator REGISTER function.
+ * The sender "<sent-from-server:sent-from-service" names are added by
+ * snapcommunicator when it receives a message which is destined for
+ * another service (i.e. not itself). This can be used by the receiver
+ * to reply back to the exact same process if it is a requirement for that
+ * message (i.e. a process that sends a LOCK message, for example,
+ * expects to receive the LOCKED message back as an answer.) Note that
+ * it is assumed that there cannot be more than one service named
+ * 'service' per server. This is enforced by the snapcommunicator
+ * REGISTER function.
  *
  * \code
  *      // why replying to the exact message sender, one can use the

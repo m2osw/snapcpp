@@ -31,7 +31,7 @@
 ################################################################################
 cmake_minimum_required( VERSION 3.5 )
 
-project( snapwebsites_plugins )
+project( snapserver_core_plugins_project )
 
 ################################################################################
 # We need a common place to install the plugins
@@ -138,6 +138,7 @@ include_directories(
 )
 
 add_subdirectory( src   )
+add_subdirectory( doc   )
 
 
 # vim: ts=4 sw=4 nocindent
