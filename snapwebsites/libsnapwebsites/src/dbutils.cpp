@@ -850,6 +850,42 @@ dbutils::column_type_t dbutils::get_column_type( const QByteArray& key ) const
 }
 
 
+QString dbutils::get_column_type_name( column_type_t val )
+{
+    QString name;
+    switch( val )
+    {
+        case column_type_t::CT_int8_value                                : name = "int8"                                      ; break;
+        case column_type_t::CT_uint8_value                               : name = "uint8"                                     ; break;
+        case column_type_t::CT_int32_value                               : name = "int32"                                     ; break;
+        case column_type_t::CT_uint32_value                              : name = "uint32"                                    ; break;
+        case column_type_t::CT_int64_value                               : name = "int64"                                     ; break;
+        case column_type_t::CT_uint64_value                              : name = "uint64"                                    ; break;
+        case column_type_t::CT_float32_value                             : name = "float32"                                   ; break;
+        case column_type_t::CT_float64_value                             : name = "float64"                                   ; break;
+        case column_type_t::CT_float64_or_empty_value                    : name = "float64_or_empty"                          ; break;
+        case column_type_t::CT_time_microseconds                         : name = "time_microseconds"                         ; break;
+        case column_type_t::CT_time_seconds                              : name = "time_seconds"                              ; break;
+        case column_type_t::CT_time_microseconds_and_string              : name = "time_microseconds_and_string"              ; break;
+        case column_type_t::CT_priority_and_time_microseconds_and_string : name = "priority_and_time_microseconds_and_string" ; break;
+        case column_type_t::CT_hexarray_value                            : name = "hexarray"                                  ; break;
+        case column_type_t::CT_hexarray_limited_value                    : name = "hexarray_limited"                          ; break;
+        case column_type_t::CT_md5array_value                            : name = "md5array"                                  ; break;
+        case column_type_t::CT_secure_value                              : name = "secure"                                    ; break;
+        case column_type_t::CT_status_value                              : name = "status"                                    ; break;
+        case column_type_t::CT_string_value                              : name = "string"                                    ; break;
+        case column_type_t::CT_rights_value                              : name = "rights"                                    ; break;
+    }
+    return name;
+}
+
+
+QString dbutils::get_column_type_name( const QByteArray& key ) const
+{
+    return get_column_type_name( get_column_type(key) );
+}
+
+
 QString dbutils::get_column_value( QCassandraCell::pointer_t c, bool const display_only ) const
 {
     return get_column_value( c->columnKey(), c->value().binaryValue(), display_only );

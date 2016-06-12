@@ -157,7 +157,7 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="QGroupBox" name="groupBox_2">
+      <widget class="QGroupBox" name="f_rowsGroup">
        <property name="title">
         <string>Rows</string>
        </property>
@@ -167,7 +167,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QGroupBox" name="groupBox_3">
+      <widget class="QGroupBox" name="f_cellsGroup">
        <property name="title">
         <string>Columns</string>
        </property>
@@ -184,7 +184,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QGroupBox" name="groupBox_4">
+      <widget class="QGroupBox" name="f_valueGroup">
        <property name="title">
         <string>Value</string>
        </property>

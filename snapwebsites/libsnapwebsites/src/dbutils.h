@@ -88,6 +88,9 @@ public:
     column_type_t       get_column_type( QtCassandra::QCassandraCell::pointer_t c ) const;
     column_type_t       get_column_type( const QByteArray& key ) const;
 
+    QString             get_column_type_name( const QByteArray& key ) const;
+    static QString      get_column_type_name( column_type_t val );
+
 private:
     QString             f_tableName;
     QString             f_rowName;

@@ -144,6 +144,7 @@ void MainWindow::fillTableList()
 
     auto doc( f_valueEdit->document() );
     doc->clear();
+    f_valueGroup->setTitle( tr("Value") );
 
     f_contextEdit->setText( f_context );
 }
@@ -375,6 +376,7 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
         {
             auto doc( f_valueEdit->document() );
             doc->clear();
+            f_valueGroup->setTitle( tr("Value") );
 
             const QByteArray row_key( f_tableModel->data(current).toByteArray() );
 
@@ -431,6 +433,8 @@ void MainWindow::onCellsCurrentChanged( const QModelIndex & current, const QMode
             auto doc( f_valueEdit->document() );
             doc->setPlainText( value );
             doc->setModified( false );
+
+            f_valueGroup->setTitle( tr("Value [%1]").arg(du.get_column_type_name(column_key)) );
         }
     }
     catch( const std::exception& except )

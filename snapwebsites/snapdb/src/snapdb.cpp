@@ -56,6 +56,8 @@
 //
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
+#include <ios>
 #include <iostream>
 #include <sstream>
 
@@ -167,6 +169,14 @@ namespace
             "info",
             nullptr,
             "print out the cluster name and protocol version",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "no-types",
+            nullptr,
+            "supress the output of the column type",
             advgetopt::getopt::no_argument
         },
         {
@@ -539,21 +549,54 @@ void snapdb::display_columns() const
         q->bindByteArray( 0, du.get_row_key() );
         q->setPagingSize(f_count);
         q->start();
+        QStringList keys;
+        QStringList types;
+        QStringList values;
         do
         {
             while( q->nextRow() )
             {
                 const auto column_key( q->getByteArrayColumn("column1") );
                 const auto column_val( q->getByteArrayColumn("value") );
-                std::cout
-                    << du.get_column_name( column_key )
-                    << " = "
-                    << du.get_column_value( column_key, column_val, true /*display_only*/ )
-                    << std::endl;
+                keys   << du.get_column_name      ( column_key );
+                types  << "[" + du.get_column_type_name ( column_key ) + "]";
+                values << du.get_column_value     ( column_key, column_val, true /*display_only*/ );
             }
         }
         while( q->nextPage() );
         q->end();
+
+        int max_key_len = 0;
+        std::for_each( keys.begin(), keys.end(),
+            [&max_key_len]( const QString& key )
+            {
+                max_key_len = std::max( key.size(), max_key_len );
+            }
+        );
+
+        int max_value_len = 0;
+        std::for_each( values.begin(), values.end(),
+            [&max_value_len]( const QString& key )
+            {
+                max_value_len = std::max( key.size(), max_value_len );
+            }
+        );
+
+        auto old_flags = std::cout.flags();
+        std::cout.flags(std::ios::left);
+        for( int idx = 0; idx < keys.size(); ++idx )
+        {
+            std::cout
+                    << std::setw(max_key_len)   << keys[idx]   << " = "
+                    << std::setw(max_value_len) << values[idx]
+                    ;
+            if( !f_opt->is_defined("no-types") )
+            {
+                std::cout << " " << types[idx];
+            }
+            std::cout << std::endl;
+        }
+        std::cout.flags(old_flags);
     }
     catch( std::exception const& e )
     {
@@ -631,7 +674,12 @@ void snapdb::display_cell() const
             std::cout << du.get_column_value
                 ( f_cell.toUtf8(), value
                 , !f_opt->is_defined("full-cell") /*display_only*/
-                ) << std::endl;
+                );
+            if( !f_opt->is_defined("no-types") )
+            {
+                std::cout << " [" << du.get_column_type_name( f_cell.toUtf8() ) << "]";
+            }
+            std::cout << std::endl;
         }
     }
 }
