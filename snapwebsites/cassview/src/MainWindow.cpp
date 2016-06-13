@@ -378,7 +378,7 @@ void MainWindow::onRowsCurrentChanged( const QModelIndex & current, const QModel
             doc->clear();
             f_valueGroup->setTitle( tr("Value") );
 
-            const QByteArray row_key( f_tableModel->data(current).toByteArray() );
+            const QByteArray row_key( f_tableModel->data(current,Qt::UserRole).toByteArray() );
 
             f_rowModel->init
                 ( f_session

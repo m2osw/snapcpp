@@ -32,7 +32,7 @@ class RowModel
 public:
     RowModel();
 
-    const QByteArray&	  rowKey() const		               { return f_rowKey; }
+    const QByteArray&	  rowKey() const		             { return f_rowKey; }
     void                  setRowKey( const QByteArray& key ) { f_rowKey = key;  }
 
     virtual bool          fetchFilter( const QByteArray& key ) override;
