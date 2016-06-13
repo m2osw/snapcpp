@@ -540,6 +540,7 @@ void snapdb::display_columns() const
     try
     {
         snap::dbutils du( f_table, f_row );
+        du.set_display_len( 24 );   // len for the elipsis for hex entries
 
         auto q( QCassandraQuery::create(f_session) );
         q->query( QString("SELECT column1, value FROM %1.%2 WHERE key = ?;")
@@ -623,6 +624,7 @@ void snapdb::display_cell() const
     else
     {
         snap::dbutils du( f_table, f_row );
+        du.set_display_len( 24 );   // len for the elipsis for hex entries
 
         QByteArray value;
         try
