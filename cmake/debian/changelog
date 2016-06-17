@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.25.147~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Fri, 17 Jun 2016 10:40:45 -0700
+
 snapcmakemodules (1.0.25.146~xenial) xenial; urgency=high
 
   * Nightly build.

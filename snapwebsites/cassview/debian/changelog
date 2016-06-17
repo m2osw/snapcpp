@@ -1,3 +1,9 @@
+cassview (0.1.1.43~xenial) xenial; urgency=high
+
+  * Nightly build.
+
+ -- Doug Barbieri <doug@dooglio.net>  Fri, 17 Jun 2016 10:41:51 -0700
+
 cassview (0.1.1.42~xenial) xenial; urgency=high
 
   * Nightly build.
