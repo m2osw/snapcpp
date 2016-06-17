@@ -35,8 +35,6 @@
 #include <QTextCodec>
 
 #include <errno.h>
-#include <grp.h>
-#include <pwd.h>
 #include <signal.h>
 #include <syslog.h>
 #include <sys/stat.h>
@@ -2390,38 +2388,6 @@ void server::listen()
     g_connection->f_messager->set_name("messager");
     g_connection->f_messager->set_priority(50);
     g_connection->f_communicator->add_connection(g_connection->f_messager);
-
-    // drop to non-priv user
-    //
-    if( getuid() == 0 )
-    {
-        struct passwd* pswd(getpwnam("snapwebsites"));
-        if( nullptr == pswd )
-        {
-            SNAP_LOG_FATAL("Cannot locate user 'snapwebsites'! Create it first, then run the server.");
-            exit(1);
-        }
-        const int sw_usr_id = pswd->pw_uid;
-        //
-        struct group* grp(getgrnam("snapwebsites"));
-        if( nullptr == grp )
-        {
-            SNAP_LOG_FATAL("Cannot locate group 'snapwebsites'! Create it first, then run the server.");
-            exit(1);
-        }
-        const int sw_grp_id = grp->gr_gid;
-        //
-        if( setgid( sw_grp_id ) != 0 )
-        {
-            SNAP_LOG_FATAL("Cannot drop to group 'snapwebsites'!");
-            exit(1);
-        }
-        if( setuid( sw_usr_id ) != 0 )
-        {
-            SNAP_LOG_FATAL("Cannot drop to user 'snapwebsites'!");
-            exit(1);
-        }
-    }
 
     // the server was successfully started
     SNAP_LOG_INFO("Snap v" SNAPWEBSITES_VERSION_STRING " on \"")(f_parameters["server_name"])("\" started.");

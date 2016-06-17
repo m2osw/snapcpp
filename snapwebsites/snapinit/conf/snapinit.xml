@@ -178,6 +178,8 @@
     <config>/etc/snapwebsites/snapcommunicator.conf</config>
     <connect>127.0.0.1:4040</connect>
     <wait>1</wait>
+    <user>snapwebsites</user>
+    <group>snapwebsites</group>
   </service>
   <service name="snapdbproxy" required="required" disabled="disabled">
     <priority>-10</priority>
@@ -185,12 +187,16 @@
     <snapdbproxy>127.0.0.1:4042</snapdbproxy>
     <safe>snapdbproxy</safe> <!-- TODO: some day, use something else than "safe" for snapdbproxy -->
     <recovery>60</recovery>
+    <user>snapwebsites</user>
+    <group>snapwebsites</group>
   </service>
   <service name="snaplock" required="required" disabled="disabled">
     <priority>-10</priority>
     <config>/etc/snapwebsites/snaplock.conf</config>
     <safe>snaplock</safe> <!-- TODO: some day, use something else than "safe" for snaplock -->
     <recovery>60</recovery>
+    <user>snapwebsites</user>
+    <group>snapwebsites</group>
   </service>
   <service name="snapfirewall" required="required" disabled="disabled">
     <priority>-5</priority>
@@ -201,6 +207,8 @@
   <service name="snapserver" required="required" disabled="disabled">
     <priority>0</priority>
     <config>/etc/snapwebsites/snapserver.conf</config>
+    <user>snapwebsites</user>
+    <group>snapwebsites</group>
   </service>
   <service name="sendmail" disabled="disabled">
     <command>/usr/bin/snapbackend</command>
@@ -217,23 +225,31 @@
     <options>--cron-action list::pagelist</options>
     <config>/etc/snapwebsites/snapserver.conf</config>
     <recovery>3600</recovery>
+    <user>snapwebsites</user>
+    <group>snapwebsites</group>
   </service>
   <service name="images" disabled="disabled">
     <command>/usr/bin/snapbackend</command>
     <options>--cron-action images::images</options>
     <config>/etc/snapwebsites/snapserver.conf</config>
     <recovery>3600</recovery>
+    <user>snapwebsites</user>
+    <group>snapwebsites</group>
   </service>
   <service name="snapwatchdog" disabled="disabled">
     <command>/usr/bin/snapwatchdogserver</command>
     <priority>90</priority>
     <config>/etc/snapwebsites/snapwatchdog.conf</config>
     <recovery>600</recovery>
+    <user>snapwebsites</user>
+    <group>snapwebsites</group>
   </service>
   <service name="snapbackend" disabled="disabled">
     <priority>75</priority>
     <config>/etc/snapwebsites/snapserver.conf</config>
     <cron>300</cron>
+    <user>snapwebsites</user>
+    <group>snapwebsites</group>
   </service>
   <service name="snapmanagerdaemon" disabled="disabled">
     <config>/etc/snapwebsites/snapmanagerdaemon.conf</config>

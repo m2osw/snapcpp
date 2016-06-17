@@ -29,7 +29,9 @@
 #include <QFile>
 
 #include <fcntl.h>
+#include <grp.h>
 #include <proc/sysinfo.h>
+#include <pwd.h>
 #include <syslog.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
@@ -468,6 +470,40 @@ void service::configure(QDomElement e, QString const & binary_path, bool const d
                                   .arg(f_service_name));
                     snap::NOTREACHED();
                 }
+            }
+        }
+    }
+
+    // non-priv user to drop to after child has forked
+    // (if empty, then we stay at the user level we were at)
+    //
+    {
+        QDomElement sub_element(e.firstChildElement("user"));
+        if(!sub_element.isNull())
+        {
+            f_user = sub_element.text();
+            if(f_user.isEmpty())
+            {
+                common::fatal_error(QString("the config tag of service \"%1\" returned an empty string which does not represent a valid configuration filename.")
+                                    .arg(f_service_name));
+                snap::NOTREACHED();
+            }
+        }
+    }
+
+    // non-priv group to drop to after child has forked
+    // (if empty, then we stay at the user level we were at)
+    //
+    {
+        QDomElement sub_element(e.firstChildElement("group"));
+        if(!sub_element.isNull())
+        {
+            f_group = sub_element.text();
+            if(f_group.isEmpty())
+            {
+                common::fatal_error(QString("the config tag of service \"%1\" returned an empty string which does not represent a valid configuration filename.")
+                                    .arg(f_service_name));
+                snap::NOTREACHED();
             }
         }
     }
@@ -1223,6 +1259,45 @@ bool service::run()
             freopen( "/dev/null", "r", stdin  );
             freopen( "/dev/null", "w", stdout );
             freopen( "/dev/null", "w", stderr );
+        }
+
+        // drop to non-priv user/group if f_user and f_group are set
+        //
+        if( getuid() == 0 )
+        {
+            if( !f_user.isEmpty() )
+            {
+                struct passwd* pswd(getpwnam(f_user.toUtf8().data()));
+                if( nullptr == pswd )
+                {
+                    common::fatal_error( QString("Cannot locate user '%1'! Create it first, then run the server.").arg(f_user) );
+                    exit(1);
+                }
+                const int sw_usr_id = pswd->pw_uid;
+                //
+                if( setuid( sw_usr_id ) != 0 )
+                {
+                    common::fatal_error( QString("Cannot drop to user '%1'!").arg(f_user) );
+                    exit(1);
+                }
+            }
+            //
+            if( !f_group.isEmpty() )
+            {
+                struct group* grp(getgrnam(f_group.toUtf8().data()));
+                if( nullptr == grp )
+                {
+                    common::fatal_error( QString("Cannot locate group '%1'! Create it first, then run the server.").arg(f_group) );
+                    exit(1);
+                }
+                const int sw_grp_id = grp->gr_gid;
+                //
+                if( setgid( sw_grp_id ) != 0 )
+                {
+                    common::fatal_error( QString("Cannot drop to group '%1'!").arg(f_group) );
+                    exit(1);
+                }
+            }
         }
 
         // Execute the child processes
